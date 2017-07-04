@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Libuv" Version="1.9.2" />
+    <ProjectReference Include="..\LibUv\LibUvTransport.csproj" />
   </ItemGroup>
 
 </Project>

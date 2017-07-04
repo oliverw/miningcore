@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26621.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceHost", "ServiceHost\ServiceHost.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibUv", "LibUv\LibUv.csproj", "{C512E655-4C3A-426F-8189-B5CF3338A411}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibUvTransport", "LibUv\LibUvTransport.csproj", "{C512E655-4C3A-426F-8189-B5CF3338A411}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
