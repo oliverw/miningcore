@@ -7,23 +7,38 @@ using System.Threading;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking
 {
-    public abstract class UvHandle : UvMemory
+    internal class UvAsyncHandle : UvHandle
     {
         private static readonly LibuvFunctions.uv_close_cb _destroyMemory = (handle) => DestroyMemory(handle);
+
+        private static readonly LibuvFunctions.uv_async_cb _uv_async_cb = (handle) => AsyncCb(handle);
+        private Action _callback;
         private Action<Action<IntPtr>, IntPtr> _queueCloseHandle;
 
-        protected UvHandle(ILibuvTrace logger) : base (logger)
+        public UvAsyncHandle(ILibuvTrace logger) : base(logger)
         {
         }
 
-        protected void CreateHandle(
-            LibuvFunctions uv,
-            int threadId,
-            int size,
-            Action<Action<IntPtr>, IntPtr> queueCloseHandle)
+        public void Init(UvLoopHandle loop, Action callback, Action<Action<IntPtr>, IntPtr> queueCloseHandle)
         {
+            CreateMemory(
+                loop.Libuv,
+                loop.ThreadId,
+                loop.Libuv.handle_size(LibuvFunctions.HandleType.ASYNC));
+
+            _callback = callback;
             _queueCloseHandle = queueCloseHandle;
-            CreateMemory(uv, threadId, size);
+            _uv.async_init(loop, this, _uv_async_cb);
+        }
+
+        public void Send()
+        {
+            _uv.async_send(this);
+        }
+
+        private static void AsyncCb(IntPtr handle)
+        {
+            FromIntPtr<UvAsyncHandle>(handle)._callback.Invoke();
         }
 
         protected override bool ReleaseHandle()
@@ -43,24 +58,15 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
                     // Ensure the closure doesn't reference "this".
                     var uv = _uv;
                     _queueCloseHandle(memory2 => uv.close(memory2, _destroyMemory), memory);
+                    uv.unsafe_async_send(memory);
                 }
                 else
                 {
-                    Debug.Assert(false, "UvHandle not initialized with queueCloseHandle action");
+                    Debug.Assert(false, "UvAsyncHandle not initialized with queueCloseHandle action");
                     return false;
                 }
             }
             return true;
-        }
-
-        public void Reference()
-        {
-            _uv.@ref(this);
-        }
-
-        public void Unreference()
-        {
-            _uv.unref(this);
         }
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking
 {
-    public class UvTimerHandle : UvHandle
+    internal class UvTimerHandle : UvHandle
     {
         private readonly static LibuvFunctions.uv_timer_cb _uv_timer_cb = UvTimerCb;
 

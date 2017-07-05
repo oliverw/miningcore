@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
 {
-    public interface ILibuvTrace : ILogger
+    internal interface ILibuvTrace : ILogger
     {
         void ConnectionRead(string connectionId, int count);
 

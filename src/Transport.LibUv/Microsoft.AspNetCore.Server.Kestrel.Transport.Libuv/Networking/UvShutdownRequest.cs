@@ -9,14 +9,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
     /// <summary>
     /// Summary description for UvWriteRequest
     /// </summary>
-    public class UvConnectRequest : UvRequest
+    internal class UvShutdownRequest : UvRequest
     {
-        private readonly static LibuvFunctions.uv_connect_cb _uv_connect_cb = (req, status) => UvConnectCb(req, status);
+        private static readonly LibuvFunctions.uv_shutdown_cb _uv_shutdown_cb = (req, status) => UvShutdownCb(req, status);
 
-        private Action<UvConnectRequest, int, UvException, object> _callback;
+        private Action<UvShutdownRequest, int, object> _callback;
         private object _state;
 
-        public UvConnectRequest(ILibuvTrace logger) : base (logger)
+        public UvShutdownRequest(ILibuvTrace logger) : base(logger)
         {
         }
 
@@ -27,28 +27,27 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
 
         public void DangerousInit(UvLoopHandle loop)
         {
-            var requestSize = loop.Libuv.req_size(LibuvFunctions.RequestType.CONNECT);
+            var requestSize = loop.Libuv.req_size(LibuvFunctions.RequestType.SHUTDOWN);
             CreateMemory(
                 loop.Libuv,
                 loop.ThreadId,
                 requestSize);
         }
 
-        public void Connect(
-            UvPipeHandle pipe, 
-            string name, 
-            Action<UvConnectRequest, int, UvException, object> callback, 
+        public void Shutdown(
+            UvStreamHandle handle,
+            Action<UvShutdownRequest, int, object> callback,
             object state)
         {
             _callback = callback;
             _state = state;
 
-            Libuv.pipe_connect(this, pipe, name, _uv_connect_cb);
+            Libuv.shutdown(this, handle, _uv_shutdown_cb);
         }
 
-        private static void UvConnectCb(IntPtr ptr, int status)
+        private static void UvShutdownCb(IntPtr ptr, int status)
         {
-            var req = FromIntPtr<UvConnectRequest>(ptr);
+            var req = FromIntPtr<UvShutdownRequest>(ptr);
 
             var callback = req._callback;
             req._callback = null;
@@ -64,11 +63,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
 
             try
             {
-                callback(req, status, error, state);
+                callback(req, status, state);
             }
             catch (Exception ex)
             {
-                req._log.LogError(0, ex, "UvConnectRequest");
+                req._log.LogError(0, ex, nameof(UvShutdownRequest));
                 throw;
             }
         }

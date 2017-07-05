@@ -13,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LibUv\LibUvTransport.csproj" />
+    <ProjectReference Include="..\Transport.LibUv\Transport.LibUv.csproj" />
+    <ProjectReference Include="..\Transport\Transport.csproj" />
   </ItemGroup>
 
 </Project>
