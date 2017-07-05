@@ -5,17 +5,17 @@ using System.Text;
 
 namespace Transport
 {
-    public interface IListener
-    {
-        void RegisterEndpoint(IPEndPoint endPoint, Action<ITransport> clientFactory);
-        void Start();
-        void Stop();
-    }
-
-    public interface ITransport
+    public interface IConnection
     {
         IObservable<byte[]> Input { get; }
         IObserver<byte[]> Output { get; }
-        IPEndPoint PeerEndPoint { get; }
+        IPEndPoint RemoteEndPoint { get; }
+    }
+
+    public interface IListener
+    {
+        void RegisterEndpoint(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory);
+        void Start();
+        void Stop();
     }
 }

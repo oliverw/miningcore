@@ -14,11 +14,11 @@ namespace ServiceHost
     {
         class EchoClient
         {
-            public EchoClient(ITransport transport)
+            public EchoClient(IConnection connection)
             {
-                transport.Output.OnNext(System.Text.Encoding.UTF8.GetBytes("Ready.\n"));
+                connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes("Ready.\n"));
 
-                transport.Input
+                connection.Input
                     .ObserveOn(ThreadPoolScheduler.Instance)
                     .Subscribe(x =>
                 {
@@ -27,7 +27,7 @@ namespace ServiceHost
                     for (int i = 0; i < 20; i++)
                     {
                         var msg2 = $"{i} - You wrote: {msg}";
-                        transport.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));
+                        connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));
                     }
                 });
             }

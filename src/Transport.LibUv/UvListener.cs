@@ -23,13 +23,13 @@ namespace Transport.LibUv
         private readonly ILibuvTrace tracer;
         private UvLoopHandle loop;
         private UvAsyncHandle stopEvent;
-        private readonly Dictionary<IPEndPoint, Action<ITransport>> endPoints =
-            new Dictionary<IPEndPoint, Action<ITransport>>();
+        private readonly Dictionary<IPEndPoint, Action<IConnection>> endPoints =
+            new Dictionary<IPEndPoint, Action<IConnection>>();
         private LibuvFunctions uv;
 
-        public void RegisterEndpoint(IPEndPoint endPoint, Action<ITransport> clientFactory)
+        public void RegisterEndpoint(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory)
         {
-            endPoints[endPoint] = clientFactory;
+            endPoints[endPoint] = connectionHandlerFactory;
         }
 
         public void Start()
@@ -86,7 +86,7 @@ namespace Transport.LibUv
 
         private static void OnNewConnection(UvStreamHandle server, int status, UvException ex, object _state)
         {
-            var state = (Tuple<UvListener, Action<ITransport>>)_state;
+            var state = (Tuple<UvListener, Action<IConnection>>)_state;
             var self = state.Item1;
 
             if (status >= 0)
@@ -99,10 +99,10 @@ namespace Transport.LibUv
                 self.tracer.ConnectionError("-1", ex);
         }
 
-        class Connection : ITransport
+        class Connection : IConnection
         {
             public Connection(UvListener parent, UvTcpHandle server,
-                Action<ITransport> clientFactory)
+                Action<IConnection> clientFactory)
             {
                 this.parent = parent;
                 this.server = server;
@@ -120,18 +120,18 @@ namespace Transport.LibUv
             private readonly UvTcpHandle server;
             private UvTcpHandle client;
             private IntPtr unmanagedReadBuffer = IntPtr.Zero;
-            private readonly Action<ITransport> clientFactory;
+            private readonly Action<IConnection> clientFactory;
             private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
             private ConcurrentQueue<byte[]> outputQueue = new ConcurrentQueue<byte[]>();
             private UvAsyncHandle outputEvent;
 
-            #region ITransport
+            #region IConnection
 
             public IObservable<byte[]> Input { get; private set; }
             public IObserver<byte[]> Output { get; private set; }
-            public IPEndPoint PeerEndPoint { get; private set; }
+            public IPEndPoint RemoteEndPoint { get; private set; }
 
-            #endregion // ITransport
+            #endregion // IConnection
 
             public void Init()
             {
@@ -141,7 +141,7 @@ namespace Transport.LibUv
                     client.Init(parent.loop, null);
                     server.Accept(client);
 
-                    PeerEndPoint = client.GetPeerIPEndPoint();
+                    RemoteEndPoint = client.GetPeerIPEndPoint();
                     connectionId = CorrelationIdGenerator.GetNextId();
 
                     clientFactory(this);
