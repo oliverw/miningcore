@@ -12,7 +12,7 @@ namespace Transport
         IPEndPoint RemoteEndPoint { get; }
     }
 
-    public interface IListener
+    public interface IEndpointDispatcher
     {
         void RegisterEndpoint(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory);
         void Start();

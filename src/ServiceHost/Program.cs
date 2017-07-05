@@ -36,7 +36,7 @@ namespace ServiceHost
         static void Main(string[] args)
         {
             var logger = new DebugLogger("default");
-            var listener = (IListener) new UvListener(logger);
+            var listener = (IEndpointDispatcher) new LibUvEndpointDispatcher(logger);
 
             // handle ctrl+c
             Console.CancelKeyPress += (sender, e) =>
