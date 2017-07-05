@@ -67,17 +67,13 @@ namespace ServiceHost
 
         static void Main(string[] args)
         {
-            Server server = null;
-
             var logger = new DebugLogger("default");
             var tracer = new LibuvTrace(logger);
             var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000);
-
-            server = new Server();
+            var server = new Server();
 
             // this blocks
             var stopHandle = server.Init(tracer, endPoint);
-
 
             // handle ctrl+c
             Console.CancelKeyPress += (sender, eventArgs) =>
