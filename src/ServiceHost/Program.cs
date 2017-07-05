@@ -20,7 +20,8 @@ namespace ServiceHost
                 try
                 {
                     var loop = new UvLoopHandle(tracer);
-                    loop.Init(new LibuvFunctions());
+                    var uv = new LibuvFunctions();
+                    loop.Init(uv);
 
                     stopHandle.Init(loop, () =>
                     {
@@ -57,29 +58,19 @@ namespace ServiceHost
 
             var logger = new DebugLogger("default");
             var tracer = new LibuvTrace(logger);
+            var stopHandle = new UvAsyncHandle(tracer);
             var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000);
 
             server = new Server();
 
-            ConcurrentQueue<Tuple<Action<IntPtr>, IntPtr>> handles = new ConcurrentQueue<Tuple<Action<IntPtr>, IntPtr>>();
-            Action<Action<IntPtr>, IntPtr> queueCloseHandle = (action, ptr) =>
-            {
-                handles.Enqueue(Tuple.Create(action, ptr));
-            };
-
             // handle ctrl+c
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
-                server.Stop();
+                stopHandle.Send();
             };
 
             // this blocks
-            server.Run(tracer, endPoint);
-
-            // cleanup
-            Tuple<Action<IntPtr>, IntPtr> item;
-            while (handles.TryDequeue(out item))
-                item.Item1(item.Item2);
+            server.Run(tracer, endPoint, stopHandle);
         }
     }
 }
