@@ -15,12 +15,16 @@ namespace ServiceHost
     {
         public class Server
         {
-            public void Run(ILibuvTrace tracer, IPEndPoint endPoint, UvAsyncHandle stopHandle)
+            private UvLoopHandle loop;
+
+            public UvAsyncHandle Init(ILibuvTrace tracer, IPEndPoint endPoint)
             {
                 try
                 {
-                    var loop = new UvLoopHandle(tracer);
+                    loop = new UvLoopHandle(tracer);
                     var uv = new LibuvFunctions();
+                    var stopHandle = new UvAsyncHandle(tracer);
+
                     var server = new UvTcpHandle(tracer);
 
                     loop.Init(uv);
@@ -38,16 +42,22 @@ namespace ServiceHost
                     server.Bind(endPoint);
                     server.Listen(LibuvConstants.ListenBacklog, OnNewConnection, null);
 
-                    loop.Run();
-
-                    loop.Dispose();
+                    return stopHandle;
                 }
 
                 catch (Exception ex)
                 {
                     tracer.LogError(ex.ToString());
                     Console.WriteLine(ex);
+                    throw;
                 }
+            }
+
+            public void Run()
+            {
+                loop.Run();
+
+                loop.Dispose();
             }
 
             private static void OnNewConnection(UvStreamHandle streamHandle, int status, UvException ex, object state)
@@ -61,10 +71,13 @@ namespace ServiceHost
 
             var logger = new DebugLogger("default");
             var tracer = new LibuvTrace(logger);
-            var stopHandle = new UvAsyncHandle(tracer);
             var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000);
 
             server = new Server();
+
+            // this blocks
+            var stopHandle = server.Init(tracer, endPoint);
+
 
             // handle ctrl+c
             Console.CancelKeyPress += (sender, eventArgs) =>
@@ -72,8 +85,7 @@ namespace ServiceHost
                 stopHandle.Send();
             };
 
-            // this blocks
-            server.Run(tracer, endPoint, stopHandle);
+            server.Run();
         }
     }
 }
