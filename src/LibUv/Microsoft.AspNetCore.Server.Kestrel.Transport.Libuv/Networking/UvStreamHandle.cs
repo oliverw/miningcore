@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
         private readonly static LibuvFunctions.uv_connection_cb _uv_connection_cb = (handle, status) => UvConnectionCb(handle, status);
         // Ref and out lamda params must be explicitly typed
         private readonly static LibuvFunctions.uv_alloc_cb _uv_alloc_cb = (IntPtr handle, int suggested_size, out LibuvFunctions.uv_buf_t buf) => UvAllocCb(handle, suggested_size, out buf);
-        private readonly static LibuvFunctions.uv_read_cb _uv_read_cb = (IntPtr handle, int status, ref LibuvFunctions.uv_buf_t buf) => UvReadCb(handle, status, ref buf);
+        private readonly static LibuvFunctions.uv_read_cb _uv_read_cb = (IntPtr handle, int nread, ref LibuvFunctions.uv_buf_t buf) => UvReadCb(handle, nread, ref buf);
 
         private Action<UvStreamHandle, int, UvException, object> _listenCallback;
         private object _listenState;
@@ -151,13 +151,13 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
             }
         }
 
-        private static void UvReadCb(IntPtr handle, int status, ref LibuvFunctions.uv_buf_t buf)
+        private static void UvReadCb(IntPtr handle, int nread, ref LibuvFunctions.uv_buf_t buf)
         {
             var stream = FromIntPtr<UvStreamHandle>(handle);
 
             try
             {
-                stream._readCallback(stream, status, stream._readState);
+                stream._readCallback(stream, nread, stream._readState);
             }
             catch (Exception ex)
             {
