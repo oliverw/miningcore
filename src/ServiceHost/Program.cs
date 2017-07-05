@@ -26,10 +26,6 @@ namespace ServiceHost
             IObserver<byte[]> Output { get; }
         }
 
-        public interface ITransportClient
-        {
-        }
-
         public class UvListener
         {
             public UvListener(ILogger logger)
@@ -40,11 +36,11 @@ namespace ServiceHost
             private readonly ILibuvTrace tracer;
             private UvLoopHandle loop;
             private UvAsyncHandle stopEvent;
-            private readonly Dictionary<IPEndPoint, Func<ITransport, ITransportClient>> endPoints = 
-                new Dictionary<IPEndPoint, Func<ITransport, ITransportClient>>();
+            private readonly Dictionary<IPEndPoint, Action<ITransport>> endPoints = 
+                new Dictionary<IPEndPoint, Action<ITransport>>();
             private LibuvFunctions uv;
 
-            public void RegisterEndpoint(IPEndPoint endPoint, Func<ITransport, ITransportClient> clientFactory)
+            public void RegisterEndpoint(IPEndPoint endPoint, Action<ITransport> clientFactory)
             {
                 endPoints[endPoint] = clientFactory;
             }
@@ -103,7 +99,7 @@ namespace ServiceHost
 
             private static void OnNewConnectionStatic(UvStreamHandle server, int status, UvException ex, object _state)
             {
-                var state = (Tuple<UvListener, Func<ITransport, ITransportClient>>) _state;
+                var state = (Tuple<UvListener, Action<ITransport>>) _state;
                 var self = state.Item1;
 
                 if (status >= 0)
@@ -118,8 +114,8 @@ namespace ServiceHost
 
             class Connection : ITransport
             {
-                public Connection(UvListener parent, UvStreamHandle server, 
-                    Func<ITransport, ITransportClient> clientFactory)
+                public Connection(UvListener parent, UvStreamHandle server,
+                    Action<ITransport> clientFactory)
                 {
                     this.parent = parent;
                     this.server = server;
@@ -127,6 +123,9 @@ namespace ServiceHost
 
                     Input = inputSubject.AsObservable();
                     Output = Observer.Create<byte[]>(OnDataAvailableForWrite);
+
+                    outputEvent = new UvAsyncHandle(parent.tracer);
+                    outputEvent.Init(parent.loop, ProcessOutputQueue, null);
                 }
 
                 private string connectionId = "-1";
@@ -134,8 +133,10 @@ namespace ServiceHost
                 private readonly UvStreamHandle server;
                 private UvTcpHandle client;
                 private IntPtr unmanagedReadBuffer = IntPtr.Zero;
-                private readonly Func<ITransport, ITransportClient> clientFactory;
+                private readonly Action<ITransport> clientFactory;
                 private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
+                private ConcurrentQueue<byte[]> outputQueue = new ConcurrentQueue<byte[]>();
+                private UvAsyncHandle outputEvent;
 
                 #region ITransport
 
@@ -171,8 +172,22 @@ namespace ServiceHost
 
                 private void Close()
                 {
-                    server?.Dispose();
-                    client?.Dispose();
+                    if (client != null)
+                    {
+                        client.Dispose();
+                        client = null;
+                    }
+
+                    if (outputEvent != null)
+                    {
+                        outputEvent.Dispose();
+                        outputEvent = null;
+                    }
+
+                    outputQueue = null;
+
+                    // signal we are done here
+                    inputSubject.OnCompleted();
 
                     if (unmanagedReadBuffer != IntPtr.Zero)
                     {
@@ -209,23 +224,57 @@ namespace ServiceHost
 
                 private void OnDataAvailableForWrite(byte[] output)
                 {
+                    outputQueue?.Enqueue(output);
+                    outputEvent?.Send();
+                }
+
+                private async void ProcessOutputQueue()
+                {
+                    byte[] data;
+                    var bufferSegments = new List<ArraySegment<byte>>();
+
+                    // collect queued buffers
+                    while (outputQueue != null && outputQueue.TryDequeue(out data))
+                        bufferSegments.Add(new ArraySegment<byte>(data));
+
+                    // write in single request
+                    try
+                    {
+                        using (var req = new UvWriteReq(parent.tracer))
+                        {
+                            req.Init(parent.loop);
+
+                            var segs = new ArraySegment<ArraySegment<byte>>(bufferSegments.ToArray());
+                            await req.WriteAsync(client, segs);
+                        }
+                    }
+
+                    catch (Exception ex)
+                    {
+                        parent.tracer.ConnectionError(connectionId, ex);
+                        Close();
+                    }
                 }
             }
         }
 
-        class EchoClient : ITransportClient
+        class EchoClient
         {
             public EchoClient(ITransport transport)
             {
+                transport.Output.OnNext(System.Text.Encoding.UTF8.GetBytes("Ready.\n"));
+
                 transport.Input
                     .ObserveOn(ThreadPoolScheduler.Instance)
                     .Subscribe(x =>
                 {
                     var msg = System.Text.Encoding.UTF8.GetString(x);
 
-                    Console.WriteLine($"You wrote: {msg}");
-
-                    transport.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg));
+                    for (int i = 0; i < 20; i++)
+                    {
+                        var msg2 = $"{i} - You wrote: {msg}";
+                        transport.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));
+                    }
                 });
             }
         }
