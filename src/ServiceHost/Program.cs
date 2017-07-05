@@ -45,9 +45,7 @@ namespace ServiceHost
                 listener.Stop();
             };
 
-            listener.RegisterEndpoint(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000), (transport => new EchoClient(transport)));
-
-            listener.Start();
+            listener.Start(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000), (transport => new EchoClient(transport)));
         }
     }
 }

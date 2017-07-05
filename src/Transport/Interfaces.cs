@@ -14,8 +14,7 @@ namespace Transport
 
     public interface IEndpointDispatcher
     {
-        void RegisterEndpoint(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory);
-        void Start();
+        void Start(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory);
         void Stop();
     }
 }

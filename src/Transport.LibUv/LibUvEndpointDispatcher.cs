@@ -23,16 +23,9 @@ namespace Transport.LibUv
         internal readonly ILibuvTrace tracer;
         internal UvLoopHandle loop;
         private UvAsyncHandle stopEvent;
-        private readonly Dictionary<IPEndPoint, Action<IConnection>> endPoints =
-            new Dictionary<IPEndPoint, Action<IConnection>>();
         internal LibuvFunctions uv;
 
-        public void RegisterEndpoint(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory)
-        {
-            endPoints[endPoint] = connectionHandlerFactory;
-        }
-
-        public void Start()
+        public void Start(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory)
         {
             try
             {
@@ -49,16 +42,12 @@ namespace Transport.LibUv
                     loop.Stop();
                 }, null);
 
-                foreach (var endPoint in endPoints.Keys)
-                {
-                    var socket = new UvTcpHandle(tracer);
-                    socket.Init(loop, null);
-                    socket.Bind(endPoint);
+                var socket = new UvTcpHandle(tracer);
+                socket.Init(loop, null);
+                socket.Bind(endPoint);
 
-                    var connectionHandler = endPoints[endPoint];
-                    var state = Tuple.Create(this, connectionHandler);
-                    socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, state);
-                }
+                var listenState = Tuple.Create(this, connectionHandlerFactory);
+                socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
                 loop.Run();
 
