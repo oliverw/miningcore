@@ -21,14 +21,18 @@ namespace ServiceHost
                 {
                     var loop = new UvLoopHandle(tracer);
                     var uv = new LibuvFunctions();
+                    var server = new UvTcpHandle(tracer);
+
                     loop.Init(uv);
 
                     stopHandle.Init(loop, () =>
                     {
+                        // Call uv_shutdown and on the shutdown callback uv_close the handle.
+
+                        server.Dispose();
                         loop.Stop();
                     }, null);
 
-                    var server = new UvTcpHandle(tracer);
                     server.Init(loop, null);
 
                     server.Bind(endPoint);
@@ -36,7 +40,6 @@ namespace ServiceHost
 
                     loop.Run();
 
-                    server.Dispose();
                     loop.Dispose();
                 }
 
