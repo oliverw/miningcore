@@ -39,7 +39,7 @@ namespace Transport.LibUv
         private readonly Action<IConnection> clientFactory;
         private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
         private MemoryStream outputQueue = new MemoryStream();
-        private object outputQueueLock = new object();
+        private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
 
         #region IConnection
