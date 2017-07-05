@@ -24,7 +24,7 @@ namespace ServiceHost
                 {
                     var msg = System.Text.Encoding.UTF8.GetString(x);
 
-                    for (int i = 0; i < 20; i++)
+                    for (int i = 0; i < 20000; i++)
                     {
                         var msg2 = $"{i} - You wrote: {msg}";
                         connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));

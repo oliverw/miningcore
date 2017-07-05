@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -36,7 +38,8 @@ namespace Transport.LibUv
         private IntPtr unmanagedReadBuffer = IntPtr.Zero;
         private readonly Action<IConnection> clientFactory;
         private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
-        private ConcurrentQueue<byte[]> outputQueue = new ConcurrentQueue<byte[]>();
+        private MemoryStream outputQueue = new MemoryStream();
+        private object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
 
         #region IConnection
@@ -129,35 +132,44 @@ namespace Transport.LibUv
 
         private void OnDataAvailableForWrite(byte[] output)
         {
-            outputQueue?.Enqueue(output);
+            lock (outputQueueLock)
+            {
+                outputQueue?.Write(output, 0, output.Length);
+            }
+
             outputEvent?.Send();
         }
 
         private async void ProcessOutputQueue()
         {
-            byte[] data;
-            var bufferSegments = new List<ArraySegment<byte>>();
+            ArraySegment<byte>? buffer = null;
 
-            // collect queued buffers
-            while (outputQueue != null && outputQueue.TryDequeue(out data))
-                bufferSegments.Add(new ArraySegment<byte>(data));
-
-            // write in single request
-            try
+            lock (outputQueueLock)
             {
-                using (var req = new UvWriteReq(parent.tracer))
+                if (outputQueue.Length > 0)
                 {
-                    req.Init(parent.loop);
-
-                    var segs = new ArraySegment<ArraySegment<byte>>(bufferSegments.ToArray());
-                    await req.WriteAsync(client, segs);
+                    buffer = new ArraySegment<byte>(outputQueue.ToArray());
+                    outputQueue.SetLength(0);
                 }
             }
 
-            catch (Exception ex)
+            // write in single request
+            if (buffer.HasValue)
             {
-                parent.tracer.ConnectionError(connectionId, ex);
-                Close();
+                try
+                {
+                    using (var req = new UvWriteReq(parent.tracer))
+                    {
+                        req.Init(parent.loop);
+                        await req.WriteAsync(client, new ArraySegment<ArraySegment<byte>>(new []{ buffer.Value }));
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    parent.tracer.ConnectionError(connectionId, ex);
+                    Close();
+                }
             }
         }
     }
