@@ -32,6 +32,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
             _uv_pipe_bind = NativeMethods.uv_pipe_bind;
             _uv_pipe_open = NativeMethods.uv_pipe_open;
             _uv_listen = NativeMethods.uv_listen;
+            _uv_shutdown = NativeMethods.uv_shutdown;
             _uv_accept = NativeMethods.uv_accept;
             _uv_pipe_connect = NativeMethods.uv_pipe_connect;
             _uv_pipe_pending_count = NativeMethods.uv_pipe_pending_count;
@@ -244,6 +245,15 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
         {
             handle.Validate();
             ThrowIfErrored(_uv_listen(handle, backlog, cb));
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void uv_shutdown_cb(IntPtr req, int status);
+        protected Func<UvShutdownRequest, UvStreamHandle, uv_shutdown_cb, int> _uv_shutdown;
+        public void shutdown(UvShutdownRequest req, UvStreamHandle handle, uv_shutdown_cb cb)
+        {
+            handle.Validate();
+            ThrowIfErrored(_uv_shutdown(req, handle, cb));
         }
 
         protected Func<UvStreamHandle, UvStreamHandle, int> _uv_accept;
@@ -547,6 +557,9 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
 
             [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
             public static extern int uv_listen(UvStreamHandle handle, int backlog, uv_connection_cb cb);
+
+            [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+            public static extern int uv_shutdown(UvShutdownRequest req, UvStreamHandle handle, uv_shutdown_cb cb);
 
             [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
             public static extern int uv_accept(UvStreamHandle server, UvStreamHandle client);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
@@ -15,49 +16,53 @@ namespace ServiceHost
     {
         public class Server
         {
-            private UvLoopHandle loop;
+            private UvAsyncHandle stopEvent;
 
-            public UvAsyncHandle Init(ILibuvTrace tracer, IPEndPoint endPoint)
+            public void Run(ILibuvTrace tracer, IPEndPoint endPoint)
             {
                 try
                 {
-                    loop = new UvLoopHandle(tracer);
-                    var uv = new LibuvFunctions();
-                    var stopHandle = new UvAsyncHandle(tracer);
+                    var loop = new UvLoopHandle(tracer);
 
-                    var server = new UvTcpHandle(tracer);
+                    var uv = new LibuvFunctions();
+                    stopEvent = new UvAsyncHandle(tracer);
+                    var socket = new UvTcpHandle(tracer);
 
                     loop.Init(uv);
 
-                    stopHandle.Init(loop, () =>
+                    stopEvent.Init(loop, () =>
                     {
-                        // Call uv_shutdown and on the shutdown callback uv_close the handle.
-
-                        server.Dispose();
                         loop.Stop();
                     }, null);
 
-                    server.Init(loop, null);
+                    socket.Init(loop, null);
 
-                    server.Bind(endPoint);
-                    server.Listen(LibuvConstants.ListenBacklog, OnNewConnection, null);
+                    socket.Bind(endPoint);
+                    socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, null);
 
-                    return stopHandle;
+                    loop.Run();
+
+                    // close handles
+                    socket.Dispose();
+                    stopEvent.Dispose();
+
+                    // enter runloop again to invoke close callbacks on the handles
+                    loop.Run();
+
+                    // finally done
+                    loop.Dispose();
                 }
 
                 catch (Exception ex)
                 {
                     tracer.LogError(ex.ToString());
-                    Console.WriteLine(ex);
                     throw;
                 }
             }
 
-            public void Run()
+            public void Stop()
             {
-                loop.Run();
-
-                loop.Dispose();
+                stopEvent.Send();
             }
 
             private static void OnNewConnection(UvStreamHandle streamHandle, int status, UvException ex, object state)
@@ -72,16 +77,15 @@ namespace ServiceHost
             var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000);
             var server = new Server();
 
-            // this blocks
-            var stopHandle = server.Init(tracer, endPoint);
-
             // handle ctrl+c
-            Console.CancelKeyPress += (sender, eventArgs) =>
+            Console.CancelKeyPress += (sender, e) =>
             {
-                stopHandle.Send();
+                e.Cancel = true;
+                server.Stop();
             };
 
-            server.Run();
+            // this blocks
+            server.Run(tracer, endPoint);
         }
     }
 }
