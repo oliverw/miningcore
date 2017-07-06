@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
 using MiningCore.Extensions;
+using MiningCore.Protocols.JsonRpc;
 using MiningCore.Transport;
-using IEndpointDispatcher = MiningCore.Stratum.IEndpointDispatcher;
 
 namespace MiningCore
 {
@@ -42,7 +42,7 @@ namespace MiningCore
 
                 dispatcher.EndpointId = endpointConfig.Id;
 
-                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new EchoHandler2(con)), TaskCreationOptions.LongRunning);
+                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new JsonRpcConnection(con)), TaskCreationOptions.LongRunning);
                 task.Start();
             }
         }

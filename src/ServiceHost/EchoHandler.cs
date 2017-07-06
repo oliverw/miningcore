@@ -4,7 +4,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 using MiningCore.Transport;
-using IConnection = MiningCore.Stratum.IConnection;
 
 namespace MiningCore
 {

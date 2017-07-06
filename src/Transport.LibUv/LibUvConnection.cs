@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -25,11 +26,23 @@ namespace MiningCore.Transport.LibUv
             this.server = server;
             this.clientFactory = clientFactory;
 
-            Input = inputSubject.AsObservable();
+            Input = Observable.Create<byte[]>(observer =>
+            {
+                var sub = inputSubject.Subscribe(observer);
+
+                // Close connection when nobody's listening anymore
+                return new CompositeDisposable(sub, Disposable.Create(Close));
+            })
+            .Publish()
+            .RefCount();
+
             Output = Observer.Create<byte[]>(OnDataAvailableForWrite);
 
             outputEvent = new UvAsyncHandle(parent.tracer);
             outputEvent.Init(parent.loop, ProcessOutputQueue, null);
+
+            closeEvent = new UvAsyncHandle(parent.tracer);
+            closeEvent.Init(parent.loop, CloseInternal, null);
         }
 
         private string connectionId = "-1";
@@ -54,13 +67,8 @@ namespace MiningCore.Transport.LibUv
 
         public void Close()
         {
-            if (closeEvent == null)
-            {
-                // dispatch actual closing to loop thread
-                closeEvent = new UvAsyncHandle(parent.tracer);
-                closeEvent.Init(parent.loop, CloseInternal, null);
-                closeEvent.Send();
-            }
+            // dispatch actual closing to loop thread
+            closeEvent.Send();
         }
 
         #endregion // IConnection

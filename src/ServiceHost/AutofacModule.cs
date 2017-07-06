@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using Autofac;
+using MiningCore.Protocols.JsonRpc;
 using Module = Autofac.Module;
 
 namespace MiningCore
@@ -21,6 +22,9 @@ namespace MiningCore
             builder.RegisterType<Host>()
                 .AsSelf()
                 .SingleInstance();
+
+            builder.RegisterType<JsonRpcConnection>()
+                .AsImplementedInterfaces();
 
             base.Load(builder);
         }
