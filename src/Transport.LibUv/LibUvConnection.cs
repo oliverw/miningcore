@@ -31,7 +31,12 @@ namespace MiningCore.Transport.LibUv
                 var sub = inputSubject.Subscribe(observer);
 
                 // Close connection when nobody's listening anymore
-                return new CompositeDisposable(sub, Disposable.Create(Close));
+                return new CompositeDisposable(sub, Disposable.Create(() =>
+                {
+                    logger.Debug(() => $"[{connectionId}] Last subscriber disconnected from input stream");
+
+                    Close();
+                }));
             })
             .Publish()
             .RefCount();
@@ -84,7 +89,7 @@ namespace MiningCore.Transport.LibUv
                 RemoteEndPoint = client.GetPeerIPEndPoint();
                 connectionId = CorrelationIdGenerator.GetNextId();
 
-                logger.Info(() => $"Accepted incoming connection [{connectionId}] from {RemoteEndPoint}");
+                logger.Info(() => $"[{connectionId}] Accepted connection from {RemoteEndPoint}");
 
                 clientFactory(this);
 
@@ -105,7 +110,7 @@ namespace MiningCore.Transport.LibUv
 
         private void CloseInternal()
         {
-            logger.Info(() => $"Closing connection [{connectionId}]");
+            logger.Info(() => $"[{connectionId}] Closing connection");
 
             // signal we are done here
             inputSubject.OnCompleted();
@@ -156,7 +161,7 @@ namespace MiningCore.Transport.LibUv
         {
             if (nread > 0)
             {
-                logger.Debug(() => $"Received {nread} bytes from [{connectionId}]");
+                logger.Debug(() => $"[{connectionId}] Received {nread} bytes");
 
                 var buffer = new byte[nread];
                 Marshal.Copy(unmanagedReadBuffer, buffer, 0, nread);
@@ -167,12 +172,12 @@ namespace MiningCore.Transport.LibUv
             {
                 if (nread != LibuvConstants.EOF)
                 {
-                    parent.tracer.LogError("Connection [{0}]: Error {1}", connectionId, parent.uv.strerror(nread));
+                    parent.tracer.LogError("[{0}] Error {1}", connectionId, parent.uv.strerror(nread));
                 }
 
                 else
                 {
-                    logger.Info(() => $"Received EOF from [{connectionId}]");
+                    logger.Info(() => $"[{connectionId}] Received EOF");
                 }
 
                 CloseInternal();
@@ -188,7 +193,7 @@ namespace MiningCore.Transport.LibUv
                     outputQueue.Write(output, 0, output.Length);
                     outputEvent?.Send();
 
-                    logger.Debug(() => $"Queueing {output.Length} outbound bytes for [{connectionId}] - Queue size now {outputQueue.Length}");
+                    logger.Debug(() => $"[{connectionId}] Queueing {output.Length} bytes for transmission - Queue size now {outputQueue.Length}");
                 }
             }
         }
@@ -211,7 +216,7 @@ namespace MiningCore.Transport.LibUv
             {
                 try
                 {
-                    logger.Debug(() => $"Sending {buffer.Value.Count} bytes to [{connectionId}]");
+                    logger.Debug(() => $"[{connectionId}] Sending {buffer.Value.Count} bytes");
 
                     using (var req = new UvWriteReq(parent.tracer))
                     {

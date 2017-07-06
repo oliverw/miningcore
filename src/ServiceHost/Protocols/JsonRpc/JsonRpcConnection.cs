@@ -5,7 +5,11 @@ using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using Autofac;
+using Microsoft.Extensions.Logging;
+using MiningCore.Extensions;
 using MiningCore.Transport;
+using MiningCore.Transport.LibUv;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -18,8 +22,10 @@ namespace MiningCore.Protocols.JsonRpc
 {
     public class JsonRpcConnection : IJsonRpcConnection
     {
-        public JsonRpcConnection(IConnection source)
+        public JsonRpcConnection(IComponentContext ctx,
+            IConnection source)
         {
+            this.logger = ctx.Resolve<ILogger<JsonRpcConnection>>();
             this.source = source;
 
             // convert input into sequence of chars
@@ -31,18 +37,19 @@ namespace MiningCore.Protocols.JsonRpc
 
             var incomingLines = incomingChars
                 .Buffer(incomingChars.Where(c => c == '\n' || c == '\r')) // scan for newline
-                .Select(c => new string(c.ToArray()).TrimEnd()); // transform buffer back to string
+                .Select(c => new string(c.ToArray()).Trim()); // transform buffer back to string
 
             var incomingNonEmptyLines = incomingLines
                 .Where(x => x.Length > 0);
 
             Input = incomingNonEmptyLines
-                .Select(x => 
-                    JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings))
+                .Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
+                .Do(x=> logger.Debug(()=> $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
+                .Select(x=> x.Msg)
                 .Publish()
                 .RefCount();
 
-//            Input.Subscribe(x => {}, x => { });
+            Input.Subscribe(x => {}, x => { });
         }
 
         private readonly IConnection source;
@@ -51,6 +58,8 @@ namespace MiningCore.Protocols.JsonRpc
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
+
+        private readonly ILogger<JsonRpcConnection> logger;
 
         #region Implementation of IJsonRpcConnection
 

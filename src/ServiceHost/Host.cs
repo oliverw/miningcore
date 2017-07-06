@@ -42,7 +42,7 @@ namespace MiningCore
 
                 dispatcher.EndpointId = endpointConfig.Id;
 
-                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new JsonRpcConnection(con)), TaskCreationOptions.LongRunning);
+                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new JsonRpcConnection(ctx, con)), TaskCreationOptions.LongRunning);
                 task.Start();
             }
         }
