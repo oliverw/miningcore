@@ -1,25 +1,26 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
-using System.Text;
+using Autofac;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
+using MiningCore.Extensions;
 
-namespace Transport.LibUv
+namespace MiningCore.Transport.LibUv
 {
     internal class LibUvConnection : IConnection
     {
-        public LibUvConnection(LibUvEndpointDispatcher parent, UvTcpHandle server,
+        public LibUvConnection(IComponentContext ctx, 
+            LibUvEndpointDispatcher parent, 
+            UvTcpHandle server,
             Action<IConnection> clientFactory)
         {
+            this.logger = ctx.Resolve<ILogger<LibUvConnection>>();
             this.parent = parent;
             this.server = server;
             this.clientFactory = clientFactory;
@@ -41,12 +42,14 @@ namespace Transport.LibUv
         private MemoryStream outputQueue = new MemoryStream();
         private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
+        private readonly ILogger<LibUvConnection> logger;
 
         #region IConnection
 
-        public IObservable<byte[]> Input { get; private set; }
-        public IObserver<byte[]> Output { get; private set; }
+        public IObservable<byte[]> Input { get; }
+        public IObserver<byte[]> Output { get; }
         public IPEndPoint RemoteEndPoint { get; private set; }
+        public string ConnectionId => connectionId;
 
         #endregion // IConnection
 
@@ -60,6 +63,8 @@ namespace Transport.LibUv
 
                 RemoteEndPoint = client.GetPeerIPEndPoint();
                 connectionId = CorrelationIdGenerator.GetNextId();
+
+                logger.Info(() => $"Accepted incoming connection [{connectionId}] from {RemoteEndPoint}");
 
                 clientFactory(this);
 
@@ -80,6 +85,8 @@ namespace Transport.LibUv
 
         private void Close()
         {
+            logger.Info(() => $"Closing connection [{connectionId}]");
+
             // signal we are done here
             inputSubject.OnCompleted();
 
@@ -123,6 +130,8 @@ namespace Transport.LibUv
         {
             if (nread > 0)
             {
+                logger.Debug(() => $"Received {nread} bytes from [{connectionId}]");
+
                 var buffer = new byte[nread];
                 Marshal.Copy(unmanagedReadBuffer, buffer, 0, nread);
                 inputSubject.OnNext(buffer);
@@ -132,7 +141,12 @@ namespace Transport.LibUv
             {
                 if (nread != LibuvConstants.EOF)
                 {
-                    parent.tracer.LogError("Connection {0}: Error {1}", connectionId, parent.uv.strerror(nread));
+                    parent.tracer.LogError("Connection [{0}]: Error {1}", connectionId, parent.uv.strerror(nread));
+                }
+
+                else
+                {
+                    logger.Info(() => $"Received EOF from [{connectionId}]");
                 }
 
                 Close();
@@ -143,8 +157,13 @@ namespace Transport.LibUv
         {
             lock (outputQueueLock)
             {
-                outputQueue?.Write(output, 0, output.Length);
-                outputEvent?.Send();
+                if (outputQueue != null)
+                {
+                    outputQueue.Write(output, 0, output.Length);
+                    outputEvent?.Send();
+
+                    logger.Debug(() => $"Queueing {output.Length} outbound bytes for [{connectionId}] - Queue size now {outputQueue.Length}");
+                }
             }
         }
 
@@ -166,6 +185,8 @@ namespace Transport.LibUv
             {
                 try
                 {
+                    logger.Debug(() => $"Sending {buffer.Value.Count} bytes to [{connectionId}]");
+
                     using (var req = new UvWriteReq(parent.tracer))
                     {
                         req.Init(parent.loop);

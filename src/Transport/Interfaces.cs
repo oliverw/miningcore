@@ -1,20 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 
-namespace Transport
+namespace MiningCore.Transport
 {
-    public interface IConnection
-    {
-        IObservable<byte[]> Input { get; }
-        IObserver<byte[]> Output { get; }
-        IPEndPoint RemoteEndPoint { get; }
-    }
-
     public interface IEndpointDispatcher
     {
+        /// <summary>
+        /// Unique endpoint id
+        /// </summary>
+        string EndpointId { get; set; }
+
+        /// <summary>
+        /// Starts the dispatcher on the specified endpoint, dispatching incoming connections through the specified factory
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="connectionHandlerFactory"></param>
         void Start(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory);
+
+        /// <summary>
+        /// Stops handling incoming connections
+        /// </summary>
         void Stop();
+    }
+
+    public interface IConnection
+    {
+        /// <summary>
+        /// Observable sequence representing incoming data from remote peer
+        /// </summary>
+        IObservable<byte[]> Input { get; }
+
+        /// <summary>
+        /// Observer for sending outgoing data to remote peer
+        /// </summary>
+        IObserver<byte[]> Output { get; }
+
+        /// <summary>
+        /// Endpoint of remote peer
+        /// </summary>
+        IPEndPoint RemoteEndPoint { get; }
+
+        /// <summary>
+        /// Unique connection id
+        /// </summary>
+        string ConnectionId { get; }
     }
 }

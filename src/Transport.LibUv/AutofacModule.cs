@@ -1,9 +1,9 @@
-﻿using System;
+﻿using System.Linq;
 using System.Reflection;
 using Autofac;
 using Module = Autofac.Module;
 
-namespace MiningCore
+namespace MiningCore.Transport.LibUv
 {
     public class AutofacModule : Module
     {
@@ -18,9 +18,11 @@ namespace MiningCore
         {
             var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
 
-            builder.RegisterType<Host>()
-                .AsSelf()
-                .SingleInstance();
+            builder.RegisterAssemblyTypes(thisAssembly)
+                .Where(t => t.GetInterfaces()
+                    .Any(i =>
+                        i.IsAssignableFrom(typeof(IEndpointDispatcher))))
+                .AsImplementedInterfaces();
 
             base.Load(builder);
         }

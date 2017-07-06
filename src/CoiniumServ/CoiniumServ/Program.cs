@@ -29,6 +29,7 @@
 
 using System;
 using System.Globalization;
+using System.Net.Sockets;
 using System.Threading;
 using CoiniumServ.Configuration;
 using CoiniumServ.Container;
@@ -51,7 +52,7 @@ namespace CoiniumServ
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler; // Catch any unhandled exceptions if we are in release mode.
-
+            
             // use invariant culture - we have to set it explicitly for every thread we create to 
             // prevent any file-reading problems (mostly because of number formats).
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

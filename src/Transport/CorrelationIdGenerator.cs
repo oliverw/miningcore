@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 
-namespace Transport
+namespace MiningCore.Transport
 {
     public static class CorrelationIdGenerator
     {

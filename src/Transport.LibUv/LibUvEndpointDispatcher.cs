@@ -1,29 +1,30 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
-using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Runtime.InteropServices;
-using System.Text;
+using Autofac;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
+using MiningCore.Extensions;
 
-namespace Transport.LibUv
+namespace MiningCore.Transport.LibUv
 {
     public class LibUvEndpointDispatcher : IEndpointDispatcher
     {
-        public LibUvEndpointDispatcher(ILogger logger)
+        public LibUvEndpointDispatcher(ILogger<LibUvEndpointDispatcher> logger, IComponentContext ctx)
         {
-            tracer = new LibuvTrace(logger);
+            this.logger = logger;
+            this.ctx = ctx;
+            this.tracer = new LibuvTrace(logger);
         }
 
         internal readonly ILibuvTrace tracer;
         internal UvLoopHandle loop;
         private UvAsyncHandle stopEvent;
         internal LibuvFunctions uv;
+        private readonly ILogger<LibUvEndpointDispatcher> logger;
+        private readonly IComponentContext ctx;
+
+        public string EndpointId { get; set; }
 
         public void Start(IPEndPoint endPoint, Action<IConnection> connectionHandlerFactory)
         {
@@ -49,7 +50,11 @@ namespace Transport.LibUv
                 var listenState = Tuple.Create(this, connectionHandlerFactory);
                 socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
+                logger.Info(() => $"Listening on {endPoint}");
+
                 loop.Run();
+
+                logger.Info(() => $"Stopped listening on {endPoint}");
 
                 // close handles
                 uv.walk(loop, (handle, state) => uv.close(handle, null), IntPtr.Zero);
@@ -80,7 +85,7 @@ namespace Transport.LibUv
 
             if (status >= 0)
             {
-                var con = new LibUvConnection(self, (UvTcpHandle) server, state.Item2);
+                var con = new LibUvConnection(self.ctx, self, (UvTcpHandle) server, state.Item2);
                 con.Init();
             }
 

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ServiceHost": {
+      "commandName": "Project",
+      "commandLineArgs": "-c config.json"
+    }
+  }
+}

@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <RootNamespace>Transport.LibUv</RootNamespace>
+    <RootNamespace>MiningCore.Transport.LibUv</RootNamespace>
+    <AssemblyName>MiningCore.Transport.LibUv</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -30,6 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CodeContracts\CodeContracts.csproj" />
+    <ProjectReference Include="..\Configuration\Configuration.csproj" />
     <ProjectReference Include="..\Transport\Transport.csproj" />
   </ItemGroup>
 

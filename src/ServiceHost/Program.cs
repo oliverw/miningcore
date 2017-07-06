@@ -1,77 +1,87 @@
 ﻿using System;
-using System.Net;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
+using System.IO;
 using System.Reflection;
-using System.Threading;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Debug;
+using MiningCore.Extensions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using NLog.Extensions.Logging;
-using Transport;
-using Transport.LibUv;
-
-// - Read listener json config file
 
 namespace MiningCore
 {
     class Program
     {
-        public static IContainer Container { get; private set; }
+        private static IContainer container;
         private static AutofacServiceProvider serviceProvider;
-
-        class EchoClient : IDisposable
-        {
-            private IDisposable sub;
-
-            public EchoClient(IConnection connection)
-            {
-                connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes("Ready.\n"));
-
-                sub = connection.Input
-                    .ObserveOn(ThreadPoolScheduler.Instance)
-                    .SubscribeOn(ThreadPoolScheduler.Instance)
-                    .Subscribe(x =>
-                    {
-                        var msg = System.Text.Encoding.UTF8.GetString(x);
-
-                        for (int i = 0; i < 20000; i++)
-                        {
-                            var msg2 = $"{i} - You wrote: {msg}";
-                            connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));
-                        }
-                    });
-            }
-
-            public void Dispose()
-            {
-                sub?.Dispose();
-            }
-        }
+        private static ILogger<Program> logger;
+        private static Host host;
 
         static void Main(string[] args)
         {
-            // Command-Line Options
-            var app = new CommandLineApplication(false);
-            app.FullName = "MiningCore - Mining Pool Engine";
-            app.ShortVersionGetter = () => $"(Build {Assembly.GetEntryAssembly().GetName().Version.Build})";
-
-            var configFile = app.Option("-config|-c <configfile>", "Configuration File", CommandOptionType.SingleValue);
-            app.HelpOption("-? | -h | --help");
-
-            if (!configFile.HasValue())
+            try
             {
-                app.ShowHelp();
-                return;
+                string configFile;
+                if (!HandleCommandLineOptions(args, out configFile))
+                    return;
+
+                Bootstrap();
+                var config = ReadConfig(configFile);
+
+                // go
+                host = container.Resolve<Host>();
+                host.Start(config);
+
+                Console.ReadKey();
             }
 
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        private static bool HandleCommandLineOptions(string[] args, out string configFile)
+        {
+            configFile = null;
+
+            var app = new CommandLineApplication(false)
+            {
+                FullName = "MiningCore - Mining Pool Engine",
+                ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
+                LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
+            };
+
+            var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
+            var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+            app.HelpOption("-? | -h | --help");
+
+            app.Execute(args);
+
+            if (versionOption.HasValue())
+            {
+                app.ShowVersion();
+                return false;
+            }
+
+            if (!configFileOption.HasValue())
+            {
+                app.ShowHelp();
+                return false;
+            }
+
+            configFile = configFileOption.Value();
+
+            return true;
+        }
+
+        private static void Bootstrap()
+        {
             // Configure DI
-            var services  = new ServiceCollection()
+            var services = new ServiceCollection()
                 .AddLogging();
 
             var builder = new ContainerBuilder();
@@ -80,60 +90,55 @@ namespace MiningCore
             builder.RegisterAssemblyModules(new[]
             {
                 typeof(AutofacModule).GetTypeInfo().Assembly,
+                typeof(Transport.LibUv.AutofacModule).GetTypeInfo().Assembly,
             });
 
-            Container = builder.Build();
+            container = builder.Build();
 
-            serviceProvider = new AutofacServiceProvider(Container);
+            serviceProvider = new AutofacServiceProvider(container);
 
             // Congfigure logging
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>()
                 .AddNLog();
 
-            loggerFactory.ConfigureNLog("NLog.config");
-
-            var logger = Container.Resolve<ILogger<Program>>();
+            loggerFactory.ConfigureNLog("nlog.config");
 
             // Done
-            logger.LogInformation("MiningCore startup ...");
+            logger = container.Resolve<ILogger<Program>>();
+            logger.Info(()=> "MiningCore startup ...");
+        }
+
+        private static Configuration ReadConfig(string file)
+        {
+            try
+            {
+                logger.Info(() => $"Reading configuration file {file}");
+
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
+
+                using (var reader = new StreamReader(file, System.Text.Encoding.UTF8))
+                {
+                    using (var jsonReader = new JsonTextReader(reader))
+                    {
+                        return serializer.Deserialize<Configuration>(jsonReader);
+                    }
+                }
+            }
+
+            catch (JsonException ex)
+            {
+                logger.Error(()=> $"Error parsing config: {ex.Message}");
+                throw;
+            }
+
+            catch (IOException ex)
+            {
+                logger.Error(() => $"Error parsing config: {ex.Message}");
+                throw;
+            }
         }
     }
 }
-
-//class EchoClient
-//{
-//    public EchoClient(IConnection connection)
-//    {
-//        connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes("Ready.\n"));
-
-//        connection.Input
-//            .ObserveOn(ThreadPoolScheduler.Instance)
-//            .Subscribe(x =>
-//            {
-//                var msg = System.Text.Encoding.UTF8.GetString(x);
-
-//                for (int i = 0; i < 20000; i++)
-//                {
-//                    var msg2 = $"{i} - You wrote: {msg}";
-//                    connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg2));
-//                }
-//            });
-//    }
-//}
-
-            //    var sub = new Subject<int>();
-            //sub
-            //    .ObserveOn(ThreadPoolScheduler.Instance)
-            //    .Subscribe(x =>
-            //{
-            //    Thread.Sleep(2000);
-            //    Console.WriteLine($"Got value {x}");
-            //});
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    sub.OnNext(i);
-            //    Console.WriteLine($"Produced value {i}");
-            //}
-
-            //Console.ReadLine();
-            //return;
