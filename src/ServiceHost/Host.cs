@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
-using MiningCore.Extensions;
+using MiningCore.Configuration.Extensions;
 using MiningCore.Protocols.JsonRpc;
 using MiningCore.Transport;
 

@@ -4,7 +4,7 @@ using Autofac;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
-using MiningCore.Extensions;
+using MiningCore.Configuration.Extensions;
 
 namespace MiningCore.Transport.LibUv
 {

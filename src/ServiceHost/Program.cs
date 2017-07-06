@@ -9,7 +9,7 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MiningCore.Extensions;
+using MiningCore.Configuration.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Extensions.Logging;

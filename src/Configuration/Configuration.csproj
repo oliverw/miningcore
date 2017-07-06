@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <RootNamespace>MiningCore</RootNamespace>
+    <RootNamespace>MiningCore.Configuration</RootNamespace>
     <AssemblyName>MiningCore.Configuration</AssemblyName>
   </PropertyGroup>
 

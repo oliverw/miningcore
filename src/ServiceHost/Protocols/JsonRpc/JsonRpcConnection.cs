@@ -7,7 +7,7 @@ using System.Reactive.Linq;
 using System.Text;
 using Autofac;
 using Microsoft.Extensions.Logging;
-using MiningCore.Extensions;
+using MiningCore.Configuration.Extensions;
 using MiningCore.Transport;
 using MiningCore.Transport.LibUv;
 using Newtonsoft.Json;
