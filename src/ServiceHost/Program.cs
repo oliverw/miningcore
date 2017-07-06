@@ -56,22 +56,6 @@ namespace MiningCore
 
         static void Main(string[] args)
         {
-            var logger2 = new DebugLogger("default");
-            var listener = (IEndpointDispatcher)new LibUvEndpointDispatcher(logger2);
-            EchoClient client = null;
-
-            // handle ctrl+c
-            Console.CancelKeyPress += (sender, e) =>
-            {
-                e.Cancel = true;
-
-                client?.Dispose();
-                listener.Stop();
-            };
-
-            listener.Start(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 57000), (transport => client = new EchoClient(transport)));
-
-
             // Command-Line Options
             var app = new CommandLineApplication(false);
             app.FullName = "MiningCore - Mining Pool Engine";
