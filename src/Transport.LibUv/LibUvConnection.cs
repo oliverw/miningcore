@@ -95,7 +95,7 @@ namespace MiningCore.Transport.LibUv
             }
         }
 
-        public void CloseInternal()
+        private void CloseInternal()
         {
             logger.Info(() => $"Closing connection [{connectionId}]");
 
