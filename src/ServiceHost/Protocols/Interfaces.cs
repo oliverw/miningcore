@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using MiningCore.Protocols.JsonRpc;
 using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Protocols
@@ -9,12 +10,12 @@ namespace MiningCore.Protocols
         /// <summary>
         /// Observable sequence representing incoming JsonRpc messages from remote peer
         /// </summary>
-        IObservable<JObject> Input { get; }
+        IObservable<JsonRpcRequest> Input { get; }
 
         /// <summary>
         /// Observer for sending outgoing JsonRpc messages to remote peer
         /// </summary>
-        IObserver<JObject> Output { get; }
+        IObserver<JsonRpcResponse> Output { get; }
 
         /// <summary>
         /// Endpoint of remote peer (proxied from underlying IConnection)

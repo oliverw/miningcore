@@ -7,6 +7,7 @@ using Autofac;
 using Microsoft.Extensions.Logging;
 using MiningCore.Extensions;
 using MiningCore.Transport;
+using IEndpointDispatcher = MiningCore.Stratum.IEndpointDispatcher;
 
 namespace MiningCore
 {
