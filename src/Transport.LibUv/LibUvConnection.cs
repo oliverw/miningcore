@@ -52,6 +52,17 @@ namespace MiningCore.Transport.LibUv
         public IPEndPoint RemoteEndPoint { get; private set; }
         public string ConnectionId => connectionId;
 
+        public void Close()
+        {
+            if (closeEvent == null)
+            {
+                // dispatch actual closing to loop thread
+                closeEvent = new UvAsyncHandle(parent.tracer);
+                closeEvent.Init(parent.loop, CloseInternal, null);
+                closeEvent.Send();
+            }
+        }
+
         #endregion // IConnection
 
         public void Init()
@@ -81,17 +92,6 @@ namespace MiningCore.Transport.LibUv
             {
                 parent.tracer.ConnectionError(connectionId, ex);
                 CloseInternal();
-            }
-        }
-
-        public void Close()
-        {
-            if (closeEvent == null)
-            {
-                // dispatch actual closing to loop thread
-                closeEvent = new UvAsyncHandle(parent.tracer);
-                closeEvent.Init(parent.loop, CloseInternal, null);
-                closeEvent.Send();
             }
         }
 
