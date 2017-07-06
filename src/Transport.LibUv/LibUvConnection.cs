@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -24,7 +25,6 @@ namespace Transport.LibUv
             this.server = server;
             this.clientFactory = clientFactory;
 
-            Input = inputSubject.AsObservable();
             Output = Observer.Create<byte[]>(OnDataAvailableForWrite);
 
             outputEvent = new UvAsyncHandle(parent.tracer);
@@ -37,7 +37,6 @@ namespace Transport.LibUv
         private UvTcpHandle client;
         private IntPtr unmanagedReadBuffer = IntPtr.Zero;
         private readonly Action<IConnection> clientFactory;
-        private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
         private MemoryStream outputQueue = new MemoryStream();
         private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
@@ -61,14 +60,24 @@ namespace Transport.LibUv
                 RemoteEndPoint = client.GetPeerIPEndPoint();
                 connectionId = CorrelationIdGenerator.GetNextId();
 
-                clientFactory(this);
+                Input = Observable.Create<byte[]>(observer =>
+                {
+                    client.ReadStart(
+                        (_, suggestedSize, state) =>
+                            ((LibUvConnection)state).AllocReadBuffer(suggestedSize),
+                        (_, nread, state) =>
+                            ((LibUvConnection)state).OnDataAvailableForRead(nread, observer),
+                        this);
 
-                client.ReadStart(
-                    (_, suggestedSize, state) =>
-                        ((LibUvConnection) state).AllocReadBuffer(suggestedSize),
-                    (_, nread, state) =>
-                        ((LibUvConnection) state).OnDataAvailableForRead(nread),
-                    this);
+                    return Disposable.Create(() =>
+                    {
+                        client?.ReadStop();
+                    });
+                })
+                .Publish()
+                .RefCount();
+
+                clientFactory(this);
             }
 
             catch (Exception ex)
@@ -82,6 +91,7 @@ namespace Transport.LibUv
         {
             if (client != null)
             {
+                client.ReadStop();
                 client.Dispose();
                 client = null;
             }
@@ -92,11 +102,24 @@ namespace Transport.LibUv
                 outputEvent = null;
             }
 
-            outputQueue = null;
+            lock (outputQueueLock)
+            {
+                outputQueue = null;
+            }
 
-            // signal we are done here
-            inputSubject.OnCompleted();
+            ReleaseReadBuffer();
+        }
 
+        private LibuvFunctions.uv_buf_t AllocReadBuffer(int suggestedSize)
+        {
+            ReleaseReadBuffer();
+
+            unmanagedReadBuffer = Marshal.AllocHGlobal(suggestedSize);
+            return parent.uv.buf_init(unmanagedReadBuffer, suggestedSize);
+        }
+
+        private void ReleaseReadBuffer()
+        {
             if (unmanagedReadBuffer != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(unmanagedReadBuffer);
@@ -104,19 +127,14 @@ namespace Transport.LibUv
             }
         }
 
-        private LibuvFunctions.uv_buf_t AllocReadBuffer(int suggestedSize)
-        {
-            unmanagedReadBuffer = Marshal.AllocHGlobal(suggestedSize);
-            return parent.uv.buf_init(unmanagedReadBuffer, suggestedSize);
-        }
-
-        private void OnDataAvailableForRead(int nread)
+        private void OnDataAvailableForRead(int nread, IObserver<byte[]> observer)
         {
             if (nread > 0)
             {
                 var buffer = new byte[nread];
                 Marshal.Copy(unmanagedReadBuffer, buffer, 0, nread);
-                inputSubject.OnNext(buffer);
+
+                observer.OnNext(buffer);
             }
 
             else
@@ -124,6 +142,13 @@ namespace Transport.LibUv
                 if (nread != LibuvConstants.EOF)
                 {
                     parent.tracer.LogError("Connection {0}: Error {1}", connectionId, parent.uv.strerror(nread));
+
+                    observer.OnError(parent.uv.GetError(nread));
+                }
+
+                else
+                {
+                    observer.OnCompleted();
                 }
 
                 Close();
@@ -135,9 +160,8 @@ namespace Transport.LibUv
             lock (outputQueueLock)
             {
                 outputQueue?.Write(output, 0, output.Length);
+                outputEvent?.Send();
             }
-
-            outputEvent?.Send();
         }
 
         private async void ProcessOutputQueue()

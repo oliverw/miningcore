@@ -91,7 +91,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networkin
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private UvException GetError(int statusCode)
+        public UvException GetError(int statusCode)
         {
             // Note: method marked as NoInlining so it doesn't bloat either of the two preceeding functions
             // Check and ThrowError and alter their jit heuristics.
