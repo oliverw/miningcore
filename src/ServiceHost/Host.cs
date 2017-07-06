@@ -41,7 +41,7 @@ namespace MiningCore
 
                 dispatcher.EndpointId = endpointConfig.Id;
 
-                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new EchoHandler(con)), TaskCreationOptions.LongRunning);
+                var task = new Task(()=> dispatcher.Start(endPoint, (con) => new EchoHandler2(con)), TaskCreationOptions.LongRunning);
                 task.Start();
             }
         }

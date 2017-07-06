@@ -44,5 +44,10 @@ namespace MiningCore.Transport
         /// Unique connection id
         /// </summary>
         string ConnectionId { get; }
+
+        /// <summary>
+        /// Closes the connection (can be called from any thread)
+        /// </summary>
+        void Close();
     }
 }

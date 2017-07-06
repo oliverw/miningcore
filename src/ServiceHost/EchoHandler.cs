@@ -27,4 +27,20 @@ namespace MiningCore
                 });
         }
     }
+
+    class EchoHandler2
+    {
+        public EchoHandler2(IConnection connection)
+        {
+            connection.Input
+                .ObserveOn(ThreadPoolScheduler.Instance)
+                .Subscribe(x =>
+                {
+                    var msg = System.Text.Encoding.UTF8.GetString(x);
+                    connection.Output.OnNext(System.Text.Encoding.UTF8.GetBytes(msg));
+
+                    Console.WriteLine(msg);
+                });
+        }
+    }
 }

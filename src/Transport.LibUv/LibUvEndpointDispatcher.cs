@@ -63,7 +63,7 @@ namespace MiningCore.Transport.LibUv
                 loop.Run();
 
                 // done
-                loop.Dispose();
+                loop.Close();
             }
 
             catch (Exception ex)

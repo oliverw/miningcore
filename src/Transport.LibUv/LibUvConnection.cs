@@ -43,6 +43,7 @@ namespace MiningCore.Transport.LibUv
         private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
         private readonly ILogger<LibUvConnection> logger;
+        private UvAsyncHandle closeEvent;
 
         #region IConnection
 
@@ -79,11 +80,22 @@ namespace MiningCore.Transport.LibUv
             catch (Exception ex)
             {
                 parent.tracer.ConnectionError(connectionId, ex);
-                Close();
+                CloseInternal();
             }
         }
 
-        private void Close()
+        public void Close()
+        {
+            if (closeEvent == null)
+            {
+                // dispatch actual closing to loop thread
+                closeEvent = new UvAsyncHandle(parent.tracer);
+                closeEvent.Init(parent.loop, CloseInternal, null);
+                closeEvent.Send();
+            }
+        }
+
+        public void CloseInternal()
         {
             logger.Info(() => $"Closing connection [{connectionId}]");
 
@@ -93,14 +105,20 @@ namespace MiningCore.Transport.LibUv
             if (client != null)
             {
                 client.ReadStop();
-                client.Dispose();
+                client.Close();
                 client = null;
             }
 
             if (outputEvent != null)
             {
-                outputEvent.Dispose();
+                outputEvent.Close();
                 outputEvent = null;
+            }
+
+            if (closeEvent != null)
+            {
+                closeEvent.Close();
+                closeEvent = null;
             }
 
             lock (outputQueueLock)
@@ -149,7 +167,7 @@ namespace MiningCore.Transport.LibUv
                     logger.Info(() => $"Received EOF from [{connectionId}]");
                 }
 
-                Close();
+                CloseInternal();
             }
         }
 
@@ -197,7 +215,7 @@ namespace MiningCore.Transport.LibUv
                 catch (Exception ex)
                 {
                     parent.tracer.ConnectionError(connectionId, ex);
-                    Close();
+                    CloseInternal();
                 }
             }
         }
