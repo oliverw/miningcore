@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
+using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
 using MiningCore.Protocols.JsonRpc;
 using MiningCore.Transport;
@@ -25,12 +26,12 @@ namespace MiningCore
         private readonly IComponentContext ctx;
         private Dictionary<string, IEndpointDispatcher> endPointDispatchers = new Dictionary<string, IEndpointDispatcher>();
 
-        public void Start(Configuration config)
+        public void Start(PoolConfiguration config)
         {
             StartEndpoints(config);
         }
 
-        private void StartEndpoints(Configuration config)
+        private void StartEndpoints(PoolConfiguration config)
         {
             foreach (var endpointConfig in config.Endpoints)
             {

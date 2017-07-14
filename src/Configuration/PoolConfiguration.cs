@@ -32,7 +32,7 @@
         public Daemon[] Daemons { get; set; }
     }
 
-    public class Configuration
+    public class PoolConfiguration
     {
         public Pool[] Pools { get; set; }
     }

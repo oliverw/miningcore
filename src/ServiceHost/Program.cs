@@ -1,14 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -111,7 +109,7 @@ namespace MiningCore
             logger.Info(()=> "MiningCore startup ...");
         }
 
-        private static Configuration ReadConfig(string file)
+        private static PoolConfiguration ReadConfig(string file)
         {
             try
             {
@@ -126,7 +124,7 @@ namespace MiningCore
                 {
                     using (var jsonReader = new JsonTextReader(reader))
                     {
-                        return serializer.Deserialize<Configuration>(jsonReader);
+                        return serializer.Deserialize<Configuration.PoolConfiguration>(jsonReader);
                     }
                 }
             }
