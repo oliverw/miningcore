@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Autofac;
+using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
@@ -26,8 +27,11 @@ namespace LibUvManaged
 
         public string EndpointId { get; set; }
 
-        public void Start(IPEndPoint endPoint, Action<ILibUvConnection> connectionHandlerFactory)
+        public void Start(IPEndPoint endPoint, Action<ILibUvConnection> connectionHandler)
         {
+            Contract.RequiresNonNull(endPoint, nameof(endPoint));
+            Contract.RequiresNonNull(connectionHandler, nameof(connectionHandler));
+
             try
             {
                 loop = new UvLoopHandle(tracer);
@@ -47,7 +51,7 @@ namespace LibUvManaged
                 socket.Init(loop, null);
                 socket.Bind(endPoint);
 
-                var listenState = Tuple.Create(this, connectionHandlerFactory);
+                var listenState = Tuple.Create(this, connectionHandler);
                 socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
                 logger.Info(() => $"Listening on {endPoint}");

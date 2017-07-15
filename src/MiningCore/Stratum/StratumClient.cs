@@ -3,6 +3,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Autofac;
+using CodeContracts;
 using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
@@ -33,6 +34,8 @@ namespace MiningCore.Stratum
 
         public void Init(ILibUvConnection uvCon)
         {
+            Contract.RequiresNonNull(uvCon, nameof(uvCon));
+
             rpcCon = new JsonRpcConnection(ctx);
             rpcCon.Init(uvCon);
 

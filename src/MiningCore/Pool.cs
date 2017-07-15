@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Autofac;
+using CodeContracts;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
@@ -19,8 +21,11 @@ namespace MiningCore
         private readonly ILogger<Pool> logger;
         private StratumServer server;
 
-        public Task InitAsync(Configuration.PoolConfig poolConfig, PoolClusterConfig poolClusterConfig)
+        public Task InitAsync(PoolConfig poolConfig, PoolClusterConfig poolClusterConfig)
         {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(poolClusterConfig, nameof(poolClusterConfig));
+
             logger.Info(() => $"Pool {poolConfig.Coin.Name} initializing ...");
 
             InitializeStratum(poolConfig);

@@ -6,6 +6,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 using Autofac;
+using CodeContracts;
 using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration.Extensions;
@@ -40,6 +41,8 @@ namespace MiningCore.JsonRpc
 
         public void Init(ILibUvConnection upstream)
         {
+            Contract.RequiresNonNull(upstream, nameof(upstream));
+
             this.upstream = upstream;
 
             // convert input into sequence of chars
@@ -68,6 +71,8 @@ namespace MiningCore.JsonRpc
 
         public void Send(JsonRpcResponse response)
         {
+            Contract.RequiresNonNull(response, nameof(response));
+
             var json = JsonConvert.SerializeObject(response);
             var bytes = Encoding.UTF8.GetBytes(json);
 

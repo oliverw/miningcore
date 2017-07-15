@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using Autofac;
+using CodeContracts;
 using LibUv;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
@@ -31,7 +32,7 @@ namespace LibUvManaged
                 // Close connection when nobody's listening anymore
                 return new CompositeDisposable(sub, Disposable.Create(() =>
                 {
-                    logger.Debug(() => $"[{connectionId}] Last subscriber disconnected from input stream");
+                    logger.Debug(() => $"[{connectionId}] Last subscriber disconnected from receiver stream");
 
                     Close();
                 }));
@@ -66,6 +67,8 @@ namespace LibUvManaged
 
         public void Send(byte[] data)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             lock (outputQueueLock)
             {
                 if (outputQueue != null)

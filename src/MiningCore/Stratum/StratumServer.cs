@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Autofac;
+using CodeContracts;
 using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
@@ -26,6 +27,8 @@ namespace MiningCore.Stratum
 
         public void Init(PoolConfig poolConfig)
         {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+
             foreach (var port in poolConfig.Ports.Keys)
             {
                 var endpointConfig = poolConfig.Ports[port];
