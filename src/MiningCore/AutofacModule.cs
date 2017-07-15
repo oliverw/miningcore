@@ -1,5 +1,8 @@
-﻿using System.Reflection;
+﻿using System.Net;
+using System.Net.Http;
+using System.Reflection;
 using Autofac;
+using MiningCore.Net;
 using MiningCore.Stratum;
 using Module = Autofac.Module;
 
@@ -17,6 +20,17 @@ namespace MiningCore
         protected override void Load(ContainerBuilder builder)
         {
             var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
+
+            builder.Register(c =>
+            {
+                var handler = new HttpClientHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+                };
+
+                return new HttpClient(handler);
+            })
+            .AsSelf();
 
             builder.RegisterType<Pool>()
                 .AsSelf();

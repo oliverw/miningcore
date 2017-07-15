@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace MiningCore.Protocols.JsonRpc
+namespace MiningCore.JsonRpc
 {
     /// <summary>
     ///  5.1 Error object

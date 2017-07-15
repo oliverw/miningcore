@@ -84,7 +84,7 @@ namespace LibUvManaged
         public void Close()
         {
             // dispatch actual closing to loop thread
-            closeEvent.Send();
+            closeEvent?.Send();
         }
 
         #endregion // IConnection
@@ -213,6 +213,8 @@ namespace LibUvManaged
                         req.Init(parent.loop);
                         await req.WriteAsync(client, new ArraySegment<ArraySegment<byte>>(new []{ buffer.Value }));
                     }
+
+                    logger.Debug(() => $"[{connectionId}] Queue size now {outputQueue.Length}");
                 }
 
                 catch (Exception ex)

@@ -10,7 +10,6 @@ using CodeContracts;
 using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration.Extensions;
-using MiningCore.Protocols.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -73,7 +72,7 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(response, nameof(response));
 
-            var json = JsonConvert.SerializeObject(response);
+            var json = JsonConvert.SerializeObject(response) + "\n";
             var bytes = Encoding.UTF8.GetBytes(json);
 
             upstream.Send(bytes);

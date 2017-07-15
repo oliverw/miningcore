@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26711.1
+VisualStudioVersion = 15.0.26621.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningCore", "MiningCore\MiningCore.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
 EndProject
@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configuration", "Configurat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeContracts", "CodeContracts\CodeContracts.csproj", "{4D9656F8-6E22-4FEF-A1DA-320D8866B63A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibUvManaged", "LibUvManaged\LibUvManaged.csproj", "{ED3E233B-D01C-46F9-B6C3-6F9176C41395}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibUvManaged", "LibUvManaged\LibUvManaged.csproj", "{ED3E233B-D01C-46F9-B6C3-6F9176C41395}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

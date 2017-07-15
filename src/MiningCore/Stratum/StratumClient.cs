@@ -1,66 +1,50 @@
 ﻿using System;
 using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
-using Microsoft.Extensions.Logging;
-using MiningCore.Configuration;
-using MiningCore.Configuration.Extensions;
 using MiningCore.JsonRpc;
-using MiningCore.Protocols.JsonRpc;
-using Newtonsoft.Json;
 
 namespace MiningCore.Stratum
 {
-    class StratumClient
+    public class StratumClient
     {
-        public StratumClient(IComponentContext ctx, ILogger<StratumClient> logger,
-            string subscriptionId, PoolConfig poolConfig )
-        {
-            this.logger = logger;
-            this.ctx = ctx;
-            this.subscriptionId = subscriptionId;
-            this.poolConfig = poolConfig;
-        }
-
-        private readonly IComponentContext ctx;
         private JsonRpcConnection rpcCon;
-        private readonly string subscriptionId;
-        private PoolConfig poolConfig;
-        private readonly CompositeDisposable cleanup = new CompositeDisposable();
-        private readonly ILogger<StratumClient> logger;
 
-        public void Init(ILibUvConnection uvCon)
+        public void Init(ILibUvConnection uvCon, IComponentContext ctx)
         {
             Contract.RequiresNonNull(uvCon, nameof(uvCon));
 
             rpcCon = new JsonRpcConnection(ctx);
             rpcCon.Init(uvCon);
 
-            cleanup.Add(rpcCon.Received
-                .ObserveOn(TaskPoolScheduler.Default)
-                .Subscribe(OnRpcMessage, OnReceiveError, OnReceiveComplete));
+            Requests = rpcCon.Received;
         }
 
-        private void OnReceiveError(Exception ex)
-        {
-            logger.Error(() => $"[{subscriptionId}]: Connection entered error state: {ex.Message}");
+        public IObservable<JsonRpcRequest> Requests { get; private set; }
+        public string SubscriptionId => rpcCon.ConnectionId;
+        public DateTime LastActivity { get; set; }
 
-            rpcCon.Close();
+        public void Respond<T>(T response) where T : JsonRpcResponse
+        {
+            rpcCon.Send(response);
         }
 
-        private void OnReceiveComplete()
+        public void Disconnect()
         {
-            logger.Debug(() => $"[{subscriptionId}]: Received End-of-Stream");
-
-            rpcCon.Close();
+            rpcCon?.Close();
+            rpcCon = null;
         }
 
-        private void OnRpcMessage(JsonRpcRequest request)
+        public void RespondError(string id, int code, string message)
         {
-            logger.Info(()=> JsonConvert.SerializeObject(request));
+            Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
+        }
+
+        public void RespondErrorNotSupported(string id)
+        {
+            Respond(new JsonRpcResponse(new JsonRpcException(20, "Unsupported method", null), id));
         }
     }
 }

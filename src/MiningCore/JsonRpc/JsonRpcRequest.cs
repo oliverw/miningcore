@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace MiningCore.Protocols.JsonRpc
+namespace MiningCore.JsonRpc
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class JsonRpcRequest
@@ -12,7 +9,7 @@ namespace MiningCore.Protocols.JsonRpc
         {
         }
 
-        public JsonRpcRequest(string method, object pars, object id)
+        public JsonRpcRequest(string method, object pars, string id)
         {
             Method = method;
             Params = pars;
@@ -29,6 +26,6 @@ namespace MiningCore.Protocols.JsonRpc
         public object Params { get; set; }
 
         [JsonProperty("id")]
-        public object Id { get; set; }
+        public string Id { get; set; }
     }
 }
