@@ -80,13 +80,18 @@ namespace LibUvManaged
 
         private static void OnNewConnection(UvStreamHandle server, int status, UvException ex, object _state)
         {
-            var state = (Tuple<LibUvListener, Action<LibUvConnection>>)_state;
+            var state = (Tuple<LibUvListener, Action<ILibUvConnection>>)_state;
             var self = state.Item1;
+            var handler = state.Item2;
 
             if (status >= 0)
             {
-                var con = new LibUvConnection(self.ctx, self, (UvTcpHandle) server, state.Item2);
+                // intialize new connection
+                var con = new LibUvConnection(self.ctx, self, (UvTcpHandle) server);
                 con.Init();
+
+                // hand it off to handler
+                handler(con);
             }
 
             else

@@ -18,13 +18,11 @@ namespace LibUvManaged
     {
         public LibUvConnection(IComponentContext ctx, 
             LibUvListener parent, 
-            UvTcpHandle server,
-            Action<LibUvConnection> clientFactory)
+            UvTcpHandle server)
         {
             this.logger = ctx.Resolve<ILogger<LibUvConnection>>();
             this.parent = parent;
             this.server = server;
-            this.clientFactory = clientFactory;
 
             Received = Observable.Create<byte[]>(observer =>
             {
@@ -53,7 +51,6 @@ namespace LibUvManaged
         private readonly UvTcpHandle server;
         private UvTcpHandle client;
         private IntPtr unmanagedReadBuffer = IntPtr.Zero;
-        private readonly Action<LibUvConnection> clientFactory;
         private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
         private MemoryStream outputQueue = new MemoryStream();
         private readonly object outputQueueLock = new object();
@@ -101,8 +98,6 @@ namespace LibUvManaged
                 connectionId = CorrelationIdGenerator.GetNextId();
 
                 logger.Info(() => $"[{connectionId}] Accepted connection from {RemoteEndPoint}");
-
-                clientFactory(this);
 
                 client.ReadStart(
                     (_, suggestedSize, state) =>
@@ -182,14 +177,9 @@ namespace LibUvManaged
             else
             {
                 if (nread != LibuvConstants.EOF)
-                {
                     parent.tracer.LogError("[{0}] Error {1}", connectionId, parent.uv.strerror(nread));
-                }
-
                 else
-                {
                     logger.Info(() => $"[{connectionId}] Received EOF");
-                }
 
                 CloseInternal();
             }

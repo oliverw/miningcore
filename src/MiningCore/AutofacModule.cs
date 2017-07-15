@@ -1,8 +1,6 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using Autofac;
-using MiningCore.JsonRpc;
-using MiningCore.Protocols.JsonRpc;
+using MiningCore.Stratum;
 using Module = Autofac.Module;
 
 namespace MiningCore
@@ -21,6 +19,12 @@ namespace MiningCore
             var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
 
             builder.RegisterType<Pool>()
+                .AsSelf();
+
+            builder.RegisterType<StratumServer>()
+                .AsSelf();
+
+            builder.RegisterType<StratumClient>()
                 .AsSelf();
 
             base.Load(builder);

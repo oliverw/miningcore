@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reactive.Concurrency;
@@ -21,21 +22,35 @@ namespace MiningCore.JsonRpc
 {
     public class JsonRpcConnection
     {
-        public JsonRpcConnection(IComponentContext ctx,
-            ILibUvConnection upstream)
+        public JsonRpcConnection(IComponentContext ctx)
         {
             this.logger = ctx.Resolve<ILogger<JsonRpcConnection>>();
+        }
+
+        private readonly ILogger<JsonRpcConnection> logger;
+        private ILibUvConnection upstream;
+        private const int MaxRequestLength = 8192;
+
+        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings()
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
+
+        #region Implementation of IJsonRpcConnection
+
+        public void Init(ILibUvConnection upstream)
+        {
             this.upstream = upstream;
 
             // convert input into sequence of chars
             var incomingChars = upstream.Received
-                .ObserveOn(TaskPoolScheduler.Default)
                 .SelectMany(bytes => Encoding.UTF8.GetChars(bytes))
                 .Publish()
                 .RefCount();
 
             var incomingLines = incomingChars
                 .Buffer(incomingChars.Where(c => c == '\n' || c == '\r')) // scan for newline
+                .TakeWhile(ValidateInput)  // flood protetion
                 .Select(c => new string(c.ToArray()).Trim()); // transform buffer back to string
 
             var incomingNonEmptyLines = incomingLines
@@ -43,28 +58,13 @@ namespace MiningCore.JsonRpc
 
             Received = incomingNonEmptyLines
                 .Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
-                .Do(x=> logger.Debug(()=> $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
-                .Select(x=> x.Msg)
-                .Replay(1)
+                .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
+                .Select(x => x.Msg)
                 .Publish()
                 .RefCount();
-
-            Received.Subscribe(x => {}, x => { });
         }
 
-        private readonly ILibUvConnection upstream;
-
-        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings()
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-
-        private readonly ILogger<JsonRpcConnection> logger;
-
-        #region Implementation of IJsonRpcConnection
-
-        public IObservable<JsonRpcRequest> Received { get; }
-        public IObserver<JsonRpcResponse> Output { get; }
+        public IObservable<JsonRpcRequest> Received { get; private set; }
 
         public void Send(JsonRpcResponse response)
         {
@@ -83,5 +83,15 @@ namespace MiningCore.JsonRpc
         }
 
         #endregion
+
+        private bool ValidateInput(IList<char> chars)
+        {
+            var messageTooLong = chars.Count > MaxRequestLength;
+
+            if (messageTooLong)
+                logger.Error(() => $"[{upstream.ConnectionId}] Incoming message too big. Closing");
+
+            return !messageTooLong;
+        }
     }
 }

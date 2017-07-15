@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ServiceHost": {
+    "MiningCore": {
       "commandName": "Project",
       "commandLineArgs": "-c config.json"
     }

@@ -1,59 +1,63 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
-using System.Text;
+using System.Reactive.Linq;
 using Autofac;
+using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Protocols.JsonRpc;
+using Newtonsoft.Json;
 
 namespace MiningCore.Stratum
 {
     class StratumClient
     {
-        public StratumClient(IComponentContext ctx, string subscriptionId,
-            NetworkEndpoint endpointConfig, Configuration.Pool poolConfig )
+        public StratumClient(IComponentContext ctx, ILogger<StratumClient> logger,
+            string subscriptionId, PoolConfig poolConfig )
         {
-            this.logger = ctx.Resolve<ILogger<StratumClient>>();
+            this.logger = logger;
             this.ctx = ctx;
             this.subscriptionId = subscriptionId;
-            this.endpointConfig = endpointConfig;
             this.poolConfig = poolConfig;
         }
 
-        private IComponentContext ctx;
+        private readonly IComponentContext ctx;
+        private JsonRpcConnection rpcCon;
         private readonly string subscriptionId;
-        private NetworkEndpoint endpointConfig;
-        private Configuration.Pool poolConfig;
-        private JsonRpcConnection con;
+        private PoolConfig poolConfig;
         private readonly CompositeDisposable cleanup = new CompositeDisposable();
         private readonly ILogger<StratumClient> logger;
 
-        public void Init(JsonRpcConnection con)
+        public void Init(ILibUvConnection uvCon)
         {
-            this.con = con;
+            rpcCon = new JsonRpcConnection(ctx);
+            rpcCon.Init(uvCon);
 
-            cleanup.Add(this.con.Received.Subscribe(OnRpcMessage, OnReceiveError, OnReceiveComplete));
+            cleanup.Add(rpcCon.Received
+                .ObserveOn(TaskPoolScheduler.Default)
+                .Subscribe(OnRpcMessage, OnReceiveError, OnReceiveComplete));
         }
 
         private void OnReceiveError(Exception ex)
         {
-            logger.Debug(() => $"[{subscriptionId}]: Connection entered error state: {ex.Message}");
+            logger.Error(() => $"[{subscriptionId}]: Connection entered error state: {ex.Message}");
 
-            con.Close();
+            rpcCon.Close();
         }
 
         private void OnReceiveComplete()
         {
             logger.Debug(() => $"[{subscriptionId}]: Received End-of-Stream");
 
-            con.Close();
+            rpcCon.Close();
         }
 
         private void OnRpcMessage(JsonRpcRequest request)
         {
+            logger.Info(()=> JsonConvert.SerializeObject(request));
         }
     }
 }

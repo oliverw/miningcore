@@ -36,7 +36,7 @@ namespace MiningCore
                 // go
                 Start(config);
 
-                Console.ReadKey();
+                Console.ReadLine();
             }
 
             catch (Exception ex)
@@ -108,7 +108,7 @@ namespace MiningCore
             logger.Info(()=> "MiningCore startup ...");
         }
 
-        private static ClusterConfiguration ReadConfig(string file)
+        private static PoolClusterConfig ReadConfig(string file)
         {
             try
             {
@@ -123,7 +123,7 @@ namespace MiningCore
                 {
                     using (var jsonReader = new JsonTextReader(reader))
                     {
-                        return serializer.Deserialize<Configuration.ClusterConfiguration>(jsonReader);
+                        return serializer.Deserialize<Configuration.PoolClusterConfig>(jsonReader);
                     }
                 }
             }
@@ -141,12 +141,12 @@ namespace MiningCore
             }
         }
 
-        private static async void Start(ClusterConfiguration clusterConfig)
+        private static async void Start(PoolClusterConfig config)
         {
-            foreach (var poolConfig in clusterConfig.Pools)
+            foreach (var poolConfig in config.Pools)
             {
                 var pool = container.Resolve<Pool>();
-                await pool.InitAsync(poolConfig, clusterConfig);
+                await pool.InitAsync(poolConfig, config);
                 pools.Add(pool);
             }
         }

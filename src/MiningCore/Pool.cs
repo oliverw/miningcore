@@ -1,31 +1,25 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Autofac;
-using LibUvManaged;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
-using MiningCore.JsonRpc;
 using MiningCore.Stratum;
 
 namespace MiningCore
 {
     public class Pool
     {
-        public Pool(IComponentContext ctx)
+        public Pool(IComponentContext ctx, ILogger<Pool> logger)
         {
             this.ctx = ctx;
-            this.logger = ctx.Resolve<ILogger<Pool>>();
+            this.logger = logger;
         }
 
         private readonly IComponentContext ctx;
         private readonly ILogger<Pool> logger;
         private StratumServer server;
 
-        public Task InitAsync(Configuration.Pool poolConfig, ClusterConfiguration clusterConfig)
+        public Task InitAsync(Configuration.PoolConfig poolConfig, PoolClusterConfig poolClusterConfig)
         {
             logger.Info(() => $"Pool {poolConfig.Coin.Name} initializing ...");
 
@@ -34,9 +28,9 @@ namespace MiningCore
             return Task.FromResult(false);
         }
 
-        private void InitializeStratum(Configuration.Pool poolConfig)
+        private void InitializeStratum(Configuration.PoolConfig poolConfig)
         {
-            server = new StratumServer(ctx);
+            server = ctx.Resolve<StratumServer>();
             server.Init(poolConfig);
         }
     }
