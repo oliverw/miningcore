@@ -84,12 +84,6 @@
               "port": 19001, // 18332 = testnet, 19001 = regtest (bob)
               "user": "user",
               "password": "pass"
-          },
-          {
-              "host": "127.0.0.1",
-              "port": 19031, // 18332 = testnet, 19001 = regtest (bob)
-              "user": "user",
-              "password": "pass"
           }
       ],
 

@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
-using MiningCore.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

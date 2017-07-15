@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using CodeContracts;
+using MiningCore.Blockchain.Bitcoin.Messages;
 using MiningCore.Configuration;
-using MiningCore.JsonRpc;
-using MiningCore.Net;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
@@ -46,7 +41,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             try
             {
-                var bla = await ExecuteCmdAllAsync("getinfo");
+                var bla = await ExecuteCmdAllAsync<GetInfoResponse>("getinfo");
             }
             catch (Exception ex)
             {
