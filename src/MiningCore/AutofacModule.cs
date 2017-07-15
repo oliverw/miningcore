@@ -2,8 +2,14 @@
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
-using MiningCore.Net;
+using MiningCore.Blockchain;
+using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Configuration;
+using MiningCore.MiningPool;
 using MiningCore.Stratum;
+using MiningCore.Stratum.Authorization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 
 namespace MiningCore
@@ -40,6 +46,21 @@ namespace MiningCore
 
             builder.RegisterType<StratumClient>()
                 .AsSelf();
+
+            builder.RegisterType<BitcoinDaemon>()
+                .Named<IBlockchainDemon>(BlockchainFamily.Bitcoin.ToString())
+                .AsImplementedInterfaces();
+            
+            builder.RegisterType<AddressBasedStratumAuthorizer>()
+                .Named<IStratumAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
+            builder.RegisterInstance(new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            });
+
 
             base.Load(builder);
         }

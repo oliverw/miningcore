@@ -1,22 +1,30 @@
 ﻿using System;
+using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
+using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 
 namespace MiningCore.Stratum
 {
     public class StratumClient
     {
+        public StratumClient(PoolEndpoint endpointConfig)
+        {
+            this.config = endpointConfig;
+        }
+
         private JsonRpcConnection rpcCon;
+        private readonly PoolEndpoint config;
 
         public void Init(ILibUvConnection uvCon, IComponentContext ctx)
         {
             Contract.RequiresNonNull(uvCon, nameof(uvCon));
 
-            rpcCon = new JsonRpcConnection(ctx);
+            rpcCon = ctx.Resolve<JsonRpcConnection>();
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;
@@ -24,27 +32,41 @@ namespace MiningCore.Stratum
 
         public IObservable<JsonRpcRequest> Requests { get; private set; }
         public string SubscriptionId => rpcCon.ConnectionId;
+        public IPEndPoint RemoteAddress => rpcCon.RemoteEndPoint;
+        public bool IsAuthorized { get; set; } = false;
+        public PoolEndpoint Config => config;
         public DateTime LastActivity { get; set; }
 
-        public void Respond<T>(T response) where T : JsonRpcResponse
+        public void Send<T>(T response) where T : JsonRpcResponse
         {
-            rpcCon.Send(response);
+            lock (rpcCon)
+            {
+                rpcCon?.Send(response);
+            }
         }
 
         public void Disconnect()
         {
-            rpcCon?.Close();
-            rpcCon = null;
+            lock (rpcCon)
+            {
+                rpcCon?.Close();
+                rpcCon = null;
+            }
         }
 
         public void RespondError(string id, int code, string message)
         {
-            Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
+            Send(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
-        public void RespondErrorNotSupported(string id)
+        public void RespondUnsupportedMethod(string id)
         {
-            Respond(new JsonRpcResponse(new JsonRpcException(20, "Unsupported method", null), id));
+            RespondError(id, 20, "Unsupported method");
+        }
+
+        public void RespondUnauthorized(string id)
+        {
+            RespondError(id, 24, "Unauthorized worker");
         }
     }
 }

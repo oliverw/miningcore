@@ -2,10 +2,28 @@
 
 namespace MiningCore.Configuration
 {
+    public enum BlockchainFamily
+    {
+        Bitcoin,
+        Monero,
+        Ethereum,
+    }
+
     public enum HashAlgorithm
     {
         Sha256 = 1,
         Scrypt = 2,
+    }
+
+    public enum RewardRecipientType
+    {
+        Pool,
+        Dev,
+    }
+
+    public enum StratumAuthorizerKind
+    {
+        AddressBased,
     }
 
     public class CoinConfig
@@ -13,6 +31,7 @@ namespace MiningCore.Configuration
         public string Name { get; set; }
         public string Symbol { get; set; }
         public HashAlgorithm Algorithm { get; set; }
+        public BlockchainFamily Family { get; set; }
     }
 
     public class NetworkEndpointConfig
@@ -65,12 +84,6 @@ namespace MiningCore.Configuration
         public AuthenticatedNetworkEndpointConfig Daemon { get; set; }
     }
 
-    public enum RewardRecipientType
-    {
-        Pool,
-        Dev,
-    }
-
     public class RewardRecipientConfig
     {
         public RewardRecipientType Type { get; set; }
@@ -87,6 +100,7 @@ namespace MiningCore.Configuration
         public BanningConfig Banning { get; set; }
         public DatabaseEndpointConfig Database { get; set; }
         public RewardRecipientConfig[] RewardRecipients { get; set; }
+        public StratumAuthorizerKind Authorizer { get; set; }
         public string Address { get; set; }
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }

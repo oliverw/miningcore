@@ -5,8 +5,11 @@
       "coin": {
         "name": "Bitcoin",
         "symbol": "BTC",
+        "family": "bitcoin",
         "algorithm": "sha256"
       },
+
+      "authorizer": "addressbased",
 
       // Address to where block rewards are given
       "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm",
@@ -79,6 +82,12 @@
       "daemons": [{
               "host": "127.0.0.1",
               "port": 19001, // 18332 = testnet, 19001 = regtest (bob)
+              "user": "user",
+              "password": "pass"
+          },
+          {
+              "host": "127.0.0.1",
+              "port": 19031, // 18332 = testnet, 19001 = regtest (bob)
               "user": "user",
               "password": "pass"
           }

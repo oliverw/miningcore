@@ -22,19 +22,16 @@ namespace MiningCore.JsonRpc
 {
     public class JsonRpcConnection
     {
-        public JsonRpcConnection(IComponentContext ctx)
+        public JsonRpcConnection(IComponentContext ctx, JsonSerializerSettings serializerSettings)
         {
             this.logger = ctx.Resolve<ILogger<JsonRpcConnection>>();
+            this.serializerSettings = serializerSettings;
         }
 
+        private readonly JsonSerializerSettings serializerSettings;
         private readonly ILogger<JsonRpcConnection> logger;
         private ILibUvConnection upstream;
         private const int MaxRequestLength = 8192;
-
-        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings()
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
 
         #region Implementation of IJsonRpcConnection
 
@@ -72,7 +69,7 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(response, nameof(response));
 
-            var json = JsonConvert.SerializeObject(response) + "\n";
+            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
             var bytes = Encoding.UTF8.GetBytes(json);
 
             upstream.Send(bytes);

@@ -1,18 +1,34 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MiningCore.JsonRpc
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class JsonRpcRequest
+    public class JsonRpcRequest : JsonRpcRequest<object>
     {
         public JsonRpcRequest()
         {
         }
 
-        public JsonRpcRequest(string method, object pars, string id)
+        public JsonRpcRequest(string method, object pars, string id) : base(method, pars, id)
+        {
+        }
+    }
+
+    [JsonObject(MemberSerialization.OptIn)]
+    public class JsonRpcRequest<T>
+    {
+        public JsonRpcRequest()
+        {
+        }
+
+        public JsonRpcRequest(string method, T pars, string id)
         {
             Method = method;
-            Params = pars;
+
+            if(pars != null)
+                Params = JObject.FromObject(pars);
+
             Id = id;
         }
 
@@ -23,7 +39,7 @@ namespace MiningCore.JsonRpc
         public string Method { get; set; }
 
         [JsonProperty("params")]
-        public object Params { get; set; }
+        public JObject Params { get; set; }
 
         [JsonProperty("id")]
         public string Id { get; set; }

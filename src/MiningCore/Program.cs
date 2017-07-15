@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
+using MiningCore.MiningPool;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Extensions.Logging;
