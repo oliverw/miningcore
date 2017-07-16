@@ -50,6 +50,11 @@ namespace MiningCore.Stratum
             }
         }
 
+        public void SendError(StratumError code, string message, string id)
+        {
+            Send(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id));
+        }
+
         public void Disconnect()
         {
             lock (rpcCon)

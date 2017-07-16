@@ -108,12 +108,12 @@ namespace MiningCore.Stratum
             clientDisconnectedSubject.OnNext(subscriptionId);
         }
 
-        public void SendBroadcast<T>(T payload, string id)
+        public void SendBroadcast<T>(T payload, string id, Func<StratumClient, bool> filter = null)
         {
-            SendBroadcast(new JsonRpcResponse<T>(payload, id));
+            SendBroadcast(new JsonRpcResponse<T>(payload, id), filter);
         }
 
-        public void SendBroadcast<T>(JsonRpcResponse<T> response)
+        public void SendBroadcast<T>(JsonRpcResponse<T> response, Func<StratumClient, bool> filter = null)
         {
             Contract.RequiresNonNull(response, nameof(response));
 
@@ -126,6 +126,9 @@ namespace MiningCore.Stratum
 
             foreach (var client in tmp)
             {
+                if (filter != null && !filter(client))
+                    continue;
+
                 client.Send(response);
             }
         }

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using Microsoft.Extensions.Logging;
+using MiningCore.Authorization;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Stratum;
-using MiningCore.Stratum.Authorization;
 using Newtonsoft.Json;
 
 namespace MiningCore.MiningPool
@@ -60,7 +60,7 @@ namespace MiningCore.MiningPool
             daemon = ctx.ResolveNamed<IBlockchainDemon>(poolConfig.Coin.Family.ToString());
             await daemon.InitAsync(poolConfig);
 
-            while (!(await daemon.AllEndpointsOnline()))
+            while (!(await daemon.IsHealthyAsync()))
             { 
                 logger.Info(()=> $"Waiting for coin-daemons to come online ...");
 
@@ -70,7 +70,7 @@ namespace MiningCore.MiningPool
             logger.Info(() => $"All coin-daemons are online");
         }
 
-    public NetworkStats NetworkStats => networkStats;
+        public NetworkStats NetworkStats => networkStats;
         public PoolStats PoolStats => poolStats;
 
         #endregion // API-Surface
@@ -141,6 +141,8 @@ namespace MiningCore.MiningPool
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
+            logger.Debug(() => $"[{client.SubscriptionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+
             try
             {
                 switch (request.Method)
@@ -156,62 +158,59 @@ namespace MiningCore.MiningPool
                         break;
 
                     default:
-                        OnClientUnsupportedRequest(client, request);
+                        logger.Warning(() => $"[{client.SubscriptionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+
+                        client.SendError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
                 }
             }
 
             catch (Exception ex)
             {
-                logger.Error(() => "OnClientRpcRequest", ex);
+                logger.Error(() => $"OnClientRpcRequest: {request.Method}", ex);
             }
         }
 
         private void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{client.SubscriptionId}] Subscribe received: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            // [
+            //    [
+            //        ["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"],
+            //        ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]
+            //    ], 
+            //    "08000002", 
+            //    4
+            // ];
         }
 
         private async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{client.SubscriptionId}] Authorize received: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            var requestParams = request.Params?.ToObject<string[]>();
+            var address = requestParams?.Length > 0 ? requestParams[0] : null;
 
-            try
+            if (!string.IsNullOrEmpty(address))
             {
-                var args = request.Params.ToObject<string[]>();
-                var address = args[0];
-
                 client.IsAuthorized = await daemon.ValidateAddressAsync(address);
-
                 client.Send(client.IsAuthorized, request.Id);
             }
 
-            catch (Exception ex)
-            {
-                logger.Error(() => $"[{client.SubscriptionId}] Client authorization failed: {ex.Message}");
-            }
+            else
+                client.SendError(StratumError.Other, "invalid or missing workername", request.Id);
         }
 
         private void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{client.SubscriptionId}] Submit received: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
-
             lock (client)
             {
                 client.LastActivity = DateTime.UtcNow;
 
                 if (!client.IsAuthorized)
-                    client.RespondUnauthorized(request.Id);
+                    client.SendError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
                 else
                 {
                     // TODO
                 }
             }
-        }
-
-        private void OnClientUnsupportedRequest(StratumClient client, JsonRpcRequest request)
-        {
-            logger.Warning(() => $"[{client.SubscriptionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
         }
 
         private void EnsureNoZombieClient(StratumClient client)

@@ -2,13 +2,13 @@
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
+using MiningCore.Authorization;
 using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.MiningPool;
 using MiningCore.Stratum;
-using MiningCore.Stratum.Authorization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
@@ -55,7 +55,7 @@ namespace MiningCore
                 .Named<IBlockchainDemon>(BlockchainFamily.Bitcoin.ToString())
                 .AsImplementedInterfaces();
             
-            builder.RegisterType<AddressBasedStratumAuthorizer>()
+            builder.RegisterType<AddressBasedAuthorizer>()
                 .Named<IStratumAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
                 .AsImplementedInterfaces()
                 .SingleInstance();

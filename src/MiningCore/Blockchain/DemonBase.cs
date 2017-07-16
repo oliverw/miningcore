@@ -15,6 +15,13 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain
 {
+    public class DaemonResponse<T>
+    {
+        public JsonRpcException Error { get; set; }
+        public T Response { get; set; }
+        public AuthenticatedNetworkEndpointConfig Instance { get; set; }
+    }
+
     public abstract class DemonBase
     {
         protected DemonBase(HttpClient httpClient, JsonSerializerSettings serializerSettings)
@@ -184,7 +191,7 @@ namespace MiningCore.Blockchain
             return resp;
         }
 
-        public async Task<bool> AllEndpointsOnline()
+        public async Task<bool> IsHealthyAsync()
         {
             Contract.Requires<ArgumentException>(testInstanceOnlineCommand != null, $"{nameof(testInstanceOnlineCommand)} must be initialized in derived class");
 
