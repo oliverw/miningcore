@@ -37,7 +37,12 @@ namespace MiningCore.Stratum
         public PoolEndpoint Config => config;
         public DateTime LastActivity { get; set; }
 
-        public void Send<T>(T response) where T : JsonRpcResponse
+        public void Send<T>(T payload, string id)
+        {
+            Send(new JsonRpcResponse<T>(payload, id));
+        }
+
+        public void Send<T>(JsonRpcResponse<T> response)
         {
             lock (rpcCon)
             {

@@ -65,7 +65,7 @@ namespace MiningCore.JsonRpc
 
         public IObservable<JsonRpcRequest> Received { get; private set; }
 
-        public void Send(JsonRpcResponse response)
+        public void Send<T>(JsonRpcResponse<T> response)
         {
             Contract.RequiresNonNull(response, nameof(response));
 

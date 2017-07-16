@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CodeContracts;
@@ -14,40 +15,30 @@ namespace MiningCore.Blockchain.Bitcoin
         public BitcoinDaemon(HttpClient httpClient, JsonSerializerSettings serializerSettings) : 
             base(httpClient, serializerSettings)
         {
+            testInstanceOnlineCommand = "getinfo";
         }
 
         #region API-Surface
 
-        public async Task InitAsync(PoolConfig poolConfig)
+        public Task InitAsync(PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.Requires<ArgumentException>(poolConfig.Daemons.Length > 0, $"{nameof(poolConfig.Daemons)} must not be empty");
 
             this.endPoints = poolConfig.Daemons;
 
-            await EnsureOnline();
-        }
-
-        public Task<bool> ValidateAddressAsync(string address)
-        {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
-
             return Task.FromResult(true);
         }
 
-        #endregion // API-Surface
-
-        private async Task EnsureOnline()
+        public async Task<bool> ValidateAddressAsync(string address)
         {
-            try
-            {
-                var bla = await ExecuteCmdAllAsync<GetInfoResponse>("getinfo");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                throw;
-            }
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+
+            var result = await ExecuteCmdAnyAsync<string[], ValidateAddressResponse>("validateaddress", new [] {address});
+
+            return result.Response != null && result.Response.IsValid;
         }
+
+        #endregion // API-Surface
     }
 }

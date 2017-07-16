@@ -72,7 +72,7 @@ namespace MiningCore.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"Pool {poolConfig.Coin.Name}: Stratum port {port} started");
+                logger.Info(() => $"{poolConfig.Coin.Name}: Stratum port {port} started");
             }
         }
 
@@ -108,7 +108,12 @@ namespace MiningCore.Stratum
             clientDisconnectedSubject.OnNext(Unit.Default);
         }
 
-        public void SendBroascast<T>(T response) where T : JsonRpcResponse
+        public void SendBroadcast<T>(T payload, string id)
+        {
+            SendBroadcast(new JsonRpcResponse<T>(payload, id));
+        }
+
+        public void SendBroadcast<T>(JsonRpcResponse<T> response)
         {
             Contract.RequiresNonNull(response, nameof(response));
 

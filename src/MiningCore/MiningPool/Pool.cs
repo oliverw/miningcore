@@ -43,7 +43,7 @@ namespace MiningCore.MiningPool
 
             try
             {
-                logger.Info(() => $"Pool {poolConfig.Coin.Name} initializing ...");
+                logger.Info(() => $"{poolConfig.Coin.Name} initializing ...");
 
                 await InitializeDaemon(poolConfig);
                 InitializeStratum(poolConfig);
@@ -59,9 +59,18 @@ namespace MiningCore.MiningPool
         {
             daemon = ctx.ResolveNamed<IBlockchainDemon>(poolConfig.Coin.Family.ToString());
             await daemon.InitAsync(poolConfig);
+
+            while (!(await daemon.AllEndpointsOnline()))
+            { 
+                logger.Info(()=> $"Waiting for coin-daemons to come online ...");
+
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            }
+
+            logger.Info(() => $"All coin-daemons are online");
         }
 
-        public NetworkStats NetworkStats => networkStats;
+    public NetworkStats NetworkStats => networkStats;
         public PoolStats PoolStats => poolStats;
 
         #endregion // API-Surface
@@ -158,13 +167,26 @@ namespace MiningCore.MiningPool
         private void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
         {
             logger.Debug(() => $"[{client.SubscriptionId}] Subscribe received: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
-
-            client.Send(new JsonRpcResponse(new { code = "Thanks" }, request.Id));
         }
 
-        private void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
+        private async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
         {
             logger.Debug(() => $"[{client.SubscriptionId}] Authorize received: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+
+            try
+            {
+                var args = request.Params.ToObject<string[]>();
+                var address = args[0];
+
+                client.IsAuthorized = await daemon.ValidateAddressAsync(address);
+
+                client.Send(client.IsAuthorized, request.Id);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(() => $"[{client.SubscriptionId}] Client authorization failed: {ex.Message}");
+            }
         }
 
         private void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)

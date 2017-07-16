@@ -31,7 +31,7 @@ namespace MiningCore.JsonRpc
 
         public JsonRpcResponse(T result, string id = null)
         {
-            Result = JObject.FromObject(result);
+            Result = JToken.FromObject(result);
             Id = id;
         }
 
@@ -45,7 +45,7 @@ namespace MiningCore.JsonRpc
         public string JsonRpc => "2.0";
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "result")]
-        public JObject Result { get; set; }
+        public JToken Result { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "error")]
         public JsonRpcException Error { get; set; }

@@ -6,6 +6,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using CodeContracts;
+using MiningCore.Blockchain.Bitcoin.Messages;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
@@ -25,15 +27,16 @@ namespace MiningCore.Blockchain
         private readonly Random random = new Random();
         protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
+        protected string testInstanceOnlineCommand;
 
         /// <summary>
         /// Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<JObject>[]> ExecuteCmdAllAsync(string method)
+        protected Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
         {
-            return ExecuteCmdAllAsync<object, JObject> (method);
+            return ExecuteCmdAllAsync<object, JToken> (method);
         }
 
         /// <summary>
@@ -83,9 +86,9 @@ namespace MiningCore.Blockchain
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<JObject>> ExecuteCmdAnyAsync(string method)
+        protected Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method)
         {
-            return ExecuteCmdAnyAsync<object, JObject>(method);
+            return ExecuteCmdAnyAsync<object, JToken>(method);
         }
 
         /// <summary>
@@ -113,51 +116,38 @@ namespace MiningCore.Blockchain
             where TRequest : class
         {
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
-            DaemonResponse<TResponse> result;
 
-            try
-            {
-                var taskFirstCompleted = await Task.WhenAny(tasks);
-                result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
-            }
-
-            catch (Exception)
-            {
-                result = MapDaemonResponse<TResponse>(0, tasks.First());
-            }
-
+            var taskFirstCompleted = await Task.WhenAny(tasks);
+            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
             return result;
         }
 
-        private Task<JsonRpcResponse> BuildRequestTask<TRequest>(
+        private async Task<JsonRpcResponse> BuildRequestTask<TRequest>(
             AuthenticatedNetworkEndpointConfig endPoint, string method, TRequest payload) 
             where TRequest: class
         {
-            return Task.Run(async () =>
-            {
-                var rpcRequestId = GetRequestId();
+            var rpcRequestId = GetRequestId();
 
-                // build rpc request
-                var rpcRequest = new JsonRpcRequest<TRequest>(method, payload, rpcRequestId);
+            // build rpc request
+            var rpcRequest = new JsonRpcRequest<TRequest>(method, payload, rpcRequestId);
 
-                // build http request
-                var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");
-                var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            // build http request
+            var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");
+            var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // build auth header
-                var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+            // build auth header
+            var auth = $"{endPoint.User}:{endPoint.Password}";
+            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
 
-                // send request
-                var response = await httpClient.SendAsync(request);
-                json = await response.Content.ReadAsStringAsync();
+            // send request
+            var response = await httpClient.SendAsync(request);
+            json = await response.Content.ReadAsStringAsync();
 
-                // deserialize response
-                var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
-                return result;
-            });
+            // deserialize response
+            var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
+            return result;
         }
 
         protected string GetRequestId()
@@ -182,8 +172,8 @@ namespace MiningCore.Blockchain
 
             if (x.IsCompletedSuccessfully)
             {
-                resp.Response = x.Result.Result.ToObject<TResponse>();
-                resp.Error = x.Result.Error;
+                resp.Response = x.Result?.Result?.ToObject<TResponse>();
+                resp.Error = x.Result?.Error;
             }
 
             else if (x.IsFaulted)
@@ -192,6 +182,15 @@ namespace MiningCore.Blockchain
             }
 
             return resp;
+        }
+
+        public async Task<bool> AllEndpointsOnline()
+        {
+            Contract.Requires<ArgumentException>(testInstanceOnlineCommand != null, $"{nameof(testInstanceOnlineCommand)} must be initialized in derived class");
+
+            var responses = await ExecuteCmdAllAsync<GetInfoResponse>(testInstanceOnlineCommand);
+
+            return responses.All(x => x.Error == null);
         }
     }
 }

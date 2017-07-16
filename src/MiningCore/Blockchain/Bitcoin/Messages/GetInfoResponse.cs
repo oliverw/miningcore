@@ -9,6 +9,15 @@ namespace MiningCore.Blockchain.Bitcoin.Messages
         public int Version { get; set; }
         public int ProtocolVersion { get; set; }
         public double Balance { get; set; }
-        todo rest
+        public int Blocks { get; set; }
+        public int Timeoffset { get; set; }
+        public int Connections { get; set; }
+        public double Difficulty { get; set; }
+        public bool Testnet { get; set; }
+        public double KeypoolOldest { get; set; }
+        public int KeypoolSize { get; set; }
+        public double PaytxFee { get; set; }
+        public double RelayFee { get; set; }
+        public string Errors { get; set; }
     }
 }

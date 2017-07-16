@@ -27,7 +27,7 @@ namespace MiningCore.JsonRpc
             Method = method;
 
             if(pars != null)
-                Params = JObject.FromObject(pars);
+                Params = JToken.FromObject(pars);
 
             Id = id;
         }
@@ -39,7 +39,7 @@ namespace MiningCore.JsonRpc
         public string Method { get; set; }
 
         [JsonProperty("params")]
-        public JObject Params { get; set; }
+        public JToken Params { get; set; }
 
         [JsonProperty("id")]
         public string Id { get; set; }

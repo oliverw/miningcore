@@ -5,6 +5,7 @@ using Autofac;
 using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
+using MiningCore.JsonRpc;
 using MiningCore.MiningPool;
 using MiningCore.Stratum;
 using MiningCore.Stratum.Authorization;
@@ -45,6 +46,9 @@ namespace MiningCore
                 .AsSelf();
 
             builder.RegisterType<StratumClient>()
+                .AsSelf();
+
+            builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
             builder.RegisterType<BitcoinDaemon>()

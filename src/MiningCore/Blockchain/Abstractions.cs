@@ -13,6 +13,7 @@ namespace MiningCore.Blockchain
     {
         Task<bool> ValidateAddressAsync(string address);
         Task InitAsync(PoolConfig config);
+        Task<bool> AllEndpointsOnline();
     }
 
     public class DaemonResponse<T>
