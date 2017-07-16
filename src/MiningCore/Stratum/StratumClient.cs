@@ -54,8 +54,7 @@ namespace MiningCore.Stratum
         {
             lock (rpcCon)
             {
-                rpcCon?.Close();
-                rpcCon = null;
+                rpcCon.Close();
             }
         }
 

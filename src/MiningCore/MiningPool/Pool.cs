@@ -98,6 +98,9 @@ namespace MiningCore.MiningPool
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
 
+                // expect miner to establish communicatin within a certain time
+                EnsureNoZombieClient(client);
+
                 // update stats
                 poolStats.ConnectedMiners = server.ClientCount;
             }
@@ -209,6 +212,28 @@ namespace MiningCore.MiningPool
         private void OnClientUnsupportedRequest(StratumClient client, JsonRpcRequest request)
         {
             logger.Warning(() => $"[{client.SubscriptionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+        }
+
+        private void EnsureNoZombieClient(StratumClient client)
+        {
+            var isAlive = client.Requests
+                .Take(1)
+                .Select(_ => true);
+
+            var timeout = Observable.Timer(DateTime.UtcNow.AddSeconds(10))
+                .Select(_ => false);
+
+            Observable.Merge(isAlive, timeout)
+                .Take(1)
+                .Subscribe(alive =>
+                {
+                    if (!alive)
+                    {
+                        logger.Debug(() => $"[{client.SubscriptionId}] Booting miner because it failed to establish communication within the alloted time");
+
+                        server.DisconnectClient(client);
+                    }
+                });
         }
     }
 }
