@@ -20,7 +20,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region API-Surface
 
-        public Task InitAsync(PoolConfig poolConfig)
+        public Task StartAsync(PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.Requires<ArgumentException>(poolConfig.Daemons.Length > 0, $"{nameof(poolConfig.Daemons)} must not be empty");

@@ -51,20 +51,28 @@ namespace MiningCore
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
-            builder.RegisterType<BitcoinDaemon>()
-                .Named<IBlockchainDemon>(BlockchainFamily.Bitcoin.ToString())
-                .AsImplementedInterfaces();
-            
             builder.RegisterType<AddressBasedAuthorizer>()
                 .Named<IStratumAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
-                .AsImplementedInterfaces()
                 .SingleInstance();
+
+            builder.RegisterType<ExtraNonceProvider>()
+                .AsSelf();
 
             builder.RegisterInstance(new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
+            //////////////////////
+            // Bitcoin and family
+
+            builder.RegisterType<BitcoinJobManager>()
+                .Named<IMiningJobManager>("bitcoin")
+                .Named<IMiningJobManager>("litecoin");
+
+            builder.RegisterType<BitcoinDaemon>()
+                .Named<IBlockchainDemon>("bitcoin")
+                .Named<IBlockchainDemon>("litecoin");
 
             base.Load(builder);
         }

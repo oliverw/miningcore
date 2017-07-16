@@ -2,13 +2,6 @@
 
 namespace MiningCore.Configuration
 {
-    public enum BlockchainFamily
-    {
-        Bitcoin,
-        Monero,
-        Ethereum,
-    }
-
     public enum HashAlgorithm
     {
         Sha256 = 1,
@@ -31,7 +24,6 @@ namespace MiningCore.Configuration
         public string Name { get; set; }
         public string Symbol { get; set; }
         public HashAlgorithm Algorithm { get; set; }
-        public BlockchainFamily Family { get; set; }
     }
 
     public class NetworkEndpointConfig

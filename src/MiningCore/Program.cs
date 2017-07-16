@@ -147,7 +147,7 @@ namespace MiningCore
             foreach (var poolConfig in config.Pools)
             {
                 var pool = container.Resolve<Pool>();
-                await pool.InitAsync(poolConfig, config);
+                await pool.StartAsync(poolConfig, config);
                 pools.Add(pool);
             }
         }

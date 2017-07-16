@@ -5,7 +5,6 @@
       "coin": {
         "name": "Bitcoin",
         "symbol": "BTC",
-        "family": "bitcoin",
         "algorithm": "sha256"
       },
 

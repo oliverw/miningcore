@@ -19,6 +19,9 @@ namespace MiningCore.Stratum
 
         private JsonRpcConnection rpcCon;
         private readonly PoolEndpoint config;
+        private readonly StratumClientStats stats = new StratumClientStats();
+
+        #region API-Surface
 
         public void Init(ILibUvConnection uvCon, IComponentContext ctx)
         {
@@ -35,7 +38,14 @@ namespace MiningCore.Stratum
         public IPEndPoint RemoteAddress => rpcCon.RemoteEndPoint;
         public bool IsAuthorized { get; set; } = false;
         public PoolEndpoint Config => config;
-        public DateTime LastActivity { get; set; }
+        public DateTime? LastActivity { get; set; }
+        public object MiningContext { get; set; }
+        public StratumClientStats Stats => stats;
+
+        public T GetMiningContextAs<T>()
+        {
+            return (T) MiningContext;
+        }
 
         public void Send<T>(T payload, string id)
         {
@@ -77,5 +87,7 @@ namespace MiningCore.Stratum
         {
             RespondError(id, 24, "Unauthorized worker");
         }
+
+        #endregion // API-Surface
     }
 }

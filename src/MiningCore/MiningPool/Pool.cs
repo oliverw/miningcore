@@ -30,22 +30,24 @@ namespace MiningCore.MiningPool
         private StratumServer server;
         private IStratumAuthorizer authorizer;
         private IBlockchainDemon daemon;
+        private IMiningJobManager manager;
         private readonly NetworkStats networkStats = new NetworkStats();
         private readonly PoolStats poolStats = new PoolStats();
         private readonly JsonSerializerSettings serializerSettings;
 
         #region API-Surface
 
-        public async Task InitAsync(PoolConfig poolConfig, PoolClusterConfig poolClusterConfig)
+        public async Task StartAsync(PoolConfig poolConfig, PoolClusterConfig poolClusterConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(poolClusterConfig, nameof(poolClusterConfig));
 
             try
             {
-                logger.Info(() => $"{poolConfig.Coin.Name} initializing ...");
+                logger.Info(() => $"{poolConfig.Coin.Name} starting ...");
 
                 await InitializeDaemon(poolConfig);
+                await InitializeJobManager(poolConfig);
                 InitializeStratum(poolConfig);
             }
 
@@ -57,8 +59,8 @@ namespace MiningCore.MiningPool
 
         private async Task InitializeDaemon(PoolConfig poolConfig)
         {
-            daemon = ctx.ResolveNamed<IBlockchainDemon>(poolConfig.Coin.Family.ToString());
-            await daemon.InitAsync(poolConfig);
+            daemon = ctx.ResolveNamed<IBlockchainDemon>(poolConfig.Coin.Name.ToLower());
+            await daemon.StartAsync(poolConfig);
 
             while (!(await daemon.IsHealthyAsync()))
             { 
@@ -68,6 +70,14 @@ namespace MiningCore.MiningPool
             }
 
             logger.Info(() => $"All coin-daemons are online");
+        }
+
+        private async Task InitializeJobManager(PoolConfig poolConfig)
+        {
+            manager = ctx.ResolveNamed<IMiningJobManager>(poolConfig.Coin.Name.ToLower());
+            await manager.StartAsync(poolConfig);
+
+            logger.Info(() => $"Job Manager started");
         }
 
         public NetworkStats NetworkStats => networkStats;
@@ -100,6 +110,9 @@ namespace MiningCore.MiningPool
 
                 // expect miner to establish communicatin within a certain time
                 EnsureNoZombieClient(client);
+
+                // announce him to job manager
+                manager.RegisterWorker(client);
 
                 // update stats
                 poolStats.ConnectedMiners = server.ClientCount;
@@ -171,8 +184,10 @@ namespace MiningCore.MiningPool
             }
         }
 
-        private void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
+        private async void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
         {
+            var subscribeParams = await manager.GetStratumSubscribeParamsAsync();
+
             // [
             //    [
             //        ["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"],
