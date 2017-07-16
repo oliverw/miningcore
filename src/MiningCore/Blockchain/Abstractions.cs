@@ -10,17 +10,22 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain
 {
-    public interface IBlockchainDemon
+    public class SubscribeResponse
     {
-        Task<bool> ValidateAddressAsync(string address);
-        Task StartAsync(PoolConfig config);
-        Task<bool> IsHealthyAsync();
+        public string SubscriptionId { get; set; }
+        public string Extranonce1 { get; set; }
+        public int Extranonce2Length { get; set; }
     }
 
-    public interface IMiningJobManager
+    public interface IBlockchainJobManager
     {
-        Task StartAsync(PoolConfig poolConfig);
-        void RegisterWorker(StratumClient worker);
-        Task<object> GetStratumSubscribeParamsAsync();
+        Task StartAsync(PoolConfig poolConfig, StratumServer stratum);
+        Task<bool> ValidateAddressAsync(string address);
+
+        Task<SubscribeResponse> HandleWorkerSubscribeAsync(StratumClient worker);
+        Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password);
+        Task<bool> HandleWorkerSubmitAsync(StratumClient worker, object submission);
+
+        IObservable<object> Jobs { get; }
     }
 }

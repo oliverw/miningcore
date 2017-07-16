@@ -75,6 +75,16 @@ namespace MiningCore.JsonRpc
             upstream.Send(bytes);
         }
 
+        public void Send<T>(JsonRpcRequest<T> response)
+        {
+            Contract.RequiresNonNull(response, nameof(response));
+
+            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
+            var bytes = Encoding.UTF8.GetBytes(json);
+
+            upstream.Send(bytes);
+        }
+
         public IPEndPoint RemoteEndPoint => upstream?.RemoteEndPoint;
         public string ConnectionId => upstream?.ConnectionId;
 

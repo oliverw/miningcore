@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using CodeContracts;
-using MiningCore.Blockchain.Bitcoin.Messages;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
@@ -22,9 +19,9 @@ namespace MiningCore.Blockchain
         public AuthenticatedNetworkEndpointConfig Instance { get; set; }
     }
 
-    public abstract class DemonBase
+    public class BlockchainDemon
     {
-        protected DemonBase(HttpClient httpClient, JsonSerializerSettings serializerSettings)
+        public BlockchainDemon(HttpClient httpClient, JsonSerializerSettings serializerSettings)
         {
             this.httpClient = httpClient;
             this.serializerSettings = serializerSettings;
@@ -34,14 +31,25 @@ namespace MiningCore.Blockchain
         private readonly Random random = new Random();
         protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
-        protected string testInstanceOnlineCommand;
+
+        #region API-Surface
+
+        public Task StartAsync(PoolConfig poolConfig)
+        {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.Requires<ArgumentException>(poolConfig.Daemons.Length > 0, $"{nameof(poolConfig.Daemons)} must not be empty");
+
+            this.endPoints = poolConfig.Daemons;
+
+            return Task.FromResult(true);
+        }
 
         /// <summary>
         /// Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
+        public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
         {
             return ExecuteCmdAllAsync<object, JToken> (method);
         }
@@ -52,7 +60,7 @@ namespace MiningCore.Blockchain
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method)
+        public Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method)
             where TResponse : class
         {
             return ExecuteCmdAllAsync<object, TResponse>(method);
@@ -66,7 +74,7 @@ namespace MiningCore.Blockchain
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        protected async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TRequest, TResponse>(string method, TRequest payload = null)
+        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TRequest, TResponse>(string method, TRequest payload = null)
             where TResponse: class
             where TRequest: class
         {
@@ -93,7 +101,7 @@ namespace MiningCore.Blockchain
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method)
+        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method)
         {
             return ExecuteCmdAnyAsync<object, JToken>(method);
         }
@@ -104,7 +112,7 @@ namespace MiningCore.Blockchain
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        protected Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method)
+        public Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method)
             where TResponse : class
         {
             return ExecuteCmdAnyAsync<object, TResponse>(method);
@@ -118,7 +126,7 @@ namespace MiningCore.Blockchain
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        protected async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TRequest, TResponse>(string method, TRequest payload = null)
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TRequest, TResponse>(string method, TRequest payload = null)
             where TResponse : class
             where TRequest : class
         {
@@ -191,13 +199,6 @@ namespace MiningCore.Blockchain
             return resp;
         }
 
-        public async Task<bool> IsHealthyAsync()
-        {
-            Contract.Requires<ArgumentException>(testInstanceOnlineCommand != null, $"{nameof(testInstanceOnlineCommand)} must be initialized in derived class");
-
-            var responses = await ExecuteCmdAllAsync<GetInfoResponse>(testInstanceOnlineCommand);
-
-            return responses.All(x => x.Error == null);
-        }
+        #endregion // API-Surface
     }
 }

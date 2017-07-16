@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinJobContext : CommonJobContext
+    public class BitcoinWorkerContext : WorkerContextBase
     {
     }
 }

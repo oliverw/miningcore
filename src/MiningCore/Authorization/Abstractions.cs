@@ -4,8 +4,8 @@ using MiningCore.Blockchain;
 
 namespace MiningCore.Authorization
 {
-    public interface IStratumAuthorizer
+    public interface IWorkerAuthorizer
     {
-        Task<bool> AuthorizeAsync(IPEndPoint remotEndPoint, string username, string password, IBlockchainDemon blockchainDemon);
+        Task<bool> AuthorizeAsync(IBlockchainJobManager manager, IPEndPoint remotEndPoint, string username, string password);
     }
 }

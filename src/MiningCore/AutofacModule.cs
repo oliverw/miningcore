@@ -7,7 +7,6 @@ using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
-using MiningCore.MiningPool;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -39,7 +38,12 @@ namespace MiningCore
             })
             .AsSelf();
 
-            builder.RegisterType<Pool>()
+            builder.RegisterInstance(new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            });
+
+            builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
             builder.RegisterType<StratumServer>()
@@ -48,31 +52,22 @@ namespace MiningCore
             builder.RegisterType<StratumClient>()
                 .AsSelf();
 
-            builder.RegisterType<JsonRpcConnection>()
+            builder.RegisterType<BlockchainDemon>()
                 .AsSelf();
 
-            builder.RegisterType<AddressBasedAuthorizer>()
-                .Named<IStratumAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
+            builder.RegisterType<AddressBasedWorkerAuthorizer>()
+                .Named<IWorkerAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
                 .SingleInstance();
 
             builder.RegisterType<ExtraNonceProvider>()
                 .AsSelf();
 
-            builder.RegisterInstance(new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            });
-
             //////////////////////
             // Bitcoin and family
 
             builder.RegisterType<BitcoinJobManager>()
-                .Named<IMiningJobManager>("bitcoin")
-                .Named<IMiningJobManager>("litecoin");
-
-            builder.RegisterType<BitcoinDaemon>()
-                .Named<IBlockchainDemon>("bitcoin")
-                .Named<IBlockchainDemon>("litecoin");
+                .Named<IBlockchainJobManager>("bitcoin")
+                .Named<IBlockchainJobManager>("litecoin");
 
             base.Load(builder);
         }

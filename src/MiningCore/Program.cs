@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
-using MiningCore.MiningPool;
+using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Extensions.Logging;
@@ -21,7 +21,7 @@ namespace MiningCore
         private static IContainer container;
         private static AutofacServiceProvider serviceProvider;
         private static ILogger<Program> logger;
-        private static readonly List<Pool> pools = new List<Pool>();
+        private static readonly List<StratumServer> servers = new List<StratumServer>();
 
         static void Main(string[] args)
         {
@@ -146,9 +146,9 @@ namespace MiningCore
         {
             foreach (var poolConfig in config.Pools)
             {
-                var pool = container.Resolve<Pool>();
-                await pool.StartAsync(poolConfig, config);
-                pools.Add(pool);
+                var pool = container.Resolve<StratumServer>();
+                await pool.StartAsync(poolConfig);
+                servers.Add(pool);
             }
         }
     }

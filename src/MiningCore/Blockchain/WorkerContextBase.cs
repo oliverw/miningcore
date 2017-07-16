@@ -4,10 +4,8 @@ using System.Text;
 
 namespace MiningCore.Blockchain
 {
-    public class CommonJobContext
+    public class WorkerContextBase
     {
-        public double Difficulty { get; set; }
-        public double PreviousDifficulty { get; set; }
         public string ExtraNonce1 { get; set; }
     }
 }

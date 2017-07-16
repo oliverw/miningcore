@@ -37,22 +37,30 @@ namespace MiningCore.Stratum
         public string SubscriptionId => rpcCon.ConnectionId;
         public IPEndPoint RemoteAddress => rpcCon.RemoteEndPoint;
         public bool IsAuthorized { get; set; } = false;
+        public bool IsSubscribed => WorkerContext != null;
         public PoolEndpoint Config => config;
         public DateTime? LastActivity { get; set; }
-        public object MiningContext { get; set; }
+        public object WorkerContext { get; set; }
+        public double Difficulty { get; set; }
+        public double PreviousDifficulty { get; set; }
         public StratumClientStats Stats => stats;
 
-        public T GetMiningContextAs<T>()
+        public T GetWorkerContextAs<T>()
         {
-            return (T) MiningContext;
+            return (T) WorkerContext;
         }
 
-        public void Send<T>(T payload, string id)
+        public void Respond<T>(T payload, string id)
         {
-            Send(new JsonRpcResponse<T>(payload, id));
+            Respond(new JsonRpcResponse<T>(payload, id));
         }
 
-        public void Send<T>(JsonRpcResponse<T> response)
+        public void RespondError(StratumError code, string message, string id, object data = null)
+        {
+            Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id));
+        }
+
+        public void Respond<T>(JsonRpcResponse<T> response)
         {
             lock (rpcCon)
             {
@@ -60,9 +68,17 @@ namespace MiningCore.Stratum
             }
         }
 
-        public void SendError(StratumError code, string message, string id)
+        public void Notify<T>(string method, T payload)
         {
-            Send(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id));
+            Notify(new JsonRpcRequest<T>(method, payload, null));
+        }
+
+        public void Notify<T>(JsonRpcRequest<T> request)
+        {
+            lock (rpcCon)
+            {
+                rpcCon?.Send(request);
+            }
         }
 
         public void Disconnect()
@@ -75,7 +91,7 @@ namespace MiningCore.Stratum
 
         public void RespondError(string id, int code, string message)
         {
-            Send(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
+            Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
         public void RespondUnsupportedMethod(string id)
