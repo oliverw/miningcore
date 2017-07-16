@@ -108,7 +108,7 @@ namespace MiningCore.MiningPool
             }
         }
 
-        private void OnClientDisconnected(Unit _)
+        private void OnClientDisconnected(string subscriptionId)
         {
             try
             {

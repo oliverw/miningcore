@@ -32,7 +32,7 @@ namespace MiningCore.Stratum
         private readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
         private readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         private readonly Subject<StratumClient> clientConnectedSubject = new Subject<StratumClient>();
-        private readonly Subject<Unit> clientDisconnectedSubject = new Subject<Unit>();
+        private readonly Subject<string> clientDisconnectedSubject = new Subject<string>();
 
         #region API-Surface
 
@@ -77,7 +77,7 @@ namespace MiningCore.Stratum
         }
 
         public IObservable<StratumClient> ClientConnected { get; }
-        public IObservable<Unit> ClientDisconnected { get; }
+        public IObservable<string> ClientDisconnected { get; }
 
         public int ClientCount
         {
@@ -105,7 +105,7 @@ namespace MiningCore.Stratum
                 }
             }
 
-            clientDisconnectedSubject.OnNext(Unit.Default);
+            clientDisconnectedSubject.OnNext(subscriptionId);
         }
 
         public void SendBroadcast<T>(T payload, string id)
