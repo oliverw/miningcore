@@ -31,8 +31,7 @@ namespace MiningForce.Stratum
 
         protected readonly IComponentContext ctx;
         protected readonly ILogger<StratumServer> logger;
-        protected readonly Dictionary<int, (LibUvListener Listener, VarDiffManager VarDiff)> ports = 
-            new Dictionary<int, (LibUvListener Listener, VarDiffManager VarDiff)>();
+        protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected PoolConfig poolConfig;
         private readonly JsonSerializerSettings serializerSettings;
@@ -45,9 +44,6 @@ namespace MiningForce.Stratum
             foreach (var port in poolConfig.Ports.Keys)
             {
                 var endpointConfig = poolConfig.Ports[port];
-
-                // fill in the blanks
-                endpointConfig.Port = port;
 
                 // set listen addresse(s)
                 var listenAddress = IPAddress.Parse("127.0.0.1");
@@ -62,16 +58,7 @@ namespace MiningForce.Stratum
 
                 // create the listener
                 var listener = new LibUvListener(ctx);
-
-                // create vardiff manager
-                VarDiffManager varDiffManager = null;
-                if (endpointConfig.VarDiff != null)
-                    varDiffManager = new VarDiffManager(endpointConfig.VarDiff);
-
-                lock (ports)
-                {
-                    ports[port] = (listener, varDiffManager);
-                }
+                ports[port] = listener;
 
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
@@ -99,7 +86,7 @@ namespace MiningForce.Stratum
                     clients[subscriptionId] = client;
                 }
 
-                client.Init(con, ctx, endpointConfig.Difficulty);
+                client.Init(con, ctx);
 
                 // monitor client requests
                 client.Requests

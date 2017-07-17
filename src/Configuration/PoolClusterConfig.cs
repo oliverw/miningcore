@@ -45,7 +45,6 @@ namespace MiningForce.Configuration
 
     public class PoolEndpoint
     {
-        public int Port { get; set; }
         public string ListenAddress { get; set; }
         public float Difficulty { get; set; }
         public VarDiffConfig VarDiff { get; set; }

@@ -16,23 +16,24 @@ namespace MiningForce.Stratum
         public StratumClient(PoolEndpoint endpointConfig)
         {
             this.config = endpointConfig;
+
+            Difficulty = config.Difficulty;
         }
 
         private JsonRpcConnection rpcCon;
         private readonly PoolEndpoint config;
         private readonly StratumClientStats stats = new StratumClientStats();
         private double? pendingDifficulty;
+        private VarDiffManager varDiffManager;
 
         #region API-Surface
 
-        public void Init(ILibUvConnection uvCon, IComponentContext ctx, double difficulty)
+        public void Init(ILibUvConnection uvCon, IComponentContext ctx)
         {
             Contract.RequiresNonNull(uvCon, nameof(uvCon));
 
             rpcCon = ctx.Resolve<JsonRpcConnection>();
             rpcCon.Init(uvCon);
-
-            Difficulty = difficulty;
 
             Requests = rpcCon.Received;
         }
@@ -48,7 +49,6 @@ namespace MiningForce.Stratum
         public double Difficulty { get; set; }
         public double? PreviousDifficulty { get; set; }
         public StratumClientStats Stats => stats;
-        public VarDiffContext VarDiffContext { get; set; }
 
         public T GetWorkerContextAs<T>()
         {

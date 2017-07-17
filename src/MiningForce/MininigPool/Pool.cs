@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
@@ -11,6 +13,7 @@ using MiningForce.JsonRpc;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;
+using NLog.LayoutRenderers.Wrappers;
 
 // TODO:
 // - periodic job re-broadcast
@@ -31,6 +34,12 @@ namespace MiningForce.MininigPool
         private object currentJobParams = null;
         private readonly object currentJobParamsLock = new object();
         private IBlockchainJobManager manager;
+
+        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
+            new Dictionary<PoolEndpoint, VarDiffManager>();
+
+        protected readonly ConditionalWeakTable<StratumClient, VarDiffContext> varDiffContexts = 
+            new ConditionalWeakTable<StratumClient, VarDiffContext>();
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
@@ -66,9 +75,6 @@ namespace MiningForce.MininigPool
 
         protected override void OnClientConnected(StratumClient client)
         {
-            if(client.PoolEndpoint.VarDiff != null)
-                client.VarDiffContext = new VarDiffContext();
-
             // update stats
             lock (clients)
             {
@@ -147,22 +153,47 @@ namespace MiningForce.MininigPool
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                // update vardiff
-                VarDiffManager varDiffManager = null;
-
-                lock (ports)
-                {
-                    varDiffManager = ports[client.PoolEndpoint.Port].VarDiff;
-                }
-
-                var newDiff = varDiffManager?.Update(client.VarDiffContext, client.Difficulty);
-                if (newDiff != null)
-                    client.EnqueueNewDifficulty(newDiff.Value);
+                UpdateVarDiff(client);
 
                 // submit 
                 var requestParams = request.Params?.ToObject<string[]>();
                 var accepted = await manager.HandleWorkerSubmitAsync(client, requestParams);
                 client.Respond(accepted, request.Id);
+            }
+        }
+
+        private void UpdateVarDiff(StratumClient client)
+        {
+            if (client.PoolEndpoint.VarDiff != null)
+            {
+                // get or create manager
+                VarDiffManager varDiffManager;
+
+                lock (varDiffManagers)
+                {
+                    if (!varDiffManagers.TryGetValue(client.PoolEndpoint, out varDiffManager))
+                    {
+                        varDiffManager = new VarDiffManager(client.PoolEndpoint.VarDiff);
+                        varDiffManagers[client.PoolEndpoint] = varDiffManager;
+                    }
+                }
+
+                // get or create context
+                VarDiffContext ctx = null;
+
+                lock (varDiffContexts)
+                {
+                    if (varDiffContexts.TryGetValue(client, out ctx))
+                    {
+                        ctx = new VarDiffContext();
+                        varDiffContexts.Add(client, ctx);
+                    }
+                }
+
+                // update it
+                var newDiff = varDiffManager.Update(ctx, client.Difficulty);
+                if (newDiff != null)
+                    client.EnqueueNewDifficulty(newDiff.Value);
             }
         }
 
