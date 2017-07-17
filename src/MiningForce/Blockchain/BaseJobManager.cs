@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -9,13 +10,15 @@ using Microsoft.Extensions.Logging;
 using MiningForce.Authorization;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
+using MiningForce.MininigPool;
 using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain
 {
-    public abstract class JobManagerBase
+    public abstract class BaseJobManager<TWorkerContext>
+        where TWorkerContext: class, new()
     {
-        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDemon daemon)
+        protected BaseJobManager(IComponentContext ctx, ILogger logger, BlockchainDemon daemon)
         {
             this.ctx = ctx;
             this.logger = logger;
@@ -29,6 +32,9 @@ namespace MiningForce.Blockchain
         protected PoolConfig poolConfig;
         protected readonly ILogger logger;
         protected long jobId = 1;
+
+        protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
+            new ConditionalWeakTable<StratumClient, TWorkerContext>();
 
         #region API-Surface
 
@@ -131,6 +137,22 @@ namespace MiningForce.Blockchain
             })
             .Publish()
             .RefCount();
+        }
+
+        protected TWorkerContext GetWorkerContext(StratumClient client)
+        {
+            TWorkerContext context;
+
+            lock (workerContexts)
+            {
+                if (!workerContexts.TryGetValue(client, out context))
+                {
+                    context = new TWorkerContext();
+                    workerContexts.Add(client, context);
+                }
+            }
+
+            return context;
         }
 
         protected long NextJobId()

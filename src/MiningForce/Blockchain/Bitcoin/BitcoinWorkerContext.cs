@@ -4,7 +4,8 @@ using System.Text;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public class BitcoinWorkerContext : WorkerContextBase
+    public class BitcoinWorkerContext
     {
+        public string ExtraNonce1 { get; set; }
     }
 }

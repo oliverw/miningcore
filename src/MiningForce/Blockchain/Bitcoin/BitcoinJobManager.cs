@@ -6,18 +6,14 @@ using CodeContracts;
 using Microsoft.Extensions.Logging;
 using MiningForce.Blockchain.Bitcoin.Commands;
 using MiningForce.Configuration.Extensions;
-using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Stratum;
 using Newtonsoft.Json.Linq;
 
-// TODO:
-// - detectCoinDataAsync
-
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public class BitcoinJobManager : JobManagerBase,
+    public class BitcoinJobManager : BaseJobManager<BitcoinWorkerContext>,
         IBlockchainJobManager
     {
         public BitcoinJobManager(
@@ -72,17 +68,13 @@ namespace MiningForce.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             
             // setup worker context
-            var job = new BitcoinWorkerContext
-            {
-                ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4"),
-            };
-
-            worker.WorkerContext = job;
+            var context = GetWorkerContext(worker);
+            context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
 
             // setup response data
             var responseData = new object[]
             {
-                job.ExtraNonce1,
+                context.ExtraNonce1,
                 extraNonceProvider.Size
             };
 
@@ -175,7 +167,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
             if (!validateAddressResponse.Response.IsMine)
-                throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon does not own pool-address");
+                throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon does not own pool-address '{poolConfig.Address}'");
 
             isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
 

@@ -9,12 +9,9 @@ using Autofac;
 using CodeContracts;
 using LibUvManaged;
 using Microsoft.Extensions.Logging;
-using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
-using MiningForce.MininigPool;
-using MiningForce.VarDiff;
 using Newtonsoft.Json;
 
 namespace MiningForce.Stratum
@@ -92,9 +89,6 @@ namespace MiningForce.Stratum
                 client.Requests
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
-
-                // expect miner to establish communication within a certain time
-                EnsureNoZombieClient(client);
             }
 
             catch (Exception ex)
@@ -103,41 +97,9 @@ namespace MiningForce.Stratum
             }
         }
 
-        private void OnClientReceiveError(StratumClient client, Exception ex)
-        {
-            logger.Error(() => $"[{poolConfig.Coin.Name}] [{client.SubscriptionId}] Client connection entered error state: {ex.Message}");
-
-            DisconnectClient(client);
-        }
-
-        private void OnClientReceiveComplete(StratumClient client)
-        {
-            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.SubscriptionId}] Received End-of-Stream from client");
-
-            DisconnectClient(client);
-        }
-
-        private void DisconnectClient(StratumClient client)
-        {
-            Contract.RequiresNonNull(client, nameof(client));
-
-            var subscriptionId = client.SubscriptionId;
-            client.Disconnect();
-
-            if (!string.IsNullOrEmpty(subscriptionId))
-            {
-                lock (clients)
-                {
-                    clients.Remove(subscriptionId);
-                }
-            }
-
-            OnClientDisconnected(subscriptionId);
-        }
-
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.SubscriptionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
             try
             {
@@ -154,7 +116,7 @@ namespace MiningForce.Stratum
                         break;
 
                     default:
-                        logger.Warning(() => $"[{client.SubscriptionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Warning(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
@@ -169,31 +131,36 @@ namespace MiningForce.Stratum
             }
         }
 
-        private void EnsureNoZombieClient(StratumClient client)
+        private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            var isAlive = client.Requests
-                .Take(1)
-                .Select(_ => true);
+            logger.Error(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Client connection entered error state: {ex.Message}");
 
-            var timeout = Observable.Timer(DateTime.UtcNow.AddSeconds(10))
-                .Select(_ => false);
+            DisconnectClient(client);
+        }
 
-            Observable.Merge(isAlive, timeout)
-                .Take(1)
-                .Subscribe(alive =>
+        private void OnClientReceiveComplete(StratumClient client)
+        {
+            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Received End-of-Stream from client");
+
+            DisconnectClient(client);
+        }
+
+        protected void DisconnectClient(StratumClient client)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            var subscriptionId = client.ConnectionId;
+            client.Disconnect();
+
+            if (!string.IsNullOrEmpty(subscriptionId))
+            {
+                lock (clients)
                 {
-                    if (!alive)
-                    {
-                        logger.Debug(() => $"[{client.SubscriptionId}] Booting miner because it failed to establish communication within the alloted time");
+                    clients.Remove(subscriptionId);
+                }
+            }
 
-                        DisconnectClient(client);
-                    }
-
-                    else
-                    {
-                        OnClientConnected(client);
-                    }
-                });
+            OnClientDisconnected(subscriptionId);
         }
 
         protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)

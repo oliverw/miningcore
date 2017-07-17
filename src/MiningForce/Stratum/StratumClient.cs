@@ -16,15 +16,10 @@ namespace MiningForce.Stratum
         public StratumClient(PoolEndpoint endpointConfig)
         {
             this.config = endpointConfig;
-
-            Difficulty = config.Difficulty;
         }
 
         private JsonRpcConnection rpcCon;
         private readonly PoolEndpoint config;
-        private readonly StratumClientStats stats = new StratumClientStats();
-        private double? pendingDifficulty;
-        private VarDiffManager varDiffManager;
 
         #region API-Surface
 
@@ -39,21 +34,9 @@ namespace MiningForce.Stratum
         }
 
         public IObservable<JsonRpcRequest> Requests { get; private set; }
-        public string SubscriptionId => rpcCon.ConnectionId;
+        public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
-        public bool IsAuthorized { get; set; } = false;
-        public bool IsSubscribed => WorkerContext != null;
-        public DateTime? LastActivity { get; set; }
-        public object WorkerContext { get; set; }
-        public double Difficulty { get; set; }
-        public double? PreviousDifficulty { get; set; }
-        public StratumClientStats Stats => stats;
-
-        public T GetWorkerContextAs<T>()
-        {
-            return (T) WorkerContext;
-        }
 
         public void Respond<T>(T payload, string id)
         {
@@ -107,39 +90,6 @@ namespace MiningForce.Stratum
         public void RespondUnauthorized(string id)
         {
             RespondError(id, 24, "Unauthorized worker");
-        }
-
-        public void EnqueueNewDifficulty(double difficulty)
-        {
-            lock (rpcCon)
-            {
-                pendingDifficulty = difficulty;
-            }
-        }
-
-        public bool ApplyPendingDifficulty()
-        {
-            lock (rpcCon)
-            {
-                if (pendingDifficulty.HasValue)
-                {
-                    SetDifficulty(pendingDifficulty.Value);
-                    pendingDifficulty = null;
-
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
-        public void SetDifficulty(double difficulty)
-        {
-            lock (rpcCon)
-            {
-                PreviousDifficulty = Difficulty;
-                Difficulty = difficulty;
-            }
         }
 
         #endregion // API-Surface

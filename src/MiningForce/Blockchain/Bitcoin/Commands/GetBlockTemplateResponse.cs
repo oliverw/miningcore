@@ -9,12 +9,12 @@
 
     public class GetBlockTemplateResponse
     {
-        public int Version { get; set; }
+        public uint Version { get; set; }
         public string PreviousBlockhash { get; set; }
         public double CoinbaseValue { get; set; }
         public string Target { get; set; }
         public string NonceRange { get; set; }
-        public uint Curtime { get; set; }
+        public uint CurTime { get; set; }
         public string Bits { get; set; }
         public uint Height { get; set; }
         public BitcoinBlockTransaction[] Transactions { get; set; }

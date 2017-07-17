@@ -179,11 +179,14 @@ namespace MiningForce
             catch (PoolStartupAbortException ex)
             {
                 logger.Error(() => ex.Message);
+
+                logger.Error(() => $"Cluster startup aborted. Good Bye!");
+
             }
 
             catch (Exception ex)
             {
-                logger.Error(() => $"Error starting pools", ex);
+                logger.Error(() => $"Error starting cluster", ex);
             }
         }
     }

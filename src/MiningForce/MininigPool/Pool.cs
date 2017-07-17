@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
@@ -39,8 +40,8 @@ namespace MiningForce.MininigPool
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        protected readonly ConditionalWeakTable<StratumClient, VarDiffContext> varDiffContexts = 
-            new ConditionalWeakTable<StratumClient, VarDiffContext>();
+        protected readonly ConditionalWeakTable<StratumClient, PoolClientContext> miningContexts = 
+            new ConditionalWeakTable<StratumClient, PoolClientContext>();
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
@@ -74,6 +75,9 @@ namespace MiningForce.MininigPool
 
         protected override void OnClientConnected(StratumClient client)
         {
+            // expect miner to establish communication within a certain time
+            EnsureNoZombieClient(client);
+
             // update stats
             lock (clients)
             {
@@ -102,17 +106,21 @@ namespace MiningForce.MininigPool
                 {
                     new object[]
                     {
-                        StratumConstants.MsgMiningNotify, client.SubscriptionId
+                        StratumConstants.MsgMiningNotify, client.ConnectionId
                     },
                 },
             }
             .Concat(response)
             .ToArray();
 
+            // send response
             client.Respond(data, request.Id);
 
-            // Send difficulty
-            client.Notify(StratumConstants.MsgSetDifficulty, new object[] { client.Difficulty });
+            // get or create context
+            var context = GetMiningContext(client);
+
+            // send difficulty
+            client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
 
             // Send current job if available
             lock (currentJobParamsLock)
@@ -134,21 +142,25 @@ namespace MiningForce.MininigPool
 
         protected override async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
         {
+            var context = GetMiningContext(client);
+
             var requestParams = request.Params?.ToObject<string[]>();
             var workername = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
-            client.IsAuthorized = await manager.HandleWorkerAuthenticateAsync(client, workername, password);
-            client.Respond(client.IsAuthorized, request.Id);
+            context.IsAuthorized = await manager.HandleWorkerAuthenticateAsync(client, workername, password);
+            client.Respond(context.IsAuthorized, request.Id);
         }
 
         protected override async void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)
         {
-            client.LastActivity = DateTime.UtcNow;
+            var context = GetMiningContext(client);
 
-            if (!client.IsAuthorized)
+            context.LastActivity = DateTime.UtcNow;
+
+            if (!context.IsAuthorized)
                 client.RespondError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
-            else if (!client.IsSubscribed)
+            else if (!context.IsSubscribed)
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
@@ -160,16 +172,61 @@ namespace MiningForce.MininigPool
                 client.Respond(accepted, request.Id);
 
                 // update client stats
-                if (accepted)
-                    client.Stats.ValidShares++;
+                if (accepted && poolConfig.Banning != null)
+                    context.Stats.ValidShares++;
                 else
-                    client.Stats.InvalidShares++;
+                    context.Stats.InvalidShares++;
             }
+        }
+
+        private PoolClientContext GetMiningContext(StratumClient client)
+        {
+            PoolClientContext context;
+
+            lock (miningContexts)
+            {
+                if (!miningContexts.TryGetValue(client, out context))
+                {
+                    context = new PoolClientContext(client, poolConfig);
+                    miningContexts.Add(client, context);
+                }
+            }
+
+            return context;
+        }
+
+        private void EnsureNoZombieClient(StratumClient client)
+        {
+            var isAlive = client.Requests
+                .Take(1)
+                .Select(_ => true);
+
+            var timeout = Observable.Timer(DateTime.UtcNow.AddSeconds(10))
+                .Select(_ => false);
+
+            Observable.Merge(isAlive, timeout)
+                .Take(1)
+                .Subscribe(alive =>
+                {
+                    if (!alive)
+                    {
+                        logger.Debug(() => $"[{client.ConnectionId}] Booting miner because it failed to establish communication within the alloted time");
+
+                        DisconnectClient(client);
+                    }
+
+                    else
+                    {
+                        OnClientConnected(client);
+                    }
+                });
         }
 
         private void UpdateVarDiff(StratumClient client)
         {
-            if (client.PoolEndpoint.VarDiff != null)
+            var context = GetMiningContext(client);
+
+            if (context.VarDiff != null)
             {
                 // get or create manager
                 VarDiffManager varDiffManager;
@@ -183,22 +240,10 @@ namespace MiningForce.MininigPool
                     }
                 }
 
-                // get or create context
-                VarDiffContext varDiffContext;
-
-                lock (varDiffContexts)
-                {
-                    if (!varDiffContexts.TryGetValue(client, out varDiffContext))
-                    {
-                        varDiffContext = new VarDiffContext();
-                        varDiffContexts.Add(client, varDiffContext);
-                    }
-                }
-
                 // update it
-                var newDiff = varDiffManager.Update(varDiffContext, client.Difficulty);
+                var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty);
                 if (newDiff != null)
-                    client.EnqueueNewDifficulty(newDiff.Value);
+                    context.EnqueueNewDifficulty(newDiff.Value);
             }
         }
 
@@ -219,11 +264,13 @@ namespace MiningForce.MininigPool
         {
             BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client =>
             {
-                if (client.IsSubscribed)
+                var context = GetMiningContext(client);
+
+                if (context.IsSubscribed)
                 {
                     // if the client has a pending difficulty change, apply it now
-                    if(client.ApplyPendingDifficulty())
-                        client.Notify(StratumConstants.MsgSetDifficulty, new object[] { client.Difficulty });
+                    if(context.ApplyPendingDifficulty())
+                        client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
                 }
 
                 return false;

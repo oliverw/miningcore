@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace MiningForce.Extensions
@@ -27,6 +29,22 @@ namespace MiningForce.Extensions
         {
             int val = (int)hex;
             return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
+        }
+
+        public static BigInteger BigIntFromBitsHex(this string bits)
+        {
+            return bits.HexToByteArray().BigIntFromBitsBuffer();
+        }
+
+        public static BigInteger BigIntFromBitsBuffer(this byte[] buffer)
+        {
+            var numBytes = Convert.ToByte(buffer.Take(1));
+            var bigIntBits = new BigInteger(buffer.Skip(1).ToArray());  // buffer.Slice(1, buffer.Length - 1));
+
+            var multiplier = new BigInteger(2 ^ 8 * (numBytes - 3));
+            var target = BigInteger.Multiply(bigIntBits, multiplier);
+
+            return target;
         }
     }
 }

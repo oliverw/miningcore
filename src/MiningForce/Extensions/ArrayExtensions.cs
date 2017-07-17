@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -35,6 +36,28 @@ namespace MiningForce.Extensions
         public static IEnumerable<byte> DoubleDigest(this IEnumerable<byte> input)
         {
             return input.ToArray().DoubleDigest();
+        }
+
+        /// <summary>
+        /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every 
+        /// block of 4 bytes must be reversed before reversing the entire buffer
+        /// </summary>
+        public static byte[] ReverseByteOrder(this byte[] bytes)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    for (var i = 0; i < 8; i++)
+                    {
+                        var value = BitConverter.ToUInt32(bytes, i * 4).ToBigEndian();
+                        writer.Write(value);
+                    }
+
+                    writer.Flush();
+                    return stream.ToArray().Reverse().ToArray();
+                }
+            }
         }
     }
 }
