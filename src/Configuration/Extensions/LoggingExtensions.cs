@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 
-namespace MiningCore.Configuration.Extensions
+namespace MiningForce.Configuration.Extensions
 {
     public static class LoggingExtensions
     {

@@ -1,3 +1,0 @@
-﻿namespace MiningCore.Crypto.Hashing
-{
-}

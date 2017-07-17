@@ -1,0 +1,3 @@
+﻿namespace MiningForce.Crypto.Hashing
+{
+}

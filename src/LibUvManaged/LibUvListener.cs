@@ -5,7 +5,7 @@ using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
-using MiningCore.Configuration.Extensions;
+using MiningForce.Configuration.Extensions;
 
 namespace LibUvManaged
 {

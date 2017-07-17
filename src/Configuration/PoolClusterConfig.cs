@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MiningCore.Configuration
+namespace MiningForce.Configuration
 {
     public enum HashAlgorithm
     {

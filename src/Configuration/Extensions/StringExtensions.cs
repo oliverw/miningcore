@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace MiningCore.Configuration.Extensions
+namespace MiningForce.Configuration.Extensions
 {
     public static class StringExtensions
     {

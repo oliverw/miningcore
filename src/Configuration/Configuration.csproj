@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <RootNamespace>MiningCore.Configuration</RootNamespace>
-    <AssemblyName>MiningCore.Configuration</AssemblyName>
+    <RootNamespace>MiningForce.Configuration</RootNamespace>
+    <AssemblyName>MiningForce.Configuration</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
