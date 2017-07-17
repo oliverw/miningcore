@@ -189,7 +189,7 @@ namespace MiningForce.MininigPool
 
                 lock (varDiffContexts)
                 {
-                    if (varDiffContexts.TryGetValue(client, out ctx))
+                    if (!varDiffContexts.TryGetValue(client, out ctx))
                     {
                         ctx = new VarDiffContext();
                         varDiffContexts.Add(client, ctx);
