@@ -16,6 +16,7 @@ using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 
 // TODO:
+// - send difficulty & varDiff
 // - periodic job re-broadcast
 
 namespace MiningCore.Stratum
@@ -39,7 +40,7 @@ namespace MiningCore.Stratum
         private readonly PoolStats poolStats = new PoolStats();
         private readonly JsonSerializerSettings serializerSettings;
         private object currentJobParams = null;
-        private object currentJobParamsLock = new object();
+        private readonly object currentJobParamsLock = new object();
 
         #region API-Surface
 
@@ -254,12 +255,12 @@ namespace MiningCore.Stratum
                 {
                     new object[]
                     {
-                        StratumConstants.MsgMiningNotify, response.SubscriptionId
+                        StratumConstants.MsgMiningNotify, client.SubscriptionId
                     },
                 },
-                response.Extranonce1,
-                response.Extranonce2Length
-            };
+            }
+            .Concat(response)
+            .ToArray();
 
             client.Respond(data, request.Id);
 
@@ -271,7 +272,15 @@ namespace MiningCore.Stratum
             {
                 if (currentJobParams != null)
                 {
-                    client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+                    client.Notify(StratumConstants.MsgMiningNotify,
+                        //new object[]
+                        //{
+                        //    "2", "08d0655c78d07c0602b3c937cd316604b64e54bfeb9e7968aa4c110800000001",
+                        //    "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff1f02d50104da536c5908",
+                        //    "0d2f6e6f64655374726174756d2f00000000040000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9c027a824000000001976a9141bf1c824cd6028bcd65732374baea5dca5fed57088ac180d8f00000000001976a91446504cf062e1f820789c752d336923c2b80fdcee88ac68890900000000001976a91446504cf062e1f820789c752d336923c2b80fdcee88ac00000000",
+                        //    new object[0], "20000000", "207fffff", "596c53da", false
+                        //});
+                    currentJobParams);
                 }
             }
         }
@@ -339,7 +348,7 @@ namespace MiningCore.Stratum
 
         private void BroadcastJob(object jobParams)
         {
-            BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams);
+            BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client => client.IsSubscribed);
         }
     }
 }

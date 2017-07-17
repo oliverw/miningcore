@@ -38,7 +38,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public Task<SubscribeResponse> HandleWorkerSubscribeAsync(StratumClient worker)
+        public Task<object[]> HandleWorkerSubscribeAsync(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             
@@ -51,11 +51,10 @@ namespace MiningCore.Blockchain.Bitcoin
             worker.WorkerContext = job;
 
             // setup response data
-            var responseData = new SubscribeResponse
+            var responseData = new object[]
             {
-                SubscriptionId = worker.SubscriptionId,
-                Extranonce1 = job.ExtraNonce1,
-                Extranonce2Length = extraNonceProvider.Size
+                job.ExtraNonce1,
+                extraNonceProvider.Size
             };
 
             return Task.FromResult(responseData);
