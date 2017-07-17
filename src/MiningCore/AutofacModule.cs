@@ -7,6 +7,7 @@ using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.MininigPool;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -46,10 +47,10 @@ namespace MiningCore
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
-            builder.RegisterType<StratumServer>()
+            builder.RegisterType<StratumClient>()
                 .AsSelf();
 
-            builder.RegisterType<StratumClient>()
+            builder.RegisterType<Pool>()
                 .AsSelf();
 
             builder.RegisterType<BlockchainDemon>()

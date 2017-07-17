@@ -10,6 +10,16 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain
 {
+    public class NetworkStats
+    {
+        public double HashRate { get; set; }
+        public DateTime LastBlockTime { get; set; }
+        public double Difficulty { get; set; }
+        public int BlockHeight { get; set; }
+        public int ConnectedPeers { get; set; }
+        public string RewardType { get; set; }
+    }
+
     public interface IBlockchainJobManager
     {
         Task StartAsync(PoolConfig poolConfig, StratumServer stratum);
@@ -20,5 +30,6 @@ namespace MiningCore.Blockchain
         Task<bool> HandleWorkerSubmitAsync(StratumClient worker, object submission);
 
         IObservable<object> Jobs { get; }
+        NetworkStats NetworkStats { get; }
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MiningCore.Blockchain.Bitcoin.Messages
+namespace MiningCore.Blockchain.Bitcoin.Commands
 {
     public class GetInfoResponse
     {

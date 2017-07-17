@@ -42,12 +42,14 @@ namespace MiningCore.Blockchain
 
             SetupAuthorizer();
             await StartDaemonAsync();
+            await EnsureDaemonsSynchedAsync();
+            await PostStartInitAsync();
             SetupJobPolling();
         }
 
         #endregion // API-Surface
 
-        private void SetupAuthorizer()
+        protected virtual void SetupAuthorizer()
         {
             authorizer = ctx.ResolveNamed<IWorkerAuthorizer>(poolConfig.Authorizer.ToString());
         }
@@ -59,29 +61,29 @@ namespace MiningCore.Blockchain
         /// <param name="workername">Name of worker requesting authorization</param>
         /// <param name="password">The password</param>
         /// <returns></returns>
-        public Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password)
+        public virtual Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workername), $"{nameof(workername)} must not be empty");
 
-            return authorizer.AuthorizeAsync((IBlockchainJobManager) this, worker.RemoteAddress, workername, password);
+            return authorizer.AuthorizeAsync((IBlockchainJobManager) this, worker.RemoteEndpoint, workername, password);
         }
         
-        protected async Task StartDaemonAsync()
+        protected virtual async Task StartDaemonAsync()
         {
             await daemon.StartAsync(poolConfig);
 
             while (!await IsDaemonHealthy())
             {
-                logger.Info(() => $"Waiting for coin-daemons to come online ...");
+                logger.Info(() => $"[{poolConfig.Coin.Name}] Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(5));
             }
 
-            logger.Info(() => $"All coin-daemons are online");
+            logger.Info(() => $"[{poolConfig.Coin.Name}] All coin-daemons are online");
         }
 
-        protected void SetupJobPolling()
+        protected virtual void SetupJobPolling()
         {
             Jobs = Observable.Create<object>(observer =>
             {
@@ -114,7 +116,7 @@ namespace MiningCore.Blockchain
                         }
                         catch (Exception ex)
                         {
-                            logger.Warning(() => $"Error during job polling: {ex.Message}");
+                            logger.Warning(() => $"[{poolConfig.Coin.Name}] Error during job polling: {ex.Message}");
                         }
                     }
                 }, TaskCreationOptions.LongRunning);
@@ -131,6 +133,9 @@ namespace MiningCore.Blockchain
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
         /// </summary>
         protected abstract Task<bool> IsDaemonHealthy();
+
+        protected abstract Task EnsureDaemonsSynchedAsync();
+        protected abstract Task PostStartInitAsync(); 
 
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected

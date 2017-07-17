@@ -1,15 +1,7 @@
 ﻿using System;
 
-namespace MiningCore.Stratum
+namespace MiningCore.MininigPool
 {
-    public class NetworkStats
-    {
-        public float HashRate { get; set; }
-        public DateTime LastBlockTime { get; set; }
-        public float Difficulty { get; set; }
-        public int BlockHeight { get; set; }
-    }
-
     public class PoolStats
     {
         public DateTime LastBlockTime { get; set; }

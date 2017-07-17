@@ -35,10 +35,10 @@ namespace MiningCore.Stratum
 
         public IObservable<JsonRpcRequest> Requests { get; private set; }
         public string SubscriptionId => rpcCon.ConnectionId;
-        public IPEndPoint RemoteAddress => rpcCon.RemoteEndPoint;
+        public PoolEndpoint PoolEndpoint => config;
+        public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
         public bool IsAuthorized { get; set; } = false;
         public bool IsSubscribed => WorkerContext != null;
-        public PoolEndpoint Config => config;
         public DateTime? LastActivity { get; set; }
         public object WorkerContext { get; set; }
         public double Difficulty { get; set; }

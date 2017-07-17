@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MiningCore.Configuration;
 using MiningCore.Configuration.Extensions;
+using MiningCore.MininigPool;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -31,6 +32,7 @@ namespace MiningCore
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
 
+                Logo();
                 Bootstrap();
                 var config = ReadConfig(configFile);
 
@@ -142,13 +144,46 @@ namespace MiningCore
             }
         }
 
+        private static void Logo()
+        {
+            Console.WriteLine($@"
+    __  ____       _             ______                   
+   /  |/  (_)___  (_)___  ____ _/ ____/___  _____________ 
+  / /|_/ / / __ \/ / __ \/ __ `/ /_  / __ \/ ___/ ___/ _ \
+ / /  / / / / / / / / / / /_/ / __/ / /_/ / /  / /__/  __/
+/_/  /_/_/_/ /_/_/_/ /_/\__, /_/    \____/_/   \___/\___/ 
+                       /____/                             
+");
+            Console.WriteLine($"Copyright (c) 2017 poolmining.org\n");
+            Console.WriteLine($"Please contribute to the development of the project by donating:\n");
+            Console.WriteLine($"BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
+            Console.WriteLine($"ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
+            Console.WriteLine($"LTC - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
+            Console.WriteLine($"XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+            Console.WriteLine();
+        }
+
+
         private static async void Start(PoolClusterConfig config)
         {
-            foreach (var poolConfig in config.Pools)
+            try
             {
-                var pool = container.Resolve<StratumServer>();
-                await pool.StartAsync(poolConfig);
-                servers.Add(pool);
+                foreach (var poolConfig in config.Pools)
+                {
+                    var pool = container.Resolve<Pool>();
+                    await pool.StartAsync(poolConfig);
+                    servers.Add(pool);
+                }
+            }
+
+            catch (PoolStartupAbortException ex)
+            {
+                logger.Error(() => ex.Message);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(() => $"Error starting pools", ex);
             }
         }
     }
