@@ -47,11 +47,13 @@ namespace MiningCore.JsonRpc
                 .Publish()
                 .RefCount();
 
+            // buffer until newline detected
             var incomingLines = incomingChars
                 .Buffer(incomingChars.Where(c => c == '\n' || c == '\r')) // scan for newline
                 .TakeWhile(ValidateInput)  // flood protetion
                 .Select(c => new string(c.ToArray()).Trim()); // transform buffer back to string
 
+            // ignore empty lines
             var incomingNonEmptyLines = incomingLines
                 .Where(x => x.Length > 0);
 
