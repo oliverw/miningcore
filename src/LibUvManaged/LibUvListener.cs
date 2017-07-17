@@ -54,11 +54,11 @@ namespace LibUvManaged
                 var listenState = Tuple.Create(this, connectionHandler);
                 socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
-                logger.Info(() => $"Listening on {endPoint}");
+                logger.Debug(() => $"Listening on {endPoint}");
 
                 loop.Run();
 
-                logger.Info(() => $"Stopped listening on {endPoint}");
+                logger.Debug(() => $"Stopped listening on {endPoint}");
 
                 // close handles
                 uv.walk(loop, (handle, state) => uv.close(handle, null), IntPtr.Zero);

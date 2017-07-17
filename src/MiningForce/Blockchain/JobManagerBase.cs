@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
@@ -27,6 +28,7 @@ namespace MiningForce.Blockchain
         private IWorkerAuthorizer authorizer;
         protected PoolConfig poolConfig;
         protected readonly ILogger logger;
+        protected long jobId = 1;
 
         #region API-Surface
 
@@ -45,6 +47,8 @@ namespace MiningForce.Blockchain
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
             SetupJobPolling();
+
+            logger.Info(() => $"[{poolConfig.Coin.Name}] Manager started");
         }
 
         #endregion // API-Surface
@@ -127,6 +131,11 @@ namespace MiningForce.Blockchain
             })
             .Publish()
             .RefCount();
+        }
+
+        protected long NextJobId()
+        {
+            return Interlocked.Increment(ref jobId);
         }
 
         /// <summary>

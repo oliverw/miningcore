@@ -6,6 +6,7 @@ using CodeContracts;
 using Microsoft.Extensions.Logging;
 using MiningForce.Blockchain.Bitcoin.Commands;
 using MiningForce.Configuration.Extensions;
+using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Stratum;
@@ -28,6 +29,7 @@ namespace MiningForce.Blockchain.Bitcoin
             this.extraNonceProvider = extraNonceProvider;
         }
 
+        private BitcoinJob job;
         private readonly ExtraNonceProvider extraNonceProvider;
         private readonly NetworkStats networkStats = new NetworkStats();
         private bool isPoS;
@@ -53,8 +55,7 @@ namespace MiningForce.Blockchain.Bitcoin
             },
         };
 
-        private readonly object blockTemplateLock = new object();
-        private GetBlockTemplateResponse blockTemplate;
+        private readonly object jobLock = new object();
 
         #region API-Surface
 
@@ -63,7 +64,6 @@ namespace MiningForce.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             var result = await daemon.ExecuteCmdAnyAsync<string[], ValidateAddressResponse>(ValidateAddressCommand, new[] { address });
-
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -201,6 +201,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Unable detect block submission RPC method");
 
             // update stats
+            networkStats.Network = isTestNet ? "Testnet" : (isRegTestNet ? "Regtest" : "Main");
             networkStats.BlockHeight = infoResponse.Response.Blocks;
             networkStats.Difficulty = miningInfoResponse.Response.Difficulty;
             networkStats.HashRate = miningInfoResponse.Response.NetworkHashps;
@@ -212,14 +213,14 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             var result = await GetBlockTemplateAsync();
 
-            lock (blockTemplateLock)
+            lock (jobLock)
             {
-                var isNew = blockTemplate == null && result != null || 
-                    blockTemplate?.PreviousBlockhash != result?.PreviousBlockhash;
+                var isNew = (job == null && result != null) ||
+                    (job != null && result != null && job.BlockTemplate.PreviousBlockhash != result.PreviousBlockhash);
 
                 if (isNew)
                 {
-                    blockTemplate = result;
+                    job = new BitcoinJob(NextJobId(), result);
 
                     // update stats
                     networkStats.LastBlockTime = DateTime.UtcNow;
@@ -231,7 +232,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
         protected override object GetJobParamsForStratum()
         {
-            return new object();
+            return job.GetJobParams();
         }
 
         #endregion // Overrides

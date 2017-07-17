@@ -12,6 +12,7 @@ namespace MiningForce.Blockchain
 {
     public class NetworkStats
     {
+        public string Network { get; set; }
         public double HashRate { get; set; }
         public DateTime LastBlockTime { get; set; }
         public double Difficulty { get; set; }

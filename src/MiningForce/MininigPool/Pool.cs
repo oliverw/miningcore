@@ -18,6 +18,7 @@ using NLog.LayoutRenderers.Wrappers;
 // TODO:
 // - periodic job re-broadcast
 // - periodic update of pool hashrate
+// - banning based on invalid shares
 
 namespace MiningForce.MininigPool
 {
@@ -31,7 +32,7 @@ namespace MiningForce.MininigPool
         }
 
         private readonly PoolStats poolStats = new PoolStats();
-        private object currentJobParams = null;
+        private object currentJobParams;
         private readonly object currentJobParamsLock = new object();
         private IBlockchainJobManager manager;
 
@@ -69,8 +70,6 @@ namespace MiningForce.MininigPool
             await manager.StartAsync(poolConfig, this);
 
             manager.Jobs.Subscribe(OnNewJob);
-
-            logger.Info(() => $"[{poolConfig.Coin.Name}] Job Manager started");
         }
 
         protected override void OnClientConnected(StratumClient client)
@@ -185,19 +184,19 @@ namespace MiningForce.MininigPool
                 }
 
                 // get or create context
-                VarDiffContext ctx = null;
+                VarDiffContext varDiffContext;
 
                 lock (varDiffContexts)
                 {
-                    if (!varDiffContexts.TryGetValue(client, out ctx))
+                    if (!varDiffContexts.TryGetValue(client, out varDiffContext))
                     {
-                        ctx = new VarDiffContext();
-                        varDiffContexts.Add(client, ctx);
+                        varDiffContext = new VarDiffContext();
+                        varDiffContexts.Add(client, varDiffContext);
                     }
                 }
 
                 // update it
-                var newDiff = varDiffManager.Update(ctx, client.Difficulty);
+                var newDiff = varDiffManager.Update(varDiffContext, client.Difficulty);
                 if (newDiff != null)
                     client.EnqueueNewDifficulty(newDiff.Value);
             }
@@ -248,6 +247,7 @@ namespace MiningForce.MininigPool
             var msg = $@"
 
 Mining Pool:            {poolConfig.Coin.Name} 
+Network Connected:      {NetworkStats.Network}
 Detected Reward Type:   {NetworkStats.RewardType}
 Current Block Height:   {NetworkStats.BlockHeight}
 Current Connect Peers:  {NetworkStats.ConnectedPeers}
