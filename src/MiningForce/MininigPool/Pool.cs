@@ -159,6 +159,12 @@ namespace MiningForce.MininigPool
                 var requestParams = request.Params?.ToObject<string[]>();
                 var accepted = await manager.HandleWorkerSubmitAsync(client, requestParams);
                 client.Respond(accepted, request.Id);
+
+                // update client stats
+                if (accepted)
+                    client.Stats.ValidShares++;
+                else
+                    client.Stats.InvalidShares++;
             }
         }
 
