@@ -9,11 +9,12 @@ using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
 using MiningForce.Stratum;
+using MiningForce.VarDiff;
 using Newtonsoft.Json;
 
 // TODO:
-// - send difficulty & varDiff
 // - periodic job re-broadcast
+// - periodic update of pool hashrate
 
 namespace MiningForce.MininigPool
 {
@@ -31,7 +32,7 @@ namespace MiningForce.MininigPool
         private readonly object currentJobParamsLock = new object();
         private IBlockchainJobManager manager;
 
-        private static string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
+        private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
         #region API-Surface
 
@@ -65,6 +66,9 @@ namespace MiningForce.MininigPool
 
         protected override void OnClientConnected(StratumClient client)
         {
+            if(client.PoolEndpoint.VarDiff != null)
+                client.VarDiffContext = new VarDiffContext();
+
             // update stats
             lock (clients)
             {
@@ -103,7 +107,7 @@ namespace MiningForce.MininigPool
             client.Respond(data, request.Id);
 
             // Send difficulty
-            client.Notify(StratumConstants.MsgSetDifficulty, new object[] { client.PoolEndpoint.Difficulty });
+            client.Notify(StratumConstants.MsgSetDifficulty, new object[] { client.Difficulty });
 
             // Send current job if available
             lock (currentJobParamsLock)
@@ -143,6 +147,19 @@ namespace MiningForce.MininigPool
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
+                // update vardiff
+                VarDiffManager varDiffManager = null;
+
+                lock (ports)
+                {
+                    varDiffManager = ports[client.PoolEndpoint.Port].VarDiff;
+                }
+
+                var newDiff = varDiffManager?.Update(client.VarDiffContext, client.Difficulty);
+                if (newDiff != null)
+                    client.EnqueueNewDifficulty(newDiff.Value);
+
+                // submit 
                 var requestParams = request.Params?.ToObject<string[]>();
                 var accepted = await manager.HandleWorkerSubmitAsync(client, requestParams);
                 client.Respond(accepted, request.Id);
@@ -164,7 +181,17 @@ namespace MiningForce.MininigPool
 
         private void BroadcastJob(object jobParams)
         {
-            BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client => client.IsSubscribed);
+            BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client =>
+            {
+                if (client.IsSubscribed)
+                {
+                    // if the client has a pending difficulty change, apply it now
+                    if(client.ApplyPendingDifficulty())
+                        client.Notify(StratumConstants.MsgSetDifficulty, new object[] { client.Difficulty });
+                }
+
+                return false;
+            });
         }
 
         private static string FormatHashRate(double hashrate)

@@ -45,6 +45,7 @@ namespace MiningForce.Configuration
 
     public class PoolEndpoint
     {
+        public int Port { get; set; }
         public string ListenAddress { get; set; }
         public float Difficulty { get; set; }
         public VarDiffConfig VarDiff { get; set; }
@@ -52,11 +53,30 @@ namespace MiningForce.Configuration
 
     public class VarDiffConfig
     {
-        public double MinDiff { get; set; }
-        public double MaxDiff { get; set; }
-        public double TargetTime { get; set; }
-        public double RetargetTime { get; set; }
-        public double VariancePercent { get; set; }
+        /// <summary>
+        /// Minimum difficulty
+        /// </summary>
+        public int MinDiff { get; set; }
+
+        /// <summary>
+        /// Network difficulty will be used if it is lower than this
+        /// </summary>
+        public int MaxDiff { get; set; }
+
+        /// <summary>
+        /// Try to get 1 share per this many seconds
+        /// </summary>
+        public int TargetTime { get; set; }
+
+        /// <summary>
+        /// Check to see if we should retarget every this many seconds
+        /// </summary>
+        public int RetargetTime { get; set; }
+
+        /// <summary>
+        /// Allow time to very this % from target without retargeting
+        /// </summary>
+        public int VariancePercent { get; set; }
     }
 
     public class BanningConfig

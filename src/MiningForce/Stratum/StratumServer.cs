@@ -14,6 +14,7 @@ using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
+using MiningForce.VarDiff;
 using Newtonsoft.Json;
 
 namespace MiningForce.Stratum
@@ -30,53 +31,11 @@ namespace MiningForce.Stratum
 
         protected readonly IComponentContext ctx;
         protected readonly ILogger<StratumServer> logger;
-        protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
+        protected readonly Dictionary<int, (LibUvListener Listener, VarDiffManager VarDiff)> ports = 
+            new Dictionary<int, (LibUvListener Listener, VarDiffManager VarDiff)>();
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected PoolConfig poolConfig;
         private readonly JsonSerializerSettings serializerSettings;
-
-        private void DisconnectClient(StratumClient client)
-        {
-            Contract.RequiresNonNull(client, nameof(client));
-
-            var subscriptionId = client.SubscriptionId;
-            client.Disconnect();
-
-            if (!string.IsNullOrEmpty(subscriptionId))
-            {
-                lock (clients)
-                {
-                    clients.Remove(subscriptionId);
-                }
-            }
-
-            OnClientDisconnected(subscriptionId);
-        }
-
-        protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)
-        {
-            BroadcastNotification(new JsonRpcRequest<T>(method, payload, null), filter);
-        }
-
-        protected void BroadcastNotification<T>(JsonRpcRequest<T> notification, Func<StratumClient, bool> filter = null)
-        {
-            Contract.RequiresNonNull(notification, nameof(notification));
-
-            StratumClient[] tmp;
-
-            lock (clients)
-            {
-                tmp = clients.Values.ToArray();
-            }
-
-            foreach (var client in tmp)
-            {
-                if (filter != null && !filter(client))
-                    continue;
-
-                client.Notify(notification);
-            }
-        }
 
         protected void StartListeners(PoolConfig poolConfig)
         {
@@ -86,6 +45,9 @@ namespace MiningForce.Stratum
             foreach (var port in poolConfig.Ports.Keys)
             {
                 var endpointConfig = poolConfig.Ports[port];
+
+                // fill in the blanks
+                endpointConfig.Port = port;
 
                 // set listen addresse(s)
                 var listenAddress = IPAddress.Parse("127.0.0.1");
@@ -101,9 +63,14 @@ namespace MiningForce.Stratum
                 // create the listener
                 var listener = new LibUvListener(ctx);
 
+                // create vardiff manager
+                VarDiffManager varDiffManager = null;
+                if (endpointConfig.VarDiff != null)
+                    varDiffManager = new VarDiffManager(endpointConfig.VarDiff);
+
                 lock (ports)
                 {
-                    ports[port] = listener;
+                    ports[port] = (listener, varDiffManager);
                 }
 
                 // host it and its message loop in a dedicated background thread
@@ -132,7 +99,7 @@ namespace MiningForce.Stratum
                     clients[subscriptionId] = client;
                 }
 
-                client.Init(con, ctx);
+                client.Init(con, ctx, endpointConfig.Difficulty);
 
                 // monitor client requests
                 client.Requests
@@ -161,6 +128,24 @@ namespace MiningForce.Stratum
             logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.SubscriptionId}] Received End-of-Stream from client");
 
             DisconnectClient(client);
+        }
+
+        private void DisconnectClient(StratumClient client)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            var subscriptionId = client.SubscriptionId;
+            client.Disconnect();
+
+            if (!string.IsNullOrEmpty(subscriptionId))
+            {
+                lock (clients)
+                {
+                    clients.Remove(subscriptionId);
+                }
+            }
+
+            OnClientDisconnected(subscriptionId);
         }
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
@@ -222,6 +207,31 @@ namespace MiningForce.Stratum
                         OnClientConnected(client);
                     }
                 });
+        }
+
+        protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)
+        {
+            BroadcastNotification(new JsonRpcRequest<T>(method, payload, null), filter);
+        }
+
+        protected void BroadcastNotification<T>(JsonRpcRequest<T> notification, Func<StratumClient, bool> filter = null)
+        {
+            Contract.RequiresNonNull(notification, nameof(notification));
+
+            StratumClient[] tmp;
+
+            lock (clients)
+            {
+                tmp = clients.Values.ToArray();
+            }
+
+            foreach (var client in tmp)
+            {
+                if (filter != null && !filter(client))
+                    continue;
+
+                client.Notify(notification);
+            }
         }
 
         protected abstract void OnClientConnected(StratumClient client);
