@@ -22,7 +22,7 @@ namespace MiningForce.Crypto
         /// <summary>
         /// The steps in tree.
         /// </summary>
-        public IList<byte[]> Steps { get; private set; }
+        public IList<byte[]> Steps { get; }
 
         /// <summary>
         /// List of hashes, will be used for calculation of merkle root. 

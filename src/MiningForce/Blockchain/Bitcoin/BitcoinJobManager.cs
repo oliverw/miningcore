@@ -22,7 +22,7 @@ namespace MiningForce.Blockchain.Bitcoin
             BlockchainDemon daemon,
             ExtraNonceProvider extraNonceProvider) : base(ctx, logger, daemon)
         {
-            this.extraNonceProvider = extraNonceProvider;
+			this.extraNonceProvider = extraNonceProvider;
         }
 
         private BitcoinJob job;
@@ -51,11 +51,9 @@ namespace MiningForce.Blockchain.Bitcoin
             },
         };
 
-        private readonly object jobLock = new object();
+		#region API-Surface
 
-        #region API-Surface
-
-        public async Task<bool> ValidateAddressAsync(string address)
+		public async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -69,7 +67,9 @@ namespace MiningForce.Blockchain.Bitcoin
             
             // setup worker context
             var context = GetWorkerContext(worker);
-            context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
+
+			// assign unique ExtraNonce1 to worker (miner)
+			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
 
             // setup response data
             var responseData = new object[]
@@ -134,7 +134,9 @@ namespace MiningForce.Blockchain.Bitcoin
 
         protected override async Task PostStartInitAsync()
         {
-            var tasks = new Task[] 
+	        job = new BitcoinJob(poolConfig);
+
+			var tasks = new Task[] 
             {
                 daemon.ExecuteCmdAnyAsync<string[], ValidateAddressResponse>(ValidateAddressCommand, 
                     new[] { poolConfig.Address }),
@@ -166,8 +168,8 @@ namespace MiningForce.Blockchain.Bitcoin
             if (!validateAddressResponse.Response.IsValid)
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            if (!validateAddressResponse.Response.IsMine)
-                throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon does not own pool-address '{poolConfig.Address}'");
+            //if (!validateAddressResponse.Response.IsMine)
+            //    throw new PoolStartupAbortException($"[{poolConfig.Coin.Name}] Daemon does not own pool-address '{poolConfig.Address}'");
 
             isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
 
@@ -201,19 +203,16 @@ namespace MiningForce.Blockchain.Bitcoin
             networkStats.RewardType = !isPoS ? "POW" : "POS";
         }
 
-        protected override async Task<bool> UpdateJobFromDaemon()
+        protected override async Task<bool> UpdateJobFromNetwork()
         {
             var result = await GetBlockTemplateAsync();
 
-            lock (jobLock)
+            lock (job)
             {
-                var isNew = (job == null && result != null) ||
-                    (job != null && result != null && job.BlockTemplate.PreviousBlockhash != result.PreviousBlockhash);
+	            var isNew = job.ApplyTemplate(result);
 
                 if (isNew)
                 {
-                    job = new BitcoinJob(NextJobId(), result);
-
                     // update stats
                     networkStats.LastBlockTime = DateTime.UtcNow;
                 }
@@ -224,12 +223,15 @@ namespace MiningForce.Blockchain.Bitcoin
 
         protected override object GetJobParamsForStratum()
         {
-            return job.GetJobParams();
+	        lock (job)
+	        {
+		        return job.GetJobParams();
+	        }
         }
 
-        #endregion // Overrides
+		#endregion // Overrides
 
-        private async Task<GetBlockTemplateResponse> GetBlockTemplateAsync()
+		private async Task<GetBlockTemplateResponse> GetBlockTemplateAsync()
         {
             var result = await daemon.ExecuteCmdAnyAsync<object[], GetBlockTemplateResponse>(
                 GetBlockTemplateCommand, getBlockTemplateParams);
@@ -237,7 +239,7 @@ namespace MiningForce.Blockchain.Bitcoin
             return result.Response;
         }
 
-        private async Task ShowDaemonSyncProgressAsync()
+		private async Task ShowDaemonSyncProgressAsync()
         {
             var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(GetInfoCommand);
 

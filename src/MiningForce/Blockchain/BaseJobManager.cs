@@ -31,7 +31,6 @@ namespace MiningForce.Blockchain
         private IWorkerAuthorizer authorizer;
         protected PoolConfig poolConfig;
         protected readonly ILogger logger;
-        protected long jobId = 1;
 
         protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
             new ConditionalWeakTable<StratumClient, TWorkerContext>();
@@ -109,7 +108,7 @@ namespace MiningForce.Blockchain
                             // fetch params from daemon(s)
                             var start = DateTime.UtcNow;
 
-                            if (await UpdateJobFromDaemon())
+                            if (await UpdateJobFromNetwork())
                             {
                                 var jobParams = GetJobParamsForStratum();
 
@@ -155,11 +154,6 @@ namespace MiningForce.Blockchain
             return context;
         }
 
-        protected long NextJobId()
-        {
-            return Interlocked.Increment(ref jobId);
-        }
-
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
         /// </summary>
@@ -171,7 +165,7 @@ namespace MiningForce.Blockchain
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
         /// </summary>
-        protected abstract Task<bool> UpdateJobFromDaemon();
+        protected abstract Task<bool> UpdateJobFromNetwork();
 
         /// <summary>
         /// Packages current job parameters for stratum update
