@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,12 +16,13 @@ namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(PoolConfig poolConfig, ExtraNonceProvider extraNonceProvider)
+	    public BitcoinJob(PoolConfig poolConfig, ExtraNonceProvider extraNonceProvider, bool isPoS)
 	    {
 		    this.poolConfig = poolConfig;
 
 			poolAddress = BitcoinAddress.Create(poolConfig.Address);
 		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
+		    this.isPoS = isPoS;
 	    }
 
 		private long jobId = 1;
@@ -28,7 +30,15 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private GetBlockTemplateResponse blockTemplate;
 	    private readonly BitcoinAddress poolAddress;
 	    private readonly PoolConfig poolConfig;
+	    private readonly bool isPoS;
+
+		// serialization constants
 		private static readonly Script scriptSigFinal = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/")));
+	    private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
+	    private static uint txInputCount = 1u;
+	    private static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
+	    private static uint txInSequence = 0;
+	    private static uint txLockTime = 0;
 
 		///////////////////////////////////////////
 		// GetJobParams related properties
@@ -37,9 +47,9 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private string[] merkleBranches;
 	    private string coinbaseInitial;
 	    private string coinbaseFinal;
-	    private string version;
+	    private uint version;
+	    private uint timestamp;
 	    private string encodedDifficulty;
-	    private string timestamp;
 
 	    public bool ApplyTemplate(GetBlockTemplateResponse update)
 		{
@@ -53,8 +63,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			// fields for miner
 			encodedDifficulty = blockTemplate.Bits;
-            timestamp = BitConverter.GetBytes(blockTemplate.CurTime.ToBigEndian()).ToHexString();
-            version = BitConverter.GetBytes(blockTemplate.Version.ToBigEndian()).ToHexString();
+            timestamp = blockTemplate.CurTime;
+            version = blockTemplate.Version;
 
             previousBlockHashReversed = blockTemplate.PreviousBlockhash
                 .HexToByteArray()
@@ -86,14 +96,60 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 			// generate script parts
 		    var scriptSigP1 = GenerateScriptSigInitial(extraNoncePlaceHolderLength);
-		    var scriptSigP2 = scriptSigFinal;
+		    var scriptSigP1Bytes = scriptSigP1.ToBytes();
+			var scriptSigP2 = scriptSigFinal;
+		    var scriptSigP2Bytes = scriptSigP2.ToBytes();
 
 			// output transaction
-		    var tx = CreateOutputTransaction();
-		    var txHex = tx.ToHex();
-	    }
+			var txOut = CreateOutputTransaction();
+		    var txOutBytes = txOut.ToBytes();
 
-	    private Script GenerateScriptSigInitial(int extraNoncePlaceholderLength)
+			// build coinbase initial
+			using (var stream = new MemoryStream())
+			{
+				var bs = new BitcoinStream(stream, true);
+
+				// version
+				bs.ReadWrite(ref version);
+
+				// timestamp for POS coins
+				if(isPoS)
+					bs.ReadWrite(ref timestamp);
+
+				// serialize (simulated) input tx
+				bs.ReadWriteAsVarInt(ref txInputCount);
+				bs.ReadWrite(ref sha256Empty);
+				bs.ReadWriteAsVarInt(ref txInPrevOutIndex);
+
+				// signature script part 1
+				var sigScriptLength = (uint) (scriptSigP1.Length + extraNoncePlaceHolderLength + scriptSigP2.Length);
+				bs.ReadWriteAsVarInt(ref sigScriptLength);
+				bs.ReadWrite(ref scriptSigP1Bytes);
+
+				// done
+				coinbaseInitial = stream.ToArray().ToHexString();
+			}
+
+		    // build coinbase final
+		    using (var stream = new MemoryStream())
+		    {
+			    var bs = new BitcoinStream(stream, true);
+
+			    // signature script part 2
+			    bs.ReadWrite(ref scriptSigP2Bytes);
+
+				// serialize (simulated) input tx
+			    bs.ReadWrite(ref txOutBytes);
+
+			    // misc
+			    bs.ReadWrite(ref txLockTime);
+
+				// done
+				coinbaseFinal = stream.ToArray().ToHexString();
+		    }
+		}
+
+		private Script GenerateScriptSigInitial(int extraNoncePlaceholderLength)
 	    {
 		    var placeholder = Enumerable.Repeat((byte) 0, extraNoncePlaceholderLength).ToArray();
 			var ops = new List<Op>();
@@ -119,11 +175,9 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var blockReward = new Money(blockTemplate.CoinbaseValue);
 		    var reward = blockReward;
 		    var rewardToPool = blockReward;
-
-		    // build tx
 		    var tx = new Transaction();
 
-		    // Payee output (DASH Coin only)
+		    // Payee funds (DASH Coin only)
 		    if (!string.IsNullOrEmpty(blockTemplate.Payee))
 		    {
 			    var payeeAddress = BitcoinAddress.Create(blockTemplate.Payee);
@@ -135,7 +189,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    tx.AddOutput(payeeReward, payeeAddress);
 		    }
 
-		    // Reward Recipient Outputs
+		    // Distribute funds to configured reward recipients
 		    foreach (var recipient in poolConfig.RewardRecipients)
 		    {
 			    var recipientAddress = BitcoinAddress.Create(recipient.Address);
@@ -147,7 +201,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    tx.AddOutput(recipientReward, recipientAddress);
 		    }
 
-		    // Pool Output
+		    // Finally distribute remaining funds to pool
 		    tx.AddOutput(rewardToPool, poolAddress);
 
 		    // validate it

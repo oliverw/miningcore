@@ -134,8 +134,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
         protected override async Task PostStartInitAsync()
         {
-	        job = new BitcoinJob(poolConfig, extraNonceProvider);
-
 			var tasks = new Task[] 
             {
                 daemon.ExecuteCmdAnyAsync<string[], ValidateAddressResponse>(ValidateAddressCommand, 
@@ -201,9 +199,12 @@ namespace MiningForce.Blockchain.Bitcoin
             networkStats.HashRate = miningInfoResponse.Response.NetworkHashps;
             networkStats.ConnectedPeers = infoResponse.Response.Connections;
             networkStats.RewardType = !isPoS ? "POW" : "POS";
-        }
 
-        protected override async Task<bool> UpdateJobFromNetwork()
+			// init job
+	        job = new BitcoinJob(poolConfig, extraNonceProvider, isPoS);
+		}
+
+		protected override async Task<bool> UpdateJobFromNetwork()
         {
             var result = await GetBlockTemplateAsync();
 

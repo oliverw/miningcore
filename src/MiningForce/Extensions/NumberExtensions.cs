@@ -14,5 +14,13 @@ namespace MiningForce.Extensions
 
             return value;
         }
-    }
+
+	    public static UInt32 ToLittleEndian(this UInt32 value)
+	    {
+		    if (!BitConverter.IsLittleEndian)
+				return (uint)IPAddress.HostToNetworkOrder((int)value);
+
+			return value;
+	    }
+	}
 }
