@@ -28,6 +28,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private GetBlockTemplateResponse blockTemplate;
 	    private readonly BitcoinAddress poolAddress;
 	    private readonly PoolConfig poolConfig;
+		private static readonly Script scriptSigFinal = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/")));
 
 		///////////////////////////////////////////
 		// GetJobParams related properties
@@ -85,7 +86,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 			// generate script parts
 		    var scriptSigP1 = GenerateScriptSigInitial(extraNoncePlaceHolderLength);
-		    var scriptSigP2 = GenerateScriptSigFinal("/MiningForce/");
+		    var scriptSigP2 = scriptSigFinal;
 
 			// output transaction
 		    var tx = CreateOutputTransaction();
@@ -111,11 +112,6 @@ namespace MiningForce.Blockchain.Bitcoin
 		    ops.Add(Op.GetPushOp(placeholder));
 
 			return new Script(ops);
-	    }
-
-	    private Script GenerateScriptSigFinal(string signature)
-	    {
-		    return new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(signature)));
 	    }
 
 	    private Transaction CreateOutputTransaction()
