@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using MiningForce.Blockchain.Bitcoin.Commands;
 using MiningForce.Configuration;
@@ -13,14 +15,16 @@ namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(PoolConfig poolConfig)
+	    public BitcoinJob(PoolConfig poolConfig, ExtraNonceProvider extraNonceProvider)
 	    {
 		    this.poolConfig = poolConfig;
 
 			poolAddress = BitcoinAddress.Create(poolConfig.Address);
+		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
 	    }
 
 		private long jobId = 1;
+	    private readonly int extraNoncePlaceHolderLength;
 	    private GetBlockTemplateResponse blockTemplate;
 	    private readonly BitcoinAddress poolAddress;
 	    private readonly PoolConfig poolConfig;
@@ -79,55 +83,83 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private void BuildCoinbase()
 	    {
+			// generate script parts
+		    var scriptSigP1 = GenerateScriptSigInitial(extraNoncePlaceHolderLength);
+		    var scriptSigP2 = GenerateScriptSigFinal("/MiningForce/");
+
+			// output transaction
+		    var tx = CreateOutputTransaction();
+		    var txHex = tx.ToHex();
+	    }
+
+	    private Script GenerateScriptSigInitial(int extraNoncePlaceholderLength)
+	    {
+		    var placeholder = Enumerable.Repeat((byte) 0, extraNoncePlaceholderLength).ToArray();
+			var ops = new List<Op>();
+
+			// push block height
+		    ops.Add(Op.GetPushOp(blockTemplate.Height));
+
+			// optionally push aux-flags
+			if(!string.IsNullOrEmpty(blockTemplate.CoinbaseAux?.Flags))
+				ops.Add(Op.GetPushOp(blockTemplate.CoinbaseAux.Flags.HexToByteArray()));
+
+		    // push timestamp
+		    ops.Add(Op.GetPushOp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()));
+
+			// push placeholder
+		    ops.Add(Op.GetPushOp(placeholder));
+
+			return new Script(ops);
+	    }
+
+	    private Script GenerateScriptSigFinal(string signature)
+	    {
+		    return new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(signature)));
+	    }
+
+	    private Transaction CreateOutputTransaction()
+	    {
 		    var blockReward = new Money(blockTemplate.CoinbaseValue);
 		    var reward = blockReward;
-			var rewardToPool = blockReward;
+		    var rewardToPool = blockReward;
 
-			// build tx
+		    // build tx
 		    var tx = new Transaction();
 
-			// generate block-reward as input
-			tx.AddInput(new TxIn
+		    // Payee output (DASH Coin only)
+		    if (!string.IsNullOrEmpty(blockTemplate.Payee))
 		    {
-				ScriptSig = new Script(Op.GetPushOp(RandomUtils.GetBytes(30)))
-			});
+			    var payeeAddress = BitcoinAddress.Create(blockTemplate.Payee);
+			    var payeeReward = reward / 5;
 
-		    var foo = new Script(Op.GetPushOp(RandomUtils.GetBytes(30)));
-		    var bar = foo.ToString();
-		    var bar2 = foo.ToHex();
+			    reward -= payeeReward;
+			    rewardToPool -= payeeReward;
 
-			// Payee output (DASH Coin only)
-			if (!string.IsNullOrEmpty(blockTemplate.Payee))
-			{
-				var payeeAddress = BitcoinAddress.Create(blockTemplate.Payee);
-				var payeeReward = reward / 5;
+			    tx.AddOutput(payeeReward, payeeAddress);
+		    }
 
-				reward -= payeeReward;
-				rewardToPool -= payeeReward;
-
-				tx.AddOutput(payeeReward, payeeAddress);
-			}
-
-			// Reward Recipient Outputs
+		    // Reward Recipient Outputs
 		    foreach (var recipient in poolConfig.RewardRecipients)
 		    {
 			    var recipientAddress = BitcoinAddress.Create(recipient.Address);
-			    var recipientReward = new Money((long) ((recipient.Percentage / 100.0) * reward.Satoshi));
+			    var recipientReward = new Money((long)((recipient.Percentage / 100.0) * reward.Satoshi));
 
 			    reward -= recipientReward;
 			    rewardToPool -= recipientReward;
 
 			    tx.AddOutput(recipientReward, recipientAddress);
-			}
+		    }
 
-			// Pool Output
+		    // Pool Output
 		    tx.AddOutput(rewardToPool, poolAddress);
 
-			// validate it
-		    var checkResult = tx.Check();
+		    // validate it
+		    //var checkResult = tx.Check();
+		    //Debug.Assert(checkResult == TransactionCheckResult.Success);
 
-			Debug.Assert(checkResult == TransactionCheckResult.Success);
-		}
+		    return tx;
+	    }
 
 		private void BuildBlockFromTemplate()
 	    {

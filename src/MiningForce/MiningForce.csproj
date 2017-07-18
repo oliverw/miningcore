@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
+    <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
+    <None Remove="Blockchain\Bitcoin\Transactions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Autofac" Version="4.6.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.1.0" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />

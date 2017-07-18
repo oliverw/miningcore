@@ -7,6 +7,11 @@
         public string Hash { get; set; }
     }
 
+	public class CoinbaseAux
+	{
+		public string Flags { get; set; }
+	}
+
     public class GetBlockTemplateResponse
     {
         public uint Version { get; set; }
@@ -18,8 +23,9 @@
         public string Bits { get; set; }
         public uint Height { get; set; }
         public BitcoinBlockTransaction[] Transactions { get; set; }
+		public CoinbaseAux CoinbaseAux { get; set; }
 
 		// DASH Coin specific
-	    public string Payee { get; set; }
+		public string Payee { get; set; }
 	}
 }

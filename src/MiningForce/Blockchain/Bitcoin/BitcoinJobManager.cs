@@ -134,7 +134,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
         protected override async Task PostStartInitAsync()
         {
-	        job = new BitcoinJob(poolConfig);
+	        job = new BitcoinJob(poolConfig, extraNonceProvider);
 
 			var tasks = new Task[] 
             {

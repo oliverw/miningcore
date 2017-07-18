@@ -22,9 +22,12 @@ namespace MiningForce.Blockchain
             counter = instanceId << 27;
         }
 
+        private readonly byte[] extraNoncePlaceholder = "f000000ff111111f".HexToByteArray();
         private uint counter;
 
-        public int Size => 4;
+        public byte[] PlaceHolder => extraNoncePlaceholder;
+
+        public int Size => extraNoncePlaceholder.Length - Marshal.SizeOf(counter);
 
         public uint Next()
         {
