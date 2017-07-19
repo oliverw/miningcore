@@ -34,14 +34,12 @@ namespace MiningForce.Blockchain
 
         #region API-Surface
 
-        public Task StartAsync(PoolConfig poolConfig)
+        public void Start(PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.Requires<ArgumentException>(poolConfig.Daemons.Length > 0, $"{nameof(poolConfig.Daemons)} must not be empty");
 
             this.endPoints = poolConfig.Daemons;
-
-            return Task.FromResult(true);
         }
 
         /// <summary>

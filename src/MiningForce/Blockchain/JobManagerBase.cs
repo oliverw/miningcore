@@ -89,7 +89,7 @@ namespace MiningForce.Blockchain
         
         protected virtual async Task StartDaemonAsync()
         {
-            await daemon.StartAsync(poolConfig);
+            daemon.Start(poolConfig);
 
             while (!await IsDaemonHealthy())
             {
