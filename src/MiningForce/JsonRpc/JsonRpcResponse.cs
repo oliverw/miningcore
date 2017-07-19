@@ -14,7 +14,7 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcResponse(JsonRpcException ex, string id = null) : base(ex, id)
+        public JsonRpcResponse(JsonRpcException ex, string id = null, object result = null) : base(ex, id)
         {
         }
     }
@@ -35,10 +35,11 @@ namespace MiningForce.JsonRpc
             Id = id;
         }
 
-        public JsonRpcResponse(JsonRpcException ex, string id = null)
+        public JsonRpcResponse(JsonRpcException ex, string id, object result)
         {
             Error = ex;
             Id = id;
+	        Result = JToken.FromObject(result);
         }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "jsonrpc")]

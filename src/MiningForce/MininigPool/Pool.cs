@@ -55,20 +55,22 @@ namespace MiningForce.MininigPool
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             this.poolConfig = poolConfig;
 
-            logger.Info(() => $"Pool '{poolConfig.Coin.Name}' starting ...");
+            logger.Info(() => $"Pool '{poolConfig.Coin.Type}' starting ...");
 
-            StartListeners(poolConfig);
-            await InitializeJobManager(poolConfig);
+            StartListeners();
+            await InitializeJobManager();
 
             OutputPoolInfo();
         }
 
         #endregion // API-Surface
 
-        private async Task InitializeJobManager(PoolConfig poolConfig)
+        private async Task InitializeJobManager()
         {
-            manager = ctx.ResolveNamed<IBlockchainJobManager>(poolConfig.Coin.Name.ToLower());
-            await manager.StartAsync(poolConfig, this);
+            manager = ctx.ResolveKeyed<IBlockchainJobManager>(poolConfig.Coin.Type,
+	            new TypedParameter(typeof(PoolConfig), poolConfig));
+
+            await manager.StartAsync(this);
 
             manager.Jobs.Subscribe(OnNewJob);
         }
@@ -157,17 +159,27 @@ namespace MiningForce.MininigPool
             {
                 UpdateVarDiff(client);
 
-                // submit 
-                var requestParams = request.Params?.ToObject<string[]>();
-                var accepted = await manager.HandleWorkerSubmitAsync(client, requestParams);
-                client.Respond(accepted, request.Id);
+	            try
+	            {
+		            // submit 
+		            var requestParams = request.Params?.ToObject<string[]>();
+		            await manager.HandleWorkerSubmitAsync(client, requestParams);
+		            client.Respond(true, request.Id);
 
-                // update client stats
-                if (accepted && poolConfig.Banning != null)
-                    context.Stats.ValidShares++;
-                else
-                    context.Stats.InvalidShares++;
-            }
+		            // update client stats
+					context.Stats.ValidShares++;
+				}
+
+				catch (StratumException ex)
+	            {
+		            client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+		            // update client stats
+		            context.Stats.InvalidShares++;
+				}
+
+				// TODO: banning check
+			}
         }
 
         private PoolClientContext GetMiningContext(StratumClient client)
@@ -240,7 +252,7 @@ namespace MiningForce.MininigPool
 
         private void OnNewJob(object jobParams)
         {
-            logger.Info(() => $"[{poolConfig.Coin.Name}] Received new job params from manager");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
 
             lock (currentJobParamsLock)
             {
@@ -286,7 +298,7 @@ namespace MiningForce.MininigPool
         {
             var msg = $@"
 
-Mining Pool:            {poolConfig.Coin.Name} 
+Mining Pool:            {poolConfig.Coin.Type} 
 Network Connected:      {NetworkStats.Network}
 Detected Reward Type:   {NetworkStats.RewardType}
 Current Block Height:   {NetworkStats.BlockHeight}

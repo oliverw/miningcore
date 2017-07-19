@@ -23,12 +23,12 @@ namespace MiningForce.Blockchain
 
     public interface IBlockchainJobManager
     {
-        Task StartAsync(PoolConfig poolConfig, StratumServer stratum);
+        Task StartAsync(StratumServer stratum);
         Task<bool> ValidateAddressAsync(string address);
 
         Task<object[]> HandleWorkerSubscribeAsync(StratumClient worker);
         Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password);
-        Task<bool> HandleWorkerSubmitAsync(StratumClient worker, object submission);
+        Task HandleWorkerSubmitAsync(StratumClient worker, object submission);
 
         IObservable<object> Jobs { get; }
         NetworkStats NetworkStats { get; }

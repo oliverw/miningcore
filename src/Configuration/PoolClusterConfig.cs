@@ -2,13 +2,17 @@
 
 namespace MiningForce.Configuration
 {
-    public enum HashAlgorithm
+    public enum CoinType
     {
-        Sha256 = 1,
-        Scrypt = 2,
+        Bitcoin = 1,
     }
 
-    public enum RewardRecipientType
+	public class CoinConfig
+	{
+		public CoinType Type { get; set; }
+	}
+
+	public enum RewardRecipientType
     {
         Op,	// Pool operators
         Dev,
@@ -17,13 +21,6 @@ namespace MiningForce.Configuration
     public enum StratumAuthorizerKind
     {
         AddressBased,
-    }
-
-    public class CoinConfig
-    {
-        public string Name { get; set; }
-        public string Symbol { get; set; }
-        public HashAlgorithm Algorithm { get; set; }
     }
 
     public class NetworkEndpointConfig

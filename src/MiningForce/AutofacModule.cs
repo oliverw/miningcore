@@ -63,14 +63,13 @@ namespace MiningForce
             builder.RegisterType<ExtraNonceProvider>()
                 .AsSelf();
 
-            //////////////////////
-            // Bitcoin and family
+			//////////////////////
+			// Bitcoin and family
 
-            builder.RegisterType<BitcoinJobManager>()
-                .Named<IBlockchainJobManager>("bitcoin")
-                .Named<IBlockchainJobManager>("litecoin");
+			builder.RegisterType<BitcoinJobManager>()
+                .Keyed<IBlockchainJobManager>(CoinType.Bitcoin);
 
-            base.Load(builder);
+			base.Load(builder);
         }
     }
 }

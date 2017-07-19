@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningForce.Blockchain.Bitcoin.Commands
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
-    public class ValidateAddressResponse
+    public class ValidateAddress
     {
         public bool IsValid { get; set; }
         public bool IsMine { get; set; }

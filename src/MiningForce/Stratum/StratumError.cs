@@ -13,4 +13,14 @@ namespace MiningForce.Stratum
         UnauthorizedWorker = 24,
         NotSubscribed = 25,
     }
+
+	public class StratumException : Exception
+	{
+		public StratumException(StratumError code, string message) : base(message)
+		{
+			this.Code = code;
+		}
+
+		public StratumError Code { get; set; }
+	}
 }

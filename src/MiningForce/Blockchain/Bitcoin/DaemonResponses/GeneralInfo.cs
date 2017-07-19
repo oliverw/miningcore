@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningForce.Blockchain.Bitcoin.Commands
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetInfoResponse
+    public class GeneralInfo
     {
         public int Version { get; set; }
         public int ProtocolVersion { get; set; }

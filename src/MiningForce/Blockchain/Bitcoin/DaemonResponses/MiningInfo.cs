@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningForce.Blockchain.Bitcoin.Commands
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetMiningInfoResponse
+    public class MiningInfo
     {
         public int Blocks { get; set; }
         public int CurrentBlockSize { get; set; }

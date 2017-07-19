@@ -43,9 +43,9 @@ namespace MiningForce.Stratum
             Respond(new JsonRpcResponse<T>(payload, id));
         }
 
-        public void RespondError(StratumError code, string message, string id, object data = null)
+        public void RespondError(StratumError code, string message, string id, object result = null, object data = null)
         {
-            Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id));
+            Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
 
         public void Respond<T>(JsonRpcResponse<T> response)

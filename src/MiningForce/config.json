@@ -3,9 +3,7 @@
       "enabled": true,
 
       "coin": {
-        "name": "Bitcoin",
-        "symbol": "BTC",
-        "algorithm": "sha256"
+          "type": "bitcoin"
       },
 
       "authorizer": "addressbased",

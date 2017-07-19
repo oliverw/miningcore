@@ -4,34 +4,52 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MiningForce.Blockchain.Bitcoin.Commands;
+using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Extensions;
+using MiningForce.Stratum;
 using NBitcoin;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(PoolConfig poolConfig, ExtraNonceProvider extraNonceProvider, bool isPoS)
+	    public BitcoinJob(PoolConfig poolConfig, BitcoinAddress poolAddress, ExtraNonceProvider extraNonceProvider, 
+			bool isPoS, double shareMultiplier, 
+			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher, BlockTemplate blockTemplate,
+			string jobId)
 	    {
 		    this.poolConfig = poolConfig;
+		    this.blockTemplate = blockTemplate;
+		    this.jobId = jobId;
 
-			poolAddress = BitcoinAddress.Create(poolConfig.Address);
+			this.poolAddress = poolAddress;
 		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
 		    this.isPoS = isPoS;
+			this.shareMultiplier = shareMultiplier;
+
+			this.coinbaseHasher = coinbaseHasher;
+		    this.headerHasher = headerHasher;
+		    this.blockHasher = blockHasher;
 	    }
 
-		private long jobId = 0;
+	    private readonly string jobId;
 	    private readonly int extraNoncePlaceHolderLength;
-	    private GetBlockTemplateResponse blockTemplate;
+	    private readonly BlockTemplate blockTemplate;
 	    private readonly BitcoinAddress poolAddress;
 	    private readonly PoolConfig poolConfig;
 	    private readonly bool isPoS;
+	    private Target target;
+	    private MerkleTree mt;
 	    private uint version;
 	    private byte[] coinbaseInitial;
 	    private byte[] coinbaseFinal;
+		private readonly HashSet<string> submissions = new HashSet<string>();
+	    private readonly double shareMultiplier;
+	    private readonly IHashAlgorithm coinbaseHasher;
+	    private readonly IHashAlgorithm headerHasher;
+	    private readonly IHashAlgorithm blockHasher;
 
 		// serialization constants
 		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
@@ -51,36 +69,74 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private uint timestamp;
 	    private string encodedDifficultyHex;
 
-		public bool ApplyTemplate(GetBlockTemplateResponse update, bool forceUpdate)
-		{
-			var isNew = blockTemplate == null || 
-						blockTemplate.PreviousBlockhash != update.PreviousBlockhash ||
-			            blockTemplate.Height < update.Height;
+	    #region API-Surface
 
-			if (!isNew && !forceUpdate)
-				return false;
+	    public BlockTemplate BlockTemplate => blockTemplate;
+	    public string JobId => jobId;
 
-			jobId++;
+	    public void Init()
+	    {
+		    version = blockTemplate.Version;
+		    timestamp = blockTemplate.CurTime;
 
-			blockTemplate = update;
-			version = blockTemplate.Version;
-			timestamp = blockTemplate.CurTime;
+		    target = !string.IsNullOrEmpty(blockTemplate.Target)
+			    ? new Target(new uint256(blockTemplate.Target))
+			    : new Target(blockTemplate.Bits.HexToByteArray());
 
-			// fields for miner
-			encodedDifficultyHex = blockTemplate.Bits;
+		    // fields for miner
+		    encodedDifficultyHex = blockTemplate.Bits;
 
-            previousBlockHashReversedHex = blockTemplate.PreviousBlockhash
-                .HexToByteArray()
-                .ReverseByteOrder()
-                .ToHexString();
+		    previousBlockHashReversedHex = blockTemplate.PreviousBlockhash
+			    .HexToByteArray()
+			    .ReverseByteOrder()
+			    .ToHexString();
 
-			BuildMerkleBranches();
-			BuildCoinbase();
+		    BuildMerkleBranches();
+		    BuildCoinbase();
+	    }
 
-			return isNew;
-        }
+		public object GetJobParams(bool isNew)
+	    {
+		    return new object[]
+		    {
+			    jobId,
+			    previousBlockHashReversedHex,
+			    coinbaseInitialHex,
+			    coinbaseFinalHex,
+			    merkleBranchesHex,
+			    version.ToString("x4"),
+			    encodedDifficultyHex,
+			    timestamp.ToString("x4"),
+			    isNew
+		    };
+	    }
 
-	    private void BuildMerkleBranches()
+		public void ValidateShare(string extraNonce1, string extraNonce2, string nTime, string nonce)
+	    {
+		    // validate nTime
+		    if (nTime?.Length != 8)
+			    throw new StratumException(StratumError.Other, "incorrect size of ntime");
+
+		    var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
+		    if (nTimeInt < blockTemplate.CurTime || nTimeInt > DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 7200)
+			    throw new StratumException(StratumError.Other, "ntime out of range");
+
+			// validate nonce
+		    if (nonce.Length != 8)
+			    throw new StratumException(StratumError.Other, "incorrect size of nonce");
+
+		    var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
+
+			// check for dupes
+			if (!RegisterSubmit(extraNonce1, extraNonce2, nTime, nonce))
+			    throw new StratumException(StratumError.DuplicateShare, "duplicate share");
+
+		    ValidateShareInternal(extraNonce1, extraNonce2, nTimeInt, nonceInt);
+	    }
+
+		#endregion // API-Surface
+
+		private void BuildMerkleBranches()
 	    {
 		    var transactionHashes = blockTemplate.Transactions
 			    .Select(tx => (tx.TxId ?? tx.Hash).HexToByteArray())
@@ -91,7 +147,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    })
 			    .ToArray();
 
-		    var mt = new MerkleTree(transactionHashes);
+		    mt = new MerkleTree(transactionHashes);
 
 			merkleBranchesHex = mt.Steps
 				.Select(x => x.ToHexString())
@@ -272,20 +328,79 @@ namespace MiningForce.Blockchain.Bitcoin
 			return tx;
 	    }
 
-        public object GetJobParams(bool isNew)
-        {
-            return new object[]
-            {
-                jobId.ToString(CultureInfo.InvariantCulture),
-                previousBlockHashReversedHex,
-                coinbaseInitialHex,
-                coinbaseFinalHex,
-                merkleBranchesHex,
-                version.ToString("x4"),
-                encodedDifficultyHex,
-                timestamp.ToString("x4"),
-	            isNew
-			};
-        }
+	    private bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
+	    {
+		    var key = extraNonce1 + extraNonce2 + nTime + nonce;
+		    if (submissions.Contains(key))
+			    return false;
+
+		    submissions.Add(key);
+		    return true;
+	    }
+
+	    private void ValidateShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce)
+	    {
+		    var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
+		    var coinbaseHash = coinbaseHasher.Transform(coinbase, null);
+
+		    var merkleRoot = mt.WithFirst(coinbaseHash)
+				.Reverse()
+				.ToArray();
+
+		    var header = SerializeHeader(merkleRoot, nTime, nonce);
+		    var headerHash = headerHasher.Transform(header, nTime);
+			var headerValue = new uint256(headerHash, true);
+			var headerTarget = new Target(headerValue);
+
+		    if (target >= headerTarget)
+		    {
+			    var shareDiff = Target.Difficulty1 * (headerValue.GetLow32() * shareMultiplier);
+			    var blockDiffAdjusted = target.Difficulty * shareMultiplier;
+		    }
+
+		    else
+		    {
+			    var boo = 1;
+		    }
+		}
+
+	    private byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
+	    {
+		    var extraNonce1Bytes = extraNonce1.HexToByteArray();
+		    var extraNonce2Bytes = extraNonce2.HexToByteArray();
+
+		    using (var stream = new MemoryStream())
+		    {
+			    stream.Write(coinbaseInitial);
+			    stream.Write(extraNonce1Bytes);
+			    stream.Write(extraNonce2Bytes);
+			    stream.Write(coinbaseFinal);
+
+			    return stream.ToArray();
+		    }
+		}
+
+	    private byte[] SerializeHeader(byte[] merkleRoot, uint nTime, uint nonce)
+	    {
+		    using (var stream = new MemoryStream())
+		    {
+			    using (var writer = new BinaryWriter(stream))
+			    {
+				    writer.Write(nonce.ToBigEndian());
+				    writer.Write(blockTemplate.Bits.HexToByteArray());
+				    writer.Write(nTime.ToBigEndian());
+				    writer.Write(merkleRoot);
+				    writer.Write(blockTemplate.PreviousBlockhash.HexToByteArray());
+					writer.Write(blockTemplate.Version.ToBigEndian());
+
+					writer.Flush();
+
+					return stream
+						.ToArray()
+						.Reverse()
+						.ToArray();
+			    }
+		    }
+	    }
 	}
 }

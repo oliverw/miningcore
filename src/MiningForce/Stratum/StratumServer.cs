@@ -33,7 +33,7 @@ namespace MiningForce.Stratum
         protected PoolConfig poolConfig;
         private readonly JsonSerializerSettings serializerSettings;
 
-        protected void StartListeners(PoolConfig poolConfig)
+        protected void StartListeners()
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -65,7 +65,7 @@ namespace MiningForce.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"[{poolConfig.Coin.Name}] Stratum port {port} started");
+                logger.Info(() => $"[{poolConfig.Coin.Type}] Stratum port {port} started");
             }
         }
 
@@ -99,7 +99,7 @@ namespace MiningForce.Stratum
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
             try
             {
@@ -125,7 +125,7 @@ namespace MiningForce.Stratum
 
             catch (Exception ex)
             {
-                logger.Error(() => $"[{poolConfig.Coin.Name}] OnClientRpcRequest: {request.Method}", ex);
+                logger.Error(() => $"[{poolConfig.Coin.Type}] OnClientRpcRequest: {request.Method}", ex);
 
                 client.RespondError(StratumError.Other, ex.Message, request.Id);
             }
@@ -133,14 +133,14 @@ namespace MiningForce.Stratum
 
         private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Client connection entered error state: {ex.Message}");
+            logger.Error(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Client connection entered error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnClientReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Name}] [{client.ConnectionId}] Received End-of-Stream from client");
+            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received End-of-Stream from client");
 
             DisconnectClient(client);
         }

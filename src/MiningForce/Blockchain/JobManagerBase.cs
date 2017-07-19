@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
@@ -15,21 +16,22 @@ using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain
 {
-    public abstract class JobManagerBase<TWorkerContext>
+    public abstract class JobManagerBase<TWorkerContext, TJob>
         where TWorkerContext: class, new()
     {
-        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDemon daemon)
+        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDemon daemon, PoolConfig poolConfig)
         {
             this.ctx = ctx;
             this.logger = logger;
             this.daemon = daemon;
+	        this.poolConfig = poolConfig;
         }
 
         protected readonly IComponentContext ctx;
         protected BlockchainDemon daemon;
         protected StratumServer stratum;
         private IWorkerAuthorizer authorizer;
-        protected PoolConfig poolConfig;
+        protected readonly PoolConfig poolConfig;
         protected readonly ILogger logger;
 	    private TimeSpan jobRebroadcastTimeout;
 	    protected DateTime? lastBlockUpdate;
@@ -37,16 +39,20 @@ namespace MiningForce.Blockchain
 		protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
             new ConditionalWeakTable<StratumClient, TWorkerContext>();
 
-	    #region API-Surface
+		protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
+	    protected TJob currentJob;
+	    protected object jobLock = new object();
+	    private long jobId = 0;
 
-        public IObservable<object> Jobs { get; private set; }
+		#region API-Surface
 
-        public async Task StartAsync(PoolConfig poolConfig, StratumServer stratum)
+		public IObservable<object> Jobs { get; private set; }
+
+        public async Task StartAsync(StratumServer stratum)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
 
-            this.poolConfig = poolConfig;
             this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
@@ -56,7 +62,7 @@ namespace MiningForce.Blockchain
             await PostStartInitAsync();
             SetupJobPolling();
 
-            logger.Info(() => $"[{poolConfig.Coin.Name}] Manager started");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] Manager started");
         }
 
         #endregion // API-Surface
@@ -87,12 +93,12 @@ namespace MiningForce.Blockchain
 
             while (!await IsDaemonHealthy())
             {
-                logger.Info(() => $"[{poolConfig.Coin.Name}] Waiting for daemons to come online ...");
+                logger.Info(() => $"[{poolConfig.Coin.Type}] Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(5));
             }
 
-            logger.Info(() => $"[{poolConfig.Coin.Name}] All coin-daemons are online");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] All coin-daemons are online");
         }
 
         protected virtual void SetupJobPolling()
@@ -114,14 +120,14 @@ namespace MiningForce.Blockchain
 	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
 
 							if(forceUpdate)
-								logger.Info(()=> $"[{poolConfig.Coin.Name}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
+								logger.Info(()=> $"[{poolConfig.Coin.Type}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
 							if (await UpdateJobFromNetwork(forceUpdate) || forceUpdate)
 							{
 								var isNew = !forceUpdate;
 
 								if (isNew)
-									logger.Info(() => $"[{poolConfig.Coin.Name}] New block detected");
+									logger.Info(() => $"[{poolConfig.Coin.Type}] New block detected");
 
 								lastBlockUpdate = now;
 
@@ -134,7 +140,7 @@ namespace MiningForce.Blockchain
                         }
                         catch (Exception ex)
                         {
-                            logger.Warning(() => $"[{poolConfig.Coin.Name}] Error during job polling: {ex.Message}");
+                            logger.Warning(() => $"[{poolConfig.Coin.Type}] Error during job polling: {ex.Message}");
                         }
                     }
                 }, TaskCreationOptions.LongRunning);
@@ -162,6 +168,11 @@ namespace MiningForce.Blockchain
 
             return context;
         }
+
+	    protected string NextJobId()
+	    {
+		    return Interlocked.Increment(ref jobId).ToString("x");
+	    }
 
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
