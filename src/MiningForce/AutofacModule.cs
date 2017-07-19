@@ -53,7 +53,7 @@ namespace MiningForce
             builder.RegisterType<Pool>()
                 .AsSelf();
 
-            builder.RegisterType<BlockchainDemon>()
+            builder.RegisterType<BlockchainDaemon>()
                 .AsSelf();
 
             builder.RegisterType<AddressBasedWorkerAuthorizer>()

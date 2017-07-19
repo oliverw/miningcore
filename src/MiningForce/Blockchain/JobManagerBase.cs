@@ -19,7 +19,7 @@ namespace MiningForce.Blockchain
     public abstract class JobManagerBase<TWorkerContext, TJob>
         where TWorkerContext: class, new()
     {
-        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDemon daemon, PoolConfig poolConfig)
+        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDaemon daemon, PoolConfig poolConfig)
         {
             this.ctx = ctx;
             this.logger = logger;
@@ -28,7 +28,7 @@ namespace MiningForce.Blockchain
         }
 
         protected readonly IComponentContext ctx;
-        protected BlockchainDemon daemon;
+        protected BlockchainDaemon daemon;
         protected StratumServer stratum;
         private IWorkerAuthorizer authorizer;
         protected readonly PoolConfig poolConfig;

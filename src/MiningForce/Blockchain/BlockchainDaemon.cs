@@ -19,9 +19,9 @@ namespace MiningForce.Blockchain
         public AuthenticatedNetworkEndpointConfig Instance { get; set; }
     }
 
-    public class BlockchainDemon
+    public class BlockchainDaemon
     {
-        public BlockchainDemon(HttpClient httpClient, JsonSerializerSettings serializerSettings)
+        public BlockchainDaemon(HttpClient httpClient, JsonSerializerSettings serializerSettings)
         {
             this.httpClient = httpClient;
             this.serializerSettings = serializerSettings;

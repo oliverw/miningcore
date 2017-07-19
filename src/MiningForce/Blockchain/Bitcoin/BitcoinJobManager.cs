@@ -25,7 +25,7 @@ namespace MiningForce.Blockchain.Bitcoin
         public BitcoinJobManager(
             IComponentContext ctx, 
             ILogger<BitcoinJobManager> logger,
-            BlockchainDemon daemon,
+            BlockchainDaemon daemon,
             ExtraNonceProvider extraNonceProvider,
 	        PoolConfig poolConfig) : base(ctx, logger, daemon, poolConfig)
         {
