@@ -110,19 +110,23 @@ namespace MiningForce.Blockchain.Bitcoin
 	        var nTime = submitParams[3] as string;
 	        var nonce = submitParams[4] as string;
 
-	        // get worker context
-	        var context = GetWorkerContext(worker);
 	        BitcoinJob job;
 
 			lock (jobLock)
 			{
 				validJobs.TryGetValue(jobId, out job);
-	        }
+			}
 
 			if(job != null)
-				job.ValidateShare(context.ExtraNonce1, extraNonce2, nTime, nonce);
-			else
-				throw new StratumException(StratumError.JobNotFound, "job not found");
+	        {
+		        // get worker context
+		        var context = GetWorkerContext(worker);
+
+		        job.ValidateShare(context.ExtraNonce1, extraNonce2, nTime, nonce);
+	        }
+
+	        else
+		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
 			return Task.FromResult(true);
         }
@@ -242,42 +246,36 @@ namespace MiningForce.Blockchain.Bitcoin
 	        ConfigureHashers();
 		}
 
-	    protected override async Task<bool> UpdateJobFromNetwork(bool forceUpdate)
+	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
         {
-            var result = await GetBlockTemplateAsync();
-	        bool isNew;
-	        BitcoinJob job = null;
+			var result = await GetBlockTemplateAsync();
 
-            lock (jobLock)
-            {
-	            isNew = currentJob == null ||
-	                    (currentJob.BlockTemplate.PreviousBlockhash != result.PreviousBlockhash ||
-	                    currentJob.BlockTemplate.Height < result.Height);
+	        lock (jobLock)
+	        {
+		        var isNew = currentJob == null ||
+		                (currentJob.BlockTemplate.PreviousBlockhash != result.PreviousBlockhash ||
+		                 currentJob.BlockTemplate.Height < result.Height);
 
-	            if (isNew || forceUpdate)
-	            {
-		            currentJob = new BitcoinJob(poolConfig, poolAddress, extraNonceProvider, isPoS, shareMultiplier,
-			            coinbaseHasher, headerHasher, blockHasher, result, NextJobId());
+		        if (isNew || forceUpdate)
+		        {
+			        currentJob = new BitcoinJob(poolConfig, poolAddress, extraNonceProvider, isPoS, shareMultiplier,
+				        coinbaseHasher, headerHasher, blockHasher, result, NextJobId());
 
-		            // save reference for initialization outside lock
-		            job = currentJob;
+			        currentJob.Init();
 
-		            if (isNew)
-		            {
-			            validJobs.Clear();
+			        if (isNew)
+			        {
+				        validJobs.Clear();
 
-			            // update stats
-			            networkStats.LastBlockTime = DateTime.UtcNow;
-		            }
+				        // update stats
+						networkStats.LastBlockTime = DateTime.UtcNow;
+			        }
 
-		            validJobs[currentJob.JobId] = currentJob;
-	            }
-            }
+			        validJobs[currentJob.JobId] = currentJob;
+		        }
 
-			// init new job if any
-	        job?.Init();
-
-			return isNew;
+		        return isNew;
+	        }
 		}
 
 		protected override object GetJobParamsForStratum(bool isNew)

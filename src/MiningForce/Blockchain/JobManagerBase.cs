@@ -122,7 +122,7 @@ namespace MiningForce.Blockchain
 							if(forceUpdate)
 								logger.Info(()=> $"[{poolConfig.Coin.Type}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
-							if (await UpdateJobFromNetwork(forceUpdate) || forceUpdate)
+							if (await UpdateJobs(forceUpdate) || forceUpdate)
 							{
 								var isNew = !forceUpdate;
 
@@ -185,7 +185,7 @@ namespace MiningForce.Blockchain
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
         /// </summary>
-        protected abstract Task<bool> UpdateJobFromNetwork(bool forceUpdate);
+        protected abstract Task<bool> UpdateJobs(bool forceUpdate);
 
 	    /// <summary>
 	    /// Packages current job parameters for stratum update
