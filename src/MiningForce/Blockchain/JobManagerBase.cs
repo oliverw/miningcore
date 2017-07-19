@@ -15,10 +15,10 @@ using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain
 {
-    public abstract class BaseJobManager<TWorkerContext>
+    public abstract class JobManagerBase<TWorkerContext>
         where TWorkerContext: class, new()
     {
-        protected BaseJobManager(IComponentContext ctx, ILogger logger, BlockchainDemon daemon)
+        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDemon daemon)
         {
             this.ctx = ctx;
             this.logger = logger;
@@ -31,11 +31,13 @@ namespace MiningForce.Blockchain
         private IWorkerAuthorizer authorizer;
         protected PoolConfig poolConfig;
         protected readonly ILogger logger;
+	    private TimeSpan jobRebroadcastTimeout;
+	    protected DateTime? lastBlockUpdate;
 
-        protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
+		protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
             new ConditionalWeakTable<StratumClient, TWorkerContext>();
 
-        #region API-Surface
+	    #region API-Surface
 
         public IObservable<object> Jobs { get; private set; }
 
@@ -46,8 +48,9 @@ namespace MiningForce.Blockchain
 
             this.poolConfig = poolConfig;
             this.stratum = stratum;
+	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
-            SetupAuthorizer();
+			SetupAuthorizer();
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
@@ -105,23 +108,29 @@ namespace MiningForce.Blockchain
                     {
                         try
                         {
-                            // fetch params from daemon(s)
-                            var start = DateTime.UtcNow;
+                            var now = DateTime.UtcNow;
 
-                            if (await UpdateJobFromNetwork())
-                            {
-                                var jobParams = GetJobParamsForStratum();
+							// force an update of current job if we haven't received a new block for a while
+	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
 
-                                // emit new value
+							if(forceUpdate)
+								logger.Info(()=> $"[{poolConfig.Coin.Name}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
+
+							if (await UpdateJobFromNetwork(forceUpdate) || forceUpdate)
+							{
+								var isNew = !forceUpdate;
+
+								if (isNew)
+									logger.Info(() => $"[{poolConfig.Coin.Name}] New block detected");
+
+								lastBlockUpdate = now;
+
+	                            // emit new job params
+								var jobParams = GetJobParamsForStratum(isNew);
                                 observer.OnNext(jobParams);
                             }
 
-                            // pause
-                            var elapsed = DateTime.UtcNow - start;
-                            var delta = interval - elapsed;
-
-                            if (delta.TotalMilliseconds > 0)
-                                await Task.Delay(delta);
+                            Thread.Sleep(interval);
                         }
                         catch (Exception ex)
                         {
@@ -165,12 +174,12 @@ namespace MiningForce.Blockchain
         /// <summary>
         /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
         /// </summary>
-        protected abstract Task<bool> UpdateJobFromNetwork();
+        protected abstract Task<bool> UpdateJobFromNetwork(bool forceUpdate);
 
-        /// <summary>
-        /// Packages current job parameters for stratum update
-        /// </summary>
-        /// <returns></returns>
-        protected abstract object GetJobParamsForStratum();
+	    /// <summary>
+	    /// Packages current job parameters for stratum update
+	    /// </summary>
+	    /// <returns></returns>
+	    protected abstract object GetJobParamsForStratum(bool isNew);
     }
 }

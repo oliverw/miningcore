@@ -118,6 +118,7 @@ namespace MiningForce.MininigPool
 
             // get or create context
             var context = GetMiningContext(client);
+	        context.IsSubscribed = true;
 
             // send difficulty
             client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
@@ -126,17 +127,7 @@ namespace MiningForce.MininigPool
             lock (currentJobParamsLock)
             {
                 if (currentJobParams != null)
-                {
-                    client.Notify(StratumConstants.MsgMiningNotify,
-                        //new object[]
-                        //{
-                        //    "2", "08d0655c78d07c0602b3c937cd316604b64e54bfeb9e7968aa4c110800000001",
-                        //    "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff1f02d50104da536c5908",
-                        //    "0d2f6e6f64655374726174756d2f00000000040000000000000000266a24aa21a9ede2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9c027a824000000001976a9141bf1c824cd6028bcd65732374baea5dca5fed57088ac180d8f00000000001976a91446504cf062e1f820789c752d336923c2b80fdcee88ac68890900000000001976a91446504cf062e1f820789c752d336923c2b80fdcee88ac00000000",
-                        //    new object[0], "20000000", "207fffff", "596c53da", false
-                        //});
-                        currentJobParams);
-                }
+                    client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
             }
         }
 
@@ -271,9 +262,11 @@ namespace MiningForce.MininigPool
                     // if the client has a pending difficulty change, apply it now
                     if(context.ApplyPendingDifficulty())
                         client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
-                }
 
-                return false;
+	                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+				}
+
+				return false;
             });
         }
 

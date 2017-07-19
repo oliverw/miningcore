@@ -14,7 +14,7 @@ namespace MiningForce.Blockchain
     {
         public string Network { get; set; }
         public double HashRate { get; set; }
-        public DateTime LastBlockTime { get; set; }
+        public DateTime? LastBlockTime { get; set; }
         public double Difficulty { get; set; }
         public int BlockHeight { get; set; }
         public int ConnectedPeers { get; set; }

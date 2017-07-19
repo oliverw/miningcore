@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public class BitcoinJobManager : BaseJobManager<BitcoinWorkerContext>,
+    public class BitcoinJobManager : JobManagerBase<BitcoinWorkerContext>,
         IBlockchainJobManager
     {
         public BitcoinJobManager(
@@ -181,7 +181,7 @@ namespace MiningForce.Blockchain.Bitcoin
             //    poolAddressScript = addressToScript(validateAddressResponse.Response.Address);
 
             // chain detection
-            isTestNet = blockchainInfoResponse.Response.Chain == "testnet";
+            isTestNet = blockchainInfoResponse.Response.Chain == "test";
             isRegTestNet = blockchainInfoResponse.Response.Chain == "regtest";
 
             // block submission RPC method
@@ -204,13 +204,13 @@ namespace MiningForce.Blockchain.Bitcoin
 	        job = new BitcoinJob(poolConfig, extraNonceProvider, isPoS);
 		}
 
-		protected override async Task<bool> UpdateJobFromNetwork()
+		protected override async Task<bool> UpdateJobFromNetwork(bool forceUpdate)
         {
             var result = await GetBlockTemplateAsync();
 
             lock (job)
             {
-	            var isNew = job.ApplyTemplate(result);
+	            var isNew = job.ApplyTemplate(result, forceUpdate);
 
                 if (isNew)
                 {
@@ -222,11 +222,11 @@ namespace MiningForce.Blockchain.Bitcoin
             }
         }
 
-        protected override object GetJobParamsForStratum()
+        protected override object GetJobParamsForStratum(bool isNew)
         {
 	        lock (job)
 	        {
-		        return job.GetJobParams();
+		        return job.GetJobParams(isNew);
 	        }
         }
 

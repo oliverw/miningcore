@@ -1,4 +1,6 @@
-﻿namespace MiningForce.Blockchain.Bitcoin.Commands
+﻿using Newtonsoft.Json;
+
+namespace MiningForce.Blockchain.Bitcoin.Commands
 {
     public class BitcoinBlockTransaction
     {
@@ -24,6 +26,9 @@
         public uint Height { get; set; }
         public BitcoinBlockTransaction[] Transactions { get; set; }
 		public CoinbaseAux CoinbaseAux { get; set; }
+
+	    [JsonProperty("default_witness_commitment")]
+		public string DefaultWitnessCommitment { get; set; }
 
 		// DASH Coin specific
 		public string Payee { get; set; }

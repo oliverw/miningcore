@@ -10,7 +10,7 @@
 
       "authorizer": "addressbased",
 
-      // Address to where block rewards are given
+      // Address to where block rewards are given (pool wallet)
       "address": "mqm3zGAVrs9mqePmxMyBgxyGSFJzmTvXMz",
 
       /* Block rewards go to the configured pool wallet address to later be paid out to miners,
@@ -18,11 +18,11 @@
       or to donations address. Addresses or hashed public keys can be used. Here is an example
       of rewards going to the main pool op, a pool co-owner, and NOMP donation. */
       "rewardRecipients": [
-        {  "type": "pool", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 1.5 },
+        {  "type": "op", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 1.5 },
 
         /* 0.1% donation to MiningForce. This pubkey can accept any type of coin, please leave this in
         your config to help support MiningForce development. */
-        {  "type": "dev", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 0.15 }
+        {  "type": "dev", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 0.1 }
       ],
 
       "blockRefreshInterval": 1000, // How often to poll RPC daemons for new blocks, in milliseconds
@@ -67,7 +67,7 @@
               }
           },
           "3256": { //  Another port for your miners to connect to, this port does not use varDiff
-              "difficulty": 256 //  The pool difficulty
+              "difficulty": 0.1 // 256 //  The pool difficulty
           }
       },
 

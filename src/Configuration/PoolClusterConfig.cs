@@ -10,7 +10,7 @@ namespace MiningForce.Configuration
 
     public enum RewardRecipientType
     {
-        Pool,
+        Op,	// Pool operators
         Dev,
     }
 
