@@ -51,19 +51,7 @@ namespace MiningForce.Blockchain
         /// <returns></returns>
         public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
         {
-            return ExecuteCmdAllAsync<object, JToken> (method);
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
-        /// </summary>
-        /// <typeparam name="TResponse"></typeparam>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method)
-            where TResponse : class
-        {
-            return ExecuteCmdAllAsync<object, TResponse>(method);
+            return ExecuteCmdAllAsync<JToken> (method);
         }
 
         /// <summary>
@@ -74,9 +62,8 @@ namespace MiningForce.Blockchain
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TRequest, TResponse>(string method, TRequest payload = null)
+        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method, object payload = null)
             where TResponse: class
-            where TRequest: class
         {
             var tasks = endPoints.Select(endPoint=> BuildRequestTask(endPoint, method, payload)).ToArray();
 
@@ -103,32 +90,18 @@ namespace MiningForce.Blockchain
         /// <returns></returns>
         public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method)
         {
-            return ExecuteCmdAnyAsync<object, JToken>(method);
+            return ExecuteCmdAnyAsync<JToken>(method);
         }
 
         /// <summary>
         /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
-        /// <typeparam name="TResponse"></typeparam>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method)
-            where TResponse : class
-        {
-            return ExecuteCmdAnyAsync<object, TResponse>(method);
-        }
-
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        /// <typeparam name="TRequest"></typeparam>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TRequest, TResponse>(string method, TRequest payload = null)
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null)
             where TResponse : class
-            where TRequest : class
         {
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
 
@@ -137,14 +110,13 @@ namespace MiningForce.Blockchain
             return result;
         }
 
-        private async Task<JsonRpcResponse> BuildRequestTask<TRequest>(
-            AuthenticatedNetworkEndpointConfig endPoint, string method, TRequest payload) 
-            where TRequest: class
+        private async Task<JsonRpcResponse> BuildRequestTask(
+            AuthenticatedNetworkEndpointConfig endPoint, string method, object payload) 
         {
             var rpcRequestId = GetRequestId();
 
             // build rpc request
-            var rpcRequest = new JsonRpcRequest<TRequest>(method, payload, rpcRequestId);
+            var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
             // build http request
             var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");

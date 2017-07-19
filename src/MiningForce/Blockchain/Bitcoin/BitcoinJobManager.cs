@@ -52,8 +52,9 @@ namespace MiningForce.Blockchain.Bitcoin
         private const string GetBlockTemplateCommand = "getblocktemplate";
         private const string SubmitBlockCommand = "submitblock";
         private const string GetBlockchainInfoCommand = "getblockchaininfo";
+	    private const string GetBlockCommand = "getblock";
 
-        private static readonly object[] getBlockTemplateParams = 
+		private static readonly object[] getBlockTemplateParams = 
         {
             new
             {
@@ -68,7 +69,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<string[], ValidateAddress>(ValidateAddressCommand, new[] { address });
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddress>(ValidateAddressCommand, new[] { address });
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -129,6 +130,9 @@ namespace MiningForce.Blockchain.Bitcoin
 			{
 				await SubmitBlockAsync(share);
 				share.IsAccepted = await CheckAcceptedAsync(share);
+
+				if(share.IsAccepted)
+					logger.Info(() => $"[{poolConfig.Coin.Type}] Block '{share.BlockHash}' has been accepted by network");
 			}
 
 		    else
@@ -165,7 +169,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<object[], BlockTemplate>(
+                var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
                     GetBlockTemplateCommand, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
@@ -193,7 +197,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
 			var tasks = new Task[] 
             {
-                daemon.ExecuteCmdAnyAsync<string[], ValidateAddress>(ValidateAddressCommand, 
+                daemon.ExecuteCmdAnyAsync<ValidateAddress>(ValidateAddressCommand, 
                     new[] { poolConfig.Address }),
                 daemon.ExecuteCmdAnyAsync<JToken>(GetDifficultyCommand),
                 daemon.ExecuteCmdAnyAsync<GeneralInfo>(GetInfoCommand),
@@ -301,7 +305,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		private async Task<BlockTemplate> GetBlockTemplateAsync()
         {
-            var result = await daemon.ExecuteCmdAnyAsync<object[], BlockTemplate>(
+            var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(
                 GetBlockTemplateCommand, getBlockTemplateParams);
 
             return result.Response;
@@ -335,14 +339,20 @@ namespace MiningForce.Blockchain.Bitcoin
             }
         }
 
-	    private Task SubmitBlockAsync(BitcoinShare share)
+	    private async Task SubmitBlockAsync(BitcoinShare share)
 	    {
-		    return Task.FromResult(true);
-	    }
+		    logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block '{share.BlockHash}' to network");
 
-	    private Task<bool> CheckAcceptedAsync(BitcoinShare share)
+			if (hasSubmitBlockMethod)
+			    await daemon.ExecuteCmdAnyAsync<string>(SubmitBlockCommand, new[] { share.BlockHex });
+			else
+				await daemon.ExecuteCmdAnyAsync<JToken>(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex });
+		}
+
+		private async Task<bool> CheckAcceptedAsync(BitcoinShare share)
 	    {
-		    return Task.FromResult(true);
+		    var result = await daemon.ExecuteCmdAnyAsync<DaemonResponses.Block>(GetBlockCommand, new[] { share.BlockHash });
+		    return result.Error == null && result.Response.Hash == share.BlockHash;
 	    }
 
 		private void SetupCrypto()
