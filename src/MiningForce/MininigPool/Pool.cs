@@ -148,7 +148,6 @@ namespace MiningForce.MininigPool
         protected override async void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)
         {
             var context = GetMiningContext(client);
-
             context.LastActivity = DateTime.UtcNow;
 
             if (!context.IsAuthorized)
@@ -163,7 +162,8 @@ namespace MiningForce.MininigPool
 	            {
 		            // submit 
 		            var requestParams = request.Params?.ToObject<string[]>();
-		            await manager.HandleWorkerSubmitAsync(client, requestParams);
+		            var share = await manager.HandleWorkerSubmitShareAsync(client, requestParams, context.Difficulty);
+
 		            client.Respond(true, request.Id);
 
 		            // update client stats

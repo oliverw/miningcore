@@ -111,7 +111,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    };
 	    }
 
-		public void ValidateShare(string extraNonce1, string extraNonce2, string nTime, string nonce)
+		public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce)
 	    {
 		    // validate nTime
 		    if (nTime?.Length != 8)
@@ -131,7 +131,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			if (!RegisterSubmit(extraNonce1, extraNonce2, nTime, nonce))
 			    throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
-		    ValidateShareInternal(extraNonce1, extraNonce2, nTimeInt, nonceInt);
+		    return ProcessShareInternal(extraNonce1, extraNonce2, nTimeInt, nonceInt);
 	    }
 
 		#endregion // API-Surface
@@ -338,31 +338,39 @@ namespace MiningForce.Blockchain.Bitcoin
 		    return true;
 	    }
 
-	    private void ValidateShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce)
+	    private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce)
 	    {
 		    var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
-		    var coinbaseHash = coinbaseHasher.Transform(coinbase, null);
+		    var coinbaseHash = coinbaseHasher.Digest(coinbase, null);
 
 		    var merkleRoot = mt.WithFirst(coinbaseHash)
 				.Reverse()
 				.ToArray();
 
 		    var header = SerializeHeader(merkleRoot, nTime, nonce);
-		    var headerHash = headerHasher.Transform(header, nTime);
+		    var headerHash = headerHasher.Digest(header, nTime);
 			var headerValue = new uint256(headerHash, true);
 			var headerTarget = new Target(headerValue);
 
-		    if (target >= headerTarget)
+		    var result = new BitcoinShare
 		    {
-			    var shareDiff = Target.Difficulty1 * (headerValue.GetLow32() * shareMultiplier);
-			    var blockDiffAdjusted = target.Difficulty * shareMultiplier;
-		    }
+			    IsBlockCandidate = target >= headerTarget,
+		    };
 
-		    else
-		    {
-			    var boo = 1;
-		    }
-		}
+		    if (result.IsBlockCandidate)
+			{
+				result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
+				result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
+
+				result.JobId = jobId;
+				result.Height = blockTemplate.Height;
+				result.BlockReward = blockTemplate.CoinbaseValue;
+				result.BlockDiffAdjusted = target.Difficulty * shareMultiplier;
+				result.Difficulty = Target.Difficulty1 / (headerValue.GetLow32() * shareMultiplier);
+			}
+
+			return result;
+	    }
 
 	    private byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
 	    {
@@ -402,5 +410,43 @@ namespace MiningForce.Blockchain.Bitcoin
 			    }
 		    }
 	    }
-	}
+
+	    private byte[] SerializeBlock(byte[] header, byte[] coinbase)
+	    {
+		    var transactionCount = (uint) blockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
+		    var rawTransactionBuffer = BuildRawTransactionBuffer();
+
+		    using (var stream = new MemoryStream())
+		    {
+			    var bs = new BitcoinStream(stream, true);
+
+			    bs.ReadWrite(ref header);
+			    bs.ReadWriteAsVarInt(ref transactionCount);
+			    bs.ReadWrite(ref coinbase);
+				bs.ReadWrite(ref rawTransactionBuffer);
+
+				// TODO: handle DASH coin masternode_payments
+
+				// POS coins require a zero byte appended to block which the daemon replaces with the signature
+				if (isPoS)
+				    bs.ReadWrite((byte) 0);
+
+				return stream.ToArray();
+		    }
+	    }
+
+	    private byte[] BuildRawTransactionBuffer()
+	    {
+		    using (var stream = new MemoryStream())
+		    {
+			    foreach (var tx in blockTemplate.Transactions)
+			    {
+				    var txRaw = tx.Data.HexToByteArray();
+					stream.Write(txRaw);
+			    }
+
+			    return stream.ToArray();
+		    }
+	    }
+    }
 }

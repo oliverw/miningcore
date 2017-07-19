@@ -4,7 +4,7 @@ namespace MiningForce.Crypto.Hashing
 {
     public class Sha256Double : IHashAlgorithm
     {
-	    public byte[] Transform(byte[] data, object args)
+	    public byte[] Digest(byte[] data, object args)
 	    {
 		    using (var hasher = SHA256.Create())
 		    {

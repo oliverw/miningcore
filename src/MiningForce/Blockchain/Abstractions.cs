@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using MiningForce.Configuration;
-using MiningForce.JsonRpc;
 using MiningForce.Stratum;
-using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain
 {
@@ -21,6 +15,24 @@ namespace MiningForce.Blockchain
         public string RewardType { get; set; }
     }
 
+	public interface IShare
+	{
+		/// <summary>
+		/// Who mined it
+		/// </summary>
+		string Worker { get; }
+
+		/// <summary>
+		/// From where was it submitted
+		/// </summary>
+		string IpAddress { get; }
+
+		/// <summary>
+		/// When was it submitted
+		/// </summary>
+		DateTime Submitted { get; }
+	}
+
     public interface IBlockchainJobManager
     {
         Task StartAsync(StratumServer stratum);
@@ -28,7 +40,7 @@ namespace MiningForce.Blockchain
 
         Task<object[]> HandleWorkerSubscribeAsync(StratumClient worker);
         Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password);
-        Task HandleWorkerSubmitAsync(StratumClient worker, object submission);
+        Task<IShare> HandleWorkerSubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
 
         IObservable<object> Jobs { get; }
         NetworkStats NetworkStats { get; }

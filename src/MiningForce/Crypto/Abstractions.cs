@@ -2,6 +2,6 @@
 {
 	public interface IHashAlgorithm
 	{
-		byte[] Transform(byte[] data, object args);
+		byte[] Digest(byte[] data, object args);
 	}
 }

@@ -30,11 +30,9 @@ namespace MiningForce.Blockchain.Bitcoin
 	        PoolConfig poolConfig) : base(ctx, logger, daemon, poolConfig)
         {
 			this.extraNonceProvider = extraNonceProvider;
-
-			poolAddress = BitcoinAddress.Create(poolConfig.Address);
         }
 
-	    private readonly BitcoinAddress poolAddress;
+	    private BitcoinAddress poolAddress;
         private readonly ExtraNonceProvider extraNonceProvider;
         private readonly NetworkStats networkStats = new NetworkStats();
         private bool isPoS;
@@ -94,14 +92,14 @@ namespace MiningForce.Blockchain.Bitcoin
             return Task.FromResult(responseData);
         }
 
-        public Task HandleWorkerSubmitAsync(StratumClient worker, object submission)
+        public async Task<IShare> HandleWorkerSubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
 	        var submitParams = submission as object[];
 			if(submitParams == null)
-				return Task.FromResult(false);
+				throw new StratumException(StratumError.Other, "invalid params");
 
 			// extract params
 			var workername = submitParams[0] as string;
@@ -117,21 +115,38 @@ namespace MiningForce.Blockchain.Bitcoin
 				validJobs.TryGetValue(jobId, out job);
 			}
 
-			if(job != null)
-	        {
-		        // get worker context
-		        var context = GetWorkerContext(worker);
-
-		        job.ValidateShare(context.ExtraNonce1, extraNonce2, nTime, nonce);
-	        }
-
-	        else
+			if(job == null)
 		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
-			return Task.FromResult(true);
+			// get worker context
+			var context = GetWorkerContext(worker);
+
+			// validate & process
+			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce);
+
+			// if candidate, submit & check if accepted by network
+			if (share.IsBlockCandidate)
+			{
+				await SubmitBlockAsync(share);
+				share.IsAccepted = await CheckAcceptedAsync(share);
+			}
+
+		    else
+		    {
+			    // otherwise check difficulty
+			    var ratio = share.Difficulty / stratumDifficulty;
+				if(ratio < 0.99)
+					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({share.Difficulty})");
+			}
+
+		    // enrich share with common data
+		    share.Worker = workername;
+		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+
+			return share;
         }
 
-        public NetworkStats NetworkStats => networkStats;
+	    public NetworkStats NetworkStats => networkStats;
 
         #endregion // API-Surface
 
@@ -208,22 +223,19 @@ namespace MiningForce.Blockchain.Bitcoin
             if (!validateAddressResponse.Response.IsValid)
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            //if (!validateAddressResponse.Response.IsMine)
-            //    throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Daemon does not own pool-address '{poolConfig.Address}'");
+			if (!validateAddressResponse.Response.IsMine)
+				throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Daemon does not own pool-address '{poolConfig.Address}'");
 
-            isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
+			isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
 
             // POS coins must use the pubkey in coinbase transaction, and pubkey is only given if address is owned by wallet
             if (isPoS && string.IsNullOrEmpty(validateAddressResponse.Response.PubKey))
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] The pool-address is not from the daemon wallet - this is required for POS coins");
 
-            //if (!isPoS)
-            //    poolAddressScript = pubkeyToScript(validateAddressResponse.Response.PubKey);
-            //else
-            //    poolAddressScript = addressToScript(validateAddressResponse.Response.Address);
+	        poolAddress = BitcoinAddress.Create(poolConfig.Address);
 
-            // chain detection
-            isTestNet = blockchainInfoResponse.Response.Chain == "test";
+			// chain detection
+			isTestNet = blockchainInfoResponse.Response.Chain == "test";
             isRegTestNet = blockchainInfoResponse.Response.Chain == "regtest";
 
             // block submission RPC method
@@ -242,8 +254,7 @@ namespace MiningForce.Blockchain.Bitcoin
             networkStats.ConnectedPeers = infoResponse.Response.Connections;
             networkStats.RewardType = !isPoS ? "POW" : "POS";
 
-			// init job
-	        ConfigureHashers();
+	        SetupCrypto();
 		}
 
 	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
@@ -324,7 +335,17 @@ namespace MiningForce.Blockchain.Bitcoin
             }
         }
 
-		private void ConfigureHashers()
+	    private Task SubmitBlockAsync(BitcoinShare share)
+	    {
+		    return Task.FromResult(true);
+	    }
+
+	    private Task<bool> CheckAcceptedAsync(BitcoinShare share)
+	    {
+		    return Task.FromResult(true);
+	    }
+
+		private void SetupCrypto()
 	    {
 			switch (poolConfig.Coin.Type)
 		    {
