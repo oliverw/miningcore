@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MiningForce.Configuration;
 using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain
@@ -31,9 +32,35 @@ namespace MiningForce.Blockchain
 		/// When was it submitted
 		/// </summary>
 		DateTime Submitted { get; }
+
+		/// <summary>
+		/// Share difficulty
+		/// </summary>
+		double Difficulty { get; set; }
+
+		/// <summary>
+		/// Block this share refers to
+		/// </summary>
+		ulong BlockHeight { get; set; }
+
+		/// <summary>
+		/// Coin
+		/// </summary>
+		CoinType Coin { get; set; }
+
+		/// <summary>
+		/// If this share presumably resulted in a block
+		/// </summary>
+		bool IsBlockCandidate { get; set; }
+
+		/// <summary>
+		/// Arbitrary data to be interpreted by the payment processor specialized 
+		/// in this coin to verify this block candidate was accepted by the network
+		/// </summary>
+		object BlockVerificationData { get; set; }
 	}
 
-    public interface IBlockchainJobManager
+	public interface IBlockchainJobManager
     {
         Task StartAsync(StratumServer stratum);
         Task<bool> ValidateAddressAsync(string address);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
@@ -120,7 +121,7 @@ namespace MiningForce.Blockchain
 	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
 
 							if(forceUpdate)
-								logger.Info(()=> $"[{poolConfig.Coin.Type}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
+								logger.Debug(()=> $"[{poolConfig.Coin.Type}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
 							if (await UpdateJobs(forceUpdate) || forceUpdate)
 							{
@@ -171,7 +172,7 @@ namespace MiningForce.Blockchain
 
 	    protected string NextJobId()
 	    {
-		    return Interlocked.Increment(ref jobId).ToString("x");
+		    return Interlocked.Increment(ref jobId).ToString("x", CultureInfo.InvariantCulture);
 	    }
 
         /// <summary>

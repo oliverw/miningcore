@@ -362,9 +362,7 @@ namespace MiningForce.Blockchain.Bitcoin
 				result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
 				result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
 
-				result.JobId = jobId;
-				result.Height = blockTemplate.Height;
-				result.BlockReward = blockTemplate.CoinbaseValue;
+				result.BlockHeight = blockTemplate.Height;
 				result.BlockDiffAdjusted = target.Difficulty * shareMultiplier;
 				result.Difficulty = Target.Difficulty1 / (headerValue.GetLow32() * shareMultiplier);
 			}

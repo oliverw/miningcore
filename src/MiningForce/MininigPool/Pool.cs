@@ -166,6 +166,8 @@ namespace MiningForce.MininigPool
 
 		            client.Respond(true, request.Id);
 
+					// TODO: record it
+
 		            // update client stats
 					context.Stats.ValidShares++;
 				}
@@ -176,9 +178,9 @@ namespace MiningForce.MininigPool
 
 		            // update client stats
 		            context.Stats.InvalidShares++;
-				}
 
-				// TODO: banning check
+		            // TODO: banning check
+				}
 			}
         }
 
@@ -252,7 +254,7 @@ namespace MiningForce.MininigPool
 
         private void OnNewJob(object jobParams)
         {
-            logger.Info(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
+            logger.Debug(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
 
             lock (currentJobParamsLock)
             {

@@ -110,6 +110,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        var nonce = submitParams[4] as string;
 
 	        BitcoinJob job;
+	        DateTime now = DateTime.UtcNow;
 
 			lock (jobLock)
 			{
@@ -129,10 +130,17 @@ namespace MiningForce.Blockchain.Bitcoin
 			if (share.IsBlockCandidate)
 			{
 				await SubmitBlockAsync(share);
-				share.IsAccepted = await CheckAcceptedAsync(share);
+				var acceptResponse = await CheckAcceptedAsync(share);
 
-				if(share.IsAccepted)
+				// is still a block candidate?
+				share.IsBlockCandidate = acceptResponse.Accepted;
+
+				if (share.IsBlockCandidate)
+				{
 					logger.Info(() => $"[{poolConfig.Coin.Type}] Block '{share.BlockHash}' has been accepted by network");
+
+					share.BlockVerificationData = acceptResponse.CoinbaseTransaction;
+				}
 			}
 
 		    else
@@ -143,9 +151,11 @@ namespace MiningForce.Blockchain.Bitcoin
 					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({share.Difficulty})");
 			}
 
-		    // enrich share with common data
-		    share.Worker = workername;
+			// enrich share with common data
+	        share.Coin = poolConfig.Coin.Type;
+			share.Worker = workername;
 		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+	        share.Submitted = now;
 
 			return share;
         }
@@ -349,10 +359,12 @@ namespace MiningForce.Blockchain.Bitcoin
 				await daemon.ExecuteCmdAnyAsync<JToken>(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex });
 		}
 
-		private async Task<bool> CheckAcceptedAsync(BitcoinShare share)
+		private async Task<(bool Accepted, string CoinbaseTransaction)> CheckAcceptedAsync(BitcoinShare share)
 	    {
 		    var result = await daemon.ExecuteCmdAnyAsync<DaemonResponses.Block>(GetBlockCommand, new[] { share.BlockHash });
-		    return result.Error == null && result.Response.Hash == share.BlockHash;
+		    var accepted = result.Error == null && result.Response.Hash == share.BlockHash;
+
+			return (accepted, result.Response.Transactions.FirstOrDefault());
 	    }
 
 		private void SetupCrypto()
