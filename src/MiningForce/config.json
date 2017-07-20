@@ -16,7 +16,7 @@
       "authorizer": "addressbased",
 
       // Address to where block rewards are given (pool wallet)
-      "address": "mtDsoqcyyUfDfgaKeoApccuB5WyTvwLmG9",
+      "address": "mkFpAB8qDaEj9T65EcY39He5bfw5s9Xs6g",
 
       /* Block rewards go to the configured pool wallet address to later be paid out to miners,
       except for a percentage that can go to, for examples, pool operator(s) as pool fees or
@@ -55,12 +55,12 @@
       optional and will only be used for the ports you configure it for. */
       "ports": {
           "3032": { // A port for your miners to connect to
-              "difficulty": 32, // the pool difficulty for this port
+              "difficulty": 0.1, // the pool difficulty for this port
 
               /* Variable difficulty is a feature that will automatically adjust difficulty for
               individual miners based on their hashrate in order to lower networking overhead */
               "varDiff": {
-                  "minDiff": 8, // Minimum difficulty
+                  "minDiff": 0.1, // Minimum difficulty
                   "maxDiff": 512, // Network difficulty will be used if it is lower than this
                   "targetTime": 15, // Try to get 1 share per this many seconds
                   "retargetTime": 90, // Check to see if we should retarget every this many seconds

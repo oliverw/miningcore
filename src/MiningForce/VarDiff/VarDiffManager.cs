@@ -8,18 +8,18 @@ namespace MiningForce.VarDiff
     {
         public VarDiffManager(VarDiffConfig varDiffOptions)
         {
-            this.options = varDiffOptions;
+            options = varDiffOptions;
 
-            var variance = (int) (varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0));
-            bufferSize = (int) ((double) varDiffOptions.RetargetTime / varDiffOptions.TargetTime * 4.0);
+	        var variance = (varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0));
+            bufferSize = (int) (varDiffOptions.RetargetTime / varDiffOptions.TargetTime * 4.0);
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
         }
 
         private readonly VarDiffConfig options;
         private readonly int bufferSize;
-        private readonly int tMin;
-        private readonly int tMax;
+        private readonly double tMin;
+        private readonly double tMax;
 
         public double? Update(VarDiffContext ctx, double difficulty)
         {
@@ -29,7 +29,7 @@ namespace MiningForce.VarDiff
 
                 if (ctx.LastRtc == 0)
                 {
-                    ctx.LastRtc = ts - options.RetargetTime / 2;
+                    ctx.LastRtc = (long) (ts - options.RetargetTime / 2);
                     ctx.LastTs = ts;
                     ctx.TimeBuffer = new CircularLongBuffer(bufferSize);
                     return null;
