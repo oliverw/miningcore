@@ -61,7 +61,17 @@ namespace MiningForce
                 Console.ReadLine();
             }
 
-            catch (Exception ex)
+            catch (JsonException)
+            {
+				// ignored
+            }
+
+            catch (IOException)
+            {
+	            // ignored
+            }
+
+			catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
@@ -145,13 +155,13 @@ namespace MiningForce
 
             catch (JsonException ex)
             {
-	            Console.WriteLine($"Error parsing config: {ex.Message}");
+	            Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
 
             catch (IOException ex)
             {
-                logger.Error(() => $"Error parsing config: {ex.Message}");
+                logger.Error(() => $"Error: {ex.Message}");
                 throw;
             }
         }
