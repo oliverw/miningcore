@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
-using Microsoft.Extensions.Logging;
+using NLog;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
@@ -18,7 +18,7 @@ namespace MiningForce.Stratum
 {
     public abstract class StratumServer
     {
-        protected StratumServer(IComponentContext ctx, ILogger<StratumServer> logger, 
+        protected StratumServer(IComponentContext ctx, ILogger logger, 
             JsonSerializerSettings serializerSettings)
         {
             this.ctx = ctx;
@@ -27,7 +27,7 @@ namespace MiningForce.Stratum
         }
 
         protected readonly IComponentContext ctx;
-        protected readonly ILogger<StratumServer> logger;
+        protected readonly ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected PoolConfig poolConfig;

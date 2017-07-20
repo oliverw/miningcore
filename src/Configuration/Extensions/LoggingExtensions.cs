@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace MiningForce.Configuration.Extensions
 {
@@ -8,19 +8,19 @@ namespace MiningForce.Configuration.Extensions
         public static void Debug(this ILogger logger, Func<string> output)
         {
 			if (logger.IsEnabled(LogLevel.Debug))
-                logger.LogDebug(output());
+                logger.Debug(output());
         }
 
         public static void Info(this ILogger logger, Func<string> output)
         {
-            if(logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation(output());
+            if(logger.IsEnabled(LogLevel.Info))
+                logger.Info(output());
         }
 
         public static void Warning(this ILogger logger, Func<string> output)
         {
-            if (logger.IsEnabled(LogLevel.Warning))
-                logger.LogWarning(output());
+            if (logger.IsEnabled(LogLevel.Warn))
+                logger.Warn(output());
         }
 
         public static void Error(this ILogger logger, Func<string> output, Exception ex = null)
@@ -28,9 +28,9 @@ namespace MiningForce.Configuration.Extensions
             if (logger.IsEnabled(LogLevel.Error))
             {
                 if(ex == null)
-                    logger.LogError(output());
+                    logger.Error(output());
                 else
-                    logger.LogError(default(EventId), ex, output());
+                    logger.Error(ex, output());
             }
         }
 
@@ -38,14 +38,14 @@ namespace MiningForce.Configuration.Extensions
         {
             if (logger.IsEnabled(LogLevel.Error))
             {
-                logger.LogError(default(EventId), ex, String.Empty);
+                logger.Error(ex, String.Empty);
             }
         }
 
         public static void Critical(this ILogger logger, Func<string> output)
         {
-            if (logger.IsEnabled(LogLevel.Critical))
-                logger.LogCritical(output());
+            if (logger.IsEnabled(LogLevel.Fatal))
+                logger.Fatal(output());
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using Microsoft.Extensions.Logging;
+using NLog;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
@@ -24,10 +24,9 @@ namespace MiningForce.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx, 
-            ILogger<BitcoinJobManager> logger,
             BlockchainDaemon daemon,
             ExtraNonceProvider extraNonceProvider,
-	        PoolConfig poolConfig) : base(ctx, logger, daemon, poolConfig)
+	        PoolConfig poolConfig) : base(ctx, LogManager.GetCurrentClassLogger(), daemon, poolConfig)
         {
 			this.extraNonceProvider = extraNonceProvider;
         }

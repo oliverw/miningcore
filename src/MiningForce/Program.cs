@@ -7,7 +7,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using NLog;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.MininigPool;
@@ -22,7 +22,7 @@ namespace MiningForce
     {
         private static IContainer container;
         private static AutofacServiceProvider serviceProvider;
-        private static ILogger<Program> logger;
+        private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 
         static void Main(string[] args)
@@ -107,7 +107,7 @@ namespace MiningForce
             ConfigureLogging();
         }
 
-	    private static PoolClusterConfig ReadConfig(string file)
+	    private static ClusterConfig ReadConfig(string file)
         {
             try
             {
@@ -122,7 +122,7 @@ namespace MiningForce
                 {
                     using (var jsonReader = new JsonTextReader(reader))
                     {
-                        return serializer.Deserialize<Configuration.PoolClusterConfig>(jsonReader);
+                        return serializer.Deserialize<ClusterConfig>(jsonReader);
                     }
                 }
             }
@@ -163,14 +163,14 @@ namespace MiningForce
 	    {
 		    var options = new NLogProviderOptions();
 
-		    serviceProvider.GetService<ILoggerFactory>()
+		    serviceProvider.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()
 			    .AddNLog(options)
 				.ConfigureNLog("nlog.config");
 
-		    logger = container.Resolve<ILogger<Program>>();
+		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
-		private static async void Start(PoolClusterConfig config)
+		private static async void Start(ClusterConfig config)
         {
             try
             {

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using Microsoft.Extensions.Logging;
+using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
@@ -26,9 +26,8 @@ namespace MiningForce.MininigPool
     public class Pool : StratumServer
     {
         public Pool(IComponentContext ctx, 
-            ILogger<Pool> logger, 
             JsonSerializerSettings serializerSettings) : 
-            base(ctx, logger, serializerSettings)
+            base(ctx, LogManager.GetCurrentClassLogger(), serializerSettings)
         {
         }
 

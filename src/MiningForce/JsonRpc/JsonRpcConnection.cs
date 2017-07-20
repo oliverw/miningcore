@@ -2,16 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
-using Autofac;
 using CodeContracts;
 using LibUvManaged;
-using Microsoft.Extensions.Logging;
-using MiningForce.Configuration.Extensions;
+using NLog;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 // http://www.jsonrpc.org/specification
 // https://github.com/Astn/JSON-RPC.NET
@@ -22,14 +18,13 @@ namespace MiningForce.JsonRpc
 {
     public class JsonRpcConnection
     {
-        public JsonRpcConnection(IComponentContext ctx, JsonSerializerSettings serializerSettings)
+        public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {
-            this.logger = ctx.Resolve<ILogger<JsonRpcConnection>>();
             this.serializerSettings = serializerSettings;
         }
 
         private readonly JsonSerializerSettings serializerSettings;
-        private readonly ILogger<JsonRpcConnection> logger;
+        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private ILibUvConnection upstream;
         private const int MaxRequestLength = 8192;
 

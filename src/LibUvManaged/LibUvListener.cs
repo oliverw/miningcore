@@ -5,7 +5,6 @@ using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
 using Microsoft.Extensions.Logging;
-using MiningForce.Configuration.Extensions;
 
 namespace LibUvManaged
 {
@@ -54,11 +53,11 @@ namespace LibUvManaged
                 var listenState = Tuple.Create(this, connectionHandler);
                 socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
-                logger.Debug(() => $"Listening on {endPoint}");
+                logger.LogDebug($"Listening on {endPoint}");
 
                 loop.Run();
 
-                logger.Debug(() => $"Stopped listening on {endPoint}");
+                logger.LogDebug($"Stopped listening on {endPoint}");
 
                 // close handles
                 uv.walk(loop, (handle, state) => uv.close(handle, null), IntPtr.Zero);

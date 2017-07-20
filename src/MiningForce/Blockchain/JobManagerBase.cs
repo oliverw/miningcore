@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using Microsoft.Extensions.Logging;
+using NLog;
 using MiningForce.Authorization;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
