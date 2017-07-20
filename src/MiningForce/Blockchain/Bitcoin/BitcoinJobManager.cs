@@ -139,6 +139,9 @@ namespace MiningForce.Blockchain.Bitcoin
 				{
 					logger.Info(() => $"[{poolConfig.Coin.Type}] Block '{share.BlockHash}' has been accepted by network");
 
+					// persist the coinbase transaction-hash to allow the payment processor
+					// to verify later on that the pool has received the reward for the block
+					// along with the amount
 					share.BlockVerificationData = acceptResponse.CoinbaseTransaction;
 				}
 			}
