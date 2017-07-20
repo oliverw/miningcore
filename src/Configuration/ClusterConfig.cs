@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using NLog;
 
 namespace MiningForce.Configuration
 {
@@ -26,9 +25,12 @@ namespace MiningForce.Configuration
 
 	public class ClusterLoggingConfig
 	{
-		public bool PerPoolLogFile { get; set; }
-		public string LogBaseDirectory { get; set; }
-		public LogLevel LogLevel { get; set; }
+		public string Level { get; set; }
+		public bool EnableConsoleLog { get; set; }
+		public bool EnableConsoleColors { get; set; }
+		public string LogFile { get; set; }
+		//public bool PerPoolLogFile { get; set; }
+		//public string LogBaseDirectory { get; set; }
 	}
 
 	public class NetworkEndpointConfig

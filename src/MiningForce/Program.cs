@@ -14,7 +14,10 @@ using MiningForce.MininigPool;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using NLog.Conditions;
+using NLog.Config;
 using NLog.Extensions.Logging;
+using NLog.Targets;
 
 namespace MiningForce
 {
@@ -50,7 +53,7 @@ namespace MiningForce
 					return;
 	            }
 
-	            Bootstrap();
+	            Bootstrap(config);
 
 				// go
 				Start(config);
@@ -99,7 +102,7 @@ namespace MiningForce
             return true;
         }
 
-        private static void Bootstrap()
+        private static void Bootstrap(ClusterConfig config)
         {
             // Configure DI
             var services = new ServiceCollection()
@@ -117,7 +120,7 @@ namespace MiningForce
 
             serviceProvider = new AutofacServiceProvider(container);
 
-            ConfigureLogging();
+            ConfigureLogging(config.Logging);
         }
 
 	    private static ClusterConfig ReadConfig(string file)
@@ -172,13 +175,80 @@ namespace MiningForce
             Console.WriteLine();
         }
 
-	    private static void ConfigureLogging()
+	    private static void ConfigureLogging(ClusterLoggingConfig config)
 	    {
-		    var options = new NLogProviderOptions();
+			var loggingConfig = new LoggingConfiguration();
+
+		    if (config != null)
+		    {
+			    // parse level
+			    var level = !string.IsNullOrEmpty(config.Level)
+				    ? LogLevel.FromString(config.Level)
+				    : LogLevel.Info;
+
+			    var layout = "[${longdate}] [${pad:inner=${level:uppercase=true}}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+
+			    if (config.EnableConsoleLog)
+			    {
+				    if (config.EnableConsoleColors)
+				    {
+					    var target = new ColoredConsoleTarget("console")
+					    {
+						    Layout = layout
+					    };
+
+					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Debug"),
+						    ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
+
+					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Info"),
+						    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+
+					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Warn"),
+						    ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
+
+					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Error"),
+						    ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
+
+					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Fatal"),
+						    ConsoleOutputColor.Red, ConsoleOutputColor.White));
+
+					    loggingConfig.AddTarget(target);
+					    loggingConfig.AddRule(level, LogLevel.Fatal, target);
+				    }
+
+					else
+				    {
+					    var target = new ConsoleTarget("console")
+					    {
+						    Layout = layout
+					    };
+
+					    loggingConfig.AddTarget(target);
+					    loggingConfig.AddRule(level, LogLevel.Fatal, target);
+				    }
+				}
+
+			    if (!string.IsNullOrEmpty(config.LogFile))
+			    {
+				    var target = new FileTarget("file")
+				    {
+					    FileName = config.LogFile,
+					    FileNameKind = FilePathKind.Unknown,
+					    Layout = layout
+				    };
+
+				    loggingConfig.AddRule(level, LogLevel.Fatal, target);
+			    }
+			}
 
 		    serviceProvider.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()
-			    .AddNLog(options)
-				.ConfigureNLog("nlog.config");
+			    .AddNLog()
+				.ConfigureNLog(loggingConfig);
 
 		    logger = LogManager.GetCurrentClassLogger();
 	    }

@@ -1,4 +1,11 @@
 ﻿{
+  "logging": {
+    "level": "info",
+    "enableConsoleLog": true,
+    "enableConsoleColors": true,
+    "logFile": ""
+  },
+
   "pools": [{
       "enabled": true,
 
@@ -16,11 +23,7 @@
       or to donations address. Addresses or hashed public keys can be used. Here is an example
       of rewards going to the main pool op, a pool co-owner, and NOMP donation. */
       "rewardRecipients": [
-        {  "type": "op", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 1.5 },
-
-        /* 0.1% donation to MiningForce. This pubkey can accept any type of coin, please leave this in
-        your config to help support MiningForce development. */
-        {  "type": "dev", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 0.1 }
+        {  "type": "op", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 1.5 }
       ],
 
       "blockRefreshInterval": 1000, // How often to poll RPC daemons for new blocks, in milliseconds
