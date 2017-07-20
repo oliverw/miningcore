@@ -127,7 +127,7 @@ namespace MiningForce
         {
             try
             {
-                Console.WriteLine($"Reading configuration file {file}");
+                Console.WriteLine($"Using configuration file {file}\n");
 
                 var serializer = JsonSerializer.Create(new JsonSerializerSettings()
                 {
