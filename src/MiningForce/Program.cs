@@ -24,8 +24,9 @@ namespace MiningForce
         private static AutofacServiceProvider serviceProvider;
         private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
+	    private static CommandOption dumpConfigOption;
 
-        static void Main(string[] args)
+	    static void Main(string[] args)
         {
             try
             {
@@ -34,14 +35,25 @@ namespace MiningForce
                     return;
 
                 Logo();
-                Bootstrap();
                 var config = ReadConfig(configFile);
 
-				// dump config as parsed for trouble-shooting purposes
-				logger.Debug(()=> $"Cluster config parsed as: {JsonConvert.SerializeObject(config)}");
+	            if (dumpConfigOption.HasValue())
+	            {
+		            Console.WriteLine("\nCurrent configuration as parsed from config file:");
 
-                // go
-                Start(config);
+					Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
+					{
+						ContractResolver = new CamelCasePropertyNamesContractResolver(),
+						Formatting = Formatting.Indented
+					}));
+
+					return;
+	            }
+
+	            Bootstrap();
+
+				// go
+				Start(config);
 
                 Console.ReadLine();
             }
@@ -65,6 +77,7 @@ namespace MiningForce
 
             var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
             var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+	        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
             app.HelpOption("-? | -h | --help");
 
             app.Execute(args);
@@ -111,7 +124,7 @@ namespace MiningForce
         {
             try
             {
-                logger.Info(() => $"Reading configuration file {file}");
+                Console.WriteLine($"Reading configuration file {file}");
 
                 var serializer = JsonSerializer.Create(new JsonSerializerSettings()
                 {
@@ -129,7 +142,7 @@ namespace MiningForce
 
             catch (JsonException ex)
             {
-                logger.Error(()=> $"Error parsing config: {ex.Message}");
+	            Console.WriteLine($"Error parsing config: {ex.Message}");
                 throw;
             }
 
