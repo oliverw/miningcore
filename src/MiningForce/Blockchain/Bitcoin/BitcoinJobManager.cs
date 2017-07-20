@@ -128,6 +128,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			// if candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
+				logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block {share.BlockHash}");
+
 				await SubmitBlockAsync(share);
 				var acceptResponse = await CheckAcceptedAsync(share);
 
@@ -136,7 +138,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{poolConfig.Coin.Type}] Block '{share.BlockHash}' has been accepted by network");
+					logger.Info(() => $"[{poolConfig.Coin.Type}] Block {share.BlockHash} was accepted");
 
 					// persist the coinbase transaction-hash to allow the payment processor
 					// to verify later on that the pool has received the reward for the block
@@ -353,8 +355,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private async Task SubmitBlockAsync(BitcoinShare share)
 	    {
-		    logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block '{share.BlockHash}' to network");
-
 			if (hasSubmitBlockMethod)
 			    await daemon.ExecuteCmdAnyAsync<string>(SubmitBlockCommand, new[] { share.BlockHex });
 			else
