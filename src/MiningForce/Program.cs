@@ -7,11 +7,14 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
+using MiningForce.Blockchain.Bitcoin;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.Configuration.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Stratum;
+using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Conditions;
@@ -33,7 +36,7 @@ namespace MiningForce
         {
             try
             {
-                string configFile;
+				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
 

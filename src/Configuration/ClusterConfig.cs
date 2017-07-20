@@ -5,6 +5,7 @@ namespace MiningForce.Configuration
 	public enum CoinType
 	{
 		Bitcoin = 1,
+		Litecoin,
 	}
 
 	public class CoinConfig
@@ -102,7 +103,7 @@ namespace MiningForce.Configuration
 		public AuthenticatedNetworkEndpointConfig Daemon { get; set; }
 	}
 
-	public class RewardRecipientConfig
+	public class RewardRecipient
 	{
 		public RewardRecipientType Type { get; set; }
 		public string Address { get; set; }
@@ -118,7 +119,7 @@ namespace MiningForce.Configuration
 		public PaymentProcessingConfig PaymentProcessing { get; set; }
 		public BanningConfig Banning { get; set; }
 		public DatabaseEndpointConfig Database { get; set; }
-		public RewardRecipientConfig[] RewardRecipients { get; set; }
+		public RewardRecipient[] RewardRecipients { get; set; }
 		public StratumAuthorizerKind Authorizer { get; set; }
 		public string Address { get; set; }
 		public int ClientConnectionTimeout { get; set; }

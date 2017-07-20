@@ -6,8 +6,10 @@ using System.Text;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public static class BitcoinConstants
-    {
-        public static BigInteger Diff1 = BigInteger.Parse("00000000ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
-    }
+	public enum BitcoinNetworkType
+	{
+		Main = 1,
+		Test,
+		RegTest
+	}
 }

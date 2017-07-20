@@ -31,12 +31,11 @@ namespace MiningForce.Blockchain.Bitcoin
 			this.extraNonceProvider = extraNonceProvider;
         }
 
-	    private BitcoinAddress poolAddress;
         private readonly ExtraNonceProvider extraNonceProvider;
         private readonly NetworkStats networkStats = new NetworkStats();
-        private bool isPoS;
-        private bool isTestNet;
-        private bool isRegTestNet;
+	    private IDestination poolAddressDestination;
+		private bool isPoS;
+	    private BitcoinNetworkType networkType;
         private bool hasSubmitBlockMethod;
 	    private double shareMultiplier;
 		private IHashAlgorithm coinbaseHasher;
@@ -250,14 +249,22 @@ namespace MiningForce.Blockchain.Bitcoin
             if (isPoS && string.IsNullOrEmpty(validateAddressResponse.Response.PubKey))
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] The pool-address is not from the daemon wallet - this is required for POS coins");
 
-	        poolAddress = BitcoinAddress.Create(poolConfig.Address);
+			// Create pool address script from response
+	        if (isPoS)
+		        poolAddressDestination = new PubKey(validateAddressResponse.Response.PubKey);
+			else
+		        poolAddressDestination = BitcoinUtils.AddressToScript(validateAddressResponse.Response.Address);
 
 			// chain detection
-			isTestNet = blockchainInfoResponse.Response.Chain == "test";
-            isRegTestNet = blockchainInfoResponse.Response.Chain == "regtest";
+			if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
+				networkType = BitcoinNetworkType.Test;
+	        else if (blockchainInfoResponse.Response.Chain.ToLower() == "regtest")
+		        networkType = BitcoinNetworkType.RegTest;
+			else
+				networkType = BitcoinNetworkType.Main;
 
-            // block submission RPC method
-            if (submitBlockResponse.Error?.Message?.ToLower() == "method not found")
+			// block submission RPC method
+			if (submitBlockResponse.Error?.Message?.ToLower() == "method not found")
                 hasSubmitBlockMethod = false;
             else if (submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
@@ -265,7 +272,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Unable detect block submission RPC method");
 
             // update stats
-            networkStats.Network = isTestNet ? "Testnet" : (isRegTestNet ? "Regtest" : "Main");
+            networkStats.Network = networkType.ToString();
             networkStats.BlockHeight = infoResponse.Response.Blocks;
             networkStats.Difficulty = miningInfoResponse.Response.Difficulty;
             networkStats.HashRate = miningInfoResponse.Response.NetworkHashps;
@@ -287,7 +294,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		        if (isNew || forceUpdate)
 		        {
-			        currentJob = new BitcoinJob(poolConfig, poolAddress, extraNonceProvider, isPoS, shareMultiplier,
+			        currentJob = new BitcoinJob(poolConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, shareMultiplier,
 				        coinbaseHasher, headerHasher, blockHasher, result, NextJobId());
 
 			        currentJob.Init();

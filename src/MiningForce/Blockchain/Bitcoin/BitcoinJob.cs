@@ -10,21 +10,23 @@ using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(PoolConfig poolConfig, BitcoinAddress poolAddress, ExtraNonceProvider extraNonceProvider, 
-			bool isPoS, double shareMultiplier, 
+	    public BitcoinJob(PoolConfig poolConfig, IDestination poolAddressDestination, BitcoinNetworkType networkType,
+			ExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier, 
 			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher, BlockTemplate blockTemplate,
 			string jobId)
 	    {
 		    this.poolConfig = poolConfig;
-		    this.blockTemplate = blockTemplate;
+		    this.poolAddressDestination = poolAddressDestination;
+			this.networkType = networkType;
+			this.blockTemplate = blockTemplate;
 		    this.jobId = jobId;
 
-			this.poolAddress = poolAddress;
 		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
 		    this.isPoS = isPoS;
 			this.shareMultiplier = shareMultiplier;
@@ -35,11 +37,12 @@ namespace MiningForce.Blockchain.Bitcoin
 	    }
 
 	    private readonly string jobId;
+	    private readonly BitcoinNetworkType networkType;
 	    private readonly int extraNoncePlaceHolderLength;
 	    private readonly BlockTemplate blockTemplate;
-	    private readonly BitcoinAddress poolAddress;
 	    private readonly PoolConfig poolConfig;
-	    private readonly bool isPoS;
+	    private readonly IDestination poolAddressDestination;
+		private readonly bool isPoS;
 	    private Target target;
 	    private MerkleTree mt;
 	    private uint version;
@@ -50,6 +53,12 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private readonly IHashAlgorithm coinbaseHasher;
 	    private readonly IHashAlgorithm headerHasher;
 	    private readonly IHashAlgorithm blockHasher;
+
+	    private static readonly Dictionary<CoinType, string> devFeeAddresses = new Dictionary<CoinType, string>
+	    {
+		    {CoinType.Bitcoin, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
+		    {CoinType.Litecoin, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
+		};
 
 		// serialization constants
 		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
@@ -295,7 +304,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    // Payee funds (DASH Coin only)
 		    if (!string.IsNullOrEmpty(blockTemplate.Payee))
 		    {
-			    var payeeAddress = BitcoinAddress.Create(blockTemplate.Payee);
+			    var payeeAddress = BitcoinUtils.AddressToScript(blockTemplate.Payee);
 			    var payeeReward = reward / 5;
 
 			    reward -= payeeReward;
@@ -305,9 +314,13 @@ namespace MiningForce.Blockchain.Bitcoin
 		    }
 
 		    // Distribute funds to configured reward recipients
-		    foreach (var recipient in poolConfig.RewardRecipients)
+		    var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
+			if(networkType == BitcoinNetworkType.Main && devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
+				rewardRecipients.Add(new RewardRecipient { Address = devFeeAddresses[poolConfig.Coin.Type], Percentage = 0.1 });
+
+			foreach (var recipient in rewardRecipients)
 		    {
-			    var recipientAddress = BitcoinAddress.Create(recipient.Address);
+			    var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
 			    var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0 * reward.Satoshi));
 
 			    rewardToPool -= recipientReward;
@@ -316,7 +329,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    }
 
 			// Finally distribute remaining funds to pool
-		    tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddress)
+		    tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
 		    {
 			    Value = rewardToPool
 			});

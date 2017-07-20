@@ -21,9 +21,9 @@
       /* Block rewards go to the configured pool wallet address to later be paid out to miners,
       except for a percentage that can go to, for examples, pool operator(s) as pool fees or
       or to donations address. Addresses or hashed public keys can be used. Here is an example
-      of rewards going to the main pool op, a pool co-owner, and NOMP donation. */
+      of rewards going to the main pool op */
       "rewardRecipients": [
-        {  "type": "op", "address": "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm", "percentage": 1.5 }
+        { "type": "op", "address": "mj4HUMQ5dqvKrqgA9NKnMt9x7qFbzzsFoY", "percentage": 1.5 }
       ],
 
       "blockRefreshInterval": 1000, // How often to poll RPC daemons for new blocks, in milliseconds
