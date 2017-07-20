@@ -315,6 +315,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		    // Distribute funds to configured reward recipients
 		    var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
+
+			// Developer fee
 			if(networkType == BitcoinNetworkType.Main && devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
 				rewardRecipients.Add(new RewardRecipient { Address = devFeeAddresses[poolConfig.Coin.Type], Percentage = 0.1 });
 
