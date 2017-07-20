@@ -101,6 +101,7 @@ namespace MiningForce.Configuration
 
     public class PoolConfig
     {
+		public bool Enabled { get; set; }
         public CoinConfig Coin { get; set; }
         public Dictionary<int, PoolEndpoint> Ports { get; set; }
         public AuthenticatedNetworkEndpointConfig[] Daemons { get; set; }

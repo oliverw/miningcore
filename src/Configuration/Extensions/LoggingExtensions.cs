@@ -7,7 +7,7 @@ namespace MiningForce.Configuration.Extensions
     {
         public static void Debug(this ILogger logger, Func<string> output)
         {
-            if (logger.IsEnabled(LogLevel.Debug))
+			if (logger.IsEnabled(LogLevel.Debug))
                 logger.LogDebug(output());
         }
 

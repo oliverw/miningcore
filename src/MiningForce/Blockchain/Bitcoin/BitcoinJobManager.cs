@@ -189,7 +189,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{poolConfig.Coin.Type}] Daemons are fully synched with blockchain");
+                    logger.Info(() => $"[{poolConfig.Coin.Type}] All daemons synched with blockchain");
                     break;
                 }
 

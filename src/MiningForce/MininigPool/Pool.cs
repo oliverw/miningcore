@@ -55,7 +55,7 @@ namespace MiningForce.MininigPool
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             this.poolConfig = poolConfig;
 
-            logger.Info(() => $"Pool '{poolConfig.Coin.Type}' starting ...");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
 
             StartListeners();
             await InitializeJobManager();

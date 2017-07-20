@@ -54,7 +54,9 @@ namespace MiningForce.Blockchain
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
 
-            this.stratum = stratum;
+	        logger.Info(() => $"[{poolConfig.Coin.Type}] Initializing ...");
+
+			this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
 			SetupAuthorizer();
@@ -63,7 +65,7 @@ namespace MiningForce.Blockchain
             await PostStartInitAsync();
             SetupJobPolling();
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] Manager started");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] Initialized");
         }
 
         #endregion // API-Surface
@@ -99,7 +101,7 @@ namespace MiningForce.Blockchain
                 await Task.Delay(TimeSpan.FromSeconds(5));
             }
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] All coin-daemons are online");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] All daemons online");
         }
 
         protected virtual void SetupJobPolling()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -35,6 +36,9 @@ namespace MiningForce
                 Logo();
                 Bootstrap();
                 var config = ReadConfig(configFile);
+
+				// dump config as parsed for trouble-shooting purposes
+				logger.Debug(()=> $"Cluster config parsed as: {JsonConvert.SerializeObject(config)}");
 
                 // go
                 Start(config);
@@ -100,18 +104,10 @@ namespace MiningForce
 
             serviceProvider = new AutofacServiceProvider(container);
 
-            // Congfigure logging
-            var loggerFactory = serviceProvider.GetService<ILoggerFactory>()
-                .AddNLog();
-
-            loggerFactory.ConfigureNLog("nlog.config");
-
-            // Done
-            logger = container.Resolve<ILogger<Program>>();
-            logger.Info(()=> "MiningCore startup ...");
+            ConfigureLogging();
         }
 
-        private static PoolClusterConfig ReadConfig(string file)
+	    private static PoolClusterConfig ReadConfig(string file)
         {
             try
             {
@@ -163,12 +159,22 @@ namespace MiningForce
             Console.WriteLine();
         }
 
+	    private static void ConfigureLogging()
+	    {
+		    var options = new NLogProviderOptions();
 
-        private static async void Start(PoolClusterConfig config)
+		    serviceProvider.GetService<ILoggerFactory>()
+			    .AddNLog(options)
+				.ConfigureNLog("nlog.config");
+
+		    logger = container.Resolve<ILogger<Program>>();
+	    }
+
+		private static async void Start(PoolClusterConfig config)
         {
             try
             {
-                foreach (var poolConfig in config.Pools)
+                foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
                 {
                     var pool = container.Resolve<Pool>();
                     await pool.StartAsync(poolConfig);
