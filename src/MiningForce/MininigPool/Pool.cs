@@ -289,7 +289,6 @@ namespace MiningForce.MininigPool
 	    private void SetupTelemetry()
 	    {
 		    resposeTimesSubject
-			    .ObserveOn(TaskPoolScheduler.Default)
 			    .Select(ms => (float) ms)
 			    .Buffer(TimeSpan.FromMinutes(1))
 			    .Select(responses => responses.Average())
