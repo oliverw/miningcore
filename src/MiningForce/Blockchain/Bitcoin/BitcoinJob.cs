@@ -406,9 +406,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 					writer.Flush();
 
-					return stream
-						.ToArray()
-						.ToReverseArray();
+					return stream.ToArray().ToReverseArray();
 			    }
 		    }
 	    }
