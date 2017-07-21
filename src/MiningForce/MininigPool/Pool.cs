@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reactive.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
@@ -72,6 +73,9 @@ namespace MiningForce.MininigPool
             await manager.StartAsync(this);
 
             manager.Jobs.Subscribe(OnNewJob);
+
+			// wait for initial job
+	        await manager.Jobs.Take(1).ToTask();
         }
 
         protected override void OnClientConnected(StratumClient client)
@@ -127,9 +131,8 @@ namespace MiningForce.MininigPool
             // send difficulty
             client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
 
-            // Send current job if available
-            if (currentJobParams != null)
-                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+            // Send current job
+            client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
         }
 
         protected override async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
