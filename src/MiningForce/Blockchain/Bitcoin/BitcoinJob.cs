@@ -85,10 +85,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    version = blockTemplate.Version;
 		    timestamp = blockTemplate.CurTime;
-
-		    blockTarget = !string.IsNullOrEmpty(blockTemplate.Target)
-			    ? new Target(new uint256(blockTemplate.Target))
-			    : new Target(blockTemplate.Bits.HexToByteArray());
+		    blockTarget = new Target(blockTemplate.Bits.HexToByteArray());
 
 		    // fields for miner
 		    encodedDifficultyHex = blockTemplate.Bits;
@@ -118,7 +115,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    };
 	    }
 
-		public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce)
+		public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
 	    {
 		    // validate nTime
 		    if (nTime?.Length != 8)
@@ -138,7 +135,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			if (!RegisterSubmit(extraNonce1, extraNonce2, nTime, nonce))
 			    throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
-		    return ProcessShareInternal(extraNonce1, extraNonce2, nTimeInt, nonceInt);
+		    return ProcessShareInternal(extraNonce1, extraNonce2, nTimeInt, nonceInt, stratumDifficulty);
 	    }
 
 		#endregion // API-Surface
@@ -346,7 +343,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    return true;
 	    }
 
-	    private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce)
+	    private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
 	    {
 		    var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
 		    var coinbaseHash = coinbaseHasher.Digest(coinbase, null);
@@ -359,13 +356,23 @@ namespace MiningForce.Blockchain.Bitcoin
 			var headerValue = new uint256(headerHash, true);
 			var target = new Target(headerValue);
 
-		    var result = new BitcoinShare
-		    {
-			    IsBlockCandidate = target < blockTarget
+			// test if share meets at least workers current difficulty
+		    var ratio = target.Difficulty / stratumDifficulty;
+		    if (ratio < 0.99)
+			    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({target.Difficulty})");
+
+			// valid share
+			var result = new BitcoinShare
+			{
+				BlockHeight = blockTemplate.Height,
+				Coin = poolConfig.Coin.Type,
+				Submitted = DateTime.UtcNow,
 			};
 
-		    if (result.IsBlockCandidate)
+		    // now check if the share meets the much harder block difficulty
+		    if (target < blockTarget)
 		    {
+			    result.IsBlockCandidate = true;
 			    result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
 			    result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
 			    result.BlockHeight = blockTemplate.Height;

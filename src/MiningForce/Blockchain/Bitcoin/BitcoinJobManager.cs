@@ -122,9 +122,9 @@ namespace MiningForce.Blockchain.Bitcoin
 			var context = GetWorkerContext(worker);
 
 			// validate & process
-			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce);
+			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, stratumDifficulty);
 
-			// if candidate, submit & check if accepted by network
+			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
 				logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block {share.BlockHash}");
@@ -132,33 +132,28 @@ namespace MiningForce.Blockchain.Bitcoin
 				await SubmitBlockAsync(share);
 				var acceptResponse = await CheckAcceptedAsync(share);
 
-				// is still a block candidate?
+				// is it still a block candidate?
 				share.IsBlockCandidate = acceptResponse.Accepted;
 
 				if (share.IsBlockCandidate)
 				{
 					logger.Info(() => $"[{poolConfig.Coin.Type}] Daemon accepted block {share.BlockHash}");
 
-					// persist the coinbase transaction-hash to allow the payment processor
+					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
-					// along with the amount
 					share.BlockVerificationData = acceptResponse.CoinbaseTransaction;
+				}
+
+				else
+				{
+					// clear fields that no longer apply
+					share.BlockVerificationData = null;
 				}
 			}
 
-		    else
-		    {
-			    // otherwise check difficulty
-			    var ratio = share.Difficulty / stratumDifficulty;
-				if(ratio < 0.99)
-					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({share.Difficulty})");
-			}
-
 			// enrich share with common data
-	        share.Coin = poolConfig.Coin.Type;
 			share.Worker = workername;
 		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-	        share.Submitted = now;
 	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
 
 			return share;
