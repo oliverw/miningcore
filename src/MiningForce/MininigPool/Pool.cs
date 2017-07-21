@@ -27,9 +27,7 @@ namespace MiningForce.MininigPool
         }
 
         private readonly PoolStats poolStats = new PoolStats();
-
         private object currentJobParams;
-        private readonly object currentJobParamsLock = new object();
         private IBlockchainJobManager manager;
 
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
@@ -130,11 +128,8 @@ namespace MiningForce.MininigPool
             client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
 
             // Send current job if available
-            lock (currentJobParamsLock)
-            {
-                if (currentJobParams != null)
-                    client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
-            }
+            if (currentJobParams != null)
+                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
         }
 
         protected override async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
@@ -261,13 +256,8 @@ namespace MiningForce.MininigPool
         {
             logger.Debug(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
 
-            lock (currentJobParamsLock)
-            {
-                currentJobParams = jobParams;
-            }
-
-            if (jobParams != null)
-                BroadcastJob(jobParams);
+            currentJobParams = jobParams;
+            BroadcastJob(currentJobParams);
         }
 
         private void BroadcastJob(object jobParams)
