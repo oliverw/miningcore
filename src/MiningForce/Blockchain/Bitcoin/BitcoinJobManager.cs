@@ -38,6 +38,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private BitcoinNetworkType networkType;
         private bool hasSubmitBlockMethod;
 	    private double shareMultiplier;
+	    private double blockProbability;
 		private IHashAlgorithm coinbaseHasher;
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
@@ -71,7 +72,7 @@ namespace MiningForce.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public Task<object[]> HandleWorkerSubscribeAsync(StratumClient worker)
+        public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             
@@ -91,7 +92,7 @@ namespace MiningForce.Blockchain.Bitcoin
             return Task.FromResult(responseData);
         }
 
-        public async Task<IShare> HandleWorkerSubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty)
+        public async Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
@@ -149,7 +150,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    else
 		    {
 			    // otherwise check difficulty
-			    var ratio = share.Difficulty / stratumDifficulty;
+			    var ratio = (share.Difficulty * shareMultiplier) / stratumDifficulty;
 				if(ratio < 0.99)
 					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({share.Difficulty})");
 			}
@@ -159,6 +160,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			share.Worker = workername;
 		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 	        share.Submitted = now;
+	        share.HashrateContribution = stratumDifficulty * blockProbability;
 
 			return share;
         }
@@ -284,18 +286,19 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
         {
-			var result = await GetBlockTemplateAsync();
+			var blockTemplate = await GetBlockTemplateAsync();
 
 	        lock (jobLock)
 	        {
 		        var isNew = currentJob == null ||
-		                (currentJob.BlockTemplate.PreviousBlockhash != result.PreviousBlockhash ||
-		                 currentJob.BlockTemplate.Height < result.Height);
+		                (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+		                 currentJob.BlockTemplate.Height < blockTemplate.Height);
 
 		        if (isNew || forceUpdate)
 		        {
-			        currentJob = new BitcoinJob(poolConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, shareMultiplier,
-				        coinbaseHasher, headerHasher, blockHasher, result, NextJobId());
+			        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
+						poolConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, 
+						coinbaseHasher, headerHasher, blockHasher);
 
 			        currentJob.Init();
 
@@ -385,6 +388,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					headerHasher = coinbaseHasher;
 					blockHasher = new DigestReverser(coinbaseHasher);
 					shareMultiplier = 1;
+					blockProbability = Math.Pow(2, 32);
 					break;
 
 				default:

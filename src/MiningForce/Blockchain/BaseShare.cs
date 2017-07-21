@@ -11,6 +11,7 @@ namespace MiningForce.Blockchain
 		public string IpAddress { get; set; }
 		public DateTime Submitted { get; set; }
 		public double Difficulty { get; set; }
+		public double HashrateContribution { get; set; }
 		public ulong BlockHeight { get; set; }
 		public CoinType Coin { get; set; }
 		public bool IsBlockCandidate { get; set; }

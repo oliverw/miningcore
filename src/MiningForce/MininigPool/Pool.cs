@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
@@ -42,8 +43,8 @@ namespace MiningForce.MininigPool
 
 		// Telemetry
 		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
-	    private readonly Subject<StratumClient> validSharesSubject = new Subject<StratumClient>();
-	    private readonly Subject<StratumClient> invalidSharesSubject = new Subject<StratumClient>();
+	    private readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
+	    private readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
 
 		#region API-Surface
 
@@ -59,7 +60,8 @@ namespace MiningForce.MininigPool
 
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
-            await InitializeJobManager();
+	        SetupStats();
+			await InitializeJobManager();
 	        StartListeners();
 
 			OutputPoolInfo();
@@ -117,7 +119,7 @@ namespace MiningForce.MininigPool
         protected override async void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
         {
 			var requestParams = request.Params?.ToObject<string[]>();
-			var response = await manager.HandleWorkerSubscribeAsync(client);
+			var response = await manager.SubscribeWorkerAsync(client);
 
 			// respond with manager provided payload
             var data = new object[]
@@ -153,7 +155,7 @@ namespace MiningForce.MininigPool
             var workername = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
-            context.IsAuthorized = await manager.HandleWorkerAuthenticateAsync(client, workername, password);
+            context.IsAuthorized = await manager.AuthenticateWorkerAsync(client, workername, password);
             client.Respond(context.IsAuthorized, request.Id);
         }
 
@@ -174,17 +176,21 @@ namespace MiningForce.MininigPool
 	            {
 		            // submit 
 		            var requestParams = request.Params?.ToObject<string[]>();
-		            var share = await manager.HandleWorkerSubmitShareAsync(client, requestParams, context.Difficulty);
+		            var share = await manager.SubmitShareAsync(client, requestParams, context.Difficulty);
 
 		            client.Respond(true, request.Id);
 
 					// TODO: record it
 
+					// update pool stats
+		            if (share.IsBlockCandidate)
+			            poolStats.LastBlockTime = DateTime.UtcNow;
+
 					// update client stats
 					context.Stats.ValidShares++;
 
 					// telemetry
-					validSharesSubject.OnNext(client);
+					validSharesSubject.OnNext(share);
 				}
 
 				catch (StratumException ex)
@@ -195,7 +201,7 @@ namespace MiningForce.MininigPool
 		            context.Stats.InvalidShares++;
 
 		            // telemetry
-		            invalidSharesSubject.OnNext(client);
+		            invalidSharesSubject.OnNext(Unit.Default);
 
 					// banning
 					if(poolConfig.Banning?.Enabled == true)
@@ -323,6 +329,29 @@ namespace MiningForce.MininigPool
 		    }
 	    }
 
+	    private void SetupStats()
+	    {
+		    poolStats.PoolFeePercent = (float)poolConfig.RewardRecipients
+			    .Where(x => x.Type == RewardRecipientType.Op)
+			    .Sum(x => x.Percentage);
+
+			poolStats.DonationsPercent = (float) poolConfig.RewardRecipients
+			    .Where(x => x.Type == RewardRecipientType.Dev)
+			    .Sum(x => x.Percentage);
+
+		    // Pool Hashrate
+		    var poolHashRateSampleInterval = 30;
+
+		    validSharesSubject
+			    .Buffer(TimeSpan.FromSeconds(poolHashRateSampleInterval))
+			    .Select(shares =>
+			    {
+				    var result = shares.Sum(share => share.HashrateContribution / poolHashRateSampleInterval);
+					return (float) result;
+			    })
+			    .Subscribe(hashRate => poolStats.HashRate = hashRate);
+		}
+
 		private void SetupTelemetry()
 	    {
 			// Average response times per minute
@@ -333,7 +362,7 @@ namespace MiningForce.MininigPool
 			    .Subscribe(avg => poolStats.AverageResponseTimePerMinuteMs = avg);
 
 		    // Shares per second
-			Observable.Merge(validSharesSubject, invalidSharesSubject)
+			Observable.Merge(validSharesSubject.Select(_=> Unit.Default), invalidSharesSubject)
 				.Buffer(TimeSpan.FromSeconds(1))
 				.Select(shares => shares.Count)
 				.Subscribe(count => poolStats.SharesPerSecond = count);

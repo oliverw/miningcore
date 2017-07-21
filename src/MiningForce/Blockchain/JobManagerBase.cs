@@ -43,7 +43,7 @@ namespace MiningForce.Blockchain
 		protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
 	    protected TJob currentJob;
 	    protected object jobLock = new object();
-	    private long jobId = 0;
+	    private long jobId;
 
 		#region API-Surface
 
@@ -63,7 +63,7 @@ namespace MiningForce.Blockchain
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
-            SetupJobPolling();
+            SetupJobStream();
 
             logger.Info(() => $"[{poolConfig.Coin.Type}] Initialized");
         }
@@ -82,7 +82,7 @@ namespace MiningForce.Blockchain
         /// <param name="workername">Name of worker requesting authorization</param>
         /// <param name="password">The password</param>
         /// <returns></returns>
-        public virtual Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password)
+        public virtual Task<bool> AuthenticateWorkerAsync(StratumClient worker, string workername, string password)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workername), $"{nameof(workername)} must not be empty");
@@ -104,7 +104,7 @@ namespace MiningForce.Blockchain
             logger.Info(() => $"[{poolConfig.Coin.Type}] All daemons online");
         }
 
-        protected virtual void SetupJobPolling()
+        protected virtual void SetupJobStream()
         {
             Jobs = Observable.Create<object>(observer =>
             {

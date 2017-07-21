@@ -8,6 +8,5 @@ namespace MiningForce.Blockchain.Bitcoin
 	{
 	    public string BlockHex { get; set; }
 	    public string BlockHash { get; set; }
-	    public double BlockDiffAdjusted { get; set; }
 	}
 }

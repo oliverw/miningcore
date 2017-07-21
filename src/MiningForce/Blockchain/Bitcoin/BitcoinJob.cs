@@ -16,10 +16,10 @@ namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(PoolConfig poolConfig, IDestination poolAddressDestination, BitcoinNetworkType networkType,
-			ExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier, 
-			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher, BlockTemplate blockTemplate,
-			string jobId)
+	    public BitcoinJob(BlockTemplate blockTemplate, string jobId, PoolConfig poolConfig, 
+			IDestination poolAddressDestination, BitcoinNetworkType networkType,
+			ExtraNonceProvider extraNonceProvider, bool isPoS, 
+			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
 	    {
 		    this.poolConfig = poolConfig;
 		    this.poolAddressDestination = poolAddressDestination;
@@ -29,7 +29,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
 		    this.isPoS = isPoS;
-			this.shareMultiplier = shareMultiplier;
 
 			this.coinbaseHasher = coinbaseHasher;
 		    this.headerHasher = headerHasher;
@@ -43,14 +42,13 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private readonly PoolConfig poolConfig;
 	    private readonly IDestination poolAddressDestination;
 		private readonly bool isPoS;
-	    private Target target;
+	    private Target blockTarget;
 	    private MerkleTree mt;
 	    private uint version;
 	    private byte[] coinbaseInitial;
 	    private byte[] coinbaseFinal;
 		private readonly HashSet<string> submissions = new HashSet<string>();
-	    private readonly double shareMultiplier;
-	    private readonly IHashAlgorithm coinbaseHasher;
+		private readonly IHashAlgorithm coinbaseHasher;
 	    private readonly IHashAlgorithm headerHasher;
 	    private readonly IHashAlgorithm blockHasher;
 
@@ -88,7 +86,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    version = blockTemplate.Version;
 		    timestamp = blockTemplate.CurTime;
 
-		    target = !string.IsNullOrEmpty(blockTemplate.Target)
+		    blockTarget = !string.IsNullOrEmpty(blockTemplate.Target)
 			    ? new Target(new uint256(blockTemplate.Target))
 			    : new Target(blockTemplate.Bits.HexToByteArray());
 
@@ -359,22 +357,20 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var header = SerializeHeader(merkleRoot, nTime, nonce);
 		    var headerHash = headerHasher.Digest(header, nTime);
 			var headerValue = new uint256(headerHash, true);
-			var headerTarget = new Target(headerValue);
+			var target = new Target(headerValue);
 
 		    var result = new BitcoinShare
 		    {
-			    IsBlockCandidate = target >= headerTarget,
-		    };
+			    IsBlockCandidate = target < blockTarget
+			};
 
 		    if (result.IsBlockCandidate)
-			{
-				result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
-				result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
-
-				result.BlockHeight = blockTemplate.Height;
-				result.BlockDiffAdjusted = target.Difficulty * shareMultiplier;
-				result.Difficulty = Target.Difficulty1 / (headerValue.GetLow32() * shareMultiplier);
-			}
+		    {
+			    result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
+			    result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
+			    result.BlockHeight = blockTemplate.Height;
+			    result.Difficulty = target.Difficulty;
+		    }
 
 			return result;
 	    }

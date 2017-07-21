@@ -9,23 +9,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
     internal interface ILibuvTrace : ILogger
     {
         void ConnectionRead(string connectionId, int count);
-
         void ConnectionReadFin(string connectionId);
-
         void ConnectionWriteFin(string connectionId);
-
         void ConnectionWroteFin(string connectionId, int status);
-
         void ConnectionWrite(string connectionId, int count);
-
         void ConnectionWriteCallback(string connectionId, int status);
-
         void ConnectionError(string connectionId, Exception ex);
-
         void ConnectionReset(string connectionId);
-
         void ConnectionPause(string connectionId);
-
         void ConnectionResume(string connectionId);
     }
 }

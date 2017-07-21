@@ -39,6 +39,11 @@ namespace MiningForce.Blockchain
 		double Difficulty { get; set; }
 
 		/// <summary>
+		/// Hashrate contribution
+		/// </summary>
+		double HashrateContribution { get; set; }
+
+		/// <summary>
 		/// Block this share refers to
 		/// </summary>
 		ulong BlockHeight { get; set; }
@@ -64,10 +69,9 @@ namespace MiningForce.Blockchain
     {
         Task StartAsync(StratumServer stratum);
         Task<bool> ValidateAddressAsync(string address);
-
-        Task<object[]> HandleWorkerSubscribeAsync(StratumClient worker);
-        Task<bool> HandleWorkerAuthenticateAsync(StratumClient worker, string workername, string password);
-        Task<IShare> HandleWorkerSubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
+        Task<object[]> SubscribeWorkerAsync(StratumClient worker);
+        Task<bool> AuthenticateWorkerAsync(StratumClient worker, string workername, string password);
+        Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
 
         IObservable<object> Jobs { get; }
         NetworkStats NetworkStats { get; }
