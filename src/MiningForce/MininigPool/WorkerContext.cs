@@ -13,13 +13,14 @@ namespace MiningForce.MininigPool
         public int InvalidShares { get; set; }
     }
 
-    public class PoolClientContext
+    public class WorkerContext
     {
-        public PoolClientContext(StratumClient client, PoolConfig poolConfig)
+        public WorkerContext(StratumClient client, PoolConfig poolConfig)
         {
             Difficulty = client.PoolEndpoint.Difficulty;
+	        LastActivity = DateTime.UtcNow;
 
-            if(poolConfig.Banning != null)
+			if (poolConfig.Banning != null)
                 Stats = new BanningStats();
 
             if (client.PoolEndpoint.VarDiff != null)
@@ -30,13 +31,14 @@ namespace MiningForce.MininigPool
 
         public BanningStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }
-        public DateTime? LastActivity { get; set; }
+        public DateTime LastActivity { get; set; }
         public bool IsAuthorized { get; set; } = false;
         public bool IsSubscribed { get; set; }
         public double Difficulty { get; set; }
         public double? PreviousDifficulty { get; set; }
+	    public string UserAgent { get; set; }
 
-        public void EnqueueNewDifficulty(double difficulty)
+	    public void EnqueueNewDifficulty(double difficulty)
         {
             pendingDifficulty = difficulty;
         }

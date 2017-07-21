@@ -34,8 +34,8 @@ namespace MiningForce.MininigPool
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        protected readonly ConditionalWeakTable<StratumClient, PoolClientContext> miningContexts = 
-            new ConditionalWeakTable<StratumClient, PoolClientContext>();
+        protected readonly ConditionalWeakTable<StratumClient, WorkerContext> workerContexts = 
+            new ConditionalWeakTable<StratumClient, WorkerContext>();
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
@@ -57,10 +57,10 @@ namespace MiningForce.MininigPool
             logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
 
 	        SetupTelemetry();
-            StartListeners();
             await InitializeJobManager();
+	        StartListeners();
 
-            OutputPoolInfo();
+			OutputPoolInfo();
         }
 
 	    #endregion // API-Surface
@@ -74,7 +74,7 @@ namespace MiningForce.MininigPool
 
             manager.Jobs.Subscribe(OnNewJob);
 
-			// wait for initial job
+			// we need work before opening the gates
 	        await manager.Jobs.Take(1).ToTask();
         }
 
@@ -104,10 +104,10 @@ namespace MiningForce.MininigPool
 
         protected override async void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
         {
-            // var requestParams = request.Params?.ToObject<string[]>();
-            // var userAgent = requestParams?.Length > 0 ? requestParams[0] : null;
-            var response = await manager.HandleWorkerSubscribeAsync(client);
+			var requestParams = request.Params?.ToObject<string[]>();
+			var response = await manager.HandleWorkerSubscribeAsync(client);
 
+			// respond with manager provided payload
             var data = new object[]
             {
                 new object[]
@@ -121,23 +121,21 @@ namespace MiningForce.MininigPool
             .Concat(response)
             .ToArray();
 
-            // send response
-            client.Respond(data, request.Id);
+	        client.Respond(data, request.Id);
 
-            // get or create context
-            var context = GetMiningContext(client);
+			// setup worker context
+			var context = GetWorkerContext(client);
 	        context.IsSubscribed = true;
+	        context.UserAgent = requestParams?.Length > 0 ? requestParams[0] : null;
 
-            // send difficulty
+			// send intial update
             client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
-
-            // Send current job
             client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
         }
 
         protected override async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
         {
-            var context = GetMiningContext(client);
+            var context = GetWorkerContext(client);
 
             var requestParams = request.Params?.ToObject<string[]>();
             var workername = requestParams?.Length > 0 ? requestParams[0] : null;
@@ -149,7 +147,7 @@ namespace MiningForce.MininigPool
 
         protected override async void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)
         {
-            var context = GetMiningContext(client);
+            var context = GetWorkerContext(client);
             context.LastActivity = DateTime.UtcNow;
 
             if (!context.IsAuthorized)
@@ -192,16 +190,16 @@ namespace MiningForce.MininigPool
 			}
         }
 
-        private PoolClientContext GetMiningContext(StratumClient client)
+        private WorkerContext GetWorkerContext(StratumClient client)
         {
-            PoolClientContext context;
+            WorkerContext context;
 
-            lock (miningContexts)
+            lock (workerContexts)
             {
-                if (!miningContexts.TryGetValue(client, out context))
+                if (!workerContexts.TryGetValue(client, out context))
                 {
-                    context = new PoolClientContext(client, poolConfig);
-                    miningContexts.Add(client, context);
+                    context = new WorkerContext(client, poolConfig);
+                    workerContexts.Add(client, context);
                 }
             }
 
@@ -223,7 +221,7 @@ namespace MiningForce.MininigPool
                 {
                     if (!alive)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting client because communication was not established within the alloted time");
+                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -232,7 +230,7 @@ namespace MiningForce.MininigPool
 
         private void UpdateVarDiff(StratumClient client)
         {
-            var context = GetMiningContext(client);
+            var context = GetWorkerContext(client);
 
             if (context.VarDiff != null)
             {
@@ -260,6 +258,7 @@ namespace MiningForce.MininigPool
             logger.Debug(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
 
             currentJobParams = jobParams;
+
             BroadcastJob(currentJobParams);
         }
 
@@ -267,15 +266,29 @@ namespace MiningForce.MininigPool
         {
             BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client =>
             {
-                var context = GetMiningContext(client);
+                var context = GetWorkerContext(client);
 
                 if (context.IsSubscribed)
                 {
-                    // if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
+					// check if turned zombie
+	                var lastActivityAgo = DateTime.UtcNow - context.LastActivity;
 
-	                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+					if (poolConfig.ClientConnectionTimeout == 0 || 
+						lastActivityAgo.TotalSeconds < poolConfig.ClientConnectionTimeout)
+	                {
+		                // if the client has a pending difficulty change, apply it now
+		                if (context.ApplyPendingDifficulty())
+			                client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
+
+		                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+	                }
+
+					else
+					{
+						logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+
+						DisconnectClient(client);
+					}
 				}
 
 				return false;
