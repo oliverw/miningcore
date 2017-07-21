@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
@@ -12,17 +11,10 @@ using CodeContracts;
 using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
-using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;
-using NLog.LayoutRenderers.Wrappers;
-
-// TODO:
-// - periodic job re-broadcast
-// - periodic update of pool hashrate
-// - banning based on invalid shares
 
 namespace MiningForce.MininigPool
 {
