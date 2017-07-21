@@ -37,8 +37,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		private bool isPoS;
 	    private BitcoinNetworkType networkType;
         private bool hasSubmitBlockMethod;
-	    private double shareMultiplier;
-	    private double blockProbability;
+	    private double difficultyNormalizationFactor;
 		private IHashAlgorithm coinbaseHasher;
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
@@ -150,7 +149,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    else
 		    {
 			    // otherwise check difficulty
-			    var ratio = (share.Difficulty * shareMultiplier) / stratumDifficulty;
+			    var ratio = share.Difficulty / stratumDifficulty;
 				if(ratio < 0.99)
 					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({share.Difficulty})");
 			}
@@ -160,7 +159,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			share.Worker = workername;
 		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 	        share.Submitted = now;
-	        share.HashrateContribution = stratumDifficulty * blockProbability;
+	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
 
 			return share;
         }
@@ -387,8 +386,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					coinbaseHasher = new Sha256Double();
 					headerHasher = coinbaseHasher;
 					blockHasher = new DigestReverser(coinbaseHasher);
-					shareMultiplier = 1;
-					blockProbability = Math.Pow(2, 32);
+					difficultyNormalizationFactor = 1;
 					break;
 
 				default:

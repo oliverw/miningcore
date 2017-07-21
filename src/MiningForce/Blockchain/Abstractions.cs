@@ -39,9 +39,9 @@ namespace MiningForce.Blockchain
 		double Difficulty { get; set; }
 
 		/// <summary>
-		/// Hashrate contribution
+		/// Difficulty relative to a Bitcoin Difficulty 1 Share (used for pool hashrate calculation)
 		/// </summary>
-		double HashrateContribution { get; set; }
+		double DifficultyNormalized { get; set; }
 
 		/// <summary>
 		/// Block this share refers to
