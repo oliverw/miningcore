@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Autofac;
@@ -32,6 +34,8 @@ namespace MiningForce.MininigPool
         }
 
         private readonly PoolStats poolStats = new PoolStats();
+		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
+
         private object currentJobParams;
         private readonly object currentJobParamsLock = new object();
         private IBlockchainJobManager manager;
@@ -56,13 +60,14 @@ namespace MiningForce.MininigPool
 
             logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
 
+	        SetupTelemetry();
             StartListeners();
             await InitializeJobManager();
 
             OutputPoolInfo();
         }
 
-        #endregion // API-Surface
+	    #endregion // API-Surface
 
         private async Task InitializeJobManager()
         {
@@ -84,9 +89,12 @@ namespace MiningForce.MininigPool
             {
                 poolStats.ConnectedMiners = clients.Count;
             }
+
+	        // Telemetry
+	        client.ResponseTime.Subscribe(x=> resposeTimesSubject.OnNext(x));
         }
 
-        protected override void OnClientDisconnected(string subscriptionId)
+		protected override void OnClientDisconnected(string subscriptionId)
         {
             // update stats
             lock (clients)
@@ -214,14 +222,9 @@ namespace MiningForce.MininigPool
                 {
                     if (!alive)
                     {
-                        logger.Debug(() => $"[{client.ConnectionId}] Booting miner because it failed to establish communication within the alloted time");
+                        logger.Info(() => $"[{client.ConnectionId}] Booting client because communication was not established within the alloted time");
 
                         DisconnectClient(client);
-                    }
-
-                    else
-                    {
-                        OnClientConnected(client);
                     }
                 });
         }
@@ -283,7 +286,17 @@ namespace MiningForce.MininigPool
             });
         }
 
-        private static string FormatHashRate(double hashrate)
+	    private void SetupTelemetry()
+	    {
+		    resposeTimesSubject
+			    .ObserveOn(TaskPoolScheduler.Default)
+			    .Select(ms => (float) ms)
+			    .Buffer(TimeSpan.FromMinutes(1))
+			    .Select(responses => responses.Average())
+			    .Subscribe(avg => poolStats.AverageResponseTimeMs = avg);
+	    }
+
+		private static string FormatHashRate(double hashrate)
         {
             var i = -1;
 

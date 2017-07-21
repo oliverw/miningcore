@@ -2,6 +2,7 @@
 using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
@@ -21,6 +22,9 @@ namespace MiningForce.Stratum
         private JsonRpcConnection rpcCon;
         private readonly PoolEndpoint config;
 
+		// telemetry
+		private readonly Subject<string> responses = new Subject<string>();
+
         #region API-Surface
 
         public void Init(ILibUvConnection uvCon, IComponentContext ctx)
@@ -31,26 +35,43 @@ namespace MiningForce.Stratum
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;
+
+			// Telemetry
+			ResponseTime = Requests
+		        .Where(x => !string.IsNullOrEmpty(x.Id))
+		        .Select(req => new {Request = req, Start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()})
+		        .SelectMany(req => responses
+			        .Where(reqId => reqId == req.Request.Id)
+			        .Select(_ => (int) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - req.Start))
+			        .Take(1))
+		        .Publish()
+		        .RefCount();
         }
 
-        public IObservable<JsonRpcRequest> Requests { get; private set; }
-        public string ConnectionId => rpcCon.ConnectionId;
+		public IObservable<JsonRpcRequest> Requests { get; private set; }
+		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
 
-        public void Respond<T>(T payload, string id)
+		// Telemetry
+	    public IObservable<int> ResponseTime { get; private set; }
+
+		public void Respond<T>(T payload, string id)
         {
-            Respond(new JsonRpcResponse<T>(payload, id));
+			Respond(new JsonRpcResponse<T>(payload, id));
         }
 
         public void RespondError(StratumError code, string message, string id, object result = null, object data = null)
         {
-            Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
+			Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
 
         public void Respond<T>(JsonRpcResponse<T> response)
         {
-            lock (rpcCon)
+			if(!string.IsNullOrEmpty(response.Id))
+		        responses.OnNext(response.Id);
+
+			lock (rpcCon)
             {
                 rpcCon?.Send(response);
             }

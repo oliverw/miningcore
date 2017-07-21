@@ -85,13 +85,15 @@ namespace MiningForce.Stratum
 
                 client.Init(con, ctx);
 
-                // monitor client requests
-                client.Requests
+				// monitor client requests
+				client.Requests
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
-            }
 
-            catch (Exception ex)
+	            OnClientConnected(client);
+			}
+
+			catch (Exception ex)
             {
                 logger.Error(() => "OnClientConnected", ex);
             }
