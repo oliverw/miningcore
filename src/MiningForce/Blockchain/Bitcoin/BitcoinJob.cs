@@ -149,12 +149,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    var transactionHashes = blockTemplate.Transactions
 			    .Select(tx => (tx.TxId ?? tx.Hash).HexToByteArray())
-			    .Select(x =>
-			    {
-				    Array.Reverse(x);
-				    return x;
-			    })
-			    .ToArray();
+				.ToReverseArray();
 
 		    mt = new MerkleTree(transactionHashes);
 
@@ -359,8 +354,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var coinbaseHash = coinbaseHasher.Digest(coinbase, null);
 
 		    var merkleRoot = mt.WithFirst(coinbaseHash)
-				.Reverse()
-				.ToArray();
+				.ToReverseArray();
 
 		    var header = SerializeHeader(merkleRoot, nTime, nonce);
 		    var headerHash = headerHasher.Digest(header, nTime);
@@ -418,8 +412,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 					return stream
 						.ToArray()
-						.Reverse()
-						.ToArray();
+						.ToReverseArray();
 			    }
 		    }
 	    }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using MiningForce.Extensions;
 
@@ -105,7 +106,7 @@ namespace MiningForce.Crypto
         private byte[] MerkleJoin(byte[] hash1, byte[] hash2)
         {
             var joined = hash1.Concat(hash2);
-            var dHashed = joined.DoubleDigest().ToArray();
+            var dHashed = DoubleDigest(joined).ToArray();
             return dHashed;
         }
 
@@ -113,10 +114,24 @@ namespace MiningForce.Crypto
         {
             foreach (var step in Steps)
             {
-                first = first.Concat(step).DoubleDigest().ToArray();
+                first = DoubleDigest(first.Concat(step)).ToArray();
             }
 
             return first;
         }
-    }
+
+		private static byte[] DoubleDigest(byte[] input)
+	    {
+		    using (var hash = SHA256.Create())
+		    {
+			    var first = hash.ComputeHash(input, 0, input.Length);
+			    return hash.ComputeHash(first);
+		    }
+	    }
+
+	    private static IEnumerable<byte> DoubleDigest(IEnumerable<byte> input)
+	    {
+		    return DoubleDigest(input.ToArray());
+	    }
+	}
 }

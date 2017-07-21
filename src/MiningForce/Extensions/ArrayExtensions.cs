@@ -24,20 +24,6 @@ namespace MiningForce.Extensions
             return byteArray.Aggregate("", (current, b) => current + " 0x" + b.ToString("x2"));
         }
 
-        public static byte[] DoubleDigest(this byte[] input)
-        {
-            using (var hash = SHA256.Create())
-            {
-                var first = hash.ComputeHash(input, 0, input.Length);
-                return hash.ComputeHash(first);
-            }
-        }
-
-        public static IEnumerable<byte> DoubleDigest(this IEnumerable<byte> input)
-        {
-            return input.ToArray().DoubleDigest();
-        }
-
         /// <summary>
         /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every 
         /// block of 4 bytes must be reversed before reversing the entire buffer
@@ -59,5 +45,12 @@ namespace MiningForce.Extensions
                 }
             }
         }
-    }
+
+	    public static T[] ToReverseArray<T>(this IEnumerable<T> bytes)
+	    {
+		    var arr = bytes.ToArray();
+			Array.Reverse(arr);
+		    return arr;
+	    }
+	}
 }
