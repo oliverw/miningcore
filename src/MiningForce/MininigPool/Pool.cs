@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using Microsoft.Extensions.Caching.Memory;
 using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
@@ -87,7 +84,6 @@ namespace MiningForce.MininigPool
         {
 	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
 	        {
-
 		        // expect miner to establish communication within a certain time
 		        EnsureNoZombieClient(client);
 
@@ -266,8 +262,8 @@ namespace MiningForce.MininigPool
 
                 // update it
                 var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty);
-                if (newDiff != null)
-                    context.EnqueueNewDifficulty(newDiff.Value);
+	            if (newDiff != null)
+					context.EnqueueNewDifficulty(newDiff.Value);
             }
         }
 
@@ -294,10 +290,15 @@ namespace MiningForce.MininigPool
 					if (poolConfig.ClientConnectionTimeout == 0 || 
 						lastActivityAgo.TotalSeconds < poolConfig.ClientConnectionTimeout)
 	                {
-		                // if the client has a pending difficulty change, apply it now
+		                // varDiff: if the client has a pending difficulty change, apply it now
 		                if (context.ApplyPendingDifficulty())
-			                client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
+		                {
+			                logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
 
+							client.Notify(StratumConstants.MsgSetDifficulty, new object[] {context.Difficulty});
+		                }
+
+		                // send job
 		                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
 	                }
 
