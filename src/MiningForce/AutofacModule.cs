@@ -8,6 +8,7 @@ using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
+using MiningForce.Networking.Banning;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -62,6 +63,10 @@ namespace MiningForce
 
             builder.RegisterType<ExtraNonceProvider>()
                 .AsSelf();
+
+	        builder.RegisterType<IntegratedBanManager>()
+		        .Keyed<IBanManager>(BanManagerTypes.Integrated)
+				.SingleInstance();
 
 			//////////////////////
 			// Bitcoin and family

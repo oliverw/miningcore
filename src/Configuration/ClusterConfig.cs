@@ -86,7 +86,18 @@ namespace MiningForce.Configuration
 		public double VariancePercent { get; set; }
 	}
 
-	public class BanningConfig
+	public enum BanManagerTypes
+	{
+		Integrated = 1,
+		IpTables,
+	}
+
+	public class ClusterBanningConfig
+	{
+		public BanManagerTypes Manager { get; set; }
+	}
+
+	public class PoolBanningConfig
 	{
 		public bool Enabled { get; set; }
 		public int CheckThreshold { get; set; } // Check stats when this many shares have been submitted
@@ -116,7 +127,7 @@ namespace MiningForce.Configuration
 		public Dictionary<int, PoolEndpoint> Ports { get; set; }
 		public AuthenticatedNetworkEndpointConfig[] Daemons { get; set; }
 		public PaymentProcessingConfig PaymentProcessing { get; set; }
-		public BanningConfig Banning { get; set; }
+		public PoolBanningConfig Banning { get; set; }
 		public DatabaseEndpointConfig Database { get; set; }
 		public RewardRecipient[] RewardRecipients { get; set; }
 		public StratumAuthorizerKind Authorizer { get; set; }
@@ -129,6 +140,7 @@ namespace MiningForce.Configuration
 	public class ClusterConfig
 	{
 		public ClusterLoggingConfig Logging { get; set; }
+		public ClusterBanningConfig Banning { get; set; }
 		public PoolConfig[] Pools { get; set; }
 	}
 }

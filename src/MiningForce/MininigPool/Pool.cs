@@ -15,6 +15,7 @@ using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
+using MiningForce.Networking.Banning;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;
@@ -32,20 +33,15 @@ namespace MiningForce.MininigPool
         private readonly PoolStats poolStats = new PoolStats();
         private object currentJobParams;
         private IBlockchainJobManager manager;
+	    private IBanManager banManager;
 
-        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
+		protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
         protected readonly ConditionalWeakTable<StratumClient, WorkerContext> workerContexts = 
             new ConditionalWeakTable<StratumClient, WorkerContext>();
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
-
-		// Banning
-		private static readonly IMemoryCache bannedIpCache = new MemoryCache(new MemoryCacheOptions
-		{
-			ExpirationScanFrequency = TimeSpan.FromSeconds(10)
-		});
 
 		// Telemetry
 		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
@@ -57,13 +53,14 @@ namespace MiningForce.MininigPool
 		public NetworkStats NetworkStats => manager.NetworkStats;
         public PoolStats PoolStats => poolStats;
 
-        public async Task StartAsync(PoolConfig poolConfig)
+        public async Task StartAsync(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             this.poolConfig = poolConfig;
 
             logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
 
+	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
             await InitializeJobManager();
 	        StartListeners();
@@ -88,8 +85,7 @@ namespace MiningForce.MininigPool
 
         protected override void OnClientConnected(StratumClient client)
         {
-			// banned?
-	        if (bannedIpCache.Get(client.RemoteEndpoint.Address.ToString()) == null)
+	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
 	        {
 
 		        // expect miner to establish communication within a certain time
@@ -188,7 +184,7 @@ namespace MiningForce.MininigPool
 
 					// TODO: record it
 
-		            // update client stats
+					// update client stats
 					context.Stats.ValidShares++;
 
 					// telemetry
@@ -317,13 +313,22 @@ namespace MiningForce.MininigPool
             });
         }
 
-	    private void SetupTelemetry()
+	    private void SetupBanning(ClusterConfig clusterConfig)
+	    {
+		    if (poolConfig.Banning?.Enabled == true)
+		    {
+			    var managerType = clusterConfig.Banning?.Manager ?? BanManagerTypes.Integrated;
+				banManager = ctx.ResolveKeyed<IBanManager>(managerType);
+		    }
+	    }
+
+		private void SetupTelemetry()
 	    {
 			// Average response times per minute
 		    resposeTimesSubject
 			    .Select(ms => (float) ms)
 			    .Buffer(TimeSpan.FromMinutes(1))
-			    .Select(responses => responses.Average())
+			    .Select(responses => responses.Count > 0 ? responses.Average() : 0)
 			    .Subscribe(avg => poolStats.AverageResponseTimePerMinuteMs = avg);
 
 		    // Shares per second
@@ -344,7 +349,7 @@ namespace MiningForce.MininigPool
 			    .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
 		}
 
-	    private void ConsiderBan(StratumClient client, WorkerContext context, BanningConfig config)
+	    private void ConsiderBan(StratumClient client, WorkerContext context, PoolBanningConfig config)
 	    {
 		    var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 
@@ -363,7 +368,7 @@ namespace MiningForce.MininigPool
 			    {
 				    logger.Warn(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Banning worker: {Math.Floor(percentBad * 100)}% of the last {totalShares} were invalid");
 
-				    bannedIpCache.Set(client.RemoteEndpoint.Address.ToString(), string.Empty, TimeSpan.FromSeconds(config.Time));
+				    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
 				    DisconnectClient(client);
 				}

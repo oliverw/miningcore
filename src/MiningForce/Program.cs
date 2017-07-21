@@ -277,7 +277,7 @@ namespace MiningForce
                 foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
                 {
                     var pool = container.Resolve<Pool>();
-                    await pool.StartAsync(poolConfig);
+                    await pool.StartAsync(poolConfig, config);
                     servers.Add(pool);
                 }
             }
