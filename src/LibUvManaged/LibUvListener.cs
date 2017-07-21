@@ -4,7 +4,7 @@ using Autofac;
 using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
-using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace LibUvManaged
 {
@@ -12,19 +12,16 @@ namespace LibUvManaged
     {
         public LibUvListener(IComponentContext ctx)
         {
-            this.logger = ctx.Resolve<ILogger<LibUvListener>>();
-            this.ctx = ctx;
-            this.tracer = new LibuvTrace(logger);
+	        this.tracer = new LibuvTrace(ctx.Resolve<Microsoft.Extensions.Logging.ILogger<LibUvListener>>());
         }
 
         internal readonly ILibuvTrace tracer;
         internal UvLoopHandle loop;
         private UvAsyncHandle stopEvent;
         internal LibuvFunctions uv;
-        private readonly ILogger<LibUvListener> logger;
-        private readonly IComponentContext ctx;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public string EndpointId { get; set; }
+	    public string EndpointId { get; set; }
 
         public void Start(IPEndPoint endPoint, Action<ILibUvConnection> connectionHandler)
         {
@@ -53,11 +50,11 @@ namespace LibUvManaged
                 var listenState = Tuple.Create(this, connectionHandler);
                 socket.Listen(LibuvConstants.ListenBacklog, OnNewConnection, listenState);
 
-                logger.LogDebug($"Listening on {endPoint}");
+	            logger.Debug(() => $"Listening on {endPoint}");
 
                 loop.Run();
 
-                logger.LogDebug($"Stopped listening on {endPoint}");
+	            logger.Debug(() => $"Stopped listening on {endPoint}");
 
                 // close handles
                 uv.walk(loop, (handle, state) => uv.close(handle, null), IntPtr.Zero);
@@ -71,7 +68,7 @@ namespace LibUvManaged
 
             catch (Exception ex)
             {
-                tracer.LogError(ex.ToString());
+	            logger.Error(ex);
                 throw;
             }
         }
@@ -90,7 +87,7 @@ namespace LibUvManaged
             if (status >= 0)
             {
                 // intialize new connection
-                var con = new LibUvConnection(self.ctx, self, (UvTcpHandle) server);
+                var con = new LibUvConnection(self, (UvTcpHandle) server);
                 con.Init();
 
                 // hand it off to handler

@@ -1,6 +1,6 @@
 ﻿{
   "logging": {
-    "level": "info",
+    "level": "debug",
     "enableConsoleLog": true,
     "enableConsoleColors": true,
     "logFile": ""
@@ -46,7 +46,7 @@
           "enabled": true,
           "time": 600, // How many seconds to ban worker for
           "invalidPercent": 50, // What percent of invalid shares triggers ban
-          "checkThreshold": 500, // Check invalid percent when this many shares have been submitted
+          "checkThreshold": 50, // Check invalid percent when this many shares have been submitted
           "purgeInterval": 300 // Every this many seconds clear out the list of old bans
       },
 

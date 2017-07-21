@@ -214,9 +214,13 @@ namespace MiningForce
 						    ConditionParser.ParseExpression("level == LogLevel.Debug"),
 						    ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
 
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+						    ConditionParser.ParseExpression("level == LogLevel.Debug"),
+						    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+
 					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
 						    ConditionParser.ParseExpression("level == LogLevel.Info"),
-						    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+						    ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
 
 					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
 						    ConditionParser.ParseExpression("level == LogLevel.Warn"),
@@ -228,7 +232,7 @@ namespace MiningForce
 
 					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
 						    ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-						    ConsoleOutputColor.Red, ConsoleOutputColor.White));
+						    ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
 
 					    loggingConfig.AddTarget(target);
 					    loggingConfig.AddRule(level, LogLevel.Fatal, target);

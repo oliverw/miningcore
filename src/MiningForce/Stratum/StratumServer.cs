@@ -135,14 +135,14 @@ namespace MiningForce.Stratum
 
         private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Client connection entered error state: {ex.Message}");
+            logger.Error(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnClientReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received End-of-Stream from client");
+            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }

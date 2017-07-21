@@ -89,10 +89,9 @@ namespace MiningForce.Configuration
 	public class BanningConfig
 	{
 		public bool Enabled { get; set; }
-		public double Time { get; set; }   // How many seconds to ban worker for
+		public int CheckThreshold { get; set; } // Check stats when this many shares have been submitted
 		public double InvalidPercent { get; set; } // What percent of invalid shares triggers ban
-		public double CheckThreshold { get; set; } // Check invalid percent when this many shares have been submitted
-		public double PurgeInterval { get; set; } // Every this many seconds clear out the list of old bans
+		public int Time { get; set; }   // How many seconds to ban worker for
 	}
 
 	public class PaymentProcessingConfig

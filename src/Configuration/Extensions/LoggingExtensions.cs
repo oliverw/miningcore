@@ -5,6 +5,12 @@ namespace MiningForce.Configuration.Extensions
 {
     public static class LoggingExtensions
     {
+	    public static void Trace(this ILogger logger, Func<string> output)
+	    {
+		    if (logger.IsEnabled(LogLevel.Trace))
+			    logger.Trace(output());
+	    }
+
         public static void Debug(this ILogger logger, Func<string> output)
         {
 			if (logger.IsEnabled(LogLevel.Debug))

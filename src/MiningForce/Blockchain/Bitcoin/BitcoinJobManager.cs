@@ -137,7 +137,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{poolConfig.Coin.Type}] Block {share.BlockHash} was accepted");
+					logger.Info(() => $"[{poolConfig.Coin.Type}] Daemon accepted block {share.BlockHash}");
 
 					// persist the coinbase transaction-hash to allow the payment processor
 					// to verify later on that the pool has received the reward for the block

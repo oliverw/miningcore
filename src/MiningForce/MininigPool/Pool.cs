@@ -6,9 +6,11 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
+using Microsoft.Extensions.Caching.Memory;
 using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
@@ -39,10 +41,16 @@ namespace MiningForce.MininigPool
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
+		// Banning
+		private static readonly IMemoryCache bannedIpCache = new MemoryCache(new MemoryCacheOptions
+		{
+			ExpirationScanFrequency = TimeSpan.FromSeconds(10)
+		});
+
 		// Telemetry
 		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
-	    private readonly Subject<Unit> validSharesSubject = new Subject<Unit>();
-	    private readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
+	    private readonly Subject<StratumClient> validSharesSubject = new Subject<StratumClient>();
+	    private readonly Subject<StratumClient> invalidSharesSubject = new Subject<StratumClient>();
 
 		#region API-Surface
 
@@ -51,7 +59,7 @@ namespace MiningForce.MininigPool
 
         public async Task StartAsync(PoolConfig poolConfig)
         {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             this.poolConfig = poolConfig;
 
             logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
@@ -80,18 +88,30 @@ namespace MiningForce.MininigPool
 
         protected override void OnClientConnected(StratumClient client)
         {
-            // expect miner to establish communication within a certain time
-            EnsureNoZombieClient(client);
+			// banned?
+	        if (bannedIpCache.Get(client.RemoteEndpoint.Address.ToString()) == null)
+	        {
 
-            // update stats
-            lock (clients)
-            {
-                poolStats.ConnectedMiners = clients.Count;
-            }
+		        // expect miner to establish communication within a certain time
+		        EnsureNoZombieClient(client);
 
-	        // Telemetry
-	        client.ResponseTime.Subscribe(x=> resposeTimesSubject.OnNext(x));
-        }
+		        // update stats
+		        lock (clients)
+		        {
+			        poolStats.ConnectedMiners = clients.Count;
+		        }
+
+		        // Telemetry
+		        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
+	        }
+
+	        else
+	        {
+		        logger.Trace(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
+
+				DisconnectClient(client);
+	        }
+		}
 
 		protected override void OnClientDisconnected(string subscriptionId)
         {
@@ -172,7 +192,7 @@ namespace MiningForce.MininigPool
 					context.Stats.ValidShares++;
 
 					// telemetry
-					validSharesSubject.OnNext(Unit.Default);
+					validSharesSubject.OnNext(client);
 				}
 
 				catch (StratumException ex)
@@ -183,14 +203,16 @@ namespace MiningForce.MininigPool
 		            context.Stats.InvalidShares++;
 
 		            // telemetry
-		            invalidSharesSubject.OnNext(Unit.Default);
+		            invalidSharesSubject.OnNext(client);
 
-					// TODO: banning check
-				}
+					// banning
+					if(poolConfig.Banning?.Enabled == true)
+						ConsiderBan(client, context, poolConfig.Banning);
+	            }
 			}
         }
 
-        private WorkerContext GetWorkerContext(StratumClient client)
+	    private WorkerContext GetWorkerContext(StratumClient client)
         {
             WorkerContext context;
 
@@ -221,7 +243,7 @@ namespace MiningForce.MininigPool
                 {
                     if (!alive)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Info(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -285,7 +307,7 @@ namespace MiningForce.MininigPool
 
 					else
 					{
-						logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+						logger.Info(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
 
 						DisconnectClient(client);
 					}
@@ -321,6 +343,32 @@ namespace MiningForce.MininigPool
 			    .Select(shares => shares.Count)
 			    .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
 		}
+
+	    private void ConsiderBan(StratumClient client, WorkerContext context, BanningConfig config)
+	    {
+		    var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
+
+		    if (totalShares > config.CheckThreshold)
+		    {
+				var percentBad = (double) context.Stats.InvalidShares / totalShares;
+
+			    if (percentBad < config.InvalidPercent)
+			    {
+					// reset stats
+				    context.Stats.ValidShares = 0;
+				    context.Stats.InvalidShares = 0;
+				}
+
+			    else
+			    {
+				    logger.Warn(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Banning worker: {Math.Floor(percentBad * 100)}% of the last {totalShares} were invalid");
+
+				    bannedIpCache.Set(client.RemoteEndpoint.Address.ToString(), string.Empty, TimeSpan.FromSeconds(config.Time));
+
+				    DisconnectClient(client);
+				}
+			}
+	    }
 
 		private static string FormatHashRate(double hashrate)
         {

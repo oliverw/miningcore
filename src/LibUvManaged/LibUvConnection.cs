@@ -5,22 +5,19 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
-using Autofac;
 using CodeContracts;
 using LibUv;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
-using Microsoft.Extensions.Logging;
+using MiningForce.Configuration.Extensions;
+using NLog;
 
 namespace LibUvManaged
 {
     internal class LibUvConnection : ILibUvConnection
     {
-        public LibUvConnection(IComponentContext ctx, 
-            LibUvListener parent, 
-            UvTcpHandle server)
+        public LibUvConnection(LibUvListener parent, UvTcpHandle server)
         {
-            this.logger = ctx.Resolve<ILogger<LibUvConnection>>();
             this.parent = parent;
             this.server = server;
 
@@ -31,7 +28,7 @@ namespace LibUvManaged
                 // Close connection when nobody's listening anymore
                 return new CompositeDisposable(sub, Disposable.Create(() =>
                 {
-                    logger.LogDebug($"[{connectionId}] Last subscriber disconnected from receiver stream");
+                    logger.Debug(()=> $"[{connectionId}] Last subscriber disconnected from receiver stream");
 
                     Close();
                 }));
@@ -55,7 +52,7 @@ namespace LibUvManaged
         private MemoryStream outputQueue = new MemoryStream();
         private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
-        private readonly ILogger<LibUvConnection> logger;
+	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private UvAsyncHandle closeEvent;
 
         #region ILibUvConnection
@@ -75,7 +72,7 @@ namespace LibUvManaged
                     outputQueue.Write(data, 0, data.Length);
                     outputEvent?.Send();
 
-                    logger.LogDebug($"[{connectionId}] Queueing {data.Length} bytes for transmission - Queue size now {outputQueue.Length}");
+					logger.Trace(() => $"[{connectionId}] Queueing {data.Length} bytes for transmission - Queue size now {outputQueue.Length}");
                 }
             }
         }
@@ -99,7 +96,7 @@ namespace LibUvManaged
                 RemoteEndPoint = client.GetPeerIPEndPoint();
                 connectionId = CorrelationIdGenerator.GetNextId();
 
-                logger.LogInformation($"[{connectionId}] Accepted connection from {RemoteEndPoint}");
+				logger.Debug(() => $"[{connectionId}] Accepted connection from {RemoteEndPoint}");
 
                 client.ReadStart(
                     (_, suggestedSize, state) =>
@@ -118,7 +115,7 @@ namespace LibUvManaged
 
         private void CloseInternal()
         {
-            logger.LogInformation($"[{connectionId}] Closing connection");
+			logger.Debug(() => $"[{connectionId}] Closing connection");
 
             // signal we are done here
             inputSubject.OnCompleted();
@@ -169,7 +166,7 @@ namespace LibUvManaged
         {
             if (nread > 0)
             {
-                logger.LogDebug($"[{connectionId}] Received {nread} bytes");
+				logger.Trace(() => $"[{connectionId}] Received {nread} bytes");
 
                 var buffer = new byte[nread];
                 Marshal.Copy(unmanagedReadBuffer, buffer, 0, nread);
@@ -179,9 +176,9 @@ namespace LibUvManaged
             else
             {
                 if (nread != LibuvConstants.EOF)
-                    parent.tracer.LogError("[{0}] Error {1}", connectionId, parent.uv.strerror(nread));
+					logger.Debug(() => $"[{connectionId}] Error {parent.uv.strerror(nread)}");
                 else
-                    logger.LogInformation($"[{connectionId}] Received EOF");
+					logger.Debug(() => $"[{connectionId}] Received EOF");
 
                 CloseInternal();
             }
@@ -205,7 +202,7 @@ namespace LibUvManaged
             {
                 try
                 {
-                    logger.LogDebug($"[{connectionId}] Sending {buffer.Value.Count} bytes");
+	                logger.Debug(() => $"[{connectionId}] Sending {buffer.Value.Count} bytes");
 
                     using (var req = new UvWriteReq(parent.tracer))
                     {
@@ -213,7 +210,7 @@ namespace LibUvManaged
                         await req.WriteAsync(client, new ArraySegment<ArraySegment<byte>>(new []{ buffer.Value }));
                     }
 
-                    logger.LogDebug($"[{connectionId}] Queue size now {outputQueue.Length}");
+	                logger.Trace(() => $"[{connectionId}] Queue size now {outputQueue.Length}");
                 }
 
                 catch (Exception ex)
