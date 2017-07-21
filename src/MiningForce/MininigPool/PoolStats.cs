@@ -6,9 +6,14 @@ namespace MiningForce.MininigPool
     {
         public DateTime LastBlockTime { get; set; }
         public int ConnectedMiners { get; set; }
-	    public float AverageResponseTimeMs { get; set; }
 		public float HashRate { get; set; }
         public float PoolFeePercent { get; set; }
         public float DevDonationsPercent { get; set; }
+
+		// Telemetry
+	    public float AverageResponseTimePerMinuteMs { get; set; }
+	    public int SharesPerSecond { get; set; }
+		public int ValidSharesPerMinute { get; set; }
+	    public int InvalidSharesPerMinute { get; set; }
     }
 }

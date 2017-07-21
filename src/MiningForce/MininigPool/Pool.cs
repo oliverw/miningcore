@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -34,7 +35,6 @@ namespace MiningForce.MininigPool
         }
 
         private readonly PoolStats poolStats = new PoolStats();
-		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
 
         private object currentJobParams;
         private readonly object currentJobParamsLock = new object();
@@ -48,9 +48,14 @@ namespace MiningForce.MininigPool
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
-        #region API-Surface
+		// Telemetry
+		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
+	    private readonly Subject<Unit> validSharesSubject = new Subject<Unit>();
+	    private readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
 
-        public NetworkStats NetworkStats => manager.NetworkStats;
+		#region API-Surface
+
+		public NetworkStats NetworkStats => manager.NetworkStats;
         public PoolStats PoolStats => poolStats;
 
         public async Task StartAsync(PoolConfig poolConfig)
@@ -177,6 +182,9 @@ namespace MiningForce.MininigPool
 
 		            // update client stats
 					context.Stats.ValidShares++;
+
+					// telemetry
+					validSharesSubject.OnNext(Unit.Default);
 				}
 
 				catch (StratumException ex)
@@ -186,7 +194,10 @@ namespace MiningForce.MininigPool
 		            // update client stats
 		            context.Stats.InvalidShares++;
 
-		            // TODO: banning check
+		            // telemetry
+		            invalidSharesSubject.OnNext(Unit.Default);
+
+					// TODO: banning check
 				}
 			}
         }
@@ -288,12 +299,30 @@ namespace MiningForce.MininigPool
 
 	    private void SetupTelemetry()
 	    {
+			// Average response times per minute
 		    resposeTimesSubject
 			    .Select(ms => (float) ms)
 			    .Buffer(TimeSpan.FromMinutes(1))
 			    .Select(responses => responses.Average())
-			    .Subscribe(avg => poolStats.AverageResponseTimeMs = avg);
-	    }
+			    .Subscribe(avg => poolStats.AverageResponseTimePerMinuteMs = avg);
+
+		    // Shares per second
+			Observable.Merge(validSharesSubject, invalidSharesSubject)
+				.Buffer(TimeSpan.FromSeconds(1))
+				.Select(shares => shares.Count)
+				.Subscribe(count => poolStats.SharesPerSecond = count);
+
+			// Valid/Invalid shares per minute
+			validSharesSubject
+				.Buffer(TimeSpan.FromMinutes(1))
+			    .Select(shares => shares.Count)
+			    .Subscribe(count => poolStats.ValidSharesPerMinute = count);
+
+		    invalidSharesSubject
+			    .Buffer(TimeSpan.FromMinutes(1))
+			    .Select(shares => shares.Count)
+			    .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
+		}
 
 		private static string FormatHashRate(double hashrate)
         {
