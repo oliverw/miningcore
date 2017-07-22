@@ -279,12 +279,8 @@ namespace MiningForce
 	    private static void ValidateRuntimeEnvironment()
 	    {
 		    // root check
-		    if ((RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || 
-		         RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) &&
-		        Environment.UserName == "root")
-		    {
+		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
 			    logger.Warn(() => "Running as root is discouraged!");
-		    }
 	    }
 
 		private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
