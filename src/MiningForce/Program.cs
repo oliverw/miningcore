@@ -42,17 +42,10 @@ namespace MiningForce
                 Logo();
                 var config = ReadConfig(configFile);
 
-	            if (dumpConfigOption.HasValue())
+	            if (!dumpConfigOption.HasValue())
 	            {
-		            Console.WriteLine("\nCurrent configuration as parsed from config file:");
-
-					Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
-					{
-						ContractResolver = new CamelCasePropertyNamesContractResolver(),
-						Formatting = Formatting.Indented
-					}));
-
-					return;
+		            DumpParsedConfig(config);
+		            return;
 	            }
 
 	            Bootstrap(config);
@@ -86,7 +79,18 @@ namespace MiningForce
             }
 		}
 
-        private static bool HandleCommandLineOptions(string[] args, out string configFile)
+	    private static void DumpParsedConfig(ClusterConfig config)
+	    {
+		    Console.WriteLine("\nCurrent configuration as parsed from config file:");
+
+		    Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
+		    {
+			    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+			    Formatting = Formatting.Indented
+		    }));
+	    }
+
+	    private static bool HandleCommandLineOptions(string[] args, out string configFile)
         {
             configFile = null;
 
