@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeContracts", "CodeContra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibUvManaged", "LibUvManaged\LibUvManaged.csproj", "{ED3E233B-D01C-46F9-B6C3-6F9176C41395}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningForce.Tests", "MiningForce.Tests\MiningForce.Tests.csproj", "{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
