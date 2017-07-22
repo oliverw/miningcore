@@ -19,5 +19,5 @@ namespace MiningForce.Tests.JsonRpc
 
 	        await upstream.Closed.Take(1);
         }
-    }
+	}
 }

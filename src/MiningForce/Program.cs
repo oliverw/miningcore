@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
@@ -28,7 +29,6 @@ namespace MiningForce
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 	    private static CommandOption dumpConfigOption;
 	    private static SharePersister sharePersister;
-
 
 		static void Main(string[] args)
         {
@@ -140,6 +140,8 @@ namespace MiningForce
 
             serviceProvider = new AutofacServiceProvider(container);
             ConfigureLogging(config.Logging);
+
+			ValidateRuntimeEnvironment();
         }
 
 	    private static ClusterConfig ReadConfig(string file)
@@ -274,7 +276,18 @@ namespace MiningForce
 		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
-	    private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
+	    private static void ValidateRuntimeEnvironment()
+	    {
+		    // root check
+		    if ((RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || 
+		         RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) &&
+		        Environment.UserName == "root")
+		    {
+			    logger.Warn(() => "Running this as root is discouraged!");
+		    }
+	    }
+
+		private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
 	    {
 			if(config.Persistence == null)
 				throw new PoolStartupAbortException("Persistence is not configured!");
