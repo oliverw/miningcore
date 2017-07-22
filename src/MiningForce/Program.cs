@@ -42,7 +42,7 @@ namespace MiningForce
                 Logo();
                 var config = ReadConfig(configFile);
 
-	            if (!dumpConfigOption.HasValue())
+	            if (dumpConfigOption.HasValue())
 	            {
 		            DumpParsedConfig(config);
 		            return;
