@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using CodeContracts;
 using MiningForce.Extensions;
 
 namespace MiningForce.Crypto
@@ -58,7 +59,9 @@ namespace MiningForce.Crypto
         /// <returns></returns>
         private IList<byte[]> CalculateSteps(IEnumerable<byte[]> hashList)
         {
-            var steps = new List<byte[]>();
+	        Contract.RequiresNonNull(hashList, nameof(hashList));
+
+			var steps = new List<byte[]>();
 
             var L = new List<byte[]> { null };
             L.AddRange(hashList);
@@ -112,7 +115,9 @@ namespace MiningForce.Crypto
 
         public byte[] WithFirst(byte[] first)
         {
-            foreach (var step in Steps)
+	        Contract.RequiresNonNull(first, nameof(first));
+
+			foreach (var step in Steps)
             {
                 first = DoubleDigest(first.Concat(step)).ToArray();
             }

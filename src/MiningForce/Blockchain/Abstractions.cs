@@ -29,11 +29,6 @@ namespace MiningForce.Blockchain
 		string IpAddress { get; }
 
 		/// <summary>
-		/// When was it submitted
-		/// </summary>
-		DateTime Submitted { get; }
-
-		/// <summary>
 		/// Share difficulty
 		/// </summary>
 		double Difficulty { get; set; }
@@ -46,7 +41,7 @@ namespace MiningForce.Blockchain
 		/// <summary>
 		/// Block this share refers to
 		/// </summary>
-		ulong BlockHeight { get; set; }
+		long BlockHeight { get; set; }
 
 		/// <summary>
 		/// Coin
@@ -62,7 +57,7 @@ namespace MiningForce.Blockchain
 		/// Arbitrary data to be interpreted by the payment processor specialized 
 		/// in this coin to verify this block candidate was accepted by the network
 		/// </summary>
-		object BlockVerificationData { get; set; }
+		string TransactionConfirmationData { get; set; }
 	}
 
 	public interface IBlockchainJobManager

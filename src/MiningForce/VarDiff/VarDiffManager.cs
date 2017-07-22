@@ -1,4 +1,5 @@
 ﻿using System;
+using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Util;
 
@@ -23,7 +24,9 @@ namespace MiningForce.VarDiff
 
         public double? Update(VarDiffContext ctx, double difficulty)
         {
-            lock (ctx)
+	        Contract.RequiresNonNull(ctx, nameof(ctx));
+
+			lock (ctx)
             {
                 var ts = (DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) | 0;
 

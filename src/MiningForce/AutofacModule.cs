@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
@@ -9,6 +10,8 @@ using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
 using MiningForce.Networking.Banning;
+using MiningForce.Payouts;
+using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -65,8 +68,14 @@ namespace MiningForce
                 .AsSelf();
 
 	        builder.RegisterType<IntegratedBanManager>()
-		        .Keyed<IBanManager>(BanManagerTypes.Integrated)
+		        .Keyed<IBanManager>(BanManagerKind.Integrated)
 				.SingleInstance();
+
+	        builder.RegisterType<SharePersister>()
+		        .SingleInstance();
+
+			//////////////////////
+			// Postgres persistence
 
 			//////////////////////
 			// Bitcoin and family

@@ -46,7 +46,7 @@ namespace MiningForce.Configuration
 		public string Password { get; set; }
 	}
 
-	public class DatabaseEndpointConfig : AuthenticatedNetworkEndpointConfig
+	public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
 	{
 		public string Database { get; set; }
 	}
@@ -86,7 +86,7 @@ namespace MiningForce.Configuration
 		public double VariancePercent { get; set; }
 	}
 
-	public enum BanManagerTypes
+	public enum BanManagerKind
 	{
 		Integrated = 1,
 		IpTables,
@@ -94,7 +94,7 @@ namespace MiningForce.Configuration
 
 	public class ClusterBanningConfig
 	{
-		public BanManagerTypes Manager { get; set; }
+		public BanManagerKind Manager { get; set; }
 	}
 
 	public class PoolBanningConfig
@@ -113,6 +113,11 @@ namespace MiningForce.Configuration
 		public AuthenticatedNetworkEndpointConfig Daemon { get; set; }
 	}
 
+	public class PersistenceConfig
+	{
+		public DatabaseConfig Postgres { get; set; }
+	}
+
 	public class RewardRecipient
 	{
 		public RewardRecipientType Type { get; set; }
@@ -128,7 +133,6 @@ namespace MiningForce.Configuration
 		public AuthenticatedNetworkEndpointConfig[] Daemons { get; set; }
 		public PaymentProcessingConfig PaymentProcessing { get; set; }
 		public PoolBanningConfig Banning { get; set; }
-		public DatabaseEndpointConfig Database { get; set; }
 		public RewardRecipient[] RewardRecipients { get; set; }
 		public StratumAuthorizerKind Authorizer { get; set; }
 		public string Address { get; set; }
@@ -141,6 +145,9 @@ namespace MiningForce.Configuration
 	{
 		public ClusterLoggingConfig Logging { get; set; }
 		public ClusterBanningConfig Banning { get; set; }
+		public PersistenceConfig Persistence { get; set; }
+		public bool EnableDevDonations { get; set; }
+
 		public PoolConfig[] Pools { get; set; }
 	}
 }

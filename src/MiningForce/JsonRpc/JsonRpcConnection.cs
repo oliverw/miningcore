@@ -54,8 +54,7 @@ namespace MiningForce.JsonRpc
 
             Received = incomingNonEmptyLines
                 .Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
-                .Do(x => 
-                    logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
+                .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
                 .Select(x => x.Msg)
                 .Publish()
                 .RefCount();

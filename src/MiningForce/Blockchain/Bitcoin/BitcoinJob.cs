@@ -4,25 +4,27 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using CodeContracts;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(BlockTemplate blockTemplate, string jobId, PoolConfig poolConfig, 
+	    public BitcoinJob(BlockTemplate blockTemplate, string jobId, 
+			PoolConfig poolConfig, ClusterConfig clusterConfig,
 			IDestination poolAddressDestination, BitcoinNetworkType networkType,
 			ExtraNonceProvider extraNonceProvider, bool isPoS, 
 			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
 	    {
 		    this.poolConfig = poolConfig;
-		    this.poolAddressDestination = poolAddressDestination;
+		    this.clusterConfig = clusterConfig;
+			this.poolAddressDestination = poolAddressDestination;
 			this.networkType = networkType;
 			this.blockTemplate = blockTemplate;
 		    this.jobId = jobId;
@@ -39,6 +41,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private readonly BitcoinNetworkType networkType;
 	    private readonly int extraNoncePlaceHolderLength;
 	    private readonly BlockTemplate blockTemplate;
+	    private readonly ClusterConfig clusterConfig;
 	    private readonly PoolConfig poolConfig;
 	    private readonly IDestination poolAddressDestination;
 		private readonly bool isPoS;
@@ -117,8 +120,13 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
 	    {
+		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce1), $"{nameof(extraNonce1)} must not be empty");
+		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
+		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
+		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+
 		    // validate nTime
-		    if (nTime?.Length != 8)
+			if (nTime?.Length != 8)
 			    throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
 		    var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
@@ -307,7 +315,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
 
 			// Developer fee
-			if(networkType == BitcoinNetworkType.Main && devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
+			if(clusterConfig.EnableDevDonations && networkType == BitcoinNetworkType.Main && devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
 				rewardRecipients.Add(new RewardRecipient { Address = devFeeAddresses[poolConfig.Coin.Type], Percentage = 0.1 });
 
 			foreach (var recipient in rewardRecipients)
@@ -365,11 +373,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			var result = new BitcoinShare
 			{
 				BlockHeight = blockTemplate.Height,
-				Coin = poolConfig.Coin.Type,
-				Submitted = DateTime.UtcNow,
+				Coin = poolConfig.Coin.Type
 			};
 
-		    // now check if the share meets the much harder block difficulty
+		    // now check if the share meets the much harder block difficulty (block candidate)
 		    if (target < blockTarget)
 		    {
 			    result.IsBlockCandidate = true;

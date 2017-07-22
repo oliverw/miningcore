@@ -30,17 +30,16 @@ namespace MiningForce.Stratum
         protected readonly ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
-        protected PoolConfig poolConfig;
         private readonly JsonSerializerSettings serializerSettings;
 
-        protected void StartListeners()
+        protected void StartListeners(Dictionary<int, PoolEndpoint> stratumPorts)
         {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(ports, nameof(ports));
 
             // start ports
-            foreach (var port in poolConfig.Ports.Keys)
+            foreach (var port in stratumPorts.Keys)
             {
-                var endpointConfig = poolConfig.Ports[port];
+                var endpointConfig = stratumPorts[port];
 
                 // set listen addresse(s)
                 var listenAddress = IPAddress.Parse("127.0.0.1");
@@ -65,7 +64,7 @@ namespace MiningForce.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"[{poolConfig.Coin.Type}] Stratum port {port} started");
+                logger.Info(() => $"Stratum port {port} started");
             }
         }
 
@@ -101,7 +100,7 @@ namespace MiningForce.Stratum
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            logger.Debug(() => $"[{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
             try
             {
@@ -127,7 +126,7 @@ namespace MiningForce.Stratum
 
             catch (Exception ex)
             {
-                logger.Error(() => $"[{poolConfig.Coin.Type}] OnClientRpcRequest: {request.Method}", ex);
+                logger.Error(() => $"OnClientRpcRequest: {request.Method}", ex);
 
                 client.RespondError(StratumError.Other, ex.Message, request.Id);
             }
@@ -135,14 +134,14 @@ namespace MiningForce.Stratum
 
         private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+            logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnClientReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }

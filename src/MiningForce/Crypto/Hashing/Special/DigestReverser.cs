@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using MiningForce.Extensions;
 
 namespace MiningForce.Crypto.Hashing.Special
 {
@@ -13,9 +14,7 @@ namespace MiningForce.Crypto.Hashing.Special
 
 		public byte[] Digest(byte[] data, object args)
 		{
-			return upstream.Digest(data, args)
-				.Reverse()
-				.ToArray();
+			return upstream.Digest(data, args).ToReverseArray();
 		}
 	}
 }

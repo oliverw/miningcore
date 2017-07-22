@@ -14,6 +14,7 @@ using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Networking.Banning;
+using MiningForce.Payouts;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;
@@ -22,12 +23,19 @@ namespace MiningForce.MininigPool
 {
     public class Pool : StratumServer
     {
-        public Pool(IComponentContext ctx, 
-            JsonSerializerSettings serializerSettings) : 
+        public Pool(IComponentContext ctx,
+	        PoolConfig poolConfig, ClusterConfig clusterConfig,
+			JsonSerializerSettings serializerSettings) : 
             base(ctx, LogManager.GetCurrentClassLogger(), serializerSettings)
         {
+	        this.poolConfig = poolConfig;
+	        this.clusterConfig = clusterConfig;
+
+	        Shares = shareSubject.AsObservable();
         }
 
+		private readonly PoolConfig poolConfig;
+	    private readonly ClusterConfig clusterConfig;
         private readonly PoolStats poolStats = new PoolStats();
         private object currentJobParams;
         private IBlockchainJobManager manager;
@@ -41,28 +49,32 @@ namespace MiningForce.MininigPool
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
 
+	    private readonly Subject<IShare> shareSubject = new Subject<IShare>();
+
 		// Telemetry
 		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
 	    private readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
 	    private readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
 
-		#region API-Surface
+	    #region API-Surface
 
 		public NetworkStats NetworkStats => manager.NetworkStats;
         public PoolStats PoolStats => poolStats;
+		public IObservable<IShare> Shares { get; }
 
-        public async Task StartAsync(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        public async Task StartAsync()
         {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            this.poolConfig = poolConfig;
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] starting ...");
+			logger.Info(() => $"[{poolConfig.Coin.Type}] Starting ...");
 
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
 	        SetupStats();
 			await InitializeJobManager();
-	        StartListeners();
+	        StartListeners(poolConfig.Ports);
+
+			logger.Info(() => $"[{poolConfig.Coin.Type}] Online");
 
 			OutputPoolInfo();
         }
@@ -72,7 +84,8 @@ namespace MiningForce.MininigPool
         private async Task InitializeJobManager()
         {
             manager = ctx.ResolveKeyed<IBlockchainJobManager>(poolConfig.Coin.Type,
-	            new TypedParameter(typeof(PoolConfig), poolConfig));
+	            new TypedParameter(typeof(PoolConfig), poolConfig),
+	            new TypedParameter(typeof(ClusterConfig), clusterConfig));
 
             await manager.StartAsync(this);
 
@@ -180,7 +193,8 @@ namespace MiningForce.MininigPool
 
 		            client.Respond(true, request.Id);
 
-					// TODO: record it
+					// record it
+					shareSubject.OnNext(share);
 
 					// update pool stats
 		            if (share.IsBlockCandidate)
@@ -324,7 +338,7 @@ namespace MiningForce.MininigPool
 	    {
 		    if (poolConfig.Banning?.Enabled == true)
 		    {
-			    var managerType = clusterConfig.Banning?.Manager ?? BanManagerTypes.Integrated;
+			    var managerType = clusterConfig.Banning?.Manager ?? BanManagerKind.Integrated;
 				banManager = ctx.ResolveKeyed<IBanManager>(managerType);
 		    }
 	    }
@@ -385,9 +399,9 @@ namespace MiningForce.MininigPool
 
 		    if (totalShares > config.CheckThreshold)
 		    {
-				var percentBad = (double) context.Stats.InvalidShares / totalShares;
+				var ratioBad = (double) context.Stats.InvalidShares / totalShares;
 
-			    if (percentBad < config.InvalidPercent)
+			    if (ratioBad < config.InvalidPercent / 100.0)
 			    {
 					// reset stats
 				    context.Stats.ValidShares = 0;
@@ -396,7 +410,7 @@ namespace MiningForce.MininigPool
 
 			    else
 			    {
-				    logger.Warn(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Banning worker: {Math.Floor(percentBad * 100)}% of the last {totalShares} were invalid");
+				    logger.Warn(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Banning worker: {Math.Floor(ratioBad * 100)}% of the last {totalShares} were invalid");
 
 				    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 

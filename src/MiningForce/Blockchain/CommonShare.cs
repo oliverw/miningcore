@@ -5,16 +5,15 @@ using MiningForce.Configuration;
 
 namespace MiningForce.Blockchain
 {
-	public class BaseShare : IShare
+	public class CommonShare : IShare
 	{
 		public string Worker { get; set; }
 		public string IpAddress { get; set; }
-		public DateTime Submitted { get; set; }
 		public double Difficulty { get; set; }
 		public double DifficultyNormalized { get; set; }
-		public ulong BlockHeight { get; set; }
+		public long BlockHeight { get; set; }
 		public CoinType Coin { get; set; }
 		public bool IsBlockCandidate { get; set; }
-		public object BlockVerificationData { get; set; }
+		public string TransactionConfirmationData { get; set; }
 	}
 }

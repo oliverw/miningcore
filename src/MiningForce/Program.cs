@@ -7,14 +7,12 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
-using MiningForce.Blockchain.Bitcoin;
 using NLog;
 using MiningForce.Configuration;
-using MiningForce.Configuration.Extensions;
 using MiningForce.MininigPool;
+using MiningForce.Payouts;
+using MiningForce.Persistence;
 using MiningForce.Stratum;
-using NBitcoin;
-using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Conditions;
@@ -31,8 +29,10 @@ namespace MiningForce
         private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 	    private static CommandOption dumpConfigOption;
+	    private static SharePersister sharePersister;
 
-	    static void Main(string[] args)
+
+		static void Main(string[] args)
         {
             try
             {
@@ -64,7 +64,14 @@ namespace MiningForce
                 Console.ReadLine();
             }
 
-            catch (JsonException)
+            catch (PoolStartupAbortException ex)
+            {
+	            Console.WriteLine(ex.Message);
+
+				Console.WriteLine("\nCluster cannot start. Good Bye!");
+			}
+
+			catch (JsonException)
             {
 				// ignored
             }
@@ -77,8 +84,10 @@ namespace MiningForce
 			catch (Exception ex)
             {
                 Console.WriteLine(ex);
+
+	            Console.WriteLine("\nCluster cannot start. Good Bye!");
             }
-        }
+		}
 
         private static bool HandleCommandLineOptions(string[] args, out string configFile)
         {
@@ -129,10 +138,10 @@ namespace MiningForce
                 typeof(AutofacModule).GetTypeInfo().Assembly,
             });
 
-            container = builder.Build();
+	        ConfigurePersistence(config, builder);
+			container = builder.Build();
 
             serviceProvider = new AutofacServiceProvider(container);
-
             ConfigureLogging(config.Logging);
         }
 
@@ -270,29 +279,59 @@ namespace MiningForce
 		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
+	    private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
+	    {
+			if(config.Persistence == null)
+				throw new PoolStartupAbortException("Persistence is not configured!");
+
+		    if (config.Persistence.Postgres != null)
+			    ConfigurePostgres(config.Persistence.Postgres, builder);
+	    }
+
+	    private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+	    {
+		    // validate config
+			if (string.IsNullOrEmpty(pgConfig.Host))
+			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");
+
+		    if (pgConfig.Port == 0)
+			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'port'");
+
+			if (string.IsNullOrEmpty(pgConfig.Database))
+			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'database'");
+
+		    if (string.IsNullOrEmpty(pgConfig.User))
+			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'user'");
+
+		    // build connection string
+		    var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
+
+			// register connection factory
+		    builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString));
+
+			// register repositories
+		    builder.RegisterType<Persistence.Postgres.Repositories.ShareRepository>()
+			    .AsImplementedInterfaces()
+				.SingleInstance();
+		}
+
 		private static async void Start(ClusterConfig config)
-        {
-            try
+		{
+			// start share persister
+			sharePersister = container.Resolve<SharePersister>();
+			sharePersister.Start();
+
+			// start pools
+			foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
             {
-                foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
-                {
-                    var pool = container.Resolve<Pool>();
-                    await pool.StartAsync(poolConfig, config);
-                    servers.Add(pool);
-                }
-            }
+                var pool = container.Resolve<Pool>(
+					new TypedParameter(typeof(PoolConfig), poolConfig),
+	                new TypedParameter(typeof(ClusterConfig), config));
 
-            catch (PoolStartupAbortException ex)
-            {
-                logger.Error(() => ex.Message);
+	            sharePersister.AttachPool(pool);
 
-                logger.Error(() => $"Cluster startup aborted. Good Bye!");
-
-            }
-
-            catch (Exception ex)
-            {
-                logger.Error(() => $"Error starting cluster", ex);
+				await pool.StartAsync();
+                servers.Add(pool);
             }
         }
     }

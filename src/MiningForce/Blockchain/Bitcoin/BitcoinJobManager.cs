@@ -26,7 +26,9 @@ namespace MiningForce.Blockchain.Bitcoin
             IComponentContext ctx, 
             BlockchainDaemon daemon,
             ExtraNonceProvider extraNonceProvider,
-	        PoolConfig poolConfig) : base(ctx, LogManager.GetCurrentClassLogger(), daemon, poolConfig)
+            ClusterConfig clusterConfig,
+			PoolConfig poolConfig) : 
+			base(ctx, LogManager.GetCurrentClassLogger(), poolConfig, clusterConfig, daemon)
         {
 			this.extraNonceProvider = extraNonceProvider;
         }
@@ -141,19 +143,19 @@ namespace MiningForce.Blockchain.Bitcoin
 
 					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
-					share.BlockVerificationData = acceptResponse.CoinbaseTransaction;
+					share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;
 				}
 
 				else
 				{
 					// clear fields that no longer apply
-					share.BlockVerificationData = null;
+					share.TransactionConfirmationData = null;
 				}
 			}
 
 			// enrich share with common data
+	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
-		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
 
 			return share;
@@ -291,7 +293,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		        if (isNew || forceUpdate)
 		        {
 			        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
-						poolConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, 
+						poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, 
 						coinbaseHasher, headerHasher, blockHasher);
 
 			        currentJob.Init();

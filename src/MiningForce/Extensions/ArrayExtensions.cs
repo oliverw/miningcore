@@ -52,5 +52,11 @@ namespace MiningForce.Extensions
 			Array.Reverse(arr);
 		    return arr;
 	    }
+
+	    public static T[] ToReverseArray<T>(this T[] arr)
+	    {
+		    Array.Reverse(arr);
+		    return arr;
+	    }
 	}
 }

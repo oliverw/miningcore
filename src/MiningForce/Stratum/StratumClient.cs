@@ -52,23 +52,29 @@ namespace MiningForce.Stratum
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
-
-		// Telemetry
 	    public IObservable<int> ResponseTime { get; private set; }
 
 		public void Respond<T>(T payload, string id)
         {
+	        Contract.RequiresNonNull(payload, nameof(payload));
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+
 			Respond(new JsonRpcResponse<T>(payload, id));
         }
 
         public void RespondError(StratumError code, string message, string id, object result = null, object data = null)
         {
+	        Contract.RequiresNonNull(message, nameof(message));
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+
 			Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
 
         public void Respond<T>(JsonRpcResponse<T> response)
         {
-			if(!string.IsNullOrEmpty(response.Id))
+	        Contract.RequiresNonNull(response, nameof(response));
+
+			if (!string.IsNullOrEmpty(response.Id))
 		        responses.OnNext(response.Id);
 
 			lock (rpcCon)
@@ -79,12 +85,16 @@ namespace MiningForce.Stratum
 
         public void Notify<T>(string method, T payload)
         {
-            Notify(new JsonRpcRequest<T>(method, payload, null));
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+			Notify(new JsonRpcRequest<T>(method, payload, null));
         }
 
         public void Notify<T>(JsonRpcRequest<T> request)
         {
-            lock (rpcCon)
+	        Contract.RequiresNonNull(request, nameof(request));
+
+			lock (rpcCon)
             {
                 rpcCon?.Send(request);
             }
@@ -100,17 +110,24 @@ namespace MiningForce.Stratum
 
         public void RespondError(string id, int code, string message)
         {
-            Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
+
+			Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
         public void RespondUnsupportedMethod(string id)
         {
-            RespondError(id, 20, "Unsupported method");
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        
+			RespondError(id, 20, "Unsupported method");
         }
 
         public void RespondUnauthorized(string id)
         {
-            RespondError(id, 24, "Unauthorized worker");
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+
+			RespondError(id, 24, "Unauthorized worker");
         }
 
         #endregion // API-Surface

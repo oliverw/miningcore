@@ -20,19 +20,22 @@ namespace MiningForce.Blockchain
     public abstract class JobManagerBase<TWorkerContext, TJob>
         where TWorkerContext: class, new()
     {
-        protected JobManagerBase(IComponentContext ctx, ILogger logger, BlockchainDaemon daemon, PoolConfig poolConfig)
+        protected JobManagerBase(IComponentContext ctx, ILogger logger, 
+			PoolConfig poolConfig, ClusterConfig clusterConfig, BlockchainDaemon daemon)
         {
             this.ctx = ctx;
             this.logger = logger;
             this.daemon = daemon;
 	        this.poolConfig = poolConfig;
+	        this.clusterConfig = clusterConfig;
         }
 
         protected readonly IComponentContext ctx;
+	    protected readonly PoolConfig poolConfig;
+	    protected readonly ClusterConfig clusterConfig;
         protected BlockchainDaemon daemon;
         protected StratumServer stratum;
         private IWorkerAuthorizer authorizer;
-        protected readonly PoolConfig poolConfig;
         protected readonly ILogger logger;
 	    private TimeSpan jobRebroadcastTimeout;
 	    protected DateTime? lastBlockUpdate;
@@ -45,7 +48,7 @@ namespace MiningForce.Blockchain
 	    protected object jobLock = new object();
 	    private long jobId;
 
-		#region API-Surface
+	    #region API-Surface
 
 		public IObservable<object> Jobs { get; private set; }
 
@@ -54,7 +57,7 @@ namespace MiningForce.Blockchain
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
 
-	        logger.Info(() => $"[{poolConfig.Coin.Type}] Initializing ...");
+	        logger.Info(() => $"[{poolConfig.Coin.Type}] Starting ...");
 
 			this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
@@ -65,7 +68,7 @@ namespace MiningForce.Blockchain
             await PostStartInitAsync();
             SetupJobStream();
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] Initialized");
+            logger.Info(() => $"[{poolConfig.Coin.Type}] Online");
         }
 
         #endregion // API-Surface

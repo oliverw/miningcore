@@ -63,7 +63,9 @@ namespace MiningForce.Blockchain
         public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method, object payload = null)
             where TResponse: class
         {
-            var tasks = endPoints.Select(endPoint=> BuildRequestTask(endPoint, method, payload)).ToArray();
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+			var tasks = endPoints.Select(endPoint=> BuildRequestTask(endPoint, method, payload)).ToArray();
 
             try
             {
@@ -101,7 +103,9 @@ namespace MiningForce.Blockchain
         public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null)
             where TResponse : class
         {
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
+	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+	        
+			var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
