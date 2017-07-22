@@ -22,8 +22,8 @@
         }
     },
 
-    // 0.1% donation to MiningForce developers. Please leave this in your config to help support development.
-    "enableDevDonations": true,
+    // Do not allow 0.2% donation to MiningForce developers. Please leave this disabled to help support development of MiningForce.
+    "disableDevDonation": false,
 
     "pools": [{
           "enabled": true,

@@ -146,7 +146,7 @@ namespace MiningForce.Configuration
 		public ClusterLoggingConfig Logging { get; set; }
 		public ClusterBanningConfig Banning { get; set; }
 		public PersistenceConfig Persistence { get; set; }
-		public bool EnableDevDonations { get; set; }
+		public bool DisableDevDonation { get; set; }
 
 		public PoolConfig[] Pools { get; set; }
 	}
