@@ -222,7 +222,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
             if (!batchTask.IsCompletedSuccessfully)
             {
-                logger.Error(()=> $"[{poolConfig.Coin.Type}] Init RPC failed", batchTask.Exception);
+                logger.Error(batchTask.Exception, ()=> $"[{poolConfig.Coin.Type}] Init RPC failed");
                 throw new PoolStartupAbortException();
             }
 

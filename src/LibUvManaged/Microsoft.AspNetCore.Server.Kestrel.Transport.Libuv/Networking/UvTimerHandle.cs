@@ -2,13 +2,12 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking
 {
     internal class UvTimerHandle : UvHandle
     {
-        private readonly static LibuvFunctions.uv_timer_cb _uv_timer_cb = UvTimerCb;
+        private static readonly LibuvFunctions.uv_timer_cb _uv_timer_cb = UvTimerCb;
 
         private Action<UvTimerHandle> _callback;
 

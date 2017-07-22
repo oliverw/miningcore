@@ -53,7 +53,7 @@ namespace MiningForce.Stratum
                 var endPoint = new IPEndPoint(listenAddress, port);
 
                 // create the listener
-                var listener = new LibUvListener(ctx);
+                var listener = new LibUvListener();
                 ports[port] = listener;
 
                 // host it and its message loop in a dedicated background thread
@@ -94,7 +94,7 @@ namespace MiningForce.Stratum
 
 			catch (Exception ex)
             {
-                logger.Error(() => "OnClientConnected", ex);
+                logger.Error(ex, () => "OnClientConnected");
             }
         }
 
@@ -117,7 +117,7 @@ namespace MiningForce.Stratum
                         break;
 
                     default:
-                        logger.Warning(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Warn(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
@@ -126,7 +126,7 @@ namespace MiningForce.Stratum
 
             catch (Exception ex)
             {
-                logger.Error(() => $"OnClientRpcRequest: {request.Method}", ex);
+                logger.Error(ex, () => $"OnClientRpcRequest: {request.Method}");
 
                 client.RespondError(StratumError.Other, ex.Message, request.Id);
             }

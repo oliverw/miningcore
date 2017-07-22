@@ -2,11 +2,10 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
 {
-    internal interface ILibuvTrace : ILogger
+    internal interface ILibuvTrace
     {
         void ConnectionRead(string connectionId, int count);
         void ConnectionReadFin(string connectionId);
@@ -18,5 +17,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
         void ConnectionReset(string connectionId);
         void ConnectionPause(string connectionId);
         void ConnectionResume(string connectionId);
+
+	    void LogError(int _, Exception exception, string msg);
     }
 }

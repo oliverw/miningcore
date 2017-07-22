@@ -2,45 +2,40 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
 {
     internal class LibuvTrace : ILibuvTrace
     {
-        // ConnectionRead: Reserved: 3
+	    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly Action<ILogger, string, Exception> _connectionPause =
-            LoggerMessage.Define<string>(LogLevel.Debug, 4, @"Connection id ""{ConnectionId}"" paused.");
+		// ConnectionRead: Reserved: 3
 
-        private static readonly Action<ILogger, string, Exception> _connectionResume =
-            LoggerMessage.Define<string>(LogLevel.Debug, 5, @"Connection id ""{ConnectionId}"" resumed.");
+		private static readonly Action<ILogger, string, Exception> _connectionPause = (l, ConnectionId, ex)=>
+            l.Debug(()=> $@"Connection id ""{ConnectionId}"" paused.");
 
-        private static readonly Action<ILogger, string, Exception> _connectionReadFin =
-            LoggerMessage.Define<string>(LogLevel.Debug, 6, @"Connection id ""{ConnectionId}"" received FIN.");
+        private static readonly Action<ILogger, string, Exception> _connectionResume = (l, ConnectionId, ex) =>
+	        l.Debug(() => $@"Connection id ""{ConnectionId}"" resumed.");
 
-        private static readonly Action<ILogger, string, Exception> _connectionWriteFin =
-            LoggerMessage.Define<string>(LogLevel.Debug, 7, @"Connection id ""{ConnectionId}"" sending FIN.");
+        private static readonly Action<ILogger, string, Exception> _connectionReadFin = (l, ConnectionId, ex) =>
+	        l.Debug(() => $@"Connection id ""{ConnectionId}"" received FIN.");
 
-        private static readonly Action<ILogger, string, int, Exception> _connectionWroteFin =
-            LoggerMessage.Define<string, int>(LogLevel.Debug, 8, @"Connection id ""{ConnectionId}"" sent FIN with status ""{Status}"".");
+        private static readonly Action<ILogger, string, Exception> _connectionWriteFin = (l, ConnectionId, ex) =>
+	        l.Debug(() => $@"Connection id ""{ConnectionId}"" sending FIN.");
+
+        private static readonly Action<ILogger, string, int, Exception> _connectionWroteFin = (l, ConnectionId, Status, ex) =>
+	        l.Debug(() => $@"Connection id ""{ConnectionId}"" sent FIN with status ""{Status}"".");
 
         // ConnectionWrite: Reserved: 11
 
         // ConnectionWriteCallback: Reserved: 12
 
-        private static readonly Action<ILogger, string, Exception> _connectionError =
-            LoggerMessage.Define<string>(LogLevel.Information, 14, @"Connection id ""{ConnectionId}"" communication error.");
+        private static readonly Action<ILogger, string, Exception> _connectionError = (l, ConnectionId, ex) =>
+	        l.Info(() => $@"Connection id ""{ConnectionId}"" communication error.");
 
-        private static readonly Action<ILogger, string, Exception> _connectionReset =
-            LoggerMessage.Define<string>(LogLevel.Debug, 19, @"Connection id ""{ConnectionId}"" reset.");
-
-        private readonly ILogger _logger;
-
-        public LibuvTrace(ILogger logger)
-        {
-            _logger = logger;
-        }
+        private static readonly Action<ILogger, string, Exception> _connectionReset = (l, ConnectionId, ex) =>
+	        l.Debug(() => $@"Connection id ""{ConnectionId}"" reset.");
 
         public void ConnectionRead(string connectionId, int count)
         {
@@ -95,11 +90,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal
             _connectionResume(_logger, connectionId, null);
         }
 
-        public IDisposable BeginScope<TState>(TState state) => _logger.BeginScope(state);
+	    public void LogError(int _, Exception exception, string msg)
+	    {
+		    _logger.Error(exception, msg);
+	    }
 
         public bool IsEnabled(LogLevel logLevel) => _logger.IsEnabled(logLevel);
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-            => _logger.Log(logLevel, eventId, state, exception, formatter);
+        public void Log<TState>(LogLevel logLevel, object _, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            => _logger.Log(logLevel, formatter(state, exception));
     }
 }

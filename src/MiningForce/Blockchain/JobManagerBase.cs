@@ -146,7 +146,7 @@ namespace MiningForce.Blockchain
                         }
                         catch (Exception ex)
                         {
-                            logger.Warning(() => $"[{poolConfig.Coin.Type}] Error during job polling: {ex.Message}");
+                            logger.Warn(() => $"[{poolConfig.Coin.Type}] Error during job polling: {ex.Message}");
                         }
                     }
                 }, TaskCreationOptions.LongRunning);

@@ -10,14 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.MininigPool;
-using MiningForce.Payouts;
 using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Conditions;
 using NLog.Config;
-using NLog.Extensions.Logging;
 using NLog.Targets;
 
 namespace MiningForce
@@ -127,8 +125,7 @@ namespace MiningForce
         private static void Bootstrap(ClusterConfig config)
         {
             // Configure DI
-            var services = new ServiceCollection()
-                .AddLogging();
+            var services = new ServiceCollection();
 
             var builder = new ContainerBuilder();
             builder.Populate(services);
@@ -272,9 +269,7 @@ namespace MiningForce
 			    }
 			}
 
-		    serviceProvider.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()
-			    .AddNLog()
-				.ConfigureNLog(loggingConfig);
+		    LogManager.Configuration = loggingConfig;
 
 		    logger = LogManager.GetCurrentClassLogger();
 	    }

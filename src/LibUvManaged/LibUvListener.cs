@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Net;
-using Autofac;
 using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
+using MiningForce.Configuration.Extensions;
 using NLog;
 
 namespace LibUvManaged
 {
     public class LibUvListener
     {
-        public LibUvListener(IComponentContext ctx)
+        public LibUvListener()
         {
-	        this.tracer = new LibuvTrace(ctx.Resolve<Microsoft.Extensions.Logging.ILogger<LibUvListener>>());
+	        this.tracer = new LibuvTrace();
         }
 
         internal readonly ILibuvTrace tracer;
