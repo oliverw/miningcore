@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.CommandLineUtils;
@@ -57,7 +58,7 @@ namespace MiningForce
 	            Bootstrap(config);
 
 				// go
-				Start(config);
+				Start(config).Wait();
 
                 Console.ReadLine();
             }
@@ -319,7 +320,7 @@ namespace MiningForce
 				.SingleInstance();
 		}
 
-		private static async void Start(ClusterConfig config)
+		private static async Task Start(ClusterConfig config)
 		{
 			// start share persister
 			sharePersister = container.Resolve<SharePersister>();
