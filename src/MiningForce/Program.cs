@@ -283,7 +283,7 @@ namespace MiningForce
 		         RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) &&
 		        Environment.UserName == "root")
 		    {
-			    logger.Warn(() => "Running this as root is discouraged!");
+			    logger.Warn(() => "Running as root is discouraged!");
 		    }
 	    }
 
