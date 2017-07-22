@@ -3,4 +3,8 @@
 	public interface IPayoutProcessor
 	{
 	}
+
+	public interface ISharePayoutDistributor
+	{
+	}
 }
