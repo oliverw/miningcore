@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-using MiningForce.Blockchain;
-using MiningForce.Persistence.Model;
+﻿using MiningForce.Blockchain;
 
 namespace MiningForce.Persistence.Repositories
 {

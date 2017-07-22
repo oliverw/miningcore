@@ -2,7 +2,6 @@
 using Dapper;
 using MiningForce.Blockchain;
 using MiningForce.Persistence.Repositories;
-using Newtonsoft.Json;
 using NLog;
 
 namespace MiningForce.Persistence.Postgres.Repositories
