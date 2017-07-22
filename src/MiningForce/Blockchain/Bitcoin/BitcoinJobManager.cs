@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -7,7 +6,6 @@ using CodeContracts;
 using NLog;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
-using MiningForce.Configuration.Extensions;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing;
 using MiningForce.Crypto.Hashing.Special;

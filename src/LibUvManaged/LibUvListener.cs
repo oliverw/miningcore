@@ -3,7 +3,6 @@ using System.Net;
 using CodeContracts;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal.Networking;
-using MiningForce.Configuration.Extensions;
 using NLog;
 
 namespace LibUvManaged

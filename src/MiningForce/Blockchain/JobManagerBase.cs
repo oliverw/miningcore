@@ -11,8 +11,6 @@ using CodeContracts;
 using NLog;
 using MiningForce.Authorization;
 using MiningForce.Configuration;
-using MiningForce.Configuration.Extensions;
-using MiningForce.MininigPool;
 using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain

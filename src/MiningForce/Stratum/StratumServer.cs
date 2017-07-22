@@ -10,7 +10,6 @@ using CodeContracts;
 using LibUvManaged;
 using NLog;
 using MiningForce.Configuration;
-using MiningForce.Configuration.Extensions;
 using MiningForce.JsonRpc;
 using Newtonsoft.Json;
 

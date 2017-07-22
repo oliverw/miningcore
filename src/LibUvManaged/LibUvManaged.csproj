@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CodeContracts\CodeContracts.csproj" />
-    <ProjectReference Include="..\Configuration\Configuration.csproj" />
   </ItemGroup>
   
 </Project>

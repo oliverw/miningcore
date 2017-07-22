@@ -43,7 +43,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CodeContracts\CodeContracts.csproj" />
-    <ProjectReference Include="..\Configuration\Configuration.csproj" />
     <ProjectReference Include="..\LibUvManaged\LibUvManaged.csproj" />
   </ItemGroup>
 
