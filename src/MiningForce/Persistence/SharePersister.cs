@@ -6,7 +6,6 @@ using System.Threading;
 using MiningForce.Blockchain;
 using MiningForce.MininigPool;
 using MiningForce.Persistence.Repositories;
-using Newtonsoft.Json;
 using NLog;
 using Polly;
 
@@ -17,6 +16,8 @@ namespace MiningForce.Persistence
 	    public SharePersister(IShareRepository shares)
 	    {
 		    this.shares = shares;
+
+		    BuildFaultHandlingPolicy();
 	    }
 
 	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -24,14 +25,8 @@ namespace MiningForce.Persistence
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shares;
 
-	    // using the policy below, the 8th retry will wait 4min26sec (would be 17min with 10 retries)
 		private const int RetryCount = 8;
-
-	    private readonly Policy retryPolicy = Policy
-			.Handle<DbException>()
-		    .Or<TimeoutException>()
-		    .Or<OutOfMemoryException>()
-			.WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
+	    private Policy faultPolicy;
 
 	    #region API-Surface
 
@@ -82,13 +77,38 @@ namespace MiningForce.Persistence
 		    thread.Start();
 	    }
 
-	    #endregion // API-Surface
+	    private void BuildFaultHandlingPolicy()
+	    {
+		    // using the policy below, the 8th retry will wait 4min26sec (would be 17min with 10 retries)
+		    var retry = Policy
+			    .Handle<DbException>()
+			    .Or<TimeoutException>()
+			    .Or<OutOfMemoryException>()
+			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
 
-	    private void PersistShare(IShare share)
+			// TODO: add fallback for writing json file in case of database failure
+			// requires polly 5.2.1 which allows to pass context to fallback action
+		    //var fallback = Policy
+			   // .Handle<DbException>()
+			   // .Or<TimeoutException>()
+			   // .Or<OutOfMemoryException>()
+			   // .Fallback(x => { });
+
+		    //Policy.Wrap(fallback, retry).Execute(() =>
+		    //{
+			   // return 2;
+		    //});
+
+		    faultPolicy = retry;
+	    }
+
+		#endregion // API-Surface
+
+		private void PersistShare(IShare share)
 	    {
 		    var context = new Dictionary<string, object> {{"share", share}};
 
-			retryPolicy.Execute(() =>
+			faultPolicy.Execute(() =>
 		    {
 				shares.PutShare(share);
 		    }, context);
