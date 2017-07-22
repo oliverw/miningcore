@@ -314,7 +314,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    // Distribute funds to configured reward recipients
 		    var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
 
-			// Miniscule donation to MiningForce developer(s)
+			// Tiny donation to MiningForce developer(s)
 			if (!clusterConfig.DisableDevDonation && 
 				networkType == BitcoinNetworkType.Main && 
 				devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
