@@ -56,8 +56,6 @@ namespace MiningForce
 	            }
 
 	            Bootstrap(config);
-
-				// go
 				Start(config).Wait();
 
                 Console.ReadLine();
