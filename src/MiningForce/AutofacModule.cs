@@ -10,7 +10,7 @@ using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
 using MiningForce.Networking.Banning;
-using MiningForce.Payouts;
+using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;

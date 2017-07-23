@@ -1,4 +1,4 @@
-﻿using MiningForce.Payouts;
+﻿using MiningForce.Payments;
 
 namespace MiningForce.Blockchain.Bitcoin
 {

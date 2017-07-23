@@ -1,4 +1,4 @@
-﻿namespace MiningForce.Payouts
+﻿namespace MiningForce.Payments
 {
 	public interface IPayoutProcessor
 	{

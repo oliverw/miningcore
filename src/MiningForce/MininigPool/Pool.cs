@@ -14,7 +14,6 @@ using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Networking.Banning;
-using MiningForce.Payouts;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;

@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
 using System.Threading.Tasks;
+using MiningForce.Persistence;
 
-namespace MiningForce.Persistence
+namespace MiningForce.Extensions
 {
-    public static class ConnectionExtensions
+    public static class ConnectionFactoryExtensions
     {
 	    public static void WithConnection(this IConnectionFactory factory, Func<IDbConnection, Task> action)
 	    {

@@ -4,13 +4,18 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using MiningForce.Blockchain;
+using MiningForce.Extensions;
 using MiningForce.MininigPool;
+using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
 using NLog;
 using Polly;
 
-namespace MiningForce.Persistence
+namespace MiningForce.Payments
 {
+	/// <summary>
+	/// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
+	/// </summary>
     public class SharePersister
     {
 	    public SharePersister(IConnectionFactory connectionFactory, IShareRepository shares, IBlockRepository blocks)
@@ -28,11 +33,10 @@ namespace MiningForce.Persistence
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shares;
 	    private readonly IBlockRepository blocks;
+	    private const int RetryCount = 8;
+	    private Policy faultPolicy;
 
 		private int QueueSizeWarningThreshold = 1024;
-
-		private const int RetryCount = 8;
-	    private Policy faultPolicy;
 
 	    #region API-Surface
 
@@ -151,7 +155,7 @@ namespace MiningForce.Persistence
 	    {
 		    connectionFactory.WithTransaction((con, tx) =>
 		    {
-			    var shareEntity = new Model.Share
+			    var shareEntity = new Persistence.Model.Share
 			    {
 				    Coin = share.Coin.ToString(),
 				    Blockheight = share.BlockHeight,
@@ -164,11 +168,11 @@ namespace MiningForce.Persistence
 
 			    if (share.IsBlockCandidate)
 			    {
-				    var blockEntity = new Model.Block
+				    var blockEntity = new Persistence.Model.Block
 				    {
 					    Coin = share.Coin.ToString(),
 					    Blockheight = share.BlockHeight,
-					    Status = Model.Block.StatusPending,
+					    Status = Persistence.Model.Block.StatusPending,
 					    TransactionConfirmationData = share.TransactionConfirmationData
 				    };
 

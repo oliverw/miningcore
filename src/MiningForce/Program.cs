@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.MininigPool;
+using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
