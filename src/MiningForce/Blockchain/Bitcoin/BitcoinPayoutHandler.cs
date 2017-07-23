@@ -2,7 +2,7 @@
 
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public class BitcoinPayoutProcessor : IPayoutProcessor
+    public class BitcoinPayoutHandler : IPayoutHandler
 	{
     }
 }

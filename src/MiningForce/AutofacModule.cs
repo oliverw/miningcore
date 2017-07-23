@@ -60,7 +60,11 @@ namespace MiningForce
             builder.RegisterType<BlockchainDaemon>()
                 .AsSelf();
 
-            builder.RegisterType<AddressBasedWorkerAuthorizer>()
+	        builder.RegisterType<PaymentProcessor>()
+		        .AsSelf()
+				.SingleInstance();
+
+			builder.RegisterType<AddressBasedWorkerAuthorizer>()
                 .Named<IWorkerAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
                 .SingleInstance();
 

@@ -57,7 +57,7 @@ namespace MiningForce.Payments
 	    {
 		    var thread = new Thread(() =>
 		    {
-			    logger.Info(() => "Share persistence queue online");
+			    logger.Info(() => "Online");
 
 				var isCleanExit = false;
 			    var hasWarnedAboutBacklogSize = false;

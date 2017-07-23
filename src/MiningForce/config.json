@@ -25,6 +25,12 @@
     // Do not allow 0.2% donation to MiningForce developers. Please leave this disabled to help support development of MiningForce.
     "disableDevDonation": false,
 
+    // Generate payouts for recorded shares and blocks
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600         // how often to process payouts
+    },
+
     "pools": [{
           "enabled": true,
           "coin": {
@@ -106,10 +112,10 @@
           }],
 
           // Generate payouts for recorded shares and blocks
-          "payouts": {
+          "paymentProcessing": {
               "enabled": true,
               "minimumPayment": 0.1,  // in pool currency
-              "interval": 600         // how often to process payouts
+              "payoutScheme": "PPLNS"
           }
       }]
 }

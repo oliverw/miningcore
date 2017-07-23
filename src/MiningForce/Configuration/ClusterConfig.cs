@@ -24,6 +24,12 @@ namespace MiningForce.Configuration
 		AddressBased,
 	}
 
+	public enum PayoutScheme
+	{
+		// ReSharper disable once InconsistentNaming
+		PPLNS = 1
+	}
+
 	public class ClusterLoggingConfig
 	{
 		public string Level { get; set; }
@@ -105,12 +111,17 @@ namespace MiningForce.Configuration
 		public int Time { get; set; }   // How many seconds to ban worker for
 	}
 
-	public class PaymentProcessingConfig
+	public class PoolPaymentProcessingConfig
 	{
 		public bool Enabled { get; set; }
-		public int PaymentInterval { get; set; }
 		public double MinimumPayment { get; set; }
-		public AuthenticatedNetworkEndpointConfig Daemon { get; set; }
+		public PayoutScheme PayoutScheme { get; set; }
+	}
+
+	public class ClusterPaymentProcessingConfig
+	{
+		public bool Enabled { get; set; }
+		public int Interval { get; set; }
 	}
 
 	public class PersistenceConfig
@@ -131,7 +142,7 @@ namespace MiningForce.Configuration
 		public CoinConfig Coin { get; set; }
 		public Dictionary<int, PoolEndpoint> Ports { get; set; }
 		public AuthenticatedNetworkEndpointConfig[] Daemons { get; set; }
-		public PaymentProcessingConfig PaymentProcessing { get; set; }
+		public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
 		public PoolBanningConfig Banning { get; set; }
 		public RewardRecipient[] RewardRecipients { get; set; }
 		public StratumAuthorizerKind Authorizer { get; set; }
@@ -146,6 +157,7 @@ namespace MiningForce.Configuration
 		public ClusterLoggingConfig Logging { get; set; }
 		public ClusterBanningConfig Banning { get; set; }
 		public PersistenceConfig Persistence { get; set; }
+		public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
 		public bool DisableDevDonation { get; set; }
 
 		public PoolConfig[] Pools { get; set; }

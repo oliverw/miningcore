@@ -31,7 +31,8 @@ namespace MiningForce
         private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 	    private static CommandOption dumpConfigOption;
-	    private static ShareRecorder _shareRecorder;
+	    private static ShareRecorder shareRecorder;
+	    private static PaymentProcessor paymentProcessor;
 
 		static void Main(string[] args)
         {
@@ -345,8 +346,15 @@ namespace MiningForce
 		private static async Task Start(ClusterConfig config)
 		{
 			// start share persister
-			_shareRecorder = container.Resolve<ShareRecorder>();
-			_shareRecorder.Start();
+			shareRecorder = container.Resolve<ShareRecorder>();
+			shareRecorder.Start();
+
+			// payment processor
+			if (config.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+			{
+				paymentProcessor = container.Resolve<PaymentProcessor>();
+				paymentProcessor.Start();
+			}
 
 			// start pools
 			foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
@@ -355,7 +363,7 @@ namespace MiningForce
 					new TypedParameter(typeof(PoolConfig), poolConfig),
 	                new TypedParameter(typeof(ClusterConfig), config));
 
-	            _shareRecorder.AttachPool(pool);
+	            shareRecorder.AttachPool(pool);
 
 				await pool.StartAsync();
                 servers.Add(pool);
