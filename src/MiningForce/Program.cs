@@ -314,12 +314,22 @@ namespace MiningForce
 		    var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
 
 			// register connection factory
-		    builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString));
+		    builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString))
+				.AsImplementedInterfaces()
+				.SingleInstance();
 
 			// register repositories
 		    builder.RegisterType<Persistence.Postgres.Repositories.ShareRepository>()
 			    .AsImplementedInterfaces()
 				.SingleInstance();
+
+		    builder.RegisterType<Persistence.Postgres.Repositories.BlockRepository>()
+			    .AsImplementedInterfaces()
+			    .SingleInstance();
+
+		    builder.RegisterType<Persistence.Postgres.Repositories.BalanceRepository>()
+			    .AsImplementedInterfaces()
+			    .SingleInstance();
 		}
 
 		private static async Task Start(ClusterConfig config)

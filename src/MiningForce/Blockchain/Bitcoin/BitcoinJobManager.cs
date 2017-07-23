@@ -108,9 +108,8 @@ namespace MiningForce.Blockchain.Bitcoin
 	        var nonce = submitParams[4] as string;
 
 	        BitcoinJob job;
-	        DateTime now = DateTime.UtcNow;
 
-			lock (jobLock)
+	        lock (jobLock)
 			{
 				validJobs.TryGetValue(jobId, out job);
 			}

@@ -13,17 +13,23 @@ namespace MiningForce.Persistence
 {
     public class SharePersister
     {
-	    public SharePersister(IShareRepository shares)
+	    public SharePersister(IConnectionFactory connectionFactory, IShareRepository shares, IBlockRepository blocks)
 	    {
 		    this.shares = shares;
+		    this.blocks = blocks;
+		    this.connectionFactory = connectionFactory;
 
-		    BuildFaultHandlingPolicy();
+			BuildFaultHandlingPolicy();
 	    }
 
 	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
+	    private readonly IConnectionFactory connectionFactory;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shares;
+	    private readonly IBlockRepository blocks;
+
+		private int QueueSizeWarningThreshold = 1024;
 
 		private const int RetryCount = 8;
 	    private Policy faultPolicy;
@@ -32,7 +38,10 @@ namespace MiningForce.Persistence
 
 		public void AttachPool(Pool pool)
 	    {
-		    pool.Shares.Subscribe(share => queue.Add(share));
+		    pool.Shares.Subscribe(share =>
+		    {
+			    queue.Add(share);
+		    });
 	    }
 
 	    public void Start()
@@ -40,7 +49,9 @@ namespace MiningForce.Persistence
 		    var thread = new Thread(() =>
 		    {
 			    logger.Info(() => "Share persistence queue online");
-			    var isCleanExit = false;
+
+				var isCleanExit = false;
+			    var hasWarnedAboutBacklogSize = false;
 
 				while (true)
 			    {
@@ -48,10 +59,12 @@ namespace MiningForce.Persistence
 				    {
 					    var share = queue.Take();
 
-						PersistShare(share);
-				    }
+						PersistShareFaulTolerant(share);
 
-				    catch (ObjectDisposedException)
+					    CheckQueueBacklog(ref hasWarnedAboutBacklogSize);
+					}
+
+					catch (ObjectDisposedException)
 				    {
 						// queue has been disposed
 					    isCleanExit = true;
@@ -75,6 +88,21 @@ namespace MiningForce.Persistence
 			thread.Priority = ThreadPriority.AboveNormal;
 		    thread.Name = "Share Persistence Queue";
 		    thread.Start();
+	    }
+
+	    private void CheckQueueBacklog(ref bool hasWarnedAboutBacklogSize)
+	    {
+		    if (queue.Count > QueueSizeWarningThreshold)
+		    {
+			    if (!hasWarnedAboutBacklogSize)
+			    {
+				    logger.Warn(() => $"Share persistence queue backlog has crossed {QueueSizeWarningThreshold}");
+				    hasWarnedAboutBacklogSize = true;
+			    }
+		    }
+
+		    else if (hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
+			    hasWarnedAboutBacklogSize = false;
 	    }
 
 	    private void BuildFaultHandlingPolicy()
@@ -104,19 +132,49 @@ namespace MiningForce.Persistence
 
 		#endregion // API-Surface
 
-		private void PersistShare(IShare share)
+		private void PersistShareFaulTolerant(IShare share)
 	    {
 		    var context = new Dictionary<string, object> {{"share", share}};
 
 			faultPolicy.Execute(() =>
-		    {
-				shares.PutShare(share);
-		    }, context);
+			{
+				PersistShare(share);
+			}, context);
 		}
 
 	    private static void OnRetry(Exception ex, TimeSpan timeSpan, int retry, object context)
 	    {
 		    logger.Warn(()=> $"Retry {1} in {timeSpan} due to: {ex}");
+	    }
+
+	    private void PersistShare(IShare share)
+	    {
+		    connectionFactory.WithTransaction((con, tx) =>
+		    {
+			    var shareEntity = new Model.Share
+			    {
+				    Coin = share.Coin.ToString(),
+				    Blockheight = share.BlockHeight,
+				    Difficulty = share.Difficulty,
+				    IpAddress = share.IpAddress,
+				    Worker = share.Worker
+			    };
+
+			    shares.Insert(con, tx, shareEntity);
+
+			    if (share.IsBlockCandidate)
+			    {
+				    var blockEntity = new Model.Block
+				    {
+					    Coin = share.Coin.ToString(),
+					    Blockheight = share.BlockHeight,
+					    Status = Model.Block.StatusPending,
+					    TransactionConfirmationData = share.TransactionConfirmationData
+				    };
+
+				    blocks.Insert(con, tx, blockEntity);
+			    }
+		    });
 	    }
 	}
 }

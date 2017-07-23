@@ -1,10 +1,11 @@
 ﻿using System.Data;
+using System.Threading.Tasks;
 using NLog;
 using Npgsql;
 
 namespace MiningForce.Persistence.Postgres
 {
-    public class ConnectionFactory
+    public class ConnectionFactory : IConnectionFactory
     {
         public ConnectionFactory(string connectionString)
         {
@@ -17,7 +18,7 @@ namespace MiningForce.Persistence.Postgres
         /// This implementation ensures that Glimpse.ADO is able to collect data
         /// </summary>
         /// <returns></returns>
-        public IDbConnection GetConnection()
+        public IDbConnection OpenConnection()
         {
             var con = new NpgsqlConnection(connectionString);
             con.Open();
