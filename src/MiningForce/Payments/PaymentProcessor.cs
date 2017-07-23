@@ -47,7 +47,7 @@ namespace MiningForce.Payments
 
 					try
 					{
-						ProcessCoins();
+						ProcessPools();
 				    }
 
 				    catch (Exception ex)
@@ -71,7 +71,7 @@ namespace MiningForce.Payments
 
 		#endregion // API-Surface
 
-	    private void ProcessCoins()
+	    private void ProcessPools()
 	    {
 			logger.Info(()=> "Processing payments");
 
