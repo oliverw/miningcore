@@ -9,8 +9,8 @@ namespace MiningForce.Persistence.Postgres.Repositories
     {
 	    public void Insert(IDbConnection con, IDbTransaction tx, Share share)
 	    {
-		    con.Execute("INSERT INTO shares(coin, blockheight, difficulty, worker, ipaddress) " +
-		                "VALUES(@coin, @blockheight, @difficulty, @worker, @ipaddress)", share, tx);
+		    con.Execute("INSERT INTO shares(coin, blockheight, difficulty, networkdifficulty, worker, ipaddress) " +
+						"VALUES(@coin, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress)", share, tx);
 	    }
     }
 }

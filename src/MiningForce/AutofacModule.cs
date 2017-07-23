@@ -71,7 +71,7 @@ namespace MiningForce
 		        .Keyed<IBanManager>(BanManagerKind.Integrated)
 				.SingleInstance();
 
-	        builder.RegisterType<SharePersister>()
+	        builder.RegisterType<ShareRecorder>()
 		        .SingleInstance();
 
 			//////////////////////

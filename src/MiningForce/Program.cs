@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
@@ -30,7 +31,7 @@ namespace MiningForce
         private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 	    private static CommandOption dumpConfigOption;
-	    private static SharePersister sharePersister;
+	    private static ShareRecorder _shareRecorder;
 
 		static void Main(string[] args)
         {
@@ -128,7 +129,7 @@ namespace MiningForce
 
         private static void Bootstrap(ClusterConfig config)
         {
-            // Configure DI
+            // Service collection
             var services = new ServiceCollection();
 
             var builder = new ContainerBuilder();
@@ -139,10 +140,24 @@ namespace MiningForce
                 typeof(AutofacModule).GetTypeInfo().Assembly,
             });
 
-	        ConfigurePersistence(config, builder);
-			container = builder.Build();
+	        // AutoMapper
+	        var amConf = new MapperConfiguration(cfg =>
+	        {
+		        cfg.CreateMissingTypeMaps = true;
 
+		        cfg.AddProfile(new AutoMapperProfile());
+	        });
+
+	        builder.Register((ctx, parms) => amConf.CreateMapper());
+
+			// Persistence
+			ConfigurePersistence(config, builder);
+
+			// Autofac Container 
+			container = builder.Build();
             serviceProvider = new AutofacServiceProvider(container);
+
+			// Logging
             ConfigureLogging(config.Logging);
 
 			ValidateRuntimeEnvironment();
@@ -320,15 +335,9 @@ namespace MiningForce
 				.SingleInstance();
 
 			// register repositories
-		    builder.RegisterType<Persistence.Postgres.Repositories.ShareRepository>()
-			    .AsImplementedInterfaces()
-				.SingleInstance();
-
-		    builder.RegisterType<Persistence.Postgres.Repositories.BlockRepository>()
-			    .AsImplementedInterfaces()
-			    .SingleInstance();
-
-		    builder.RegisterType<Persistence.Postgres.Repositories.BalanceRepository>()
+			builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+			    .Where(t => 
+					t.Namespace.StartsWith(typeof(Persistence.Postgres.Repositories.ShareRepository).Namespace))
 			    .AsImplementedInterfaces()
 			    .SingleInstance();
 		}
@@ -336,8 +345,8 @@ namespace MiningForce
 		private static async Task Start(ClusterConfig config)
 		{
 			// start share persister
-			sharePersister = container.Resolve<SharePersister>();
-			sharePersister.Start();
+			_shareRecorder = container.Resolve<ShareRecorder>();
+			_shareRecorder.Start();
 
 			// start pools
 			foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
@@ -346,7 +355,7 @@ namespace MiningForce
 					new TypedParameter(typeof(PoolConfig), poolConfig),
 	                new TypedParameter(typeof(ClusterConfig), config));
 
-	            sharePersister.AttachPool(pool);
+	            _shareRecorder.AttachPool(pool);
 
 				await pool.StartAsync();
                 servers.Add(pool);

@@ -27,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.6.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.2.0" />
+    <PackageReference Include="AutoMapper" Version="6.1.1" />
     <PackageReference Include="Dapper" Version="1.50.2" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />

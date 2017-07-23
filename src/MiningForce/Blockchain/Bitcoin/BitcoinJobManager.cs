@@ -128,8 +128,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			{
 				logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block {share.BlockHash}");
 
-				await SubmitBlockAsync(share);
-				var acceptResponse = await CheckAcceptedAsync(share);
+				var acceptResponse = await SubmitBlockAsync(share);
+
+				// update share
+				share.NetworkDifficulty = acceptResponse.CurrentDifficulty;
 
 				// is it still a block candidate?
 				share.IsBlockCandidate = acceptResponse.Accepted;
@@ -356,20 +358,24 @@ namespace MiningForce.Blockchain.Bitcoin
             }
         }
 
-	    private async Task SubmitBlockAsync(BitcoinShare share)
+		private async Task<(bool Accepted, string CoinbaseTransaction, double CurrentDifficulty)> SubmitBlockAsync(BitcoinShare share)
 	    {
-			if (hasSubmitBlockMethod)
-			    await daemon.ExecuteCmdAnyAsync<string>(SubmitBlockCommand, new[] { share.BlockHex });
-			else
-				await daemon.ExecuteCmdAnyAsync<JToken>(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex });
-		}
+		    var results = await daemon.ExecuteBatchAnyAsync(
+			    hasSubmitBlockMethod ? 
+					new BatchCmd(SubmitBlockCommand, new[] { share.BlockHex }) :
+				    new BatchCmd(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex }),
 
-		private async Task<(bool Accepted, string CoinbaseTransaction)> CheckAcceptedAsync(BitcoinShare share)
-	    {
-		    var result = await daemon.ExecuteCmdAnyAsync<DaemonResponses.Block>(GetBlockCommand, new[] { share.BlockHash });
-		    var accepted = result.Error == null && result.Response.Hash == share.BlockHash;
+			    new BatchCmd(GetBlockCommand, new[] { share.BlockHash }),
+			    new BatchCmd(GetDifficultyCommand, null));
 
-			return (accepted, result.Response.Transactions.FirstOrDefault());
+		    var acceptResult = results[1];
+			var block = acceptResult.Response.ToObject<DaemonResponses.Block>();
+			var accepted = acceptResult.Error == null && block.Hash == share.BlockHash;
+
+		    var difficultyResult = results[2];
+		    var difficulty = difficultyResult.Response.ToObject<double>();
+
+			return (accepted, block.Transactions.FirstOrDefault(), difficulty);
 	    }
 
 		private void SetupCrypto()

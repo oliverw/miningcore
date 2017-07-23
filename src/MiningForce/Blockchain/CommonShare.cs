@@ -15,5 +15,6 @@ namespace MiningForce.Blockchain
 		public CoinType Coin { get; set; }
 		public bool IsBlockCandidate { get; set; }
 		public string TransactionConfirmationData { get; set; }
+		public double NetworkDifficulty { get; set; }
 	}
 }

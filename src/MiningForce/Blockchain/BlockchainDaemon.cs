@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -19,7 +20,29 @@ namespace MiningForce.Blockchain
         public AuthenticatedNetworkEndpointConfig Instance { get; set; }
     }
 
-    public class BlockchainDaemon
+	public class BatchCmd
+	{
+		public BatchCmd()
+		{
+			
+		}
+
+		public BatchCmd(string method)
+		{
+			Method = method;
+		}
+
+		public BatchCmd(string method, object payload)
+		{
+			Method = method;
+			Payload = payload;
+		}
+
+		public string Method { get; set; }
+		public object Payload { get; set; }
+	}
+
+	public class BlockchainDaemon
     {
         public BlockchainDaemon(HttpClient httpClient, JsonSerializerSettings serializerSettings)
         {
@@ -112,7 +135,22 @@ namespace MiningForce.Blockchain
             return result;
         }
 
-        private async Task<JsonRpcResponse> BuildRequestTask(
+	    /// <summary>
+	    /// Executes the requests against all configured demons and returns the first successful response array
+	    /// </summary>
+	    /// <returns></returns>
+	    public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params BatchCmd[] batch)
+	    {
+		    Contract.RequiresNonNull(batch, nameof(batch));
+
+		    var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(endPoint, batch)).ToArray();
+
+			var taskFirstCompleted = await Task.WhenAny(tasks);
+		    var result = MapDaemonBatchResponse(0, taskFirstCompleted);
+		    return result;
+	    }
+
+		private async Task<JsonRpcResponse> BuildRequestTask(
             AuthenticatedNetworkEndpointConfig endPoint, string method, object payload) 
         {
             var rpcRequestId = GetRequestId();
@@ -139,7 +177,32 @@ namespace MiningForce.Blockchain
             return result;
         }
 
-        protected string GetRequestId()
+	    private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(
+		    AuthenticatedNetworkEndpointConfig endPoint, BatchCmd[] batch)
+	    {
+		    // build rpc request
+		    var rpcRequests = batch.Select(x=> new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
+
+		    // build http request
+		    var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");
+		    var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
+		    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+		    // build auth header
+		    var auth = $"{endPoint.User}:{endPoint.Password}";
+		    var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+		    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+
+		    // send request
+		    var response = await httpClient.SendAsync(request);
+		    json = await response.Content.ReadAsStringAsync();
+
+		    // deserialize response
+		    var result = JsonConvert.DeserializeObject<JsonRpcResponse<JToken>[]>(json);
+		    return result;
+	    }
+
+		protected string GetRequestId()
         {
             string rpcRequestId;
 
@@ -159,20 +222,43 @@ namespace MiningForce.Blockchain
                 Instance = endPoints[i]
             };
 
-            if (x.IsCompletedSuccessfully)
-            {
-                resp.Response = x.Result?.Result?.ToObject<TResponse>();
-                resp.Error = x.Result?.Error;
-            }
+			if (x.IsFaulted)
+			{
+				resp.Error = new JsonRpcException(-500, x.Exception.Message, null);
+			}
 
-            else if (x.IsFaulted)
-            {
-                resp.Error = new JsonRpcException(-500, x.Exception.Message, null);
+			else
+			{
+	            Debug.Assert(x.IsCompletedSuccessfully);
+
+				resp.Response = x.Result?.Result?.ToObject<TResponse>();
+                resp.Error = x.Result?.Error;
             }
 
             return resp;
         }
 
-        #endregion // API-Surface
-    }
+	    private DaemonResponse<JToken>[] MapDaemonBatchResponse(int i, Task<JsonRpcResponse<JToken>[]> x)
+	    {
+		    if (x.IsFaulted)
+		    {
+			    return x.Result?.Select(y => new DaemonResponse<JToken>
+			    {
+				    Instance = endPoints[i],
+				    Error = new JsonRpcException(-500, x.Exception.Message, null)
+			    }).ToArray();
+		    }
+
+			Debug.Assert(x.IsCompletedSuccessfully);
+
+			return x.Result?.Select(y=> new DaemonResponse<JToken>
+			{
+				Instance = endPoints[i],
+				Response = y.Result != null ? JToken.FromObject(y.Result) : null,
+				Error = y.Error
+			}).ToArray();
+	    }
+
+		#endregion // API-Surface
+	}
 }

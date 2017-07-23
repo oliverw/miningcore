@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
+using AutoMapper;
 using MiningForce.Blockchain;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
@@ -16,13 +17,16 @@ namespace MiningForce.Payments
 	/// <summary>
 	/// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
 	/// </summary>
-    public class SharePersister
+    public class ShareRecorder
     {
-	    public SharePersister(IConnectionFactory connectionFactory, IShareRepository shares, IBlockRepository blocks)
+	    public ShareRecorder(IConnectionFactory connectionFactory, IMapper mapper,
+			IShareRepository shares, IBlockRepository blocks)
 	    {
-		    this.shares = shares;
-		    this.blocks = blocks;
 		    this.connectionFactory = connectionFactory;
+		    this.mapper = mapper;
+
+			this.shares = shares;
+		    this.blocks = blocks;
 
 			BuildFaultHandlingPolicy();
 	    }
@@ -30,6 +34,7 @@ namespace MiningForce.Payments
 	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
 	    private readonly IConnectionFactory connectionFactory;
+	    private readonly IMapper mapper;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shares;
 	    private readonly IBlockRepository blocks;
@@ -155,26 +160,13 @@ namespace MiningForce.Payments
 	    {
 		    connectionFactory.WithTransaction((con, tx) =>
 		    {
-			    var shareEntity = new Persistence.Model.Share
-			    {
-				    Coin = share.Coin.ToString(),
-				    Blockheight = share.BlockHeight,
-				    Difficulty = share.Difficulty,
-				    IpAddress = share.IpAddress,
-				    Worker = share.Worker
-			    };
-
+			    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
 			    shares.Insert(con, tx, shareEntity);
 
 			    if (share.IsBlockCandidate)
 			    {
-				    var blockEntity = new Persistence.Model.Block
-				    {
-					    Coin = share.Coin.ToString(),
-					    Blockheight = share.BlockHeight,
-					    Status = Persistence.Model.Block.StatusPending,
-					    TransactionConfirmationData = share.TransactionConfirmationData
-				    };
+				    var blockEntity = mapper.Map<Persistence.Model.Block>(share);
+				    blockEntity.Status = Persistence.Model.Block.StatusPending;
 
 				    blocks.Insert(con, tx, blockEntity);
 			    }

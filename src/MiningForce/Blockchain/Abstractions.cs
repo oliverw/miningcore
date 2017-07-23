@@ -58,6 +58,11 @@ namespace MiningForce.Blockchain
 		/// in this coin to verify this block candidate was accepted by the network
 		/// </summary>
 		string TransactionConfirmationData { get; set; }
+
+		/// <summary>
+		/// Network difficulty at the time the share was submitted (used for some payout schemes like PPLNS)
+		/// </summary>
+		double NetworkDifficulty { get; set; }
 	}
 
 	public interface IBlockchainJobManager
