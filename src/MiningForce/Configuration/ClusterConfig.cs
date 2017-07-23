@@ -4,8 +4,8 @@ namespace MiningForce.Configuration
 {
 	public enum CoinType
 	{
-		Bitcoin = 1,
-		Litecoin,
+		BTC = 1,	// Bitcoin
+		LTC,		// Litecoin
 	}
 
 	public class CoinConfig
@@ -138,6 +138,7 @@ namespace MiningForce.Configuration
 
 	public class PoolConfig
 	{
+		public string Id { get; set; }
 		public bool Enabled { get; set; }
 		public CoinConfig Coin { get; set; }
 		public Dictionary<int, PoolEndpoint> Ports { get; set; }

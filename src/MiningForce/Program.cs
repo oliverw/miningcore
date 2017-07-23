@@ -51,6 +51,7 @@ namespace MiningForce
 		            return;
 	            }
 
+	            ValidateConfig(config);
 	            Bootstrap(config);
 				Start(config).Wait();
 
@@ -197,7 +198,37 @@ namespace MiningForce
             }
         }
 
-        private static void Logo()
+		private static void ValidateConfig(ClusterConfig config)
+	    {
+		    if (config.Pools.Length == 0)
+			    throw new PoolStartupAbortException("No pools configured!");
+
+		    ValidatePoolIds(config);
+	    }
+
+	    private static void ValidatePoolIds(ClusterConfig config)
+	    {
+		    // check for missing ids
+		    if (config.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
+			    throw new PoolStartupAbortException($"Pool {config.Pools.ToList().IndexOf(config.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+
+		    // check for duplicate ids
+		    var ids = config.Pools
+			    .GroupBy(x => x.Id)
+			    .ToArray();
+
+		    if (ids.Any(id => id.Count() > 1))
+			    throw new PoolStartupAbortException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
+	    }
+
+	    private static void ValidateRuntimeEnvironment()
+	    {
+		    // root check
+		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
+			    logger.Warn(() => "Running as root is discouraged!");
+	    }
+
+		private static void Logo()
         {
             Console.WriteLine($@"
     __  ____       _             ______                   
@@ -296,13 +327,6 @@ namespace MiningForce
 		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
-	    private static void ValidateRuntimeEnvironment()
-	    {
-		    // root check
-		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
-			    logger.Warn(() => "Running as root is discouraged!");
-	    }
-
 		private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
 	    {
 			if(config.Persistence == null)
@@ -350,9 +374,11 @@ namespace MiningForce
 			shareRecorder.Start();
 
 			// payment processor
-			if (config.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+			if (config.PaymentProcessing?.Enabled == true && config.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
-				paymentProcessor = container.Resolve<PaymentProcessor>();
+				paymentProcessor = container.Resolve<PaymentProcessor>(
+					new TypedParameter(typeof(ClusterConfig), config));
+
 				paymentProcessor.Start();
 			}
 

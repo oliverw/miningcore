@@ -153,6 +153,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			}
 
 			// enrich share with common data
+	        share.PoolId = poolConfig.Id;
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
 	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
@@ -382,7 +383,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 			switch (poolConfig.Coin.Type)
 		    {
-				case CoinType.Bitcoin:
+				case CoinType.BTC:
 					coinbaseHasher = new Sha256Double();
 					headerHasher = coinbaseHasher;
 					blockHasher = new DigestReverser(coinbaseHasher);

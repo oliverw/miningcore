@@ -3,7 +3,7 @@
 CREATE TABLE shares
 (
   id BIGSERIAL NOT NULL PRIMARY KEY,
-  coin TEXT NOT NULL,
+  poolid TEXT NOT NULL,
   blockheight BIGINT NOT NULL,
   difficulty REAL NOT NULL,
   networkdifficulty REAL NOT NULL,
@@ -12,19 +12,19 @@ CREATE TABLE shares
   created TIMESTAMP NOT NULL DEFAULT (now()::timestamp at time zone 'utc')
 );
 
-CREATE INDEX IDX_COIN_BLOCK_WORKER on shares(coin, blockheight, worker);
+CREATE INDEX IDX_POOL_BLOCK on shares(poolid, blockheight);
 
 CREATE TABLE blocks
 (
   id BIGSERIAL NOT NULL PRIMARY KEY,
-  coin TEXT NOT NULL,
+  poolid TEXT NOT NULL,
   blockheight BIGINT NOT NULL,
   status TEXT NOT NULL,
   transactionconfirmationdata TEXT NOT NULL,
   created TIMESTAMP NOT NULL DEFAULT (now()::timestamp at time zone 'utc')
 );
 
-CREATE INDEX IDX_BLOCKS_COIN_BLOCK_STATUS_CREATED on blocks(coin, blockheight, status, created);
+CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status);
 
 CREATE TABLE balances
 (
@@ -40,6 +40,7 @@ CREATE TABLE balances
 CREATE TABLE payments
 (
   id BIGSERIAL NOT NULL PRIMARY KEY,
+  poolid TEXT NOT NULL,
   coin TEXT NOT NULL,
   blockheight BIGINT NOT NULL,
   wallet TEXT NOT NULL,
@@ -47,4 +48,4 @@ CREATE TABLE payments
   created TIMESTAMP NOT NULL DEFAULT (now()::timestamp at time zone 'utc')
 );
 
-CREATE INDEX IDX_PAYMENTS_COIN_BLOCK_WALLET on payments(coin, blockheight, wallet);
+CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, wallet);

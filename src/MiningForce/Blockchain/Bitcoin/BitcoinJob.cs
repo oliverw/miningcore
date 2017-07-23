@@ -57,8 +57,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private static readonly Dictionary<CoinType, string> devFeeAddresses = new Dictionary<CoinType, string>
 	    {
-		    {CoinType.Bitcoin, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
-		    {CoinType.Litecoin, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
+		    {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
+		    {CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
 		};
 
 		// serialization constants
@@ -378,8 +378,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			// valid share
 			var result = new BitcoinShare
 			{
-				BlockHeight = blockTemplate.Height,
-				Coin = poolConfig.Coin.Type
+				BlockHeight = blockTemplate.Height
 			};
 
 		    // now check if the share meets the much harder block difficulty (block candidate)

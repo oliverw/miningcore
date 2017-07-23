@@ -1,7 +1,6 @@
 ﻿using System;
-using MiningForce.Configuration;
 
-namespace MiningForce.Persistence.Model
+namespace MiningForce.Persistence.Postgres.Entities
 {
 	public class Block
 	{
@@ -10,7 +9,5 @@ namespace MiningForce.Persistence.Model
 		public string Status { get; set; }
 		public string TransactionConfirmationData { get; set; }
 		public DateTime Created { get; set; }
-
-		public const string StatusPending = "pending";
 	}
 }

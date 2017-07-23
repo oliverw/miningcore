@@ -85,7 +85,7 @@ namespace MiningForce
 			// Bitcoin and family
 
 			builder.RegisterType<BitcoinJobManager>()
-                .Keyed<IBlockchainJobManager>(CoinType.Bitcoin);
+                .Keyed<IBlockchainJobManager>(CoinType.BTC);
 
 			base.Load(builder);
         }

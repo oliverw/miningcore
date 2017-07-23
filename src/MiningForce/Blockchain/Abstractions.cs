@@ -19,6 +19,11 @@ namespace MiningForce.Blockchain
 	public interface IShare
 	{
 		/// <summary>
+		/// The pool originating this share from
+		/// </summary>
+		string PoolId { get; set; }
+		
+		/// <summary>
 		/// Who mined it
 		/// </summary>
 		string Worker { get; }
@@ -42,11 +47,6 @@ namespace MiningForce.Blockchain
 		/// Block this share refers to
 		/// </summary>
 		long BlockHeight { get; set; }
-
-		/// <summary>
-		/// Coin
-		/// </summary>
-		CoinType Coin { get; set; }
 
 		/// <summary>
 		/// If this share presumably resulted in a block

@@ -19,10 +19,10 @@ namespace MiningForce.Payments
 	/// </summary>
     public class ShareRecorder
     {
-	    public ShareRecorder(IConnectionFactory connectionFactory, IMapper mapper,
+	    public ShareRecorder(IConnectionFactory cf, IMapper mapper,
 			IShareRepository shares, IBlockRepository blocks)
 	    {
-		    this.connectionFactory = connectionFactory;
+		    this.cf = cf;
 		    this.mapper = mapper;
 
 			this.shares = shares;
@@ -33,7 +33,7 @@ namespace MiningForce.Payments
 
 	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-	    private readonly IConnectionFactory connectionFactory;
+	    private readonly IConnectionFactory cf;
 	    private readonly IMapper mapper;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shares;
@@ -158,7 +158,7 @@ namespace MiningForce.Payments
 
 	    private void PersistShare(IShare share)
 	    {
-		    connectionFactory.WithTransaction((con, tx) =>
+		    cf.RunTx((con, tx) =>
 		    {
 			    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
 			    shares.Insert(con, tx, shareEntity);

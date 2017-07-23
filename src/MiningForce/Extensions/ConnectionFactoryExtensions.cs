@@ -7,7 +7,10 @@ namespace MiningForce.Extensions
 {
     public static class ConnectionFactoryExtensions
     {
-	    public static void WithConnection(this IConnectionFactory factory, Func<IDbConnection, Task> action)
+	    /// <summary>
+	    /// Run the specified action providing it with a fresh connection. 
+	    /// </summary>
+	    public static void Run(this IConnectionFactory factory, Func<IDbConnection, Task> action)
 	    {
 		    using (var con = factory.OpenConnection())
 		    {
@@ -15,7 +18,11 @@ namespace MiningForce.Extensions
 		    }
 	    }
 
-	    public static T WithConnection<T>(this IConnectionFactory factory, Func<IDbConnection, T> action)
+		/// <summary>
+		/// Run the specified action providing it with a fresh connection returing its result.
+		/// </summary>
+		/// <returns>The result returned by the action</returns>
+	    public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action)
 	    {
 			using (var con = factory.OpenConnection())
 			{
@@ -23,7 +30,11 @@ namespace MiningForce.Extensions
 		    }
 	    }
 
-	    public static void WithTransaction(this IConnectionFactory factory, Action<IDbConnection, IDbTransaction> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+		/// <summary>
+		/// Run the specified action inside a transaction. If the action throws an exception,
+		/// the transaction is rolled back. Otherwise it is commited.
+		/// </summary>
+	    public static void RunTx(this IConnectionFactory factory, Action<IDbConnection, IDbTransaction> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 			using (var con = factory.OpenConnection())
 			{
@@ -46,7 +57,12 @@ namespace MiningForce.Extensions
 		    }
 	    }
 
-	    public static T WithTransaction<T>(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, T> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+		/// <summary>
+		/// Run the specified action inside a transaction. If the action throws an exception,
+		/// the transaction is rolled back. Otherwise it is commited. 
+		/// </summary>
+		/// <returns>The result returned by the action</returns>
+		public static T RunTx<T>(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, T> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 			using (var con = factory.OpenConnection())
 			{

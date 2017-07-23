@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MiningForce.Configuration;
 
-namespace MiningForce.Persistence.Model
+namespace MiningForce.Persistence.Postgres.Entities
 {
 	public class Share
 	{
