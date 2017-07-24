@@ -16,6 +16,7 @@ using MiningForce.MininigPool;
 using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Stratum;
+using MiningForce.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Conditions;
@@ -76,11 +77,19 @@ namespace MiningForce
 	            // ignored
             }
 
+            catch (AggregateException ex)
+            {
+	            if (!(ex.InnerExceptions.First() is PoolStartupAbortException))
+		            Console.WriteLine(ex);
+
+				Console.WriteLine("Cluster cannot start. Good Bye!");
+            }
+
 			catch (Exception ex)
             {
                 Console.WriteLine(ex);
 
-	            Console.WriteLine("\nCluster cannot start. Good Bye!");
+	            Console.WriteLine("Cluster cannot start. Good Bye!");
             }
 		}
 
@@ -202,7 +211,7 @@ namespace MiningForce
 		private static void ValidateConfig(ClusterConfig clusterConfig)
 	    {
 		    if (clusterConfig.Pools.Length == 0)
-			    throw new PoolStartupAbortException("No pools configured!");
+			    logger.LogThrowPoolStartupException("No pools configured!");
 
 		    ValidatePoolIds(clusterConfig);
 	    }
@@ -211,7 +220,7 @@ namespace MiningForce
 	    {
 		    // check for missing ids
 		    if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-			    throw new PoolStartupAbortException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+			    logger.LogThrowPoolStartupException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
 
 		    // check for duplicate ids
 		    var ids = clusterConfig.Pools
@@ -219,7 +228,7 @@ namespace MiningForce
 			    .ToArray();
 
 		    if (ids.Any(id => id.Count() > 1))
-			    throw new PoolStartupAbortException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
+			    logger.LogThrowPoolStartupException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
 	    }
 
 	    private static void ValidateRuntimeEnvironment()
@@ -260,7 +269,7 @@ namespace MiningForce
 				    ? LogLevel.FromString(config.Level)
 				    : LogLevel.Info;
 
-			    var layout = "[${logger:shortName=true}] [${longdate}] [${pad:inner=${level:uppercase=true}}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+			    var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
 			    if (config.EnableConsoleLog)
 			    {
@@ -357,7 +366,7 @@ namespace MiningForce
 	    private static void ConfigurePersistence(ClusterConfig clusterConfig, ContainerBuilder builder)
 	    {
 			if(clusterConfig.Persistence == null)
-				throw new PoolStartupAbortException("Persistence is not configured!");
+				logger.LogThrowPoolStartupException("Persistence is not configured!");
 
 		    if (clusterConfig.Persistence.Postgres != null)
 			    ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
@@ -367,16 +376,16 @@ namespace MiningForce
 	    {
 		    // validate config
 			if (string.IsNullOrEmpty(pgConfig.Host))
-			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'host'");
+			    logger.LogThrowPoolStartupException("Postgres configuration: invalid or missing 'host'");
 
 		    if (pgConfig.Port == 0)
-			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'port'");
+			    logger.LogThrowPoolStartupException("Postgres configuration: invalid or missing 'port'");
 
 			if (string.IsNullOrEmpty(pgConfig.Database))
-			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'database'");
+			    logger.LogThrowPoolStartupException("Postgres configuration: invalid or missing 'database'");
 
 		    if (string.IsNullOrEmpty(pgConfig.User))
-			    throw new PoolStartupAbortException("Postgres configuration: invalid or missing 'user'");
+			    logger.LogThrowPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
 		    // build connection string
 		    var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";

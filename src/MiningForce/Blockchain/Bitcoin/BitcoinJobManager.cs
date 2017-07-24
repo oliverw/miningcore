@@ -227,10 +227,7 @@ namespace MiningForce.Blockchain.Bitcoin
             await batchTask;
 
             if (!batchTask.IsCompletedSuccessfully)
-            {
-                logger.Error(batchTask.Exception, ()=> $"[{LogCategory}] Init RPC failed");
-                throw new PoolStartupAbortException();
-            }
+                logger.LogThrowPoolStartupException(batchTask.Exception, "Init RPC failed", LogCategory);
 
             // extract results
             var validateAddressResponse = ((Task<DaemonResponse<ValidateAddress>>) tasks[0]).Result;
@@ -242,16 +239,12 @@ namespace MiningForce.Blockchain.Bitcoin
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.Response.IsValid)
-                throw new PoolStartupAbortException($"[{LogCategory}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
+                logger.LogThrowPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCategory);
 
 			if (!validateAddressResponse.Response.IsMine)
-				throw new PoolStartupAbortException($"[{LogCategory}] Daemon does not own pool-address '{poolConfig.Address}'");
+				logger.LogThrowPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCategory);
 
 			isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
-
-            // POS coins must use the pubkey in coinbase transaction, and pubkey is only given if address is owned by wallet
-            if (isPoS && string.IsNullOrEmpty(validateAddressResponse.Response.PubKey))
-                throw new PoolStartupAbortException($"[{LogCategory}] The pool-address is not from the daemon wallet - this is required for POS coins");
 
 			// Create pool address script from response
 	        if (isPoS)
@@ -273,7 +266,7 @@ namespace MiningForce.Blockchain.Bitcoin
             else if (submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                throw new PoolStartupAbortException($"[{LogCategory}] Unable detect block submission RPC method");
+                logger.LogThrowPoolStartupException($"Unable detect block submission RPC method", LogCategory);
 
             // update stats
             networkStats.Network = networkType.ToString();
@@ -399,8 +392,8 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				default:
-				    logger.Error(() => $"[{LogCategory}] Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager");
-				    throw new PoolStartupAbortException();
+				    logger.LogThrowPoolStartupException("Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCategory);
+					break;
 		    }
 		}
 	}
