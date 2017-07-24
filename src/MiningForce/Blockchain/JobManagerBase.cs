@@ -10,6 +10,7 @@ using Autofac;
 using CodeContracts;
 using NLog;
 using MiningForce.Authorization;
+using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Stratum;
 
@@ -18,20 +19,17 @@ namespace MiningForce.Blockchain
     public abstract class JobManagerBase<TWorkerContext, TJob>
         where TWorkerContext: class, new()
     {
-        protected JobManagerBase(IComponentContext ctx, ILogger logger, 
-			PoolConfig poolConfig, ClusterConfig clusterConfig, BlockchainDaemon daemon)
+        protected JobManagerBase(IComponentContext ctx, ILogger logger, DaemonClient daemon)
         {
             this.ctx = ctx;
             this.logger = logger;
             this.daemon = daemon;
-	        this.poolConfig = poolConfig;
-	        this.clusterConfig = clusterConfig;
         }
 
         protected readonly IComponentContext ctx;
-	    protected readonly PoolConfig poolConfig;
-	    protected readonly ClusterConfig clusterConfig;
-        protected BlockchainDaemon daemon;
+	    protected PoolConfig poolConfig;
+	    protected ClusterConfig clusterConfig;
+        protected DaemonClient daemon;
         protected StratumServer stratum;
         private IWorkerAuthorizer authorizer;
         protected readonly ILogger logger;
@@ -50,7 +48,18 @@ namespace MiningForce.Blockchain
 
 		public IObservable<object> Jobs { get; private set; }
 
-        public async Task StartAsync(StratumServer stratum)
+	    public void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+	    {
+		    Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+			Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+
+			this.poolConfig = poolConfig;
+		    this.clusterConfig = clusterConfig;
+
+		    daemon.Configure(poolConfig);
+	    }
+
+		public async Task StartAsync(StratumServer stratum)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
@@ -93,8 +102,6 @@ namespace MiningForce.Blockchain
         
         protected virtual async Task StartDaemonAsync()
         {
-            daemon.Start(poolConfig);
-
             while (!await IsDaemonHealthy())
             {
                 logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Waiting for daemons to come online ...");

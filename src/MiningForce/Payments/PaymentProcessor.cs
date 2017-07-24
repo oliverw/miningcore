@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Autofac;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
@@ -15,26 +18,32 @@ namespace MiningForce.Payments
     public class PaymentProcessor
     {
 	    public PaymentProcessor(IComponentContext ctx, 
-			IConnectionFactory cf, IBlockRepository blocks,
-			ClusterConfig clusterConfig)
+			IConnectionFactory cf, IBlockRepository blocks)
 	    {
 		    this.ctx = ctx;
 		    this.cf = cf;
 		    this.blocks = blocks;
-			this.clusterConfig = clusterConfig;
 	    }
 
 		private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 	    private readonly IComponentContext ctx;
 	    private readonly IConnectionFactory cf;
 	    private readonly IBlockRepository blocks;
-	    private readonly ClusterConfig clusterConfig;
+	    private ClusterConfig clusterConfig;
+	    private Dictionary<CoinType, IPayoutHandler> payoutHandlers;
 
-	    #region API-Surface
+		#region API-Surface
+
+		public void Configure(ClusterConfig clusterConfig)
+		{
+			this.clusterConfig = clusterConfig;
+		}
 
 		public void Start()
 	    {
-		    var thread = new Thread(() =>
+		    ResolveHandlers();
+
+			var thread = new Thread(async () =>
 		    {
 			    logger.Info(() => "Online");
 
@@ -47,7 +56,7 @@ namespace MiningForce.Payments
 
 					try
 					{
-						ProcessPools();
+						await ProcessPoolsAsync();
 				    }
 
 				    catch (Exception ex)
@@ -71,16 +80,36 @@ namespace MiningForce.Payments
 
 		#endregion // API-Surface
 
-	    private void ProcessPools()
+		private void ResolveHandlers()
+	    {
+		    payoutHandlers = clusterConfig.Pools.ToDictionary(x => x.Coin.Type, x =>
+		    {
+			    var handler = ctx.ResolveKeyed<IPayoutHandler>(x.Coin.Type);
+			    handler.Configure(x);
+			    return handler;
+		    });
+	    }
+
+		private async Task ProcessPoolsAsync()
 	    {
 			logger.Info(()=> "Processing payments");
 
 		    foreach (var pool in clusterConfig.Pools)
 		    {
-				// get pending blocks for pool
-			    var pendingBlocks = cf.Run(con => blocks.GetPendingBlocksForPool(con, pool.Id));
+			    try
+			    {
+				    var handler = payoutHandlers[pool.Coin.Type];
 
-				// get confirmation status for each block
+				    // get pending blocks for pool
+				    var pendingBlocks = await handler.GetConfirmedPendingBlocksAsync();
+
+				    // get confirmation status for each block
+			    }
+
+				catch (Exception ex)
+			    {
+					logger.Error(ex, ()=> $"[{pool.Id}] Payment processing failed");
+			    }
 		    }
 		}
     }

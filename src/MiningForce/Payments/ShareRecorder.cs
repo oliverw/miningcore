@@ -18,8 +18,8 @@ namespace MiningForce.Payments
 	/// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
 	/// </summary>
     public class ShareRecorder
-    {
-	    public ShareRecorder(IConnectionFactory cf, IMapper mapper,
+	{
+		public ShareRecorder(IConnectionFactory cf, IMapper mapper,
 			IShareRepository shares, IBlockRepository blocks)
 	    {
 		    this.cf = cf;

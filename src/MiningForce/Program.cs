@@ -43,17 +43,17 @@ namespace MiningForce
                     return;
 
                 Logo();
-                var config = ReadConfig(configFile);
+                var clusterConfig = ReadConfig(configFile);
 
 	            if (dumpConfigOption.HasValue())
 	            {
-		            DumpParsedConfig(config);
+		            DumpParsedConfig(clusterConfig);
 		            return;
 	            }
 
-	            ValidateConfig(config);
-	            Bootstrap(config);
-				Start(config).Wait();
+	            ValidateConfig(clusterConfig);
+	            Bootstrap(clusterConfig);
+				Start(clusterConfig).Wait();
 
                 Console.ReadLine();
             }
@@ -198,22 +198,22 @@ namespace MiningForce
             }
         }
 
-		private static void ValidateConfig(ClusterConfig config)
+		private static void ValidateConfig(ClusterConfig clusterConfig)
 	    {
-		    if (config.Pools.Length == 0)
+		    if (clusterConfig.Pools.Length == 0)
 			    throw new PoolStartupAbortException("No pools configured!");
 
-		    ValidatePoolIds(config);
+		    ValidatePoolIds(clusterConfig);
 	    }
 
-	    private static void ValidatePoolIds(ClusterConfig config)
+	    private static void ValidatePoolIds(ClusterConfig clusterConfig)
 	    {
 		    // check for missing ids
-		    if (config.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-			    throw new PoolStartupAbortException($"Pool {config.Pools.ToList().IndexOf(config.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+		    if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
+			    throw new PoolStartupAbortException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
 
 		    // check for duplicate ids
-		    var ids = config.Pools
+		    var ids = clusterConfig.Pools
 			    .GroupBy(x => x.Id)
 			    .ToArray();
 
@@ -247,22 +247,22 @@ namespace MiningForce
             Console.WriteLine();
         }
 
-	    private static void ConfigureLogging(ClusterLoggingConfig config)
+	    private static void ConfigureLogging(ClusterLoggingConfig clusterConfig)
 	    {
 			var loggingConfig = new LoggingConfiguration();
 
-		    if (config != null)
+		    if (clusterConfig != null)
 		    {
 			    // parse level
-			    var level = !string.IsNullOrEmpty(config.Level)
-				    ? LogLevel.FromString(config.Level)
+			    var level = !string.IsNullOrEmpty(clusterConfig.Level)
+				    ? LogLevel.FromString(clusterConfig.Level)
 				    : LogLevel.Info;
 
 			    var layout = "[${longdate}] [${pad:inner=${level:uppercase=true}}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
-			    if (config.EnableConsoleLog)
+			    if (clusterConfig.EnableConsoleLog)
 			    {
-				    if (config.EnableConsoleColors)
+				    if (clusterConfig.EnableConsoleColors)
 				    {
 					    var target = new ColoredConsoleTarget("console")
 					    {
@@ -309,11 +309,11 @@ namespace MiningForce
 				    }
 				}
 
-			    if (!string.IsNullOrEmpty(config.LogFile))
+			    if (!string.IsNullOrEmpty(clusterConfig.LogFile))
 			    {
 				    var target = new FileTarget("file")
 				    {
-					    FileName = config.LogFile,
+					    FileName = clusterConfig.LogFile,
 					    FileNameKind = FilePathKind.Unknown,
 					    Layout = layout
 				    };
@@ -327,13 +327,13 @@ namespace MiningForce
 		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
-		private static void ConfigurePersistence(ClusterConfig config, ContainerBuilder builder)
+		private static void ConfigurePersistence(ClusterConfig clusterConfig, ContainerBuilder builder)
 	    {
-			if(config.Persistence == null)
+			if(clusterConfig.Persistence == null)
 				throw new PoolStartupAbortException("Persistence is not configured!");
 
-		    if (config.Persistence.Postgres != null)
-			    ConfigurePostgres(config.Persistence.Postgres, builder);
+		    if (clusterConfig.Persistence.Postgres != null)
+			    ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
 	    }
 
 	    private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
@@ -367,27 +367,29 @@ namespace MiningForce
 			    .SingleInstance();
 		}
 
-		private static async Task Start(ClusterConfig config)
+		private static async Task Start(ClusterConfig clusterConfig)
 		{
 			// start share persister
 			shareRecorder = container.Resolve<ShareRecorder>();
 			shareRecorder.Start();
 
 			// payment processor
-			if (config.PaymentProcessing?.Enabled == true && config.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+			if (clusterConfig.PaymentProcessing?.Enabled == true && clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
-				paymentProcessor = container.Resolve<PaymentProcessor>(
-					new TypedParameter(typeof(ClusterConfig), config));
+				paymentProcessor = container.Resolve<PaymentProcessor>();
+				paymentProcessor.Configure(clusterConfig);
 
 				paymentProcessor.Start();
 			}
 
 			// start pools
-			foreach (var poolConfig in config.Pools.Where(x=> x.Enabled))
+			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
             {
                 var pool = container.Resolve<Pool>(
 					new TypedParameter(typeof(PoolConfig), poolConfig),
-	                new TypedParameter(typeof(ClusterConfig), config));
+	                new TypedParameter(typeof(ClusterConfig), clusterConfig));
+
+	            pool.Configure(poolConfig, clusterConfig);
 
 	            shareRecorder.AttachPool(pool);
 

@@ -11,66 +11,39 @@ using MiningForce.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace MiningForce.Blockchain
+namespace MiningForce.Blockchain.Daemon
 {
-    public class DaemonResponse<T>
+	public class DaemonClient
     {
-        public JsonRpcException Error { get; set; }
-        public T Response { get; set; }
-        public AuthenticatedNetworkEndpointConfig Instance { get; set; }
-    }
-
-	public class BatchCmd
-	{
-		public BatchCmd()
-		{
-			
-		}
-
-		public BatchCmd(string method)
-		{
-			Method = method;
-		}
-
-		public BatchCmd(string method, object payload)
-		{
-			Method = method;
-			Payload = payload;
-		}
-
-		public string Method { get; set; }
-		public object Payload { get; set; }
-	}
-
-	public class BlockchainDaemon
-    {
-        public BlockchainDaemon(HttpClient httpClient, JsonSerializerSettings serializerSettings)
+        public DaemonClient(HttpClient httpClient, JsonSerializerSettings serializerSettings)
         {
-            this.httpClient = httpClient;
+	        Contract.RequiresNonNull(httpClient, nameof(httpClient));
+			Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+
+			this.httpClient = httpClient;
             this.serializerSettings = serializerSettings;
         }
 
-        protected AuthenticatedNetworkEndpointConfig[] endPoints;
+		protected AuthenticatedNetworkEndpointConfig[] endPoints;
         private readonly Random random = new Random();
         protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
 
-        #region API-Surface
+		#region API-Surface
 
-        public void Start(PoolConfig poolConfig)
-        {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.Requires<ArgumentException>(poolConfig.Daemons.Length > 0, $"{nameof(poolConfig.Daemons)} must not be empty");
+		public void Configure(PoolConfig poolConfig)
+		{
+			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            this.endPoints = poolConfig.Daemons;
-        }
+			endPoints = poolConfig.Daemons;
+		}
 
-        /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
+		/// <summary>
+		/// Executes the request against all configured demons and returns their responses as an array
+		/// </summary>
+		/// <param name="method"></param>
+		/// <returns></returns>
+		public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
         {
             return ExecuteCmdAllAsync<JToken> (method);
         }
@@ -139,7 +112,7 @@ namespace MiningForce.Blockchain
 	    /// Executes the requests against all configured demons and returns the first successful response array
 	    /// </summary>
 	    /// <returns></returns>
-	    public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params BatchCmd[] batch)
+	    public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params DaemonCmd[] batch)
 	    {
 		    Contract.RequiresNonNull(batch, nameof(batch));
 
@@ -178,7 +151,7 @@ namespace MiningForce.Blockchain
         }
 
 	    private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(
-		    AuthenticatedNetworkEndpointConfig endPoint, BatchCmd[] batch)
+		    AuthenticatedNetworkEndpointConfig endPoint, DaemonCmd[] batch)
 	    {
 		    // build rpc request
 		    var rpcRequests = batch.Select(x=> new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));

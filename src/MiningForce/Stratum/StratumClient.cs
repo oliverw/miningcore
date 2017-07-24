@@ -14,24 +14,23 @@ namespace MiningForce.Stratum
 {
     public class StratumClient
     {
-        public StratumClient(PoolEndpoint endpointConfig)
-        {
-            this.config = endpointConfig;
-        }
-
         private JsonRpcConnection rpcCon;
-        private readonly PoolEndpoint config;
+        private PoolEndpoint config;
 
 		// telemetry
 		private readonly Subject<string> responses = new Subject<string>();
 
-        #region API-Surface
+		#region API-Surface
 
-        public void Init(ILibUvConnection uvCon, IComponentContext ctx)
+		public void Init(ILibUvConnection uvCon, IComponentContext ctx, PoolEndpoint endpointConfig)
         {
-            Contract.RequiresNonNull(uvCon, nameof(uvCon));
+	        Contract.RequiresNonNull(uvCon, nameof(uvCon));
+            Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(endpointConfig, nameof(endpointConfig));
 
-            rpcCon = ctx.Resolve<JsonRpcConnection>();
+	        config = endpointConfig;
+
+			rpcCon = ctx.Resolve<JsonRpcConnection>();
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;

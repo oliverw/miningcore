@@ -5,6 +5,7 @@ using Autofac;
 using CodeContracts;
 using NLog;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
+using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing;
@@ -22,11 +23,9 @@ namespace MiningForce.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx, 
-            BlockchainDaemon daemon,
-            ExtraNonceProvider extraNonceProvider,
-            ClusterConfig clusterConfig,
-			PoolConfig poolConfig) : 
-			base(ctx, LogManager.GetCurrentClassLogger(), poolConfig, clusterConfig, daemon)
+            DaemonClient daemon,
+            ExtraNonceProvider extraNonceProvider) : 
+			base(ctx, LogManager.GetCurrentClassLogger(), daemon)
         {
 			this.extraNonceProvider = extraNonceProvider;
         }
@@ -363,11 +362,11 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    var results = await daemon.ExecuteBatchAnyAsync(
 			    hasSubmitBlockMethod ? 
-					new BatchCmd(SubmitBlockCommand, new[] { share.BlockHex }) :
-				    new BatchCmd(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex }),
+					new DaemonCmd(SubmitBlockCommand, new[] { share.BlockHex }) :
+				    new DaemonCmd(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex }),
 
-			    new BatchCmd(GetBlockCommand, new[] { share.BlockHash }),
-			    new BatchCmd(GetDifficultyCommand, null));
+			    new DaemonCmd(GetBlockCommand, new[] { share.BlockHash }),
+			    new DaemonCmd(GetDifficultyCommand, null));
 
 		    var acceptResult = results[1];
 			var block = acceptResult.Response.ToObject<DaemonResponses.Block>();

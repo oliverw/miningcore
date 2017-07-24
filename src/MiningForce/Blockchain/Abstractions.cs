@@ -66,8 +66,10 @@ namespace MiningForce.Blockchain
 	}
 
 	public interface IBlockchainJobManager
-    {
-        Task StartAsync(StratumServer stratum);
+	{
+		void Configure(PoolConfig pool, ClusterConfig cluster);
+		Task StartAsync(StratumServer stratum);
+
         Task<bool> ValidateAddressAsync(string address);
         Task<object[]> SubscribeWorkerAsync(StratumClient worker);
         Task<bool> AuthenticateWorkerAsync(StratumClient worker, string workername, string password);

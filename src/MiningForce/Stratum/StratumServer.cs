@@ -73,15 +73,14 @@ namespace MiningForce.Stratum
             {
                 var subscriptionId = con.ConnectionId;
 
-                var client = ctx.Resolve<StratumClient>(
-                    new TypedParameter(typeof(PoolEndpoint), endpointConfig));
+                var client = ctx.Resolve<StratumClient>();
 
                 lock (clients)
                 {
                     clients[subscriptionId] = client;
                 }
 
-                client.Init(con, ctx);
+                client.Init(con, ctx, endpointConfig);
 
 				// monitor client requests
 				client.Requests

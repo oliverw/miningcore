@@ -6,6 +6,7 @@ using Autofac;
 using MiningForce.Authorization;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
+using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
@@ -57,7 +58,7 @@ namespace MiningForce
             builder.RegisterType<Pool>()
                 .AsSelf();
 
-            builder.RegisterType<BlockchainDaemon>()
+            builder.RegisterType<DaemonClient>()
                 .AsSelf();
 
 	        builder.RegisterType<PaymentProcessor>()
@@ -84,8 +85,13 @@ namespace MiningForce
 			//////////////////////
 			// Bitcoin and family
 
-			builder.RegisterType<BitcoinJobManager>()
-                .Keyed<IBlockchainJobManager>(CoinType.BTC);
+	        builder.RegisterType<BitcoinJobManager>()
+		        .Keyed<IBlockchainJobManager>(CoinType.BTC)
+		        .Keyed<IBlockchainJobManager>(CoinType.LTC);
+
+			builder.RegisterType<BitcoinPayoutHandler>()
+				.Keyed<IPayoutHandler>(CoinType.BTC)
+				.Keyed<IPayoutHandler>(CoinType.LTC);
 
 			base.Load(builder);
         }

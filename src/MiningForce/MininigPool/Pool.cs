@@ -23,18 +23,14 @@ namespace MiningForce.MininigPool
     public class Pool : StratumServer
     {
         public Pool(IComponentContext ctx,
-	        PoolConfig poolConfig, ClusterConfig clusterConfig,
 			JsonSerializerSettings serializerSettings) : 
             base(ctx, LogManager.GetCurrentClassLogger(), serializerSettings)
         {
-	        this.poolConfig = poolConfig;
-	        this.clusterConfig = clusterConfig;
-
 	        Shares = shareSubject.AsObservable();
         }
 
-		private readonly PoolConfig poolConfig;
-	    private readonly ClusterConfig clusterConfig;
+		private PoolConfig poolConfig;
+	    private ClusterConfig clusterConfig;
         private readonly PoolStats poolStats = new PoolStats();
         private object currentJobParams;
         private IBlockchainJobManager manager;
@@ -61,7 +57,13 @@ namespace MiningForce.MininigPool
         public PoolStats PoolStats => poolStats;
 		public IObservable<IShare> Shares { get; }
 
-        public async Task StartAsync()
+	    public void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+	    {
+		    this.poolConfig = poolConfig;
+		    this.clusterConfig = clusterConfig;
+	    }
+
+		public async Task StartAsync()
         {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -82,10 +84,9 @@ namespace MiningForce.MininigPool
 
         private async Task InitializeJobManager()
         {
-            manager = ctx.ResolveKeyed<IBlockchainJobManager>(poolConfig.Coin.Type,
-	            new TypedParameter(typeof(PoolConfig), poolConfig),
-	            new TypedParameter(typeof(ClusterConfig), clusterConfig));
+            manager = ctx.ResolveKeyed<IBlockchainJobManager>(poolConfig.Coin.Type);
 
+			manager.Configure(poolConfig, clusterConfig);
             await manager.StartAsync(this);
 
             manager.Jobs.Subscribe(OnNewJob);

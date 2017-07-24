@@ -5,7 +5,7 @@ using MiningForce.Configuration;
 
 namespace MiningForce.Blockchain
 {
-	public class CommonShare : IShare
+	public class ShareBase : IShare
 	{
 		public string PoolId { get; set; }
 		public string Worker { get; set; }
