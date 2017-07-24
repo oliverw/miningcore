@@ -77,7 +77,7 @@ namespace MiningForce.Payments.PayoutSchemes
 				    break;
 
 				// iterate over shares (skip winning share)
-			    var start = Math.Max(0, currentPage > 0 ? page.Length - 1 : page.Length - 2);
+			    var start = Math.Max(0, page.Length - 1);
 
 				for (int i = start; i > 0; i--)
 			    {
