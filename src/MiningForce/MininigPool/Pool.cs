@@ -65,7 +65,7 @@ namespace MiningForce.MininigPool
         {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-			logger.Info(() => $"[{poolConfig.Coin.Type}] Starting ...");
+			logger.Info(() => $"[{LoggingPrefix}] Launching ...");
 
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
@@ -73,7 +73,7 @@ namespace MiningForce.MininigPool
 			await InitializeJobManager();
 	        StartListeners(poolConfig.Ports);
 
-			logger.Info(() => $"[{poolConfig.Coin.Type}] Online");
+			logger.Info(() => $"[{LoggingPrefix}] Online");
 
 			OutputPoolInfo();
         }
@@ -94,7 +94,9 @@ namespace MiningForce.MininigPool
 	        await manager.Jobs.Take(1).ToTask();
         }
 
-        protected override void OnClientConnected(StratumClient client)
+	    protected override string LoggingPrefix => poolConfig.Id.ToUpper();
+
+	    protected override void OnClientConnected(StratumClient client)
         {
 	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
 	        {
@@ -113,7 +115,7 @@ namespace MiningForce.MininigPool
 
 	        else
 	        {
-		        logger.Trace(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
+		        logger.Trace(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
 
 				DisconnectClient(client);
 	        }
@@ -254,7 +256,7 @@ namespace MiningForce.MininigPool
                 {
                     if (!alive)
                     {
-                        logger.Info(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Info(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -288,7 +290,7 @@ namespace MiningForce.MininigPool
 
         private void OnNewJob(object jobParams)
         {
-            logger.Debug(() => $"[{poolConfig.Coin.Type}] Received new job params from manager");
+            logger.Debug(() => $"[{LoggingPrefix}] Received new job params from manager");
 
             currentJobParams = jobParams;
 
@@ -312,7 +314,7 @@ namespace MiningForce.MininigPool
 		                // varDiff: if the client has a pending difficulty change, apply it now
 		                if (context.ApplyPendingDifficulty())
 		                {
-			                logger.Debug(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
+			                logger.Debug(() => $"[{LoggingPrefix}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
 
 							client.Notify(StratumConstants.MsgSetDifficulty, new object[] {context.Difficulty});
 		                }
@@ -323,7 +325,7 @@ namespace MiningForce.MininigPool
 
 					else
 					{
-						logger.Info(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+						logger.Info(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
 
 						DisconnectClient(client);
 					}
@@ -409,7 +411,7 @@ namespace MiningForce.MininigPool
 
 			    else
 			    {
-				    logger.Warn(() => $"[{poolConfig.Coin.Type}] [{client.ConnectionId}] Banning worker: {Math.Floor(ratioBad * 100)}% of the last {totalShares} were invalid");
+				    logger.Warn(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Banning worker: {Math.Floor(ratioBad * 100)}% of the last {totalShares} were invalid");
 
 				    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 

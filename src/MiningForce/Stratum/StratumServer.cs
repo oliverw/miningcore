@@ -63,7 +63,7 @@ namespace MiningForce.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"Stratum port {port} started");
+                logger.Info(() => $"[{LoggingPrefix}] Stratum port {port} online");
             }
         }
 
@@ -99,7 +99,7 @@ namespace MiningForce.Stratum
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            logger.Debug(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
             try
             {
@@ -116,7 +116,7 @@ namespace MiningForce.Stratum
                         break;
 
                     default:
-                        logger.Warn(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Warn(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
@@ -133,14 +133,14 @@ namespace MiningForce.Stratum
 
         private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex.Message}");
+            logger.Error(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnClientReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
@@ -187,6 +187,8 @@ namespace MiningForce.Stratum
                 client.Notify(notification);
             }
         }
+
+		protected abstract string LoggingPrefix { get; }
 
         protected abstract void OnClientConnected(StratumClient client);
         protected abstract void OnClientDisconnected(string subscriptionId);

@@ -55,7 +55,7 @@ namespace MiningForce.Blockchain
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
 
-	        logger.Info(() => $"[{poolConfig.Coin.Type}] Starting ...");
+	        logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Launching ...");
 
 			this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
@@ -66,7 +66,7 @@ namespace MiningForce.Blockchain
             await PostStartInitAsync();
             SetupJobStream();
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] Online");
+            logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Online");
         }
 
         #endregion // API-Surface
@@ -97,12 +97,12 @@ namespace MiningForce.Blockchain
 
             while (!await IsDaemonHealthy())
             {
-                logger.Info(() => $"[{poolConfig.Coin.Type}] Waiting for daemons to come online ...");
+                logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(5));
             }
 
-            logger.Info(() => $"[{poolConfig.Coin.Type}] All daemons online");
+            logger.Info(() => $"[{poolConfig.Id.ToUpper()}] All daemons online");
         }
 
         protected virtual void SetupJobStream()
@@ -124,14 +124,14 @@ namespace MiningForce.Blockchain
 	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
 
 							if(forceUpdate)
-								logger.Debug(()=> $"[{poolConfig.Coin.Type}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
+								logger.Debug(()=> $"[{poolConfig.Id.ToUpper()}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
 							if (await UpdateJobs(forceUpdate) || forceUpdate)
 							{
 								var isNew = !forceUpdate;
 
 								if (isNew)
-									logger.Info(() => $"[{poolConfig.Coin.Type}] New block detected");
+									logger.Info(() => $"[{poolConfig.Id.ToUpper()}] New block detected");
 
 								lastBlockUpdate = now;
 
@@ -144,7 +144,7 @@ namespace MiningForce.Blockchain
                         }
                         catch (Exception ex)
                         {
-                            logger.Warn(() => $"[{poolConfig.Coin.Type}] Error during job polling: {ex.Message}");
+                            logger.Warn(() => $"[{poolConfig.Id.ToUpper()}] Error during job polling: {ex.Message}");
                         }
                     }
                 }, TaskCreationOptions.LongRunning);

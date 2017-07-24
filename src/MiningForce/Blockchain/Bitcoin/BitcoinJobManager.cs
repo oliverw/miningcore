@@ -126,7 +126,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
-				logger.Info(() => $"[{poolConfig.Coin.Type}] Submitting block {share.BlockHash}");
+				logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Submitting block {share.BlockHash}");
 
 				var acceptResponse = await SubmitBlockAsync(share);
 
@@ -138,7 +138,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{poolConfig.Coin.Type}] Daemon accepted block {share.BlockHash}");
+					logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemon accepted block {share.BlockHash}");
 
 					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
@@ -187,13 +187,13 @@ namespace MiningForce.Blockchain.Bitcoin
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{poolConfig.Coin.Type}] All daemons synched with blockchain");
+                    logger.Info(() => $"[{poolConfig.Id.ToUpper()}] All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 { 
-                    logger.Info(() => $"[{poolConfig.Coin.Type}] Daemons still syncing with network (download blockchain) - manager will be started once synced");
+                    logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemons still syncing with network (download blockchain) - manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -222,7 +222,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
             if (!batchTask.IsCompletedSuccessfully)
             {
-                logger.Error(batchTask.Exception, ()=> $"[{poolConfig.Coin.Type}] Init RPC failed");
+                logger.Error(batchTask.Exception, ()=> $"[{poolConfig.Id.ToUpper()}] Init RPC failed");
                 throw new PoolStartupAbortException();
             }
 
@@ -236,16 +236,16 @@ namespace MiningForce.Blockchain.Bitcoin
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.Response.IsValid)
-                throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
+                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
 			if (!validateAddressResponse.Response.IsMine)
-				throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Daemon does not own pool-address '{poolConfig.Address}'");
+				throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Daemon does not own pool-address '{poolConfig.Address}'");
 
 			isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
 
             // POS coins must use the pubkey in coinbase transaction, and pubkey is only given if address is owned by wallet
             if (isPoS && string.IsNullOrEmpty(validateAddressResponse.Response.PubKey))
-                throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] The pool-address is not from the daemon wallet - this is required for POS coins");
+                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] The pool-address is not from the daemon wallet - this is required for POS coins");
 
 			// Create pool address script from response
 	        if (isPoS)
@@ -267,7 +267,7 @@ namespace MiningForce.Blockchain.Bitcoin
             else if (submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                throw new PoolStartupAbortException($"[{poolConfig.Coin.Type}] Unable detect block submission RPC method");
+                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Unable detect block submission RPC method");
 
             // update stats
             networkStats.Network = networkType.ToString();
@@ -353,7 +353,7 @@ namespace MiningForce.Blockchain.Bitcoin
                             .First().StartingHeight;
 
                         var percent = ((double)totalBlocks / blockCount) * 100;
-                        this.logger.Info(() => $"[{poolConfig.Coin.Type}] Daemons have downloaded {percent}% of blockchain from {peers.Length} peers");
+                        this.logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemons have downloaded {percent}% of blockchain from {peers.Length} peers");
                     }
                 }
             }
@@ -391,7 +391,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				default:
-				    logger.Error(() => $"[{poolConfig.Coin.Type}] Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager");
+				    logger.Error(() => $"[{poolConfig.Id.ToUpper()}] Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager");
 				    throw new PoolStartupAbortException();
 		    }
 		}
