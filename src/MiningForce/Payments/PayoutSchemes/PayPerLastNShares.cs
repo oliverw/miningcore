@@ -76,10 +76,8 @@ namespace MiningForce.Payments.PayoutSchemes
 				if (page.Length == 0)
 				    break;
 
-				// iterate over shares (skip winning share)
-			    var start = Math.Max(0, page.Length - 1);
-
-				for (int i = start; i > 0; i--)
+				// iterate over shares
+				for (int i = Math.Max(0, page.Length - 1); i > 0; i--)
 			    {
 				    var share = page[i];
 
