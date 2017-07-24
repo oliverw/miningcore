@@ -4,6 +4,7 @@ namespace MiningForce.Persistence.Postgres.Entities
 {
 	public class Share
 	{
+		public long Id { get; set; }
 		public string PoolId { get; set; }
 		public long Blockheight { get; set; }
 		public string Worker { get; set; }

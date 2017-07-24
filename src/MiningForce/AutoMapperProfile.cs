@@ -9,14 +9,14 @@ namespace MiningForce
         public AutoMapperProfile()
         {
 			// outgoing mappings
-			CreateMap<IShare, Persistence.Model.Share>()
-				.ForMember(dest => dest.Created, opt => opt.Ignore());
+			CreateMap<IShare, Persistence.Model.Share>();
 
 	        CreateMap<IShare, Persistence.Model.Block>()
-		        .ForMember(dest => dest.Created, opt => opt.Ignore())
 		        .ForMember(dest => dest.Status, opt => opt.Ignore());
 
-	        // incoming mappings
-        }
+	        CreateMap<Persistence.Model.BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
+
+			// incoming mappings
+		}
 	}
 }

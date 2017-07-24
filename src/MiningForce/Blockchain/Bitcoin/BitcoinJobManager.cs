@@ -3,19 +3,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using NLog;
-using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing;
 using MiningForce.Crypto.Hashing.Special;
 using MiningForce.Extensions;
-using MiningForce.MininigPool;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
+using BDC = MiningForce.Blockchain.Bitcoin.BitcoinDaemonCommands;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -46,16 +44,6 @@ namespace MiningForce.Blockchain.Bitcoin
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
 
-		private const string CmdGetInfo = "getinfo";
-        private const string CmdGetMiningInfo = "getmininginfo";
-        private const string CmdGetPeerInfo = "getpeerinfo";
-        private const string CmdValidateAddress = "validateaddress";
-        private const string CmdGetDifficulty = "getdifficulty";
-        private const string CmdGetBlockTemplate = "getblocktemplate";
-        private const string CmdSubmitBlock = "submitblock";
-        private const string CmdGetBlockchainInfo = "getblockchaininfo";
-	    private const string CmdGetBlock = "getblock";
-
 		private static readonly object[] getBlockTemplateParams = 
         {
             new
@@ -71,7 +59,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddress>(CmdValidateAddress, new[] { address });
+            var result = await daemon.ExecuteCmdAnyAsync<DaemonResults.ValidateAddressResult>(BDC.ValidateAddress, new[] { address });
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -161,12 +149,13 @@ namespace MiningForce.Blockchain.Bitcoin
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
 	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
+			share.Created = DateTime.UtcNow;
 
 			return share;
         }
 
 	    public NetworkStats NetworkStats => networkStats;
-
+ 
 		#endregion // API-Surface
 
 		#region Overrides
@@ -175,7 +164,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<GeneralInfo>(CmdGetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
 
             return responses.All(x => x.Error == null);
         }
@@ -186,8 +175,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
-                    CmdGetBlockTemplate, getBlockTemplateParams);
+                var responses = await daemon.ExecuteCmdAllAsync<DaemonResults.GetBlockTemplateResult>(
+                    BDC.GetBlockTemplate, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
 
@@ -209,18 +198,18 @@ namespace MiningForce.Blockchain.Bitcoin
                 await Task.Delay(5000);
             }
         }
-
+		
         protected override async Task PostStartInitAsync()
         {
 			var tasks = new Task[] 
             {
-                daemon.ExecuteCmdAnyAsync<ValidateAddress>(CmdValidateAddress, 
+                daemon.ExecuteCmdAnyAsync<DaemonResults.ValidateAddressResult>(BDC.ValidateAddress, 
                     new[] { poolConfig.Address }),
-                daemon.ExecuteCmdAnyAsync<JToken>(CmdGetDifficulty),
-                daemon.ExecuteCmdAnyAsync<GeneralInfo>(CmdGetInfo),
-                daemon.ExecuteCmdAnyAsync<MiningInfo>(CmdGetMiningInfo),
-                daemon.ExecuteCmdAnyAsync<object>(CmdSubmitBlock),
-                daemon.ExecuteCmdAnyAsync<BlockchainInfo>(CmdGetBlockchainInfo),
+                daemon.ExecuteCmdAnyAsync<JToken>(BDC.GetDifficulty),
+                daemon.ExecuteCmdAnyAsync<DaemonResults.GetInfoResult>(BDC.GetInfo),
+                daemon.ExecuteCmdAnyAsync<DaemonResults.GetMiningInfoResult>(BDC.GetMiningInfo),
+                daemon.ExecuteCmdAnyAsync<object>(BDC.SubmitBlock),
+                daemon.ExecuteCmdAnyAsync<DaemonResults.GetBlockchainInfoResult>(BDC.GetBlockchainInfo),
             };
 
             var batchTask = Task.WhenAll(tasks);
@@ -230,12 +219,12 @@ namespace MiningForce.Blockchain.Bitcoin
                 logger.ThrowLogPoolStartupException(batchTask.Exception, "Init RPC failed", LogCategory);
 
             // extract results
-            var validateAddressResponse = ((Task<DaemonResponse<ValidateAddress>>) tasks[0]).Result;
+            var validateAddressResponse = ((Task<DaemonResponse<DaemonResults.ValidateAddressResult>>) tasks[0]).Result;
             var difficultyResponse = ((Task<DaemonResponse<JToken>>)tasks[1]).Result;
-            var infoResponse = ((Task<DaemonResponse<GeneralInfo>>)tasks[2]).Result;
-            var miningInfoResponse = ((Task<DaemonResponse<MiningInfo>>)tasks[3]).Result;
+            var infoResponse = ((Task<DaemonResponse<DaemonResults.GetInfoResult>>)tasks[2]).Result;
+            var miningInfoResponse = ((Task<DaemonResponse<DaemonResults.GetMiningInfoResult>>)tasks[3]).Result;
             var submitBlockResponse = ((Task<DaemonResponse<object>>)tasks[4]).Result;
-            var blockchainInfoResponse = ((Task<DaemonResponse<BlockchainInfo>>)tasks[5]).Result;
+            var blockchainInfoResponse = ((Task<DaemonResponse<DaemonResults.GetBlockchainInfoResult>>)tasks[5]).Result;
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.Response.IsValid)
@@ -322,17 +311,17 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#endregion // Overrides
 
-		private async Task<BlockTemplate> GetBlockTemplateAsync()
+		private async Task<DaemonResults.GetBlockTemplateResult> GetBlockTemplateAsync()
         {
-            var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(
-                CmdGetBlockTemplate, getBlockTemplateParams);
+            var result = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetBlockTemplateResult>(
+	            BDC.GetBlockTemplate, getBlockTemplateParams);
 
             return result.Response;
         }
 
 		private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GeneralInfo>(CmdGetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
 
             if (infos.Length > 0)
             {
@@ -342,7 +331,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 if (blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(CmdGetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetPeerInfoResult[]>(BDC.GetPeerInfo);
                     var peers = peerInfo.Response;
 
                     if (peers != null && peers.Length > 0)
@@ -363,15 +352,15 @@ namespace MiningForce.Blockchain.Bitcoin
 			// execute command batch
 		    var results = await daemon.ExecuteBatchAnyAsync(
 			    hasSubmitBlockMethod ? 
-					new DaemonCmd(CmdSubmitBlock, new[] { share.BlockHex }) :
-				    new DaemonCmd(CmdGetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
+					new DaemonCmd(BDC.SubmitBlock, new[] { share.BlockHex }) :
+				    new DaemonCmd(BDC.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
 
-			    new DaemonCmd(CmdGetBlock, new[] { share.BlockHash }),
-			    new DaemonCmd(CmdGetDifficulty, null));
+			    new DaemonCmd(BDC.GetBlock, new[] { share.BlockHash }),
+			    new DaemonCmd(BDC.GetDifficulty, null));
 
 			// evaluate results
 		    var acceptResult = results[1];
-			var block = acceptResult.Response.ToObject<DaemonResponses.Block>();
+			var block = acceptResult.Response.ToObject<DaemonResults.GetBlockResult>();
 			var accepted = acceptResult.Error == null && block.Hash == share.BlockHash;
 
 		    var difficultyResult = results[2];

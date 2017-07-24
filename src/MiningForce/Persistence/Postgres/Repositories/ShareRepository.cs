@@ -1,7 +1,7 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using AutoMapper;
 using Dapper;
-using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 
 namespace MiningForce.Persistence.Postgres.Repositories
@@ -15,10 +15,15 @@ namespace MiningForce.Persistence.Postgres.Repositories
 
 	    private readonly IMapper mapper;
 
-		public void Insert(IDbConnection con, IDbTransaction tx, Share share)
+		public void Insert(IDbConnection con, IDbTransaction tx, Model.Share share)
 	    {
-		    con.Execute("INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress) " +
-						"VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress)", share, tx);
+		    con.Execute("INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress, created) " +
+						"VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)", share, tx);
+	    }
+
+	    public Model.Share[] PageSharesBefore(DateTime before, int page, int pageSize)
+	    {
+		    throw new NotImplementedException();
 	    }
     }
 }

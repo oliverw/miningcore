@@ -22,14 +22,26 @@ namespace MiningForce.Persistence.Postgres.Repositories
 		{
 			var mapped = mapper.Map<Entities.Block>(block);
 
-			con.Execute("INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata) " +
-						"VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata)", mapped, tx);
+			con.Execute("INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata, created) " +
+						"VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata, @created)", mapped, tx);
 	    }
 
-	    public Model.Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
+	    public void DeleteBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
+	    {
+		    con.Execute("DELETE FROM blocks WHERE id = @id", block, tx);
+	    }
+
+	    public void UpdateBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
+	    {
+		    var mapped = mapper.Map<Entities.Block>(block);
+
+		    con.Execute("UPDATE blocks SET status = @status, reward = @reward WHERE id = @id", mapped, tx);
+	    }
+
+		public Model.Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
 	    {
 		    return con.Query<Entities.Block>("SELECT * FROM blocks WHERE poolid = @poolid AND status = @status",
-				    new { status = Model.Block.StatusPending, poolid })
+				    new { status = Model.BlockStatus.Pending.ToString().ToLower(), poolid })
 			    .Select(mapper.Map<Model.Block>)
 			    .ToArray();
 	    }

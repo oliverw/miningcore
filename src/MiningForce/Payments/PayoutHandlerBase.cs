@@ -11,24 +11,23 @@ namespace MiningForce.Payments
     public abstract class PayoutHandlerBase
     {
 	    protected PayoutHandlerBase(IConnectionFactory cf, IMapper mapper,
-		    IShareRepository shares, IBlockRepository blocks)
+		    IShareRepository shareRepo, IBlockRepository blockRepo)
 	    {
 		    Contract.RequiresNonNull(cf, nameof(cf));
 		    Contract.RequiresNonNull(mapper, nameof(mapper));
-		    Contract.RequiresNonNull(shares, nameof(shares));
-		    Contract.RequiresNonNull(blocks, nameof(blocks));
+		    Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
+		    Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
  
 			this.cf = cf;
 		    this.mapper = mapper;
-
-		    this.shares = shares;
-		    this.blocks = blocks;
+		    this.shareRepo = shareRepo;
+		    this.blockRepo = blockRepo;
 	    }
 
 	    protected ILogger logger;
 	    protected readonly IConnectionFactory cf;
 	    protected readonly IMapper mapper;
-	    protected readonly IShareRepository shares;
-	    protected readonly IBlockRepository blocks;
+	    protected readonly IShareRepository shareRepo;
+	    protected readonly IBlockRepository blockRepo;
     }
 }

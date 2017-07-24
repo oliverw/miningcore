@@ -4,6 +4,7 @@ namespace MiningForce.Persistence.Postgres.Entities
 {
 	public class Payment
 	{
+		public long Id { get; set; }
 		public string PoolId { get; set; }
 		public string Coin { get; set; }
 		public long Blockheight { get; set; }

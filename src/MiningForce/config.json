@@ -107,7 +107,10 @@
             "paymentProcessing": {
                 "enabled": true,
                 "minimumPayment": 0.1, // in pool currency
-                "payoutScheme": "PPLNS"
+                "payoutScheme": "PPLNS",
+                "payoutSchemeConfig": {
+                    "factor": 2.0
+                }
             }
         }
     ]

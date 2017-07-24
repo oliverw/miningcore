@@ -12,6 +12,7 @@ using MiningForce.JsonRpc;
 using MiningForce.MininigPool;
 using MiningForce.Networking.Banning;
 using MiningForce.Payments;
+using MiningForce.Payments.PayoutSchemes;
 using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
@@ -80,12 +81,16 @@ namespace MiningForce
 		        .SingleInstance();
 
 			//////////////////////
-			// Postgres persistence
+			// Payment Schemes
+
+	        builder.RegisterType<PayPerLastNShares>()
+		        .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
+		        .SingleInstance();
 
 			//////////////////////
 			// Bitcoin and family
 
-	        builder.RegisterType<BitcoinJobManager>()
+			builder.RegisterType<BitcoinJobManager>()
 		        .Keyed<IBlockchainJobManager>(CoinType.BTC)
 		        .Keyed<IBlockchainJobManager>(CoinType.LTC);
 

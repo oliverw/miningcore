@@ -5,6 +5,7 @@ namespace MiningForce.Persistence.Model
 {
 	public class Payment
 	{
+		public long Id { get; set; }
 		public string PoolId { get; set; }
 		public CoinType Coin { get; set; }
 		public long Blockheight { get; set; }

@@ -5,18 +5,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CodeContracts;
-using MiningForce.Blockchain.Bitcoin.DaemonResponses;
+using MiningForce.Blockchain.Bitcoin.DaemonResults;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using NBitcoin;
+using Transaction = NBitcoin.Transaction;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(BlockTemplate blockTemplate, string jobId, 
+	    public BitcoinJob(GetBlockTemplateResult blockTemplate, string jobId, 
 			PoolConfig poolConfig, ClusterConfig clusterConfig,
 			IDestination poolAddressDestination, BitcoinNetworkType networkType,
 			ExtraNonceProvider extraNonceProvider, bool isPoS, 
@@ -50,7 +51,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private readonly string jobId;
 	    private readonly BitcoinNetworkType networkType;
 	    private readonly int extraNoncePlaceHolderLength;
-	    private readonly BlockTemplate blockTemplate;
+	    private readonly GetBlockTemplateResult blockTemplate;
 	    private readonly ClusterConfig clusterConfig;
 	    private readonly PoolConfig poolConfig;
 	    private readonly IDestination poolAddressDestination;
@@ -91,7 +92,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    #region API-Surface
 
-	    public BlockTemplate BlockTemplate => blockTemplate;
+	    public GetBlockTemplateResult BlockTemplate => blockTemplate;
 	    public string JobId => jobId;
 
 	    public void Init()

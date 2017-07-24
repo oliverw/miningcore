@@ -63,6 +63,11 @@ namespace MiningForce.Blockchain
 		/// Network difficulty at the time the share was submitted (used for some payout schemes like PPLNS)
 		/// </summary>
 		double NetworkDifficulty { get; set; }
+
+		/// <summary>
+		/// When the share was found
+		/// </summary>
+		DateTime Created { get; set; }
 	}
 
 	public interface IBlockchainJobManager

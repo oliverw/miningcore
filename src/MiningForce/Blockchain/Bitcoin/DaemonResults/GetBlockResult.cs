@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
+namespace MiningForce.Blockchain.Bitcoin.DaemonResults
 {
-    public class Block
+    public class GetBlockResult
 	{
         public uint Version { get; set; }
 		public string Hash { get; set; }

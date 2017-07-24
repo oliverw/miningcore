@@ -5,12 +5,12 @@ namespace MiningForce.Persistence.Model
 {
 	public class Block
 	{
+		public long Id { get; set; }
 		public string PoolId { get; set; }
 		public long Blockheight { get; set; }
-		public string Status { get; set; }
+		public BlockStatus Status { get; set; }
 		public string TransactionConfirmationData { get; set; }
+		public double? Reward { get; set; }
 		public DateTime Created { get; set; }
-
-		public const string StatusPending = "pending";
 	}
 }

@@ -136,7 +136,7 @@ namespace MiningForce.Blockchain
 	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
 
 							if(forceUpdate)
-								logger.Debug(()=> $"[{LogCategory}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
+								logger.Debug(()=> $"[{LogCategory}] No new blockRepo for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
 							if (await UpdateJobs(forceUpdate) || forceUpdate)
 							{

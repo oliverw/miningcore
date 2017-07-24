@@ -1,6 +1,6 @@
-﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResults
 {
-    public class ValidateAddress
+    public class ValidateAddressResult
     {
         public bool IsValid { get; set; }
         public bool IsMine { get; set; }

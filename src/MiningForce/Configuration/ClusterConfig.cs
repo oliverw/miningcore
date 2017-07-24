@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Configuration
 {
@@ -116,6 +117,7 @@ namespace MiningForce.Configuration
 		public bool Enabled { get; set; }
 		public double MinimumPayment { get; set; }
 		public PayoutScheme PayoutScheme { get; set; }
+		public JToken PayoutSchemeConfig { get; set; }
 	}
 
 	public class ClusterPaymentProcessingConfig

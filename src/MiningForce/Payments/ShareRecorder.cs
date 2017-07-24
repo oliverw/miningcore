@@ -21,18 +21,18 @@ namespace MiningForce.Payments
     public class ShareRecorder
 	{
 		public ShareRecorder(IConnectionFactory cf, IMapper mapper,
-			IShareRepository shares, IBlockRepository blocks)
+			IShareRepository shareRepo, IBlockRepository blockRepo)
 	    {
 		    Contract.RequiresNonNull(cf, nameof(cf));
 		    Contract.RequiresNonNull(mapper, nameof(mapper));
-		    Contract.RequiresNonNull(shares, nameof(shares));
-		    Contract.RequiresNonNull(blocks, nameof(blocks));
+		    Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
+		    Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
 
 			this.cf = cf;
 		    this.mapper = mapper;
 
-			this.shares = shares;
-		    this.blocks = blocks;
+			this.shareRepo = shareRepo;
+		    this.blockRepo = blockRepo;
 
 			BuildFaultHandlingPolicy();
 	    }
@@ -42,8 +42,8 @@ namespace MiningForce.Payments
 	    private readonly IConnectionFactory cf;
 	    private readonly IMapper mapper;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
-		private readonly IShareRepository shares;
-	    private readonly IBlockRepository blocks;
+		private readonly IShareRepository shareRepo;
+	    private readonly IBlockRepository blockRepo;
 	    private const int RetryCount = 8;
 	    private Policy faultPolicy;
 
@@ -167,14 +167,14 @@ namespace MiningForce.Payments
 		    cf.RunTx((con, tx) =>
 		    {
 			    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
-			    shares.Insert(con, tx, shareEntity);
+			    shareRepo.Insert(con, tx, shareEntity);
 
 			    if (share.IsBlockCandidate)
 			    {
 				    var blockEntity = mapper.Map<Persistence.Model.Block>(share);
-				    blockEntity.Status = Persistence.Model.Block.StatusPending;
+				    blockEntity.Status = Persistence.Model.BlockStatus.Pending;
 
-				    blocks.Insert(con, tx, blockEntity);
+				    blockRepo.Insert(con, tx, blockEntity);
 			    }
 		    });
 	    }

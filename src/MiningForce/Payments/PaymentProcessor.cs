@@ -8,6 +8,7 @@ using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Persistence;
+using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using NLog;
 
@@ -19,23 +20,29 @@ namespace MiningForce.Payments
     public class PaymentProcessor
     {
 	    public PaymentProcessor(IComponentContext ctx, 
-			IConnectionFactory cf, IBlockRepository blocks)
+			IConnectionFactory cf, 
+			IBlockRepository blockRepo,
+		    IShareRepository shareRepo)
 	    {
 		    Contract.RequiresNonNull(ctx, nameof(ctx));
 		    Contract.RequiresNonNull(cf, nameof(cf));
-		    Contract.RequiresNonNull(blocks, nameof(blocks));
+		    Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
+		    Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
 
 			this.ctx = ctx;
 		    this.cf = cf;
-		    this.blocks = blocks;
+		    this.blockRepo = blockRepo;
+		    this.shareRepo = shareRepo;
 	    }
 
 		private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 	    private readonly IComponentContext ctx;
 	    private readonly IConnectionFactory cf;
-	    private readonly IBlockRepository blocks;
+	    private readonly IBlockRepository blockRepo;
+	    private readonly IShareRepository shareRepo;
 	    private ClusterConfig clusterConfig;
 	    private Dictionary<CoinType, IPayoutHandler> payoutHandlers;
+	    private Dictionary<PayoutScheme, IPayoutScheme> payoutSchemes;
 
 		#region API-Surface
 
@@ -46,13 +53,17 @@ namespace MiningForce.Payments
 
 		public void Start()
 	    {
-		    ResolveHandlers();
+		    ResolvePayoutHandlers();
+		    ResolvePayoutSchemes();
 
 			var thread = new Thread(async () =>
 		    {
 			    logger.Info(() => "Online");
 
-			    var interval = TimeSpan.FromSeconds(
+				// Wait for other startup tasks to settle down
+			    Thread.Sleep(3000);
+
+				var interval = TimeSpan.FromSeconds(
 					clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
 				while (true)
@@ -83,32 +94,61 @@ namespace MiningForce.Payments
 		    thread.Start();
 	    }
 
-		#endregion // API-Surface
+	    #endregion // API-Surface
 
-		private void ResolveHandlers()
+		private void ResolvePayoutHandlers()
 	    {
-		    payoutHandlers = clusterConfig.Pools.ToDictionary(x => x.Coin.Type, x =>
+		    payoutHandlers = clusterConfig.Pools
+			    .Where(x => x.PaymentProcessing?.Enabled == true)
+				.ToDictionary(x => x.Coin.Type, x =>
 		    {
 			    var handler = ctx.ResolveKeyed<IPayoutHandler>(x.Coin.Type);
 			    handler.Configure(x);
-			    return handler;
+
+				return handler;
 		    });
+		}
+
+	    private void ResolvePayoutSchemes()
+	    {
+		    payoutSchemes = clusterConfig.Pools
+			    .Where(x => x.PaymentProcessing?.Enabled == true)
+			    .Select(x => x.PaymentProcessing.PayoutScheme)
+			    .ToDictionary(x => x, x =>
+			    {
+				    var scheme = ctx.ResolveKeyed<IPayoutScheme>(x);
+				    return scheme;
+			    });
 	    }
 
 		private async Task ProcessPoolsAsync()
 	    {
-			logger.Info(()=> "Processing payments");
-
 		    foreach (var pool in clusterConfig.Pools)
 		    {
-			    try
-			    {
+			    logger.Info(() => $"Processing payments for pool '{pool.Id}'");
+
+				//GenerateTestShares(pool.Id);
+
+				try
+				{
 				    var handler = payoutHandlers[pool.Coin.Type];
+					var scheme = payoutSchemes[pool.PaymentProcessing.PayoutScheme];
 
-				    // get pending blocks for pool
-				    var pendingBlocks = await handler.GetConfirmedPendingBlocksAsync();
+					// get pending blockRepo for pool
+					var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
 
-				    // get confirmation status for each block
+				    // ask handler to classify them
+				    var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
+
+				    foreach (var block in updatedBlocks.OrderBy(x=> x.Created))
+				    {
+					    logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
+
+					    if (block.Status == BlockStatus.Orphaned)
+						    cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
+					    else
+						    await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
+				    }
 			    }
 
 				catch (Exception ex)
@@ -117,5 +157,38 @@ namespace MiningForce.Payments
 			    }
 		    }
 		}
+
+	    private void GenerateTestShares(string poolid)
+	    {
+			#if DEBUG
+		    var numShares = 10000;
+		    var shareOffset = TimeSpan.FromSeconds(10);
+
+		    var block = cf.Run(con=> blockRepo.GetPendingBlocksForPool(con, poolid).First());
+
+			cf.RunTx((con, tx) =>
+		    {
+			    var blockDate = block.Created;
+
+			    for (int i = 0; i < numShares; i++)
+			    {
+				    var share = new Persistence.Model.Share
+				    {
+					    Difficulty = 0.2,
+					    NetworkDifficulty = 4.656542373906925e-10,
+					    Blockheight = block.Blockheight,
+					    IpAddress = "127.0.0.1",
+					    Created = blockDate,
+					    Worker = "n2e6yXKGue3abKidxJUgeMGxGDcPmCZD1v",
+					    PoolId = poolid,
+				    };
+
+				    blockDate -= shareOffset;
+
+					shareRepo.Insert(con, tx, share);
+			    }
+			});
+#endif
+	    }
     }
 }
