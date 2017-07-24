@@ -110,7 +110,7 @@ namespace MiningForce
 
             var app = new CommandLineApplication(false)
             {
-                FullName = "MiningCore - Mining Pool Engine",
+                FullName = "MiningForce - Mining Pool Engine",
                 ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
                 LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
             };

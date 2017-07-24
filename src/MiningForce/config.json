@@ -37,7 +37,7 @@
             },
             "authorizer": "addressbased",
             // Address to where block rewards are given (pool wallet)
-            "address": "mk26Pao2ANAsjBdwe8k75CTBo4PX27dzw7",
+            "address": "msd3QpSouVm7u9Pym4QB7BuEj4dxoqZsZA",
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
             // or to donations address. Addresses or hashed public keys can be used. Here is an example
@@ -45,7 +45,7 @@
             "rewardRecipients": [
                 {
                     "type": "op",
-                    "address": "mmdakU16B8nCvzWNfnFYpRBFhNKRiCDVmq",
+                    "address": "momwHPiW4rzJp5GEdZcYowXkFnBZaaGdkx",    // alice
                     "percentage": 1.5
                 }
             ],
