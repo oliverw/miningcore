@@ -13,6 +13,7 @@ using MiningForce.Crypto.Hashing.Special;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Stratum;
+using MiningForce.Util;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 
@@ -25,7 +26,7 @@ namespace MiningForce.Blockchain.Bitcoin
             IComponentContext ctx, 
             DaemonClient daemon,
             ExtraNonceProvider extraNonceProvider) : 
-			base(ctx, LogManager.GetCurrentClassLogger(), daemon)
+			base(ctx, daemon)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
 	        Contract.RequiresNonNull(daemon, nameof(daemon));
@@ -45,15 +46,15 @@ namespace MiningForce.Blockchain.Bitcoin
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
 
-		private const string GetInfoCommand = "getinfo";
-        private const string GetMiningInfoCommand = "getmininginfo";
-        private const string GetPeerInfoCommand = "getpeerinfo";
-        private const string ValidateAddressCommand = "validateaddress";
-        private const string GetDifficultyCommand = "getdifficulty";
-        private const string GetBlockTemplateCommand = "getblocktemplate";
-        private const string SubmitBlockCommand = "submitblock";
-        private const string GetBlockchainInfoCommand = "getblockchaininfo";
-	    private const string GetBlockCommand = "getblock";
+		private const string CmdGetInfo = "getinfo";
+        private const string CmdGetMiningInfo = "getmininginfo";
+        private const string CmdGetPeerInfo = "getpeerinfo";
+        private const string CmdValidateAddress = "validateaddress";
+        private const string CmdGetDifficulty = "getdifficulty";
+        private const string CmdGetBlockTemplate = "getblocktemplate";
+        private const string CmdSubmitBlock = "submitblock";
+        private const string CmdGetBlockchainInfo = "getblockchaininfo";
+	    private const string CmdGetBlock = "getblock";
 
 		private static readonly object[] getBlockTemplateParams = 
         {
@@ -70,7 +71,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddress>(ValidateAddressCommand, new[] { address });
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddress>(CmdValidateAddress, new[] { address });
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -129,7 +130,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
-				logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Submitting block {share.BlockHash}");
+				logger.Info(() => $"[{LogCategory}] Submitting block {share.BlockHash}");
 
 				var acceptResponse = await SubmitBlockAsync(share);
 
@@ -141,7 +142,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemon accepted block {share.BlockHash}");
+					logger.Info(() => $"[{LogCategory}] Daemon accepted block {share.BlockHash}");
 
 					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
@@ -166,13 +167,15 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    public NetworkStats NetworkStats => networkStats;
 
-        #endregion // API-Surface
+		#endregion // API-Surface
 
-        #region Overrides
+		#region Overrides
 
-        protected override async Task<bool> IsDaemonHealthy()
+		//protected override string LogCategory => "Bitcoin Job Manager";
+
+		protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<GeneralInfo>(GetInfoCommand);
+            var responses = await daemon.ExecuteCmdAllAsync<GeneralInfo>(CmdGetInfo);
 
             return responses.All(x => x.Error == null);
         }
@@ -184,19 +187,19 @@ namespace MiningForce.Blockchain.Bitcoin
             while (true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
-                    GetBlockTemplateCommand, getBlockTemplateParams);
+                    CmdGetBlockTemplate, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{poolConfig.Id.ToUpper()}] All daemons synched with blockchain");
+                    logger.Info(() => $"[{LogCategory}] All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 { 
-                    logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemons still syncing with network (download blockchain) - manager will be started once synced");
+                    logger.Info(() => $"[{LogCategory}] Daemons still syncing with network (download blockchain) - manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -211,13 +214,13 @@ namespace MiningForce.Blockchain.Bitcoin
         {
 			var tasks = new Task[] 
             {
-                daemon.ExecuteCmdAnyAsync<ValidateAddress>(ValidateAddressCommand, 
+                daemon.ExecuteCmdAnyAsync<ValidateAddress>(CmdValidateAddress, 
                     new[] { poolConfig.Address }),
-                daemon.ExecuteCmdAnyAsync<JToken>(GetDifficultyCommand),
-                daemon.ExecuteCmdAnyAsync<GeneralInfo>(GetInfoCommand),
-                daemon.ExecuteCmdAnyAsync<MiningInfo>(GetMiningInfoCommand),
-                daemon.ExecuteCmdAnyAsync<object>(SubmitBlockCommand),
-                daemon.ExecuteCmdAnyAsync<BlockchainInfo>(GetBlockchainInfoCommand),
+                daemon.ExecuteCmdAnyAsync<JToken>(CmdGetDifficulty),
+                daemon.ExecuteCmdAnyAsync<GeneralInfo>(CmdGetInfo),
+                daemon.ExecuteCmdAnyAsync<MiningInfo>(CmdGetMiningInfo),
+                daemon.ExecuteCmdAnyAsync<object>(CmdSubmitBlock),
+                daemon.ExecuteCmdAnyAsync<BlockchainInfo>(CmdGetBlockchainInfo),
             };
 
             var batchTask = Task.WhenAll(tasks);
@@ -225,7 +228,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
             if (!batchTask.IsCompletedSuccessfully)
             {
-                logger.Error(batchTask.Exception, ()=> $"[{poolConfig.Id.ToUpper()}] Init RPC failed");
+                logger.Error(batchTask.Exception, ()=> $"[{LogCategory}] Init RPC failed");
                 throw new PoolStartupAbortException();
             }
 
@@ -239,16 +242,16 @@ namespace MiningForce.Blockchain.Bitcoin
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.Response.IsValid)
-                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
+                throw new PoolStartupAbortException($"[{LogCategory}] Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
 			if (!validateAddressResponse.Response.IsMine)
-				throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Daemon does not own pool-address '{poolConfig.Address}'");
+				throw new PoolStartupAbortException($"[{LogCategory}] Daemon does not own pool-address '{poolConfig.Address}'");
 
 			isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
 
             // POS coins must use the pubkey in coinbase transaction, and pubkey is only given if address is owned by wallet
             if (isPoS && string.IsNullOrEmpty(validateAddressResponse.Response.PubKey))
-                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] The pool-address is not from the daemon wallet - this is required for POS coins");
+                throw new PoolStartupAbortException($"[{LogCategory}] The pool-address is not from the daemon wallet - this is required for POS coins");
 
 			// Create pool address script from response
 	        if (isPoS)
@@ -270,7 +273,7 @@ namespace MiningForce.Blockchain.Bitcoin
             else if (submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                throw new PoolStartupAbortException($"[{poolConfig.Id.ToUpper()}] Unable detect block submission RPC method");
+                throw new PoolStartupAbortException($"[{LogCategory}] Unable detect block submission RPC method");
 
             // update stats
             networkStats.Network = networkType.ToString();
@@ -329,14 +332,14 @@ namespace MiningForce.Blockchain.Bitcoin
 		private async Task<BlockTemplate> GetBlockTemplateAsync()
         {
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(
-                GetBlockTemplateCommand, getBlockTemplateParams);
+                CmdGetBlockTemplate, getBlockTemplateParams);
 
             return result.Response;
         }
 
 		private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GeneralInfo>(GetInfoCommand);
+            var infos = await daemon.ExecuteCmdAllAsync<GeneralInfo>(CmdGetInfo);
 
             if (infos.Length > 0)
             {
@@ -346,7 +349,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 if (blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(GetPeerInfoCommand);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(CmdGetPeerInfo);
                     var peers = peerInfo.Response;
 
                     if (peers != null && peers.Length > 0)
@@ -356,7 +359,7 @@ namespace MiningForce.Blockchain.Bitcoin
                             .First().StartingHeight;
 
                         var percent = ((double)totalBlocks / blockCount) * 100;
-                        this.logger.Info(() => $"[{poolConfig.Id.ToUpper()}] Daemons have downloaded {percent}% of blockchain from {peers.Length} peers");
+                        this.logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent}% of blockchain from {peers.Length} peers");
                     }
                 }
             }
@@ -364,14 +367,16 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		private async Task<(bool Accepted, string CoinbaseTransaction, double CurrentDifficulty)> SubmitBlockAsync(BitcoinShare share)
 	    {
+			// execute command batch
 		    var results = await daemon.ExecuteBatchAnyAsync(
 			    hasSubmitBlockMethod ? 
-					new DaemonCmd(SubmitBlockCommand, new[] { share.BlockHex }) :
-				    new DaemonCmd(GetBlockTemplateCommand, new { mode = "submit", data = share.BlockHex }),
+					new DaemonCmd(CmdSubmitBlock, new[] { share.BlockHex }) :
+				    new DaemonCmd(CmdGetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
 
-			    new DaemonCmd(GetBlockCommand, new[] { share.BlockHash }),
-			    new DaemonCmd(GetDifficultyCommand, null));
+			    new DaemonCmd(CmdGetBlock, new[] { share.BlockHash }),
+			    new DaemonCmd(CmdGetDifficulty, null));
 
+			// evaluate results
 		    var acceptResult = results[1];
 			var block = acceptResult.Response.ToObject<DaemonResponses.Block>();
 			var accepted = acceptResult.Error == null && block.Hash == share.BlockHash;
@@ -394,7 +399,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				default:
-				    logger.Error(() => $"[{poolConfig.Id.ToUpper()}] Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager");
+				    logger.Error(() => $"[{LogCategory}] Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager");
 				    throw new PoolStartupAbortException();
 		    }
 		}

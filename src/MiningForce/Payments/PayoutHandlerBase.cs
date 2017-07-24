@@ -4,6 +4,7 @@ using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
+using NLog;
 
 namespace MiningForce.Payments
 {
@@ -24,6 +25,7 @@ namespace MiningForce.Payments
 		    this.blocks = blocks;
 	    }
 
+	    protected ILogger logger;
 	    protected readonly IConnectionFactory cf;
 	    protected readonly IMapper mapper;
 	    protected readonly IShareRepository shares;

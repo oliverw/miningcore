@@ -3,7 +3,9 @@
         "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
-        "logFile": ""
+        "logFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
     },
     "banning": {
         "manager": "integrated" // "integrated" or "iptables" (linux only)

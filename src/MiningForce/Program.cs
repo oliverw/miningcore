@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog.Conditions;
 using NLog.Config;
+using NLog.Layouts;
 using NLog.Targets;
 
 namespace MiningForce
@@ -160,7 +161,7 @@ namespace MiningForce
             serviceProvider = new AutofacServiceProvider(container);
 
 			// Logging
-            ConfigureLogging(config.Logging);
+            ConfigureLogging(config);
 
 			ValidateRuntimeEnvironment();
         }
@@ -247,22 +248,23 @@ namespace MiningForce
             Console.WriteLine();
         }
 
-	    private static void ConfigureLogging(ClusterLoggingConfig clusterConfig)
+	    private static void ConfigureLogging(ClusterConfig clusterConfig)
 	    {
+			var config = clusterConfig.Logging;
 			var loggingConfig = new LoggingConfiguration();
 
-		    if (clusterConfig != null)
+		    if (config != null)
 		    {
 			    // parse level
-			    var level = !string.IsNullOrEmpty(clusterConfig.Level)
-				    ? LogLevel.FromString(clusterConfig.Level)
+			    var level = !string.IsNullOrEmpty(config.Level)
+				    ? LogLevel.FromString(config.Level)
 				    : LogLevel.Info;
 
-			    var layout = "[${longdate}] [${pad:inner=${level:uppercase=true}}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+			    var layout = "[${logger:shortName=true}] [${longdate}] [${pad:inner=${level:uppercase=true}}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
-			    if (clusterConfig.EnableConsoleLog)
+			    if (config.EnableConsoleLog)
 			    {
-				    if (clusterConfig.EnableConsoleColors)
+				    if (config.EnableConsoleColors)
 				    {
 					    var target = new ColoredConsoleTarget("console")
 					    {
@@ -309,17 +311,34 @@ namespace MiningForce
 				    }
 				}
 
-			    if (!string.IsNullOrEmpty(clusterConfig.LogFile))
+			    if (!string.IsNullOrEmpty(config.LogFile))
 			    {
 				    var target = new FileTarget("file")
 				    {
-					    FileName = clusterConfig.LogFile,
+					    FileName = config.LogFile,
 					    FileNameKind = FilePathKind.Unknown,
 					    Layout = layout
 				    };
 
+				    loggingConfig.AddTarget(target);
 				    loggingConfig.AddRule(level, LogLevel.Fatal, target);
 			    }
+
+			    if (config.PerPoolLogFile)
+			    {
+				    foreach (var poolConfig in clusterConfig.Pools)
+				    {
+					    var target = new FileTarget(poolConfig.Id)
+					    {
+						    FileName = GetLogPath(config, poolConfig.Id + ".log"),
+						    FileNameKind = FilePathKind.Unknown,
+						    Layout = layout
+					    };
+
+					    loggingConfig.AddTarget(target);
+					    loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
+				    }
+				}
 			}
 
 		    LogManager.Configuration = loggingConfig;
@@ -327,7 +346,15 @@ namespace MiningForce
 		    logger = LogManager.GetCurrentClassLogger();
 	    }
 
-		private static void ConfigurePersistence(ClusterConfig clusterConfig, ContainerBuilder builder)
+	    private static Layout GetLogPath(ClusterLoggingConfig config, string name)
+	    {
+		    if (string.IsNullOrEmpty(config.LogBaseDirectory))
+			    return name;
+
+		    return Path.Combine(config.LogBaseDirectory, name);
+	    }
+
+	    private static void ConfigurePersistence(ClusterConfig clusterConfig, ContainerBuilder builder)
 	    {
 			if(clusterConfig.Persistence == null)
 				throw new PoolStartupAbortException("Persistence is not configured!");

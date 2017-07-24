@@ -9,6 +9,7 @@ using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
+using MiningForce.Util;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -36,6 +37,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
 			this.poolConfig = poolConfig;
+			logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
 			daemon.Configure(poolConfig);
 		}

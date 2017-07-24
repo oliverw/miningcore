@@ -17,16 +17,17 @@ namespace MiningForce.Stratum
 {
     public abstract class StratumServer
     {
-        protected StratumServer(IComponentContext ctx, ILogger logger, 
-            JsonSerializerSettings serializerSettings)
+        protected StratumServer(IComponentContext ctx, JsonSerializerSettings serializerSettings)
         {
-            this.ctx = ctx;
-            this.logger = logger;
+	        Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+
+			this.ctx = ctx;
             this.serializerSettings = serializerSettings;
         }
 
         protected readonly IComponentContext ctx;
-        protected readonly ILogger logger;
+        protected ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         private readonly JsonSerializerSettings serializerSettings;
@@ -63,7 +64,7 @@ namespace MiningForce.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"[{LoggingPrefix}] Stratum port {port} online");
+                logger.Info(() => $"[{LogCategory}] Stratum port {port} online");
             }
         }
 
@@ -98,7 +99,7 @@ namespace MiningForce.Stratum
 
         private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
         {
-            logger.Debug(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+            logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
             try
             {
@@ -115,7 +116,7 @@ namespace MiningForce.Stratum
                         break;
 
                     default:
-                        logger.Warn(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
@@ -132,14 +133,14 @@ namespace MiningForce.Stratum
 
         private void OnClientReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+            logger.Error(() => $"[{LogCategory}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnClientReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{LoggingPrefix}] [{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
@@ -187,7 +188,7 @@ namespace MiningForce.Stratum
             }
         }
 
-		protected abstract string LoggingPrefix { get; }
+		protected abstract string LogCategory { get; }
 
         protected abstract void OnClientConnected(StratumClient client);
         protected abstract void OnClientDisconnected(string subscriptionId);

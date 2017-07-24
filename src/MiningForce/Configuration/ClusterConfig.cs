@@ -36,8 +36,8 @@ namespace MiningForce.Configuration
 		public bool EnableConsoleLog { get; set; }
 		public bool EnableConsoleColors { get; set; }
 		public string LogFile { get; set; }
-		//public bool PerPoolLogFile { get; set; }
-		//public string LogBaseDirectory { get; set; }
+		public bool PerPoolLogFile { get; set; }
+		public string LogBaseDirectory { get; set; }
 	}
 
 	public class NetworkEndpointConfig
