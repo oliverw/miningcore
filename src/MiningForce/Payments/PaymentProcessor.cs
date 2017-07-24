@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Persistence;
@@ -20,7 +21,11 @@ namespace MiningForce.Payments
 	    public PaymentProcessor(IComponentContext ctx, 
 			IConnectionFactory cf, IBlockRepository blocks)
 	    {
-		    this.ctx = ctx;
+		    Contract.RequiresNonNull(ctx, nameof(ctx));
+		    Contract.RequiresNonNull(cf, nameof(cf));
+		    Contract.RequiresNonNull(blocks, nameof(blocks));
+
+			this.ctx = ctx;
 		    this.cf = cf;
 		    this.blocks = blocks;
 	    }

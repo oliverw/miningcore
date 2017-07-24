@@ -27,6 +27,10 @@ namespace MiningForce.Blockchain.Bitcoin
             ExtraNonceProvider extraNonceProvider) : 
 			base(ctx, LogManager.GetCurrentClassLogger(), daemon)
         {
+	        Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(daemon, nameof(daemon));
+	        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+
 			this.extraNonceProvider = extraNonceProvider;
         }
 

@@ -26,7 +26,10 @@ namespace MiningForce.MininigPool
 			JsonSerializerSettings serializerSettings) : 
             base(ctx, LogManager.GetCurrentClassLogger(), serializerSettings)
         {
-	        Shares = shareSubject.AsObservable();
+	        Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+
+			Shares = shareSubject.AsObservable();
         }
 
 		private PoolConfig poolConfig;
@@ -59,7 +62,10 @@ namespace MiningForce.MininigPool
 
 	    public void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
-		    this.poolConfig = poolConfig;
+			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+		    Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+
+			this.poolConfig = poolConfig;
 		    this.clusterConfig = clusterConfig;
 	    }
 

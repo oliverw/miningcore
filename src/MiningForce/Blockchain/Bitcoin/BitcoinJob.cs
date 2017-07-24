@@ -22,7 +22,17 @@ namespace MiningForce.Blockchain.Bitcoin
 			ExtraNonceProvider extraNonceProvider, bool isPoS, 
 			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
 	    {
-		    this.poolConfig = poolConfig;
+		    Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
+		    Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+		    Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+		    Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+		    Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+		    Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
+		    Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
+		    Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
+		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+
+			this.poolConfig = poolConfig;
 		    this.clusterConfig = clusterConfig;
 			this.poolAddressDestination = poolAddressDestination;
 			this.networkType = networkType;

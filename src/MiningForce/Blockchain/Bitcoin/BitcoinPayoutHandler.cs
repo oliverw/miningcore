@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AutoMapper;
+using CodeContracts;
 using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
@@ -17,6 +19,12 @@ namespace MiningForce.Blockchain.Bitcoin
 			IShareRepository shares, IBlockRepository blocks, DaemonClient daemon) :
 			base(cf, mapper, shares, blocks)
 		{
+			Contract.RequiresNonNull(cf, nameof(cf));
+			Contract.RequiresNonNull(mapper, nameof(mapper));
+			Contract.RequiresNonNull(shares, nameof(shares));
+			Contract.RequiresNonNull(blocks, nameof(blocks));
+			Contract.RequiresNonNull(daemon, nameof(daemon));
+
 			this.daemon = daemon;
 		}
 
@@ -25,6 +33,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		public void Configure(PoolConfig poolConfig)
 		{
+			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+
 			this.poolConfig = poolConfig;
 
 			daemon.Configure(poolConfig);

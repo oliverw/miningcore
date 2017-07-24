@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using CodeContracts;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace MiningForce.Networking.Banning
@@ -15,13 +16,18 @@ namespace MiningForce.Networking.Banning
 
 		public bool IsBanned(IPAddress address)
 		{
+			Contract.RequiresNonNull(address, nameof(address));
+
 			var result = bannedIpCache.Get(address.ToString());
 			return result != null;
 		}
 
 	    public void Ban(IPAddress address, TimeSpan duration)
 	    {
-		    bannedIpCache.Set(address.ToString(), string.Empty, duration);
+		    Contract.RequiresNonNull(address, nameof(address));
+			Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
+
+			bannedIpCache.Set(address.ToString(), string.Empty, duration);
 	    }
 
 		#endregion

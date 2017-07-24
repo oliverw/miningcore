@@ -21,7 +21,11 @@ namespace MiningForce.Blockchain
     {
         protected JobManagerBase(IComponentContext ctx, ILogger logger, DaemonClient daemon)
         {
-            this.ctx = ctx;
+	        Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(logger, nameof(logger));
+	        Contract.RequiresNonNull(daemon, nameof(daemon));
+
+			this.ctx = ctx;
             this.logger = logger;
             this.daemon = daemon;
         }

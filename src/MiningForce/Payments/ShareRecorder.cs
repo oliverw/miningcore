@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using AutoMapper;
+using CodeContracts;
 using MiningForce.Blockchain;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
@@ -22,7 +23,12 @@ namespace MiningForce.Payments
 		public ShareRecorder(IConnectionFactory cf, IMapper mapper,
 			IShareRepository shares, IBlockRepository blocks)
 	    {
-		    this.cf = cf;
+		    Contract.RequiresNonNull(cf, nameof(cf));
+		    Contract.RequiresNonNull(mapper, nameof(mapper));
+		    Contract.RequiresNonNull(shares, nameof(shares));
+		    Contract.RequiresNonNull(blocks, nameof(blocks));
+
+			this.cf = cf;
 		    this.mapper = mapper;
 
 			this.shares = shares;

@@ -13,6 +13,9 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain.Daemon
 {
+	/// <summary>
+	/// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
+	/// </summary>
 	public class DaemonClient
     {
         public DaemonClient(HttpClient httpClient, JsonSerializerSettings serializerSettings)
@@ -51,7 +54,6 @@ namespace MiningForce.Blockchain.Daemon
         /// <summary>
         /// Executes the request against all configured demons and returns their responses as an array
         /// </summary>
-        /// <typeparam name="TRequest"></typeparam>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
         /// <param name="payload"></param>

@@ -20,7 +20,9 @@ namespace MiningForce.JsonRpc
     {
         public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {
-            this.serializerSettings = serializerSettings;
+	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+
+			this.serializerSettings = serializerSettings;
         }
 
         private readonly JsonSerializerSettings serializerSettings;

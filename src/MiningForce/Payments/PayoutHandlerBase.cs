@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using System;
+using AutoMapper;
+using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
@@ -10,7 +12,12 @@ namespace MiningForce.Payments
 	    protected PayoutHandlerBase(IConnectionFactory cf, IMapper mapper,
 		    IShareRepository shares, IBlockRepository blocks)
 	    {
-		    this.cf = cf;
+		    Contract.RequiresNonNull(cf, nameof(cf));
+		    Contract.RequiresNonNull(mapper, nameof(mapper));
+		    Contract.RequiresNonNull(shares, nameof(shares));
+		    Contract.RequiresNonNull(blocks, nameof(blocks));
+ 
+			this.cf = cf;
 		    this.mapper = mapper;
 
 		    this.shares = shares;
