@@ -405,12 +405,13 @@ namespace MiningForce
 
 		private static async Task Start(ClusterConfig clusterConfig)
 		{
-			// start share persister
+			// start share recorder
 			shareRecorder = container.Resolve<ShareRecorder>();
 			shareRecorder.Start();
 
-			// payment processor
-			if (clusterConfig.PaymentProcessing?.Enabled == true && clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+			// start payment processor
+			if (clusterConfig.PaymentProcessing?.Enabled == true && 
+				clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
 				paymentProcessor = container.Resolve<PaymentProcessor>();
 				paymentProcessor.Configure(clusterConfig);
@@ -421,16 +422,13 @@ namespace MiningForce
 			// start pools
 			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
             {
-                var pool = container.Resolve<Pool>(
-					new TypedParameter(typeof(PoolConfig), poolConfig),
-	                new TypedParameter(typeof(ClusterConfig), clusterConfig));
-
+                var pool = container.Resolve<Pool>();
 	            pool.Configure(poolConfig, clusterConfig);
 
-	            shareRecorder.AttachPool(pool);
+				servers.Add(pool);
+				shareRecorder.AttachPool(pool);
 
 				await pool.StartAsync();
-                servers.Add(pool);
             }
         }
     }
