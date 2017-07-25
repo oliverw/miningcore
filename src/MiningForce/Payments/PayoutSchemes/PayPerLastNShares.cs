@@ -61,48 +61,49 @@ namespace MiningForce.Payments.PayoutSchemes
 
 	    private Dictionary<string, double> CalculateBalances(double networkDifficulty, double factor, Persistence.Model.Block block)
 	    {
-		    networkDifficulty = 15000000000;
-
-			var result = new Dictionary<string, double>();
+			var result = new Dictionary<string, double>();	// maps address to balance
 		    var done = false;
 		    var pageSize = 10000;
 		    var currentPage = 0;
 		    var targetScore = networkDifficulty * factor;
 		    var accumulatedScore = 0.0;
-		    var blockRewardRemaining = block.Reward;
+		    var blockReward = block.Reward.Value;
+			var blockRewardRemaining = blockReward;
 
 			while (!done)
 			{
 				// fetch next page
-				var page = cf.Run(con => shareRepo.PageSharesBefore(con, block.Created, currentPage++, pageSize));
+				var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, block.Created, currentPage++, pageSize));
 
 				// done if no more shares
-				if (page.Length == 0)
+				if (blockPage.Length == 0)
 					break;
 
 				// iterate over shares
-				for (int i = Math.Max(0, page.Length - 1); i >= 0; i--)
+				var start = Math.Max(0, blockPage.Length - 1);
+
+				for (var i = start; i >= 0; i--)
 				{
-					var share = page[i];
+					var share = blockPage[i];
 
 					var score = share.Difficulty / share.NetworkDifficulty;
 
-					if (accumulatedScore + score < targetScore)
-					{
-						var reward = score * block.Reward;
-						blockRewardRemaining -= reward;
-
-						accumulatedScore += score;
-					}
-
-					else
+					// if accumulated score would cross threshold, cap it to the remaining value
+					if (accumulatedScore + score >= targetScore)
 					{
 						score = targetScore - accumulatedScore;
-						var reward = score * block.Reward;
-						blockRewardRemaining -= reward;
-
 						done = true;
 					}
+
+					var reward = score * blockReward;
+					accumulatedScore += score;
+					blockRewardRemaining -= reward;
+
+					// accumulate per-worker reward
+					if (!result.ContainsKey(share.Worker))
+						result[share.Worker] = reward;
+					else
+						result[share.Worker] += reward;
 				}
 			}
 

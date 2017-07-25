@@ -8,7 +8,6 @@ using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Persistence;
-using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using NLog;
 
@@ -130,23 +129,36 @@ namespace MiningForce.Payments
 				{
 				    var handler = payoutHandlers[pool.Coin.Type];
 					var scheme = payoutSchemes[pool.PaymentProcessing.PayoutScheme];
+#if false
+					var block = new Persistence.Model.Block
+					{
+						Created = DateTime.UtcNow,
+						Id = 4,
+						Reward = 157556752,
+						Blockheight = 33432432,
+						PoolId = "btc1",
+						Status = Persistence.Model.BlockStatus.Confirmed,
+					};
 
-					// get pending blockRepo for pool
+					await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
+#else
+					//// get pending blockRepo for pool
 					var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
 
-				    // ask handler to classify them
-				    var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
+					// ask handler to classify them
+					var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
 
-				    foreach (var block in updatedBlocks.OrderBy(x=> x.Created))
-				    {
-					    logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
+					foreach (var block in updatedBlocks.OrderBy(x => x.Created))
+					{
+						logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
 
-					    if (block.Status == BlockStatus.Orphaned)
-						    cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
-					    else
-						    await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
-				    }
-			    }
+						if (block.Status == Persistence.Model.BlockStatus.Orphaned)
+							cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
+						else
+							await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
+					}
+#endif
+				}
 
 				catch (Exception ex)
 			    {
@@ -157,7 +169,7 @@ namespace MiningForce.Payments
 
 	    private void GenerateTestShares(string poolid)
 	    {
-			#if DEBUG
+#if DEBUG
 		    var numShares = 10000;
 		    var shareOffset = TimeSpan.FromSeconds(10);
 
