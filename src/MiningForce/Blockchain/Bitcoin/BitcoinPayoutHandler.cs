@@ -6,12 +6,12 @@ using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
+using MiningForce.Extensions;
 using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
-using Newtonsoft.Json.Linq;
 using BDC = MiningForce.Blockchain.Bitcoin.BitcoinDaemonCommands;
 
 namespace MiningForce.Blockchain.Bitcoin
@@ -20,16 +20,25 @@ namespace MiningForce.Blockchain.Bitcoin
 		IPayoutHandler
 	{
 		public BitcoinPayoutHandler(IConnectionFactory cf, IMapper mapper,
-			IShareRepository shareRepo, IBlockRepository blockRepo, DaemonClient daemon) :
-			base(cf, mapper, shareRepo, blockRepo)
+			DaemonClient daemon,
+			IShareRepository shareRepo, 
+			IBlockRepository blockRepo,
+			IBalanceRepository balanceRepo,
+			IPaymentRepository paymentRepo) :
+			base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo)
 		{
 			Contract.RequiresNonNull(daemon, nameof(daemon));
+			Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
+			Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
 			this.daemon = daemon;
+
 		}
 
 		private PoolConfig poolConfig;
 		private readonly DaemonClient daemon;
+
+		protected override string LogCategory => "Bitcoin Payout Handler";
 
 		#region IPayoutHandler
 
@@ -43,9 +52,16 @@ namespace MiningForce.Blockchain.Bitcoin
 			daemon.Configure(poolConfig);
 		}
 
+		public string FormatRewardAmount(decimal amount)
+		{
+			// assumes amount in satoshis (as returned from GetTransaction)
+			return $"{amount:0.#####} {poolConfig.Coin.Type}";
+		}
+
 		public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+			Contract.RequiresNonNull(blocks, nameof(blocks));
 
 			var pageSize = 100;
 			var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
@@ -85,7 +101,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 						else
 						{
-							logger.Warn(() => $"Daemon report error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
+							logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
 							continue;
 						}
 					}
@@ -124,21 +140,64 @@ namespace MiningForce.Blockchain.Bitcoin
 			return result.ToArray();
 		}
 
-		public async Task<double> GetNetworkDifficultyAsync()
+		public async Task PayoutAsync(Balance[] balances)
 		{
-			var result = await daemon.ExecuteCmdAnyAsync<JToken>(BDC.GetDifficulty);
-			return result.Response.ToObject<double>();
-		}
+			Contract.RequiresNonNull(balances, nameof(balances));
 
-		public string FormatRewardAmount(double amount)
-		{
-			// assumes amount in satoshis (as returned from GetTransaction)
-			return $"{amount:0.#####} {poolConfig.Coin.Type}";
-		}
+			logger.Info(()=> $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x=> x.Amount))} to {balances.Length} addresses");
 
-		public Task PayoutAsync(Balance balance)
-		{
-			return Task.FromResult(true);
+			// build args
+			var amounts = balances.ToDictionary(x => x.Address, x => x.Amount);
+			var subtractFeesFrom = amounts.Keys.ToArray();
+
+			var args = new object[]
+			{
+				string.Empty,
+				amounts,
+				1,						// only spend funds covered by this many confirmations
+				"MiningForce Payout",
+				subtractFeesFrom
+			};
+
+			// send it
+			var result = await daemon.ExecuteCmdAnyAsync<string>(BDC.SendMany, args);
+
+			if (result.Error == null)
+			{
+				var txId = result.Response;
+
+				// check result
+				if (string.IsNullOrEmpty(txId))
+					logger.Error(() => $"[{LogCategory}] SendMany did not return a transaction id!");
+				else
+					logger.Info(() => $"[{LogCategory}] Payout Transaction Id is {txId}");
+
+				// commit changes to database
+				cf.RunTx((con, tx) =>
+				{
+					foreach (var balance in balances)
+					{
+						// subtract balance
+						balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
+
+						// record payment
+						var payment = new Payment
+						{
+							PoolId = poolConfig.Id,
+							Coin = poolConfig.Coin.Type,
+							Address = balance.Address,
+							Amount = balance.Amount,
+							Created = DateTime.UtcNow,
+							TransactionConfirmationData = txId,
+						};
+
+						paymentRepo.Insert(con, tx, payment);
+					}
+				});
+			}
+
+			else
+				logger.Error(() => $"[{LogCategory}] SendMany returned error: {result.Error.Message} Code {result.Error.Code}");
 		}
 
 		#endregion // IPayoutHandler

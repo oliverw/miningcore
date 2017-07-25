@@ -10,7 +10,7 @@ namespace MiningForce.Persistence.Model
 		public long Blockheight { get; set; }
 		public BlockStatus Status { get; set; }
 		public string TransactionConfirmationData { get; set; }
-		public double? Reward { get; set; }
+		public decimal? Reward { get; set; }
 		public DateTime Created { get; set; }
 	}
 }

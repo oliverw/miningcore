@@ -33,7 +33,7 @@ CREATE TABLE balances
   poolid TEXT NOT NULL,
   coin TEXT NOT NULL,
   address TEXT NOT NULL,
-  amount REAL NOT NULL DEFAULT 0,
+  amount decimal(20,8) NOT NULL DEFAULT 0,
   created TIMESTAMP NOT NULL,
   updated TIMESTAMP NOT NULL,
 
@@ -45,10 +45,10 @@ CREATE TABLE payments
   id BIGSERIAL NOT NULL PRIMARY KEY,
   poolid TEXT NOT NULL,
   coin TEXT NOT NULL,
-  blockheight BIGINT NOT NULL,
-  wallet TEXT NOT NULL,
-  amount REAL NOT NULL,
+  address TEXT NOT NULL,
+  amount decimal(20,8) NOT NULL,
+  transactionconfirmationdata TEXT NOT NULL,
   created TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, wallet);
+CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, address);

@@ -7,7 +7,7 @@ namespace MiningForce.Persistence.Postgres.Entities
 		public string PoolId { get; set; }
 		public string Coin { get; set; }
 		public string Address { get; set; }
-		public double Amount { get; set; }
+		public decimal Amount { get; set; }
 		public DateTime Created { get; set; }
 		public DateTime Updated { get; set; }
 	}

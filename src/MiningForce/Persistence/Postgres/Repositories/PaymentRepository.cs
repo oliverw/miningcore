@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using AutoMapper;
 using Dapper;
 using MiningForce.Persistence.Model;
@@ -18,7 +17,12 @@ namespace MiningForce.Persistence.Postgres.Repositories
 
 		public void Insert(IDbConnection con, IDbTransaction tx, Payment payment)
 	    {
-		    throw new NotImplementedException();
+		    var mapped = mapper.Map<Entities.Payment>(payment);
+
+		    var query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
+						"VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
+
+		    con.Execute(query, mapped, tx);
 	    }
-    }
+	}
 }

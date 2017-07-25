@@ -12,7 +12,7 @@ namespace MiningForce.Persistence.Model
 		/// <summary>
 		/// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
 		/// </summary>
-		public double Amount { get; set; }
+		public decimal Amount { get; set; }
 
 		public DateTime Created { get; set; }
 		public DateTime Updated { get; set; }

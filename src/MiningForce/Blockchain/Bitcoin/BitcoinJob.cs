@@ -332,13 +332,13 @@ namespace MiningForce.Blockchain.Bitcoin
 				rewardRecipients.Add(new RewardRecipient
 				{
 					Address = devFeeAddresses[poolConfig.Coin.Type],
-					Percentage = 0.2
+					Percentage = 0.2m
 				});
 
 			foreach (var recipient in rewardRecipients)
 		    {
 			    var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
-			    var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0 * reward.Satoshi));
+			    var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * reward.Satoshi));
 
 			    rewardToPool -= recipientReward;
 

@@ -7,14 +7,14 @@ namespace MiningForce.Blockchain.Bitcoin.DaemonResults
 	{
 		public string Address { get; set; }
 		public string Category { get; set; }
-		public double Amount { get; set; }
+		public decimal Amount { get; set; }
 		public string Label { get; set; }
 		public int Vout { get; set; }
 	}
 
 	public class GetTransactionResult
 	{
-		public double Amount { get; set; }
+		public decimal Amount { get; set; }
 		public uint Confirmations { get; set; }
 		public bool Generated { get; set; }
 		public string BlockHash { get; set; }

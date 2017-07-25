@@ -18,7 +18,7 @@ namespace MiningForce.Persistence.Postgres.Repositories
 
 	    private readonly IMapper mapper;
 
-	    public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, double amount)
+	    public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount)
 	    {
 		    var query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
@@ -56,7 +56,7 @@ namespace MiningForce.Persistence.Postgres.Repositories
 			}
 	    }
 
-	    public Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, double minimum)
+	    public Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum)
 	    {
 		    var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
 

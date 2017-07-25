@@ -173,11 +173,13 @@ namespace MiningForce.Payments
 			var poolBalancesOverMinimum = cf.Run(con => 
 				balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
 
-		    foreach (var balance in poolBalancesOverMinimum)
-			    await handler.PayoutAsync(balance);
+		    if (poolBalancesOverMinimum.Length > 0)
+			    await handler.PayoutAsync(poolBalancesOverMinimum);
+			else
+			    logger.Info(() => $"No balances over configured minimum payout for pool '{pool.Id}'");
 	    }
 
-	    private void GenerateTestShares(string poolid)
+		private void GenerateTestShares(string poolid)
 	    {
 #if DEBUG
 		    var numShares = 10000;

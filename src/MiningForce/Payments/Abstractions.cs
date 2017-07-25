@@ -9,9 +9,9 @@ namespace MiningForce.Payments
 		void Configure(PoolConfig poolConfig);
 
 		Task<Block[]> ClassifyBlocksAsync(Block[] blocks);
-		Task<double> GetNetworkDifficultyAsync();
-		string FormatRewardAmount(double amount);
-		Task PayoutAsync(Balance balance);
+		Task PayoutAsync(Balance[] balances);
+
+		string FormatRewardAmount(decimal amount);
 	}
 
 	public interface IPayoutScheme

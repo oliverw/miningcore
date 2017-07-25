@@ -18,10 +18,12 @@ namespace MiningForce.Persistence.Postgres.Repositories
 
 		public void Insert(IDbConnection con, IDbTransaction tx, Model.Share share)
 		{
+			var mapped = mapper.Map<Entities.Share>(share);
+
 			var query = "INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress, created) " +
 			            "VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)";
 
-			con.Execute(query, share, tx);
+			con.Execute(query, mapped, tx);
 	    }
 
 	    public Model.Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize)

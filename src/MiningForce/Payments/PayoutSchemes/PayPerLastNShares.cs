@@ -37,7 +37,7 @@ namespace MiningForce.Payments.PayoutSchemes
 
 	    private class Config
 	    {
-		    public double Factor { get; set; }
+		    public decimal Factor { get; set; }
 	    }
 
 	    #region IPayoutScheme
@@ -47,10 +47,10 @@ namespace MiningForce.Payments.PayoutSchemes
 		    var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
 
 			// PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
-			var factorX = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0;
+			var factorX = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
 			// holds pending balances per address (in our case workername = address)
-		    var payouts = new Dictionary<string, double>();
+		    var payouts = new Dictionary<string, decimal>();
 			var shareCutOffDate = CalculatePayouts(poolConfig, factorX, block, payouts);
 
 		    cf.RunTx((con, tx) =>
@@ -85,12 +85,12 @@ namespace MiningForce.Payments.PayoutSchemes
 
 		#endregion // IPayoutScheme
 
-	    private DateTime? CalculatePayouts(PoolConfig poolConfig, double factorX, Block block, Dictionary<string, double> payouts)
+	    private DateTime? CalculatePayouts(PoolConfig poolConfig, decimal factorX, Block block, Dictionary<string, decimal> payouts)
 	    {
 			var done = false;
 		    var pageSize = 10000;
 		    var currentPage = 0;
-		    var accumulatedScore = 0.0;
+		    var accumulatedScore = 0.0m;
 		    var blockReward = block.Reward.Value;
 			var blockRewardRemaining = blockReward;
 		    DateTime? shareCutOffDate = null;
@@ -110,7 +110,7 @@ namespace MiningForce.Payments.PayoutSchemes
 				for (var i = start; i >= 0; i--)
 				{
 					var share = blockPage[i];
-					var score = share.Difficulty / share.NetworkDifficulty;
+					var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
 					// if accumulated score would cross threshold, cap it to the remaining value
 					if (accumulatedScore + score >= factorX)
@@ -130,10 +130,12 @@ namespace MiningForce.Payments.PayoutSchemes
 						throw new OverflowException("blockRewardRemaining < 0");
 
 					// accumulate per-worker reward
-					if (!payouts.ContainsKey(share.Worker))
-						payouts[share.Worker] = reward;
+					var address = share.Worker.Trim();
+
+					if (!payouts.ContainsKey(address))
+						payouts[address] = reward;
 					else
-						payouts[share.Worker] += reward;
+						payouts[address] += reward;
 				}
 			}
 

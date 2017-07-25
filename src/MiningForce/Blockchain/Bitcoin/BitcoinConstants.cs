@@ -43,6 +43,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	public class BitcoinConstants
 	{
-		public const double SatoshisPerBitcoin = 100000000;
+		public const decimal SatoshisPerBitcoin = 100000000;
 	}
 }

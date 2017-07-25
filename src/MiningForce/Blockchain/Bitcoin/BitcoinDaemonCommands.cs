@@ -16,5 +16,6 @@ namespace MiningForce.Blockchain.Bitcoin
 	    public const string GetBlockchainInfo = "getblockchaininfo";
 	    public const string GetBlock = "getblock";
 	    public const string GetTransaction = "gettransaction";
+	    public const string SendMany = "sendmany";
     }
 }

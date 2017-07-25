@@ -93,7 +93,7 @@ namespace MiningForce.Blockchain.Bitcoin
 				throw new StratumException(StratumError.Other, "invalid params");
 
 			// extract params
-			var workername = submitParams[0] as string;
+			var workername = (submitParams[0] as string)?.Trim();
 	        var jobId = submitParams[1] as string;
 	        var extraNonce2 = submitParams[2] as string;
 	        var nTime = submitParams[3] as string;
@@ -203,8 +203,6 @@ namespace MiningForce.Blockchain.Bitcoin
 	        {
 		        new DaemonCmd(BDC.ValidateAddress, new[] {poolConfig.Address}),
 		        new DaemonCmd(BDC.GetDifficulty),
-		        new DaemonCmd(BDC.GetInfo),
-		        new DaemonCmd(BDC.GetMiningInfo),
 		        new DaemonCmd(BDC.SubmitBlock),
 		        new DaemonCmd(BDC.GetBlockchainInfo)
 	        };
@@ -223,10 +221,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			// extract results
 			var validateAddressResponse = results[0].Response.ToObject<DaemonResults.ValidateAddressResult>();
             var difficultyResponse = results[1].Response.ToObject<JToken>(); 
-            var infoResponse = results[2].Response.ToObject<DaemonResults.GetInfoResult>();
-            var miningInfoResponse = results[3].Response.ToObject<DaemonResults.GetMiningInfoResult>();
-            var submitBlockResponse = results[4];
-			var blockchainInfoResponse = results[5].Response.ToObject<DaemonResults.GetBlockchainInfoResult>();
+            var submitBlockResponse = results[2];
+			var blockchainInfoResponse = results[3].Response.ToObject<DaemonResults.GetBlockchainInfoResult>();
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.IsValid)
