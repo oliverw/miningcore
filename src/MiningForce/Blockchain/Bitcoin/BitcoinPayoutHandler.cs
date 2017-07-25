@@ -168,18 +168,15 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				// check result
 				if (string.IsNullOrEmpty(txId))
-					logger.Error(() => $"[{LogCategory}] SendMany did not return a transaction id!");
+					logger.Error(() => $"[{LogCategory}] 'sendmany' did not return a transaction id!");
 				else
 					logger.Info(() => $"[{LogCategory}] Payout Transaction Id is {txId}");
 
-				// commit changes to database
+				// record changes
 				cf.RunTx((con, tx) =>
 				{
 					foreach (var balance in balances)
 					{
-						// subtract balance
-						balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
-
 						// record payment
 						var payment = new Payment
 						{
@@ -192,6 +189,9 @@ namespace MiningForce.Blockchain.Bitcoin
 						};
 
 						paymentRepo.Insert(con, tx, payment);
+
+						// subtract balance
+						balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
 					}
 				});
 			}
