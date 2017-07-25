@@ -22,26 +22,31 @@ namespace MiningForce.Persistence.Postgres.Repositories
 		{
 			var mapped = mapper.Map<Entities.Block>(block);
 
-			con.Execute("INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata, created) " +
-						"VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata, @created)", mapped, tx);
+			var query = "INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata, created) " +
+			            "VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata, @created)";
+
+			con.Execute(query, mapped, tx);
 	    }
 
 	    public void DeleteBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
 	    {
-		    con.Execute("DELETE FROM blocks WHERE id = @id", block, tx);
+		    var query = "DELETE FROM blocks WHERE id = @id";
+		    con.Execute(query, block, tx);
 	    }
 
 	    public void UpdateBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
 	    {
 		    var mapped = mapper.Map<Entities.Block>(block);
 
-		    con.Execute("UPDATE blocks SET status = @status, reward = @reward WHERE id = @id", mapped, tx);
+		    var query = "UPDATE blocks SET status = @status, reward = @reward WHERE id = @id";
+		    con.Execute(query, mapped, tx);
 	    }
 
 		public Model.Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
 	    {
-		    return con.Query<Entities.Block>("SELECT * FROM blocks WHERE poolid = @poolid AND status = @status",
-				    new { status = Model.BlockStatus.Pending.ToString().ToLower(), poolid })
+		    var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
+
+		    return con.Query<Entities.Block>(query, new { status = Model.BlockStatus.Pending.ToString().ToLower(), poolid })
 			    .Select(mapper.Map<Model.Block>)
 			    .ToArray();
 	    }

@@ -8,6 +8,7 @@ using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Payments;
 using MiningForce.Persistence;
+using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
 using Newtonsoft.Json.Linq;
@@ -42,13 +43,13 @@ namespace MiningForce.Blockchain.Bitcoin
 			daemon.Configure(poolConfig);
 		}
 
-		public async Task<Persistence.Model.Block[]> ClassifyBlocksAsync(Persistence.Model.Block[] blocks)
+		public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
 			var pageSize = 100;
 			var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
-			var result = new List<Persistence.Model.Block>();
+			var result = new List<Block>();
 
 			for (int i = 0; i < pageCount; i++)
 			{
@@ -67,13 +68,32 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				for (int j = 0; j < results.Length; j++)
 				{
-					var transactionInfo = results[j].Response.ToObject<DaemonResults.GetTransactionResult>();
+					var cmdResult = results[j];
+
+					var transactionInfo = cmdResult.Response?.ToObject<DaemonResults.GetTransactionResult>();
 					var block = page[j];
 
-					// missing transaction details are interpreted as "orphaned"
-					if (transactionInfo.Details == null || transactionInfo.Details.Length == 0)
+					// check error
+					if (cmdResult.Error != null)
 					{
-						block.Status = Persistence.Model.BlockStatus.Orphaned;
+						// Code -5 interpreted as "orphaned"
+						if (cmdResult.Error.Code == -5)
+						{
+							block.Status = BlockStatus.Orphaned;
+							result.Add(block);
+						}
+
+						else
+						{
+							logger.Warn(() => $"Daemon report error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
+							continue;
+						}
+					}
+
+					// missing transaction details are interpreted as "orphaned"
+					else if (transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
+					{
+						block.Status = BlockStatus.Orphaned;
 						result.Add(block);
 					}
 
@@ -82,19 +102,18 @@ namespace MiningForce.Blockchain.Bitcoin
 						switch (transactionInfo.Details[0].Category)
 						{
 							case "immature":
-								// coinbase transaction that is not spendable yet
-								// do nothing and let it mature
+								// coinbase transaction that is not spendable yet, do nothing and let it mature
 								break;
 
 							case "generate":
 								// matured and spendable coinbase transaction
-								block.Status = Persistence.Model.BlockStatus.Confirmed;
-								block.Reward = transactionInfo.Details[0].Amount;
+								block.Status = BlockStatus.Confirmed;
+								block.Reward = transactionInfo.Details[0].Amount / BitcoinConstants.SatoshisPerBitcoin;
 								result.Add(block);
 								break;
 
 							default:
-								block.Status = Persistence.Model.BlockStatus.Orphaned;
+								block.Status = BlockStatus.Orphaned;
 								result.Add(block);
 								break;
 						}
@@ -109,6 +128,17 @@ namespace MiningForce.Blockchain.Bitcoin
 		{
 			var result = await daemon.ExecuteCmdAnyAsync<JToken>(BDC.GetDifficulty);
 			return result.Response.ToObject<double>();
+		}
+
+		public string FormatRewardAmount(double amount)
+		{
+			// assumes amount in satoshis (as returned from GetTransaction)
+			return $"{amount:0.#####} {poolConfig.Coin.Type}";
+		}
+
+		public Task PayoutAsync(Balance balance)
+		{
+			return Task.FromResult(true);
 		}
 
 		#endregion // IPayoutHandler

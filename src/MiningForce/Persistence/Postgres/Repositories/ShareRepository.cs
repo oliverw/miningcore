@@ -17,18 +17,35 @@ namespace MiningForce.Persistence.Postgres.Repositories
 	    private readonly IMapper mapper;
 
 		public void Insert(IDbConnection con, IDbTransaction tx, Model.Share share)
-	    {
-		    con.Execute("INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress, created) " +
-						"VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)", share, tx);
+		{
+			var query = "INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress, created) " +
+			            "VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)";
+
+			con.Execute(query, share, tx);
 	    }
 
-	    public Model.Share[] PageSharesBefore(IDbConnection con, DateTime before, int page, int pageSize)
+	    public Model.Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize)
 	    {
-		    return con.Query<Entities.Share>("SELECT * FROM shares WHERE created < @before " +
-		                                     "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY",
-				    new { before, offset = page * pageSize, pageSize })
+		    var query = "SELECT * FROM shares WHERE poolid = @poolId AND created < @before " +
+		                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+			return con.Query<Entities.Share>(query, new { poolId, before, offset = page * pageSize, pageSize })
 			    .Select(mapper.Map<Model.Share>)
 			    .ToArray();
+	    }
+
+	    public long CountSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+	    {
+		    var query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
+
+		    return con.QuerySingle<long>(query, new { poolId, before }, tx);
+	    }
+
+		public void DeleteSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+	    {
+		    var query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
+
+			con.Execute(query, new { poolId, before }, tx);
 	    }
 	}
 }

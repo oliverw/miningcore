@@ -12,8 +12,8 @@ CREATE TABLE shares
   created TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IDX_POOL_BLOCK on shares(poolid, blockheight);
-CREATE INDEX IDX_SHARES_CREATED on shares(created);
+CREATE INDEX IDX_SHARES_POOL_BLOCK on shares(poolid, blockheight);
+CREATE INDEX IDX_SHARES_POOL_CREATED on shares(poolid, created);
 
 CREATE TABLE blocks
 (
@@ -30,13 +30,14 @@ CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status)
 
 CREATE TABLE balances
 (
+  poolid TEXT NOT NULL,
   coin TEXT NOT NULL,
-  wallet TEXT NOT NULL,
+  address TEXT NOT NULL,
   amount REAL NOT NULL DEFAULT 0,
   created TIMESTAMP NOT NULL,
   updated TIMESTAMP NOT NULL,
 
-  primary key(wallet, coin)
+  primary key(poolid, address, coin)
 );
 
 CREATE TABLE payments

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using MiningForce.Configuration;
-using Newtonsoft.Json.Linq;
+using MiningForce.Persistence.Model;
 
 namespace MiningForce.Payments
 {
@@ -8,12 +8,14 @@ namespace MiningForce.Payments
 	{
 		void Configure(PoolConfig poolConfig);
 
-		Task<Persistence.Model.Block[]> ClassifyBlocksAsync(Persistence.Model.Block[] blocks);
+		Task<Block[]> ClassifyBlocksAsync(Block[] blocks);
 		Task<double> GetNetworkDifficultyAsync();
+		string FormatRewardAmount(double amount);
+		Task PayoutAsync(Balance balance);
 	}
 
 	public interface IPayoutScheme
 	{
-		Task UpdateBalancesAndBlockAsync(JToken payoutConfig, IPayoutHandler payoutHandler, Persistence.Model.Block block);
+		Task UpdateBalancesAndBlockAsync(PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block);
 	}
 }

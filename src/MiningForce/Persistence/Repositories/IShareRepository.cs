@@ -6,6 +6,8 @@ namespace MiningForce.Persistence.Repositories
     public interface IShareRepository
 	{
 		void Insert(IDbConnection con, IDbTransaction tx, Model.Share share);
-		Model.Share[] PageSharesBefore(IDbConnection con, DateTime before, int page, int pageSize);
+		Model.Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize);
+		long CountSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+		void DeleteSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
 	}
 }

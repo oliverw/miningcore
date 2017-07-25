@@ -115,7 +115,7 @@ namespace MiningForce.Configuration
 	public class PoolPaymentProcessingConfig
 	{
 		public bool Enabled { get; set; }
-		public double MinimumPayment { get; set; }
+		public double MinimumPayment { get; set; }  // in pool-base-currency (ie. Bitcoin, not Satoshis)
 		public PayoutScheme PayoutScheme { get; set; }
 		public JToken PayoutSchemeConfig { get; set; }
 	}

@@ -5,9 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
+using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Persistence;
+using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using NLog;
 
@@ -21,17 +23,20 @@ namespace MiningForce.Payments
 	    public PaymentProcessor(IComponentContext ctx, 
 			IConnectionFactory cf, 
 			IBlockRepository blockRepo,
-		    IShareRepository shareRepo)
+		    IShareRepository shareRepo,
+		    IBalanceRepository balanceRepo)
 	    {
 		    Contract.RequiresNonNull(ctx, nameof(ctx));
 		    Contract.RequiresNonNull(cf, nameof(cf));
 		    Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
 		    Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
+		    Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
 
 			this.ctx = ctx;
 		    this.cf = cf;
 		    this.blockRepo = blockRepo;
 		    this.shareRepo = shareRepo;
+		    this.balanceRepo = balanceRepo;
 	    }
 
 		private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -39,6 +44,7 @@ namespace MiningForce.Payments
 	    private readonly IConnectionFactory cf;
 	    private readonly IBlockRepository blockRepo;
 	    private readonly IShareRepository shareRepo;
+	    private readonly IBalanceRepository balanceRepo;
 	    private ClusterConfig clusterConfig;
 	    private Dictionary<CoinType, IPayoutHandler> payoutHandlers;
 	    private Dictionary<PayoutScheme, IPayoutScheme> payoutSchemes;
@@ -123,41 +129,14 @@ namespace MiningForce.Payments
 		    {
 			    logger.Info(() => $"Processing payments for pool '{pool.Id}'");
 
-				//GenerateTestShares(pool.Id);
-
 				try
 				{
 				    var handler = payoutHandlers[pool.Coin.Type];
 					var scheme = payoutSchemes[pool.PaymentProcessing.PayoutScheme];
-#if false
-					var block = new Persistence.Model.Block
-					{
-						Created = DateTime.UtcNow,
-						Id = 4,
-						Reward = 157556752,
-						Blockheight = 33432432,
-						PoolId = "btc1",
-						Status = Persistence.Model.BlockStatus.Confirmed,
-					};
 
-					await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
-#else
-					// get pending blockRepo for pool
-					var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
-
-					// ask handler to classify them
-					var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
-
-					foreach (var block in updatedBlocks.OrderBy(x => x.Created))
-					{
-						logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
-
-						if (block.Status == Persistence.Model.BlockStatus.Orphaned)
-							cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
-						else
-							await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
-					}
-#endif
+//GenerateTestShares(pool.Id);
+					await UpdatePoolBalancesAsync(pool, handler, scheme);
+					await PayoutPoolBalancesAsync(pool, handler);
 				}
 
 				catch (Exception ex)
@@ -167,32 +146,73 @@ namespace MiningForce.Payments
 		    }
 		}
 
+	    private async Task UpdatePoolBalancesAsync(PoolConfig pool, IPayoutHandler handler, IPayoutScheme scheme)
+	    {
+			// get pending blockRepo for pool
+		    var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
+
+		    // ask handler to classify them
+		    var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
+
+//updatedBlocks.First().Status = BlockStatus.Confirmed;
+//updatedBlocks.First().Reward = 19531250 / BitcoinConstants.SatoshisPerBitcoin;
+
+		    foreach (var block in updatedBlocks.OrderBy(x => x.Created))
+		    {
+			    logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
+
+			    if (block.Status == BlockStatus.Orphaned)
+				    cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
+			    else
+				    await scheme.UpdateBalancesAndBlockAsync(pool, handler, block);
+		    }
+	    }
+
+	    private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
+	    {
+			var poolBalancesOverMinimum = cf.Run(con => 
+				balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
+
+		    foreach (var balance in poolBalancesOverMinimum)
+			    await handler.PayoutAsync(balance);
+	    }
+
 	    private void GenerateTestShares(string poolid)
 	    {
 #if DEBUG
 		    var numShares = 10000;
 		    var shareOffset = TimeSpan.FromSeconds(10);
 
-		    var block = cf.Run(con=> blockRepo.GetPendingBlocksForPool(con, poolid).First());
-
 			cf.RunTx((con, tx) =>
 		    {
-			    var blockDate = block.Created;
-
-			    for (int i = 0; i < numShares; i++)
+			    var block = new Block
 			    {
-				    var share = new Persistence.Model.Share
+				    Created = DateTime.UtcNow,
+				    Id = 4,
+				    Blockheight = 334324,
+				    PoolId = "btc1",
+				    Status = BlockStatus.Pending,
+					TransactionConfirmationData = "foobar"
+			    };
+
+			    blockRepo.Insert(con, tx, block);
+
+				var shareDate = block.Created;
+
+				for (int i = 0; i < numShares; i++)
+			    {
+				    var share = new Share
 				    {
-					    Difficulty = 0.2,
-					    NetworkDifficulty = 4.656542373906925e-10,
+					    Difficulty = (i & 1) == 0 ? 16 : 32,
+					    NetworkDifficulty = 236000,
 					    Blockheight = block.Blockheight,
 					    IpAddress = "127.0.0.1",
-					    Created = blockDate,
-					    Worker = "n2e6yXKGue3abKidxJUgeMGxGDcPmCZD1v",
-					    PoolId = poolid,
+					    Created = shareDate,
+					    Worker = (i & 1) == 0 ? "mkeiTodVRTseFymDbgi2HAV3Re8zv3DQFf" : "n37zNp1QbtwHh9jVUThe6ZgCxvm9rdpX2f",
+						PoolId = poolid,
 				    };
 
-				    blockDate -= shareOffset;
+				    shareDate -= shareOffset;
 
 					shareRepo.Insert(con, tx, share);
 			    }

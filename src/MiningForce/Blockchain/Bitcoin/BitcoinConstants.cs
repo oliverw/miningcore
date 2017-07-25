@@ -40,4 +40,9 @@ namespace MiningForce.Blockchain.Bitcoin
 		/// </summary>
 		Orphan
 	}
+
+	public class BitcoinConstants
+	{
+		public const double SatoshisPerBitcoin = 100000000;
+	}
 }
