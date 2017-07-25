@@ -54,7 +54,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		public string FormatRewardAmount(decimal amount)
 		{
-			// assumes amount in satoshis (as returned from GetTransaction)
 			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
@@ -152,14 +151,14 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			var args = new object[]
 			{
-				string.Empty,
-				amounts,
+				string.Empty,			// default account 
+				amounts,				// addresses and asscociated amounts
 				1,						// only spend funds covered by this many confirmations
-				"MiningForce Payout",
-				subtractFeesFrom
+				"MiningForce Payout",	// comment
+				subtractFeesFrom		// distribute transaction fee equally over all recipients
 			};
 
-			// send it
+			// send command
 			var result = await daemon.ExecuteCmdAnyAsync<string>(BDC.SendMany, args);
 
 			if (result.Error == null)
