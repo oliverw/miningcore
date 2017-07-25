@@ -251,6 +251,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			else
 				networkType = BitcoinNetworkType.Main;
 
+			// update stats
+	        networkStats.Network = networkType.ToString();
+	        networkStats.RewardType = isPoS ? "POS" : "POW";
+
 			// block submission RPC method
 			if (submitBlockResponse.Error?.Message?.ToLower() == "method not found")
                 hasSubmitBlockMethod = false;
