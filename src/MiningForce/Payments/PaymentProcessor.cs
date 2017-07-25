@@ -142,7 +142,7 @@ namespace MiningForce.Payments
 
 					await scheme.UpdateBalancesAndBlockAsync(pool.PaymentProcessing.PayoutSchemeConfig, handler, block);
 #else
-					//// get pending blockRepo for pool
+					// get pending blockRepo for pool
 					var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
 
 					// ask handler to classify them
