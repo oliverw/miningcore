@@ -37,17 +37,17 @@
             },
             "authorizer": "addressbased",
             // Address to where block rewards are given (pool wallet)
-            "address": "msd3QpSouVm7u9Pym4QB7BuEj4dxoqZsZA",
+            "address": "mxQe7HNpwVsCaTGucnSCZ4cJzdQoBem43u",
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
             // or to donations address. Addresses or hashed public keys can be used. Here is an example
             // of rewards going to the main pool op
             "rewardRecipients": [
-                {
-                    "type": "op",
-                    "address": "momwHPiW4rzJp5GEdZcYowXkFnBZaaGdkx",    // alice
-                    "percentage": 1.5
-                }
+                // {
+                //     "type": "op",
+                //     "address": "mg1MRzf7V1ZzvoBpR5kELgUqmGk1RJuc3W",    // alice
+                //     "percentage": 1.5
+                // }
             ],
             // How often to poll RPC daemons for new blocks, in milliseconds
             "blockRefreshInterval": 1000,
@@ -74,11 +74,11 @@
             // optional and will only be used for the ports you configure it for.
             "ports": {
                 "3032": { // A port for your miners to connect to
-                    "difficulty": 0.1, // the pool difficulty for this port
+                    "difficulty": 1, // the pool difficulty for this port
                     // Variable difficulty is a feature that will automatically adjust difficulty for
                     // individual miners based on their hashrate in order to lower networking overhead
                     "varDiff": {
-                        "minDiff": 0.1, // Minimum difficulty
+                        "minDiff": 1, // Minimum difficulty
                         "maxDiff": 512, // Network difficulty will be used if it is lower than this
                         "targetTime": 15, // Try to get 1 share per this many seconds
                         "retargetTime": 90, // Check to see if we should retarget every this many seconds
@@ -86,7 +86,7 @@
                     }
                 },
                 "3256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 0.1 // 256 //  The pool difficulty
+                    "difficulty": 1 // 256 //  The pool difficulty
                 }
             },
             // Recommended to have at least two daemon instances running in case one drops out-of-sync

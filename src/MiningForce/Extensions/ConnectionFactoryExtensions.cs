@@ -10,7 +10,7 @@ namespace MiningForce.Extensions
 	    /// <summary>
 	    /// Run the specified action providing it with a fresh connection. 
 	    /// </summary>
-	    public static void Run(this IConnectionFactory factory, Func<IDbConnection, Task> action)
+	    public static void Run(this IConnectionFactory factory, Action<IDbConnection> action)
 	    {
 		    using (var con = factory.OpenConnection())
 		    {

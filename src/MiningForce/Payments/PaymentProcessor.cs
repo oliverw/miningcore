@@ -60,9 +60,6 @@ namespace MiningForce.Payments
 		    {
 			    logger.Info(() => "Online");
 
-				// Wait for other startup tasks to settle down
-			    Thread.Sleep(3000);
-
 				var interval = TimeSpan.FromSeconds(
 					clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 

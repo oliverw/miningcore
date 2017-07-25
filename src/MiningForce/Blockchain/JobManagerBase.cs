@@ -152,6 +152,9 @@ namespace MiningForce.Blockchain
                                 observer.OnNext(jobParams);
                             }
 
+	                        if (forceUpdate)
+		                        await UpdateNetworkStats();
+
                             Thread.Sleep(interval);
                         }
                         catch (Exception ex)
@@ -198,12 +201,17 @@ namespace MiningForce.Blockchain
 		protected abstract Task<bool> IsDaemonHealthy();
 
         protected abstract Task EnsureDaemonsSynchedAsync();
-        protected abstract Task PostStartInitAsync(); 
+        protected abstract Task PostStartInitAsync();
 
-        /// <summary>
-        /// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
-        /// </summary>
-        protected abstract Task<bool> UpdateJobs(bool forceUpdate);
+		/// <summary>
+		/// Refresh network stats
+		/// </summary>
+	    protected abstract Task UpdateNetworkStats();
+
+		/// <summary>
+		/// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
+		/// </summary>
+		protected abstract Task<bool> UpdateJobs(bool forceUpdate);
 
 	    /// <summary>
 	    /// Packages current job parameters for stratum update

@@ -53,39 +53,60 @@ namespace MiningForce.Payments.PayoutSchemes
 		    cf.RunTx((con, tx) =>
 		    {
 			    // finally update block status
-			    blockRepo.UpdateBlock(con, tx, block);
+			    //blockRepo.UpdateBlock(con, tx, block);
 		    });
 		}
 
 		#endregion // IPayoutScheme
 
-	    private Dictionary<string, double> CalculateBalances(double d, double x, Persistence.Model.Block block)
+	    private Dictionary<string, double> CalculateBalances(double networkDifficulty, double factor, Persistence.Model.Block block)
 	    {
-		    var result = new Dictionary<string, double>();
-		    var pageSize = 1000;
-		    var currentPage = 0;
-		    var targetScore = d * x;
-		    var totalScore = 0.0;
+		    networkDifficulty = 15000000000;
 
-		    while (true)
-		    {
+			var result = new Dictionary<string, double>();
+		    var done = false;
+		    var pageSize = 10000;
+		    var currentPage = 0;
+		    var targetScore = networkDifficulty * factor;
+		    var accumulatedScore = 0.0;
+		    var blockRewardRemaining = block.Reward;
+
+			while (!done)
+			{
 				// fetch next page
-			    var page = shareRepo.PageSharesBefore(block.Created, currentPage, pageSize);
+				var page = cf.Run(con => shareRepo.PageSharesBefore(con, block.Created, currentPage++, pageSize));
 
 				// done if no more shares
 				if (page.Length == 0)
-				    break;
+					break;
 
 				// iterate over shares
-				for (int i = Math.Max(0, page.Length - 1); i > 0; i--)
-			    {
-				    var share = page[i];
+				for (int i = Math.Max(0, page.Length - 1); i >= 0; i--)
+				{
+					var share = page[i];
 
-				    var score = 1.0 / share.NetworkDifficulty;
-			    }
-		    }
+					var score = share.Difficulty / share.NetworkDifficulty;
 
-		    return result;
+					if (accumulatedScore + score < targetScore)
+					{
+						var reward = score * block.Reward;
+						blockRewardRemaining -= reward;
+
+						accumulatedScore += score;
+					}
+
+					else
+					{
+						score = targetScore - accumulatedScore;
+						var reward = score * block.Reward;
+						blockRewardRemaining -= reward;
+
+						done = true;
+					}
+				}
+			}
+
+			return result;
 	    }
 	}
 }

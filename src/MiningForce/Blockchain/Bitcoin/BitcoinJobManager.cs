@@ -122,9 +122,6 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				var acceptResponse = await SubmitBlockAsync(share);
 
-				// update share
-				share.NetworkDifficulty = acceptResponse.CurrentDifficulty;
-
 				// is it still a block candidate?
 				share.IsBlockCandidate = acceptResponse.Accepted;
 
@@ -149,6 +146,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
 	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
+	        share.NetworkDifficulty = networkStats.Difficulty;
 			share.Created = DateTime.UtcNow;
 
 			return share;
@@ -201,50 +199,54 @@ namespace MiningForce.Blockchain.Bitcoin
 		
         protected override async Task PostStartInitAsync()
         {
-			var tasks = new Task[] 
-            {
-                daemon.ExecuteCmdAnyAsync<DaemonResults.ValidateAddressResult>(BDC.ValidateAddress, 
-                    new[] { poolConfig.Address }),
-                daemon.ExecuteCmdAnyAsync<JToken>(BDC.GetDifficulty),
-                daemon.ExecuteCmdAnyAsync<DaemonResults.GetInfoResult>(BDC.GetInfo),
-                daemon.ExecuteCmdAnyAsync<DaemonResults.GetMiningInfoResult>(BDC.GetMiningInfo),
-                daemon.ExecuteCmdAnyAsync<object>(BDC.SubmitBlock),
-                daemon.ExecuteCmdAnyAsync<DaemonResults.GetBlockchainInfoResult>(BDC.GetBlockchainInfo),
-            };
+	        var commands = new[]
+	        {
+		        new DaemonCmd(BDC.ValidateAddress, new[] {poolConfig.Address}),
+		        new DaemonCmd(BDC.GetDifficulty),
+		        new DaemonCmd(BDC.GetInfo),
+		        new DaemonCmd(BDC.GetMiningInfo),
+		        new DaemonCmd(BDC.SubmitBlock),
+		        new DaemonCmd(BDC.GetBlockchainInfo)
+	        };
 
-            var batchTask = Task.WhenAll(tasks);
-            await batchTask;
+	        var results = await daemon.ExecuteBatchAnyAsync(commands);
 
-            if (!batchTask.IsCompletedSuccessfully)
-                logger.ThrowLogPoolStartupException(batchTask.Exception, "Init RPC failed", LogCategory);
+	        if (results.Any(x => x.Error != null))
+	        {
+		        var resultList = results.ToList();
+				var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BDC.SubmitBlock).ToArray();
+				
+				if(errors.Any())
+					logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y=> y.Error.Message))}", LogCategory);
+	        }
 
-            // extract results
-            var validateAddressResponse = ((Task<DaemonResponse<DaemonResults.ValidateAddressResult>>) tasks[0]).Result;
-            var difficultyResponse = ((Task<DaemonResponse<JToken>>)tasks[1]).Result;
-            var infoResponse = ((Task<DaemonResponse<DaemonResults.GetInfoResult>>)tasks[2]).Result;
-            var miningInfoResponse = ((Task<DaemonResponse<DaemonResults.GetMiningInfoResult>>)tasks[3]).Result;
-            var submitBlockResponse = ((Task<DaemonResponse<object>>)tasks[4]).Result;
-            var blockchainInfoResponse = ((Task<DaemonResponse<DaemonResults.GetBlockchainInfoResult>>)tasks[5]).Result;
+			// extract results
+			var validateAddressResponse = results[0].Response.ToObject<DaemonResults.ValidateAddressResult>();
+            var difficultyResponse = results[1].Response.ToObject<JToken>(); 
+            var infoResponse = results[2].Response.ToObject<DaemonResults.GetInfoResult>();
+            var miningInfoResponse = results[3].Response.ToObject<DaemonResults.GetMiningInfoResult>();
+            var submitBlockResponse = results[4];
+			var blockchainInfoResponse = results[5].Response.ToObject<DaemonResults.GetBlockchainInfoResult>();
 
             // validate pool-address for pool-fee payout
-            if (!validateAddressResponse.Response.IsValid)
+            if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCategory);
 
-			if (!validateAddressResponse.Response.IsMine)
+			if (!validateAddressResponse.IsMine)
 				logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCategory);
 
-			isPoS = difficultyResponse.Response.Values().Any(x=> x.Path == "proof-of-stake");
+			isPoS = difficultyResponse.Values().Any(x=> x.Path == "proof-of-stake");
 
 			// Create pool address script from response
 	        if (isPoS)
-		        poolAddressDestination = new PubKey(validateAddressResponse.Response.PubKey);
+		        poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
 			else
-		        poolAddressDestination = BitcoinUtils.AddressToScript(validateAddressResponse.Response.Address);
+		        poolAddressDestination = BitcoinUtils.AddressToScript(validateAddressResponse.Address);
 
 			// chain detection
-			if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
+			if (blockchainInfoResponse.Chain.ToLower() == "test")
 				networkType = BitcoinNetworkType.Test;
-	        else if (blockchainInfoResponse.Response.Chain.ToLower() == "regtest")
+	        else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
 		        networkType = BitcoinNetworkType.RegTest;
 			else
 				networkType = BitcoinNetworkType.Main;
@@ -257,13 +259,7 @@ namespace MiningForce.Blockchain.Bitcoin
             else
                 logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCategory);
 
-            // update stats
-            networkStats.Network = networkType.ToString();
-            networkStats.BlockHeight = infoResponse.Response.Blocks;
-            networkStats.Difficulty = miningInfoResponse.Response.Difficulty;
-            networkStats.HashRate = miningInfoResponse.Response.NetworkHashps;
-            networkStats.ConnectedPeers = infoResponse.Response.Connections;
-            networkStats.RewardType = !isPoS ? "POW" : "POS";
+            await UpdateNetworkStats();
 
 	        SetupCrypto();
 		}
@@ -347,7 +343,7 @@ namespace MiningForce.Blockchain.Bitcoin
             }
         }
 
-		private async Task<(bool Accepted, string CoinbaseTransaction, double CurrentDifficulty)> SubmitBlockAsync(BitcoinShare share)
+		private async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
 	    {
 			// execute command batch
 		    var results = await daemon.ExecuteBatchAnyAsync(
@@ -355,18 +351,38 @@ namespace MiningForce.Blockchain.Bitcoin
 					new DaemonCmd(BDC.SubmitBlock, new[] { share.BlockHex }) :
 				    new DaemonCmd(BDC.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
 
-			    new DaemonCmd(BDC.GetBlock, new[] { share.BlockHash }),
-			    new DaemonCmd(BDC.GetDifficulty, null));
+			    new DaemonCmd(BDC.GetBlock, new[] { share.BlockHash }));
 
 			// evaluate results
 		    var acceptResult = results[1];
 			var block = acceptResult.Response.ToObject<DaemonResults.GetBlockResult>();
 			var accepted = acceptResult.Error == null && block.Hash == share.BlockHash;
 
-		    var difficultyResult = results[2];
-		    var difficulty = difficultyResult.Response.ToObject<double>();
+			return (accepted, block.Transactions.FirstOrDefault());
+	    }
 
-			return (accepted, block.Transactions.FirstOrDefault(), difficulty);
+	    protected override async Task UpdateNetworkStats()
+	    {
+		    var results = await daemon.ExecuteBatchAnyAsync(
+			    new DaemonCmd(BDC.GetInfo),
+			    new DaemonCmd(BDC.GetMiningInfo)
+		    );
+
+		    if (results.Any(x => x.Error != null))
+		    {
+			    var errors = results.Where(x => x.Error != null).ToArray();
+
+			    if (errors.Any())
+				    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+		    }
+
+		    var infoResponse = results[0].Response.ToObject<DaemonResults.GetInfoResult>();
+		    var miningInfoResponse = results[1].Response.ToObject<DaemonResults.GetMiningInfoResult>();
+
+		    networkStats.BlockHeight = infoResponse.Blocks;
+		    networkStats.Difficulty = miningInfoResponse.Difficulty;
+		    networkStats.HashRate = miningInfoResponse.NetworkHashps;
+		    networkStats.ConnectedPeers = infoResponse.Connections;
 	    }
 
 		private void SetupCrypto()

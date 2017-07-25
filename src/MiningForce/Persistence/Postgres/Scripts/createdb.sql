@@ -13,6 +13,7 @@ CREATE TABLE shares
 );
 
 CREATE INDEX IDX_POOL_BLOCK on shares(poolid, blockheight);
+CREATE INDEX IDX_SHARES_CREATED on shares(created);
 
 CREATE TABLE blocks
 (

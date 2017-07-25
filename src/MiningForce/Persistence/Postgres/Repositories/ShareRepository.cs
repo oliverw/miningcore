@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Linq;
 using AutoMapper;
 using Dapper;
 using MiningForce.Persistence.Repositories;
@@ -21,9 +22,13 @@ namespace MiningForce.Persistence.Postgres.Repositories
 						"VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)", share, tx);
 	    }
 
-	    public Model.Share[] PageSharesBefore(DateTime before, int page, int pageSize)
+	    public Model.Share[] PageSharesBefore(IDbConnection con, DateTime before, int page, int pageSize)
 	    {
-		    throw new NotImplementedException();
+		    return con.Query<Entities.Share>("SELECT * FROM shares WHERE created < @before " +
+		                                     "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY",
+				    new { before, offset = page * pageSize, pageSize })
+			    .Select(mapper.Map<Model.Share>)
+			    .ToArray();
 	    }
-    }
+	}
 }

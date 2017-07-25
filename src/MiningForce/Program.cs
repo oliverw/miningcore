@@ -37,7 +37,7 @@ namespace MiningForce
 	    private static PaymentProcessor paymentProcessor;
 
 		static void Main(string[] args)
-        {
+		{
             try
             {
 				string configFile;
@@ -409,16 +409,6 @@ namespace MiningForce
 			shareRecorder = container.Resolve<ShareRecorder>();
 			shareRecorder.Start();
 
-			// start payment processor
-			if (clusterConfig.PaymentProcessing?.Enabled == true && 
-				clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-			{
-				paymentProcessor = container.Resolve<PaymentProcessor>();
-				paymentProcessor.Configure(clusterConfig);
-
-				paymentProcessor.Start();
-			}
-
 			// start pools
 			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
             {
@@ -430,6 +420,17 @@ namespace MiningForce
 
 				await pool.StartAsync();
             }
-        }
-    }
+
+			// start payment processor
+			if (clusterConfig.PaymentProcessing?.Enabled == true &&
+			    clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+			{
+				paymentProcessor = container.Resolve<PaymentProcessor>();
+				paymentProcessor.Configure(clusterConfig);
+
+				paymentProcessor.Start();
+			}
+
+		}
+	}
 }

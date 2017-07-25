@@ -389,6 +389,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			// valid share
 			var result = new BitcoinShare
 			{
+				Difficulty = target.Difficulty,
 				BlockHeight = blockTemplate.Height
 			};
 
@@ -399,7 +400,6 @@ namespace MiningForce.Blockchain.Bitcoin
 			    result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
 			    result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
 			    result.BlockHeight = blockTemplate.Height;
-			    result.Difficulty = target.Difficulty;
 		    }
 
 			return result;
