@@ -158,7 +158,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#region Overrides
 
-		//protected override string LogCategory => "Bitcoin Job Manager";
+		protected override string LogCategory => "Bitcoin Job Manager";
 
 		protected override async Task<bool> IsDaemonHealthy()
         {

@@ -155,8 +155,6 @@ namespace MiningForce
 	        // AutoMapper
 	        var amConf = new MapperConfiguration(cfg =>
 	        {
-		        cfg.CreateMissingTypeMaps = true;
-
 		        cfg.AddProfile(new AutoMapperProfile());
 	        });
 
