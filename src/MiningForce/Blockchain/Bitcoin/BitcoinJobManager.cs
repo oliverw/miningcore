@@ -266,7 +266,16 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
         {
-			var blockTemplate = await GetBlockTemplateAsync();
+			var response = await GetBlockTemplateAsync();
+
+	        // may happen if daemon is currently not connected to peers
+	        if (response.Error != null)
+			{ 
+		        logger.Warn(() => $"[{LogCategory}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+				return false;
+			}
+
+	        var blockTemplate = response.Response;
 
 	        lock (jobLock)
 	        {
@@ -307,12 +316,12 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#endregion // Overrides
 
-		private async Task<DaemonResults.GetBlockTemplateResult> GetBlockTemplateAsync()
+		private async Task<DaemonResponse<DaemonResults.GetBlockTemplateResult>> GetBlockTemplateAsync()
         {
             var result = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetBlockTemplateResult>(
 	            BDC.GetBlockTemplate, getBlockTemplateParams);
 
-            return result.Response;
+			return result;
         }
 
 		private async Task ShowDaemonSyncProgressAsync()

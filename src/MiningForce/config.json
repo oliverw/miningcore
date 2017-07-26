@@ -44,18 +44,18 @@
             "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
-            "address": "miVhjBC6YCZrp8vEQhco35dDk8J3pyemmz",
+            "address": "mrfe2kVAWP95yZ97kBEDg5hvNgEdGM8MwG",
 
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
             // or to donations address. Addresses or hashed public keys can be used. Here is an example
             // of rewards going to the main pool op
             "rewardRecipients": [
-                {
-                    "type": "op",
-                    "address": "n2jViffyoYeEfCKAJJKzRtwRkeLKepXRZ5",    // alice
-                    "percentage": 1.5
-                }
+                // {
+                //     "type": "op",
+                //     "address": "n2jViffyoYeEfCKAJJKzRtwRkeLKepXRZ5",    // alice
+                //     "percentage": 1.5
+                // }
             ],
 
             // How often to poll RPC daemons for new blocks, in milliseconds

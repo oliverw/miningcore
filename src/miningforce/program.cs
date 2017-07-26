@@ -12,6 +12,8 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
+using MiningForce.Crypto.Hashing;
+using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Payments;
 using MiningForce.Persistence;
@@ -40,6 +42,11 @@ namespace MiningForce
 		{
             try
             {
+				var scrypt = new Scrypt();
+	            var foo = scrypt.Digest("34435439584390583940".HexToByteArray(), null);
+				Console.WriteLine(foo.ToHexString());
+
+
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
