@@ -20,7 +20,7 @@ HEADERS = bcrypt.h blake.h boolberry.h c11.h cryptonight.h crypto\crypto.h crypt
 	scryptn.h sha256.h sha3\sph_blake.h sha3\sph_bmw.h sha3\sph_cubehash.h sha3\sph_echo.h sha3\sph_fugue.h \
 	sha3\sph_groestl.h sha3\sph_hamsi.h sha3\sph_hefty1.h sha3\sph_jh.h sha3\sph_keccak.h sha3\sph_luffa.h \
 	sha3\sph_shabal.h sha3\sph_shavite.h sha3\sph_simd.h sha3\sph_skein.h sha3\sph_types.h sha3\sph_whirlpool.h \
-	shavite3.h skein.h stdafx.h stdint.h targetver.h x11.h x13.h x14.h x15.h 
+	shavite3.h skein.h stdafx.h stdint.h targetver.h x11.h x15.h 
 
 # OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES:.c=.o))
 OBJECTS = bcrypt.o blake.o c11.o cryptonight.o crypto\aesb.o crypto\c_blake256.o crypto\c_groestl.o crypto\c_jh.o \
