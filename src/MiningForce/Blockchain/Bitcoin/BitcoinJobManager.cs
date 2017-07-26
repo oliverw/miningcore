@@ -7,6 +7,7 @@ using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing;
+using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Crypto.Hashing.Special;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
@@ -399,7 +400,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			switch (poolConfig.Coin.Type)
 		    {
 				case CoinType.BTC:
-					coinbaseHasher = new Sha256Double();
+					coinbaseHasher = new Sha256D();
 					headerHasher = coinbaseHasher;
 					blockHasher = new DigestReverser(coinbaseHasher);
 					difficultyNormalizationFactor = 1;

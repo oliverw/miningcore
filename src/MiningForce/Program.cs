@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.Crypto.Hashing;
+using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Payments;

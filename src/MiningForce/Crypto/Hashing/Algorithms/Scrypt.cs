@@ -1,6 +1,6 @@
 ﻿using MH = MiningForce.Crypto.Hashing.LibMultiHash;
 
-namespace MiningForce.Crypto.Hashing
+namespace MiningForce.Crypto.Hashing.Algorithms
 {
     public unsafe class Scrypt : IHashAlgorithm
     {

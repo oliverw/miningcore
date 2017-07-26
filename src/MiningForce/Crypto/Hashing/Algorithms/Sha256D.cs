@@ -1,8 +1,11 @@
 ﻿using System.Security.Cryptography;
 
-namespace MiningForce.Crypto.Hashing
+namespace MiningForce.Crypto.Hashing.Algorithms
 {
-    public class Sha256Double : IHashAlgorithm
+	/// <summary>
+	/// Sha-256 double round
+	/// </summary>
+	public class Sha256D : IHashAlgorithm
     {
 	    public byte[] Digest(byte[] data, object args)
 	    {
