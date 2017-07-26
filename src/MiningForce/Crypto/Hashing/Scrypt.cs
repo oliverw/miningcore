@@ -1,12 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using MH = MiningForce.Crypto.Hashing.LibMultiHash;
 
 namespace MiningForce.Crypto.Hashing
 {
     public unsafe class Scrypt : IHashAlgorithm
     {
-	    [DllImport("multihash-native", CallingConvention = CallingConvention.Cdecl)]
-	    static extern int scrypt(byte *input, byte* output, uint n, uint r, uint len);
-
 		public byte[] Digest(byte[] data, object args)
 	    {
 		    var result = new byte[32];
@@ -21,7 +18,7 @@ namespace MiningForce.Crypto.Hashing
 		    {
 			    fixed (byte* output = result)
 			    {
-				    scrypt(input, output, n, r, (uint) data.Length);
+				    MH.scrypt(input, output, n, r, (uint) data.Length);
 			    }
 			}
 
