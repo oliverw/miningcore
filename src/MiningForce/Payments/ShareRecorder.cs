@@ -44,7 +44,8 @@ namespace MiningForce.Payments
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shareRepo;
 	    private readonly IBlockRepository blockRepo;
-	    private const int RetryCount = 8;
+
+		private const int RetryCount = 8;
 	    private Policy faultPolicy;
 
 		private int QueueSizeWarningThreshold = 1024;

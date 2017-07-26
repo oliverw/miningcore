@@ -6,7 +6,6 @@ using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
-using MiningForce.Extensions;
 using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
@@ -32,10 +31,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
 			this.daemon = daemon;
-
 		}
 
-		private PoolConfig poolConfig;
 		private readonly DaemonClient daemon;
 
 		protected override string LogCategory => "Bitcoin Payout Handler";
@@ -143,10 +140,13 @@ namespace MiningForce.Blockchain.Bitcoin
 		{
 			Contract.RequiresNonNull(balances, nameof(balances));
 
-			logger.Info(()=> $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x=> x.Amount))} to {balances.Length} addresses");
+			logger.Info(() => $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
 			// build args
-			var amounts = balances.ToDictionary(x => x.Address, x => x.Amount);
+			var amounts = balances
+				.Where(x=> x.Amount > 0)
+				.ToDictionary(x => x.Address, x => x.Amount);
+
 			var subtractFeesFrom = amounts.Keys.ToArray();
 
 			var args = new object[]
@@ -167,36 +167,15 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				// check result
 				if (string.IsNullOrEmpty(txId))
-					logger.Error(() => $"[{LogCategory}] 'sendmany' did not return a transaction id!");
+					logger.Error(() => $"[{LogCategory}] Daemon command 'sendmany' did not return a transaction id!");
 				else
 					logger.Info(() => $"[{LogCategory}] Payout Transaction Id is {txId}");
 
-				// record changes
-				cf.RunTx((con, tx) =>
-				{
-					foreach (var balance in balances)
-					{
-						// record payment
-						var payment = new Payment
-						{
-							PoolId = poolConfig.Id,
-							Coin = poolConfig.Coin.Type,
-							Address = balance.Address,
-							Amount = balance.Amount,
-							Created = DateTime.UtcNow,
-							TransactionConfirmationData = txId,
-						};
-
-						paymentRepo.Insert(con, tx, payment);
-
-						// subtract balance
-						balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
-					}
-				});
+				PersistPayments(balances, txId);
 			}
 
 			else
-				logger.Error(() => $"[{LogCategory}] SendMany returned error: {result.Error.Message} Code {result.Error.Code}");
+				logger.Error(() => $"[{LogCategory}] Daemon command 'sendmany' returned error: {result.Error.Message} code {result.Error.Code}");
 		}
 
 		#endregion // IPayoutHandler
