@@ -173,8 +173,7 @@ namespace MiningForce.Payments
 			    if (share.IsBlockCandidate)
 			    {
 				    var blockEntity = mapper.Map<Persistence.Model.Block>(share);
-				    blockEntity.Status = Persistence.Model.BlockStatus.Pending;
-
+					blockEntity.Status = Persistence.Model.BlockStatus.Pending;
 				    blockRepo.Insert(con, tx, blockEntity);
 			    }
 		    });

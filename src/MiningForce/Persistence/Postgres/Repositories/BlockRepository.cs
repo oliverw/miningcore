@@ -22,8 +22,8 @@ namespace MiningForce.Persistence.Postgres.Repositories
 		{
 			var mapped = mapper.Map<Entities.Block>(block);
 
-			var query = "INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata, created) " +
-			            "VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata, @created)";
+			var query = "INSERT INTO blocks(poolid, blockheight, status, transactionconfirmationdata, reward, created) " +
+						"VALUES(@poolid, @blockheight, @status, @transactionconfirmationdata, @reward, @created)";
 
 			con.Execute(query, mapped, tx);
 	    }

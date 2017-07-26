@@ -186,7 +186,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
                 if(!syncPendingNotificationShown)
                 { 
-                    logger.Info(() => $"[{LogCategory}] Daemons still syncing with network (download blockchain) - manager will be started once synced");
+                    logger.Info(() => $"[{LogCategory}] Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -337,7 +337,7 @@ namespace MiningForce.Blockchain.Bitcoin
                             .First().StartingHeight;
 
                         var percent = ((double)totalBlocks / blockCount) * 100;
-                        this.logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent}% of blockchain from {peers.Length} peers");
+                        this.logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
                     }
                 }
             }

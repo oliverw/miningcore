@@ -49,6 +49,11 @@ namespace MiningForce.Blockchain
 		long BlockHeight { get; set; }
 
 		/// <summary>
+		/// Block reward after deducting pool fee and donations
+		/// </summary>
+		decimal BlockReward { get; set; }
+
+		/// <summary>
 		/// If this share presumably resulted in a block
 		/// </summary>
 		bool IsBlockCandidate { get; set; }

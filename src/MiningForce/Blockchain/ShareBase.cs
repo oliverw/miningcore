@@ -13,6 +13,7 @@ namespace MiningForce.Blockchain
 		public double Difficulty { get; set; }
 		public double DifficultyNormalized { get; set; }
 		public long BlockHeight { get; set; }
+		public decimal BlockReward { get; set; }
 		public bool IsBlockCandidate { get; set; }
 		public string TransactionConfirmationData { get; set; }
 		public double NetworkDifficulty { get; set; }

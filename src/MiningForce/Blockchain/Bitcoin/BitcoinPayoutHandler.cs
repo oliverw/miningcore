@@ -120,7 +120,6 @@ namespace MiningForce.Blockchain.Bitcoin
 							case "generate":
 								// matured and spendable coinbase transaction
 								block.Status = BlockStatus.Confirmed;
-								block.Reward = transactionInfo.Details[0].Amount / BitcoinConstants.SatoshisPerBitcoin;
 								result.Add(block);
 								break;
 

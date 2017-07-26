@@ -91,7 +91,7 @@ namespace MiningForce.Payments.PayoutSchemes
 		    var pageSize = 10000;
 		    var currentPage = 0;
 		    var accumulatedScore = 0.0m;
-		    var blockReward = block.Reward.Value;
+		    var blockReward = block.Reward;
 			var blockRewardRemaining = blockReward;
 		    DateTime? shareCutOffDate = null;
 

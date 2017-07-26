@@ -9,7 +9,7 @@ namespace MiningForce.Persistence.Postgres.Entities
 		public long Blockheight { get; set; }
 		public string Status { get; set; }
 		public string TransactionConfirmationData { get; set; }
-		public double? Reward { get; set; }
+		public double Reward { get; set; }
 		public DateTime Created { get; set; }
 	}
 }

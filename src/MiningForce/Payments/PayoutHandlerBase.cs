@@ -110,4 +110,3 @@ namespace MiningForce.Payments
 	    }
 	}
 }
-record remaining blockfee in share

@@ -59,6 +59,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private Target blockTarget;
 	    private MerkleTree mt;
 	    private uint version;
+	    private Money rewardToPool;
 	    private byte[] coinbaseInitial;
 	    private byte[] coinbaseFinal;
 		private readonly HashSet<string> submissions = new HashSet<string>();
@@ -307,11 +308,11 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    var blockReward = new Money(blockTemplate.CoinbaseValue);
 		    var reward = blockReward;
-		    var rewardToPool = blockReward;
 		    var tx = new Transaction();
+		    rewardToPool = blockReward;
 
-		    // Payee funds (DASH Coin only)
-		    if (!string.IsNullOrEmpty(blockTemplate.Payee))
+			// Payee funds (DASH Coin only)
+			if (!string.IsNullOrEmpty(blockTemplate.Payee))
 		    {
 			    var payeeAddress = BitcoinUtils.AddressToScript(blockTemplate.Payee);
 			    var payeeReward = reward / 5;
@@ -400,6 +401,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    result.BlockHex = SerializeBlock(header, coinbase).ToHexString();
 			    result.BlockHash = blockHasher.Digest(header, nTime).ToHexString();
 			    result.BlockHeight = blockTemplate.Height;
+			    result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
 		    }
 
 			return result;
