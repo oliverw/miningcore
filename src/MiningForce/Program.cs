@@ -47,11 +47,6 @@ namespace MiningForce
 #if DEBUG
 	            DebugLoadMultiHashNativeWorkaround();
 #endif
-				var scrypt = new Scrypt();
-	            var foo = scrypt.Digest("34435439584390583940".HexToByteArray(), null);
-				Console.WriteLine(foo.ToHexString());
-
-
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#if !defined(__cplusplus)
 
 #include <assert.h>
 #include <stdbool.h>
@@ -38,8 +37,6 @@ union hash_state {
 
 void hash_permutation(union hash_state *state);
 void hash_process(union hash_state *state, const uint8_t *buf, size_t count);
-
-#endif
 
 enum {
   HASH_SIZE = 32,

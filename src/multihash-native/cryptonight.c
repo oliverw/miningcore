@@ -7,8 +7,6 @@
 #endif
 
 #include "crypto/oaes_lib.h"
-
-#include "crypto/oaes_lib.h"
 #include "crypto/c_groestl.h"
 #include "crypto/c_blake256.h"
 #include "crypto/c_jh.h"
