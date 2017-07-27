@@ -126,15 +126,6 @@ namespace MiningForce.Stratum
             catch (Exception ex)
             {
                 logger.Error(ex, () => $"OnClientRpcRequest: {request.Method}");
-
-	            try
-	            {
-		            client.RespondError(StratumError.Other, ex.Message, request.Id);
-	            }
-
-				catch
-	            {
-	            }
             }
         }
 
