@@ -45,6 +45,9 @@ namespace MiningForce.Blockchain.Bitcoin
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
 
+	    private readonly IHashAlgorithm sha256d = new Sha256d();
+	    private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256d());
+
 		private static readonly object[] getBlockTemplateParams = 
         {
             new
@@ -110,11 +113,14 @@ namespace MiningForce.Blockchain.Bitcoin
 			if(job == null)
 		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
+			// under testnet or regtest conditions network difficulty may be lower than statum diff
+	        var minDiff = Math.Min(networkStats.Difficulty, stratumDifficulty);
+
 			// get worker context
 			var context = GetWorkerContext(worker);
 
 			// validate & process
-			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, stratumDifficulty);
+			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
 
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
@@ -146,7 +152,6 @@ namespace MiningForce.Blockchain.Bitcoin
 	        share.PoolId = poolConfig.Id;
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
-	        share.DifficultyNormalized = share.Difficulty * difficultyNormalizationFactor;
 	        share.NetworkDifficulty = networkStats.Difficulty;
 			share.Created = DateTime.UtcNow;
 
@@ -288,6 +293,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		        {
 			        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
 						poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, 
+						difficultyNormalizationFactor,
 						coinbaseHasher, headerHasher, blockHasher);
 
 			        currentJob.Init();
@@ -365,10 +371,10 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			// evaluate results
 		    var acceptResult = results[1];
-			var block = acceptResult.Response.ToObject<DaemonResults.GetBlockResult>();
-			var accepted = acceptResult.Error == null && block.Hash == share.BlockHash;
+			var block = acceptResult.Response?.ToObject<DaemonResults.GetBlockResult>();
+			var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
 
-			return (accepted, block.Transactions.FirstOrDefault());
+			return (accepted, block?.Transactions.FirstOrDefault());
 	    }
 
 	    protected override async Task UpdateNetworkStats()
@@ -396,20 +402,27 @@ namespace MiningForce.Blockchain.Bitcoin
 	    }
 
 		private void SetupCrypto()
-	    {
+		{
 			switch (poolConfig.Coin.Type)
-		    {
+			{
 				case CoinType.BTC:
-					coinbaseHasher = new Sha256D();
-					headerHasher = coinbaseHasher;
-					blockHasher = new DigestReverser(coinbaseHasher);
+					coinbaseHasher = sha256d;
+					headerHasher = sha256d;
+					blockHasher = sha256dReverse;
 					difficultyNormalizationFactor = 1;
 					break;
 
-				default:
-				    logger.ThrowLogPoolStartupException("Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCategory);
+				case CoinType.LTC:
+					coinbaseHasher = sha256d;
+					headerHasher = new Scrypt(1024, 1);
+					blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
+					difficultyNormalizationFactor = Math.Pow(2, 16) / 1000;
 					break;
-		    }
+
+				default:
+					logger.ThrowLogPoolStartupException("Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCategory);
+					break;
+			}
 		}
 	}
 }

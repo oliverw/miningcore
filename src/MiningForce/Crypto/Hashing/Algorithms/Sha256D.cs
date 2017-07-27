@@ -5,9 +5,9 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 	/// <summary>
 	/// Sha-256 double round
 	/// </summary>
-	public class Sha256D : IHashAlgorithm
+	public class Sha256d : IHashAlgorithm
     {
-	    public byte[] Digest(byte[] data, object args)
+	    public byte[] Digest(byte[] data, ulong nTime)
 	    {
 		    using (var hasher = SHA256.Create())
 		    {

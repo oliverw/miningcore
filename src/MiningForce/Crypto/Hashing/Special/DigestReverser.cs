@@ -12,9 +12,9 @@ namespace MiningForce.Crypto.Hashing.Special
 
 		private readonly IHashAlgorithm upstream;
 
-		public byte[] Digest(byte[] data, object args)
+		public byte[] Digest(byte[] data, ulong nTime)
 		{
-			return upstream.Digest(data, args).ToReverseArray();
+			return upstream.Digest(data, nTime).ToReverseArray();
 		}
 	}
 }

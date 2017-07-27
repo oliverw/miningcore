@@ -4,26 +4,18 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 {
     public unsafe class Scrypt : IHashAlgorithm
     {
-	    public class ScryptArgs
-	    {
-		    public uint? N { get; set; }
-		    public uint? R { get; set; }
-	    }
+		public Scrypt(uint n, uint r)
+		{
+			this.n = n;
+			this.r = r;
+		}
 
-		public byte[] Digest(byte[] data, object args)
+	    private readonly uint n;
+	    private readonly uint r;
+
+		public byte[] Digest(byte[] data, ulong nTime)
 	    {
 		    var result = new byte[32];
-		    uint n = 1024, r = 1;
-		    var scryptArgs = args as ScryptArgs;
-
-			if (scryptArgs != null)
-			{
-				if (scryptArgs.N.HasValue)
-					n = scryptArgs.N.Value;
-
-				if (scryptArgs.R.HasValue)
-					r = scryptArgs.R.Value;
-			}
 
 			fixed (byte* input = data)
 		    {

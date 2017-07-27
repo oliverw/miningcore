@@ -17,11 +17,11 @@ namespace MiningForce.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-	    public BitcoinJob(GetBlockTemplateResult blockTemplate, string jobId, 
-			PoolConfig poolConfig, ClusterConfig clusterConfig,
-			IDestination poolAddressDestination, BitcoinNetworkType networkType,
-			ExtraNonceProvider extraNonceProvider, bool isPoS, 
-			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
+	    public BitcoinJob(GetBlockTemplateResult blockTemplate, string jobId,
+		    PoolConfig poolConfig, ClusterConfig clusterConfig,
+		    IDestination poolAddressDestination, BitcoinNetworkType networkType,
+		    ExtraNonceProvider extraNonceProvider, bool isPoS, double difficultyNormalizationFactor,
+		    IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
 	    {
 		    Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
 		    Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -33,17 +33,18 @@ namespace MiningForce.Blockchain.Bitcoin
 		    Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
 		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-			this.poolConfig = poolConfig;
+		    this.poolConfig = poolConfig;
 		    this.clusterConfig = clusterConfig;
-			this.poolAddressDestination = poolAddressDestination;
-			this.networkType = networkType;
-			this.blockTemplate = blockTemplate;
+		    this.poolAddressDestination = poolAddressDestination;
+		    this.networkType = networkType;
+		    this.blockTemplate = blockTemplate;
 		    this.jobId = jobId;
 
 		    extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
 		    this.isPoS = isPoS;
+		    this.difficultyNormalizationFactor = difficultyNormalizationFactor;
 
-			this.coinbaseHasher = coinbaseHasher;
+		    this.coinbaseHasher = coinbaseHasher;
 		    this.headerHasher = headerHasher;
 		    this.blockHasher = blockHasher;
 	    }
@@ -55,15 +56,16 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private readonly ClusterConfig clusterConfig;
 	    private readonly PoolConfig poolConfig;
 	    private readonly IDestination poolAddressDestination;
-		private readonly bool isPoS;
+	    private readonly bool isPoS;
+	    private readonly double difficultyNormalizationFactor;
 	    private Target blockTarget;
 	    private MerkleTree mt;
 	    private uint version;
 	    private Money rewardToPool;
 	    private byte[] coinbaseInitial;
 	    private byte[] coinbaseFinal;
-		private readonly HashSet<string> submissions = new HashSet<string>();
-		private readonly IHashAlgorithm coinbaseHasher;
+	    private readonly HashSet<string> submissions = new HashSet<string>();
+	    private readonly IHashAlgorithm coinbaseHasher;
 	    private readonly IHashAlgorithm headerHasher;
 	    private readonly IHashAlgorithm blockHasher;
 
@@ -71,13 +73,13 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
 		    {CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
-		};
+	    };
 
-		// serialization constants
-		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
+	    // serialization constants
+	    private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
 	    private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
 	    private static uint txInputCount = 1u;
-	    private static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
+	    private static uint txInPrevOutIndex = (uint)(Math.Pow(2, 32) - 1);
 	    private static uint txInSequence = 0;
 	    private static uint txLockTime = 0;
 
@@ -372,7 +374,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
 	    {
 		    var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
-		    var coinbaseHash = coinbaseHasher.Digest(coinbase, null);
+		    var coinbaseHash = coinbaseHasher.Digest(coinbase, 0);
 
 		    var merkleRoot = mt.WithFirst(coinbaseHash)
 				.ToReverseArray();
@@ -382,17 +384,19 @@ namespace MiningForce.Blockchain.Bitcoin
 			var headerValue = new uint256(headerHash, true);
 			var target = new Target(headerValue);
 
-			// test if share meets at least workers current difficulty
-		    var ratio = target.Difficulty / stratumDifficulty;
+		    // test if share meets at least workers current difficulty
+		    var targetDiffAdjusted = target.Difficulty * difficultyNormalizationFactor;
+		    var ratio = targetDiffAdjusted / stratumDifficulty;
 		    if (ratio < 0.99)
 			    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({target.Difficulty})");
 
-			// valid share
-			var result = new BitcoinShare
-			{
-				Difficulty = target.Difficulty,
-				BlockHeight = blockTemplate.Height
-			};
+		    // valid share
+		    var result = new BitcoinShare
+		    {
+			    Difficulty = target.Difficulty,
+				DifficultyNormalized = targetDiffAdjusted,
+			    BlockHeight = blockTemplate.Height
+		    };
 
 		    // now check if the share meets the much harder block difficulty (block candidate)
 		    if (target < blockTarget)

@@ -36,15 +36,15 @@
     "pools": [
         {
             // DON'T change the id after a production pool has begun collecting shares!
-            "id": "btc1",
+            "id": "ltc1",
             "enabled": true,
             "coin": {
-                "type": "BTC"
+                "type": "LTC"
             },
             "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
-            "address": "mrfe2kVAWP95yZ97kBEDg5hvNgEdGM8MwG",
+            "address": "mztg3xfy8LNmZo1mjhjBr55WYA8cJbPuNv",
 
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or

@@ -194,7 +194,7 @@ namespace MiningForce.MininigPool
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                UpdateVarDiff(client);
+                UpdateVarDiff(client, NetworkStats.Difficulty);
 
 	            try
 	            {
@@ -273,7 +273,7 @@ namespace MiningForce.MininigPool
                 });
         }
 
-        private void UpdateVarDiff(StratumClient client)
+        private void UpdateVarDiff(StratumClient client, double networkDifficulty)
         {
             var context = GetWorkerContext(client);
 
@@ -292,7 +292,7 @@ namespace MiningForce.MininigPool
                 }
 
                 // update it
-                var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty);
+                var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, networkDifficulty);
 	            if (newDiff != null)
 					context.EnqueueNewDifficulty(newDiff.Value);
             }
@@ -446,7 +446,8 @@ namespace MiningForce.MininigPool
         {
             var msg = $@"
 
-Mining Pool:            {poolConfig.Coin.Type} 
+Mining Pool:            {poolConfig.Id} 
+Coin Type:		{poolConfig.Coin.Type} 
 Network Connected:      {NetworkStats.Network}
 Detected Reward Type:   {NetworkStats.RewardType}
 Current Block Height:   {NetworkStats.BlockHeight}

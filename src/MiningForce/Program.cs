@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -200,7 +201,13 @@ namespace MiningForce
                 }
             }
 
-            catch (JsonException ex)
+            catch (JsonSerializationException ex)
+            {
+	            HumanizeJsonParseException(ex);
+	            throw;
+            }
+
+			catch (JsonException ex)
             {
 	            Console.WriteLine($"Error: {ex.Message}");
                 throw;
@@ -213,7 +220,32 @@ namespace MiningForce
             }
         }
 
-		private static void ValidateConfig(ClusterConfig clusterConfig)
+		static readonly Regex regexJsonTypeConversionError = new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+
+	    private static void HumanizeJsonParseException(JsonSerializationException ex)
+	    {
+		    var m = regexJsonTypeConversionError.Match(ex.Message);
+
+		    if (m.Success)
+		    {
+			    var value = m.Groups[1].Value;
+				var type = Type.GetType(m.Groups[2].Value);
+			    var line = m.Groups[3].Value;
+			    var col = m.Groups[4].Value;
+
+				if (type == typeof(CoinType))
+					Console.WriteLine($"Error: Coin '{value}' is not (yet) supported (line {line}, column {col})");
+			    else if (type == typeof(PayoutScheme))
+				    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+			    else if (type == typeof(StratumAuthorizerKind))
+				    Console.WriteLine($"Error: Authorization method '{value}' is not (yet) supported (line {line}, column {col})");
+			}
+
+			else
+			    Console.WriteLine($"Error: {ex.Message}");
+	    }
+
+	    private static void ValidateConfig(ClusterConfig clusterConfig)
 	    {
 		    if (clusterConfig.Pools.Length == 0)
 			    logger.ThrowLogPoolStartupException("No pools configured!");

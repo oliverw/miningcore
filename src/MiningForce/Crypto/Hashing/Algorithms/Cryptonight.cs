@@ -4,7 +4,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 {
     public unsafe class Cryptonight : IHashAlgorithm
     {
-		public byte[] Digest(byte[] data, object args)
+		public byte[] Digest(byte[] data, ulong nTime)
 	    {
 		    var result = new byte[32];
 
