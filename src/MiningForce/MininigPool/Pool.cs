@@ -418,7 +418,7 @@ namespace MiningForce.MininigPool
 
 			    else
 			    {
-				    logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Banning worker: {Math.Floor(ratioBad * 100)}% of the last {totalShares} were invalid");
+				    logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
 				    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 

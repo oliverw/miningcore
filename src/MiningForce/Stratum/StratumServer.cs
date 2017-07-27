@@ -82,7 +82,6 @@ namespace MiningForce.Stratum
 
 	            lock (clients)
 	            {
-		            // monitor client requests
 		            var sub = client.Requests
 			            .ObserveOn(TaskPoolScheduler.Default)
 			            .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
