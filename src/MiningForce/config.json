@@ -44,7 +44,7 @@
             "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
-            "address": "mrfe2kVAWP95yZ97kBEDg5hvNgEdGM8MwG",
+            "address": "mt64pwmjs9e9YZpJqGdxpZcNDiP787xjUe",
 
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or

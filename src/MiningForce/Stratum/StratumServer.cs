@@ -29,8 +29,11 @@ namespace MiningForce.Stratum
         protected readonly IComponentContext ctx;
         protected ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
-        protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
-        private readonly JsonSerializerSettings serializerSettings;
+
+		protected readonly Dictionary<string, Tuple<StratumClient, IDisposable>> clients = 
+			new Dictionary<string, Tuple<StratumClient, IDisposable>>();
+
+		private readonly JsonSerializerSettings serializerSettings;
 
         protected void StartListeners(Dictionary<int, PoolEndpoint> stratumPorts)
         {
@@ -75,20 +78,19 @@ namespace MiningForce.Stratum
                 var subscriptionId = con.ConnectionId;
 
                 var client = ctx.Resolve<StratumClient>();
-
-                lock (clients)
-                {
-                    clients[subscriptionId] = client;
-                }
-
                 client.Init(con, ctx, endpointConfig);
 
-				// monitor client requests
-				client.Requests
-                    .ObserveOn(TaskPoolScheduler.Default)
-                    .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
+	            lock (clients)
+	            {
+		            // monitor client requests
+		            var sub = client.Requests
+			            .ObserveOn(TaskPoolScheduler.Default)
+			            .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
 
-	            OnClientConnected(client);
+					clients[subscriptionId] = Tuple.Create(client, sub);
+	            }
+
+				OnClientConnected(client);
 			}
 
 			catch (Exception ex)
@@ -148,17 +150,23 @@ namespace MiningForce.Stratum
             Contract.RequiresNonNull(client, nameof(client));
 
             var subscriptionId = client.ConnectionId;
-            client.Disconnect();
 
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 lock (clients)
                 {
-                    clients.Remove(subscriptionId);
+	                Tuple<StratumClient, IDisposable> item;
+					if (clients.TryGetValue(subscriptionId, out item))
+	                {
+		                item.Item2.Dispose();
+		                clients.Remove(subscriptionId);
+	                }
                 }
             }
 
-            OnClientDisconnected(subscriptionId);
+	        client.Disconnect();
+
+			OnClientDisconnected(subscriptionId);
         }
 
         protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)
@@ -174,7 +182,7 @@ namespace MiningForce.Stratum
 
             lock (clients)
             {
-                tmp = clients.Values.ToArray();
+                tmp = clients.Values.Select(x=> x.Item1).ToArray();
             }
 
             foreach (var client in tmp)
