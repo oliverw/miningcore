@@ -5,7 +5,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 	/// <summary>
 	/// Sha-256 single round
 	/// </summary>
-    public class Sha256s : IHashAlgorithm
+    public class Sha256S : IHashAlgorithm
     {
 	    public byte[] Digest(byte[] data, ulong nTime)
 	    {

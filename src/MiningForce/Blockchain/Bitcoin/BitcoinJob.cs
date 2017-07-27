@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using MiningForce.Crypto;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using NBitcoin;
+using Newtonsoft.Json;
 using Transaction = NBitcoin.Transaction;
 
 namespace MiningForce.Blockchain.Bitcoin
@@ -33,7 +35,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
 		    Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-		    this.poolConfig = poolConfig;
+			this.poolConfig = poolConfig;
 		    this.clusterConfig = clusterConfig;
 		    this.poolAddressDestination = poolAddressDestination;
 		    this.networkType = networkType;
@@ -78,7 +80,8 @@ namespace MiningForce.Blockchain.Bitcoin
 	    // serialization constants
 	    private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
 	    private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
-	    private static uint txInputCount = 1u;
+	    private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+		private static uint txInputCount = 1u;
 	    private static uint txInPrevOutIndex = (uint)(Math.Pow(2, 32) - 1);
 	    private static uint txInSequence = 0;
 	    private static uint txLockTime = 0;
@@ -183,8 +186,14 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var sigScriptInitial = GenerateScriptSigInitial();
 		    var sigScriptInitialBytes = sigScriptInitial.ToBytes();
 
-		    // output transaction
-		    var txOut = CreateOutputTransaction();
+			var sigScriptLength = (uint)(
+				sigScriptInitial.Length + 
+				1 + // for extranonce-placeholder length after sigScriptInitial
+				extraNoncePlaceHolderLength + 
+				scriptSigFinalBytes.Length);
+
+			// output transaction
+			var txOut = CreateOutputTransaction();
 
 		    // build coinbase initial
 		    using (var stream = new MemoryStream())
@@ -192,7 +201,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    var bs = new BitcoinStream(stream, true);
 
 			    // version
-			    bs.ReadWrite(ref version);
+			    bs.ReadWrite(ref txVersion);
 
 			    // timestamp for POS coins
 			    if (isPoS)
@@ -204,13 +213,11 @@ namespace MiningForce.Blockchain.Bitcoin
 			    bs.ReadWrite(ref txInPrevOutIndex);
 
 			    // signature script initial part
-			    var sigScriptLength = (uint) (sigScriptInitial.Length + extraNoncePlaceHolderLength +
-			                                  scriptSigFinalBytes.Length);
 			    bs.ReadWriteAsVarInt(ref sigScriptLength);
 			    bs.ReadWrite(ref sigScriptInitialBytes);
 
-			    // emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
-			    bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
+				// emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
+				bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
 
 			    // done
 			    coinbaseInitial = stream.ToArray();
@@ -373,7 +380,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
 	    {
-		    var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
+			var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
 		    var coinbaseHash = coinbaseHasher.Digest(coinbase, 0);
 
 		    var merkleRoot = mt.WithFirst(coinbaseHash)

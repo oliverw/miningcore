@@ -45,8 +45,8 @@ namespace MiningForce.Blockchain.Bitcoin
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
 
-	    private readonly IHashAlgorithm sha256d = new Sha256d();
-	    private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256d());
+	    private readonly IHashAlgorithm sha256d = new Sha256D();
+	    private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 
 		private static readonly object[] getBlockTemplateParams = 
         {
@@ -360,7 +360,7 @@ namespace MiningForce.Blockchain.Bitcoin
                             .First().StartingHeight;
 
                         var percent = ((double)totalBlocks / blockCount) * 100;
-                        this.logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
+                        logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
                     }
                 }
             }
