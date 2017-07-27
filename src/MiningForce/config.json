@@ -44,7 +44,7 @@
             "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
-            "address": "mztg3xfy8LNmZo1mjhjBr55WYA8cJbPuNv",
+            "address": "mrfe2kVAWP95yZ97kBEDg5hvNgEdGM8MwG",
 
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
@@ -101,7 +101,7 @@
                 },
 
                 "3256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 0.1 // 256 //  The pool difficulty
+                    "difficulty": 0.001 // 256 //  The pool difficulty
                 }
             },
 

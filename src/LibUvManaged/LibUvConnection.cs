@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reactive.Disposables;
@@ -46,15 +47,16 @@ namespace LibUvManaged
         private readonly LibUvListener parent;
         private readonly UvTcpHandle server;
         private UvTcpHandle client;
-        private IntPtr unmanagedReadBuffer = IntPtr.Zero;
         private readonly ISubject<byte[]> inputSubject = new Subject<byte[]>();
         private MemoryStream outputQueue = new MemoryStream();
         private readonly object outputQueueLock = new object();
         private UvAsyncHandle outputEvent;
 	    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private UvAsyncHandle closeEvent;
+	    private IntPtr unmanagedReadBuffer = IntPtr.Zero;
+	    private LibuvFunctions.uv_buf_t readBuffer;
 
-        #region ILibUvConnection
+	    #region ILibUvConnection
 
         public IObservable<byte[]> Received { get; }
         public IPEndPoint RemoteEndPoint { get; private set; }
@@ -69,9 +71,18 @@ namespace LibUvManaged
                 if (outputQueue != null)
                 {
                     outputQueue.Write(data, 0, data.Length);
-                    outputEvent?.Send();
 
-					logger.Trace(() => $"[{connectionId}] Queueing {data.Length} bytes for transmission - Queue size now {outputQueue.Length}");
+	                try
+	                {
+		                outputEvent?.Send();
+
+		                logger.Trace(() => $"[{connectionId}] Queueing {data.Length} bytes for transmission - Queue size now {outputQueue.Length}");
+	                }
+
+					catch (ObjectDisposedException)
+	                {
+						// ignored
+	                }
                 }
             }
         }
@@ -148,8 +159,13 @@ namespace LibUvManaged
 
         private LibuvFunctions.uv_buf_t AllocReadBuffer(int suggestedSize)
         {
-            unmanagedReadBuffer = Marshal.AllocHGlobal(suggestedSize);
-            return parent.uv.buf_init(unmanagedReadBuffer, suggestedSize);
+			if (unmanagedReadBuffer == IntPtr.Zero)
+			{
+		        unmanagedReadBuffer = Marshal.AllocHGlobal(suggestedSize);
+		        readBuffer = parent.uv.buf_init(unmanagedReadBuffer, suggestedSize);
+	        }
+
+	        return readBuffer;
         }
 
         private void ReleaseReadBuffer()

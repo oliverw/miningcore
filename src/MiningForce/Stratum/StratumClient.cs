@@ -34,24 +34,12 @@ namespace MiningForce.Stratum
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;
-
-			// Telemetry
-			ResponseTime = Requests
-		        .Where(x => !string.IsNullOrEmpty(x.Id))
-		        .Select(req => new {Request = req, Start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()})
-		        .SelectMany(req => responses
-			        .Where(reqId => reqId == req.Request.Id)
-			        .Select(_ => (int) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - req.Start))
-			        .Take(1))
-		        .Publish()
-		        .RefCount();
         }
 
 		public IObservable<JsonRpcRequest> Requests { get; private set; }
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
-	    public IObservable<int> ResponseTime { get; private set; }
 
 		public void Respond<T>(T payload, string id)
         {

@@ -384,10 +384,11 @@ namespace MiningForce.Blockchain.Bitcoin
 			var headerValue = new uint256(headerHash, true);
 			var target = new Target(headerValue);
 
-		    // test if share meets at least workers current difficulty
 		    var targetDiffAdjusted = target.Difficulty * difficultyNormalizationFactor;
 		    var ratio = targetDiffAdjusted / stratumDifficulty;
-		    if (ratio < 0.99)
+
+		    // test if share meets at least workers current difficulty
+			if (ratio < 0.99)
 			    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({target.Difficulty})");
 
 		    // valid share

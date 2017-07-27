@@ -118,9 +118,6 @@ namespace MiningForce.MininigPool
 		        {
 			        poolStats.ConnectedMiners = clients.Count;
 		        }
-
-		        // Telemetry
-		        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
 	        }
 
 	        else

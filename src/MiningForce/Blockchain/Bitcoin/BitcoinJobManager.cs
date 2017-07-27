@@ -173,7 +173,14 @@ namespace MiningForce.Blockchain.Bitcoin
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task EnsureDaemonsSynchedAsync()
+	    protected override async Task<bool> IsDaemonConnected()
+	    {
+		    var response = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
+
+		    return response.Error == null && response.Response.Connections > 0;
+	    }
+
+		protected override async Task EnsureDaemonsSynchedAsync()
         {
             var syncPendingNotificationShown = false;
 
@@ -369,7 +376,17 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			    new DaemonCmd(BDC.GetBlock, new[] { share.BlockHash }));
 
-			// evaluate results
+			// did submission succeed?
+		    var submitResult = results[0];
+		    var submitError = submitResult.Error?.Message ?? submitResult.Response?.ToString();
+
+			if (!string.IsNullOrEmpty(submitError))
+		    {
+			    logger.Warn(()=> $"[{LogCategory}] Block submission failed with: {submitError}");
+			    return (false, null);
+		    }
+
+			// was it accepted?
 		    var acceptResult = results[1];
 			var block = acceptResult.Response?.ToObject<DaemonResults.GetBlockResult>();
 			var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;

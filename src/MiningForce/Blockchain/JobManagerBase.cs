@@ -111,13 +111,20 @@ namespace MiningForce.Blockchain
             {
                 logger.Info(() => $"[{LogCategory}] Waiting for daemons to come online ...");
 
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
 
             logger.Info(() => $"[{LogCategory}] All daemons online");
-        }
 
-        protected virtual void SetupJobStream()
+	        while (!await IsDaemonConnected())
+	        {
+		        logger.Info(() => $"[{LogCategory}] Waiting for daemons to connect to peers ...");
+
+		        await Task.Delay(TimeSpan.FromSeconds(10));
+	        }
+		}
+
+		protected virtual void SetupJobStream()
         {
             Jobs = Observable.Create<object>(observer =>
             {
@@ -195,12 +202,10 @@ namespace MiningForce.Blockchain
 
 	    protected virtual string LogCategory { get; } = "Job Manager";
 
-		/// <summary>
-		/// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
-		/// </summary>
 		protected abstract Task<bool> IsDaemonHealthy();
+	    protected abstract Task<bool> IsDaemonConnected();
 
-        protected abstract Task EnsureDaemonsSynchedAsync();
+		protected abstract Task EnsureDaemonsSynchedAsync();
         protected abstract Task PostStartInitAsync();
 
 		/// <summary>
