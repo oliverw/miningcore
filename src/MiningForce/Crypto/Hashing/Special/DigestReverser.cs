@@ -14,7 +14,9 @@ namespace MiningForce.Crypto.Hashing.Special
 
 		public byte[] Digest(byte[] data, ulong nTime)
 		{
-			return upstream.Digest(data, nTime).ToReverseArray();
+			return upstream.Digest(data, nTime)
+				.Reverse()
+				.ToArray();
 		}
 	}
 }

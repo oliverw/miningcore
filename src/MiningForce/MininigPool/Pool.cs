@@ -201,19 +201,25 @@ namespace MiningForce.MininigPool
 
 		            client.Respond(true, request.Id);
 
-					// record it
-					shareSubject.OnNext(share);
+		            // record it
+		            shareSubject.OnNext(share);
 
-					// update pool stats
+		            // update pool stats
 		            if (share.IsBlockCandidate)
 			            poolStats.LastBlockTime = DateTime.UtcNow;
 
-					// update client stats
-					context.Stats.ValidShares++;
+		            // update client stats
+		            context.Stats.ValidShares++;
 
-					// telemetry
-					validSharesSubject.OnNext(share);
-				}
+		            // telemetry
+		            validSharesSubject.OnNext(share);
+	            }
+
+	            catch (ObjectDisposedException)
+	            {
+		            client.Respond(true, request.Id);
+		            context.Stats.ValidShares++;
+	            }
 
 				catch (StratumException ex)
 	            {
@@ -226,8 +232,8 @@ namespace MiningForce.MininigPool
 		            invalidSharesSubject.OnNext(Unit.Default);
 
 					// banning
-					if(poolConfig.Banning?.Enabled == true)
-						ConsiderBan(client, context, poolConfig.Banning);
+					//if(poolConfig.Banning?.Enabled == true)
+					//	ConsiderBan(client, context, poolConfig.Banning);
 	            }
 			}
         }
@@ -297,10 +303,7 @@ namespace MiningForce.MininigPool
 
         private void OnNewJob(object jobParams)
         {
-            logger.Debug(() => $"[{LogCategory}] Received new job params from manager");
-
             currentJobParams = jobParams;
-
             BroadcastJob(currentJobParams);
         }
 

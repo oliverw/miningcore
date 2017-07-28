@@ -205,7 +205,7 @@ namespace LibUvManaged
 
             lock (outputQueueLock)
             {
-                if (outputQueue.Length > 0)
+                if (outputQueue?.Length > 0)
                 {
                     buffer = new ArraySegment<byte>(outputQueue.ToArray());
                     outputQueue.SetLength(0);
