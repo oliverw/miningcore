@@ -36,15 +36,15 @@
     "pools": [
         {
             // DON'T change the id after a production pool has begun collecting shares!
-            "id": "ltc1",
+            "id": "btc1",
             "enabled": true,
             "coin": {
-                "type": "LTC"
+                "type": "BTC"
             },
             "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
-            "address": "mt64pwmjs9e9YZpJqGdxpZcNDiP787xjUe",
+            "address": "mwWWJPGhU4Ck2L9jiCuDEFDHbtmTYEiW83",
 
             // Block rewards go to the configured pool wallet address to later be paid out to miners,
             // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
@@ -87,7 +87,7 @@
             // optional and will only be used for the ports you configure it for.
             "ports": {
                 "3032": { // A port for your miners to connect to
-                    "difficulty": 1, // the pool difficulty for this port
+                    "difficulty": 0.06, // the pool difficulty for this port
 
                     // Variable difficulty is a feature that will automatically adjust difficulty for
                     // individual miners based on their hashrate in order to lower networking overhead
@@ -101,7 +101,7 @@
                 },
 
                 "3256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 0.001 // 256 //  The pool difficulty
+                    "difficulty": 0.06 // 256 //  The pool difficulty
                 }
             },
 

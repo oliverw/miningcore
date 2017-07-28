@@ -433,7 +433,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					coinbaseHasher = sha256d;
 					headerHasher = new Scrypt(1024, 1);
 					blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
-					difficultyNormalizationFactor = Math.Pow(2, 16);
+					difficultyNormalizationFactor = Math.Pow(2, 16) / 1000;
 					break;
 
 				default:
