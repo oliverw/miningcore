@@ -20,8 +20,8 @@ namespace MiningForce.Persistence.Postgres.Repositories
 		{
 			var mapped = mapper.Map<Entities.Share>(share);
 
-			var query = "INSERT INTO shares(poolid, blockheight, difficulty, networkdifficulty, worker, ipaddress, created) " +
-			            "VALUES(@poolid, @blockheight, @difficulty, @networkdifficulty, @worker, @ipaddress, @created)";
+			var query = "INSERT INTO shares(poolid, blockheight, difficulty, stratumdifficulty, networkdifficulty, worker, ipaddress, created) " +
+						"VALUES(@poolid, @blockheight, @difficulty, @stratumdifficulty, @networkdifficulty, @worker, @ipaddress, @created)";
 
 			con.Execute(query, mapped, tx);
 	    }

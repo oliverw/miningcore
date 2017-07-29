@@ -110,7 +110,7 @@ namespace MiningForce.Payments.PayoutSchemes
 				for (var i = start; i >= 0; i--)
 				{
 					var share = blockPage[i];
-					var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
+					var score = (decimal) share.StratumDifficulty / (decimal) share.NetworkDifficulty;
 
 					// if accumulated score would cross threshold, cap it to the remaining value
 					if (accumulatedScore + score >= factorX)

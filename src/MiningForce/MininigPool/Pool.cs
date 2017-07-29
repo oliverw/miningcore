@@ -365,7 +365,7 @@ namespace MiningForce.MininigPool
 			    .Buffer(TimeSpan.FromSeconds(poolHashRateSampleInterval))
 			    .Select(shares =>
 			    {
-				    var result = shares.Sum(share => (share.DifficultyNormalized * Math.Pow(2, 32)) / poolHashRateSampleInterval);
+				    var result = shares.Sum(share => (share.NormalizedDifficulty * Math.Pow(2, 32)) / poolHashRateSampleInterval);
 					return (float) result;
 			    })
 			    .Subscribe(hashRate => poolStats.HashRate = hashRate);

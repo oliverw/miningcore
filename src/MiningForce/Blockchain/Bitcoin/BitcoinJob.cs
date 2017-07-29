@@ -79,7 +79,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		};
 
 		// serialization constants
-		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/nodeStratum/"))).ToBytes();
+		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
 		private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
 		private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
 		private static uint txInputCount = 1u;
@@ -420,7 +420,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			var result = new BitcoinShare
 			{
 				Difficulty = headerTarget.Difficulty,
-				DifficultyNormalized = shareDiffNormalized,
+				NormalizedDifficulty = shareDiffNormalized,
+				StratumDifficulty = stratumDifficulty,
 				BlockHeight = blockTemplate.Height
 			};
 

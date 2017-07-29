@@ -11,12 +11,13 @@ namespace MiningForce.Blockchain
 		public string Worker { get; set; }
 		public string IpAddress { get; set; }
 		public double Difficulty { get; set; }
-		public double DifficultyNormalized { get; set; }
+		public double StratumDifficulty { get; set; }
+		public double NetworkDifficulty { get; set; }
+		public double NormalizedDifficulty { get; set; }
 		public long BlockHeight { get; set; }
 		public decimal BlockReward { get; set; }
 		public bool IsBlockCandidate { get; set; }
 		public string TransactionConfirmationData { get; set; }
-		public double NetworkDifficulty { get; set; }
 		public DateTime Created { get; set; }
 	}
 }

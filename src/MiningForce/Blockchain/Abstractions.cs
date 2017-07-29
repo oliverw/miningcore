@@ -34,14 +34,19 @@ namespace MiningForce.Blockchain
 		string IpAddress { get; }
 
 		/// <summary>
-		/// Share difficulty
+		/// Share difficulty as submitted by miner
 		/// </summary>
 		double Difficulty { get; set; }
 
 		/// <summary>
+		/// Stratum difficulty assigned to the miner at the time the share was submitted/accepted (used for payout calculations)
+		/// </summary>
+		double StratumDifficulty { get; set; }
+
+		/// <summary>
 		/// Difficulty relative to a Bitcoin Difficulty 1 Share (used for pool hashrate calculation)
 		/// </summary>
-		double DifficultyNormalized { get; set; }
+		double NormalizedDifficulty { get; set; }
 
 		/// <summary>
 		/// Block this share refers to

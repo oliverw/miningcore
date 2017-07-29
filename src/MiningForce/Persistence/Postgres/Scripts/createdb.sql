@@ -7,6 +7,7 @@ CREATE TABLE shares
   blockheight BIGINT NOT NULL,
   difficulty REAL NOT NULL,
   networkdifficulty REAL NOT NULL,
+  stratumdifficulty REAL NOT NULL,
   worker TEXT NOT NULL,
   ipaddress TEXT NOT NULL,
   created TIMESTAMP NOT NULL
@@ -22,7 +23,7 @@ CREATE TABLE blocks
   blockheight BIGINT NOT NULL,
   status TEXT NOT NULL,
   transactionconfirmationdata TEXT NOT NULL,
-  reward REAL NULL,
+  reward decimal(20,8) NULL,
   created TIMESTAMP NOT NULL
 );
 
