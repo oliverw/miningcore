@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using CodeContracts;
 using MiningForce.Blockchain.Bitcoin.DaemonResults;
@@ -61,7 +62,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		private readonly IDestination poolAddressDestination;
 		private readonly bool isPoS;
 		private readonly double difficultyNormalizationFactor;
-		private Target blockTarget;
+		private BigInteger blockTargetValue;
 		private MerkleTree mt;
 		private Money rewardToPool;
 		private byte[] coinbaseInitial;
@@ -102,9 +103,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		public void Init()
 		{
-			blockTarget = !string.IsNullOrEmpty(blockTemplate.Target) ?
-				new Target(uint256.Parse(blockTemplate.Target)) :
-				new Target(blockTemplate.Bits.HexToByteArray());
+			blockTargetValue = BigInteger.Parse(blockTemplate.Target, NumberStyles.HexNumber);
 
 			previousBlockHashReversedHex = blockTemplate.PreviousBlockhash
 				.HexToByteArray()
@@ -406,28 +405,30 @@ namespace MiningForce.Blockchain.Bitcoin
 			// hash block-header
 			var headerBytes = blockHeader.ToBytes();
 			var headerHash = headerHasher.Digest(headerBytes, nTime);
-			var headerValue = new uint256(headerHash, true);
-			var target = new Target(headerValue);
+			var headerValue = new BigInteger(headerHash);
 
-			var shareDiffAdjusted = target.Difficulty * difficultyNormalizationFactor;
-			var ratio = shareDiffAdjusted / stratumDifficulty;
+			// calc share-diff
+			var headerTarget = new Target(new uint256(headerHash, true));
+			var shareDiffNormalized = headerTarget.Difficulty * difficultyNormalizationFactor;
+			var ratio = shareDiffNormalized / stratumDifficulty;
 
 			// test if share meets at least workers current difficulty
 			if (ratio < 0.99)
-				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({target.Difficulty})");
+				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({headerTarget.Difficulty})");
 
 			// valid share
 			var result = new BitcoinShare
 			{
-				Difficulty = target.Difficulty,
-				DifficultyNormalized = shareDiffAdjusted,
+				Difficulty = headerTarget.Difficulty,
+				DifficultyNormalized = shareDiffNormalized,
 				BlockHeight = blockTemplate.Height
 			};
 
 			// now check if the share meets the much harder block difficulty (block candidate)
-			if (target < blockTarget)
+			if (headerValue < blockTargetValue)
 			{
 				result.IsBlockCandidate = true;
+
 				var blockBytes = SerializeBlock(headerBytes, coinbase);
 				result.BlockHex = blockBytes.ToHexString();
 				result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();

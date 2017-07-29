@@ -126,7 +126,7 @@ namespace MiningForce.Payments.PayoutSchemes
 					blockRewardRemaining -= reward;
 
 					// this should never happen
-					if(blockRewardRemaining <= 0)
+					if(blockRewardRemaining <= 0 && !done)
 						throw new OverflowException("blockRewardRemaining < 0");
 
 					// accumulate per-worker reward

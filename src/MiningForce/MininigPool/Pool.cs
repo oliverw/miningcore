@@ -215,12 +215,6 @@ namespace MiningForce.MininigPool
 		            validSharesSubject.OnNext(share);
 	            }
 
-	            catch (ObjectDisposedException)
-	            {
-		            client.Respond(true, request.Id);
-		            context.Stats.ValidShares++;
-	            }
-
 				catch (StratumException ex)
 	            {
 		            client.RespondError(ex.Code, ex.Message, request.Id, false);
@@ -232,9 +226,9 @@ namespace MiningForce.MininigPool
 		            invalidSharesSubject.OnNext(Unit.Default);
 
 					// banning
-					//if(poolConfig.Banning?.Enabled == true)
-					//	ConsiderBan(client, context, poolConfig.Banning);
-	            }
+					if (poolConfig.Banning?.Enabled == true)
+						ConsiderBan(client, context, poolConfig.Banning);
+				}
 			}
         }
 
