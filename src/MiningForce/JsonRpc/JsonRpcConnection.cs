@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
 using CodeContracts;
@@ -58,11 +59,12 @@ namespace MiningForce.JsonRpc
                 .Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
                 .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
                 .Select(x => x.Msg)
+				.Timestamp()
                 .Publish()
                 .RefCount();
         }
 
-        public IObservable<JsonRpcRequest> Received { get; private set; }
+        public IObservable<Timestamped<JsonRpcRequest>> Received { get; private set; }
 
         public void Send<T>(JsonRpcResponse<T> response)
         {
@@ -71,17 +73,21 @@ namespace MiningForce.JsonRpc
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
             var bytes = Encoding.UTF8.GetBytes(json);
 
-            upstream.Send(bytes);
+	        logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
+
+			upstream.Send(bytes);
         }
 
-        public void Send<T>(JsonRpcRequest<T> response)
+        public void Send<T>(JsonRpcRequest<T> request)
         {
-            Contract.RequiresNonNull(response, nameof(response));
+            Contract.RequiresNonNull(request, nameof(request));
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
+            var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
             var bytes = Encoding.UTF8.GetBytes(json);
 
-            upstream.Send(bytes);
+	        logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
+
+			upstream.Send(bytes);
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.RemoteEndPoint;

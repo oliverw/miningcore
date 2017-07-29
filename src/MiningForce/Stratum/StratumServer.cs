@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -11,19 +12,16 @@ using LibUvManaged;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
-using Newtonsoft.Json;
 
 namespace MiningForce.Stratum
 {
     public abstract class StratumServer
     {
-        protected StratumServer(IComponentContext ctx, JsonSerializerSettings serializerSettings)
+        protected StratumServer(IComponentContext ctx)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
-	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
 			this.ctx = ctx;
-            this.serializerSettings = serializerSettings;
         }
 
         protected readonly IComponentContext ctx;
@@ -32,8 +30,6 @@ namespace MiningForce.Stratum
 
 		protected readonly Dictionary<string, Tuple<StratumClient, IDisposable>> clients = 
 			new Dictionary<string, Tuple<StratumClient, IDisposable>>();
-
-		private readonly JsonSerializerSettings serializerSettings;
 
         protected void StartListeners(Dictionary<int, PoolEndpoint> stratumPorts)
         {
@@ -84,60 +80,28 @@ namespace MiningForce.Stratum
 	            {
 		            var sub = client.Requests
 			            .ObserveOn(TaskPoolScheduler.Default)
-			            .Subscribe(x => OnClientRpcRequest(client, x), ex => OnClientReceiveError(client, ex), () => OnClientReceiveComplete(client));
+			            .Subscribe(x => OnRequest(client, x), ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
 					clients[subscriptionId] = Tuple.Create(client, sub);
 	            }
 
-				OnClientConnected(client);
+				OnConnect(client);
 			}
 
 			catch (Exception ex)
             {
-                logger.Error(ex, () => "OnClientConnected");
+                logger.Error(ex, () => nameof(OnClientConnected));
             }
         }
 
-        private void OnClientRpcRequest(StratumClient client, JsonRpcRequest request)
-        {
-            logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
-
-            try
-            {
-                switch (request.Method)
-                {
-                    case StratumConstants.MsgSubscribe:
-                        OnClientSubscribe(client, request);
-                        break;
-                    case StratumConstants.MsgAuthorize:
-                        OnClientAuthorize(client, request);
-                        break;
-                    case StratumConstants.MsgSubmitShare:
-                        OnClientSubmitShare(client, request);
-                        break;
-
-                    default:
-                        logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
-
-                        client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                        break;
-                }
-            }
-
-            catch (Exception ex)
-            {
-                logger.Error(ex, () => $"OnClientRpcRequest: {request.Method}");
-            }
-        }
-
-        private void OnClientReceiveError(StratumClient client, Exception ex)
+        private void OnReceiveError(StratumClient client, Exception ex)
         {
             logger.Error(() => $"[{LogCategory}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
-        private void OnClientReceiveComplete(StratumClient client)
+        private void OnReceiveComplete(StratumClient client)
         {
             logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received EOF");
 
@@ -165,7 +129,7 @@ namespace MiningForce.Stratum
 
 	        client.Disconnect();
 
-			OnClientDisconnected(subscriptionId);
+			OnDisconnect(subscriptionId);
         }
 
         protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)
@@ -195,11 +159,8 @@ namespace MiningForce.Stratum
 
 		protected abstract string LogCategory { get; }
 
-        protected abstract void OnClientConnected(StratumClient client);
-        protected abstract void OnClientDisconnected(string subscriptionId);
-
-        protected abstract void OnClientSubscribe(StratumClient client, JsonRpcRequest request);
-        protected abstract void OnClientAuthorize(StratumClient client, JsonRpcRequest request);
-        protected abstract void OnClientSubmitShare(StratumClient client, JsonRpcRequest request);
+        protected abstract void OnConnect(StratumClient client);
+        protected abstract void OnDisconnect(string subscriptionId);
+	    protected abstract void OnRequest(StratumClient client, Timestamped<JsonRpcRequest> request);
     }
 }

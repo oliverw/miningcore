@@ -27,13 +27,13 @@ namespace MiningForce.JsonRpc
     [JsonObject(MemberSerialization.OptIn)]
     public class JsonRpcException
     {
-        [JsonProperty]
+        [JsonProperty(PropertyName = "code")]
         public int Code { get; set; }
 
-        [JsonProperty]
+	    [JsonProperty(PropertyName = "message")]
         public string Message { get; set; }
 
-        [JsonProperty]
+	    [JsonProperty(PropertyName = "data")]
         public object Data { get; set; }
 
         public JsonRpcException(int code, string message, object data)

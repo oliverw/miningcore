@@ -26,16 +26,18 @@ namespace MiningForce.MininigPool
     {
         public Pool(IComponentContext ctx,
 			JsonSerializerSettings serializerSettings) : 
-            base(ctx, serializerSettings)
+            base(ctx)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
 	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
 			Shares = shareSubject.AsObservable();
+	        this.serializerSettings = serializerSettings;
         }
 
 		private PoolConfig poolConfig;
 	    private ClusterConfig clusterConfig;
+	    private readonly JsonSerializerSettings serializerSettings;
         private readonly PoolStats poolStats = new PoolStats();
         private object currentJobParams;
         private IBlockchainJobManager manager;
@@ -48,8 +50,9 @@ namespace MiningForce.MininigPool
             new ConditionalWeakTable<StratumClient, WorkerContext>();
 
         private static readonly string[] HashRateUnits = { " KH", " MH", " GH", " TH", " PH" };
+		private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 
-	    private readonly Subject<IShare> shareSubject = new Subject<IShare>();
+		private readonly Subject<IShare> shareSubject = new Subject<IShare>();
 
 		// Telemetry
 		private readonly Subject<int> resposeTimesSubject = new Subject<int>();
@@ -106,7 +109,7 @@ namespace MiningForce.MininigPool
 
 	    protected override string LogCategory => "Pool";
 
-	    protected override void OnClientConnected(StratumClient client)
+	    protected override void OnConnect(StratumClient client)
         {
 	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
 	        {
@@ -128,7 +131,7 @@ namespace MiningForce.MininigPool
 	        }
 		}
 
-		protected override void OnClientDisconnected(string subscriptionId)
+		protected override void OnDisconnect(string subscriptionId)
         {
             // update stats
             lock (clients)
@@ -137,8 +140,42 @@ namespace MiningForce.MininigPool
             }
         }
 
-        protected override async void OnClientSubscribe(StratumClient client, JsonRpcRequest request)
+	    protected override void OnRequest(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+	    {
+		    var request = tsRequest.Value;
+			logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+
+		    try
+		    {
+			    switch (request.Method)
+			    {
+				    case StratumMethod.Subscribe:
+					    OnSubscribe(client, tsRequest);
+					    break;
+				    case StratumMethod.Authorize:
+					    OnAuthorize(client, tsRequest);
+					    break;
+				    case StratumMethod.SubmitShare:
+					    OnSubmitShare(client, tsRequest);
+					    break;
+
+				    default:
+					    logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+
+					    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+					    break;
+			    }
+		    }
+
+		    catch (Exception ex)
+		    {
+			    logger.Error(ex, () => $"{nameof(OnRequest)}: {request.Method}");
+		    }
+	    }
+
+	    private async void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
+	        var request = tsRequest.Value;
 			var requestParams = request.Params?.ToObject<string[]>();
 			var response = await manager.SubscribeWorkerAsync(client);
 
@@ -147,10 +184,8 @@ namespace MiningForce.MininigPool
             {
                 new object[]
                 {
-                    new object[]
-                    {
-                        StratumConstants.MsgMiningNotify, client.ConnectionId
-                    },
+                    new object[] { StratumMethod.SetDifficulty, client.ConnectionId },
+	                new object[] { StratumMethod.MiningNotify, client.ConnectionId }
                 },
             }
             .Concat(response)
@@ -164,12 +199,13 @@ namespace MiningForce.MininigPool
 	        context.UserAgent = requestParams?.Length > 0 ? requestParams[0] : null;
 
 			// send intial update
-            client.Notify(StratumConstants.MsgSetDifficulty, new object[] { context.Difficulty });
-            client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+            client.Notify(StratumMethod.SetDifficulty, new object[] { context.Difficulty });
+            client.Notify(StratumMethod.MiningNotify, currentJobParams);
         }
 
-        protected override async void OnClientAuthorize(StratumClient client, JsonRpcRequest request)
+        private async void OnAuthorize(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
+	        var request = tsRequest.Value;
             var context = GetWorkerContext(client);
 
             var requestParams = request.Params?.ToObject<string[]>();
@@ -180,9 +216,20 @@ namespace MiningForce.MininigPool
             client.Respond(context.IsAuthorized, request.Id);
         }
 
-        protected override async void OnClientSubmitShare(StratumClient client, JsonRpcRequest request)
-        {
-            var context = GetWorkerContext(client);
+	    private async void OnSubmitShare(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+	    {
+		    // check age of submission (aged submissions usually caused by high server load)
+		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+
+		    if (requestAge > maxShareAge)
+		    {
+			    logger.Debug(()=> $"[{LogCategory}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+				return;
+		    }
+
+			// check worker state
+		    var request = tsRequest.Value;
+			var context = GetWorkerContext(client);
             context.LastActivity = DateTime.UtcNow;
 
             if (!context.IsAuthorized)
@@ -303,7 +350,7 @@ namespace MiningForce.MininigPool
 
         private void BroadcastJob(object jobParams)
         {
-            BroadcastNotification(StratumConstants.MsgMiningNotify, jobParams, client =>
+            BroadcastNotification(StratumMethod.MiningNotify, jobParams, client =>
             {
                 var context = GetWorkerContext(client);
 
@@ -320,11 +367,11 @@ namespace MiningForce.MininigPool
 		                {
 			                logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
 
-							client.Notify(StratumConstants.MsgSetDifficulty, new object[] {context.Difficulty});
+							client.Notify(StratumMethod.SetDifficulty, new object[] {context.Difficulty});
 		                }
 
 		                // send job
-		                client.Notify(StratumConstants.MsgMiningNotify, currentJobParams);
+		                client.Notify(StratumMethod.MiningNotify, currentJobParams);
 	                }
 
 					else

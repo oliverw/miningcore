@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -36,7 +37,7 @@ namespace MiningForce.Stratum
             Requests = rpcCon.Received;
         }
 
-		public IObservable<JsonRpcRequest> Requests { get; private set; }
+		public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;

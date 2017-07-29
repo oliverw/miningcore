@@ -42,16 +42,16 @@ namespace MiningForce.JsonRpc
 	        Result = JToken.FromObject(result);
         }
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "jsonrpc")]
-        public string JsonRpc => "2.0";
+        //[JsonProperty(PropertyName = "jsonrpc")]
+        //public string JsonRpc => "2.0";
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "result")]
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "result", Order = 2)]
         public JToken Result { get; set; }
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "error")]
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "error", Order = 3)]
         public JsonRpcException Error { get; set; }
 
-        [JsonProperty(PropertyName = "id")]
+        [JsonProperty(PropertyName = "id", Order = 1)]
         public string Id { get; set; }
     }
 }

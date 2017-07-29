@@ -130,20 +130,22 @@ namespace MiningForce.Payments
 			    .Or<OutOfMemoryException>()
 			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
 
-			// TODO: add fallback for writing json file in case of database failure
-			// requires polly 5.2.1 which allows to pass context to fallback action
-		    //var fallback = Policy
-			   // .Handle<DbException>()
-			   // .Or<TimeoutException>()
-			   // .Or<OutOfMemoryException>()
-			   // .Fallback(x => { });
+			var fallback = Policy
+				.Handle<DbException>()
+				.Or<TimeoutException>()
+				.Or<OutOfMemoryException>()
+				.Fallback((Context context) => { },
+					(Exception ex, Context context) => 
+					{
+						
+					});
 
-		    //Policy.Wrap(fallback, retry).Execute(() =>
-		    //{
-			   // return 2;
-		    //});
+			Policy.Wrap(fallback, retry).Execute(() =>
+			{
+				return 2;
+			});
 
-		    faultPolicy = retry;
+			faultPolicy = retry;
 	    }
 
 		#endregion // API-Surface
