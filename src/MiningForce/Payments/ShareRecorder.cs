@@ -18,6 +18,7 @@ using MiningForce.Persistence.Repositories;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
+using Polly.CircuitBreaker;
 
 namespace MiningForce.Payments
 {
@@ -50,12 +51,12 @@ namespace MiningForce.Payments
 
 	    private readonly IConnectionFactory cf;
 	    private readonly IMapper mapper;
-		private JsonSerializerSettings jsonSerializerSettings;
+		private readonly JsonSerializerSettings jsonSerializerSettings;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shareRepo;
 	    private readonly IBlockRepository blockRepo;
 
-		private const int RetryCount = 1;
+		private const int RetryCount = 3;
 		private const string PolicyContextKeyShare = "share";
 		private Policy faultPolicy;
 		private bool hasLoggedPolicyFallbackFailure = false;
@@ -146,13 +147,25 @@ namespace MiningForce.Payments
 				.Or<TimeoutException>()
 			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnPolicyRetry);
 
-		    var fallback = Policy
+		    var breaker = Policy
+			    .Handle<DbException>()
+			    .Or<SocketException>()
+			    .Or<TimeoutException>()
+			    .CircuitBreaker(exceptionsAllowedBeforeBreaking: 2, durationOfBreak: TimeSpan.FromMinutes(1));
+
+			var fallback = Policy
 			    .Handle<DbException>()
 			    .Or<SocketException>()
 			    .Or<TimeoutException>()
 			    .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
 
-			faultPolicy = Policy.Wrap(fallback, retry);
+		    var fallbackOnBrokenCircuit = Policy
+			    .Handle<BrokenCircuitException>()
+			    .Fallback(OnExecutePolicyFallback, (Exception ex, Context context)=> {});
+
+			faultPolicy = Policy.Wrap(
+				fallbackOnBrokenCircuit, 
+				Policy.Wrap(fallback, breaker, retry));
 	    }
 
 		#endregion // API-Surface
@@ -171,13 +184,13 @@ namespace MiningForce.Payments
 		{
 			cf.RunTx((con, tx) =>
 			{
-				var shareEntity = mapper.Map<Persistence.Model.Share>(share);
+				var shareEntity = mapper.Map<Share>(share);
 				shareRepo.Insert(con, tx, shareEntity);
 
 				if (share.IsBlockCandidate)
 				{
-					var blockEntity = mapper.Map<Persistence.Model.Block>(share);
-					blockEntity.Status = Persistence.Model.BlockStatus.Pending;
+					var blockEntity = mapper.Map<Block>(share);
+					blockEntity.Status = BlockStatus.Pending;
 					blockRepo.Insert(con, tx, blockEntity);
 				}
 			});

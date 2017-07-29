@@ -17,7 +17,7 @@
         // Persist to postgresql database
         "postgres": {
             "host": "127.0.0.1",
-            "port": 5432,
+            "port": 54312,
             "user": "miningforce",
             "password": "Qx6SJcOOlfVyoR66nZH1",
             "database": "miningforce"
