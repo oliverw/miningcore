@@ -11,8 +11,8 @@ using CodeContracts;
 using NLog;
 using MiningForce.Authorization;
 using MiningForce.Blockchain.Bitcoin;
-using MiningForce.Blockchain.Daemon;
 using MiningForce.Configuration;
+using MiningForce.Daemon;
 using MiningForce.Stratum;
 using MiningForce.Util;
 

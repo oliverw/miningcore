@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningForce.Blockchain.Daemon
+﻿namespace MiningForce.Daemon
 {
 	public class DaemonCmd
 	{

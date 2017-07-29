@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MiningForce.Configuration;
+﻿using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 
-namespace MiningForce.Blockchain.Daemon
+namespace MiningForce.Daemon
 {
 	public class DaemonResponse<T>
 	{
