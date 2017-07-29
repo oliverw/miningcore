@@ -2,14 +2,20 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain;
+using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Persistence;
+using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
+using Newtonsoft.Json;
 using NLog;
 using Polly;
 
@@ -21,15 +27,18 @@ namespace MiningForce.Payments
     public class ShareRecorder
 	{
 		public ShareRecorder(IConnectionFactory cf, IMapper mapper,
+			JsonSerializerSettings jsonSerializerSettings,
 			IShareRepository shareRepo, IBlockRepository blockRepo)
 	    {
 		    Contract.RequiresNonNull(cf, nameof(cf));
 		    Contract.RequiresNonNull(mapper, nameof(mapper));
 		    Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
 		    Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
+		    Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
 
 			this.cf = cf;
 		    this.mapper = mapper;
+		    this.jsonSerializerSettings = jsonSerializerSettings;
 
 			this.shareRepo = shareRepo;
 		    this.blockRepo = blockRepo;
@@ -41,16 +50,20 @@ namespace MiningForce.Payments
 
 	    private readonly IConnectionFactory cf;
 	    private readonly IMapper mapper;
+		private JsonSerializerSettings jsonSerializerSettings;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 		private readonly IShareRepository shareRepo;
 	    private readonly IBlockRepository blockRepo;
 
-		private const int RetryCount = 8;
-	    private Policy faultPolicy;
+		private const int RetryCount = 1;
+		private const string PolicyContextKeyShare = "share";
+		private Policy faultPolicy;
+		private bool hasLoggedPolicyFallbackFailure = false;
+		private string recoveryFilename;
 
 		private int QueueSizeWarningThreshold = 1024;
-
-	    #region API-Surface
+		
+		#region API-Surface
 
 		public void AttachPool(Pool pool)
 	    {
@@ -60,9 +73,13 @@ namespace MiningForce.Payments
 		    });
 	    }
 
-	    public void Start()
+	    public void Start(ClusterConfig clusterConfig)
 	    {
-		    var thread = new Thread(() =>
+		    recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
+			    ? clusterConfig.PaymentProcessing.ShareRecoveryFile
+			    : "recovered-shares.json";
+
+			var thread = new Thread(() =>
 		    {
 			    logger.Info(() => "Online");
 
@@ -96,7 +113,7 @@ namespace MiningForce.Payments
 			    if (!isCleanExit)
 			    {
 				    logger.Fatal(() => "Share persistence queue thread exiting prematurely! Restarting ...");
-				    Start();
+				    Start(clusterConfig);
 			    }
 		    });
 
@@ -123,36 +140,26 @@ namespace MiningForce.Payments
 
 	    private void BuildFaultHandlingPolicy()
 	    {
-		    // using the policy below, the 8th retry will wait 4min26sec (would be 17min with 10 retries)
 		    var retry = Policy
 			    .Handle<DbException>()
-			    .Or<TimeoutException>()
-			    .Or<OutOfMemoryException>()
-			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
-
-			var fallback = Policy
-				.Handle<DbException>()
+			    .Or<SocketException>()
 				.Or<TimeoutException>()
-				.Or<OutOfMemoryException>()
-				.Fallback((Context context) => { },
-					(Exception ex, Context context) => 
-					{
-						
-					});
+			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnPolicyRetry);
 
-			Policy.Wrap(fallback, retry).Execute(() =>
-			{
-				return 2;
-			});
+		    var fallback = Policy
+			    .Handle<DbException>()
+			    .Or<SocketException>()
+			    .Or<TimeoutException>()
+			    .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
 
-			faultPolicy = retry;
+			faultPolicy = Policy.Wrap(fallback, retry);
 	    }
 
 		#endregion // API-Surface
 
 		private void PersistShareFaulTolerant(IShare share)
 	    {
-		    var context = new Dictionary<string, object> {{"share", share}};
+		    var context = new Dictionary<string, object> {{PolicyContextKeyShare, share}};
 
 			faultPolicy.Execute(() =>
 			{
@@ -160,25 +167,119 @@ namespace MiningForce.Payments
 			}, context);
 		}
 
-	    private static void OnRetry(Exception ex, TimeSpan timeSpan, int retry, object context)
-	    {
-		    logger.Warn(()=> $"Retry {1} in {timeSpan} due to: {ex}");
-	    }
+		private void PersistShare(IShare share)
+		{
+			cf.RunTx((con, tx) =>
+			{
+				var shareEntity = mapper.Map<Persistence.Model.Share>(share);
+				shareRepo.Insert(con, tx, shareEntity);
 
-	    private void PersistShare(IShare share)
-	    {
-		    cf.RunTx((con, tx) =>
-		    {
-			    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
-			    shareRepo.Insert(con, tx, shareEntity);
-
-			    if (share.IsBlockCandidate)
-			    {
-				    var blockEntity = mapper.Map<Persistence.Model.Block>(share);
+				if (share.IsBlockCandidate)
+				{
+					var blockEntity = mapper.Map<Persistence.Model.Block>(share);
 					blockEntity.Status = Persistence.Model.BlockStatus.Pending;
-				    blockRepo.Insert(con, tx, blockEntity);
-			    }
-		    });
+					blockRepo.Insert(con, tx, blockEntity);
+				}
+			});
+		}
+
+		private static void OnPolicyRetry(Exception ex, TimeSpan timeSpan, int retry, object context)
+	    {
+		    logger.Warn(()=> $"Retry {retry} in {timeSpan} due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
 	    }
+
+		private void OnPolicyFallback(Exception ex, Context context)
+		{
+			logger.Warn(() => $"Fallback due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
+		}
+
+		private void OnExecutePolicyFallback(Context context)
+		{
+			var share = (IShare) context[PolicyContextKeyShare];
+
+			try
+			{
+				using (var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
+				{
+					using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+					{
+						if (stream.Length == 0)
+							WriteRecoveryFileheader(writer);
+
+						var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
+						writer.WriteLine(json);
+					}
+				}
+			}
+
+			catch (Exception ex)
+			{
+				if (!hasLoggedPolicyFallbackFailure)
+				{
+					logger.Fatal(ex, "Fatal error during policy fallback execution. Share(s) will be lost!");
+					hasLoggedPolicyFallbackFailure = true;
+				}
+			}
+		}
+
+		private static void WriteRecoveryFileheader(StreamWriter writer)
+		{
+			writer.WriteLine("// The existence of this file means shares could not be committed to the database.");
+			writer.WriteLine("// You should stop the pool cluster and run the following command:");
+			writer.WriteLine("// miningforce -c <path-to-config> -rs <path-to-this-file>\n");
+		}
+
+		public void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
+		{
+			logger.Info(() => $"Recovering shares using {recoveryFilename} ...");
+
+			try
+			{
+				int successCount = 0;
+				int failCount = 0;
+
+				using (var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
+				{
+					using (var reader = new StreamReader(stream, new UTF8Encoding(false)))
+					{
+						while (!reader.EndOfStream)
+						{
+							var line = reader.ReadLine().Trim();
+
+							// skip blank lines
+							if (line.Length == 0)
+								continue;
+
+							// skip comments
+							if (line.StartsWith("//"))
+								continue;
+
+							try
+							{
+								var share = JsonConvert.DeserializeObject<ShareBase>(line, jsonSerializerSettings);
+								PersistShare(share);
+								successCount++;
+							}
+
+							catch (Exception ex)
+							{
+								logger.Error(ex, ()=> $"Unable to import share record: {line}");
+								failCount++;
+							}
+						}
+					}
+				}
+
+				if(failCount == 0)
+					logger.Info(() => $"Successfully recovered {successCount} shares");
+				else
+					logger.Warn(() => $"Successfully {successCount} shares with {failCount} failures");
+			}
+
+			catch (FileNotFoundException)
+			{
+				logger.Error(()=> $"Recovery file {recoveryFilename} was not found");
+			}
+		}
 	}
 }

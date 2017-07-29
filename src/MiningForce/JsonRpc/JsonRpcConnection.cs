@@ -51,12 +51,9 @@ namespace MiningForce.JsonRpc
                 .TakeWhile(ValidateInput)  // flood protetion
                 .Select(c => new string(c.ToArray()).Trim()); // transform buffer back to string
 
-            // ignore empty lines
-            var incomingNonEmptyLines = incomingLines
-                .Where(x => x.Length > 0);
-
-            Received = incomingNonEmptyLines
-                .Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
+            Received = incomingLines
+		        .Where(x => x.Length > 0) // ignore empty lines
+				.Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
                 .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
                 .Select(x => x.Msg)
 				.Timestamp()

@@ -30,7 +30,10 @@
     // Generate payouts for recorded shares and blocks
     "paymentProcessing": {
         "enabled": true,
-        "interval": 600 // how often to process payouts
+        "interval": 600, // how often to process payouts
+
+        // Path to a file used to record shares under emergency conditions such as database outage
+        "shareRecoveryFile": "recovered-shares.json"
     },
 
     "pools": [

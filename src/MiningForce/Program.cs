@@ -38,6 +38,7 @@ namespace MiningForce
         private static ILogger logger;
         private static readonly List<StratumServer> servers = new List<StratumServer>();
 	    private static CommandOption dumpConfigOption;
+	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
 	    private static PaymentProcessor paymentProcessor;
 
@@ -63,9 +64,15 @@ namespace MiningForce
 
 	            ValidateConfig(clusterConfig);
 	            Bootstrap(clusterConfig);
-				Start(clusterConfig).Wait();
 
-                Console.ReadLine();
+	            if (!shareRecoveryOption.HasValue())
+	            {
+		            Start(clusterConfig).Wait();
+		            Console.ReadLine();
+	            }
+
+				else
+		            RecoverShares(clusterConfig, shareRecoveryOption.Value());
             }
 
             catch (PoolStartupAbortException ex)
@@ -126,6 +133,7 @@ namespace MiningForce
             var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
             var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
 	        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
+	        shareRecoveryOption = app.Option("-rs", "Share recovery file", CommandOptionType.SingleValue);
             app.HelpOption("-? | -h | --help");
 
             app.Execute(args);
@@ -444,7 +452,7 @@ namespace MiningForce
 		{
 			// start share recorder
 			shareRecorder = container.Resolve<ShareRecorder>();
-			shareRecorder.Start();
+			shareRecorder.Start(clusterConfig);
 
 			// start pools
 			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
@@ -469,7 +477,13 @@ namespace MiningForce
 			}
 		}
 
-	    [DllImport("kernel32.dll", SetLastError = true)]
+		private static void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
+	    {
+		    shareRecorder = container.Resolve<ShareRecorder>();
+		    shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+	    }
+
+		[DllImport("kernel32.dll", SetLastError = true)]
 	    static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 
 		private static void DebugLoadMultiHashNativeWorkaround()

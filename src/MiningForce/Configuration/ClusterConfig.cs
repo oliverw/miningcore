@@ -124,6 +124,8 @@ namespace MiningForce.Configuration
 	{
 		public bool Enabled { get; set; }
 		public int Interval { get; set; }
+
+		public string ShareRecoveryFile { get; set; }
 	}
 
 	public class PersistenceConfig
