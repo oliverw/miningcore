@@ -3,7 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using AutoMapper;
@@ -53,17 +56,19 @@ namespace MiningForce.Payments
 	    private readonly IMapper mapper;
 		private readonly JsonSerializerSettings jsonSerializerSettings;
 	    private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+		private IDisposable queueSub;
+		private bool hasWarnedAboutBacklogSize;
 		private readonly IShareRepository shareRepo;
 	    private readonly IBlockRepository blockRepo;
 
 		private const int RetryCount = 3;
-		private const string PolicyContextKeyShare = "share";
+		private const string PolicyContextKeyShares = "share";
 		private Policy faultPolicy;
 		private bool hasLoggedPolicyFallbackFailure = false;
 		private string recoveryFilename;
 
 		private int QueueSizeWarningThreshold = 1024;
-		
+
 		#region API-Surface
 
 		public void AttachPool(Pool pool)
@@ -76,55 +81,60 @@ namespace MiningForce.Payments
 
 	    public void Start(ClusterConfig clusterConfig)
 	    {
-		    recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
-			    ? clusterConfig.PaymentProcessing.ShareRecoveryFile
-			    : "recovered-shares.json";
+		    ConfigureRecovery(clusterConfig);
 
-			var thread = new Thread(() =>
-		    {
-			    logger.Info(() => "Online");
-
-				var isCleanExit = false;
-			    var hasWarnedAboutBacklogSize = false;
-
-				while (true)
+		    queueSub = CreateQueueObservable()
+				.Buffer(TimeSpan.FromSeconds(1), 20)
+				.Where(shares=> shares.Any())
+				.Subscribe(shares =>
 			    {
 				    try
 				    {
-					    var share = queue.Take();
-
-						PersistShareFaulTolerant(share);
-
-					    CheckQueueBacklog(ref hasWarnedAboutBacklogSize);
-					}
-
-					catch (ObjectDisposedException)
-				    {
-						// queue has been disposed
-					    isCleanExit = true;
-					    break;
+					    PersistShareFaulTolerant(shares);
 				    }
 
-					catch (Exception ex)
+				    catch (Exception ex)
 				    {
 					    logger.Error(ex);
 				    }
-			    }
+				});
 
-			    if (!isCleanExit)
-			    {
-				    logger.Fatal(() => "Share persistence queue thread exiting prematurely! Restarting ...");
-				    Start(clusterConfig);
-			    }
-		    });
+		    logger.Info(() => "Online");
+		}
 
-		    thread.IsBackground = false;
-			thread.Priority = ThreadPriority.AboveNormal;
-		    thread.Name = "Share Persistence Queue";
-		    thread.Start();
-	    }
+		private IObservable<IShare> CreateQueueObservable()
+		{
+			return Observable.Create<IShare>(observer =>
+			{
+				var done = false;
+				
+				var thread = new Thread(() =>
+				{
+					while (!done)
+					{
+						observer.OnNext(queue.Take());
 
-	    private void CheckQueueBacklog(ref bool hasWarnedAboutBacklogSize)
+						CheckQueueBacklog();
+					}
+				});
+
+				thread.IsBackground = false;
+				thread.Priority = ThreadPriority.AboveNormal;
+				thread.Name = "Share Persistence Queue";
+				thread.Start();
+
+				return Disposable.Create(() => done = true);
+			});
+		}
+
+		private void ConfigureRecovery(ClusterConfig clusterConfig)
+		{
+			recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
+				? clusterConfig.PaymentProcessing.ShareRecoveryFile
+				: "recovered-shares.json";
+		}
+
+		private void CheckQueueBacklog()
 	    {
 		    if (queue.Count > QueueSizeWarningThreshold)
 		    {
@@ -170,28 +180,31 @@ namespace MiningForce.Payments
 
 		#endregion // API-Surface
 
-		private void PersistShareFaulTolerant(IShare share)
+		private void PersistShareFaulTolerant(IList<IShare> shares)
 	    {
-		    var context = new Dictionary<string, object> {{PolicyContextKeyShare, share}};
+		    var context = new Dictionary<string, object> {{PolicyContextKeyShares, shares}};
 
 			faultPolicy.Execute(() =>
 			{
-				PersistShare(share);
+				PersistShares(shares);
 			}, context);
 		}
 
-		private void PersistShare(IShare share)
+		private void PersistShares(IList<IShare> shares)
 		{
 			cf.RunTx((con, tx) =>
 			{
-				var shareEntity = mapper.Map<Share>(share);
-				shareRepo.Insert(con, tx, shareEntity);
-
-				if (share.IsBlockCandidate)
+				foreach (var share in shares)
 				{
-					var blockEntity = mapper.Map<Block>(share);
-					blockEntity.Status = BlockStatus.Pending;
-					blockRepo.Insert(con, tx, blockEntity);
+					var shareEntity = mapper.Map<Share>(share);
+					shareRepo.Insert(con, tx, shareEntity);
+
+					if (share.IsBlockCandidate)
+					{
+						var blockEntity = mapper.Map<Block>(share);
+						blockEntity.Status = BlockStatus.Pending;
+						blockRepo.Insert(con, tx, blockEntity);
+					}
 				}
 			});
 		}
@@ -208,7 +221,7 @@ namespace MiningForce.Payments
 
 		private void OnExecutePolicyFallback(Context context)
 		{
-			var share = (IShare) context[PolicyContextKeyShare];
+			var shares = (IList<IShare>) context[PolicyContextKeyShares];
 
 			try
 			{
@@ -219,8 +232,11 @@ namespace MiningForce.Payments
 						if (stream.Length == 0)
 							WriteRecoveryFileheader(writer);
 
-						var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
-						writer.WriteLine(json);
+						foreach (var share in shares)
+						{
+							var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
+							writer.WriteLine(json);
+						}
 					}
 				}
 			}
@@ -255,6 +271,8 @@ namespace MiningForce.Payments
 				{
 					using (var reader = new StreamReader(stream, new UTF8Encoding(false)))
 					{
+						var shares = new List<IShare>();
+
 						while (!reader.EndOfStream)
 						{
 							var line = reader.ReadLine().Trim();
@@ -270,7 +288,11 @@ namespace MiningForce.Payments
 							try
 							{
 								var share = JsonConvert.DeserializeObject<ShareBase>(line, jsonSerializerSettings);
-								PersistShare(share);
+
+								shares.Clear();
+								shares.Add(share);
+								PersistShares(shares);
+
 								successCount++;
 							}
 

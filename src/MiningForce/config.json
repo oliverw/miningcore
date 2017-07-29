@@ -17,7 +17,7 @@
         // Persist to postgresql database
         "postgres": {
             "host": "127.0.0.1",
-            "port": 54312,
+            "port": 5432,
             "user": "miningforce",
             "password": "Qx6SJcOOlfVyoR66nZH1",
             "database": "miningforce"
@@ -104,7 +104,7 @@
                 },
 
                 "3256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 0.001 // 256 //  The pool difficulty
+                    "difficulty": 0.1 // 256 //  The pool difficulty
                 }
             },
 

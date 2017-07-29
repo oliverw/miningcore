@@ -181,3 +181,5 @@ src/Client/Windows.UWP/Win32
 *.appx
 src/Client/packages
 src/Server/packages
+
+recovered-shares.json
