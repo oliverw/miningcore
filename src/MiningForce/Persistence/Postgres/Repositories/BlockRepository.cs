@@ -1,11 +1,9 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
-using MiningForce.Configuration;
+using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
-using NLog;
 
 namespace MiningForce.Persistence.Postgres.Repositories
 {
@@ -42,12 +40,12 @@ namespace MiningForce.Persistence.Postgres.Repositories
 		    con.Execute(query, mapped, tx);
 	    }
 
-		public Model.Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
+		public Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
 	    {
 		    var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
 		    return con.Query<Entities.Block>(query, new { status = Model.BlockStatus.Pending.ToString().ToLower(), poolid })
-			    .Select(mapper.Map<Model.Block>)
+			    .Select(mapper.Map<Block>)
 			    .ToArray();
 	    }
 	}
