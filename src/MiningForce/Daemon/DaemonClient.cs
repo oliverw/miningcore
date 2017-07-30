@@ -34,6 +34,8 @@ namespace MiningForce.Daemon
 
 		#region API-Surface
 
+		public string RpcUrl { get; set; }
+
 		public void Configure(PoolConfig poolConfig)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -133,8 +135,13 @@ namespace MiningForce.Daemon
             // build rpc request
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
-            // build http request
-            var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");
+            // build request url
+	        var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
+	        if (!string.IsNullOrEmpty(RpcUrl))
+		        requestUrl += $"/{RpcUrl}";
+
+	        // build http request
+			var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
             var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -158,8 +165,13 @@ namespace MiningForce.Daemon
 		    // build rpc request
 		    var rpcRequests = batch.Select(x=> new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
+		    // build request url
+		    var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
+		    if (!string.IsNullOrEmpty(RpcUrl))
+			    requestUrl += $"/{RpcUrl}";
+
 		    // build http request
-		    var request = new HttpRequestMessage(HttpMethod.Post, $"http://{endPoint.Host}:{endPoint.Port}");
+		    var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
 		    var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
 		    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 

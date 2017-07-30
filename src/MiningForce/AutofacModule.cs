@@ -6,6 +6,7 @@ using Autofac;
 using MiningForce.Authorization;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
+using MiningForce.Blockchain.Monero;
 using MiningForce.Configuration;
 using MiningForce.Daemon;
 using MiningForce.JsonRpc;
@@ -97,6 +98,15 @@ namespace MiningForce
 			builder.RegisterType<BitcoinPayoutHandler>()
 				.Keyed<IPayoutHandler>(CoinType.BTC)
 				.Keyed<IPayoutHandler>(CoinType.LTC);
+
+	        //////////////////////
+	        // Monero
+
+	        builder.RegisterType<MoneroJobManager>()
+		        .Keyed<IBlockchainJobManager>(CoinType.XMR);
+
+	        builder.RegisterType<MoneroPayoutHandler>()
+		        .Keyed<IPayoutHandler>(CoinType.XMR);
 
 			base.Load(builder);
         }

@@ -5,9 +5,12 @@ namespace MiningForce.Configuration
 {
 	public enum CoinType
 	{
+		// ReSharper disable InconsistentNaming
 		BTC = 1,	// Bitcoin
 		LTC,		// Litecoin
 		DOGE,       // Dogecoin,
+		XMR,		// Monero
+
 		EMC2,       // Einsteinium
 		GRS,        // GroestlCoin
 		DGB,        // Digibyte

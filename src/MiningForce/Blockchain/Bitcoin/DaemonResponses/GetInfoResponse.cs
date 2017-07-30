@@ -1,6 +1,6 @@
-﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResults
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetInfoResult
+    public class GetInfoResponse
     {
         public int Version { get; set; }
         public int ProtocolVersion { get; set; }

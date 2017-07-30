@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using CodeContracts;
+using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Daemon;
 using MiningForce.Payments;
@@ -82,7 +83,7 @@ namespace MiningForce.Blockchain.Bitcoin
 				{
 					var cmdResult = results[j];
 
-					var transactionInfo = cmdResult.Response?.ToObject<DaemonResults.GetTransactionResult>();
+					var transactionInfo = cmdResult.Response?.ToObject<GetTransactionResponse>();
 					var block = page[j];
 
 					// check error

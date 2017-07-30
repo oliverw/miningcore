@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
+using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing.Algorithms;
@@ -63,7 +64,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<DaemonResults.ValidateAddressResult>(BDC.ValidateAddress, new[] { address });
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(BDC.ValidateAddress, new[] { address });
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -168,14 +169,14 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BDC.GetInfo);
 
             return responses.All(x => x.Error == null);
         }
 
 	    protected override async Task<bool> IsDaemonConnected()
 	    {
-		    var response = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
+		    var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(BDC.GetInfo);
 
 		    return response.Error == null && response.Response.Connections > 0;
 	    }
@@ -186,7 +187,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<DaemonResults.GetBlockTemplateResult>(
+                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
                     BDC.GetBlockTemplate, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
@@ -232,10 +233,10 @@ namespace MiningForce.Blockchain.Bitcoin
 	        }
 
 			// extract results
-			var validateAddressResponse = results[0].Response.ToObject<DaemonResults.ValidateAddressResult>();
+			var validateAddressResponse = results[0].Response.ToObject<ValidateAddressResponse>();
             var difficultyResponse = results[1].Response.ToObject<JToken>(); 
             var submitBlockResponse = results[2];
-			var blockchainInfoResponse = results[3].Response.ToObject<DaemonResults.GetBlockchainInfoResult>();
+			var blockchainInfoResponse = results[3].Response.ToObject<GetBlockchainInfoResponse>();
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.IsValid)
@@ -330,9 +331,9 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#endregion // Overrides
 
-		private async Task<DaemonResponse<DaemonResults.GetBlockTemplateResult>> GetBlockTemplateAsync()
+		private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
-            var result = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetBlockTemplateResult>(
+            var result = await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(
 	            BDC.GetBlockTemplate, getBlockTemplateParams);
 
 			return result;
@@ -340,7 +341,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<DaemonResults.GetInfoResult>(BDC.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BDC.GetInfo);
 
             if (infos.Length > 0)
             {
@@ -350,7 +351,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 if (blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<DaemonResults.GetPeerInfoResult[]>(BDC.GetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<GetPeerInfoResponse[]>(BDC.GetPeerInfo);
                     var peers = peerInfo.Response;
 
                     if (peers != null && peers.Length > 0)
@@ -388,7 +389,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			// was it accepted?
 		    var acceptResult = results[1];
-			var block = acceptResult.Response?.ToObject<DaemonResults.GetBlockResult>();
+			var block = acceptResult.Response?.ToObject<GetBlockResponse>();
 			var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
 
 			return (accepted, block?.Transactions.FirstOrDefault());
@@ -409,8 +410,8 @@ namespace MiningForce.Blockchain.Bitcoin
 				    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
 		    }
 
-		    var infoResponse = results[0].Response.ToObject<DaemonResults.GetInfoResult>();
-		    var miningInfoResponse = results[1].Response.ToObject<DaemonResults.GetMiningInfoResult>();
+		    var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
+		    var miningInfoResponse = results[1].Response.ToObject<GetMiningInfoResponse>();
 
 		    networkStats.BlockHeight = infoResponse.Blocks;
 		    networkStats.Difficulty = miningInfoResponse.Difficulty;

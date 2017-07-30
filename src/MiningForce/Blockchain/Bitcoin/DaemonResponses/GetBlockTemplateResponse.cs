@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace MiningForce.Blockchain.Bitcoin.DaemonResults
+namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
     public class BitcoinBlockTransaction
     {
@@ -14,7 +14,7 @@ namespace MiningForce.Blockchain.Bitcoin.DaemonResults
 		public string Flags { get; set; }
 	}
 
-    public class GetBlockTemplateResult
+    public class GetBlockTemplateResponse
     {
         public uint Version { get; set; }
         public string PreviousBlockhash { get; set; }

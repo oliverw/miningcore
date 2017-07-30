@@ -6,7 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using CodeContracts;
-using MiningForce.Blockchain.Bitcoin.DaemonResults;
+using MiningForce.Blockchain.Bitcoin.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Extensions;
@@ -19,7 +19,7 @@ namespace MiningForce.Blockchain.Bitcoin
 {
 	public class BitcoinJob
 	{
-		public BitcoinJob(GetBlockTemplateResult blockTemplate, string jobId,
+		public BitcoinJob(GetBlockTemplateResponse blockTemplate, string jobId,
 			PoolConfig poolConfig, ClusterConfig clusterConfig,
 			IDestination poolAddressDestination, BitcoinNetworkType networkType,
 			ExtraNonceProvider extraNonceProvider, bool isPoS, double difficultyNormalizationFactor,
@@ -56,7 +56,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		private readonly string jobId;
 		private readonly BitcoinNetworkType networkType;
 		private readonly int extraNoncePlaceHolderLength;
-		private readonly GetBlockTemplateResult blockTemplate;
+		private readonly GetBlockTemplateResponse blockTemplate;
 		private readonly ClusterConfig clusterConfig;
 		private readonly PoolConfig poolConfig;
 		private readonly IDestination poolAddressDestination;
@@ -92,7 +92,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#region API-Surface
 
-		public GetBlockTemplateResult BlockTemplate => blockTemplate;
+		public GetBlockTemplateResponse BlockTemplate => blockTemplate;
 		public string JobId => jobId;
 
 		public void Init()

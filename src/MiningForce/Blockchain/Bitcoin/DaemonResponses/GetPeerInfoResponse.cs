@@ -1,6 +1,6 @@
-﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResults
+﻿namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetPeerInfoResult
+    public class GetPeerInfoResponse
     {
         public int Id { get; set; }
         public string Addr { get; set; }

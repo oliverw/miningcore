@@ -1,7 +1,6 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace MiningForce.Blockchain.Bitcoin.DaemonResults
+namespace MiningForce.Blockchain.Bitcoin.DaemonResponses
 {
 	public class TransactionDetails
 	{
@@ -12,7 +11,7 @@ namespace MiningForce.Blockchain.Bitcoin.DaemonResults
 		public int Vout { get; set; }
 	}
 
-	public class GetTransactionResult
+	public class GetTransactionResponse
 	{
 		public decimal Amount { get; set; }
 		public uint Confirmations { get; set; }
