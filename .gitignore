@@ -182,4 +182,6 @@ src/Client/Windows.UWP/Win32
 src/Client/packages
 src/Server/packages
 
+src/multihash-native/**/*.o
+
 recovered-shares.json
