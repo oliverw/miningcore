@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{2DE74E14-BF6D-4046-951B-8EBC8A1BA009}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>netmultihashnative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <ProjectName>libmultihash</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="bcrypt.h" />
+    <ClInclude Include="blake.h" />
+    <ClInclude Include="boolberry.h" />
+    <ClInclude Include="c11.h" />
+    <ClInclude Include="cryptonight.h" />
+    <ClInclude Include="crypto\crypto.h" />
+    <ClInclude Include="crypto\c_blake256.h" />
+    <ClInclude Include="crypto\c_groestl.h" />
+    <ClInclude Include="crypto\c_jh.h" />
+    <ClInclude Include="crypto\c_keccak.h" />
+    <ClInclude Include="crypto\c_skein.h" />
+    <ClInclude Include="crypto\groestl_tables.h" />
+    <ClInclude Include="crypto\hash-ops.h" />
+    <ClInclude Include="crypto\hash.h" />
+    <ClInclude Include="crypto\int-util.h" />
+    <ClInclude Include="crypto\oaes_config.h" />
+    <ClInclude Include="crypto\oaes_lib.h" />
+    <ClInclude Include="crypto\skein_port.h" />
+    <ClInclude Include="crypto\wild_keccak.h" />
+    <ClInclude Include="dcrypt.h" />
+    <ClInclude Include="fresh.h" />
+    <ClInclude Include="fugue.h" />
+    <ClInclude Include="groestl.h" />
+    <ClInclude Include="hefty1.h" />
+    <ClInclude Include="jh.h" />
+    <ClInclude Include="keccak.h" />
+    <ClInclude Include="neoscrypt.h" />
+    <ClInclude Include="nist5.h" />
+    <ClInclude Include="quark.h" />
+    <ClInclude Include="qubit.h" />
+    <ClInclude Include="s3.h" />
+    <ClInclude Include="scryptjane.h" />
+    <ClInclude Include="scryptn.h" />
+    <ClInclude Include="sha256.h" />
+    <ClInclude Include="sha3\sph_blake.h" />
+    <ClInclude Include="sha3\sph_bmw.h" />
+    <ClInclude Include="sha3\sph_cubehash.h" />
+    <ClInclude Include="sha3\sph_echo.h" />
+    <ClInclude Include="sha3\sph_fugue.h" />
+    <ClInclude Include="sha3\sph_groestl.h" />
+    <ClInclude Include="sha3\sph_hamsi.h" />
+    <ClInclude Include="sha3\sph_hefty1.h" />
+    <ClInclude Include="sha3\sph_jh.h" />
+    <ClInclude Include="sha3\sph_keccak.h" />
+    <ClInclude Include="sha3\sph_luffa.h" />
+    <ClInclude Include="sha3\sph_shabal.h" />
+    <ClInclude Include="sha3\sph_shavite.h" />
+    <ClInclude Include="sha3\sph_simd.h" />
+    <ClInclude Include="sha3\sph_skein.h" />
+    <ClInclude Include="sha3\sph_types.h" />
+    <ClInclude Include="sha3\sph_whirlpool.h" />
+    <ClInclude Include="shavite3.h" />
+    <ClInclude Include="skein.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="stdint.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="x11.h" />
+    <ClInclude Include="x13.h" />
+    <ClInclude Include="x14.h" />
+    <ClInclude Include="x15.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bcrypt.c" />
+    <ClCompile Include="blake.c" />
+    <ClCompile Include="c11.c" />
+    <ClCompile Include="cryptonight.c" />
+    <ClCompile Include="crypto\aesb.c" />
+    <ClCompile Include="crypto\c_blake256.c" />
+    <ClCompile Include="crypto\c_groestl.c" />
+    <ClCompile Include="crypto\c_jh.c" />
+    <ClCompile Include="crypto\c_keccak.c" />
+    <ClCompile Include="crypto\c_skein.c" />
+    <ClCompile Include="crypto\hash.c" />
+    <ClCompile Include="crypto\oaes_lib.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="crypto\wild_keccak.cpp" />
+    <ClCompile Include="dcrypt.c" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="fresh.c" />
+    <ClCompile Include="fugue.c" />
+    <ClCompile Include="groestl.c" />
+    <ClCompile Include="hefty1.c" />
+    <ClCompile Include="jh.c" />
+    <ClCompile Include="keccak.c" />
+    <ClCompile Include="neoscrypt.c" />
+    <ClCompile Include="exports.cpp" />
+    <ClCompile Include="nist5.c" />
+    <ClCompile Include="quark.c" />
+    <ClCompile Include="qubit.c" />
+    <ClCompile Include="s3.c" />
+    <ClCompile Include="scryptn.c" />
+    <ClCompile Include="sha3\aes_helper.c" />
+    <ClCompile Include="sha3\hamsi.c" />
+    <ClCompile Include="sha3\hamsi_helper.c" />
+    <ClCompile Include="sha3\sph_blake.c" />
+    <ClCompile Include="sha3\sph_bmw.c" />
+    <ClCompile Include="sha3\sph_cubehash.c" />
+    <ClCompile Include="sha3\sph_echo.c" />
+    <ClCompile Include="sha3\sph_fugue.c" />
+    <ClCompile Include="sha3\sph_groestl.c" />
+    <ClCompile Include="sha3\sph_hefty1.c" />
+    <ClCompile Include="sha3\sph_jh.c" />
+    <ClCompile Include="sha3\sph_keccak.c" />
+    <ClCompile Include="sha3\sph_luffa.c" />
+    <ClCompile Include="sha3\sph_shabal.c" />
+    <ClCompile Include="sha3\sph_shavite.c" />
+    <ClCompile Include="sha3\sph_simd.c" />
+    <ClCompile Include="sha3\sph_skein.c" />
+    <ClCompile Include="sha3\sph_whirlpool.c" />
+    <ClCompile Include="shavite3.c" />
+    <ClCompile Include="skein.c" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="x11.c" />
+    <ClCompile Include="x13.c" />
+    <ClCompile Include="x14.c" />
+    <ClCompile Include="x15.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
