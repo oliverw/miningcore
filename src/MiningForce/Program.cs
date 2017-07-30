@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
@@ -16,6 +17,8 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
+using MiningForce.Crypto.Hashing.Algorithms;
+using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Payments;
 using MiningForce.Stratum;
@@ -53,7 +56,9 @@ namespace MiningForce
             {
 #if DEBUG
 	            DebugLoadMultiHashNativeWorkaround();
+	            //Console.WriteLine(new Scrypt(1024,1).Digest(Encoding.UTF8.GetBytes("dsfdsfdsfdssfds"), 0).ToHexString());
 #endif
+
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
@@ -521,10 +526,10 @@ namespace MiningForce
 #if DEBUG
 		    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		    {
-			    var runtime = Environment.Is64BitProcess ? "win7-x64" : "win7-86";
+			    var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
 			    var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", "multihash-native.dll");
+			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", "libmultihash.dll");
 			    var result = LoadLibraryEx(path, IntPtr.Zero, 0);
 		    }
 #endif
