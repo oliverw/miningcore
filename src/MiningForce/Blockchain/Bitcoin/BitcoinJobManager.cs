@@ -422,24 +422,29 @@ namespace MiningForce.Blockchain.Bitcoin
 		{
 			switch (poolConfig.Coin.Type)
 			{
+				// SHA256
 				case CoinType.BTC:
 				case CoinType.NMC:
+				case CoinType.PPC:
 					coinbaseHasher = sha256d;
 					headerHasher = sha256d;
 					blockHasher = sha256dReverse;
 					difficultyNormalizationFactor = 1;
 					break;
-
+				
+				// Scrypt
 				case CoinType.LTC:
 				case CoinType.DOGE:
 				case CoinType.EMC2:
 				case CoinType.DGB:
+				case CoinType.VIA:
 					coinbaseHasher = sha256d;
 					headerHasher = new Scrypt(1024, 1);
 					blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
 					difficultyNormalizationFactor = Math.Pow(2, 16) / 1000;
 					break;
 
+				// Groestl
 				case CoinType.GRS:
 					coinbaseHasher = sha256s;
 					headerHasher = new Groestl();

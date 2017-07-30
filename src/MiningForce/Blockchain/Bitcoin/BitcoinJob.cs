@@ -72,13 +72,6 @@ namespace MiningForce.Blockchain.Bitcoin
 		private readonly IHashAlgorithm headerHasher;
 		private readonly IHashAlgorithm blockHasher;
 
-		private static readonly Dictionary<CoinType, string> devFeeAddresses = new Dictionary<CoinType, string>
-		{
-			{CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
-			{CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
-			{CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q"},
-		};
-
 		// serialization constants
 		private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningForce/"))).ToBytes();
 		private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
@@ -342,10 +335,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			// Tiny donation to MiningForce developer(s)
 			if (!clusterConfig.DisableDevDonation &&
 			    networkType == BitcoinNetworkType.Main &&
-			    devFeeAddresses.ContainsKey(poolConfig.Coin.Type))
+			    KnownAddresses.DevFeeAddresses.ContainsKey(poolConfig.Coin.Type))
 				rewardRecipients.Add(new RewardRecipient
 				{
-					Address = devFeeAddresses[poolConfig.Coin.Type],
+					Address = KnownAddresses.DevFeeAddresses[poolConfig.Coin.Type],
 					Percentage = 0.2m
 				});
 

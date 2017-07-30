@@ -12,6 +12,8 @@ namespace MiningForce.Configuration
 		GRS,        // GroestlCoin
 		DGB,        // Digibyte
 		NMC,        // Namecoin
+		PPC,        // Peercoin
+		VIA,		// Viacoin
 	}
 
 	public class CoinConfig
