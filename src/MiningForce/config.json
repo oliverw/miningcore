@@ -27,6 +27,12 @@
     // Do not allow 0.2% donation to MiningForce developers. Please leave this disabled to help support development of MiningForce.
     "disableDevDonation": false,
 
+    // Rest API (for consumption by web-frontend and CLI tool)
+    "api": {
+        "address": "127.0.0.1", // IP address or "*" to listen on all interfaces
+        "port": 4000
+    },
+
     // Generate payouts for recorded shares and blocks
     "paymentProcessing": {
         "enabled": true,

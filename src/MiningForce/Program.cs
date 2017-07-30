@@ -3,23 +3,21 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Extensions.DependencyInjection;
 using AutoMapper;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
-using MiningForce.Crypto.Hashing;
-using MiningForce.Crypto.Hashing.Algorithms;
-using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Payments;
-using MiningForce.Persistence;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using Newtonsoft.Json;
@@ -28,21 +26,28 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
+using ILogger = NLog.ILogger;
+using LogLevel = NLog.LogLevel;
 
 namespace MiningForce
 {
     class Program
     {
-        private static IContainer container;
-        private static AutofacServiceProvider serviceProvider;
-        private static ILogger logger;
-        private static readonly List<StratumServer> servers = new List<StratumServer>();
+	    private static ILogger logger;
+	    private static IContainer container;
 	    private static CommandOption dumpConfigOption;
 	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
 	    private static PaymentProcessor paymentProcessor;
+	    private static IWebHost webHost;
 
-		static void Main(string[] args)
+	    private static ClusterConfig clusterConfig;
+	    private static readonly Dictionary<PoolConfig, Pool> pools = new Dictionary<PoolConfig, Pool>();
+
+		public static Dictionary<PoolConfig, Pool> Pools => pools;
+	    public static ClusterConfig ClusterConfig => clusterConfig;
+
+		public static void Main(string[] args)
 		{
             try
             {
@@ -54,7 +59,7 @@ namespace MiningForce
                     return;
 
                 Logo();
-                var clusterConfig = ReadConfig(configFile);
+                clusterConfig = ReadConfig(configFile);
 
 	            if (dumpConfigOption.HasValue())
 	            {
@@ -62,18 +67,15 @@ namespace MiningForce
 		            return;
 	            }
 
-	            ValidateConfig(clusterConfig);
-	            Bootstrap(clusterConfig);
+	            ValidateConfig();
+	            Bootstrap();
 
 	            if (!shareRecoveryOption.HasValue())
-	            {
-		            Start(clusterConfig).Wait();
-		            Console.ReadLine();
-	            }
+		            Start().Wait();
+	            else
+		            RecoverShares(shareRecoveryOption.Value());
 
-				else
-		            RecoverShares(clusterConfig, shareRecoveryOption.Value());
-            }
+			}
 
             catch (PoolStartupAbortException ex)
             {
@@ -155,13 +157,10 @@ namespace MiningForce
             return true;
         }
 
-        private static void Bootstrap(ClusterConfig config)
+        private static void Bootstrap()
         {
             // Service collection
-            var services = new ServiceCollection();
-
-            var builder = new ContainerBuilder();
-            builder.Populate(services);
+			var builder = new ContainerBuilder();
 
             builder.RegisterAssemblyModules(new[]
             {
@@ -177,14 +176,13 @@ namespace MiningForce
 	        builder.Register((ctx, parms) => amConf.CreateMapper());
 
 			// Persistence
-			ConfigurePersistence(config, builder);
+			ConfigurePersistence(builder);
 
 			// Autofac Container
 			container = builder.Build();
-            serviceProvider = new AutofacServiceProvider(container);
 
 			// Logging
-            ConfigureLogging(config);
+            ConfigureLogging();
 
 			ValidateRuntimeEnvironment();
         }
@@ -253,15 +251,15 @@ namespace MiningForce
 			    Console.WriteLine($"Error: {ex.Message}");
 	    }
 
-	    private static void ValidateConfig(ClusterConfig clusterConfig)
+	    private static void ValidateConfig()
 	    {
 		    if (clusterConfig.Pools.Length == 0)
 			    logger.ThrowLogPoolStartupException("No pools configured!");
 
-		    ValidatePoolIds(clusterConfig);
+		    ValidatePoolIds();
 	    }
 
-	    private static void ValidatePoolIds(ClusterConfig clusterConfig)
+	    private static void ValidatePoolIds()
 	    {
 		    // check for missing ids
 		    if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
@@ -302,7 +300,7 @@ namespace MiningForce
             Console.WriteLine();
         }
 
-	    private static void ConfigureLogging(ClusterConfig clusterConfig)
+	    private static void ConfigureLogging()
 	    {
 			var config = clusterConfig.Logging;
 			var loggingConfig = new LoggingConfiguration();
@@ -408,7 +406,7 @@ namespace MiningForce
 		    return Path.Combine(config.LogBaseDirectory, name);
 	    }
 
-	    private static void ConfigurePersistence(ClusterConfig clusterConfig, ContainerBuilder builder)
+	    private static void ConfigurePersistence(ContainerBuilder builder)
 	    {
 			if(clusterConfig.Persistence == null)
 				logger.ThrowLogPoolStartupException("Persistence is not configured!");
@@ -448,7 +446,37 @@ namespace MiningForce
 			    .SingleInstance();
 		}
 
-		private static async Task Start(ClusterConfig clusterConfig)
+	    private static void RunApiHost()
+	    {
+		    var address = clusterConfig.Api?.Address != null ?
+				(clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
+				IPAddress.Parse("127.0.0.1");
+
+		    var port = clusterConfig.Api?.Port ?? 4000;
+
+			webHost = new WebHostBuilder()
+			    .ConfigureServices(services =>
+			    {
+				    services.AddMvc();
+			    })
+			    .Configure(app =>
+			    {
+				    app.UseMvc();
+			    })
+			    .UseKestrel(options =>
+			    {
+				    options.Listen(address, port);
+			    })
+			    .Build();
+
+		    webHost.Start();
+
+			logger.Info(()=> $"Rest API online at http://{address}:{port}/api");
+
+			Console.ReadLine();
+	    }
+
+		private static async Task Start()
 		{
 			// start share recorder
 			shareRecorder = container.Resolve<ShareRecorder>();
@@ -460,7 +488,7 @@ namespace MiningForce
                 var pool = container.Resolve<Pool>();
 	            pool.Configure(poolConfig, clusterConfig);
 
-				servers.Add(pool);
+				pools[poolConfig] = pool;
 				shareRecorder.AttachPool(pool);
 
 				await pool.StartAsync();
@@ -475,9 +503,11 @@ namespace MiningForce
 
 				paymentProcessor.Start();
 			}
+
+			RunApiHost();
 		}
 
-		private static void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
+		private static void RecoverShares(string recoveryFilename)
 	    {
 		    shareRecorder = container.Resolve<ShareRecorder>();
 		    shareRecorder.RecoverShares(clusterConfig, recoveryFilename);

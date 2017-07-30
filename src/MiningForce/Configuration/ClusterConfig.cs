@@ -147,6 +147,12 @@ namespace MiningForce.Configuration
 		public decimal Percentage { get; set; }
 	}
 
+	public class ApiConfig
+	{
+		public string Address { get; set; }
+		public int Port { get; set; }
+	}
+
 	public class PoolConfig
 	{
 		public string Id { get; set; }
@@ -170,6 +176,7 @@ namespace MiningForce.Configuration
 		public ClusterBanningConfig Banning { get; set; }
 		public PersistenceConfig Persistence { get; set; }
 		public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
+		public ApiConfig Api { get; set; }
 		public bool DisableDevDonation { get; set; }
 
 		public PoolConfig[] Pools { get; set; }

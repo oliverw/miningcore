@@ -106,24 +106,29 @@ namespace MiningForce.Payments
 		{
 			return Observable.Create<IShare>(observer =>
 			{
-				var done = false;
-				
 				var thread = new Thread(() =>
 				{
-					while (!done)
+					while (true)
 					{
-						observer.OnNext(queue.Take());
+						try
+						{
+							observer.OnNext(queue.Take());
+							CheckQueueBacklog();
+						}
 
-						CheckQueueBacklog();
+						catch (ObjectDisposedException)
+						{
+							break;
+						}
 					}
 				});
 
-				thread.IsBackground = false;
+				thread.IsBackground = true;
 				thread.Priority = ThreadPriority.AboveNormal;
 				thread.Name = "Share Persistence Queue";
 				thread.Start();
 
-				return Disposable.Create(() => done = true);
+				return Disposable.Empty;
 			});
 		}
 

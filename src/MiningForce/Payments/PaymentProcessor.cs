@@ -48,8 +48,10 @@ namespace MiningForce.Payments
 	    private ClusterConfig clusterConfig;
 	    private Dictionary<CoinType, IPayoutHandler> payoutHandlers;
 	    private Dictionary<PayoutScheme, IPayoutScheme> payoutSchemes;
+		private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+	    private Thread thread;
 
-		#region API-Surface
+	    #region API-Surface
 
 		public void Configure(ClusterConfig clusterConfig)
 		{
@@ -61,7 +63,7 @@ namespace MiningForce.Payments
 		    ResolvePayoutHandlers();
 		    ResolvePayoutSchemes();
 
-			var thread = new Thread(async () =>
+			thread = new Thread(async () =>
 		    {
 			    logger.Info(() => "Online");
 
@@ -69,9 +71,7 @@ namespace MiningForce.Payments
 					clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
 				while (true)
-			    {
-				    var now = DateTime.UtcNow;
-
+				{
 					try
 					{
 						await ProcessPoolsAsync();
@@ -82,21 +82,31 @@ namespace MiningForce.Payments
 					    logger.Error(ex);
 				    }
 
-				    var elapsed = DateTime.UtcNow - now;
-				    var remaining = interval - elapsed;
+					var waitResult = stopEvent.WaitOne(interval);
 
-				    if (remaining.TotalSeconds > 0)
-					    Thread.Sleep(remaining);
+					// check if stop was signalled
+					if (waitResult)
+						break;
 				}
 			});
 
-		    thread.IsBackground = false;
+		    thread.IsBackground = true;
 		    thread.Priority = ThreadPriority.AboveNormal;
 		    thread.Name = "Payment Processor";
 		    thread.Start();
 	    }
 
-	    #endregion // API-Surface
+	    public void Stop()
+	    {
+		    logger.Info(() => "Stopping ..");
+
+		    stopEvent.Set();
+		    thread.Join();
+
+		    logger.Info(() => "Stopped");
+		}
+
+		#endregion // API-Surface
 
 		private void ResolvePayoutHandlers()
 	    {
