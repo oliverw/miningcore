@@ -44,6 +44,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		private IHashAlgorithm headerHasher;
 	    private IHashAlgorithm blockHasher;
 
+	    private readonly IHashAlgorithm sha256s = new Sha256S();
 	    private readonly IHashAlgorithm sha256d = new Sha256D();
 	    private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 
@@ -422,6 +423,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			switch (poolConfig.Coin.Type)
 			{
 				case CoinType.BTC:
+				case CoinType.NMC:
 					coinbaseHasher = sha256d;
 					headerHasher = sha256d;
 					blockHasher = sha256dReverse;
@@ -430,10 +432,19 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				case CoinType.LTC:
 				case CoinType.DOGE:
+				case CoinType.EMC2:
+				case CoinType.DGB:
 					coinbaseHasher = sha256d;
 					headerHasher = new Scrypt(1024, 1);
 					blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
 					difficultyNormalizationFactor = Math.Pow(2, 16) / 1000;
+					break;
+
+				case CoinType.GRS:
+					coinbaseHasher = sha256s;
+					headerHasher = new Groestl();
+					blockHasher = sha256dReverse;
+					difficultyNormalizationFactor = Math.Pow(2, 8) / 1000;
 					break;
 
 				default:

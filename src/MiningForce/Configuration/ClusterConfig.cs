@@ -7,7 +7,11 @@ namespace MiningForce.Configuration
 	{
 		BTC = 1,	// Bitcoin
 		LTC,		// Litecoin
-		DOGE,		// Dogecoin
+		DOGE,       // Dogecoin,
+		EMC2,       // Einsteinium
+		GRS,        // GroestlCoin
+		DGB,        // Digibyte
+		NMC,        // Namecoin
 	}
 
 	public class CoinConfig
