@@ -76,6 +76,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		{
 			{CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
 			{CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
+			{CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q"},
 		};
 
 		// serialization constants

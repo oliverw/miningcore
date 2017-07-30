@@ -131,7 +131,7 @@ namespace MiningForce.Payments
 		{
 			recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
 				? clusterConfig.PaymentProcessing.ShareRecoveryFile
-				: "recovered-shares.json";
+				: "recovered-shares.txt";
 		}
 
 		private void CheckQueueBacklog()
@@ -253,9 +253,9 @@ namespace MiningForce.Payments
 
 		private static void WriteRecoveryFileheader(StreamWriter writer)
 		{
-			writer.WriteLine("// The existence of this file means shares could not be committed to the database.");
-			writer.WriteLine("// You should stop the pool cluster and run the following command:");
-			writer.WriteLine("// miningforce -c <path-to-config> -rs <path-to-this-file>\n");
+			writer.WriteLine("# The existence of this file means shares could not be committed to the database.");
+			writer.WriteLine("# You should stop the pool cluster and run the following command:");
+			writer.WriteLine("# miningforce -c <path-to-config> -rs <path-to-this-file>\n");
 		}
 
 		public void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
@@ -266,12 +266,14 @@ namespace MiningForce.Payments
 			{
 				int successCount = 0;
 				int failCount = 0;
+				const int bufferSize = 20;
 
 				using (var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
 				{
 					using (var reader = new StreamReader(stream, new UTF8Encoding(false)))
 					{
 						var shares = new List<IShare>();
+						var lastProgressUpdate = DateTime.UtcNow;
 
 						while (!reader.EndOfStream)
 						{
@@ -282,25 +284,64 @@ namespace MiningForce.Payments
 								continue;
 
 							// skip comments
-							if (line.StartsWith("//"))
+							if (line.StartsWith("#"))
 								continue;
 
+							// parse
 							try
 							{
 								var share = JsonConvert.DeserializeObject<ShareBase>(line, jsonSerializerSettings);
-
-								shares.Clear();
 								shares.Add(share);
-								PersistShares(shares);
+							}
 
-								successCount++;
+							catch (JsonException ex)
+							{
+								logger.Error(ex, ()=> $"Unable to parse share record: {line}");
+								failCount++;
+							}
+
+							// import
+							try
+							{
+								if (shares.Count == bufferSize)
+								{
+									PersistShares(shares);
+
+									shares.Clear();
+									successCount += shares.Count;
+								}
 							}
 
 							catch (Exception ex)
 							{
-								logger.Error(ex, ()=> $"Unable to import share record: {line}");
+								logger.Error(ex, () => $"Unable to import shares");
 								failCount++;
 							}
+
+							// progress
+							var now = DateTime.UtcNow;
+							if (now - lastProgressUpdate > TimeSpan.FromMinutes(1))
+							{
+								logger.Info($"{successCount} shares imported");
+								lastProgressUpdate = now;
+							}
+						}
+
+						// import remaining shares
+						try
+						{
+							if (shares.Count > 0)
+							{
+								PersistShares(shares);
+
+								successCount += shares.Count;
+							}
+						}
+
+						catch (Exception ex)
+						{
+							logger.Error(ex, () => $"Unable to import shares");
+							failCount++;
 						}
 					}
 				}

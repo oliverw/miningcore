@@ -5,7 +5,6 @@ using Autofac;
 using CodeContracts;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
-using MiningForce.Crypto.Hashing;
 using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Crypto.Hashing.Special;
 using MiningForce.Daemon;
@@ -430,6 +429,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				case CoinType.LTC:
+				case CoinType.DOGE:
 					coinbaseHasher = sha256d;
 					headerHasher = new Scrypt(1024, 1);
 					blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
