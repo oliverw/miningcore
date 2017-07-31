@@ -5,12 +5,27 @@ using MiningForce.Stratum;
 
 namespace MiningForce.Blockchain
 {
-    public class NetworkStats
+	/// <summary>
+	/// By encapsulating this in an interface we can enforce a contract
+	/// in other layers consuming these metrics (such as persistence)
+	/// </summary>
+	public interface IBlockchainStats
+	{
+		string NetworkType { get; set; }
+		double NetworkHashRate { get; set; }
+		double NetworkDifficulty { get; set; }
+		DateTime? LastNetworkBlockTime { get; set; }
+		int BlockHeight { get; set; }
+		int ConnectedPeers { get; set; }
+		string RewardType { get; set; }
+	}
+
+	public class BlockchainStats : IBlockchainStats
     {
-        public string Network { get; set; }
-        public double HashRate { get; set; }
-        public DateTime? LastBlockTime { get; set; }
-        public double Difficulty { get; set; }
+        public string NetworkType { get; set; }
+        public double NetworkHashRate { get; set; }
+        public double NetworkDifficulty { get; set; }
+	    public DateTime? LastNetworkBlockTime { get; set; }
         public int BlockHeight { get; set; }
         public int ConnectedPeers { get; set; }
         public string RewardType { get; set; }
@@ -91,6 +106,6 @@ namespace MiningForce.Blockchain
         Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
 
         IObservable<object> Jobs { get; }
-        NetworkStats NetworkStats { get; }
+        BlockchainStats BlockchainStats { get; }
     }
 }

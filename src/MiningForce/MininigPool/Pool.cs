@@ -13,8 +13,11 @@ using NLog;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
+using MiningForce.Extensions;
 using MiningForce.JsonRpc;
 using MiningForce.Networking.Banning;
+using MiningForce.Persistence;
+using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using MiningForce.VarDiff;
@@ -25,19 +28,28 @@ namespace MiningForce.MininigPool
     public class Pool : StratumServer
     {
         public Pool(IComponentContext ctx,
-			JsonSerializerSettings serializerSettings) : 
+			JsonSerializerSettings serializerSettings,
+	        IConnectionFactory cf,
+			IStatsRepository statsRepo) : 
             base(ctx)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
 	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+	        Contract.RequiresNonNull(cf, nameof(cf));
+	        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
 			Shares = shareSubject.AsObservable();
 	        this.serializerSettings = serializerSettings;
+
+			this.cf = cf;
+	        this.statsRepo = statsRepo;
         }
 
 		private PoolConfig poolConfig;
 	    private ClusterConfig clusterConfig;
 	    private readonly JsonSerializerSettings serializerSettings;
+	    private readonly IConnectionFactory cf;
+	    private readonly IStatsRepository statsRepo;
         private readonly PoolStats poolStats = new PoolStats();
         private object currentJobParams;
         private IBlockchainJobManager manager;
@@ -61,8 +73,6 @@ namespace MiningForce.MininigPool
 
 	    #region API-Surface
 
-		public NetworkStats NetworkStats => manager.NetworkStats;
-        public PoolStats PoolStats => poolStats;
 		public IObservable<IShare> Shares { get; }
 
 	    public void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
@@ -83,9 +93,9 @@ namespace MiningForce.MininigPool
 
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
-	        SetupStats();
 			await InitializeJobManager();
 	        StartListeners(poolConfig.Ports);
+	        SetupStats();
 
 			logger.Info(() => $"[{LogCategory}] Online");
 
@@ -238,7 +248,7 @@ namespace MiningForce.MininigPool
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                UpdateVarDiff(client, NetworkStats.Difficulty);
+                UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
 
 	            try
 	            {
@@ -253,7 +263,7 @@ namespace MiningForce.MininigPool
 
 		            // update pool stats
 		            if (share.IsBlockCandidate)
-			            poolStats.LastBlockTime = DateTime.UtcNow;
+			            poolStats.LastPoolBlockTime = DateTime.UtcNow;
 
 		            // update client stats
 		            context.Stats.ValidShares++;
@@ -415,10 +425,30 @@ namespace MiningForce.MininigPool
 				    var result = shares.Sum(share => (share.NormalizedDifficulty * Math.Pow(2, 32)) / poolHashRateSampleInterval);
 					return (float) result;
 			    })
-			    .Subscribe(hashRate => poolStats.HashRate = hashRate);
-		}
+			    .Subscribe(hashRate => poolStats.PoolHashRate = hashRate);
 
-		private void SetupTelemetry()
+			Observable.Interval(TimeSpan.FromSeconds(10))
+				.StartWith(0)	// initial update
+			    .Subscribe(_ => PersistStats());
+	    }
+
+	    private void PersistStats()
+	    {
+		    try
+		    {
+			    cf.RunTx((con, tx) =>
+			    {
+				    statsRepo.UpdatePoolStats(con, tx, poolConfig.Id, poolStats, manager.BlockchainStats);
+			    });
+			}
+
+			catch (Exception ex)
+		    {
+			    logger.Error(ex, ()=> $"[{LogCategory}] Unable to persist stats");
+		    }
+	    }
+
+	    private void SetupTelemetry()
 	    {
 			// Average response times per minute
 		    resposeTimesSubject
@@ -489,12 +519,12 @@ namespace MiningForce.MininigPool
 
 Mining Pool:            {poolConfig.Id} 
 Coin Type:		{poolConfig.Coin.Type} 
-Network Connected:      {NetworkStats.Network}
-Detected Reward Type:   {NetworkStats.RewardType}
-Current Block Height:   {NetworkStats.BlockHeight}
-Current Connect Peers:  {NetworkStats.ConnectedPeers}
-Network Difficulty:     {NetworkStats.Difficulty}
-Network Hash Rate:      {FormatHashRate(NetworkStats.HashRate)}
+Network Connected:      {manager.BlockchainStats.NetworkType}
+Detected Reward Type:   {manager.BlockchainStats.RewardType}
+Current Block Height:   {manager.BlockchainStats.BlockHeight}
+Current Connect Peers:  {manager.BlockchainStats.ConnectedPeers}
+Network Difficulty:     {manager.BlockchainStats.NetworkDifficulty}
+Network Hash Rate:      {FormatHashRate(manager.BlockchainStats.NetworkHashRate)}
 Stratum Port(s):        {string.Join(", ", poolConfig.Ports.Keys)}
 Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 ";

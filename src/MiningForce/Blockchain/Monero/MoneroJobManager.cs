@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Blockchain.Monero.DaemonRequests;
 using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Daemon;
@@ -34,7 +33,7 @@ namespace MiningForce.Blockchain.Monero
         }
 
         private readonly ExtraNonceProvider extraNonceProvider;
-        private readonly NetworkStats networkStats = new NetworkStats();
+        private readonly BlockchainStats blockchainStats = new BlockchainStats();
 	    private MoneroNetworkType networkType;
 
 		#region API-Surface
@@ -94,7 +93,7 @@ namespace MiningForce.Blockchain.Monero
 		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
 			// under testnet or regtest conditions network difficulty may be lower than statum diff
-	        var minDiff = Math.Min(networkStats.Difficulty, stratumDifficulty);
+	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// get worker context
 			var context = GetWorkerContext(worker);
@@ -132,13 +131,13 @@ namespace MiningForce.Blockchain.Monero
 	        share.PoolId = poolConfig.Id;
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
-	        share.NetworkDifficulty = networkStats.Difficulty;
+	        share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
 			share.Created = DateTime.UtcNow;
 
 			return share;
         }
 
-	    public NetworkStats NetworkStats => networkStats;
+	    public BlockchainStats BlockchainStats => blockchainStats;
  
 		#endregion // API-Surface
 
@@ -204,8 +203,8 @@ namespace MiningForce.Blockchain.Monero
 		    networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
 
 			// update stats
-			networkStats.RewardType = "POW";
-	        networkStats.Network = networkType.ToString();
+			blockchainStats.RewardType = "POW";
+	        blockchainStats.NetworkType = networkType.ToString();
 
 			await UpdateNetworkStats();
 
@@ -243,7 +242,7 @@ namespace MiningForce.Blockchain.Monero
 				        validJobs.Clear();
 
 				        // update stats
-						networkStats.LastBlockTime = DateTime.UtcNow;
+						blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
 			        }
 
 			        validJobs[currentJob.JobId] = currentJob;
@@ -329,10 +328,10 @@ namespace MiningForce.Blockchain.Monero
 
 		    var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-		    networkStats.BlockHeight = (int) info.TargetHeight;
-		    networkStats.Difficulty = info.Difficulty;
-		    networkStats.HashRate = (double) info.Difficulty / info.Target;
-		    networkStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+		    blockchainStats.BlockHeight = (int) info.TargetHeight;
+		    blockchainStats.NetworkDifficulty = info.Difficulty;
+		    blockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
+		    blockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
 	    }
 
 		private void SetupCrypto()

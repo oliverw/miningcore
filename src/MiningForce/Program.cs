@@ -6,22 +6,15 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using MiningForce.Configuration;
-using MiningForce.Crypto.Hashing.Algorithms;
-using MiningForce.Extensions;
 using MiningForce.MininigPool;
 using MiningForce.Payments;
-using MiningForce.Stratum;
 using MiningForce.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -42,7 +35,6 @@ namespace MiningForce
 	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
 	    private static PaymentProcessor paymentProcessor;
-	    private static IWebHost webHost;
 
 	    private static ClusterConfig clusterConfig;
 	    private static readonly Dictionary<PoolConfig, Pool> pools = new Dictionary<PoolConfig, Pool>();
@@ -76,11 +68,15 @@ namespace MiningForce
 	            Bootstrap();
 
 	            if (!shareRecoveryOption.HasValue())
+	            {
 		            Start().Wait();
-	            else
+		            Console.ReadLine();
+	            }
+
+				else
 		            RecoverShares(shareRecoveryOption.Value());
 
-			}
+            }
 
             catch (PoolStartupAbortException ex)
             {
@@ -451,36 +447,6 @@ namespace MiningForce
 			    .SingleInstance();
 		}
 
-	    private static void RunApiHost()
-	    {
-		    var address = clusterConfig.Api?.Address != null ?
-				(clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
-				IPAddress.Parse("127.0.0.1");
-
-		    var port = clusterConfig.Api?.Port ?? 4000;
-
-			webHost = new WebHostBuilder()
-			    .ConfigureServices(services =>
-			    {
-				    services.AddMvc();
-			    })
-			    .Configure(app =>
-			    {
-				    app.UseMvc();
-			    })
-			    .UseKestrel(options =>
-			    {
-				    options.Listen(address, port);
-			    })
-			    .Build();
-
-		    webHost.Start();
-
-			logger.Info(()=> $"Rest API online at http://{address}:{port}/api");
-
-			Console.ReadLine();
-	    }
-
 		private static async Task Start()
 		{
 			// start share recorder
@@ -508,8 +474,6 @@ namespace MiningForce
 
 				paymentProcessor.Start();
 			}
-
-			RunApiHost();
 		}
 
 		private static void RecoverShares(string recoveryFilename)

@@ -35,7 +35,7 @@ namespace MiningForce.Blockchain.Bitcoin
         }
 
         private readonly ExtraNonceProvider extraNonceProvider;
-        private readonly NetworkStats networkStats = new NetworkStats();
+        private readonly BlockchainStats blockchainStats = new BlockchainStats();
 	    private IDestination poolAddressDestination;
 		private bool isPoS;
 	    private BitcoinNetworkType networkType;
@@ -115,7 +115,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
 			// under testnet or regtest conditions network difficulty may be lower than statum diff
-	        var minDiff = Math.Min(networkStats.Difficulty, stratumDifficulty);
+	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// get worker context
 			var context = GetWorkerContext(worker);
@@ -153,13 +153,13 @@ namespace MiningForce.Blockchain.Bitcoin
 	        share.PoolId = poolConfig.Id;
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
 			share.Worker = workername;
-	        share.NetworkDifficulty = networkStats.Difficulty;
+	        share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
 			share.Created = DateTime.UtcNow;
 
 			return share;
         }
 
-	    public NetworkStats NetworkStats => networkStats;
+	    public BlockchainStats BlockchainStats => blockchainStats;
  
 		#endregion // API-Surface
 
@@ -262,8 +262,8 @@ namespace MiningForce.Blockchain.Bitcoin
 				networkType = BitcoinNetworkType.Main;
 
 			// update stats
-	        networkStats.Network = networkType.ToString();
-	        networkStats.RewardType = isPoS ? "POS" : "POW";
+	        blockchainStats.NetworkType = networkType.ToString();
+	        blockchainStats.RewardType = isPoS ? "POS" : "POW";
 
 			// block submission RPC method
 			if (submitBlockResponse.Error?.Message?.ToLower() == "method not found")
@@ -311,7 +311,7 @@ namespace MiningForce.Blockchain.Bitcoin
 				        validJobs.Clear();
 
 				        // update stats
-						networkStats.LastBlockTime = DateTime.UtcNow;
+						blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
 			        }
 
 			        validJobs[currentJob.JobId] = currentJob;
@@ -413,10 +413,10 @@ namespace MiningForce.Blockchain.Bitcoin
 		    var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
 		    var miningInfoResponse = results[1].Response.ToObject<GetMiningInfoResponse>();
 
-		    networkStats.BlockHeight = infoResponse.Blocks;
-		    networkStats.Difficulty = miningInfoResponse.Difficulty;
-		    networkStats.HashRate = miningInfoResponse.NetworkHashps;
-		    networkStats.ConnectedPeers = infoResponse.Connections;
+		    blockchainStats.BlockHeight = infoResponse.Blocks;
+		    blockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
+		    blockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+		    blockchainStats.ConnectedPeers = infoResponse.Connections;
 	    }
 
 		private void SetupCrypto()
