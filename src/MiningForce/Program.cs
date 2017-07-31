@@ -39,7 +39,7 @@ namespace MiningForce
             try
             {
 #if DEBUG
-	            DebugLoadMultiHashNativeWorkaround();
+	            PreLoadLibMultihash();
 	            //Console.WriteLine(new Scrypt(1024,1).Digest(Encoding.UTF8.GetBytes("dsfdsfdsfdssfds"), 0).ToHexString());
 #endif
 				string configFile;
@@ -477,16 +477,20 @@ namespace MiningForce
 		[DllImport("kernel32.dll", SetLastError = true)]
 	    static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 
-		private static void DebugLoadMultiHashNativeWorkaround()
+		/// <summary>
+		/// work-around for libmultihash.dll not being found when running in dev-environment
+		/// </summary>
+		private static void PreLoadLibMultihash()
 	    {
-		    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-		    {
-			    var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
-			    var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			    throw new NotSupportedException($"{nameof(PreLoadLibMultihash)} only works on Windows");
 
-			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", "libmultihash.dll");
-			    var result = LoadLibraryEx(path, IntPtr.Zero, 0);
-		    }
+			// load it
+			var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
+			var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+
+			var path = Path.Combine(appRoot, "runtimes", runtime, "native", "libmultihash.dll");
+			var result = LoadLibraryEx(path, IntPtr.Zero, 0);
 		}
 #endif
 	}
