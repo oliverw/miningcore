@@ -89,7 +89,7 @@ namespace MiningForce.Mining
         {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-			logger.Info(() => $"[{LogCategory}] Launching ...");
+			logger.Info(() => $"[{LogCat}] Launching ...");
 
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
@@ -97,7 +97,7 @@ namespace MiningForce.Mining
 	        StartListeners(poolConfig.Ports);
 	        SetupStats();
 
-			logger.Info(() => $"[{LogCategory}] Online");
+			logger.Info(() => $"[{LogCat}] Online");
 
 			OutputPoolInfo();
         }
@@ -118,7 +118,7 @@ namespace MiningForce.Mining
 	        await manager.Jobs.Take(1).ToTask();
         }
 
-	    protected override string LogCategory => "Pool";
+	    protected override string LogCat => "Pool";
 
 	    protected override void OnConnect(StratumClient client)
         {
@@ -139,7 +139,7 @@ namespace MiningForce.Mining
 
 			else
 	        {
-		        logger.Trace(() => $"[{LogCategory}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
+		        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
 
 				DisconnectClient(client);
 	        }
@@ -157,7 +157,7 @@ namespace MiningForce.Mining
 	    protected override void OnRequest(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-			logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
+			logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
 		    try
 		    {
@@ -166,15 +166,17 @@ namespace MiningForce.Mining
 				    case StratumMethod.Subscribe:
 					    OnSubscribe(client, tsRequest);
 					    break;
-				    case StratumMethod.Authorize:
+
+					case StratumMethod.Authorize:
 					    OnAuthorize(client, tsRequest);
 					    break;
-				    case StratumMethod.SubmitShare:
+
+					case StratumMethod.SubmitShare:
 					    OnSubmitShare(client, tsRequest);
 					    break;
 
-				    default:
-					    logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+					default:
+					    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
 					    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
 					    break;
@@ -238,7 +240,7 @@ namespace MiningForce.Mining
 
 		    if (requestAge > maxShareAge)
 		    {
-			    logger.Debug(()=> $"[{LogCategory}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+			    logger.Debug(()=> $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
 				return;
 		    }
 
@@ -325,7 +327,7 @@ namespace MiningForce.Mining
                 {
                     if (!alive)
                     {
-                        logger.Info(() => $"[{LogCategory}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -380,7 +382,7 @@ namespace MiningForce.Mining
 		                // varDiff: if the client has a pending difficulty change, apply it now
 		                if (context.ApplyPendingDifficulty())
 		                {
-			                logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
+			                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
 
 							client.Notify(StratumMethod.SetDifficulty, new object[] {context.Difficulty});
 		                }
@@ -391,7 +393,7 @@ namespace MiningForce.Mining
 
 					else
 					{
-						logger.Info(() => $"[{LogCategory}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+						logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
 
 						DisconnectClient(client);
 					}
@@ -442,7 +444,7 @@ namespace MiningForce.Mining
 	    {
 		    try
 		    {
-				logger.Debug(()=> $"[{LogCategory}] Persisting stats");
+				logger.Debug(()=> $"[{LogCat}] Persisting stats");
 
 			    cf.RunTx((con, tx) =>
 			    {
@@ -452,7 +454,7 @@ namespace MiningForce.Mining
 
 			catch (Exception ex)
 		    {
-			    logger.Error(ex, ()=> $"[{LogCategory}] Unable to persist stats");
+			    logger.Error(ex, ()=> $"[{LogCat}] Unable to persist stats");
 		    }
 	    }
 
@@ -500,7 +502,7 @@ namespace MiningForce.Mining
 
 			    else
 			    {
-				    logger.Warn(() => $"[{LogCategory}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+				    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
 				    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 

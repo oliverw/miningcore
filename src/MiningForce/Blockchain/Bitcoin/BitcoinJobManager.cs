@@ -125,7 +125,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
-				logger.Info(() => $"[{LogCategory}] Submitting block {share.BlockHash}");
+				logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHash}");
 
 				var acceptResponse = await SubmitBlockAsync(share);
 
@@ -134,7 +134,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{LogCategory}] Daemon accepted block {share.BlockHash}");
+					logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHash}");
 
 					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
@@ -164,7 +164,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#region Overrides
 
-		protected override string LogCategory => "Bitcoin Job Manager";
+		protected override string LogCat => "Bitcoin Job Manager";
 
 		protected override async Task<bool> IsDaemonHealthy()
         {
@@ -193,13 +193,13 @@ namespace MiningForce.Blockchain.Bitcoin
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{LogCategory}] All daemons synched with blockchain");
+                    logger.Info(() => $"[{LogCat}] All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 { 
-                    logger.Info(() => $"[{LogCategory}] Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -228,7 +228,7 @@ namespace MiningForce.Blockchain.Bitcoin
 				var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock).ToArray();
 				
 				if(errors.Any())
-					logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y=> y.Error.Message))}", LogCategory);
+					logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y=> y.Error.Message))}", LogCat);
 	        }
 
 			// extract results
@@ -239,10 +239,10 @@ namespace MiningForce.Blockchain.Bitcoin
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.IsValid)
-                logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCategory);
+                logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
 			if (!validateAddressResponse.IsMine)
-				logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCategory);
+				logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
 			isPoS = difficultyResponse.Values().Any(x=> x.Path == "proof-of-stake");
 
@@ -270,7 +270,7 @@ namespace MiningForce.Blockchain.Bitcoin
             else if (submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCategory);
+                logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCat);
 
             await UpdateNetworkStats();
 
@@ -284,7 +284,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        // may happen if daemon is currently not connected to peers
 	        if (response.Error != null)
 			{ 
-		        logger.Warn(() => $"[{LogCategory}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+		        logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
 				return false;
 			}
 
@@ -360,7 +360,7 @@ namespace MiningForce.Blockchain.Bitcoin
                             .First().StartingHeight;
 
                         var percent = ((double)totalBlocks / blockCount) * 100;
-                        logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
+                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
                     }
                 }
             }
@@ -382,7 +382,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			if (!string.IsNullOrEmpty(submitError))
 		    {
-			    logger.Warn(()=> $"[{LogCategory}] Block submission failed with: {submitError}");
+			    logger.Warn(()=> $"[{LogCat}] Block submission failed with: {submitError}");
 			    return (false, null);
 		    }
 
@@ -406,7 +406,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    var errors = results.Where(x => x.Error != null).ToArray();
 
 			    if (errors.Any())
-				    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+				    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
 		    }
 
 		    var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
@@ -453,7 +453,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				default:
-					logger.ThrowLogPoolStartupException("Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCategory);
+					logger.ThrowLogPoolStartupException("Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
 					break;
 			}
 		}

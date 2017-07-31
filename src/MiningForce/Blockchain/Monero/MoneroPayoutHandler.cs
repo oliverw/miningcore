@@ -47,7 +47,7 @@ namespace MiningForce.Blockchain.Monero
 
 			// extract dedicated wallet daemon endpoints
 			var walletDaemonEndpoints = poolConfig.Daemons
-				.Where(x => x.Category.ToLower() == MoneroConstants.WalletDaemonCategory)
+				.Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
 				.ToArray();
 
 			daemon.Configure(walletDaemonEndpoints);

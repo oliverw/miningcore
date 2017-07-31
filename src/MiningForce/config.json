@@ -1,6 +1,6 @@
 ﻿{
     "logging": {
-        "level": "info",
+        "level": "debug",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",
@@ -95,7 +95,7 @@
             // optional and will only be used for the ports you configure it for.
             "ports": {
                 "4032": { // A port for your miners to connect to
-                    "difficulty": 0.1, // the pool difficulty for this port
+                    "difficulty": 8, // the pool difficulty for this port
 
                     // Variable difficulty is a feature that will automatically adjust difficulty for
                     // individual miners based on their hashrate in order to lower networking overhead
@@ -109,7 +109,7 @@
                 },
 
                 "4256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 0.1 // 256 //  The pool difficulty
+                    "difficulty": 8 // 256 //  The pool difficulty
                 }
             },
 

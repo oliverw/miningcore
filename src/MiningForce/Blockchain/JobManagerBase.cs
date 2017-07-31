@@ -67,7 +67,7 @@ namespace MiningForce.Blockchain
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
 
-	        logger.Info(() => $"[{LogCategory}] Launching ...");
+	        logger.Info(() => $"[{LogCat}] Launching ...");
 
 			this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
@@ -77,7 +77,7 @@ namespace MiningForce.Blockchain
             await PostStartInitAsync();
             CreateJobStream();
 
-            logger.Info(() => $"[{LogCategory}] Online");
+            logger.Info(() => $"[{LogCat}] Online");
         }
 
 		#endregion // API-Surface
@@ -91,16 +91,16 @@ namespace MiningForce.Blockchain
         {
             while (!await IsDaemonHealthy())
             {
-                logger.Info(() => $"[{LogCategory}] Waiting for daemons to come online ...");
+                logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
 
-            logger.Info(() => $"[{LogCategory}] All daemons online");
+            logger.Info(() => $"[{LogCat}] All daemons online");
 
 	        while (!await IsDaemonConnected())
 	        {
-		        logger.Info(() => $"[{LogCategory}] Waiting for daemons to connect to peers ...");
+		        logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
 
 		        await Task.Delay(TimeSpan.FromSeconds(10));
 	        }
@@ -115,7 +115,7 @@ namespace MiningForce.Blockchain
 				.Do(isNew =>
 				{
 					if (isNew)
-						logger.Info(() => $"[{LogCategory}] New block detected");
+						logger.Info(() => $"[{LogCat}] New block detected");
 				})
 				.Where(isNew => isNew)
 				.Publish()
@@ -124,7 +124,7 @@ namespace MiningForce.Blockchain
 			// if there haven't been any new jobs for a while, force an update
 			var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
 				.TakeUntil(newJobs)		// cancel timeout if an actual new job has been detected
-				.Do(_=> logger.Info(() => $"[{LogCategory}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
+				.Do(_=> logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
 				                           $"updating transactions & rebroadcasting work"))
 				.Select(x => Observable.FromAsync(() => UpdateJob(true)))
 				.Concat()
@@ -157,7 +157,7 @@ namespace MiningForce.Blockchain
 		    return Interlocked.Increment(ref jobId).ToString("x", CultureInfo.InvariantCulture);
 	    }
 
-	    protected virtual string LogCategory { get; } = "Job Manager";
+	    protected virtual string LogCat { get; } = "Job Manager";
 
 		protected abstract Task<bool> IsDaemonHealthy();
 	    protected abstract Task<bool> IsDaemonConnected();

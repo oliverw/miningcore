@@ -46,7 +46,7 @@ namespace MiningForce
             builder.RegisterInstance(new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
-            });
+			});
 
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();

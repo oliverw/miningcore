@@ -149,7 +149,7 @@ namespace MiningForce.Blockchain.Monero
 
 		#region Overrides
 
-		protected override string LogCategory => "Monero Job Manager";
+		protected override string LogCat => "Monero Job Manager";
 
 	    #region Overrides of JobManagerBase<MoneroWorkerContext,MoneroJob>
 
@@ -164,7 +164,7 @@ namespace MiningForce.Blockchain.Monero
 
 		    // extract dedicated wallet daemon endpoints
 			walletDaemonEndpoints = poolConfig.Daemons
-			    .Where(x => x.Category.ToLower() == MoneroConstants.WalletDaemonCategory)
+			    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
 			    .ToArray();
 
 			base.Configure(poolConfig, clusterConfig);
@@ -212,13 +212,13 @@ namespace MiningForce.Blockchain.Monero
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{LogCategory}] All daemons synched with blockchain");
+                    logger.Info(() => $"[{LogCat}] All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 { 
-                    logger.Info(() => $"[{LogCategory}] Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -234,7 +234,7 @@ namespace MiningForce.Blockchain.Monero
 	        var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
 	        if (infoResponse.Error != null)
-			    logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCategory);
+			    logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
 	        // extract results
 	        var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -258,7 +258,7 @@ namespace MiningForce.Blockchain.Monero
 	        // may happen if daemon is currently not connected to peers
 	        if (response.Error != null)
 			{ 
-		        logger.Warn(() => $"[{LogCategory}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+		        logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
 				return false;
 			}
 
@@ -329,7 +329,7 @@ namespace MiningForce.Blockchain.Monero
 	            var totalBlocks = firstValidResponse.TargetHeight;
 		        var percent = ((double) lowestHeight / totalBlocks) * 100;
 
-		        logger.Info(() => $"[{LogCategory}] Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
+		        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
 			}
         }
 
@@ -364,7 +364,7 @@ namespace MiningForce.Blockchain.Monero
 		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
 		    if (infoResponse.Error != null)
-			    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+			    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
 		    var info = infoResponse.Response.ToObject<GetInfoResponse>();
 

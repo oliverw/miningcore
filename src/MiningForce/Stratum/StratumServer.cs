@@ -63,7 +63,7 @@ namespace MiningForce.Stratum
 
                 task.Start();
 
-                logger.Info(() => $"[{LogCategory}] Stratum port {port} online");
+                logger.Info(() => $"[{LogCat}] Stratum port {port} online");
             }
         }
 
@@ -96,14 +96,14 @@ namespace MiningForce.Stratum
 
         private void OnReceiveError(StratumClient client, Exception ex)
         {
-            logger.Error(() => $"[{LogCategory}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+            logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
         private void OnReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{LogCategory}] [{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
@@ -157,7 +157,7 @@ namespace MiningForce.Stratum
             }
         }
 
-		protected abstract string LogCategory { get; }
+		protected abstract string LogCat { get; }
 
         protected abstract void OnConnect(StratumClient client);
         protected abstract void OnDisconnect(string subscriptionId);
