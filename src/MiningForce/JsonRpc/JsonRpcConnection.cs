@@ -49,13 +49,13 @@ namespace MiningForce.JsonRpc
             var incomingLines = incomingChars
                 .Buffer(incomingChars.Where(c => c == '\n' || c == '\r')) // scan for newline
                 .TakeWhile(ValidateInput)  // flood protetion
-                .Select(c => new string(c.ToArray()).Trim()); // transform buffer back to string
+                .Select(c => new string(c.ToArray()).Trim()); // transform back to string
 
             Received = incomingLines
-		        .Where(x => x.Length > 0) // ignore empty lines
-				.Select(x => new { Json = x, Msg = JsonConvert.DeserializeObject<JsonRpcRequest>(x, serializerSettings) })
+		        .Where(line => line.Length > 0) // ignore empty lines
+				.Select(line => new { Json = line, Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings) })
                 .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
-                .Select(x => x.Msg)
+                .Select(x => x.Request)
 				.Timestamp()
                 .Publish()
                 .RefCount();
@@ -65,26 +65,18 @@ namespace MiningForce.JsonRpc
 
         public void Send<T>(JsonRpcResponse<T> response)
         {
-            Contract.RequiresNonNull(response, nameof(response));
-
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-            var bytes = Encoding.UTF8.GetBytes(json);
-
 	        logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
-			upstream.Send(bytes);
+			upstream.Send(Encoding.UTF8.GetBytes(json));
         }
 
         public void Send<T>(JsonRpcRequest<T> request)
         {
-            Contract.RequiresNonNull(request, nameof(request));
-
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
-            var bytes = Encoding.UTF8.GetBytes(json);
-
 	        logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
-			upstream.Send(bytes);
+			upstream.Send(Encoding.UTF8.GetBytes(json));
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.RemoteEndPoint;
@@ -99,12 +91,12 @@ namespace MiningForce.JsonRpc
 
         private bool ValidateInput(IList<char> chars)
         {
-            var messageTooLong = chars.Count > MaxRequestLength;
+            var isInvalid = chars.Count > MaxRequestLength;
 
-            if (messageTooLong)
+            if (isInvalid)
                 logger.Error(() => $"[{upstream.ConnectionId}] Incoming message too big. Closing");
 
-            return !messageTooLong;
+            return !isInvalid;
         }
     }
 }

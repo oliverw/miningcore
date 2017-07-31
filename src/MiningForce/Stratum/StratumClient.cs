@@ -101,7 +101,7 @@ namespace MiningForce.Stratum
         {
             lock (rpcCon)
             {
-                rpcCon.Close();
+                rpcCon?.Close();
             }
         }
 
