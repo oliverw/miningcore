@@ -131,9 +131,12 @@ namespace MiningForce.MininigPool
 		        {
 			        poolStats.ConnectedMiners = clients.Count;
 		        }
-	        }
 
-	        else
+		        // Telemetry
+		        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
+			}
+
+			else
 	        {
 		        logger.Trace(() => $"[{LogCategory}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Autofac;
@@ -9,7 +8,6 @@ using CodeContracts;
 using LibUvManaged;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
-using MiningForce.VarDiff;
 
 namespace MiningForce.Stratum
 {
@@ -35,12 +33,23 @@ namespace MiningForce.Stratum
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;
-        }
+
+	        // Telemetry
+	        ResponseTime = Requests
+		        .Where(x => !string.IsNullOrEmpty(x.Value.Id))
+		        .SelectMany(req => responses
+			        .Where(reqId => reqId == req.Value.Id)
+			        .Select(_ => (int)(DateTimeOffset.UtcNow - req.Timestamp).TotalMilliseconds)
+			        .Take(1))
+		        .Publish()
+		        .RefCount();
+		}
 
 		public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
+	    public IObservable<int> ResponseTime { get; private set; }
 
 		public void Respond<T>(T payload, string id)
         {
