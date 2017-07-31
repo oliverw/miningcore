@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -22,8 +20,6 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
-using ILogger = NLog.ILogger;
-using LogLevel = NLog.LogLevel;
 
 namespace MiningForce
 {
@@ -35,12 +31,8 @@ namespace MiningForce
 	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
 	    private static PaymentProcessor paymentProcessor;
-
 	    private static ClusterConfig clusterConfig;
 	    private static readonly Dictionary<PoolConfig, Pool> pools = new Dictionary<PoolConfig, Pool>();
-
-		public static Dictionary<PoolConfig, Pool> Pools => pools;
-	    public static ClusterConfig ClusterConfig => clusterConfig;
 
 		public static void Main(string[] args)
 		{
@@ -50,7 +42,6 @@ namespace MiningForce
 	            DebugLoadMultiHashNativeWorkaround();
 	            //Console.WriteLine(new Scrypt(1024,1).Digest(Encoding.UTF8.GetBytes("dsfdsfdsfdssfds"), 0).ToHexString());
 #endif
-
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
@@ -482,12 +473,12 @@ namespace MiningForce
 		    shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
 	    }
 
+#if DEBUG
 		[DllImport("kernel32.dll", SetLastError = true)]
 	    static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 
 		private static void DebugLoadMultiHashNativeWorkaround()
 	    {
-#if DEBUG
 		    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		    {
 			    var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
@@ -496,7 +487,7 @@ namespace MiningForce
 			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", "libmultihash.dll");
 			    var result = LoadLibraryEx(path, IntPtr.Zero, 0);
 		    }
-#endif
 		}
+#endif
 	}
 }
