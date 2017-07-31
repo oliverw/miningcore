@@ -108,64 +108,32 @@ namespace MiningForce.Blockchain
 
 		protected virtual void CreateJobStream()
 		{
-			//var regularJobUpdates = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-			//	.Select(_ => Observable.FromAsync(() => UpdateJob(false)))
-			//	.Concat()
-			//	.Select(GetJobParamsForStratum)
-			//	.Publish()
-			//	.RefCount();
+			// periodically update job from daemon
+			var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+				.Select(_ => Observable.FromAsync(() => UpdateJob(false)))
+				.Concat()
+				.Do(isNew =>
+				{
+					if (isNew)
+						logger.Info(() => $"[{LogCategory}] New block detected");
+				})
+				.Where(isNew => isNew)
+				.Publish()
+				.RefCount();
 
-			Jobs = Observable.Create<object>(observer =>
-            {
-                var interval = TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval);
-                var abort = false;
+			// if there haven't been any new jobs for a while, force an update
+			var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
+				.TakeUntil(newJobs)		// cancel timeout if an actual new job has been detected
+				.Do(_=> logger.Info(() => $"[{LogCategory}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
+				                           $"updating transactions & rebroadcasting work"))
+				.Select(x => Observable.FromAsync(() => UpdateJob(true)))
+				.Concat()
+				.Repeat();
 
-                var task = new Task(async () =>
-                {
-                    while (!abort)
-                    {
-                        try
-                        {
-                            var now = DateTime.UtcNow;
-
-							// force an update of current job if we haven't received a new block for a while
-	                        var forceUpdate = lastBlockUpdate.HasValue && (now - lastBlockUpdate) > jobRebroadcastTimeout;
-
-							if(forceUpdate)
-								logger.Debug(()=> $"[{LogCategory}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
-
-							if (await UpdateJob(forceUpdate) || forceUpdate)
-							{
-								var isNew = !forceUpdate;
-
-								if (isNew)
-									logger.Info(() => $"[{LogCategory}] New block detected");
-
-								lastBlockUpdate = now;
-
-	                            // emit new job params
-								var jobParams = GetJobParamsForStratum(isNew);
-                                observer.OnNext(jobParams);
-                            }
-
-	                        if (forceUpdate)
-		                        await UpdateNetworkStats();
-
-                            Thread.Sleep(interval);
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.Warn(() => $"[{LogCategory}] Error during job polling: {ex.Message}");
-                        }
-                    }
-                }, TaskCreationOptions.LongRunning);
-
-                task.Start();
-
-                return Disposable.Create(()=> abort = true);
-            })
-            .Publish()
-            .RefCount();
+			Jobs = Observable.Merge(newJobs, forcedNewJobs)
+				.Select(GetJobParamsForStratum)
+				.Publish()
+				.RefCount();
         }
 
         protected TWorkerContext GetWorkerContext(StratumClient client)

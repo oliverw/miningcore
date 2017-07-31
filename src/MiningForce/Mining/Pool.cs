@@ -111,7 +111,8 @@ namespace MiningForce.Mining
 			manager.Configure(poolConfig, clusterConfig);
             await manager.StartAsync(this);
 
-            manager.Jobs.Subscribe(OnNewJob);
+            manager.Jobs
+				.Subscribe(OnNewJob);
 
 			// we need work before opening the gates
 	        await manager.Jobs.Take(1).ToTask();
