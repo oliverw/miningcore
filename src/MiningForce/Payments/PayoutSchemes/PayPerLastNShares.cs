@@ -11,6 +11,9 @@ using NLog;
 
 namespace MiningForce.Payments.PayoutSchemes
 {
+	/// <summary>
+	/// PPLNS payout scheme implementation
+	/// </summary>
     public class PayPerLastNShares : IPayoutScheme
     {
 	    public PayPerLastNShares(IConnectionFactory cf, 
