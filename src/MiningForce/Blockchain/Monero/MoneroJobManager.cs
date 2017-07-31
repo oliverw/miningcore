@@ -46,7 +46,7 @@ namespace MiningForce.Blockchain.Monero
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-	        var response = await daemon.ExecuteCmdAnyAsync<SplitIntegratedAddressResponse>(
+	        var response = await walletDaemon.ExecuteCmdAnyAsync<SplitIntegratedAddressResponse>(
 				MWC.SplitIntegratedAddress, new { split_integrated_address = address });
 
 	        return response.Error == null && !string.IsNullOrEmpty(response.Response.StandardAddress);
