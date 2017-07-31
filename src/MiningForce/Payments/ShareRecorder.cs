@@ -14,7 +14,7 @@ using CodeContracts;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;

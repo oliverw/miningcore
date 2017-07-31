@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
 using MiningForce.Blockchain;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 using MiningForce.Persistence.Repositories;
 
 namespace MiningForce.Persistence.Postgres.Repositories

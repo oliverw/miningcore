@@ -1,6 +1,6 @@
 ﻿using System;
 using MiningForce.Blockchain;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 
 namespace MiningForce.Persistence.Postgres.Entities
 {

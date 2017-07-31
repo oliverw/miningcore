@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using MiningForce.Configuration;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 using NLog;
 
 namespace MiningForce.Util

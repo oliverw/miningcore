@@ -2,14 +2,14 @@
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
+using MiningForce.Banning;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
-using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Blockchain.Monero;
 using MiningForce.Configuration;
+using MiningForce.DaemonInterface;
 using MiningForce.JsonRpc;
-using MiningForce.MininigPool;
-using MiningForce.Networking.Banning;
+using MiningForce.Mining;
 using MiningForce.Payments;
 using MiningForce.Payments.PayoutSchemes;
 using MiningForce.Stratum;

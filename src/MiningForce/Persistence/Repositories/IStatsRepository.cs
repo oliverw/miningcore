@@ -2,7 +2,7 @@
 using System.Data;
 using System.Threading.Tasks;
 using MiningForce.Blockchain;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 
 namespace MiningForce.Persistence.Repositories
 {

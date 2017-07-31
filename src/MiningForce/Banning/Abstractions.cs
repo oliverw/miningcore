@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace MiningForce.Networking.Banning
+namespace MiningForce.Banning
 {
 	public interface IBanManager
 	{

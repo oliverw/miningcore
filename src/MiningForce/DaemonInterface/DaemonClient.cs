@@ -11,7 +11,7 @@ using MiningForce.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace MiningForce.Blockchain.DaemonInterface
+namespace MiningForce.DaemonInterface
 {
 	/// <summary>
 	/// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance

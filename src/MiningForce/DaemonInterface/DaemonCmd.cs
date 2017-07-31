@@ -1,4 +1,4 @@
-﻿namespace MiningForce.Blockchain.DaemonInterface
+﻿namespace MiningForce.DaemonInterface
 {
 	public class DaemonCmd
 	{

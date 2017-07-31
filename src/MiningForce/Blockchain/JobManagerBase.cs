@@ -10,8 +10,8 @@ using Autofac;
 using CodeContracts;
 using NLog;
 using MiningForce.Blockchain.Bitcoin;
-using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
+using MiningForce.DaemonInterface;
 using MiningForce.Stratum;
 using MiningForce.Util;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using AutoMapper;
 using MiningForce.Blockchain;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 
 namespace MiningForce
 {

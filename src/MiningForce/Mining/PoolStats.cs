@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MiningForce.MininigPool
+namespace MiningForce.Mining
 {
 	/// <summary>
 	/// By encapsulating this in an interface we can enforce a contract

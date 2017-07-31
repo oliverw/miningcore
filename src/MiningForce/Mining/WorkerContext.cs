@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using MiningForce.Configuration;
 using MiningForce.Stratum;
 using MiningForce.VarDiff;
 
-namespace MiningForce.MininigPool
+namespace MiningForce.Mining
 {
     public class BanningStats
     {

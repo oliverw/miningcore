@@ -11,7 +11,7 @@ using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
 using NLog;
 using MiningForce.Configuration;
-using MiningForce.MininigPool;
+using MiningForce.Mining;
 using MiningForce.Payments;
 using MiningForce.Util;
 using Newtonsoft.Json;
