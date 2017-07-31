@@ -64,7 +64,7 @@ namespace MiningForce.Blockchain.Monero
 			var result = new List<Block>();
 
 			// TODO
-			throw new NotImplementedException();
+			return Task.FromResult(blocks);
 		}
 
 		public Task PayoutAsync(Balance[] balances)
@@ -74,7 +74,7 @@ namespace MiningForce.Blockchain.Monero
 			logger.Info(() => $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
 			// TODO
-			throw new NotImplementedException();
+			return Task.FromResult(true);
 		}
 
 		#endregion // IPayoutHandler

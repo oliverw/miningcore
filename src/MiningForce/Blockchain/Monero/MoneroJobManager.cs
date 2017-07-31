@@ -192,32 +192,22 @@ namespace MiningForce.Blockchain.Monero
 		
         protected override async Task PostStartInitAsync()
         {
-	        var commands = new[]
-	        {
-		        new DaemonCmd(MDC.GetInfo)
-	        };
+	        var infoResponse = await daemon.ExecuteCmdAnyAsync(MDC.GetInfo);
 
-	        var results = await daemon.ExecuteBatchAnyAsync(commands);
-
-	        if (results.Any(x => x.Error != null))
-	        {
-		        var resultList = results.ToList();
-		        var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != MDC.SubmitBlock).ToArray();
-
-		        if (errors.Any())
-			        logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", LogCategory);
-	        }
+	        if (infoResponse.Error != null)
+			    logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCategory);
 
 	        // extract results
-	        var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
+	        var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
 			// chain detection
-		    networkType = infoResponse.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
+		    networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
 
 			// update stats
 			networkStats.RewardType = "POW";
+	        networkStats.Network = networkType.ToString();
 
-            await UpdateNetworkStats();
+			await UpdateNetworkStats();
 
 	        SetupCrypto();
 		}
@@ -332,24 +322,17 @@ namespace MiningForce.Blockchain.Monero
 
 	    protected override async Task UpdateNetworkStats()
 	    {
-		    var results = await daemon.ExecuteBatchAnyAsync(
-			    new DaemonCmd(MDC.GetInfo)
-		    );
+		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MDC.GetInfo);
 
-		    if (results.Any(x => x.Error != null))
-		    {
-			    var errors = results.Where(x => x.Error != null).ToArray();
+		    if (infoResponse.Error != null)
+			    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
-			    if (errors.Any())
-				    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
-		    }
+		    var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-		    var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
-
-		    networkStats.BlockHeight = (int) infoResponse.TargetHeight;
-		    networkStats.Difficulty = infoResponse.Difficulty;
-		    // TODO: networkStats.HashRate = infoResponse.;
-		    networkStats.ConnectedPeers = infoResponse.OutgoingConnectionsCount + infoResponse.IncomingConnectionsCount;
+		    networkStats.BlockHeight = (int) info.TargetHeight;
+		    networkStats.Difficulty = info.Difficulty;
+		    networkStats.HashRate = (double) info.Difficulty / info.Target;
+		    networkStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
 	    }
 
 		private void SetupCrypto()

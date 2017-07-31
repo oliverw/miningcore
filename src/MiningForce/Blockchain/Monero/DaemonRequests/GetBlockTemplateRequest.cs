@@ -7,7 +7,7 @@ namespace MiningForce.Blockchain.Monero.DaemonRequests
 		/// <summary>
 		/// Address of wallet to receive coinbase transactions if block is successfully mined.
 		/// </summary>
-		[JsonProperty("wallet_address ")]
+		[JsonProperty("wallet_address")]
 		public string WalletAddress { get; set; }
 
 	    [JsonProperty("reserved_offset")]
