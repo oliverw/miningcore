@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using NLog;
-using MiningForce.Authorization;
 using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
@@ -35,7 +34,6 @@ namespace MiningForce.Blockchain
 	    protected ClusterConfig clusterConfig;
         protected DaemonClient daemon;
         protected StratumServer stratum;
-        private IWorkerAuthorizer authorizer;
         protected ILogger logger;
 	    private TimeSpan jobRebroadcastTimeout;
 	    protected DateTime? lastBlockUpdate;
@@ -74,7 +72,6 @@ namespace MiningForce.Blockchain
 			this.stratum = stratum;
 	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
-			SetupAuthorizer();
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
@@ -89,26 +86,6 @@ namespace MiningForce.Blockchain
 		{
 			daemon.Configure(poolConfig.Daemons);
 		}
-
-		protected virtual void SetupAuthorizer()
-        {
-            authorizer = ctx.ResolveNamed<IWorkerAuthorizer>(poolConfig.Authorizer.ToString());
-        }
-
-        /// <summary>
-        /// Authorizes workers using configured authenticator
-        /// </summary>
-        /// <param name="worker">StratumClient requesting authorization</param>
-        /// <param name="workername">Name of worker requesting authorization</param>
-        /// <param name="password">The password</param>
-        /// <returns></returns>
-        public virtual Task<bool> AuthenticateWorkerAsync(StratumClient worker, string workername, string password)
-        {
-            Contract.RequiresNonNull(worker, nameof(worker));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workername), $"{nameof(workername)} must not be empty");
-
-            return authorizer.AuthorizeAsync((IBlockchainJobManager) this, worker.RemoteEndpoint, workername, password);
-        }
         
         protected virtual async Task StartDaemonAsync()
         {

@@ -241,8 +241,6 @@ namespace MiningForce
 					Console.WriteLine($"Error: Coin '{value}' is not (yet) supported (line {line}, column {col})");
 			    else if (type == typeof(PayoutScheme))
 				    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
-			    else if (type == typeof(StratumAuthorizerKind))
-				    Console.WriteLine($"Error: Authorization method '{value}' is not (yet) supported (line {line}, column {col})");
 			}
 
 			else

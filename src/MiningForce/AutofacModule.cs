@@ -1,9 +1,7 @@
-﻿using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
-using MiningForce.Authorization;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Blockchain.DaemonInterface;
@@ -14,7 +12,6 @@ using MiningForce.MininigPool;
 using MiningForce.Networking.Banning;
 using MiningForce.Payments;
 using MiningForce.Payments.PayoutSchemes;
-using MiningForce.Persistence;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -66,10 +63,6 @@ namespace MiningForce
 	        builder.RegisterType<PaymentProcessor>()
 		        .AsSelf()
 				.SingleInstance();
-
-			builder.RegisterType<AddressBasedWorkerAuthorizer>()
-                .Named<IWorkerAuthorizer>(StratumAuthorizerKind.AddressBased.ToString())
-                .SingleInstance();
 
             builder.RegisterType<ExtraNonceProvider>()
                 .AsSelf();

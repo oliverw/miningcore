@@ -50,7 +50,6 @@
         //     "coin": {
         //         "type": "XMR"
         //     },
-        //     "authorizer": "addressbased",
 
         //     // Address to where block rewards are given (pool wallet)
         //     "address": "44L1YtEQdoiWxpewRmRDRGFNVxda8KRgnJ5fqwvFjkwjhNjMSxJVsjDBej2qJEHoGrfYVbKb72Jt8eUpdjUiYQLJ4qraTJz",
@@ -150,7 +149,6 @@
             "coin": {
                 "type": "BTC"
             },
-            "authorizer": "addressbased",
 
             // Address to where block rewards are given (pool wallet)
             "address": "miW56twBnftPNqKcSFgP3UrxdsSPeSKKLo",

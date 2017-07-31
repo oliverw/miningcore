@@ -225,7 +225,8 @@ namespace MiningForce.MininigPool
             var workername = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
-            context.IsAuthorized = await manager.AuthenticateWorkerAsync(client, workername, password);
+			// assumes that workerName is an address
+            context.IsAuthorized = await manager.ValidateAddressAsync(workername);
             client.Respond(context.IsAuthorized, request.Id);
         }
 

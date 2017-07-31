@@ -30,11 +30,6 @@ namespace MiningForce.Configuration
 		Dev,
 	}
 
-	public enum StratumAuthorizerKind
-	{
-		AddressBased,
-	}
-
 	public enum PayoutScheme
 	{
 		// ReSharper disable once InconsistentNaming
@@ -171,7 +166,6 @@ namespace MiningForce.Configuration
 		public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
 		public PoolBanningConfig Banning { get; set; }
 		public RewardRecipient[] RewardRecipients { get; set; }
-		public StratumAuthorizerKind Authorizer { get; set; }
 		public string Address { get; set; }
 		public int ClientConnectionTimeout { get; set; }
 		public int JobRebroadcastTimeout { get; set; }

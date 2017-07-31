@@ -102,7 +102,6 @@ namespace MiningForce.Blockchain
 
         Task<bool> ValidateAddressAsync(string address);
         Task<object[]> SubscribeWorkerAsync(StratumClient worker);
-        Task<bool> AuthenticateWorkerAsync(StratumClient worker, string workername, string password);
         Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
 
         IObservable<object> Jobs { get; }
