@@ -460,7 +460,7 @@ namespace MiningForce.MininigPool
 		    resposeTimesSubject
 			    .Select(ms => (float) ms)
 			    .Buffer(TimeSpan.FromMinutes(1))
-			    .Select(responses => responses.Count > 0 ? responses.Average() : 0)
+			    .Select(responses => responses.Count > 0 ? responses.Average() : -1)
 			    .Subscribe(avg => poolStats.AverageResponseTimePerMinuteMs = avg);
 
 		    // Shares per second
