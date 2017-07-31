@@ -5,14 +5,13 @@ using System.Threading.Tasks;
 using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
+using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
-using MiningForce.Daemon;
 using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
-using BDC = MiningForce.Blockchain.Bitcoin.BitcoinDaemonCommands;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -47,7 +46,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			this.poolConfig = poolConfig;
 			logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
-			daemon.Configure(poolConfig);
+			daemon.Configure(poolConfig.Daemons);
 		}
 
 		public string FormatRewardAmount(decimal amount)
@@ -73,7 +72,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					.ToArray();
 
 				// build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
-				var batch = page.Select(block => new DaemonCmd(BDC.GetTransaction,
+				var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
 					new[] {block.TransactionConfirmationData})).ToArray();
 
 				// execute batch
@@ -159,7 +158,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			};
 
 			// send command
-			var result = await daemon.ExecuteCmdAnyAsync<string>(BDC.SendMany, args);
+			var result = await daemon.ExecuteCmdAnyAsync<string>(BitcoinCommands.SendMany, args);
 
 			if (result.Error == null)
 			{

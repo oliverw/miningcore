@@ -1,7 +1,7 @@
 ﻿using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 
-namespace MiningForce.Daemon
+namespace MiningForce.Blockchain.DaemonInterface
 {
 	public class DaemonResponse<T>
 	{

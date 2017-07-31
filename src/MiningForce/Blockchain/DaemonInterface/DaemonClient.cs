@@ -11,7 +11,7 @@ using MiningForce.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace MiningForce.Daemon
+namespace MiningForce.Blockchain.DaemonInterface
 {
 	/// <summary>
 	/// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
@@ -27,7 +27,7 @@ namespace MiningForce.Daemon
             this.serializerSettings = serializerSettings;
         }
 
-		protected AuthenticatedNetworkEndpointConfig[] endPoints;
+		protected DaemonEndpointConfig[] endPoints;
         private readonly Random random = new Random();
         protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
@@ -36,11 +36,12 @@ namespace MiningForce.Daemon
 
 		public string RpcUrl { get; set; }
 
-		public void Configure(PoolConfig poolConfig)
+		public void Configure(DaemonEndpointConfig[] endPoints)
 		{
-			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+			Contract.RequiresNonNull(endPoints, nameof(endPoints));
+			Contract.Requires<ArgumentException>(endPoints.Length > 0, $"{nameof(endPoints)} must not be empty");
 
-			endPoints = poolConfig.Daemons;
+			this.endPoints = endPoints;
 		}
 
 		/// <summary>
@@ -146,11 +147,14 @@ namespace MiningForce.Daemon
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // build auth header
-            var auth = $"{endPoint.User}:{endPoint.Password}";
-            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+	        if (!string.IsNullOrEmpty(endPoint.User))
+	        {
+		        var auth = $"{endPoint.User}:{endPoint.Password}";
+		        var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+		        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+	        }
 
-            // send request
+	        // send request
             var response = await httpClient.SendAsync(request);
             json = await response.Content.ReadAsStringAsync();
 
@@ -175,13 +179,16 @@ namespace MiningForce.Daemon
 		    var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
 		    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-		    // build auth header
-		    var auth = $"{endPoint.User}:{endPoint.Password}";
-		    var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-		    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+			// build auth header
+		    if (!string.IsNullOrEmpty(endPoint.User))
+		    {
+			    var auth = $"{endPoint.User}:{endPoint.Password}";
+			    var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+			    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+		    }
 
-		    // send request
-		    var response = await httpClient.SendAsync(request);
+			// send request
+			var response = await httpClient.SendAsync(request);
 		    json = await response.Content.ReadAsStringAsync();
 
 		    // deserialize response

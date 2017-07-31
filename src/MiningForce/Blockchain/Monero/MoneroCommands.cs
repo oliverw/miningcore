@@ -1,6 +1,6 @@
 ﻿namespace MiningForce.Blockchain.Monero
 {
-    public static class MoneroDaemonCommands
+    public static class MoneroCommands
     {
 	    public const string GetInfo = "get_info";
 	    public const string GetBlockTemplate = "getblocktemplate";
@@ -14,5 +14,6 @@
 		public const string Transfer = "transfer";
 		public const string TransferSplit = "transfer_split";
 		public const string GetTransfers = "get_transfers";
+		public const string SplitIntegratedAddress = "split_integrated_address";
 	}
 }

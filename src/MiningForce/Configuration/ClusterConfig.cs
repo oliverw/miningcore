@@ -63,6 +63,11 @@ namespace MiningForce.Configuration
 		public string Password { get; set; }
 	}
 
+	public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
+	{
+		public string Category { get; set; }
+	}
+
 	public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
 	{
 		public string Database { get; set; }
@@ -162,7 +167,7 @@ namespace MiningForce.Configuration
 		public bool Enabled { get; set; }
 		public CoinConfig Coin { get; set; }
 		public Dictionary<int, PoolEndpoint> Ports { get; set; }
-		public AuthenticatedNetworkEndpointConfig[] Daemons { get; set; }
+		public DaemonEndpointConfig[] Daemons { get; set; }
 		public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
 		public PoolBanningConfig Banning { get; set; }
 		public RewardRecipient[] RewardRecipients { get; set; }

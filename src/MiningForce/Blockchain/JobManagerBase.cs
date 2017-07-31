@@ -11,8 +11,8 @@ using CodeContracts;
 using NLog;
 using MiningForce.Authorization;
 using MiningForce.Blockchain.Bitcoin;
+using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
-using MiningForce.Daemon;
 using MiningForce.Stratum;
 using MiningForce.Util;
 
@@ -52,7 +52,7 @@ namespace MiningForce.Blockchain
 
 		public IObservable<object> Jobs { get; private set; }
 
-	    public void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+	    public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
 		    Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 			Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
@@ -61,10 +61,10 @@ namespace MiningForce.Blockchain
 			this.poolConfig = poolConfig;
 		    this.clusterConfig = clusterConfig;
 
-		    daemon.Configure(poolConfig);
+		    ConfigureDaemons();
 	    }
 
-		public async Task StartAsync(StratumServer stratum)
+	    public async Task StartAsync(StratumServer stratum)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(stratum, nameof(stratum));
@@ -83,9 +83,14 @@ namespace MiningForce.Blockchain
             logger.Info(() => $"[{LogCategory}] Online");
         }
 
-        #endregion // API-Surface
+		#endregion // API-Surface
 
-        protected virtual void SetupAuthorizer()
+	    protected virtual void ConfigureDaemons()
+		{
+			daemon.Configure(poolConfig.Daemons);
+		}
+
+		protected virtual void SetupAuthorizer()
         {
             authorizer = ctx.ResolveNamed<IWorkerAuthorizer>(poolConfig.Authorizer.ToString());
         }
@@ -145,7 +150,7 @@ namespace MiningForce.Blockchain
 							if(forceUpdate)
 								logger.Debug(()=> $"[{LogCategory}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work");
 
-							if (await UpdateJobs(forceUpdate) || forceUpdate)
+							if (await UpdateJob(forceUpdate) || forceUpdate)
 							{
 								var isNew = !forceUpdate;
 
@@ -216,7 +221,7 @@ namespace MiningForce.Blockchain
 		/// <summary>
 		/// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
 		/// </summary>
-		protected abstract Task<bool> UpdateJobs(bool forceUpdate);
+		protected abstract Task<bool> UpdateJob(bool forceUpdate);
 
 	    /// <summary>
 	    /// Packages current job parameters for stratum update

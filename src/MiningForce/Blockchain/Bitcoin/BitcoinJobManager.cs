@@ -4,17 +4,16 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using MiningForce.Blockchain.Bitcoin.DaemonResponses;
+using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
 using MiningForce.Crypto;
 using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Crypto.Hashing.Special;
-using MiningForce.Daemon;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
-using BDC = MiningForce.Blockchain.Bitcoin.BitcoinDaemonCommands;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -64,7 +63,7 @@ namespace MiningForce.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(BDC.ValidateAddress, new[] { address });
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(BitcoinCommands.ValidateAddress, new[] { address });
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -169,14 +168,14 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BDC.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
 
             return responses.All(x => x.Error == null);
         }
 
 	    protected override async Task<bool> IsDaemonConnected()
 	    {
-		    var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(BDC.GetInfo);
+		    var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
 
 		    return response.Error == null && response.Response.Connections > 0;
 	    }
@@ -188,7 +187,7 @@ namespace MiningForce.Blockchain.Bitcoin
             while (true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
-                    BDC.GetBlockTemplate, getBlockTemplateParams);
+                    BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
 
@@ -215,10 +214,10 @@ namespace MiningForce.Blockchain.Bitcoin
         {
 	        var commands = new[]
 	        {
-		        new DaemonCmd(BDC.ValidateAddress, new[] {poolConfig.Address}),
-		        new DaemonCmd(BDC.GetDifficulty),
-		        new DaemonCmd(BDC.SubmitBlock),
-		        new DaemonCmd(BDC.GetBlockchainInfo)
+		        new DaemonCmd(BitcoinCommands.ValidateAddress, new[] {poolConfig.Address}),
+		        new DaemonCmd(BitcoinCommands.GetDifficulty),
+		        new DaemonCmd(BitcoinCommands.SubmitBlock),
+		        new DaemonCmd(BitcoinCommands.GetBlockchainInfo)
 	        };
 
 	        var results = await daemon.ExecuteBatchAnyAsync(commands);
@@ -226,7 +225,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        if (results.Any(x => x.Error != null))
 	        {
 		        var resultList = results.ToList();
-				var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BDC.SubmitBlock).ToArray();
+				var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock).ToArray();
 				
 				if(errors.Any())
 					logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y=> y.Error.Message))}", LogCategory);
@@ -278,7 +277,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        SetupCrypto();
 		}
 
-	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
+	    protected override async Task<bool> UpdateJob(bool forceUpdate)
         {
 			var response = await GetBlockTemplateAsync();
 
@@ -334,14 +333,14 @@ namespace MiningForce.Blockchain.Bitcoin
 		private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
             var result = await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(
-	            BDC.GetBlockTemplate, getBlockTemplateParams);
+	            BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
 			return result;
         }
 
 		private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BDC.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
 
             if (infos.Length > 0)
             {
@@ -351,7 +350,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 if (blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<GetPeerInfoResponse[]>(BDC.GetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<GetPeerInfoResponse[]>(BitcoinCommands.GetPeerInfo);
                     var peers = peerInfo.Response;
 
                     if (peers != null && peers.Length > 0)
@@ -372,10 +371,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			// execute command batch
 		    var results = await daemon.ExecuteBatchAnyAsync(
 			    hasSubmitBlockMethod ? 
-					new DaemonCmd(BDC.SubmitBlock, new[] { share.BlockHex }) :
-				    new DaemonCmd(BDC.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
+					new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { share.BlockHex }) :
+				    new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
 
-			    new DaemonCmd(BDC.GetBlock, new[] { share.BlockHash }));
+			    new DaemonCmd(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
 
 			// did submission succeed?
 		    var submitResult = results[0];
@@ -398,8 +397,8 @@ namespace MiningForce.Blockchain.Bitcoin
 	    protected override async Task UpdateNetworkStats()
 	    {
 		    var results = await daemon.ExecuteBatchAnyAsync(
-			    new DaemonCmd(BDC.GetInfo),
-			    new DaemonCmd(BDC.GetMiningInfo)
+			    new DaemonCmd(BitcoinCommands.GetInfo),
+			    new DaemonCmd(BitcoinCommands.GetMiningInfo)
 		    );
 
 		    if (results.Any(x => x.Error != null))

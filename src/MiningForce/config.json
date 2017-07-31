@@ -124,6 +124,11 @@
         //         {
         //             "host": "127.0.0.1",
         //             "port": 18081 // 28081 = testnet
+        //         },
+        //         {
+        //             "host": "127.0.0.1",
+        //             "port": 18082, // 28081 = testnet
+        //             "category": "wallet"
         //         }
         //     ],
 
@@ -140,10 +145,10 @@
 
         {
             // DON'T change the id after a production pool has begun collecting shares!
-            "id": "ltc1",
+            "id": "btc1",
             "enabled": true,
             "coin": {
-                "type": "LTC"
+                "type": "BTC"
             },
             "authorizer": "addressbased",
 

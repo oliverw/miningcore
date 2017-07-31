@@ -3,14 +3,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
+using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Blockchain.Monero.DaemonRequests;
 using MiningForce.Blockchain.Monero.DaemonResponses;
-using MiningForce.Daemon;
+using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using Newtonsoft.Json.Linq;
-using MDC = MiningForce.Blockchain.Monero.MoneroDaemonCommands;
+using MC = MiningForce.Blockchain.Monero.MoneroCommands;
+using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -28,25 +30,29 @@ namespace MiningForce.Blockchain.Monero
 	        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
 			this.extraNonceProvider = extraNonceProvider;
-
-	        daemon.RpcUrl = "json_rpc";
         }
 
         private readonly ExtraNonceProvider extraNonceProvider;
         private readonly BlockchainStats blockchainStats = new BlockchainStats();
 	    private MoneroNetworkType networkType;
 
+		private DaemonEndpointConfig[] daemonEndpoints;
+	    private DaemonEndpointConfig[] walletDaemonEndpoints;
+	    private DaemonClient walletDaemon;
+
 		#region API-Surface
 
-		public Task<bool> ValidateAddressAsync(string address)
+		public async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-			// TODO
-            return Task.FromResult(true);
+	        var response = await daemon.ExecuteCmdAnyAsync<SplitIntegratedAddressResponse>(
+				MWC.SplitIntegratedAddress, new { split_integrated_address = address });
+
+	        return response.Error == null && !string.IsNullOrEmpty(response.Response.StandardAddress);
         }
 
-        public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
+		public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             
@@ -145,16 +151,50 @@ namespace MiningForce.Blockchain.Monero
 
 		protected override string LogCategory => "Monero Job Manager";
 
+	    #region Overrides of JobManagerBase<MoneroWorkerContext,MoneroJob>
+
+	    #region Overrides of JobManagerBase<MoneroWorkerContext,MoneroJob>
+
+	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+	    {
+			// extract standard daemon endpoints
+		    daemonEndpoints = poolConfig.Daemons
+			    .Where(x => string.IsNullOrEmpty(x.Category))
+			    .ToArray();
+
+		    // extract dedicated wallet daemon endpoints
+			walletDaemonEndpoints = poolConfig.Daemons
+			    .Where(x => x.Category.ToLower() == MoneroConstants.WalletDaemonCategory)
+			    .ToArray();
+
+			base.Configure(poolConfig, clusterConfig);
+	    }
+
+	    #endregion
+
+	    protected override void ConfigureDaemons()
+	    {
+		    daemon.RpcUrl = "json_rpc";
+			daemon.Configure(daemonEndpoints);
+
+			// also setup wallet daemon
+			walletDaemon = ctx.Resolve<DaemonClient>();
+		    walletDaemon.RpcUrl = "json_rpc";
+		    walletDaemon.Configure(walletDaemonEndpoints);
+		}
+
+		#endregion
+
 		protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MDC.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
 
             return responses.All(x => x.Error == null);
         }
 
 	    protected override async Task<bool> IsDaemonConnected()
 	    {
-		    var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MDC.GetInfo);
+		    var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
 
 		    return response.Error == null && response.Response.OutgoingConnectionsCount > 0;
 	    }
@@ -166,7 +206,7 @@ namespace MiningForce.Blockchain.Monero
             while (true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
-                    MDC.GetBlockTemplate, new JObject());
+                    MC.GetBlockTemplate, new JObject());
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -9);
 
@@ -191,7 +231,7 @@ namespace MiningForce.Blockchain.Monero
 		
         protected override async Task PostStartInitAsync()
         {
-	        var infoResponse = await daemon.ExecuteCmdAnyAsync(MDC.GetInfo);
+	        var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
 	        if (infoResponse.Error != null)
 			    logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCategory);
@@ -211,7 +251,7 @@ namespace MiningForce.Blockchain.Monero
 	        SetupCrypto();
 		}
 
-	    protected override async Task<bool> UpdateJobs(bool forceUpdate)
+	    protected override async Task<bool> UpdateJob(bool forceUpdate)
         {
 			var response = await GetBlockTemplateAsync();
 
@@ -271,14 +311,14 @@ namespace MiningForce.Blockchain.Monero
 	        };
 
 			var result = await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(
-	            MDC.GetBlockTemplate, request);
+	            MC.GetBlockTemplate, request);
 
 			return result;
         }
 
 		private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MDC.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
 	        var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
 			if (firstValidResponse != null)
@@ -321,7 +361,7 @@ namespace MiningForce.Blockchain.Monero
 
 	    protected override async Task UpdateNetworkStats()
 	    {
-		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MDC.GetInfo);
+		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
 		    if (infoResponse.Error != null)
 			    logger.Warn(() => $"[{LogCategory}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");

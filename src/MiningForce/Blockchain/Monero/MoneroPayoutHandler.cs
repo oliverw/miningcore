@@ -4,14 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using CodeContracts;
+using MiningForce.Blockchain.DaemonInterface;
 using MiningForce.Configuration;
-using MiningForce.Daemon;
 using MiningForce.Payments;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
-using MDC = MiningForce.Blockchain.Monero.MoneroDaemonCommands;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -46,7 +45,12 @@ namespace MiningForce.Blockchain.Monero
 			this.poolConfig = poolConfig;
 			logger = LogUtil.GetPoolScopedLogger(typeof(MoneroPayoutHandler), poolConfig);
 
-			daemon.Configure(poolConfig);
+			// extract dedicated wallet daemon endpoints
+			var walletDaemonEndpoints = poolConfig.Daemons
+				.Where(x => x.Category.ToLower() == MoneroConstants.WalletDaemonCategory)
+				.ToArray();
+
+			daemon.Configure(walletDaemonEndpoints);
 		}
 
 		public string FormatRewardAmount(decimal amount)
