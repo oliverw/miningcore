@@ -37,9 +37,9 @@ namespace MiningForce.Stratum
 	        // Telemetry
 	        ResponseTime = Requests
 		        .Where(x => !string.IsNullOrEmpty(x.Value.Id))
-		        .SelectMany(req => responses
-			        .Where(reqId => reqId == req.Value.Id)
-			        .Select(_ => (int)(DateTimeOffset.UtcNow - req.Timestamp).TotalMilliseconds)
+		        .SelectMany(request => responses
+			        .Where(requestId => requestId == request.Value.Id)
+			        .Select(_ => (int)(DateTimeOffset.UtcNow - request.Timestamp).TotalMilliseconds)
 			        .Take(1))
 		        .Publish()
 		        .RefCount();
