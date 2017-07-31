@@ -427,6 +427,7 @@ namespace MiningForce.MininigPool
 			    })
 			    .Subscribe(hashRate => poolStats.PoolHashRate = hashRate);
 
+			// Periodically persist pool- and blockchain-stats to persistent storage
 			Observable.Interval(TimeSpan.FromSeconds(10))
 				.StartWith(0)	// initial update
 			    .Subscribe(_ => PersistStats());
