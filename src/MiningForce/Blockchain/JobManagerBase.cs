@@ -109,10 +109,12 @@ namespace MiningForce.Blockchain
 		protected virtual void CreateJobStream()
 		{
 			//var regularJobUpdates = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-			//	.Select(_=> Observable.FromAsync(() => UpdateJob(false)))
+			//	.Select(_ => Observable.FromAsync(() => UpdateJob(false)))
 			//	.Concat()
-			//	.Select(GetJobParamsForStratum);
-		
+			//	.Select(GetJobParamsForStratum)
+			//	.Publish()
+			//	.RefCount();
+
 			Jobs = Observable.Create<object>(observer =>
             {
                 var interval = TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval);
