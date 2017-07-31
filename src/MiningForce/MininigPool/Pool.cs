@@ -436,6 +436,8 @@ namespace MiningForce.MininigPool
 	    {
 		    try
 		    {
+				logger.Debug(()=> $"[{LogCategory}] Persisting stats");
+
 			    cf.RunTx((con, tx) =>
 			    {
 				    statsRepo.UpdatePoolStats(con, tx, poolConfig.Id, poolStats, manager.BlockchainStats);
