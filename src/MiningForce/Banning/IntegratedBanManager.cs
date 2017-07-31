@@ -7,7 +7,7 @@ namespace MiningForce.Banning
 {
     public class IntegratedBanManager : IBanManager
     {
-	    private static readonly IMemoryCache bannedIpCache = new MemoryCache(new MemoryCacheOptions
+	    private static readonly IMemoryCache cache = new MemoryCache(new MemoryCacheOptions
 	    {
 		    ExpirationScanFrequency = TimeSpan.FromSeconds(10)
 	    });
@@ -18,7 +18,7 @@ namespace MiningForce.Banning
 		{
 			Contract.RequiresNonNull(address, nameof(address));
 
-			var result = bannedIpCache.Get(address.ToString());
+			var result = cache.Get(address.ToString());
 			return result != null;
 		}
 
@@ -27,7 +27,7 @@ namespace MiningForce.Banning
 		    Contract.RequiresNonNull(address, nameof(address));
 			Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
 
-			bannedIpCache.Set(address.ToString(), string.Empty, duration);
+			cache.Set(address.ToString(), string.Empty, duration);
 	    }
 
 		#endregion
