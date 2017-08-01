@@ -15,6 +15,7 @@ using MiningForce.Util;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
+	[BitcoinCoinsMetaData]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
 		IPayoutHandler
 	{

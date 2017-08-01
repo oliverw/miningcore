@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +18,7 @@ using MiningForce.Util;
 
 namespace MiningForce.Blockchain
 {
-    public abstract class JobManagerBase<TWorkerContext, TJob>
-        where TWorkerContext: class, new()
+    public abstract class JobManagerBase<TJob>
     {
         protected JobManagerBase(IComponentContext ctx, DaemonClient daemon)
         {
@@ -27,7 +27,7 @@ namespace MiningForce.Blockchain
 
 			this.ctx = ctx;
             this.daemon = daemon;
-		}
+        }
 
         protected readonly IComponentContext ctx;
 	    protected PoolConfig poolConfig;
@@ -35,11 +35,6 @@ namespace MiningForce.Blockchain
         protected DaemonClient daemon;
         protected StratumServer stratum;
         protected ILogger logger;
-	    private TimeSpan jobRebroadcastTimeout;
-	    protected DateTime? lastBlockUpdate;
-
-		protected readonly ConditionalWeakTable<StratumClient, TWorkerContext> workerContexts =
-            new ConditionalWeakTable<StratumClient, TWorkerContext>();
 
 		protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
 	    protected TJob currentJob;
@@ -47,8 +42,6 @@ namespace MiningForce.Blockchain
 	    private long jobId;
 
 	    #region API-Surface
-
-		public IObservable<object> Jobs { get; private set; }
 
 	    public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
@@ -70,12 +63,10 @@ namespace MiningForce.Blockchain
 	        logger.Info(() => $"[{LogCat}] Launching ...");
 
 			this.stratum = stratum;
-	        this.jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
-            CreateJobStream();
 
             logger.Info(() => $"[{LogCat}] Online");
         }
@@ -106,52 +97,6 @@ namespace MiningForce.Blockchain
 	        }
 		}
 
-		protected virtual void CreateJobStream()
-		{
-			// periodically update job from daemon
-			var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-				.Select(_ => Observable.FromAsync(() => UpdateJob(false)))
-				.Concat()
-				.Do(isNew =>
-				{
-					if (isNew)
-						logger.Info(() => $"[{LogCat}] New block detected");
-				})
-				.Where(isNew => isNew)
-				.Publish()
-				.RefCount();
-
-			// if there haven't been any new jobs for a while, force an update
-			var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
-				.TakeUntil(newJobs)		// cancel timeout if an actual new job has been detected
-				.Do(_=> logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
-				                           $"updating transactions & rebroadcasting work"))
-				.Select(x => Observable.FromAsync(() => UpdateJob(true)))
-				.Concat()
-				.Repeat();
-
-			Jobs = Observable.Merge(newJobs, forcedNewJobs)
-				.Select(GetJobParamsForStratum)
-				.Publish()
-				.RefCount();
-        }
-
-        protected TWorkerContext GetWorkerContext(StratumClient client)
-        {
-            TWorkerContext context;
-
-            lock (workerContexts)
-            {
-                if (!workerContexts.TryGetValue(client, out context))
-                {
-                    context = new TWorkerContext();
-                    workerContexts.Add(client, context);
-                }
-            }
-
-            return context;
-        }
-
 	    protected string NextJobId()
 	    {
 		    return Interlocked.Increment(ref jobId).ToString("x", CultureInfo.InvariantCulture);
@@ -161,24 +106,7 @@ namespace MiningForce.Blockchain
 
 		protected abstract Task<bool> IsDaemonHealthy();
 	    protected abstract Task<bool> IsDaemonConnected();
-
 		protected abstract Task EnsureDaemonsSynchedAsync();
         protected abstract Task PostStartInitAsync();
-
-		/// <summary>
-		/// Refresh network stats
-		/// </summary>
-	    protected abstract Task UpdateNetworkStats();
-
-		/// <summary>
-		/// Query coin-daemon for job (block) updates and returns true if a new job (block) was detected
-		/// </summary>
-		protected abstract Task<bool> UpdateJob(bool forceUpdate);
-
-	    /// <summary>
-	    /// Packages current job parameters for stratum update
-	    /// </summary>
-	    /// <returns></returns>
-	    protected abstract object GetJobParamsForStratum(bool isNew);
     }
 }

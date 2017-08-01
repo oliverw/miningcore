@@ -16,8 +16,7 @@ using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
 
 namespace MiningForce.Blockchain.Monero
 {
-    public class MoneroJobManager : JobManagerBase<MoneroWorkerContext, MoneroJob>,
-        IBlockchainJobManager
+    public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
         public MoneroJobManager(
             IComponentContext ctx, 
@@ -55,9 +54,9 @@ namespace MiningForce.Blockchain.Monero
 		public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
-            
-            // setup worker context
-            var context = GetWorkerContext(worker);
+
+			// setup worker context
+	        var context = worker.ContextAs<MoneroWorkerContext>();
 
 			// assign unique ExtraNonce1 to worker (miner)
 			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
@@ -102,7 +101,7 @@ namespace MiningForce.Blockchain.Monero
 	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// get worker context
-			var context = GetWorkerContext(worker);
+	        var context = worker.ContextAs<MoneroWorkerContext>();
 
 			// validate & process
 			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
@@ -251,7 +250,7 @@ namespace MiningForce.Blockchain.Monero
 	        SetupCrypto();
 		}
 
-	    protected override async Task<bool> UpdateJob(bool forceUpdate)
+	    protected async Task<bool> UpdateJob(bool forceUpdate)
         {
 			var response = await GetBlockTemplateAsync();
 
@@ -292,7 +291,7 @@ namespace MiningForce.Blockchain.Monero
 	        }
 		}
 
-		protected override object GetJobParamsForStratum(bool isNew)
+		protected object GetJobParamsForStratum(bool isNew)
         {
 	        lock (jobLock)
 	        {
@@ -359,7 +358,7 @@ namespace MiningForce.Blockchain.Monero
 			return Task.FromResult((Accepted: false, CoinbaseTransaction: ""));
 	    }
 
-	    protected override async Task UpdateNetworkStats()
+	    protected async Task UpdateNetworkStats()
 	    {
 		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 

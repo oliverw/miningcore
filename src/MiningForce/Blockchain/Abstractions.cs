@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using MiningForce.Configuration;
 using MiningForce.Stratum;
+using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain
 {
@@ -94,17 +95,4 @@ namespace MiningForce.Blockchain
 		/// </summary>
 		DateTime Created { get; set; }
 	}
-
-	public interface IBlockchainJobManager
-	{
-		void Configure(PoolConfig pool, ClusterConfig cluster);
-		Task StartAsync(StratumServer stratum);
-
-        Task<bool> ValidateAddressAsync(string address);
-        Task<object[]> SubscribeWorkerAsync(StratumClient worker);
-        Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty);
-
-        IObservable<object> Jobs { get; }
-        BlockchainStats BlockchainStats { get; }
-    }
 }

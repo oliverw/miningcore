@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Features.Metadata;
 using CodeContracts;
 using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
+using MiningForce.Mining;
 using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
@@ -112,10 +114,15 @@ namespace MiningForce.Payments
 	    {
 		    payoutHandlers = clusterConfig.Pools
 			    .Where(x => x.PaymentProcessing?.Enabled == true)
-				.ToDictionary(x => x.Coin.Type, x =>
+				.ToDictionary(x => x.Coin.Type, poolConfig =>
 		    {
-			    var handler = ctx.ResolveKeyed<IPayoutHandler>(x.Coin.Type);
-			    handler.Configure(x);
+			    // resolve pool implementation supporting coin type
+			    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, SupportedCoinsMetadataAttribute>>>>()
+				    .First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
+
+			    // create and configure
+				var handler = handlerImpl.Value;
+			    handler.Configure(poolConfig);
 
 				return handler;
 		    });

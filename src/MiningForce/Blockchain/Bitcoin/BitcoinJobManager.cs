@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
@@ -17,8 +19,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
-    public class BitcoinJobManager : JobManagerBase<BitcoinWorkerContext, BitcoinJob>,
-        IBlockchainJobManager
+    public class BitcoinJobManager : JobManagerBase<BitcoinJob>
     {
         public BitcoinJobManager(
             IComponentContext ctx, 
@@ -35,6 +36,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
         private readonly ExtraNonceProvider extraNonceProvider;
         private readonly BlockchainStats blockchainStats = new BlockchainStats();
+	    private TimeSpan jobRebroadcastTimeout;
+	    protected DateTime? lastBlockUpdate;
 	    private IDestination poolAddressDestination;
 		private bool isPoS;
 	    private BitcoinNetworkType networkType;
@@ -57,7 +60,9 @@ namespace MiningForce.Blockchain.Bitcoin
             },
         };
 
-	    #region API-Surface
+		#region API-Surface
+
+		public IObservable<object> Jobs { get; private set; }
 
 		public async Task<bool> ValidateAddressAsync(string address)
         {
@@ -72,7 +77,7 @@ namespace MiningForce.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             
             // setup worker context
-            var context = GetWorkerContext(worker);
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
 			// assign unique ExtraNonce1 to worker (miner)
 			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
@@ -117,7 +122,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// get worker context
-			var context = GetWorkerContext(worker);
+			var context = worker.ContextAs<BitcoinWorkerContext>();
 
 			// validate & process
 			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
@@ -272,12 +277,13 @@ namespace MiningForce.Blockchain.Bitcoin
             else
                 logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCat);
 
-            await UpdateNetworkStats();
+            await UpdateNetworkStatsAsync();
 
-	        SetupCrypto();
+			SetupCrypto();
+	        SetupJobUpdates();
 		}
 
-	    protected override async Task<bool> UpdateJob(bool forceUpdate)
+		protected async Task<bool> UpdateJob(bool forceUpdate)
         {
 			var response = await GetBlockTemplateAsync();
 
@@ -320,7 +326,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        }
 		}
 
-		protected override object GetJobParamsForStratum(bool isNew)
+		protected object GetJobParamsForStratum(bool isNew)
         {
 	        lock (jobLock)
 	        {
@@ -329,6 +335,36 @@ namespace MiningForce.Blockchain.Bitcoin
         }
 
 		#endregion // Overrides
+
+	    protected virtual void SetupJobUpdates()
+	    {
+		    jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
+
+			// periodically update job from daemon
+			var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+			    .Select(_ => Observable.FromAsync(() => UpdateJob(false)))
+			    .Concat()
+			    .Do(isNew =>
+			    {
+				    if (isNew)
+					    logger.Info(() => $"[{LogCat}] New block detected");
+			    })
+			    .Where(isNew => isNew)
+			    .Publish()
+			    .RefCount();
+
+		    // if there haven't been any new jobs for a while, force an update
+		    var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
+			    .TakeUntil(newJobs)     // cancel timeout if an actual new job has been detected
+			    .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
+			                                $"updating transactions & rebroadcasting work"))
+			    .Select(x => Observable.FromAsync(() => UpdateJob(true)))
+			    .Concat()
+			    .Repeat();
+
+		    Jobs = Observable.Merge(newJobs, forcedNewJobs)
+			    .Select(GetJobParamsForStratum);
+		}
 
 		private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
@@ -394,7 +430,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			return (accepted, block?.Transactions.FirstOrDefault());
 	    }
 
-	    protected override async Task UpdateNetworkStats()
+	    protected async Task UpdateNetworkStatsAsync()
 	    {
 		    var results = await daemon.ExecuteBatchAnyAsync(
 			    new DaemonCmd(BitcoinCommands.GetInfo),

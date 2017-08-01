@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using Autofac;
@@ -54,9 +55,6 @@ namespace MiningForce
             builder.RegisterType<StratumClient>()
                 .AsSelf();
 
-            builder.RegisterType<Pool>()
-                .AsSelf();
-
             builder.RegisterType<DaemonClient>()
                 .AsSelf();
 
@@ -74,8 +72,17 @@ namespace MiningForce
 	        builder.RegisterType<ShareRecorder>()
 		        .SingleInstance();
 
-			//////////////////////
-			// Payment Schemes
+	        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+		        .Where(t => t.GetCustomAttributes<SupportedCoinsMetadataAttribute>().Any() && t.GetInterfaces()
+			                    .Any(i =>
+				                    i.IsAssignableFrom(typeof(IMiningPool)) ||
+				                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
+				                    i.IsAssignableFrom(typeof(IPayoutScheme))))
+		        .WithMetadataFrom<SupportedCoinsMetadataAttribute>()
+		        .AsImplementedInterfaces();
+
+	        //////////////////////
+	        // Payment Schemes
 
 	        builder.RegisterType<PayPerLastNShares>()
 		        .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
@@ -85,21 +92,13 @@ namespace MiningForce
 			// Bitcoin and family
 
 			builder.RegisterType<BitcoinJobManager>()
-		        .Keyed<IBlockchainJobManager>(CoinType.BTC)
-		        .Keyed<IBlockchainJobManager>(CoinType.LTC);
+		        .AsSelf();
 
-			builder.RegisterType<BitcoinPayoutHandler>()
-				.Keyed<IPayoutHandler>(CoinType.BTC)
-				.Keyed<IPayoutHandler>(CoinType.LTC);
+			//////////////////////
+			// Monero
 
-	        //////////////////////
-	        // Monero
-
-	        builder.RegisterType<MoneroJobManager>()
-		        .Keyed<IBlockchainJobManager>(CoinType.XMR);
-
-	        builder.RegisterType<MoneroPayoutHandler>()
-		        .Keyed<IPayoutHandler>(CoinType.XMR);
+			builder.RegisterType<MoneroJobManager>()
+				.AsSelf();
 
 			base.Load(builder);
         }

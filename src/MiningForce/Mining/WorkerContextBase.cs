@@ -11,21 +11,21 @@ namespace MiningForce.Mining
         public int InvalidShares { get; set; }
     }
 
-    public class WorkerContext
+    public class WorkerContextBase
     {
-        public WorkerContext(StratumClient client, PoolConfig poolConfig)
-        {
-            Difficulty = client.PoolEndpoint.Difficulty;
-	        LastActivity = DateTime.UtcNow;
+		public void Init(StratumClient client, PoolConfig poolConfig)
+		{
+			Difficulty = client.PoolEndpoint.Difficulty;
+			LastActivity = DateTime.UtcNow;
 
 			if (poolConfig.Banning != null)
-                Stats = new BanningStats();
+				Stats = new BanningStats();
 
-            if (client.PoolEndpoint.VarDiff != null)
-                VarDiff = new VarDiffContext();
-        }
+			if (client.PoolEndpoint.VarDiff != null)
+				VarDiff = new VarDiffContext();
+		}
 
-        private double? pendingDifficulty;
+		private double? pendingDifficulty;
 
         public BanningStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }

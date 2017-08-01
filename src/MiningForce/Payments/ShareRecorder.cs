@@ -71,7 +71,7 @@ namespace MiningForce.Payments
 
 		#region API-Surface
 
-		public void AttachPool(Pool pool)
+		public void AttachPool(IMiningPool pool)
 	    {
 		    pool.Shares.Subscribe(share =>
 		    {

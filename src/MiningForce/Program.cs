@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
 using NLog;
@@ -20,6 +21,7 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
+using MiningForce.Extensions;
 
 namespace MiningForce
 {
@@ -32,7 +34,6 @@ namespace MiningForce
 	    private static ShareRecorder shareRecorder;
 	    private static PaymentProcessor paymentProcessor;
 	    private static ClusterConfig clusterConfig;
-	    private static readonly Dictionary<PoolConfig, Pool> pools = new Dictionary<PoolConfig, Pool>();
 
 		public static void Main(string[] args)
 		{
@@ -450,13 +451,19 @@ namespace MiningForce
 
 			// start pools
 			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
-            {
-                var pool = container.Resolve<Pool>();
-	            pool.Configure(poolConfig, clusterConfig);
+			{
+				// resolve pool implementation supporting coin type
+				var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, SupportedCoinsMetadataAttribute>>>>()
+					.First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
 
-				pools[poolConfig] = pool;
+				// create and configure
+				var pool = poolImpl.Value;
+				pool.Configure(poolConfig, clusterConfig);
+
+				// record shares produced by pool
 				shareRecorder.AttachPool(pool);
 
+				// start it
 				await pool.StartAsync();
             }
 

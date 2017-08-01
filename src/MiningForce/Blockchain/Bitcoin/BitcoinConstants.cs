@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using MiningForce.Configuration;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -44,5 +45,21 @@ namespace MiningForce.Blockchain.Bitcoin
 	public class BitcoinConstants
 	{
 		public const decimal SatoshisPerBitcoin = 100000000;
+	}
+
+	public class BitcoinCoinsMetaData : SupportedCoinsMetadataAttribute
+	{
+		public BitcoinCoinsMetaData() : base(
+			CoinType.BTC,
+			CoinType.NMC,
+			CoinType.PPC,
+			CoinType.LTC,
+			CoinType.DOGE,
+			CoinType.EMC2,
+			CoinType.DGB,
+			CoinType.VIA,
+			CoinType.GRS)
+		{
+		}
 	}
 }

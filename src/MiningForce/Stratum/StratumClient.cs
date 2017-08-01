@@ -45,11 +45,17 @@ namespace MiningForce.Stratum
 		        .RefCount();
 		}
 
+		public object Context { get; set; }
 		public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
 	    public IObservable<int> ResponseTime { get; private set; }
+
+	    public T ContextAs<T>()
+	    {
+		    return (T)Context;
+	    }
 
 		public void Respond<T>(T payload, string id)
         {
