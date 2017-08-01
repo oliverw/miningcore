@@ -51,27 +51,24 @@ namespace MiningForce.Blockchain.Monero
 	        return response.Error == null && !string.IsNullOrEmpty(response.Response.StandardAddress);
         }
 
-		public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
+		public Task<object[]> SubscribeWorkerAsync(StratumClient<MoneroWorkerContext> worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
-			// setup worker context
-	        var context = worker.ContextAs<MoneroWorkerContext>();
-
 			// assign unique ExtraNonce1 to worker (miner)
-			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
+			worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
 
             // setup response data
             var responseData = new object[]
             {
-                context.ExtraNonce1,
+                worker.Context.ExtraNonce1,
                 extraNonceProvider.Size
             };
 
             return Task.FromResult(responseData);
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty)
+        public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker, object submission, double stratumDifficulty)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
@@ -100,11 +97,8 @@ namespace MiningForce.Blockchain.Monero
 			// under testnet or regtest conditions network difficulty may be lower than statum diff
 	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
-			// get worker context
-	        var context = worker.ContextAs<MoneroWorkerContext>();
-
 			// validate & process
-			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
+			var share = job.ProcessShare(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
 
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)

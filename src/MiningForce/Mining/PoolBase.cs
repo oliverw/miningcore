@@ -22,7 +22,7 @@ using NLog;
 
 namespace MiningForce.Mining
 {
-    public abstract class PoolBase<TWorkerContext> : StratumServer,
+    public abstract class PoolBase<TWorkerContext> : StratumServer<TWorkerContext>,
 	    IMiningPool
 		where TWorkerContext : WorkerContextBase, new()
     {
@@ -102,13 +102,13 @@ namespace MiningForce.Mining
 
 	    protected override string LogCat => "Pool";
 
-	    protected override void OnConnect(StratumClient client)
+	    protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
 	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
 	        {
 				// client setup
 		        var context = new TWorkerContext();
-				context.Init(client, poolConfig);
+				context.Init(poolConfig, client.PoolEndpoint.Difficulty, client.PoolEndpoint.VarDiff);
 				client.Context = context;
 
 				// expect miner to establish communication within a certain time
@@ -141,7 +141,7 @@ namespace MiningForce.Mining
             }
         }
 
-        private void EnsureNoZombieClient(StratumClient client)
+        private void EnsureNoZombieClient(StratumClient<TWorkerContext> client)
         {
             var isAlive = client.Requests
                 .Take(1)
@@ -163,9 +163,9 @@ namespace MiningForce.Mining
                 });
         }
 
-        protected void UpdateVarDiff(StratumClient client, double networkDifficulty)
+        protected void UpdateVarDiff(StratumClient<TWorkerContext> client, double networkDifficulty)
         {
-            var context = client.ContextAs<TWorkerContext>();
+            var context = client.Context;
 
             if (context.VarDiff != null)
             {
@@ -273,7 +273,7 @@ namespace MiningForce.Mining
 			    .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
 		}
 
-	    protected void ConsiderBan(StratumClient client, WorkerContextBase context, PoolBanningConfig config)
+	    protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolBanningConfig config)
 	    {
 		    var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 

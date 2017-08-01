@@ -33,7 +33,6 @@ namespace MiningForce.Blockchain
 	    protected PoolConfig poolConfig;
 	    protected ClusterConfig clusterConfig;
         protected DaemonClient daemon;
-        protected StratumServer stratum;
         protected ILogger logger;
 
 		protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
@@ -55,14 +54,11 @@ namespace MiningForce.Blockchain
 		    ConfigureDaemons();
 	    }
 
-	    public async Task StartAsync(StratumServer stratum)
+	    public async Task StartAsync()
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(stratum, nameof(stratum));
 
 	        logger.Info(() => $"[{LogCat}] Launching ...");
-
-			this.stratum = stratum;
 
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();

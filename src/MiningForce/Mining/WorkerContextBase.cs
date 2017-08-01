@@ -13,15 +13,15 @@ namespace MiningForce.Mining
 
     public class WorkerContextBase
     {
-		public void Init(StratumClient client, PoolConfig poolConfig)
+		public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig)
 		{
-			Difficulty = client.PoolEndpoint.Difficulty;
+			Difficulty = difficulty;
 			LastActivity = DateTime.UtcNow;
 
 			if (poolConfig.Banning != null)
 				Stats = new BanningStats();
 
-			if (client.PoolEndpoint.VarDiff != null)
+			if (varDiffConfig != null)
 				VarDiff = new VarDiffContext();
 		}
 

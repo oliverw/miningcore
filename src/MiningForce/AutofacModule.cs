@@ -52,9 +52,6 @@ namespace MiningForce
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
-            builder.RegisterType<StratumClient>()
-                .AsSelf();
-
             builder.RegisterType<DaemonClient>()
                 .AsSelf();
 

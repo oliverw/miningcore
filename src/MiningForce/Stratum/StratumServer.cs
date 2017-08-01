@@ -12,11 +12,12 @@ using LibUvManaged;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
+using MiningForce.Mining;
 
 namespace MiningForce.Stratum
 {
-    public abstract class StratumServer
-    {
+    public abstract class StratumServer<TClientContext>
+	{
         protected StratumServer(IComponentContext ctx)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -28,8 +29,8 @@ namespace MiningForce.Stratum
         protected ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
 
-		protected readonly Dictionary<string, Tuple<StratumClient, IDisposable>> clients = 
-			new Dictionary<string, Tuple<StratumClient, IDisposable>>();
+		protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients = 
+			new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
 
         protected void StartListeners(Dictionary<int, PoolEndpoint> stratumPorts)
         {
@@ -73,7 +74,7 @@ namespace MiningForce.Stratum
             {
                 var subscriptionId = con.ConnectionId;
 
-                var client = ctx.Resolve<StratumClient>();
+                var client = new StratumClient<TClientContext>();
                 client.Init(con, ctx, endpointConfig);
 
 	            lock (clients)
@@ -94,21 +95,21 @@ namespace MiningForce.Stratum
             }
         }
 
-        private void OnReceiveError(StratumClient client, Exception ex)
+        private void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
             logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
 
-        private void OnReceiveComplete(StratumClient client)
+        private void OnReceiveComplete(StratumClient<TClientContext> client)
         {
             logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
 
-        protected void DisconnectClient(StratumClient client)
+        protected void DisconnectClient(StratumClient<TClientContext> client)
         {
             Contract.RequiresNonNull(client, nameof(client));
 
@@ -118,7 +119,7 @@ namespace MiningForce.Stratum
             {
                 lock (clients)
                 {
-	                Tuple<StratumClient, IDisposable> item;
+	                Tuple<StratumClient<TClientContext>, IDisposable> item;
 					if (clients.TryGetValue(subscriptionId, out item))
 	                {
 		                item.Item2.Dispose();
@@ -132,16 +133,16 @@ namespace MiningForce.Stratum
 			OnDisconnect(subscriptionId);
         }
 
-        protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient, bool> filter = null)
+        protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient<TClientContext>, bool> filter = null)
         {
             BroadcastNotification(new JsonRpcRequest<T>(method, payload, null), filter);
         }
 
-        protected void BroadcastNotification<T>(JsonRpcRequest<T> notification, Func<StratumClient, bool> filter = null)
+        protected void BroadcastNotification<T>(JsonRpcRequest<T> notification, Func<StratumClient<TClientContext>, bool> filter = null)
         {
             Contract.RequiresNonNull(notification, nameof(notification));
 
-            StratumClient[] tmp;
+	        StratumClient<TClientContext>[] tmp;
 
             lock (clients)
             {
@@ -159,8 +160,8 @@ namespace MiningForce.Stratum
 
 		protected abstract string LogCat { get; }
 
-        protected abstract void OnConnect(StratumClient client);
+        protected abstract void OnConnect(StratumClient<TClientContext> client);
         protected abstract void OnDisconnect(string subscriptionId);
-	    protected abstract void OnRequest(StratumClient client, Timestamped<JsonRpcRequest> request);
+	    protected abstract void OnRequest(StratumClient<TClientContext> client, Timestamped<JsonRpcRequest> request);
     }
 }

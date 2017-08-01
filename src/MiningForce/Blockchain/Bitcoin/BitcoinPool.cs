@@ -37,14 +37,14 @@ namespace MiningForce.Blockchain.Bitcoin
 		    manager = ctx.Resolve<BitcoinJobManager>();
 		    manager.Configure(poolConfig, clusterConfig);
 
-			await manager.StartAsync(this);
+			await manager.StartAsync();
 		    manager.Jobs.Subscribe(OnNewJob);
 
 		    // we need work before opening the gates
 		    await manager.Jobs.Take(1).ToTask();
 	    }
 
-	    protected override void OnRequest(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+	    protected override void OnRequest(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
 		    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
@@ -86,7 +86,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    #endregion // Overrides
 
-		private async void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+		private async void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
 		    var requestParams = request.Params?.ToObject<string[]>();
@@ -106,20 +106,19 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		    client.Respond(data, request.Id);
 
-		    // setup worker context
-		    var context = client.ContextAs<BitcoinWorkerContext>();
-		    context.IsSubscribed = true;
-		    context.UserAgent = requestParams?.Length > 0 ? requestParams[0] : null;
+			// setup worker context
+		    client.Context.IsSubscribed = true;
+		    client.Context.UserAgent = requestParams?.Length > 0 ? requestParams[0] : null;
 
 		    // send intial update
-		    client.Notify(StratumMethod.SetDifficulty, new object[] { context.Difficulty });
+		    client.Notify(StratumMethod.SetDifficulty, new object[] { client.Context.Difficulty });
 		    client.Notify(StratumMethod.MiningNotify, currentJobParams);
 	    }
 
-	    private async void OnAuthorize(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+	    private async void OnAuthorize(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var context = client.ContextAs<BitcoinWorkerContext>();
+		    var context = client.Context;
 
 			var requestParams = request.Params?.ToObject<string[]>();
 		    var workername = requestParams?.Length > 0 ? requestParams[0] : null;
@@ -130,7 +129,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    client.Respond(context.IsAuthorized, request.Id);
 	    }
 
-	    private async void OnSubmitShare(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+	    private async void OnSubmitShare(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    // check age of submission (aged submissions usually caused by high server load)
 		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
@@ -143,12 +142,11 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		    // check worker state
 		    var request = tsRequest.Value;
-		    var context = client.ContextAs<BitcoinWorkerContext>();
-		    context.LastActivity = DateTime.UtcNow;
+		    client.Context.LastActivity = DateTime.UtcNow;
 
-		    if (!context.IsAuthorized)
+		    if (!client.Context.IsAuthorized)
 			    client.RespondError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
-		    else if (!context.IsSubscribed)
+		    else if (!client.Context.IsSubscribed)
 			    client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
 		    else
 		    {
@@ -158,7 +156,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    {
 				    // submit 
 				    var requestParams = request.Params?.ToObject<string[]>();
-				    var share = await manager.SubmitShareAsync(client, requestParams, context.Difficulty);
+				    var share = await manager.SubmitShareAsync(client, requestParams, client.Context.Difficulty);
 
 				    client.Respond(true, request.Id);
 
@@ -169,8 +167,8 @@ namespace MiningForce.Blockchain.Bitcoin
 				    if (share.IsBlockCandidate)
 					    poolStats.LastPoolBlockTime = DateTime.UtcNow;
 
-				    // update client stats
-				    context.Stats.ValidShares++;
+					// update client stats
+				    client.Context.Stats.ValidShares++;
 
 				    // telemetry
 				    validSharesSubject.OnNext(share);
@@ -180,15 +178,15 @@ namespace MiningForce.Blockchain.Bitcoin
 			    {
 				    client.RespondError(ex.Code, ex.Message, request.Id, false);
 
-				    // update client stats
-				    context.Stats.InvalidShares++;
+					// update client stats
+				    client.Context.Stats.InvalidShares++;
 
 				    // telemetry
 				    invalidSharesSubject.OnNext(Unit.Default);
 
 				    // banning
 				    if (poolConfig.Banning?.Enabled == true)
-					    ConsiderBan(client, context, poolConfig.Banning);
+					    ConsiderBan(client, client.Context, poolConfig.Banning);
 			    }
 		    }
 	    }
@@ -199,22 +197,20 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		    BroadcastNotification(StratumMethod.MiningNotify, currentJobParams, client =>
 		    {
-			    var context = client.ContextAs<BitcoinWorkerContext>();
-
-				if (context.IsSubscribed)
+				if (client.Context.IsSubscribed)
 			    {
 				    // check if turned zombie
-				    var lastActivityAgo = DateTime.UtcNow - context.LastActivity;
+				    var lastActivityAgo = DateTime.UtcNow - client.Context.LastActivity;
 
 				    if (poolConfig.ClientConnectionTimeout == 0 ||
 				        lastActivityAgo.TotalSeconds < poolConfig.ClientConnectionTimeout)
 				    {
 					    // varDiff: if the client has a pending difficulty change, apply it now
-					    if (context.ApplyPendingDifficulty())
+					    if (client.Context.ApplyPendingDifficulty())
 					    {
-						    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {context.Difficulty}");
+						    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
 
-						    client.Notify(StratumMethod.SetDifficulty, new object[] { context.Difficulty });
+						    client.Notify(StratumMethod.SetDifficulty, new object[] { client.Context.Difficulty });
 					    }
 
 					    // send job

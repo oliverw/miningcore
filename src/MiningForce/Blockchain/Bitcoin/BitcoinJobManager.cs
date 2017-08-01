@@ -72,12 +72,12 @@ namespace MiningForce.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public Task<object[]> SubscribeWorkerAsync(StratumClient worker)
+        public Task<object[]> SubscribeWorkerAsync(StratumClient<BitcoinWorkerContext> worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             
             // setup worker context
-            var context = worker.ContextAs<BitcoinWorkerContext>();
+            var context = worker.Context;
 
 			// assign unique ExtraNonce1 to worker (miner)
 			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
@@ -92,7 +92,7 @@ namespace MiningForce.Blockchain.Bitcoin
             return Task.FromResult(responseData);
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient worker, object submission, double stratumDifficulty)
+        public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission, double stratumDifficulty)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
@@ -122,7 +122,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// get worker context
-			var context = worker.ContextAs<BitcoinWorkerContext>();
+			var context = worker.Context;
 
 			// validate & process
 			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
