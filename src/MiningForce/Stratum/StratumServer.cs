@@ -89,34 +89,35 @@ namespace MiningForce.Stratum
 		        OnConnect(client);
 
 				// request subscription
-		        lock (clients)
+	            var sub = client.Requests
+		            .ObserveOn(TaskPoolScheduler.Default)
+		            .Subscribe(tsRequest =>
+		            {
+			            var request = tsRequest.Value;
+			            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+
+			            try
+			            {
+				            // boot pre-connected clients
+				            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+				            {
+					            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
+					            DisconnectClient(client);
+					            return;
+				            }
+
+				            OnRequest(client, tsRequest);
+			            }
+
+			            catch (Exception ex)
+			            {
+				            logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
+			            }
+		            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+
+				// done
+				lock (clients)
 		        {
-			        var sub = client.Requests
-				        .ObserveOn(TaskPoolScheduler.Default)
-				        .Subscribe(tsRequest =>
-				        {
-					        var request = tsRequest.Value;
-					        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
-
-					        try
-					        {
-						        // boot pre-connected clients
-						        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
-						        {
-							        logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
-							        DisconnectClient(client);
-							        return;
-						        }
-
-								OnRequest(client, tsRequest);
-					        }
-
-					        catch (Exception ex)
-					        {
-						        logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
-					        }
-				        }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
-
 			        clients[connectionId] = Tuple.Create(client, sub);
 		        }
 			}
