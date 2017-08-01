@@ -171,9 +171,6 @@ namespace MiningForce.Payments
 		    // ask handler to classify them
 		    var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
 
-//updatedBlocks.First().Status = BlockStatus.Confirmed;
-//updatedBlocks.First().Reward = 19531250 / BitcoinConstants.SatoshisPerBitcoin;
-
 		    foreach (var block in updatedBlocks.OrderBy(x => x.Created))
 		    {
 			    logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");

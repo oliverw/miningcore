@@ -86,23 +86,21 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    #endregion // Overrides
 
-		private async void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+		private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
 		    var requestParams = request.Params?.ToObject<string[]>();
-		    var response = await manager.SubscribeWorkerAsync(client);
 
-		    // respond with manager provided payload
 		    var data = new object[]
-			    {
-				    new object[]
-				    {
-					    new object[] { StratumMethod.SetDifficulty, client.ConnectionId },
-					    new object[] { StratumMethod.MiningNotify, client.ConnectionId }
-				    },
-			    }
-			    .Concat(response)
-			    .ToArray();
+			{
+				new object[]
+				{
+					new object[] { StratumMethod.SetDifficulty, client.ConnectionId },
+					new object[] { StratumMethod.MiningNotify, client.ConnectionId }
+				},
+			}
+			.Concat(manager.GetSubscriberData(client))
+			.ToArray();
 
 		    client.Respond(data, request.Id);
 

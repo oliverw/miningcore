@@ -72,7 +72,7 @@ namespace MiningForce.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public Task<object[]> SubscribeWorkerAsync(StratumClient<BitcoinWorkerContext> worker)
+        public object[] GetSubscriberData(StratumClient<BitcoinWorkerContext> worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -86,7 +86,7 @@ namespace MiningForce.Blockchain.Bitcoin
                 extraNonceProvider.Size
             };
 
-            return Task.FromResult(responseData);
+            return responseData;
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission, double stratumDifficulty)
