@@ -8,7 +8,6 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
-using System.Threading;
 using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain;
@@ -85,6 +84,14 @@ namespace MiningForce.Payments
 		    InitializeQueue();
 
 			logger.Info(() => "Online");
+		}
+
+		public void Stop()
+		{
+			queueSub?.Dispose();
+			queueSub = null;
+
+			logger.Info(() => "Stopped");
 		}
 
 		private void InitializeQueue()
