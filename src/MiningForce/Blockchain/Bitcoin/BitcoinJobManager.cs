@@ -75,17 +75,14 @@ namespace MiningForce.Blockchain.Bitcoin
         public Task<object[]> SubscribeWorkerAsync(StratumClient<BitcoinWorkerContext> worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
-            
-            // setup worker context
-            var context = worker.Context;
 
 			// assign unique ExtraNonce1 to worker (miner)
-			context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
+	        worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
 
             // setup response data
             var responseData = new object[]
             {
-                context.ExtraNonce1,
+	            worker.Context.ExtraNonce1,
                 extraNonceProvider.Size
             };
 
@@ -121,11 +118,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			// under testnet or regtest conditions network difficulty may be lower than statum diff
 	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
-			// get worker context
-			var context = worker.Context;
-
 			// validate & process
-			var share = job.ProcessShare(context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
+			var share = job.ProcessShare(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
 
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
