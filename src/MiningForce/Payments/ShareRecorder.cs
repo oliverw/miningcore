@@ -98,7 +98,7 @@ namespace MiningForce.Payments
 				{
 					try
 					{
-						PersistShareFaulTolerant(shares);
+						PersistSharesFaulTolerant(shares);
 					}
 
 					catch (Exception ex)
@@ -132,13 +132,15 @@ namespace MiningForce.Payments
 
 	    private void BuildFaultHandlingPolicy()
 	    {
+			// retry with increasing delay (1s, 2s, 4s etc) 
 		    var retry = Policy
 			    .Handle<DbException>()
 			    .Or<SocketException>()
 				.Or<TimeoutException>()
 			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnPolicyRetry);
 
-		    var breaker = Policy
+			// after retries failed several times, break the circuit and without further retries, call fallback action directly for one minute 
+			var breaker = Policy
 			    .Handle<DbException>()
 			    .Or<SocketException>()
 			    .Or<TimeoutException>()
@@ -161,7 +163,7 @@ namespace MiningForce.Payments
 
 		#endregion // API-Surface
 
-		private void PersistShareFaulTolerant(IList<IShare> shares)
+		private void PersistSharesFaulTolerant(IList<IShare> shares)
 	    {
 		    var context = new Dictionary<string, object> {{PolicyContextKeyShares, shares}};
 
