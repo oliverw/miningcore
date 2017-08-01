@@ -88,6 +88,8 @@ namespace MiningForce.Payments
 
 		public void Stop()
 		{
+			logger.Info(() => "Stopping ..");
+
 			queueSub?.Dispose();
 			queueSub = null;
 
