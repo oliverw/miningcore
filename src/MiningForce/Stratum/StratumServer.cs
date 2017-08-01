@@ -78,7 +78,9 @@ namespace MiningForce.Stratum
                 var client = new StratumClient<TClientContext>();
                 client.Init(con, ctx, endpointConfig);
 
-	            lock (clients)
+				OnConnect(client);
+
+				lock (clients)
 	            {
 		            var sub = client.Requests
 			            .ObserveOn(TaskPoolScheduler.Default)
@@ -100,8 +102,6 @@ namespace MiningForce.Stratum
 
 					clients[subscriptionId] = Tuple.Create(client, sub);
 	            }
-
-				OnConnect(client);
 			}
 
 			catch (Exception ex)
