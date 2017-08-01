@@ -64,12 +64,14 @@ namespace MiningForce.Blockchain.Bitcoin
 			var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
 			var result = new List<Block>();
 
+			var immatureCount = 0;
+
 			for (int i = 0; i < pageCount; i++)
 			{
 				// get a page full of blocks
 				var page = blocks
 					.Skip(i * pageSize)
-					.Take(pageCount)
+					.Take(pageSize)
 					.ToArray();
 
 				// build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
@@ -116,6 +118,7 @@ namespace MiningForce.Blockchain.Bitcoin
 						{
 							case "immature":
 								// coinbase transaction that is not spendable yet, do nothing and let it mature
+								immatureCount++;
 								break;
 
 							case "generate":
