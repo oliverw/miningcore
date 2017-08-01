@@ -51,7 +51,6 @@ namespace MiningForce.Mining
 	    protected readonly IStatsRepository statsRepo;
 	    protected readonly PoolStats poolStats = new PoolStats();
 	    protected BlockchainStats blockchainStats;
-		protected IBanManager banManager;
 
 		protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = 
             new Dictionary<PoolEndpoint, VarDiffManager>();
@@ -104,32 +103,22 @@ namespace MiningForce.Mining
 
 	    protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
-	        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == false)
+	        // client setup
+	        var context = new TWorkerContext();
+	        context.Init(poolConfig, client.PoolEndpoint.Difficulty, client.PoolEndpoint.VarDiff);
+	        client.Context = context;
+
+	        // expect miner to establish communication within a certain time
+	        EnsureNoZombieClient(client);
+
+	        // update stats
+	        lock (clients)
 	        {
-				// client setup
-		        var context = new TWorkerContext();
-				context.Init(poolConfig, client.PoolEndpoint.Difficulty, client.PoolEndpoint.VarDiff);
-				client.Context = context;
-
-				// expect miner to establish communication within a certain time
-				EnsureNoZombieClient(client);
-
-		        // update stats
-		        lock (clients)
-		        {
-			        poolStats.ConnectedMiners = clients.Count;
-		        }
-
-		        // Telemetry
-		        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
-			}
-
-			else
-	        {
-		        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned worker @ {client.RemoteEndpoint.Address}");
-
-				DisconnectClient(client);
+		        poolStats.ConnectedMiners = clients.Count;
 	        }
+
+	        // Telemetry
+	        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
 		}
 
 		protected override void OnDisconnect(string subscriptionId)

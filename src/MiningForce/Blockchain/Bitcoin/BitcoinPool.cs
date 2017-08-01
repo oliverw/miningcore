@@ -46,7 +46,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    protected override void OnRequest(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
-		    var request = tsRequest.Value;
+			var request = tsRequest.Value;
 
 			switch (request.Method)
 			{

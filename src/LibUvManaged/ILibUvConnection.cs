@@ -9,7 +9,7 @@ namespace LibUvManaged
         void Send(byte[] data);
         void Close();
 
-        IPEndPoint RemoteEndPoint { get; }
+        IPEndPoint RemoteEndpoint { get; }
         string ConnectionId { get; }
     }
 }

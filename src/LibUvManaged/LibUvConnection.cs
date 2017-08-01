@@ -59,7 +59,7 @@ namespace LibUvManaged
 	    #region ILibUvConnection
 
         public IObservable<byte[]> Received { get; }
-        public IPEndPoint RemoteEndPoint { get; private set; }
+        public IPEndPoint RemoteEndpoint { get; private set; }
         public string ConnectionId => connectionId;
 
         public void Send(byte[] data)
@@ -103,10 +103,10 @@ namespace LibUvManaged
                 client.Init(parent.loop, null);
                 server.Accept(client);
 
-                RemoteEndPoint = client.GetPeerIPEndPoint();
+                RemoteEndpoint = client.GetPeerIPEndPoint();
                 connectionId = CorrelationIdGenerator.GetNextId();
 
-				logger.Debug(() => $"[{connectionId}] Accepted connection from {RemoteEndPoint}");
+				logger.Debug(() => $"[{connectionId}] Accepted connection from {RemoteEndpoint}");
 
                 client.ReadStart(
                     (_, suggestedSize, state) =>

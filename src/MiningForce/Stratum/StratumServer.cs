@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
+using MiningForce.Banning;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
-using MiningForce.Mining;
-using Newtonsoft.Json;
 
 namespace MiningForce.Stratum
 {
@@ -29,6 +28,7 @@ namespace MiningForce.Stratum
         protected readonly IComponentContext ctx;
         protected ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
+		protected IBanManager banManager;
 
 		protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients = 
 			new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
@@ -73,35 +73,52 @@ namespace MiningForce.Stratum
         {
             try
             {
-                var subscriptionId = con.ConnectionId;
+                var connectionId = con.ConnectionId;
 
-                var client = new StratumClient<TClientContext>();
-                client.Init(con, ctx, endpointConfig);
-
-				OnConnect(client);
-
-				lock (clients)
+				// get rid of banned clients as early as possible
+	            if (banManager?.IsBanned(con.RemoteEndpoint.Address) == true)
 	            {
-		            var sub = client.Requests
-			            .ObserveOn(TaskPoolScheduler.Default)
-			            .Subscribe(tsRequest =>
-			            {
-							var request = tsRequest.Value;
-				            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
-
-				            try
-				            {
-					            OnRequest(client, tsRequest);
-				            }
-
-							catch (Exception ex)
-				            {
-					            logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
-				            }
-			            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
-
-					clients[subscriptionId] = Tuple.Create(client, sub);
+		            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
+		            con.Close();
+		            return;
 	            }
+
+				// setup client
+				var client = new StratumClient<TClientContext>();
+		        client.Init(con, ctx, endpointConfig);
+		        OnConnect(client);
+
+				// request subscription
+		        lock (clients)
+		        {
+			        var sub = client.Requests
+				        .ObserveOn(TaskPoolScheduler.Default)
+				        .Subscribe(tsRequest =>
+				        {
+					        var request = tsRequest.Value;
+					        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+
+					        try
+					        {
+						        // boot pre-connected clients
+						        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+						        {
+							        logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
+							        DisconnectClient(client);
+							        return;
+						        }
+
+								OnRequest(client, tsRequest);
+					        }
+
+					        catch (Exception ex)
+					        {
+						        logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
+					        }
+				        }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+
+			        clients[connectionId] = Tuple.Create(client, sub);
+		        }
 			}
 
 			catch (Exception ex)

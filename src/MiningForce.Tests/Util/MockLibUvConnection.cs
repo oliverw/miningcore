@@ -13,7 +13,7 @@ namespace MiningForce.Tests.Util
     {
 	    public MockLibUvConnection(IPEndPoint remoteEndPoint = null, string connectionId = "MOCKCONN")
 	    {
-		    RemoteEndPoint = remoteEndPoint ?? new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4444);
+		    RemoteEndpoint = remoteEndPoint ?? new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4444);
 		    ConnectionId = connectionId;
 
 			Received = ReceiveSubject.AsObservable();
@@ -38,7 +38,7 @@ namespace MiningForce.Tests.Util
 			closedSubject.OnNext(Unit.Default);
 		}
 
-	    public IPEndPoint RemoteEndPoint { get; }
+	    public IPEndPoint RemoteEndpoint { get; }
 	    public string ConnectionId { get; }
 
 		#endregion // ILibUvConnection

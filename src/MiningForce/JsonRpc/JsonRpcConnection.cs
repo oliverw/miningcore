@@ -79,7 +79,7 @@ namespace MiningForce.JsonRpc
 			upstream.Send(Encoding.UTF8.GetBytes(json));
         }
 
-        public IPEndPoint RemoteEndPoint => upstream?.RemoteEndPoint;
+        public IPEndPoint RemoteEndPoint => upstream?.RemoteEndpoint;
         public string ConnectionId => upstream?.ConnectionId;
 
         public void Close()
