@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Reactive.Disposables;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -82,54 +82,29 @@ namespace MiningForce.Payments
 	    public void Start(ClusterConfig clusterConfig)
 	    {
 		    ConfigureRecovery(clusterConfig);
+		    InitializeQueue();
 
-		    queueSub = CreateQueueObservable()
-				.Buffer(TimeSpan.FromSeconds(1), 20)
-				.Where(shares=> shares.Any())
-				.Subscribe(shares =>
-			    {
-				    try
-				    {
-					    PersistShareFaulTolerant(shares);
-				    }
-
-				    catch (Exception ex)
-				    {
-					    logger.Error(ex);
-				    }
-				});
-
-		    logger.Info(() => "Online");
+			logger.Info(() => "Online");
 		}
 
-		private IObservable<IShare> CreateQueueObservable()
+		private void InitializeQueue()
 		{
-			return Observable.Create<IShare>(observer =>
-			{
-				var thread = new Thread(() =>
+			queueSub = queue.GetConsumingEnumerable()
+				.ToObservable(TaskPoolScheduler.Default)
+				.Buffer(TimeSpan.FromSeconds(1), 20)
+				.Where(shares => shares.Any())
+				.Subscribe(shares =>
 				{
-					while (true)
+					try
 					{
-						try
-						{
-							observer.OnNext(queue.Take());
-							CheckQueueBacklog();
-						}
+						PersistShareFaulTolerant(shares);
+					}
 
-						catch (ObjectDisposedException)
-						{
-							break;
-						}
+					catch (Exception ex)
+					{
+						logger.Error(ex);
 					}
 				});
-
-				thread.IsBackground = true;
-				thread.Priority = ThreadPriority.AboveNormal;
-				thread.Name = "Share Persistence Queue";
-				thread.Start();
-
-				return Disposable.Empty;
-			});
 		}
 
 		private void ConfigureRecovery(ClusterConfig clusterConfig)
