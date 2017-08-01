@@ -13,6 +13,7 @@ using NLog;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Mining;
+using Newtonsoft.Json;
 
 namespace MiningForce.Stratum
 {
@@ -81,7 +82,21 @@ namespace MiningForce.Stratum
 	            {
 		            var sub = client.Requests
 			            .ObserveOn(TaskPoolScheduler.Default)
-			            .Subscribe(x => OnRequest(client, x), ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+			            .Subscribe(tsRequest =>
+			            {
+							var request = tsRequest.Value;
+				            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+
+				            try
+				            {
+					            OnRequest(client, tsRequest);
+				            }
+
+							catch (Exception ex)
+				            {
+					            logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
+				            }
+			            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
 					clients[subscriptionId] = Tuple.Create(client, sub);
 	            }

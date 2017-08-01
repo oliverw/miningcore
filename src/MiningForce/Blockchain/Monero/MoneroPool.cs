@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Autofac;
-using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Mining;
@@ -15,7 +13,7 @@ using NLog;
 
 namespace MiningForce.Blockchain.Monero
 {
-	[SupportedCoinsMetadata(CoinType.XMR)]
+	[CoinMetadata(CoinType.XMR)]
     public class MoneroPool : PoolBase<MoneroWorkerContext>
     {
 	    public MoneroPool(IComponentContext ctx,
@@ -42,28 +40,19 @@ namespace MiningForce.Blockchain.Monero
 	    protected override void OnRequest(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
-		    try
-		    {
-			    switch (request.Method)
-			    {
-				    case MoneroStratumMethods.Login:
-					    OnLogin(client, tsRequest);
-					    break;
+			switch (tsRequest.Value.Method)
+			{
+				case MoneroStratumMethods.Login:
+					OnLogin(client, tsRequest);
+					break;
 
-				    default:
-					    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+				default:
+					logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-					    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-					    break;
-			    }
-		    }
-
-		    catch (Exception ex)
-		    {
-			    logger.Error(ex, () => $"{nameof(OnRequest)}: {request.Method}");
-		    }
+					client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+					break;
+			}
 	    }
 
 	    protected override void UpdateBlockChainStats()

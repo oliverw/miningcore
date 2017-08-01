@@ -4,14 +4,14 @@ using MiningForce.Configuration;
 
 namespace MiningForce
 {
-	public class SupportedCoinsMetadataAttribute : Attribute
+	public class CoinMetadataAttribute : Attribute
 	{
-		public SupportedCoinsMetadataAttribute(IDictionary<string, object> values)
+		public CoinMetadataAttribute(IDictionary<string, object> values)
 		{
 			SupportedCoins = (CoinType[]) values[nameof(SupportedCoins)];
 		}
 
-		public SupportedCoinsMetadataAttribute(params CoinType[] supportedCoins)
+		public CoinMetadataAttribute(params CoinType[] supportedCoins)
 		{
 			SupportedCoins = supportedCoins;
 		}

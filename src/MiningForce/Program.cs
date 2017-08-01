@@ -453,7 +453,7 @@ namespace MiningForce
 			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
 			{
 				// resolve pool implementation supporting coin type
-				var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, SupportedCoinsMetadataAttribute>>>>()
+				var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
 					.First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
 
 				// create and configure

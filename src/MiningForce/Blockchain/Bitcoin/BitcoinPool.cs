@@ -47,36 +47,27 @@ namespace MiningForce.Blockchain.Bitcoin
 	    protected override void OnRequest(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]: {JsonConvert.SerializeObject(request.Params, serializerSettings)}");
 
-		    try
-		    {
-			    switch (request.Method)
-			    {
-				    case BitcoinStratumMethods.Subscribe:
-					    OnSubscribe(client, tsRequest);
-					    break;
+			switch (request.Method)
+			{
+				case BitcoinStratumMethods.Subscribe:
+					OnSubscribe(client, tsRequest);
+					break;
 
-				    case BitcoinStratumMethods.Authorize:
-					    OnAuthorize(client, tsRequest);
-					    break;
+				case BitcoinStratumMethods.Authorize:
+					OnAuthorize(client, tsRequest);
+					break;
 
-				    case BitcoinStratumMethods.SubmitShare:
-					    OnSubmitShare(client, tsRequest);
-					    break;
+				case BitcoinStratumMethods.SubmitShare:
+					OnSubmitShare(client, tsRequest);
+					break;
 
-				    default:
-					    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+				default:
+					logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-					    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-					    break;
-			    }
-		    }
-
-		    catch (Exception ex)
-		    {
-			    logger.Error(ex, () => $"{nameof(OnRequest)}: {request.Method}");
-		    }
+					client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+					break;
+			}
 	    }
 
 	    protected override void UpdateBlockChainStats()

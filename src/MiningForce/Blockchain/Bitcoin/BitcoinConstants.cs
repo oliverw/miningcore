@@ -47,7 +47,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		public const decimal SatoshisPerBitcoin = 100000000;
 	}
 
-	public class BitcoinCoinsMetaData : SupportedCoinsMetadataAttribute
+	public class BitcoinCoinsMetaData : CoinMetadataAttribute
 	{
 		public BitcoinCoinsMetaData() : base(
 			CoinType.BTC,

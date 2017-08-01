@@ -117,7 +117,7 @@ namespace MiningForce.Payments
 				.ToDictionary(x => x.Coin.Type, poolConfig =>
 		    {
 			    // resolve pool implementation supporting coin type
-			    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, SupportedCoinsMetadataAttribute>>>>()
+			    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinMetadataAttribute>>>>()
 				    .First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
 
 			    // create and configure
