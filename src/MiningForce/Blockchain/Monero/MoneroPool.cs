@@ -41,7 +41,7 @@ namespace MiningForce.Blockchain.Monero
 	    {
 		    var request = tsRequest.Value;
 
-			switch (tsRequest.Value.Method)
+			switch (request.Method)
 			{
 				case MoneroStratumMethods.Login:
 					OnLogin(client, tsRequest);
