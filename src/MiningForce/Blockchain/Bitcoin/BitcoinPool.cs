@@ -172,9 +172,9 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				    // telemetry
 				    validSharesSubject.OnNext(share);
-			    }
+				}
 
-			    catch (StratumException ex)
+				catch (StratumException ex)
 			    {
 				    client.RespondError(ex.Code, ex.Message, request.Id, false);
 

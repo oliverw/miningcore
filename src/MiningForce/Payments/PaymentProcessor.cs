@@ -94,7 +94,7 @@ namespace MiningForce.Payments
 
 		    thread.IsBackground = true;
 		    thread.Priority = ThreadPriority.AboveNormal;
-		    thread.Name = "Payment Processor";
+		    thread.Name = "Payment Processing";
 		    thread.Start();
 	    }
 

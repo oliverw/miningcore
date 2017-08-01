@@ -91,6 +91,7 @@ namespace MiningForce.Payments
 		{
 			queueSub = queue.GetConsumingEnumerable()
 				.ToObservable(TaskPoolScheduler.Default)
+				.Do(_ => CheckQueueBacklog())
 				.Buffer(TimeSpan.FromSeconds(1), 20)
 				.Where(shares => shares.Any())
 				.Subscribe(shares =>
