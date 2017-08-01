@@ -53,15 +53,15 @@ namespace MiningForce.Blockchain.Bitcoin
 		    {
 			    switch (request.Method)
 			    {
-				    case StratumMethod.Subscribe:
+				    case BitcoinStratumMethods.Subscribe:
 					    OnSubscribe(client, tsRequest);
 					    break;
 
-				    case StratumMethod.Authorize:
+				    case BitcoinStratumMethods.Authorize:
 					    OnAuthorize(client, tsRequest);
 					    break;
 
-				    case StratumMethod.SubmitShare:
+				    case BitcoinStratumMethods.SubmitShare:
 					    OnSubmitShare(client, tsRequest);
 					    break;
 
@@ -95,8 +95,8 @@ namespace MiningForce.Blockchain.Bitcoin
 			{
 				new object[]
 				{
-					new object[] { StratumMethod.SetDifficulty, client.ConnectionId },
-					new object[] { StratumMethod.MiningNotify, client.ConnectionId }
+					new object[] { BitcoinStratumMethods.SetDifficulty, client.ConnectionId },
+					new object[] { BitcoinStratumMethods.MiningNotify, client.ConnectionId }
 				},
 			}
 			.Concat(manager.GetSubscriberData(client))
@@ -106,11 +106,11 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			// setup worker context
 		    client.Context.IsSubscribed = true;
-		    client.Context.UserAgent = requestParams?.Length > 0 ? requestParams[0] : null;
+		    client.Context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
 
 		    // send intial update
-		    client.Notify(StratumMethod.SetDifficulty, new object[] { client.Context.Difficulty });
-		    client.Notify(StratumMethod.MiningNotify, currentJobParams);
+		    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+		    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
 	    }
 
 	    private async void OnAuthorize(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
@@ -193,7 +193,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    currentJobParams = jobParams;
 
-		    BroadcastNotification(StratumMethod.MiningNotify, currentJobParams, client =>
+		    BroadcastNotification(BitcoinStratumMethods.MiningNotify, currentJobParams, client =>
 		    {
 				if (client.Context.IsSubscribed)
 			    {
@@ -208,11 +208,11 @@ namespace MiningForce.Blockchain.Bitcoin
 					    {
 						    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
 
-						    client.Notify(StratumMethod.SetDifficulty, new object[] { client.Context.Difficulty });
+						    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
 					    }
 
 					    // send job
-					    client.Notify(StratumMethod.MiningNotify, currentJobParams);
+					    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
 				    }
 
 				    else

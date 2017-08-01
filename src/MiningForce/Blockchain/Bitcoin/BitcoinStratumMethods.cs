@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningForce.Stratum
+﻿namespace MiningForce.Blockchain.Bitcoin
 {
-    public class StratumMethod
+    public class BitcoinStratumMethods
     {
         /// <summary>
         /// Used to subscribe to work from a server, required before all other communication.
