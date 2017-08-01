@@ -139,7 +139,8 @@ namespace MiningForce.Payments
 				.Or<TimeoutException>()
 			    .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnPolicyRetry);
 
-			// after retries failed several times, break the circuit and without further retries, call fallback action directly for one minute 
+			// after retries failed several times, break the circuit and fall through to
+			// fallback action for one minute, not attempting further retries during that period
 			var breaker = Policy
 			    .Handle<DbException>()
 			    .Or<SocketException>()
