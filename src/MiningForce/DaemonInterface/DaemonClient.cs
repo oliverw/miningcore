@@ -43,6 +43,7 @@ namespace MiningForce.DaemonInterface
 			this.endPoints = endPoints;
 			this.rpcLocation = rpcLocation;
 
+			// create one HttpClient instance per endpoint that carries the associated credentials
 			httpClients = endPoints.ToDictionary(endpoint=> endpoint, endpoint => 
 				new HttpClient(new HttpClientHandler
 				{
