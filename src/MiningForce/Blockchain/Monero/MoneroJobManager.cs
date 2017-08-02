@@ -18,7 +18,7 @@ namespace MiningForce.Blockchain.Monero
 {
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
-        public MoneroJobManager(
+	    public MoneroJobManager(
             IComponentContext ctx, 
             DaemonClient daemon,
             ExtraNonceProvider extraNonceProvider) : 
@@ -38,6 +38,8 @@ namespace MiningForce.Blockchain.Monero
 		private DaemonEndpointConfig[] daemonEndpoints;
 	    private DaemonEndpointConfig[] walletDaemonEndpoints;
 	    private DaemonClient walletDaemon;
+	    private const string DaemonRpcLocation = "json_rpc";
+	    private const string DaemonRpcDigestAuthRealm = "monero_rpc";
 
 		#region API-Surface
 
@@ -167,13 +169,11 @@ namespace MiningForce.Blockchain.Monero
 
 	    protected override void ConfigureDaemons()
 	    {
-		    daemon.RpcUrl = "json_rpc";
-			daemon.Configure(daemonEndpoints);
+			daemon.Configure(daemonEndpoints, DaemonRpcLocation, DaemonRpcDigestAuthRealm);
 
 			// also setup wallet daemon
 			walletDaemon = ctx.Resolve<DaemonClient>();
-		    walletDaemon.RpcUrl = "json_rpc";
-		    walletDaemon.Configure(walletDaemonEndpoints);
+			walletDaemon.Configure(walletDaemonEndpoints, DaemonRpcLocation, DaemonRpcDigestAuthRealm);
 		}
 
 		#endregion

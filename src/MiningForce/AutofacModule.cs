@@ -33,17 +33,6 @@ namespace MiningForce
         {
             var thisAssembly = typeof(AutofacModule).GetTypeInfo().Assembly;
 
-            builder.Register(c =>
-            {
-                var handler = new HttpClientHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-                };
-
-                return new HttpClient(handler);
-            })
-            .AsSelf();
-
             builder.RegisterInstance(new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()

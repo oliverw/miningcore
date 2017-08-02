@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -18,30 +19,44 @@ namespace MiningForce.DaemonInterface
 	/// </summary>
 	public class DaemonClient
     {
-        public DaemonClient(HttpClient httpClient, JsonSerializerSettings serializerSettings)
+        public DaemonClient(JsonSerializerSettings serializerSettings)
         {
 	        Contract.RequiresNonNull(httpClient, nameof(httpClient));
 			Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
-			this.httpClient = httpClient;
             this.serializerSettings = serializerSettings;
-        }
+
+	        httpClient = new HttpClient(new HttpClientHandler
+	        {
+		        Credentials = credentialCache,
+		        AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+			});
+		}
 
 		protected DaemonEndpointConfig[] endPoints;
         private readonly Random random = new Random();
         protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
+	    private string rpcLocation;
+	    private readonly CredentialCache credentialCache = new CredentialCache();
 
-		#region API-Surface
+	    #region API-Surface
 
-		public string RpcUrl { get; set; }
-
-		public void Configure(DaemonEndpointConfig[] endPoints)
+		public void Configure(DaemonEndpointConfig[] endPoints, string rpcLocation = null, string digestAuthRealm = null)
 		{
 			Contract.RequiresNonNull(endPoints, nameof(endPoints));
 			Contract.Requires<ArgumentException>(endPoints.Length > 0, $"{nameof(endPoints)} must not be empty");
 
 			this.endPoints = endPoints;
+			this.rpcLocation = rpcLocation;
+
+			if (!string.IsNullOrEmpty(digestAuthRealm))
+			{
+				// build Credential Cache
+				foreach (var endPoint in endPoints.Where(x=> !string.IsNullOrEmpty(x.User)))
+					credentialCache.Add(endPoint.Host, endPoint.Port, "Digest", 
+						new NetworkCredential(endPoint.User, endPoint.Password, digestAuthRealm));
+			}
 		}
 
 		/// <summary>
@@ -138,8 +153,8 @@ namespace MiningForce.DaemonInterface
 
             // build request url
 	        var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
-	        if (!string.IsNullOrEmpty(RpcUrl))
-		        requestUrl += $"/{RpcUrl}";
+	        if (!string.IsNullOrEmpty(rpcLocation))
+		        requestUrl += $"/{rpcLocation}";
 
 	        // build http request
 			var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
@@ -171,8 +186,8 @@ namespace MiningForce.DaemonInterface
 
 		    // build request url
 		    var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
-		    if (!string.IsNullOrEmpty(RpcUrl))
-			    requestUrl += $"/{RpcUrl}";
+		    if (!string.IsNullOrEmpty(rpcLocation))
+			    requestUrl += $"/{rpcLocation}";
 
 		    // build http request
 		    var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
