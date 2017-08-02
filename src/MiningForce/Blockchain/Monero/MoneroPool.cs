@@ -2,6 +2,7 @@
 using System.Reactive;
 using System.Threading.Tasks;
 using Autofac;
+using MiningForce.Blockchain.Monero.StratumRequests;
 using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Mining;
@@ -65,9 +66,19 @@ namespace MiningForce.Blockchain.Monero
 		private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var requestParams = request.Params?.ToObject<string[]>();
 
-		 //   var data = new object[]
+			var loginRequest = request.Params?.ToObject<StratumLoginRequest>();
+
+		    if (!string.IsNullOrEmpty(loginRequest?.Login))
+		    {
+				// assumes that StratumLoginRequest.Login is an address
+				client.Context.IsAuthorized = manager.ValidateAddress(loginRequest.Login);
+		    }
+
+			// TODO
+			// send response
+
+		    //   var data = new object[]
 			//{
 			//	new object[]
 			//	{
@@ -78,7 +89,7 @@ namespace MiningForce.Blockchain.Monero
 			//.Concat(manager.GetSubscriberData(client))
 			//.ToArray();
 
-		 //   client.Respond(data, request.Id);
-	    }
+			//   client.Respond(data, request.Id);
+		}
 	}
 }

@@ -14,6 +14,7 @@ using MiningForce.Util;
 
 namespace MiningForce.Blockchain.Monero
 {
+	[CoinMetadata(CoinType.XMR)]
     public class MoneroPayoutHandler : PayoutHandlerBase,
 		IPayoutHandler
 	{

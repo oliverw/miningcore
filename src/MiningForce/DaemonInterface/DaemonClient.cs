@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -21,24 +22,16 @@ namespace MiningForce.DaemonInterface
     {
         public DaemonClient(JsonSerializerSettings serializerSettings)
         {
-	        Contract.RequiresNonNull(httpClient, nameof(httpClient));
 			Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
-
-	        httpClient = new HttpClient(new HttpClientHandler
-	        {
-		        Credentials = credentialCache,
-		        AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-			});
 		}
 
 		protected DaemonEndpointConfig[] endPoints;
         private readonly Random random = new Random();
-        protected HttpClient httpClient;
         private readonly JsonSerializerSettings serializerSettings;
 	    private string rpcLocation;
-	    private readonly CredentialCache credentialCache = new CredentialCache();
+	    private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
 
 	    #region API-Surface
 
@@ -50,13 +43,13 @@ namespace MiningForce.DaemonInterface
 			this.endPoints = endPoints;
 			this.rpcLocation = rpcLocation;
 
-			if (!string.IsNullOrEmpty(digestAuthRealm))
-			{
-				// build Credential Cache
-				foreach (var endPoint in endPoints.Where(x=> !string.IsNullOrEmpty(x.User)))
-					credentialCache.Add(endPoint.Host, endPoint.Port, "Digest", 
-						new NetworkCredential(endPoint.User, endPoint.Password, digestAuthRealm));
-			}
+			httpClients = endPoints.ToDictionary(endpoint=> endpoint, endpoint => 
+				new HttpClient(new HttpClientHandler
+				{
+					Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
+					PreAuthenticate = true,
+					AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+				}));
 		}
 
 		/// <summary>
@@ -143,8 +136,7 @@ namespace MiningForce.DaemonInterface
 		    return result;
 	    }
 
-		private async Task<JsonRpcResponse> BuildRequestTask(
-            AuthenticatedNetworkEndpointConfig endPoint, string method, object payload) 
+		private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload) 
         {
             var rpcRequestId = GetRequestId();
 
@@ -170,7 +162,8 @@ namespace MiningForce.DaemonInterface
 	        }
 
 	        // send request
-            var response = await httpClient.SendAsync(request);
+	        var httpClient = httpClients[endPoint];
+			var response = await httpClient.SendAsync(request);
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
@@ -178,8 +171,7 @@ namespace MiningForce.DaemonInterface
             return result;
         }
 
-	    private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(
-		    AuthenticatedNetworkEndpointConfig endPoint, DaemonCmd[] batch)
+	    private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(DaemonEndpointConfig endPoint, DaemonCmd[] batch)
 	    {
 		    // build rpc request
 		    var rpcRequests = batch.Select(x=> new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
@@ -203,6 +195,7 @@ namespace MiningForce.DaemonInterface
 		    }
 
 			// send request
+		    var httpClient = httpClients[endPoint];
 			var response = await httpClient.SendAsync(request);
 		    json = await response.Content.ReadAsStringAsync();
 

@@ -107,15 +107,14 @@ namespace MiningForce.Blockchain.Bitcoin
 	    private async void OnAuthorize(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var context = client.Context;
 
 			var requestParams = request.Params?.ToObject<string[]>();
 		    var workername = requestParams?.Length > 0 ? requestParams[0] : null;
 		    var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
-		    // assumes that workerName is an address
-		    context.IsAuthorized = await manager.ValidateAddressAsync(workername);
-		    client.Respond(context.IsAuthorized, request.Id);
+			// assumes that workerName is an address
+		    client.Context.IsAuthorized = await manager.ValidateAddressAsync(workername);
+		    client.Respond(client.Context.IsAuthorized, request.Id);
 	    }
 
 	    private async void OnSubmitShare(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)

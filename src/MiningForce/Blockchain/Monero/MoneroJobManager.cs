@@ -38,19 +38,25 @@ namespace MiningForce.Blockchain.Monero
 		private DaemonEndpointConfig[] daemonEndpoints;
 	    private DaemonEndpointConfig[] walletDaemonEndpoints;
 	    private DaemonClient walletDaemon;
-	    private const string DaemonRpcLocation = "json_rpc";
-	    private const string DaemonRpcDigestAuthRealm = "monero_rpc";
 
 		#region API-Surface
 
-		public async Task<bool> ValidateAddressAsync(string address)
+		public bool ValidateAddress(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-	        var response = await walletDaemon.ExecuteCmdAnyAsync<SplitIntegratedAddressResponse>(
-				MWC.SplitIntegratedAddress, new { split_integrated_address = address });
+	        if (address.Length != MoneroConstants.AddressLength)
+		        return false;
 
-	        return response.Error == null && !string.IsNullOrEmpty(response.Response.StandardAddress);
+	        if (networkType == MoneroNetworkType.Main &&
+	            !address.StartsWith(MoneroConstants.MainNetAddressPrefix))
+		        return false;
+
+	        if (networkType == MoneroNetworkType.Test &&
+	            !address.StartsWith(MoneroConstants.TestNetAddressPrefix))
+		        return false;
+
+			return true;
         }
 
 		public Task<object[]> SubscribeWorkerAsync(StratumClient<MoneroWorkerContext> worker)
@@ -169,11 +175,11 @@ namespace MiningForce.Blockchain.Monero
 
 	    protected override void ConfigureDaemons()
 	    {
-			daemon.Configure(daemonEndpoints, DaemonRpcLocation, DaemonRpcDigestAuthRealm);
+			daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
 			// also setup wallet daemon
 			walletDaemon = ctx.Resolve<DaemonClient>();
-			walletDaemon.Configure(walletDaemonEndpoints, DaemonRpcLocation, DaemonRpcDigestAuthRealm);
+			walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
 		}
 
 		#endregion
@@ -198,8 +204,14 @@ namespace MiningForce.Blockchain.Monero
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
-                    MC.GetBlockTemplate, new JObject());
+	            var request = new GetBlockTemplateRequest
+	            {
+		            WalletAddress = poolConfig.Address,
+		            ReservedOffset = 60,
+	            };
+
+				var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
+                    MC.GetBlockTemplate, request);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -9);
 
