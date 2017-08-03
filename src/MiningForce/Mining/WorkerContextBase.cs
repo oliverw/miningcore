@@ -41,7 +41,9 @@ namespace MiningForce.Mining
             pendingDifficulty = difficulty;
         }
 
-        public bool ApplyPendingDifficulty()
+	    public bool HasPendingDifficulty => pendingDifficulty.HasValue;
+
+		public bool ApplyPendingDifficulty()
         {
             if (pendingDifficulty.HasValue)
             {

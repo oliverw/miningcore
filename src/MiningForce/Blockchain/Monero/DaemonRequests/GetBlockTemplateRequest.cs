@@ -10,7 +10,7 @@ namespace MiningForce.Blockchain.Monero.DaemonRequests
 		[JsonProperty("wallet_address")]
 		public string WalletAddress { get; set; }
 
-	    [JsonProperty("reserved_offset")]
-	    public uint ReservedOffset { get; set; }
+	    [JsonProperty("reserve_size")]
+	    public uint ReserveSize { get; set; }
 	}
 }

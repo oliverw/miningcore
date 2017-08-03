@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
@@ -7,10 +10,7 @@ using MiningForce.Blockchain.Monero.DaemonRequests;
 using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.DaemonInterface;
-using MiningForce.Extensions;
-using MiningForce.Stratum;
 using MiningForce.Util;
-using Newtonsoft.Json.Linq;
 using MC = MiningForce.Blockchain.Monero.MoneroCommands;
 using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
 
@@ -20,26 +20,30 @@ namespace MiningForce.Blockchain.Monero
     {
 	    public MoneroJobManager(
             IComponentContext ctx, 
-            DaemonClient daemon,
-            ExtraNonceProvider extraNonceProvider) : 
+            DaemonClient daemon) : 
 			base(ctx, daemon)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
 	        Contract.RequiresNonNull(daemon, nameof(daemon));
-	        Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-			this.extraNonceProvider = extraNonceProvider;
-        }
+	        using (var rng = RandomNumberGenerator.Create())
+	        {
+		        instanceId = new byte[MoneroConstants.InstanceIdSize];
+		        rng.GetNonZeroBytes(instanceId);
+	        }
+		}
 
-        private readonly ExtraNonceProvider extraNonceProvider;
         private readonly BlockchainStats blockchainStats = new BlockchainStats();
-	    private MoneroNetworkType networkType;
-
-		private DaemonEndpointConfig[] daemonEndpoints;
+	    private DaemonEndpointConfig[] daemonEndpoints;
 	    private DaemonEndpointConfig[] walletDaemonEndpoints;
 	    private DaemonClient walletDaemon;
+	    private MoneroNetworkType networkType;
+	    protected DateTime? lastBlockUpdate;
+	    private readonly byte[] instanceId;
 
 		#region API-Surface
+
+		public IObservable<Unit> Blocks { get; private set; }
 
 		public bool ValidateAddress(string address)
         {
@@ -59,102 +63,24 @@ namespace MiningForce.Blockchain.Monero
 			return true;
         }
 
-		public Task<object[]> SubscribeWorkerAsync(StratumClient<MoneroWorkerContext> worker)
-        {
-            Contract.RequiresNonNull(worker, nameof(worker));
-
-			// assign unique ExtraNonce1 to worker (miner)
-			worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
-
-            // setup response data
-            var responseData = new object[]
-            {
-                worker.Context.ExtraNonce1,
-                extraNonceProvider.Size
-            };
-
-            return Task.FromResult(responseData);
-        }
-
-        public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker, object submission, double stratumDifficulty)
-        {
-            Contract.RequiresNonNull(worker, nameof(worker));
-            Contract.RequiresNonNull(submission, nameof(submission));
-
-	        var submitParams = submission as object[];
-			if(submitParams == null)
-				throw new StratumException(StratumError.Other, "invalid params");
-
-			// extract params
-			var workername = (submitParams[0] as string)?.Trim();
-	        var jobId = submitParams[1] as string;
-	        var extraNonce2 = submitParams[2] as string;
-	        var nTime = submitParams[3] as string;
-	        var nonce = submitParams[4] as string;
-
-	        MoneroJob job;
-
-	        lock (jobLock)
-			{
-				validJobs.TryGetValue(jobId, out job);
-			}
-
-			if(job == null)
-		        throw new StratumException(StratumError.JobNotFound, "job not found");
-
-			// under testnet or regtest conditions network difficulty may be lower than statum diff
-	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
-
-			// validate & process
-			var share = job.ProcessShare(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
-
-			// if block candidate, submit & check if accepted by network
-			if (share.IsBlockCandidate)
-			{
-				//logger.Info(() => $"[{LogCategory}] Submitting block {share.BlockHash}");
-
-				var acceptResponse = await SubmitBlockAsync(share);
-
-				// is it still a block candidate?
-				share.IsBlockCandidate = acceptResponse.Accepted;
-
-				if (share.IsBlockCandidate)
-				{
-					//logger.Info(() => $"[{LogCategory}] Daemon accepted block {share.BlockHash}");
-
-					// persist the coinbase transaction-hash to allow the payment processor 
-					// to verify later on that the pool has received the reward for the block
-					share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;
-				}
-
-				else
-				{
-					// clear fields that no longer apply
-					share.TransactionConfirmationData = null;
-				}
-			}
-
-			// enrich share with common data
-	        share.PoolId = poolConfig.Id;
-	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-			share.Worker = workername;
-	        share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
-			share.Created = DateTime.UtcNow;
-
-			return share;
-        }
-
 	    public BlockchainStats BlockchainStats => blockchainStats;
- 
+
+	    public void PrepareWorkerJob(MoneroWorkerJob workerJob, out string blob, out string target)
+	    {
+		    blob = null;
+		    target = null;
+
+		    lock (jobLock)
+		    {
+			    currentJob?.PrepareWorkerJob(workerJob, out blob, out target);
+		    }
+	    }
+
 		#endregion // API-Surface
 
 		#region Overrides
 
 		protected override string LogCat => "Monero Job Manager";
-
-	    #region Overrides of JobManagerBase<MoneroWorkerContext,MoneroJob>
-
-	    #region Overrides of JobManagerBase<MoneroWorkerContext,MoneroJob>
 
 	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
@@ -171,8 +97,6 @@ namespace MiningForce.Blockchain.Monero
 			base.Configure(poolConfig, clusterConfig);
 	    }
 
-	    #endregion
-
 	    protected override void ConfigureDaemons()
 	    {
 			daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
@@ -181,8 +105,6 @@ namespace MiningForce.Blockchain.Monero
 			walletDaemon = ctx.Resolve<DaemonClient>();
 			walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
 		}
-
-		#endregion
 
 		protected override async Task<bool> IsDaemonHealthy()
         {
@@ -207,8 +129,8 @@ namespace MiningForce.Blockchain.Monero
 	            var request = new GetBlockTemplateRequest
 	            {
 		            WalletAddress = poolConfig.Address,
-		            ReservedOffset = 60,
-	            };
+					ReserveSize = MoneroConstants.ReserveSize,
+				};
 
 				var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
                     MC.GetBlockTemplate, request);
@@ -237,12 +159,16 @@ namespace MiningForce.Blockchain.Monero
         protected override async Task PostStartInitAsync()
         {
 	        var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+	        var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
 
-	        if (infoResponse.Error != null)
+			if (infoResponse.Error != null)
 			    logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
-	        // extract results
-	        var info = infoResponse.Response.ToObject<GetInfoResponse>();
+	        if (addressResponse.Response?.Address != poolConfig.Address)
+		        logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+
+			// extract results
+			var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
 			// chain detection
 		    networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
@@ -254,9 +180,29 @@ namespace MiningForce.Blockchain.Monero
 			await UpdateNetworkStats();
 
 	        SetupCrypto();
+	        SetupJobUpdates();
 		}
 
-	    protected async Task<bool> UpdateJob(bool forceUpdate)
+		protected virtual void SetupJobUpdates()
+	    {
+			// periodically update block-template from daemon
+			Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+			    .Select(_ => Observable.FromAsync(UpdateJob))
+			    .Concat()
+			    .Do(isNew =>
+			    {
+				    if (isNew)
+					    logger.Info(() => $"[{LogCat}] New block detected");
+			    })
+			    .Where(isNew => isNew)
+				.Select(_=> Unit.Default)
+			    .Publish()
+			    .RefCount();
+	    }
+
+		#endregion // Overrides
+
+		protected async Task<bool> UpdateJob()
         {
 			var response = await GetBlockTemplateAsync();
 
@@ -275,50 +221,30 @@ namespace MiningForce.Blockchain.Monero
 		                (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
 		                 currentJob.BlockTemplate.Height < blockTemplate.Height);
 
-		        if (isNew || forceUpdate)
+		        if (isNew)
 		        {
-			        currentJob = new MoneroJob(blockTemplate, NextJobId(),
-						poolConfig, clusterConfig, networkType, extraNonceProvider);
+			        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
+						poolConfig, clusterConfig, networkType);
 
 			        currentJob.Init();
 
-			        if (isNew)
-			        {
-				        validJobs.Clear();
-
-				        // update stats
-						blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
-			        }
-
-			        validJobs[currentJob.JobId] = currentJob;
+				    // update stats
+					blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
 		        }
 
 		        return isNew;
 	        }
 		}
 
-		protected object GetJobParamsForStratum(bool isNew)
-        {
-	        lock (jobLock)
-	        {
-		        return currentJob?.GetJobParams(isNew);
-	        }
-        }
-
-		#endregion // Overrides
-
 		private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
 	        var request = new GetBlockTemplateRequest
 	        {
 		        WalletAddress = poolConfig.Address,
-		        ReservedOffset = 60,
+		        ReserveSize = MoneroConstants.ReserveSize,
 	        };
 
-			var result = await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(
-	            MC.GetBlockTemplate, request);
-
-			return result;
+			return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(MC.GetBlockTemplate, request);
         }
 
 		private async Task ShowDaemonSyncProgressAsync()
@@ -387,5 +313,5 @@ namespace MiningForce.Blockchain.Monero
 			//blockHasher = sha256dReverse;
 			//difficultyNormalizationFactor = 1;
 		}
-	}
+    }
 }

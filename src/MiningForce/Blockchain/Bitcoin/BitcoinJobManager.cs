@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -24,7 +26,7 @@ namespace MiningForce.Blockchain.Bitcoin
         public BitcoinJobManager(
             IComponentContext ctx, 
             DaemonClient daemon,
-            ExtraNonceProvider extraNonceProvider) : 
+            BitcoinExtraNonceProvider extraNonceProvider) : 
 			base(ctx, daemon)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -34,9 +36,10 @@ namespace MiningForce.Blockchain.Bitcoin
 			this.extraNonceProvider = extraNonceProvider;
         }
 
-        private readonly ExtraNonceProvider extraNonceProvider;
+        private readonly BitcoinExtraNonceProvider extraNonceProvider;
         private readonly BlockchainStats blockchainStats = new BlockchainStats();
-	    private TimeSpan jobRebroadcastTimeout;
+	    protected readonly Dictionary<string, BitcoinJob> validJobs = new Dictionary<string, BitcoinJob>();
+		private TimeSpan jobRebroadcastTimeout;
 	    protected DateTime? lastBlockUpdate;
 	    private IDestination poolAddressDestination;
 		private bool isPoS;
@@ -77,7 +80,7 @@ namespace MiningForce.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
 
 			// assign unique ExtraNonce1 to worker (miner)
-	        worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToString("x4");
+	        worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToStringHex8();
 
             // setup response data
             var responseData = new object[]
@@ -334,7 +337,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
-			// periodically update job from daemon
+			// periodically update block-template from daemon
 			var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
 			    .Select(_ => Observable.FromAsync(() => UpdateJob(false)))
 			    .Concat()

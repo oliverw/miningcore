@@ -42,9 +42,17 @@ namespace MiningForce.Mining
 
 			this.cf = cf;
 	        this.statsRepo = statsRepo;
-        }
 
-	    protected PoolConfig poolConfig;
+	        validShares = validSharesSubject
+				.AsObservable()
+		        .Synchronize();
+
+	        invalidShares = invalidSharesSubject
+				.AsObservable()
+		        .Synchronize();
+		}
+
+		protected PoolConfig poolConfig;
 	    protected ClusterConfig clusterConfig;
 	    protected readonly JsonSerializerSettings serializerSettings;
 	    protected readonly IConnectionFactory cf;
@@ -60,11 +68,13 @@ namespace MiningForce.Mining
 	    protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
 
 		// Telemetry
-	    protected readonly Subject<int> resposeTimesSubject = new Subject<int>();
-	    protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
-	    protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
+		protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
+		protected readonly IObservable<IShare> validShares;
 
-	    #region API-Surface
+		protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
+		protected readonly IObservable<Unit> invalidShares;
+
+		#region API-Surface
 
 		public IObservable<IShare> Shares { get; }
 
@@ -116,9 +126,6 @@ namespace MiningForce.Mining
 	        {
 		        poolStats.ConnectedMiners = clients.Count;
 	        }
-
-	        // Telemetry
-	        client.ResponseTime.Subscribe(x => resposeTimesSubject.OnNext(x));
 		}
 
 		protected override void OnDisconnect(string subscriptionId)
@@ -237,26 +244,19 @@ namespace MiningForce.Mining
 
 	    private void SetupTelemetry()
 	    {
-			// Average response times per minute
-		    resposeTimesSubject
-			    .Select(ms => (float) ms)
-			    .Buffer(TimeSpan.FromMinutes(1))
-			    .Select(responses => responses.Count > 0 ? responses.Average() : -1)
-			    .Subscribe(avg => poolStats.AverageResponseTimePerMinuteMs = avg);
-
 		    // Shares per second
-			Observable.Merge(validSharesSubject.Select(_=> Unit.Default), invalidSharesSubject)
+			Observable.Merge(validShares.Select(_=> Unit.Default), invalidShares)
 				.Buffer(TimeSpan.FromSeconds(1))
 				.Select(shares => shares.Count)
 				.Subscribe(count => poolStats.SharesPerSecond = count);
 
 			// Valid/Invalid shares per minute
-			validSharesSubject
+			validShares
 				.Buffer(TimeSpan.FromMinutes(1))
 			    .Select(shares => shares.Count)
 			    .Subscribe(count => poolStats.ValidSharesPerMinute = count);
 
-		    invalidSharesSubject
+		    invalidShares
 			    .Buffer(TimeSpan.FromMinutes(1))
 			    .Select(shares => shares.Count)
 			    .Subscribe(count => poolStats.InvalidSharesPerMinute = count);

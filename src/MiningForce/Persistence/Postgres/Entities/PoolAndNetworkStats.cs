@@ -17,7 +17,6 @@ namespace MiningForce.Persistence.Postgres.Entities
 		public float PoolHashRate { get; set; }
 		public float PoolFeePercent { get; set; }
 		public float DonationsPercent { get; set; }
-		public float AverageResponseTimePerMinuteMs { get; set; }
 		public int SharesPerSecond { get; set; }
 		public int ValidSharesPerMinute { get; set; }
 		public int InvalidSharesPerMinute { get; set; }

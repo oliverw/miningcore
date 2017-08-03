@@ -9,6 +9,11 @@
 	public class MoneroConstants
 	{
 		public const string WalletDaemonCategory = "wallet";
+
+		public const int InstanceIdSize = 4;
+		public const int ExtraNonceSize = 4;
+		public const int ReserveSize = InstanceIdSize + ExtraNonceSize;
+
 		public const int AddressLength = 95;
 
 		public const string DaemonRpcLocation = "json_rpc";

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
@@ -46,7 +47,7 @@ namespace MiningForce
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
 
-                Logo();
+				Logo();
                 clusterConfig = ReadConfig(configFile);
 
 	            if (dumpConfigOption.HasValue())

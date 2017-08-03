@@ -22,7 +22,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		public BitcoinJob(GetBlockTemplateResponse blockTemplate, string jobId,
 			PoolConfig poolConfig, ClusterConfig clusterConfig,
 			IDestination poolAddressDestination, BitcoinNetworkType networkType,
-			ExtraNonceProvider extraNonceProvider, bool isPoS, double difficultyNormalizationFactor,
+			BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double difficultyNormalizationFactor,
 			IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
 		{
 			Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -115,9 +115,9 @@ namespace MiningForce.Blockchain.Bitcoin
 				coinbaseInitialHex,
 				coinbaseFinalHex,
 				merkleBranchesHex,
-				blockTemplate.Version.ToString("x4"),
+				blockTemplate.Version.ToStringHex8(),
 				blockTemplate.Bits,
-				blockTemplate.CurTime.ToString("x4"),
+				blockTemplate.CurTime.ToStringHex8(),
 				isNew
 			};
 		}

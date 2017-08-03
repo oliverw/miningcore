@@ -16,9 +16,6 @@ namespace MiningForce.Stratum
         private JsonRpcConnection rpcCon;
         private PoolEndpoint config;
 
-		// telemetry
-		private readonly Subject<string> responses = new Subject<string>();
-
 		#region API-Surface
 
 		public void Init(ILibUvConnection uvCon, IComponentContext ctx, PoolEndpoint endpointConfig)
@@ -33,16 +30,6 @@ namespace MiningForce.Stratum
             rpcCon.Init(uvCon);
 
             Requests = rpcCon.Received;
-
-	        // Telemetry
-	        ResponseTime = Requests
-		        .Where(x => !string.IsNullOrEmpty(x.Value.Id))
-		        .SelectMany(request => responses
-			        .Where(requestId => requestId == request.Value.Id)
-			        .Select(_ => (int)(DateTimeOffset.UtcNow - request.Timestamp).TotalMilliseconds)
-			        .Take(1))
-		        .Publish()
-		        .RefCount();
 		}
 
 		public TContext Context { get; set; }
@@ -50,7 +37,6 @@ namespace MiningForce.Stratum
 		public string ConnectionId => rpcCon.ConnectionId;
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
-	    public IObservable<int> ResponseTime { get; private set; }
 
 		public void Respond<T>(T payload, string id)
         {
@@ -71,9 +57,6 @@ namespace MiningForce.Stratum
         public void Respond<T>(JsonRpcResponse<T> response)
         {
 	        Contract.RequiresNonNull(response, nameof(response));
-
-			if (!string.IsNullOrEmpty(response.Id))
-		        responses.OnNext(response.Id);
 
 			lock (rpcCon)
             {

@@ -15,7 +15,6 @@ namespace MiningForce.Mining
 		 float DonationsPercent { get; set; }
 
 		// Telemetry
-		 float AverageResponseTimePerMinuteMs { get; set; }
 		 int SharesPerSecond { get; set; }
 		 int ValidSharesPerMinute { get; set; }
 		 int InvalidSharesPerMinute { get; set; }
@@ -30,7 +29,6 @@ namespace MiningForce.Mining
         public float DonationsPercent { get; set; }
 
 		// Telemetry
-	    public float AverageResponseTimePerMinuteMs { get; set; }
 	    public int SharesPerSecond { get; set; }
 		public int ValidSharesPerMinute { get; set; }
 	    public int InvalidSharesPerMinute { get; set; }

@@ -63,7 +63,6 @@ CREATE TABLE poolstats
 	poolhashrate FLOAT NOT NULL DEFAULT 0,
 	poolfeepercent FLOAT NOT NULL DEFAULT 0,
 	donationspercent FLOAT NOT NULL DEFAULT 0,
-	averageresponsetimeperminutems INT NOT NULL DEFAULT 0,
 	sharespersecond FLOAT NOT NULL DEFAULT 0,
 	validsharesperminute INT NOT NULL DEFAULT 0,
 	invalidsharesperminute INT NOT NULL DEFAULT 0,

@@ -183,7 +183,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    currentJobParams = jobParams;
 
-		    BroadcastNotification(BitcoinStratumMethods.MiningNotify, currentJobParams, client =>
+		    ForEachClient(client =>
 		    {
 				if (client.Context.IsSubscribed)
 			    {
@@ -212,8 +212,6 @@ namespace MiningForce.Blockchain.Bitcoin
 					    DisconnectClient(client);
 				    }
 			    }
-
-			    return false;
 		    });
 		}
 	}

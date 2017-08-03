@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Threading;
 using MiningForce.Extensions;
 
-namespace MiningForce.Blockchain
+namespace MiningForce.Blockchain.Bitcoin
 {
-    public class ExtraNonceProvider
+    public class BitcoinExtraNonceProvider
     {
-        public ExtraNonceProvider()
+        public BitcoinExtraNonceProvider()
         {
             uint instanceId;
 

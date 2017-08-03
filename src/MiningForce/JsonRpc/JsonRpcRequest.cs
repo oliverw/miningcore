@@ -10,7 +10,7 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcRequest(string method, object pars, string id) : base(method, pars, id)
+        public JsonRpcRequest(string method, object parameters, string id) : base(method, parameters, id)
         {
         }
     }
@@ -22,12 +22,12 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcRequest(string method, T pars, string id)
+        public JsonRpcRequest(string method, T parameters, string id)
         {
             Method = method;
 
-            if(pars != null)
-                Params = JToken.FromObject(pars);
+            if(parameters != null)
+                Params = JToken.FromObject(parameters);
 
             Id = id;
         }

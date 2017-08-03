@@ -48,7 +48,7 @@ namespace MiningForce
 		        .AsSelf()
 				.SingleInstance();
 
-            builder.RegisterType<ExtraNonceProvider>()
+            builder.RegisterType<BitcoinExtraNonceProvider>()
                 .AsSelf();
 
 	        builder.RegisterType<IntegratedBanManager>()

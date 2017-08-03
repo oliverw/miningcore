@@ -166,29 +166,19 @@ namespace MiningForce.Stratum
 			OnDisconnect(subscriptionId);
         }
 
-        protected void BroadcastNotification<T>(string method, T payload, Func<StratumClient<TClientContext>, bool> filter = null)
+        protected void ForEachClient(Action<StratumClient<TClientContext>> action)
         {
-            BroadcastNotification(new JsonRpcRequest<T>(method, payload, null), filter);
-        }
-
-        protected void BroadcastNotification<T>(JsonRpcRequest<T> notification, Func<StratumClient<TClientContext>, bool> filter = null)
-        {
-            Contract.RequiresNonNull(notification, nameof(notification));
-
 	        StratumClient<TClientContext>[] tmp;
 
-            lock (clients)
-            {
-                tmp = clients.Values.Select(x=> x.Item1).ToArray();
-            }
+	        lock (clients)
+	        {
+		        tmp = clients.Values.Select(x => x.Item1).ToArray();
+	        }
 
-            foreach (var client in tmp)
-            {
-                if (filter != null && !filter(client))
-                    continue;
-
-                client.Notify(notification);
-            }
+	        foreach (var client in tmp)
+	        {
+		        action(client);
+	        }
         }
 
 		protected abstract string LogCat { get; }

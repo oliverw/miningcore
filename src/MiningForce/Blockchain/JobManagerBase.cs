@@ -35,7 +35,6 @@ namespace MiningForce.Blockchain
         protected DaemonClient daemon;
         protected ILogger logger;
 
-		protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
 	    protected TJob currentJob;
 	    protected object jobLock = new object();
 	    private long jobId;
@@ -95,7 +94,7 @@ namespace MiningForce.Blockchain
 
 	    protected string NextJobId()
 	    {
-		    return Interlocked.Increment(ref jobId).ToString("x", CultureInfo.InvariantCulture);
+		    return Interlocked.Increment(ref jobId).ToString(CultureInfo.InvariantCulture);
 	    }
 
 	    protected virtual string LogCat { get; } = "Job Manager";
