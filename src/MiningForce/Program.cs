@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
+using MiningForce.Blockchain.Monero;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.Mining;
@@ -41,7 +43,7 @@ namespace MiningForce
             try
             {
 #if DEBUG
-	            PreloadLibMultihash();
+	            PreloadNativeLibs();
 #endif
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
@@ -489,14 +491,20 @@ namespace MiningForce
 		[DllImport("kernel32.dll", SetLastError = true)]
 	    static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 
+	    private static readonly string[] NativeLibs =
+	    {
+		    "libmultihash.dll",
+		    "libcryptonote.dll"
+		};
+
 		/// <summary>
 		/// work-around for libmultihash.dll not being found when running in dev-environment
 		/// </summary>
-		private static void PreloadLibMultihash()
+		private static void PreloadNativeLibs()
 	    {
 		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		    {
-			    Console.WriteLine($"{nameof(PreloadLibMultihash)} only operates on Windows");
+			    Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
 			    return;
 		    }
 
@@ -504,11 +512,14 @@ namespace MiningForce
 			var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
 			var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-			var path = Path.Combine(appRoot, "runtimes", runtime, "native", "libmultihash.dll");
-			var result = LoadLibraryEx(path, IntPtr.Zero, 0);
+		    foreach (var nativeLib in NativeLibs)
+		    {
+			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
+			    var result = LoadLibraryEx(path, IntPtr.Zero, 0);
 
-			if(result == IntPtr.Zero)
-				Console.WriteLine($"Unable to load {path}");
+			    if (result == IntPtr.Zero)
+				    Console.WriteLine($"Unable to load {path}");
+		    }
 		}
 #endif
 	}

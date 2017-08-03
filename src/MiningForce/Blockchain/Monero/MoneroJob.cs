@@ -80,17 +80,18 @@ namespace MiningForce.Blockchain.Monero
 			Buffer.BlockCopy(instanceId, 0, blobTemplate, (int)(blockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize), instanceId.Length);
 		}
 
-		private string EncodeBlob(uint extraNonce)
+		private string EncodeBlob(uint workerExtraNonce)
 		{
 			// clone template
 			var blob = new byte[blobTemplate.Length];
 			Buffer.BlockCopy(blobTemplate, 0, blob, 0, blobTemplate.Length);
 
 			// inject extranonce as big-endian at the beginning of the reserved area of the blob
-			var extraNonceBytes = BitConverter.GetBytes(extraNonce.ToBigEndian());
+			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
 			Buffer.BlockCopy(extraNonceBytes, 0, blobTemplate, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
 
-			return blob;
+			var result = LibCryptoNote.ConvertBlob(blob).ToHexString();
+			return result;
 		}
 
 		private string EncodeTarget(double difficulty)
