@@ -98,6 +98,18 @@
     <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\base58.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\int-util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\pod-class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\varint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -170,6 +182,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="crypto\chacha8.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base58.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -73,23 +73,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\oweichhold\Projects\boost_1_62_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\oweichhold\Projects\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\..\..\..\boost_1_62_0\lib32-msvc-14.0</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\oweichhold\Projects\boost_1_62_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\oweichhold\Projects\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\oweichhold\Projects\boost_1_62_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\oweichhold\Projects\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\..\..\..\boost_1_62_0\lib32-msvc-14.0</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\oweichhold\Projects\boost_1_62_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\oweichhold\Projects\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(SolutionDir)\..\..\..\boost_1_62_0</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -168,6 +168,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="common\base58.h" />
+    <ClInclude Include="common\int-util.h" />
+    <ClInclude Include="common\pod-class.h" />
+    <ClInclude Include="common\varint.h" />
     <ClInclude Include="contrib\easylogging\easylogging++.h" />
     <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h" />
     <ClInclude Include="cryptonote_config.h" />
@@ -199,6 +203,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="common\base58.cpp" />
     <ClCompile Include="contrib\easylogging\easylogging++.cc" />
     <ClCompile Include="crypto\aesb.c" />
     <ClCompile Include="crypto\blake256.c" />
