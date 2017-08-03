@@ -29,6 +29,9 @@
     <ClInclude Include="c11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cryptonight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="dcrypt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -203,6 +206,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="c11.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cryptonight.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dcrypt.c">

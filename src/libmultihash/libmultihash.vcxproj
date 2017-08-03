@@ -156,6 +156,7 @@
     <ClInclude Include="blake.h" />
     <ClInclude Include="boolberry.h" />
     <ClInclude Include="c11.h" />
+    <ClInclude Include="cryptonight.h" />
     <ClInclude Include="crypto\crypto.h" />
     <ClInclude Include="crypto\c_blake256.h" />
     <ClInclude Include="crypto\c_groestl.h" />
@@ -216,6 +217,7 @@
     <ClCompile Include="bcrypt.c" />
     <ClCompile Include="blake.c" />
     <ClCompile Include="c11.c" />
+    <ClCompile Include="cryptonight.c" />
     <ClCompile Include="crypto\aesb.c" />
     <ClCompile Include="crypto\c_blake256.c" />
     <ClCompile Include="crypto\c_groestl.c" />
