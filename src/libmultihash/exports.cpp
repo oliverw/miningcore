@@ -3,8 +3,6 @@
 #include "quark.h"
 #include "scryptjane.h"
 #include "scryptn.h"
-#include "yescrypt/yescrypt.h"
-#include "yescrypt/sha256_Y.h"
 #include "neoscrypt.h"
 #include "skein.h"
 #include "x11.h"
@@ -15,7 +13,6 @@
 #include "s3.h"
 #include "hefty1.h"
 #include "shavite3.h"
-#include "cryptonight.h"
 #include "x13.h"
 #include "x14.h"
 #include "nist5.h"
@@ -121,14 +118,6 @@ extern "C" MODULE_API void hefty1_export(const char* input, char* output, uint32
 extern "C" MODULE_API void shavite3_export(const char* input, char* output, uint32_t input_len)
 {
 	shavite3_hash(input, output, input_len);
-}
-
-extern "C" MODULE_API void cryptonight_export(const char* input, char* output, uint32_t input_len, uint32_t fast)
-{
-	if (fast)
-		cryptonight_fast_hash(input, output, input_len);
-	else
-		cryptonight_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void nist5_export(const char* input, char* output, uint32_t input_len)
