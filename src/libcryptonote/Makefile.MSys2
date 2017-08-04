@@ -2,9 +2,9 @@ CC = gcc
 INC_DIRS = -I. -Icontrib/epee/include
 CFLAGS = -Wall -c -fPIC -O2 $(INC_DIRS)
 CXXFLAGS = -Wall -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 $(INC_DIRS)
-LDFLAGS = -shared
-LDLIBS = -lboost_system -lboost_date_time
-TARGET  = libcryptonote.so
+LDFLAGS = -shared -static-libgcc -static-libstdc++ -static
+LDLIBS = -lboost_system-mt -lboost_date_time-mt
+TARGET  = libcryptonote.dll
 
 OBJECTS = common/base58.o crypto/aesb.o crypto/blake256.o crypto/chacha8.o \
 		crypto/crypto-ops-data.o crypto/crypto-ops.o crypto/crypto.o crypto/groestl.o crypto/hash-extra-blake.o \
@@ -21,4 +21,4 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	find . -name '*.o' -exec rm -r {} \;
-	rm libcryptonote.so
+	rm libcryptonote.dll
