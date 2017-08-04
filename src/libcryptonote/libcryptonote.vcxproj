@@ -172,7 +172,6 @@
     <ClInclude Include="common\int-util.h" />
     <ClInclude Include="common\pod-class.h" />
     <ClInclude Include="common\varint.h" />
-    <ClInclude Include="contrib\easylogging\easylogging++.h" />
     <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h" />
     <ClInclude Include="cryptonote_config.h" />
     <ClInclude Include="crypto\blake256.h" />
@@ -204,7 +203,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common\base58.cpp" />
-    <ClCompile Include="contrib\easylogging\easylogging++.cc" />
     <ClCompile Include="crypto\aesb.c" />
     <ClCompile Include="crypto\blake256.c" />
     <ClCompile Include="crypto\chacha8.c" />

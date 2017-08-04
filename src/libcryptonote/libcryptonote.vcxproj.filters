@@ -53,9 +53,6 @@
     <ClInclude Include="crypto\wild_keccak.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="contrib\easylogging\easylogging++.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="crypto\blake256.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -116,9 +113,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\easylogging\easylogging++.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="crypto\blake256.c">

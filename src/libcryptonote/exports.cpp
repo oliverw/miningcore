@@ -33,6 +33,8 @@ static blobdata uint64be_to_blob(uint64_t num) {
 
 extern "C" MODULE_API bool convert_blob_export(const char* input, unsigned int inputSize, unsigned char *output, unsigned int *outputSize)
 {
+	unsigned int originalOutputSize = *outputSize;
+
 	blobdata input_blob = std::string(input, inputSize);
 	blobdata result = "";
 
@@ -48,7 +50,7 @@ extern "C" MODULE_API bool convert_blob_export(const char* input, unsigned int i
 	*outputSize = result.length();
 
 	// output buffer big enough?
-	if (result.length() > *outputSize)
+	if (result.length() > originalOutputSize)
 		return false;
 
 	// success
@@ -58,6 +60,8 @@ extern "C" MODULE_API bool convert_blob_export(const char* input, unsigned int i
 
 extern "C" MODULE_API bool decode_address_export(const char* input, unsigned int inputSize, unsigned char *output, unsigned int *outputSize)
 {
+	unsigned int originalOutputSize = *outputSize;
+
 	blobdata input_blob = std::string(input, inputSize);
 	blobdata result = "";
 
@@ -74,7 +78,7 @@ extern "C" MODULE_API bool decode_address_export(const char* input, unsigned int
 	*outputSize = result.length();
 
 	// output buffer big enough?
-	if (result.length() > *outputSize)
+	if (result.length() > originalOutputSize)
 		return false;
 
 	// success
