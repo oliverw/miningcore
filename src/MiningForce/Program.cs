@@ -25,6 +25,7 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using MiningForce.Extensions;
+using NBitcoin.BouncyCastle.Math;
 
 namespace MiningForce
 {

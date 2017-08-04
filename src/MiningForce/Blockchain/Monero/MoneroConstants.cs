@@ -1,4 +1,7 @@
-﻿namespace MiningForce.Blockchain.Monero
+﻿using MiningForce.Extensions;
+using NBitcoin.BouncyCastle.Math;
+
+namespace MiningForce.Blockchain.Monero
 {
 	public enum MoneroNetworkType
 	{
@@ -21,5 +24,7 @@
 
 		public const char MainNetAddressPrefix = '4';
 		public const char TestNetAddressPrefix = '9';
+
+		public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 	}
 }

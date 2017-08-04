@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using CodeContracts;
 using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
+using NBitcoin.BouncyCastle.Math;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -96,7 +98,16 @@ namespace MiningForce.Blockchain.Monero
 
 		private string EncodeTarget(double difficulty)
 		{
-			throw new NotImplementedException();
+			var quotient = MoneroConstants.Diff1.Divide(BigInteger.ValueOf((long) difficulty));
+			var bytes = quotient.ToByteArray();
+			var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+			Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+
+			var result = new ArraySegment<byte>(padded, 0, 4)
+				.Reverse()
+				.ToHexString();
+
+			return result;
 		}
 
 		private ShareBase ProcessShareInternal(string extraNonce1, string extraNonce2, uint nonce, double stratumDifficulty)
