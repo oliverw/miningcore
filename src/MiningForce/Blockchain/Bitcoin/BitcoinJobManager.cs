@@ -18,6 +18,7 @@ using MiningForce.Stratum;
 using MiningForce.Util;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -282,45 +283,57 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		protected async Task<bool> UpdateJob(bool forceUpdate)
         {
-			var response = await GetBlockTemplateAsync();
-
-	        // may happen if daemon is currently not connected to peers
-	        if (response.Error != null)
-			{ 
-		        logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
-				return false;
-			}
-
-	        var blockTemplate = response.Response;
-
-	        lock (jobLock)
+	        try
 	        {
-		        var isNew = currentJob == null ||
-		                (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-		                 currentJob.BlockTemplate.Height < blockTemplate.Height);
+		        var response = await GetBlockTemplateAsync();
 
-		        if (isNew || forceUpdate)
+		        // may happen if daemon is currently not connected to peers
+		        if (response.Error != null)
 		        {
-			        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
-						poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS, 
-						difficultyNormalizationFactor,
-						coinbaseHasher, headerHasher, blockHasher);
-
-			        currentJob.Init();
-
-			        if (isNew)
-			        {
-				        validJobs.Clear();
-
-				        // update stats
-						blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
-			        }
-
-			        validJobs[currentJob.JobId] = currentJob;
+			        logger.Warn(
+				        () =>
+					        $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+			        return false;
 		        }
 
-		        return isNew;
+		        var blockTemplate = response.Response;
+
+		        lock (jobLock)
+		        {
+			        var isNew = currentJob == null ||
+			                    (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+			                     currentJob.BlockTemplate.Height < blockTemplate.Height);
+
+			        if (isNew || forceUpdate)
+			        {
+				        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
+					        poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS,
+					        difficultyNormalizationFactor,
+					        coinbaseHasher, headerHasher, blockHasher);
+
+				        currentJob.Init();
+
+				        if (isNew)
+				        {
+					        validJobs.Clear();
+
+					        // update stats
+					        blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+				        }
+
+				        validJobs[currentJob.JobId] = currentJob;
+			        }
+
+			        return isNew;
+		        }
 	        }
+
+	        catch (Exception ex)
+	        {
+		        logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+	        }
+
+	        return false;
 		}
 
 		protected object GetJobParamsForStratum(bool isNew)

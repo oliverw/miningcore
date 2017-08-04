@@ -13,9 +13,12 @@ namespace MiningForce.Blockchain.Monero
 	{
 		public const string WalletDaemonCategory = "wallet";
 
-		public const int InstanceIdSize = 4;
+		public const int InstanceIdSize = 3;
 		public const int ExtraNonceSize = 4;
-		public const int ReserveSize = InstanceIdSize + ExtraNonceSize;
+
+		// NOTE: for whatever strange reason only reserved_size -1 can be used,
+		// the LAST byte MUST be zero or nothing works
+		public const int ReserveSize = ExtraNonceSize + InstanceIdSize + 1;
 
 		public const int AddressLength = 95;
 

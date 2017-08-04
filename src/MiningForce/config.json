@@ -89,7 +89,7 @@
             // optional and will only be used for the ports you configure it for.
             "ports": {
                 "4032": { // A port for your miners to connect to
-                    "difficulty": 8, // the pool difficulty for this port
+                    "difficulty": 1600, // the pool difficulty for this port
 
                     // Variable difficulty is a feature that will automatically adjust difficulty for
                     // individual miners based on their hashrate in order to lower networking overhead

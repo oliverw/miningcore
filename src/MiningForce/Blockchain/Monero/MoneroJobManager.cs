@@ -13,6 +13,7 @@ using MiningForce.DaemonInterface;
 using MiningForce.Util;
 using MC = MiningForce.Blockchain.Monero.MoneroCommands;
 using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
+using NLog;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -204,37 +205,47 @@ namespace MiningForce.Blockchain.Monero
 
 		protected async Task<bool> UpdateJob()
         {
-			var response = await GetBlockTemplateAsync();
-
-	        // may happen if daemon is currently not connected to peers
-	        if (response.Error != null)
-			{ 
-		        logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
-				return false;
-			}
-
-	        var blockTemplate = response.Response;
-
-	        lock (jobLock)
+	        try
 	        {
-		        var isNew = currentJob == null ||
-		                (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-		                 currentJob.BlockTemplate.Height < blockTemplate.Height);
+		        var response = await GetBlockTemplateAsync();
 
-		        if (isNew)
+		        // may happen if daemon is currently not connected to peers
+		        if (response.Error != null)
 		        {
-			        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
-						poolConfig, clusterConfig, networkType);
-
-			        currentJob.Init();
-
-				    // update stats
-					blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+			        logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+			        return false;
 		        }
 
-		        return isNew;
+		        var blockTemplate = response.Response;
+
+		        lock (jobLock)
+		        {
+			        var isNew = currentJob == null ||
+			                    (currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+			                     currentJob.BlockTemplate.Height < blockTemplate.Height);
+
+			        if (isNew)
+			        {
+				        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
+					        poolConfig, clusterConfig, networkType);
+
+				        currentJob.Init();
+
+				        // update stats
+				        blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+			        }
+
+			        return isNew;
+		        }
 	        }
-		}
+
+			catch (Exception ex)
+	        {
+		        logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+	        }
+
+	        return false;
+        }
 
 		private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {

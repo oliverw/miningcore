@@ -46,6 +46,13 @@ namespace MiningForce
 #if DEBUG
 	            PreloadNativeLibs();
 #endif
+	            var blobBuf =
+					"0105d9f591cc050549f3ee8f2ef6e42f55ded37052975026aed1f46145a7da220742191148d67b0000000001dc0101ffa00106f591a9ef01029b04f444de07ed0ac4b67a0bfa628a4bcb8570adf8bb8f7646a21b82ab42550a80b4c4c321022fccf5f7590eb28f457634fa7e24463b134123f8e4bdf00388ce90d8ad720f0e80c0fc82aa02025e5de51d172a85bce15e94bee34e6ca43100e3b50793036ac1aa570a2b6352468090cad2c60e0249e1d1c9ee08d20b3137627879ccfb97fbe25401a6e2c109d035000ddd7d0e7d80e08d84ddcb010296cb202a979decada0651aedf0a431d236908dfbe8623946b61098416903531580c0caf384a3020230152cd0009ab7b17a75ac413a2268834e21476176d6d69ea0fee345a70caedc2b01729238ba4c01383d7db2545f82ba27c2faaeb8e4a1ef654c24831caeb71462800208000000000000000000"
+						.HexToByteArray();
+
+
+				var result = LibCryptoNote.ConvertBlob(blobBuf).ToHexString();
+
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;

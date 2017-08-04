@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using CodeContracts;
@@ -79,7 +80,8 @@ namespace MiningForce.Blockchain.Monero
 			blobTemplate = blockTemplate.Blob.HexToByteArray();
 
 			// inject instanceId at the end of the reserved area of the blob
-			Buffer.BlockCopy(instanceId, 0, blobTemplate, (int)(blockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize), instanceId.Length);
+			var destOffset = (int) blockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
+			Buffer.BlockCopy(instanceId, 0, blobTemplate, destOffset, 3);
 		}
 
 		private string EncodeBlob(uint workerExtraNonce)
@@ -90,7 +92,7 @@ namespace MiningForce.Blockchain.Monero
 
 			// inject extranonce as big-endian at the beginning of the reserved area of the blob
 			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-			Buffer.BlockCopy(extraNonceBytes, 0, blobTemplate, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
+			Buffer.BlockCopy(extraNonceBytes, 0, blob, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
 
 			var result = LibCryptoNote.ConvertBlob(blob).ToHexString();
 			return result;
