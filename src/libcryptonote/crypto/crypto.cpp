@@ -42,7 +42,7 @@
 #include "crypto.h"
 #include "hash.h"
 
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(_WIN32)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(__MINGW32__) && !defined(_MSC_VER)
  #include <alloca.h>
 #else
  #include <stdlib.h>

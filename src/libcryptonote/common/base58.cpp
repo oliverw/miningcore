@@ -36,6 +36,7 @@
 
 #include "crypto/hash.h"
 #include "int-util.h"
+// OW: unused #include "util.h"
 #include "varint.h"
 
 namespace tools

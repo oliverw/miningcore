@@ -59,20 +59,19 @@
 #define ELPP_FEATURE_CRASH_LOG 1
 #define ELPP_DISABLE_CHECK_MACROS
 
-// OW - this shit is causing crashes
-#if 0
-#include "easylogging++.h"
+// OW: #include "easylogging++.h"
 
 #define MONERO_DEFAULT_LOG_CATEGORY "default"
 
-#define MCFATAL(cat,x) CLOG(FATAL,cat) << x
-#define MCERROR(cat,x) CLOG(ERROR,cat) << x
-#define MCWARNING(cat,x) CLOG(WARNING,cat) << x
-#define MCINFO(cat,x) CLOG(INFO,cat) << x
-#define MCDEBUG(cat,x) CLOG(DEBUG,cat) << x
-#define MCTRACE(cat,x) CLOG(TRACE,cat) << x
-#define MCLOG(level,cat,x) ELPP_WRITE_LOG(el::base::Writer, level, el::base::DispatchAction::NormalLog, cat) << x
-#else
+// OW:
+//#define MCFATAL(cat,x) CLOG(FATAL,cat) << x
+//#define MCERROR(cat,x) CLOG(ERROR,cat) << x
+//#define MCWARNING(cat,x) CLOG(WARNING,cat) << x
+//#define MCINFO(cat,x) CLOG(INFO,cat) << x
+//#define MCDEBUG(cat,x) CLOG(DEBUG,cat) << x
+//#define MCTRACE(cat,x) CLOG(TRACE,cat) << x
+//#define MCLOG(level,cat,x) ELPP_WRITE_LOG(el::base::Writer, level, el::base::DispatchAction::NormalLog, cat) << x
+
 #define MCFATAL(cat,x) 
 #define MCERROR(cat,x) 
 #define MCWARNING(cat,x) 
@@ -80,7 +79,6 @@
 #define MCDEBUG(cat,x) 
 #define MCTRACE(cat,x) 
 #define MCLOG(level,cat,x) 
-#endif
 
 #define MCLOG_COLOR(level,cat,color,x) MCLOG(level,cat,"\033[1;" color "m" << x << "\033[0m")
 #define MCLOG_RED(level,cat,x) MCLOG_COLOR(level,cat,"31",x)

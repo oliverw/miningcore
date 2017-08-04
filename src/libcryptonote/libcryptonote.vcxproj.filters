@@ -184,5 +184,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="Makefile.MSys2" />
   </ItemGroup>
 </Project>

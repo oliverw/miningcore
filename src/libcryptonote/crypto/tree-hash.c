@@ -34,15 +34,14 @@
 
 #include "hash-ops.h"
 
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(_WIN32)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(__MINGW32__) && !defined(_MSC_VER)
  #include <alloca.h>
 #else
  #include <stdlib.h>
-
-#if defined(_WIN32)
-#define alloca(x) _alloca(x)
 #endif
 
+#if defined(_MSC_VER)
+#define alloca(x) _alloca(x)
 #endif
 
 /*** 
