@@ -12,6 +12,7 @@ namespace MiningForce.Stratum
         LowDifficultyShare = 23,
         UnauthorizedWorker = 24,
         NotSubscribed = 25,
+		MinusOne = -1,
     }
 
 	public class StratumException : Exception

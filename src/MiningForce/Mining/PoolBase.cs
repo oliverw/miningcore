@@ -37,13 +37,15 @@ namespace MiningForce.Mining
 	        Contract.RequiresNonNull(cf, nameof(cf));
 	        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
-			Shares = shareSubject.AsObservable();
-	        this.serializerSettings = serializerSettings;
-
+			this.serializerSettings = serializerSettings;
 			this.cf = cf;
 	        this.statsRepo = statsRepo;
 
-	        validShares = validSharesSubject
+	        Shares = shareSubject
+		        .AsObservable()
+		        .Synchronize();
+
+			validShares = validSharesSubject
 				.AsObservable()
 		        .Synchronize();
 

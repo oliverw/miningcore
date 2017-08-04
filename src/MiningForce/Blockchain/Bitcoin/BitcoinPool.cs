@@ -11,7 +11,6 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
-using NLog;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -119,8 +118,8 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private async void OnSubmitShare(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
-		    // check age of submission (aged submissions usually caused by high server load)
-		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+			// check age of submission (aged submissions are usually caused by high server load)
+			var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
 
 		    if (requestAge > maxShareAge)
 		    {

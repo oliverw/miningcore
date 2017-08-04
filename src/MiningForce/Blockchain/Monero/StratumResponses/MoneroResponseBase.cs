@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MiningForce.Blockchain.Monero.StratumResponses
 {
-    public class ResponseBase
+    public class MoneroResponseBase
     {
 	    public string Status { get; set; } = "OK";
     }

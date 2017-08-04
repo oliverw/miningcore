@@ -143,7 +143,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
 
-			// check for dupes
+			// dupe check
 			if (!RegisterSubmit(extraNonce1, extraNonce2, nTime, nonce))
 				throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 

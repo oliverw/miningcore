@@ -17,7 +17,7 @@ namespace MiningForce.Blockchain.Monero
 			fixed (byte* input = data)
 			{
 				// provide reasonable large output buffer
-				var outputBuffer = new byte[0x1000];
+				var outputBuffer = new byte[0x100];
 				var outputBufferLength = outputBuffer.Length;
 
 				bool success = false;
@@ -59,7 +59,7 @@ namespace MiningForce.Blockchain.Monero
 			fixed (byte* input = data)
 			{
 				// provide reasonable large output buffer
-				var outputBuffer = new byte[0x1000];
+				var outputBuffer = new byte[0x100];
 				var outputBufferLength = outputBuffer.Length;
 
 				bool success = false;

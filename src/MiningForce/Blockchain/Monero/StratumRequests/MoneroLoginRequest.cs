@@ -2,7 +2,7 @@
 
 namespace MiningForce.Blockchain.Monero.StratumRequests
 {
-    public class StratumLoginRequest
+    public class MoneroLoginRequest
     {
 		[JsonProperty("login")]
 		public string Login { get; set; }

@@ -5,6 +5,9 @@ using System.Linq;
 using CodeContracts;
 using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Configuration;
+using MiningForce.Crypto;
+using MiningForce.Crypto.Hashing;
+using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Extensions;
 using MiningForce.Stratum;
 using NBitcoin.BouncyCastle.Math;
@@ -36,6 +39,7 @@ namespace MiningForce.Blockchain.Monero
 		private readonly ClusterConfig clusterConfig;
 		private readonly PoolConfig poolConfig;
 		private readonly GetBlockTemplateResponse blockTemplate;
+		private static readonly IHashAlgorithm hasher = new Cryptonight();
 		private byte[] blobTemplate;
 		private readonly MoneroNetworkType networkType;
 		private uint extraNonce = 0;
@@ -57,20 +61,66 @@ namespace MiningForce.Blockchain.Monero
 			target = EncodeTarget(workerJob.Difficulty);
 		}
 
-		public ShareBase ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
+		public ShareBase ProcessShare(string nonce, uint workerExtraNonce, string workerHash, double stratumDifficulty)
 		{
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce1), $"{nameof(extraNonce1)} must not be empty");
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
+			Contract.Requires<ArgumentException>(extraNonce != 0, $"{nameof(extraNonce)} must not be empty");
 
 			// validate nonce
-			if (nonce.Length != 8)
-				throw new StratumException(StratumError.Other, "incorrect size of nonce");
+			if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))
+				throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
-			var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
+			// clone template
+			var blob = new byte[blobTemplate.Length];
+			Buffer.BlockCopy(blobTemplate, 0, blob, 0, blobTemplate.Length);
 
-			return ProcessShareInternal(extraNonce1, extraNonce2, nonceInt, stratumDifficulty);
+			// inject extranonce
+			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
+			Buffer.BlockCopy(extraNonceBytes, 0, blob, (int)blockTemplate.ReservedOffset, extraNonceBytes.Length);
+
+			// inject nonce
+			var nonceBytes = nonce.HexToByteArray();
+			Buffer.BlockCopy(nonceBytes, 0, blob, MoneroConstants.BlobNonceOffset, nonceBytes.Length);
+
+			// convert
+			var converted = LibCryptoNote.ConvertBlob(blob);
+			if(converted == null)
+				throw new StratumException(StratumError.MinusOne, "malformed blob");
+
+			// hash it
+			var hashBytes = hasher.Digest(converted, 0);
+			var hash = hashBytes.ToHexString();
+
+			if (hash != workerHash)
+				throw new StratumException(StratumError.MinusOne, "bad hash");
+
+			// check difficulty
+			var hashDiff = MoneroConstants.Diff1.Divide(new BigInteger(hashBytes.ToReverseArray()));
+			var hashDiffLong = hashDiff.LongValue;
+
+			// test if share meets at least workers current difficulty
+			var ratio = hashDiffLong / stratumDifficulty;
+
+			if (ratio < 0.99)
+				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({hashDiffLong})");
+
+			// valid share
+			var result = new MoneroShare
+			{
+				Difficulty = hashDiffLong,
+				NormalizedDifficulty = hashDiffLong,
+				StratumDifficulty = stratumDifficulty,
+				BlockHeight = blockTemplate.Height
+			};
+
+			// now check if the share meets the much harder block difficulty (block candidate)
+			if (hashDiff.LongValue >= blockTemplate.Difficulty)
+			{
+				result.IsBlockCandidate = true;
+			}
+
+			return result;
 		}
 
 		#endregion // API-Surface
@@ -90,7 +140,7 @@ namespace MiningForce.Blockchain.Monero
 			var blob = new byte[blobTemplate.Length];
 			Buffer.BlockCopy(blobTemplate, 0, blob, 0, blobTemplate.Length);
 
-			// inject extranonce as big-endian at the beginning of the reserved area of the blob
+			// inject extranonce (big-endian at the beginning of the reserved area of the blob)
 			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
 			Buffer.BlockCopy(extraNonceBytes, 0, blob, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
 

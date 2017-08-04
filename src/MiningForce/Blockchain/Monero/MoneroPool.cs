@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Blockchain.Monero.StratumRequests;
 using MiningForce.Blockchain.Monero.StratumResponses;
 using MiningForce.Configuration;
@@ -16,7 +16,6 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
-using NLog;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -60,6 +59,18 @@ namespace MiningForce.Blockchain.Monero
 					OnLogin(client, tsRequest);
 					break;
 
+				case MoneroStratumMethods.GetJob:
+					OnGetJob(client, tsRequest);
+					break;
+
+				case MoneroStratumMethods.Submit:
+					OnSubmit(client, tsRequest);
+					break;
+
+				case MoneroStratumMethods.KeepAlive:
+					// ignored
+					break;
+
 				default:
 					logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
@@ -78,7 +89,7 @@ namespace MiningForce.Blockchain.Monero
 		private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-			var loginRequest = request.Params?.ToObject<StratumLoginRequest>();
+			var loginRequest = request.Params?.ToObject<MoneroLoginRequest>();
 
 			// validate login
 		    if (string.IsNullOrEmpty(loginRequest?.Login))
@@ -88,7 +99,10 @@ namespace MiningForce.Blockchain.Monero
 		    }
 
 			// assumes that StratumLoginRequest.Login is an address
-			client.Context.IsAuthorized = manager.ValidateAddress(loginRequest.Login);
+		    var result = manager.ValidateAddress(loginRequest.Login);
+
+			client.Context.IsSubscribed = result;
+			client.Context.IsAuthorized = result;
 
 		    if (!client.Context.IsAuthorized)
 		    {
@@ -97,7 +111,7 @@ namespace MiningForce.Blockchain.Monero
 		    }
 
 			// respond
-			var loginResponse = new LoginResponse
+			var loginResponse = new MoneroLoginResponse
 		    {
 			    Id = client.ConnectionId,
 				Job = CreateWorkerJob(client),
@@ -106,7 +120,24 @@ namespace MiningForce.Blockchain.Monero
 		    client.Respond(loginResponse, request.Id);
 		}
 
-	    private MoneroJobParams CreateWorkerJob(StratumClient<MoneroWorkerContext> client)
+	    private void OnGetJob(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    {
+		    var request = tsRequest.Value;
+		    var getJobRequest = request.Params?.ToObject<MoneroGetJobRequest>();
+
+		    // validate worker
+		    if (client.ConnectionId != getJobRequest?.WorkerId || !client.Context.IsAuthorized)
+		    {
+			    client.RespondError(request.Id, -1, "unauthorized");
+			    return;
+		    }
+
+			// respond
+		    var job = CreateWorkerJob(client);
+			client.Respond(job, request.Id);
+	    }
+
+		private MoneroJobParams CreateWorkerJob(StratumClient<MoneroWorkerContext> client)
 	    {
 		    var job = new MoneroWorkerJob(NextJobId(), client.Context.Difficulty);
 
@@ -133,6 +164,89 @@ namespace MiningForce.Blockchain.Monero
 
 			return result;
 	    }
+
+	    private async void OnSubmit(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    {
+		    // check age of submission (aged submissions are usually caused by high server load)
+		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+
+		    if (requestAge > maxShareAge)
+		    {
+			    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+			    return;
+		    }
+
+			// check request
+			var request = tsRequest.Value;
+			var submitRequest = request.Params?.ToObject<MoneroSubmitShareRequest>();
+
+			// validate worker
+			if (client.ConnectionId != submitRequest?.WorkerId || !client.Context.IsAuthorized)
+				throw new StratumException(StratumError.MinusOne, "unauthorized");
+
+			// recognize activity
+		    client.Context.LastActivity = DateTime.UtcNow;
+
+			UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+
+		    try
+		    {
+			    MoneroWorkerJob job;
+
+			    lock (client.Context)
+			    {
+				    if (string.IsNullOrEmpty(submitRequest?.JobId) || !client.Context.ValidJobs.Any(x => x.Id == submitRequest.JobId))
+					    throw new StratumException(StratumError.MinusOne, "invalid jobid");
+
+					// look it up
+					job = client.Context.ValidJobs.First(x => x.Id == submitRequest.JobId);
+				}
+
+				// dupe check
+			    var nonceLower = submitRequest.Nonce.ToLower();
+
+			    lock (job)
+			    {
+				    if (job.Submissions.Contains(nonceLower))
+					    throw new StratumException(StratumError.MinusOne, "duplicate share");
+
+					job.Submissions.Add(nonceLower);
+				}
+
+			    var share = await manager.SubmitShareAsync(client, submitRequest, job, client.Context.Difficulty);
+
+				// success
+			    client.Respond(new MoneroResponseBase(), request.Id);
+
+			    // record it
+			    shareSubject.OnNext(share);
+
+			    // update pool stats
+			    if (share.IsBlockCandidate)
+				    poolStats.LastPoolBlockTime = DateTime.UtcNow;
+
+			    // update client stats
+			    client.Context.Stats.ValidShares++;
+
+			    // telemetry
+			    validSharesSubject.OnNext(share);
+		    }
+
+		    catch (StratumException ex)
+		    {
+			    client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+			    // update client stats
+			    client.Context.Stats.InvalidShares++;
+
+			    // telemetry
+			    invalidSharesSubject.OnNext(Unit.Default);
+
+			    // banning
+			    if (poolConfig.Banning?.Enabled == true)
+				    ConsiderBan(client, client.Context, poolConfig.Banning);
+		    }
+		}
 
 		private string NextJobId()
 	    {

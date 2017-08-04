@@ -11,7 +11,7 @@ namespace MiningForce.Blockchain.Monero.StratumResponses
 		public string Target { get; set; }
 	}
 
-	public class LoginResponse : ResponseBase
+	public class MoneroLoginResponse : MoneroResponseBase
     {
 	    public string Id { get; set; }
 	    public MoneroJobParams Job { get; set; }

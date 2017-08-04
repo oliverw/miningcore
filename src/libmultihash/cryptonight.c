@@ -124,6 +124,9 @@ struct cryptonight_ctx {
 };
 
 void cryptonight_hash(const char* input, char* output, uint32_t len) {
+	// ix = 2097568 !!
+	int ix = sizeof(struct cryptonight_ctx);
+
 	struct cryptonight_ctx *ctx = alloca(sizeof(struct cryptonight_ctx));
 	hash_process(&ctx->state.hs, (const uint8_t*)input, len);
 	memcpy(ctx->text, ctx->state.init, INIT_SIZE_BYTE);

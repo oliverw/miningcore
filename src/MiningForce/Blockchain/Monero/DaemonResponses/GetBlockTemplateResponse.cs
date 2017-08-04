@@ -7,7 +7,7 @@ namespace MiningForce.Blockchain.Monero.DaemonResponses
 	    [JsonProperty("blocktemplate_blob")]
 	    public string Blob { get; set; }
 
-		public ulong Difficulty { get; set; }
+		public long Difficulty { get; set; }
 	    public uint Height { get; set; }
 
 		[JsonProperty("prev_hash")]

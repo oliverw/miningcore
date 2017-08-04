@@ -8,8 +8,10 @@ using Autofac;
 using CodeContracts;
 using MiningForce.Blockchain.Monero.DaemonRequests;
 using MiningForce.Blockchain.Monero.DaemonResponses;
+using MiningForce.Blockchain.Monero.StratumRequests;
 using MiningForce.Configuration;
 using MiningForce.DaemonInterface;
+using MiningForce.Stratum;
 using MiningForce.Util;
 using MC = MiningForce.Blockchain.Monero.MoneroCommands;
 using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
@@ -46,6 +48,21 @@ namespace MiningForce.Blockchain.Monero
 
 		public IObservable<Unit> Blocks { get; private set; }
 
+	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+	    {
+		    // extract standard daemon endpoints
+		    daemonEndpoints = poolConfig.Daemons
+			    .Where(x => string.IsNullOrEmpty(x.Category))
+			    .ToArray();
+
+		    // extract dedicated wallet daemon endpoints
+		    walletDaemonEndpoints = poolConfig.Daemons
+			    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+			    .ToArray();
+
+		    base.Configure(poolConfig, clusterConfig);
+	    }
+
 		public bool ValidateAddress(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
@@ -77,28 +94,31 @@ namespace MiningForce.Blockchain.Monero
 		    }
 	    }
 
+	    public Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> client, 
+			MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficulty)
+	    {
+		    MoneroJob job;
+
+		    lock (jobLock)
+		    {
+			    if(workerJob.Height != currentJob.BlockTemplate.Height)
+				    throw new StratumException(StratumError.MinusOne, "block expired");
+
+			    job = currentJob;
+		    }
+
+		    var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, stratumDifficulty);
+
+		    return Task.FromResult((IShare) share);
+	    }
+
 		#endregion // API-Surface
 
 		#region Overrides
 
 		protected override string LogCat => "Monero Job Manager";
 
-	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
-	    {
-			// extract standard daemon endpoints
-		    daemonEndpoints = poolConfig.Daemons
-			    .Where(x => string.IsNullOrEmpty(x.Category))
-			    .ToArray();
-
-		    // extract dedicated wallet daemon endpoints
-			walletDaemonEndpoints = poolConfig.Daemons
-			    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
-			    .ToArray();
-
-			base.Configure(poolConfig, clusterConfig);
-	    }
-
-	    protected override void ConfigureDaemons()
+		protected override void ConfigureDaemons()
 	    {
 			daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
 

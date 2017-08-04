@@ -1,4 +1,5 @@
-﻿using MiningForce.Extensions;
+﻿using System.Text.RegularExpressions;
+using MiningForce.Extensions;
 using NBitcoin.BouncyCastle.Math;
 
 namespace MiningForce.Blockchain.Monero
@@ -20,6 +21,9 @@ namespace MiningForce.Blockchain.Monero
 		// the LAST byte MUST be zero or nothing works
 		public const int ReserveSize = ExtraNonceSize + InstanceIdSize + 1;
 
+		// Offset to nonce in block blob
+		public const int BlobNonceOffset = 39;
+
 		public const int AddressLength = 95;
 
 		public const string DaemonRpcLocation = "json_rpc";
@@ -27,6 +31,8 @@ namespace MiningForce.Blockchain.Monero
 
 		public const char MainNetAddressPrefix = '4';
 		public const char TestNetAddressPrefix = '9';
+
+		public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
 
 		public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 	}
