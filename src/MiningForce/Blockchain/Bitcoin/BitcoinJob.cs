@@ -428,9 +428,6 @@ namespace MiningForce.Blockchain.Bitcoin
 				result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
 				result.BlockHeight = blockTemplate.Height;
 				result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-
-				if (blockTemplate.Transactions.Length > 1)
-					Console.WriteLine($"** TXCOUNT {blockTemplate.Transactions.Length}-{mt.Branches.Count}");
 			}
 
 			return result;
