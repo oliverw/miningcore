@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using MiningForce.Extensions;
-using MH = MiningForce.Crypto.Hashing.LibMultiHash;
+using MiningForce.Native;
 
 namespace MiningForce.Crypto.Hashing.Algorithms
 {
@@ -18,7 +18,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    MH.kezzak(input, output, (uint) data.Length);
+				    libmultihash.kezzak(input, output, (uint) data.Length);
 			    }
 			}
 

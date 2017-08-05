@@ -1,4 +1,4 @@
-﻿using MH = MiningForce.Crypto.Hashing.LibMultiHash;
+﻿using MiningForce.Native;
 
 namespace MiningForce.Crypto.Hashing.Algorithms
 {
@@ -12,7 +12,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    MH.blake(input, output, (uint) data.Length);
+				    libmultihash.blake(input, output, (uint) data.Length);
 			    }
 			}
 

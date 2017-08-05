@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using CodeContracts;
 using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Configuration;
-using MiningForce.Crypto;
-using MiningForce.Crypto.Hashing;
-using MiningForce.Crypto.Hashing.Algorithms;
 using MiningForce.Extensions;
+using MiningForce.Native;
 using MiningForce.Stratum;
 using NBitcoin.BouncyCastle.Math;
 
@@ -83,12 +79,12 @@ namespace MiningForce.Blockchain.Monero
 			Buffer.BlockCopy(nonceBytes, 0, blob, MoneroConstants.BlobNonceOffset, nonceBytes.Length);
 
 			// convert
-			var converted = LibCryptoNote.ConvertBlob(blob);
+			var converted = libcryptonote.ConvertBlob(blob);
 			if(converted == null)
 				throw new StratumException(StratumError.MinusOne, "malformed blob");
 
 			// hash it
-			var hashBytes = LibCryptoNote.CryptonightHashSlow(converted);
+			var hashBytes = libcryptonote.CryptonightHashSlow(converted);
 			var hash = hashBytes.ToHexString();
 
 			if (hash != workerHash)
@@ -118,7 +114,7 @@ namespace MiningForce.Blockchain.Monero
 			{
 				result.IsBlockCandidate = true;
 				result.BlobHex = blob.ToHexString();
-				result.BlobHash = LibCryptoNote.CryptonightHashFast(converted).ToHexString();
+				result.BlobHash = libcryptonote.CryptonightHashFast(converted).ToHexString();
 			}
 
 			return result;
@@ -145,7 +141,7 @@ namespace MiningForce.Blockchain.Monero
 			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
 			Buffer.BlockCopy(extraNonceBytes, 0, blob, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
 
-			var result = LibCryptoNote.ConvertBlob(blob).ToHexString();
+			var result = libcryptonote.ConvertBlob(blob).ToHexString();
 			return result;
 		}
 

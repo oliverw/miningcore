@@ -29,9 +29,12 @@ namespace MiningForce.JsonRpc
             Id = id;
         }
 
-	    public T ParamsAs<T>() where T: class
+	    public TParam ParamsAs<TParam>() where TParam : class
 	    {
-		    return ((JToken) Params)?.ToObject<T>();
+			if(Params is JToken)
+			    return ((JToken) Params)?.ToObject<TParam>();
+
+		    return (TParam) Params;
 	    }
 
         [JsonProperty("jsonrpc")]

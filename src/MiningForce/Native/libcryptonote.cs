@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using MiningForce.Crypto.Hashing;
 
-namespace MiningForce.Blockchain.Monero
+namespace MiningForce.Native
 {
-    public static unsafe class LibCryptoNote
+	// ReSharper disable once InconsistentNaming
+    public static unsafe class libcryptonote
 	{
 	    [DllImport("libcryptonote", EntryPoint = "convert_blob_export", CallingConvention = CallingConvention.Cdecl)]
 	    private static extern bool convert_blob(byte* input, int inputSize, byte* output, ref int outputSize);

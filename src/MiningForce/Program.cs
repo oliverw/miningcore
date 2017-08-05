@@ -25,6 +25,7 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using MiningForce.Extensions;
+using MiningForce.Native;
 using NBitcoin.BouncyCastle.Math;
 
 namespace MiningForce
@@ -51,7 +52,7 @@ namespace MiningForce
 						.HexToByteArray();
 
 
-				var result = LibCryptoNote.ConvertBlob(blobBuf).ToHexString();
+				var result = libcryptonote.ConvertBlob(blobBuf).ToHexString();
 
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
