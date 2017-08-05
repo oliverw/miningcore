@@ -11,6 +11,7 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
+using NLog;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -43,7 +44,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    await manager.Jobs.Take(1).ToTask();
 	    }
 
-	    protected override void OnRequest(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    protected override async Task OnRequestAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 			var request = tsRequest.Value;
 
@@ -54,11 +55,11 @@ namespace MiningForce.Blockchain.Bitcoin
 					break;
 
 				case BitcoinStratumMethods.Authorize:
-					OnAuthorize(client, tsRequest);
+					await OnAuthorizeAsync(client, tsRequest);
 					break;
 
 				case BitcoinStratumMethods.SubmitShare:
-					OnSubmitShare(client, tsRequest);
+					await OnSubmitAsync(client, tsRequest);
 					break;
 
 				default:
@@ -103,7 +104,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
 	    }
 
-	    private async void OnAuthorize(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    private async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
 
@@ -116,7 +117,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		    client.Respond(client.Context.IsAuthorized, request.Id);
 	    }
 
-	    private async void OnSubmitShare(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    private async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 			// check age of submission (aged submissions are usually caused by high server load)
 			var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
@@ -176,7 +177,7 @@ namespace MiningForce.Blockchain.Bitcoin
 					    ConsiderBan(client, client.Context, poolConfig.Banning);
 			    }
 		    }
-	    }
+		}
 
 	    private void OnNewJob(object jobParams)
 	    {

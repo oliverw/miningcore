@@ -121,9 +121,9 @@ namespace MiningForce.Blockchain.Monero
 			    {
 				    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlobHash.Substring(0, 6)}");
 
-				    // persist the coinbase transaction-hash to allow the payment processor 
-				    // to verify later on that the pool has received the reward for the block
-				    share.TransactionConfirmationData = share.BlobHash;
+					// persist the coinbase transaction-hash to allow the payment processor 
+					// to verify later on that the pool has received the reward for the block
+					share.TransactionConfirmationData = share.BlobHash;
 			    }
 
 			    else

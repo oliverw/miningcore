@@ -1,6 +1,6 @@
 ﻿{
     "logging": {
-        "level": "debug",
+        "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",
@@ -103,7 +103,7 @@
                 },
 
                 "4256": { //  Another port for your miners to connect to, this port does not use varDiff
-                    "difficulty": 8 // 256 //  The pool difficulty
+                    "difficulty": 1000 // 256 //  The pool difficulty
                 }
             },
 

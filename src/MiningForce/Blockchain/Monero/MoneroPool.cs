@@ -16,6 +16,7 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
+using NLog;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -49,7 +50,7 @@ namespace MiningForce.Blockchain.Monero
 		    await manager.Blocks.Take(1).ToTask();
 		}
 
-		protected override void OnRequest(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+		protected override async Task OnRequestAsync(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
 
@@ -64,7 +65,7 @@ namespace MiningForce.Blockchain.Monero
 					break;
 
 				case MoneroStratumMethods.Submit:
-					OnSubmit(client, tsRequest);
+					await OnSubmitAsync(client, tsRequest);
 					break;
 
 				case MoneroStratumMethods.KeepAlive:
@@ -165,7 +166,7 @@ namespace MiningForce.Blockchain.Monero
 			return result;
 	    }
 
-	    private async void OnSubmit(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+	    private async Task OnSubmitAsync(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    // check age of submission (aged submissions are usually caused by high server load)
 		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;

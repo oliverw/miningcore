@@ -10,11 +10,11 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcResponse(object result, string id = null) : base(result, id)
+        public JsonRpcResponse(object result, object id = null) : base(result, id)
         {
         }
 
-        public JsonRpcResponse(JsonRpcException ex, string id = null, object result = null) : base(ex, id)
+        public JsonRpcResponse(JsonRpcException ex, object id = null, object result = null) : base(ex, id)
         {
         }
     }
@@ -29,7 +29,7 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcResponse(T result, string id = null)
+        public JsonRpcResponse(T result, object id = null)
         {
             Result = result;
             Id = id;
@@ -42,16 +42,16 @@ namespace MiningForce.JsonRpc
 	        Result = JToken.FromObject(result);
         }
 
-		[JsonProperty(PropertyName = "jsonrpc")]
+		[JsonProperty(PropertyName = "jsonrpc", Order = 1)]
 		public string JsonRpc => "2.0";
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "result")]
+		[JsonProperty(PropertyName = "result", Order = 2)]
         public object Result { get; set; }
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore, PropertyName = "error")]
+        [JsonProperty(PropertyName = "error", Order = 3)]
         public JsonRpcException Error { get; set; }
 
-        [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
-		public string Id { get; set; }
+        [JsonProperty(PropertyName = "id", Order = 0, NullValueHandling = NullValueHandling.Ignore)]
+		public object Id { get; set; }
     }
 }

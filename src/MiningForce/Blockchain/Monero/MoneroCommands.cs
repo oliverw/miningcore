@@ -5,6 +5,7 @@
 	    public const string GetInfo = "get_info";
 	    public const string GetBlockTemplate = "getblocktemplate";
 	    public const string SubmitBlock = "submitblock";
+	    public const string GetBlockHeaderByHash = "getblockheaderbyhash";
     }
 
 	public static class MoneroWalletCommands

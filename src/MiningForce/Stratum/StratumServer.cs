@@ -91,7 +91,7 @@ namespace MiningForce.Stratum
 				// request subscription
 	            var sub = client.Requests
 		            .ObserveOn(TaskPoolScheduler.Default)
-		            .Subscribe(tsRequest =>
+		            .Subscribe(async tsRequest =>
 		            {
 			            var request = tsRequest.Value;
 			            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
@@ -106,12 +106,12 @@ namespace MiningForce.Stratum
 					            return;
 				            }
 
-				            OnRequest(client, tsRequest);
+				            await OnRequestAsync(client, tsRequest);
 			            }
 
 			            catch (Exception ex)
 			            {
-				            logger.Error(ex, () => $"{nameof(OnClientConnected)}: {request.Method}");
+				            logger.Error(ex, () => $"Error handling request: {request.Method}");
 			            }
 		            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
@@ -185,6 +185,6 @@ namespace MiningForce.Stratum
 
         protected abstract void OnConnect(StratumClient<TClientContext> client);
         protected abstract void OnDisconnect(string subscriptionId);
-	    protected abstract void OnRequest(StratumClient<TClientContext> client, Timestamped<JsonRpcRequest> request);
+	    protected abstract Task OnRequestAsync(StratumClient<TClientContext> client, Timestamped<JsonRpcRequest> request);
     }
 }

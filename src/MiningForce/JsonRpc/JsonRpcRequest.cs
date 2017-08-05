@@ -10,7 +10,7 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcRequest(string method, object parameters, string id) : base(method, parameters, id)
+        public JsonRpcRequest(string method, object parameters, object id) : base(method, parameters, id)
         {
         }
     }
@@ -22,7 +22,7 @@ namespace MiningForce.JsonRpc
         {
         }
 
-        public JsonRpcRequest(string method, T parameters, string id)
+        public JsonRpcRequest(string method, T parameters, object id)
         {
             Method = method;
             Params = parameters;
@@ -44,6 +44,6 @@ namespace MiningForce.JsonRpc
         public object Params { get; set; }
 
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
-        public string Id { get; set; }
+        public object Id { get; set; }
     }
 }

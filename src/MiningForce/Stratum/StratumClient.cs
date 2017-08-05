@@ -38,18 +38,18 @@ namespace MiningForce.Stratum
         public PoolEndpoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
 
-		public void Respond<T>(T payload, string id)
+		public void Respond<T>(T payload, object id)
         {
 	        Contract.RequiresNonNull(payload, nameof(payload));
-	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        Contract.RequiresNonNull(id, nameof(id));
 
 			Respond(new JsonRpcResponse<T>(payload, id));
         }
 
-        public void RespondError(StratumError code, string message, string id, object result = null, object data = null)
+        public void RespondError(StratumError code, string message, object id, object result = null, object data = null)
         {
 	        Contract.RequiresNonNull(message, nameof(message));
-	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        Contract.RequiresNonNull(id, nameof(id));
 
 			Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
@@ -89,24 +89,24 @@ namespace MiningForce.Stratum
             }
         }
 
-        public void RespondError(string id, int code, string message)
+        public void RespondError(object id, int code, string message)
         {
-	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        Contract.RequiresNonNull(id, nameof(id));
 	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
 
 			Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
-        public void RespondUnsupportedMethod(string id)
+        public void RespondUnsupportedMethod(object id)
         {
-	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
-	        
+	        Contract.RequiresNonNull(id, nameof(id));
+
 			RespondError(id, 20, "Unsupported method");
         }
 
-        public void RespondUnauthorized(string id)
+        public void RespondUnauthorized(object id)
         {
-	        Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(id), $"{nameof(id)} must not be empty");
+	        Contract.RequiresNonNull(id, nameof(id));
 
 			RespondError(id, 24, "Unauthorized worker");
         }
