@@ -94,7 +94,7 @@ namespace MiningForce.Blockchain.Monero
 		    }
 	    }
 
-	    public Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> client, 
+	    public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker, 
 			MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficulty)
 	    {
 		    MoneroJob job;
@@ -107,9 +107,40 @@ namespace MiningForce.Blockchain.Monero
 			    job = currentJob;
 		    }
 
+		    // validate & process
 		    var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, stratumDifficulty);
 
-		    return Task.FromResult((IShare) share);
+		    // if block candidate, submit & check if accepted by network
+		    if (share.IsBlockCandidate)
+		    {
+			    logger.Info(() => $"[{LogCat}] Submitting block {share.BlobHash.Substring(0, 6)}");
+
+			    share.IsBlockCandidate = await SubmitBlockAsync(share);
+
+			    if (share.IsBlockCandidate)
+			    {
+				    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlobHash.Substring(0, 6)}");
+
+				    // persist the coinbase transaction-hash to allow the payment processor 
+				    // to verify later on that the pool has received the reward for the block
+				    share.TransactionConfirmationData = share.BlobHash;
+			    }
+
+			    else
+			    {
+				    // clear fields that no longer apply
+				    share.TransactionConfirmationData = null;
+			    }
+		    }
+
+		    // enrich share with common data
+		    share.PoolId = poolConfig.Id;
+		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+		    share.Worker = worker.Context.WorkerName;
+		    share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
+		    share.Created = DateTime.UtcNow;
+
+		    return share;
 	    }
 
 		#endregion // API-Surface
@@ -295,33 +326,22 @@ namespace MiningForce.Blockchain.Monero
 			}
         }
 
-		private Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(ShareBase share)
-	    {
-			//// execute command batch
-			//   var results = await daemon.ExecuteBatchAnyAsync(
-			//	new DaemonCmd(MDC.SubmitBlock, new[] { share.BlockHex }) :
-			//    new DaemonCmd(MDC.GetBlock, new[] { share.BlockHash }));
+		private async Task<bool> SubmitBlockAsync(MoneroShare share)
+		{
+		    var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { share.BlobHex });
 
-			//// did submission succeed?
-			//   var submitResult = results[0];
-			//   var submitError = submitResult.Error?.Message ?? submitResult.Response?.ToString();
+			if (response.Error != null || response?.Response?.Status != "OK")
+			{
+				var error = response.Error?.Message ?? response.Response?.Status;
 
-			//if (!string.IsNullOrEmpty(submitError))
-			//   {
-			//    logger.Warn(()=> $"[{LogCategory}] Block submission failed with: {submitError}");
-			//    return (false, null);
-			//   }
+				logger.Warn(() => $"[{LogCat}] Block submission failed with: {error}");
+				return false;
+			}
 
-			//// was it accepted?
-			//   var acceptResult = results[1];
-			//var block = acceptResult.Response?.ToObject<DaemonResponses.GetBlockResult>();
-			//var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
-		    //return (accepted, block?.Transactions.FirstOrDefault());
-
-			return Task.FromResult((Accepted: false, CoinbaseTransaction: ""));
+		    return true;
 	    }
 
-	    protected async Task UpdateNetworkStats()
+		protected async Task UpdateNetworkStats()
 	    {
 		    var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 

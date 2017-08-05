@@ -39,7 +39,6 @@ namespace MiningForce.Blockchain.Monero
 		private readonly ClusterConfig clusterConfig;
 		private readonly PoolConfig poolConfig;
 		private readonly GetBlockTemplateResponse blockTemplate;
-		private static readonly IHashAlgorithm hasher = new Cryptonight();
 		private byte[] blobTemplate;
 		private readonly MoneroNetworkType networkType;
 		private uint extraNonce = 0;
@@ -61,7 +60,7 @@ namespace MiningForce.Blockchain.Monero
 			target = EncodeTarget(workerJob.Difficulty);
 		}
 
-		public ShareBase ProcessShare(string nonce, uint workerExtraNonce, string workerHash, double stratumDifficulty)
+		public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, double stratumDifficulty)
 		{
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -89,7 +88,7 @@ namespace MiningForce.Blockchain.Monero
 				throw new StratumException(StratumError.MinusOne, "malformed blob");
 
 			// hash it
-			var hashBytes = hasher.Digest(converted, 0);
+			var hashBytes = LibCryptoNote.CryptonightHashSlow(converted);
 			var hash = hashBytes.ToHexString();
 
 			if (hash != workerHash)
@@ -118,6 +117,8 @@ namespace MiningForce.Blockchain.Monero
 			if (hashDiff.LongValue >= blockTemplate.Difficulty)
 			{
 				result.IsBlockCandidate = true;
+				result.BlobHex = blob.ToHexString();
+				result.BlobHash = LibCryptoNote.CryptonightHashFast(converted).ToHexString();
 			}
 
 			return result;

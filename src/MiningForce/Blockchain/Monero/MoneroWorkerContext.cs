@@ -5,7 +5,7 @@ namespace MiningForce.Blockchain.Monero
 {
     public class MoneroWorkerContext : WorkerContextBase
 	{
-		public uint LastQueryBlockHeight { get; set; }
+		public string WorkerName { get; set; }
 		public List<MoneroWorkerJob> ValidJobs { get; } = new List<MoneroWorkerJob>();
 
 		public void AddJob(MoneroWorkerJob job)

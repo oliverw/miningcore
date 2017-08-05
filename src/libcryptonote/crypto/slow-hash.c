@@ -1222,7 +1222,10 @@ union cn_slow_hash_state {
 #pragma pack(pop)
 
 void cn_slow_hash(const void *data, size_t length, char *hash) {
-  uint8_t long_state[MEMORY];
+  // OW: causes stack overflow
+  // uint8_t long_state[MEMORY];
+  uint8_t *long_state = malloc(MEMORY);
+
   union cn_slow_hash_state state;
   uint8_t text[INIT_SIZE_BYTE];
   uint8_t a[AES_BLOCK_SIZE];
@@ -1290,6 +1293,8 @@ void cn_slow_hash(const void *data, size_t length, char *hash) {
   /*memcpy(hash, &state, 32);*/
   extra_hashes[state.hs.b[0] & 3](&state, 200, hash);
   oaes_free((OAES_CTX **) &aes_ctx);
+
+  free(long_state);
 }
 
 #endif

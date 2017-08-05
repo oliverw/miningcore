@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using MiningForce.Crypto.Hashing;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -11,6 +12,12 @@ namespace MiningForce.Blockchain.Monero
 
 		[DllImport("libcryptonote", EntryPoint = "decode_address_export", CallingConvention = CallingConvention.Cdecl)]
 		private static extern bool decode_address(byte* input, int inputSize, byte* output, ref int outputSize);
+
+		[DllImport("libcryptonote", EntryPoint = "cn_slow_hash_export", CallingConvention = CallingConvention.Cdecl)]
+		private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength);
+
+		[DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
+		private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
 
 		public static byte[] ConvertBlob(byte[] data)
 		{
@@ -92,6 +99,36 @@ namespace MiningForce.Blockchain.Monero
 
 				return result;
 			}
+		}
+
+		public static byte[] CryptonightHashSlow(byte[] data)
+		{
+			var result = new byte[32];
+
+			fixed (byte* input = data)
+			{
+				fixed (byte* output = result)
+				{
+					cn_slow_hash(input, output, (uint)data.Length);
+				}
+			}
+
+			return result;
+		}
+
+		public static byte[] CryptonightHashFast(byte[] data)
+		{
+			var result = new byte[32];
+
+			fixed (byte* input = data)
+			{
+				fixed (byte* output = result)
+				{
+					cn_fast_hash(input, output, (uint)data.Length);
+				}
+			}
+
+			return result;
 		}
 	}
 }

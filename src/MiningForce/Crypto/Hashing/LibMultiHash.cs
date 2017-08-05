@@ -58,9 +58,6 @@ namespace MiningForce.Crypto.Hashing
 	    [DllImport("libmultihash", EntryPoint = "shavite3_export", CallingConvention = CallingConvention.Cdecl)]
 	    public static extern int shavite3(byte* input, byte* output, uint inputLength);
 
-	    [DllImport("libmultihash", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-	    public static extern int cryptonight(byte* input, byte* output, uint inputLength, bool fast);
-
 	    [DllImport("libmultihash", EntryPoint = "nist5_export", CallingConvention = CallingConvention.Cdecl)]
 	    public static extern int nist5(byte* input, byte* output, uint inputLength);
 

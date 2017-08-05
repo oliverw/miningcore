@@ -89,7 +89,7 @@ namespace MiningForce.Blockchain.Monero
 		private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-			var loginRequest = request.Params?.ToObject<MoneroLoginRequest>();
+			var loginRequest = request.ParamsAs<MoneroLoginRequest>();
 
 			// validate login
 		    if (string.IsNullOrEmpty(loginRequest?.Login))
@@ -103,6 +103,7 @@ namespace MiningForce.Blockchain.Monero
 
 			client.Context.IsSubscribed = result;
 			client.Context.IsAuthorized = result;
+		    client.Context.WorkerName = loginRequest.Login;
 
 		    if (!client.Context.IsAuthorized)
 		    {
@@ -123,7 +124,7 @@ namespace MiningForce.Blockchain.Monero
 	    private void OnGetJob(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var getJobRequest = request.Params?.ToObject<MoneroGetJobRequest>();
+		    var getJobRequest = request.ParamsAs<MoneroGetJobRequest>();
 
 		    // validate worker
 		    if (client.ConnectionId != getJobRequest?.WorkerId || !client.Context.IsAuthorized)
@@ -159,7 +160,6 @@ namespace MiningForce.Blockchain.Monero
 		    lock (client.Context)
 		    {
 			    client.Context.AddJob(job);
-			    client.Context.LastQueryBlockHeight = job.Height;
 		    }
 
 			return result;
@@ -178,7 +178,7 @@ namespace MiningForce.Blockchain.Monero
 
 			// check request
 			var request = tsRequest.Value;
-			var submitRequest = request.Params?.ToObject<MoneroSubmitShareRequest>();
+			var submitRequest = request.ParamsAs<MoneroSubmitShareRequest>();
 
 			// validate worker
 			if (client.ConnectionId != submitRequest?.WorkerId || !client.Context.IsAuthorized)

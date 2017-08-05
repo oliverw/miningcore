@@ -5,8 +5,8 @@
 #include "cryptonote_basic/cryptonote_format_utils.h"
 #include "cryptonote_protocol/blobdatatype.h"
 #include "crypto/crypto.h"
-#include "crypto/hash.h"
 #include "common/base58.h"
+#include "crypto/hash-ops.h"
 
 using namespace cryptonote;
 
@@ -84,4 +84,14 @@ extern "C" MODULE_API bool decode_address_export(const char* input, unsigned int
 	// success
 	memcpy(output, result.data(), result.length());
 	return true;
+}
+
+extern "C" MODULE_API void cn_slow_hash_export(const char* input, unsigned char *output, uint32_t inputSize)
+{
+	cn_slow_hash((const void *) input, (const size_t) inputSize, (char *) output);
+}
+
+extern "C" MODULE_API void cn_fast_hash_export(const char* input, unsigned char *output, uint32_t inputSize)
+{
+	cn_fast_hash((const void *)input, (const size_t)inputSize, (char *)output);
 }

@@ -79,7 +79,7 @@ namespace MiningForce.Blockchain.Bitcoin
 		private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var requestParams = request.Params?.ToObject<string[]>();
+		    var requestParams = request.ParamsAs<string[]>();
 
 		    var data = new object[]
 			{
@@ -107,7 +107,7 @@ namespace MiningForce.Blockchain.Bitcoin
 	    {
 		    var request = tsRequest.Value;
 
-			var requestParams = request.Params?.ToObject<string[]>();
+			var requestParams = request.ParamsAs<string[]>();
 		    var workername = requestParams?.Length > 0 ? requestParams[0] : null;
 		    var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
@@ -142,7 +142,7 @@ namespace MiningForce.Blockchain.Bitcoin
 			    try
 			    {
 				    // submit 
-				    var requestParams = request.Params?.ToObject<string[]>();
+				    var requestParams = request.ParamsAs<string[]>();
 				    var share = await manager.SubmitShareAsync(client, requestParams, client.Context.Difficulty);
 
 				    client.Respond(true, request.Id);
