@@ -178,6 +178,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 			var sigScriptLength = (uint)(
 				sigScriptInitial.Length +
+				1 + // for extranonce-placeholder length after sigScriptInitial
 				extraNoncePlaceHolderLength +
 				scriptSigFinalBytes.Length);
 

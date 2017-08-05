@@ -234,8 +234,12 @@ namespace MiningForce.DaemonInterface
 			{
 	            Debug.Assert(x.IsCompletedSuccessfully);
 
-				resp.Response = ((JToken) x.Result?.Result)?.ToObject<TResponse>();
-                resp.Error = x.Result?.Error;
+				if (x.Result?.Result is JToken)
+					resp.Response = ((JToken) x.Result?.Result)?.ToObject<TResponse>();
+				else
+					resp.Response = (TResponse) x.Result?.Result;
+
+				resp.Error = x.Result?.Error;
             }
 
             return resp;
