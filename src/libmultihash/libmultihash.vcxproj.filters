@@ -146,48 +146,6 @@
     <ClInclude Include="sha3\sph_whirlpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crypto\c_blake256.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\c_groestl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\c_jh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\c_keccak.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\c_skein.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\crypto.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\groestl_tables.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\hash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\hash-ops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\int-util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\oaes_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\oaes_lib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\skein_port.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\wild_keccak.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -314,33 +272,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sph_whirlpool.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\c_blake256.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\c_groestl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\c_jh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\c_keccak.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\c_skein.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\oaes_lib.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\wild_keccak.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\aesb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="exports.cpp">

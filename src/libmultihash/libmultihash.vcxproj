@@ -156,20 +156,6 @@
     <ClInclude Include="blake.h" />
     <ClInclude Include="boolberry.h" />
     <ClInclude Include="c11.h" />
-    <ClInclude Include="crypto\crypto.h" />
-    <ClInclude Include="crypto\c_blake256.h" />
-    <ClInclude Include="crypto\c_groestl.h" />
-    <ClInclude Include="crypto\c_jh.h" />
-    <ClInclude Include="crypto\c_keccak.h" />
-    <ClInclude Include="crypto\c_skein.h" />
-    <ClInclude Include="crypto\groestl_tables.h" />
-    <ClInclude Include="crypto\hash-ops.h" />
-    <ClInclude Include="crypto\hash.h" />
-    <ClInclude Include="crypto\int-util.h" />
-    <ClInclude Include="crypto\oaes_config.h" />
-    <ClInclude Include="crypto\oaes_lib.h" />
-    <ClInclude Include="crypto\skein_port.h" />
-    <ClInclude Include="crypto\wild_keccak.h" />
     <ClInclude Include="dcrypt.h" />
     <ClInclude Include="fresh.h" />
     <ClInclude Include="fugue.h" />
@@ -216,20 +202,6 @@
     <ClCompile Include="bcrypt.c" />
     <ClCompile Include="blake.c" />
     <ClCompile Include="c11.c" />
-    <ClCompile Include="crypto\aesb.c" />
-    <ClCompile Include="crypto\c_blake256.c" />
-    <ClCompile Include="crypto\c_groestl.c" />
-    <ClCompile Include="crypto\c_jh.c" />
-    <ClCompile Include="crypto\c_keccak.c" />
-    <ClCompile Include="crypto\c_skein.c" />
-    <ClCompile Include="crypto\hash.c" />
-    <ClCompile Include="crypto\oaes_lib.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-    </ClCompile>
-    <ClCompile Include="crypto\wild_keccak.cpp" />
     <ClCompile Include="dcrypt.c" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="fresh.c" />
