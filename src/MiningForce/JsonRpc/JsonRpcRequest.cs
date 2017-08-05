@@ -43,7 +43,7 @@ namespace MiningForce.JsonRpc
         [JsonProperty("params")]
         public object Params { get; set; }
 
-        [JsonProperty("id")]
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
     }
 }
