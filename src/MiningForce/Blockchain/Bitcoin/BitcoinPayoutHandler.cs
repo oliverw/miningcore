@@ -145,12 +145,15 @@ namespace MiningForce.Blockchain.Bitcoin
 		{
 			Contract.RequiresNonNull(balances, nameof(balances));
 
-			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
 			// build args
 			var amounts = balances
 				.Where(x=> x.Amount > 0)
 				.ToDictionary(x => x.Address, x => x.Amount);
+
+			if (amounts.Count == 0)
+				return;
+
+			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
 			var subtractFeesFrom = amounts.Keys.ToArray();
 

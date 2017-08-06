@@ -11,14 +11,11 @@ using MiningForce.Banning;
 using MiningForce.Blockchain;
 using MiningForce.Blockchain.Bitcoin;
 using MiningForce.Configuration;
-using MiningForce.Extensions;
 using MiningForce.Persistence;
-using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using MiningForce.Util;
 using MiningForce.VarDiff;
 using Newtonsoft.Json;
-using NLog;
 
 namespace MiningForce.Mining
 {
@@ -28,18 +25,15 @@ namespace MiningForce.Mining
     {
 	    protected PoolBase(IComponentContext ctx,
 			JsonSerializerSettings serializerSettings,
-	        IConnectionFactory cf,
-			IStatsRepository statsRepo) : 
+	        IConnectionFactory cf) : 
             base(ctx)
         {
 	        Contract.RequiresNonNull(ctx, nameof(ctx));
 	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 	        Contract.RequiresNonNull(cf, nameof(cf));
-	        Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
 			this.serializerSettings = serializerSettings;
 			this.cf = cf;
-	        this.statsRepo = statsRepo;
 
 	        Shares = shareSubject
 		        .AsObservable()
@@ -58,7 +52,6 @@ namespace MiningForce.Mining
 	    protected ClusterConfig clusterConfig;
 	    protected readonly JsonSerializerSettings serializerSettings;
 	    protected readonly IConnectionFactory cf;
-	    protected readonly IStatsRepository statsRepo;
 	    protected readonly PoolStats poolStats = new PoolStats();
 	    protected BlockchainStats blockchainStats;
 
@@ -79,8 +72,10 @@ namespace MiningForce.Mining
 		#region API-Surface
 
 		public IObservable<IShare> Shares { get; }
+	    public PoolStats PoolStats => poolStats;
+	    public BlockchainStats NetworkStats => blockchainStats;
 
-	    public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+		public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 		    Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
@@ -217,32 +212,15 @@ namespace MiningForce.Mining
 			    })
 			    .Subscribe(hashRate => poolStats.PoolHashRate = hashRate);
 
-			// Periodically persist pool- and blockchain-stats to persistent storage
-			Observable.Interval(TimeSpan.FromSeconds(10))
-				.StartWith(0)	// initial update
-				.Do(_=> UpdateBlockChainStats())
-			    .Subscribe(_ => PersistStats());
-	    }
 
-	    protected abstract void UpdateBlockChainStats();
+		    // Periodically persist pool- and blockchain-stats to persistent storage
+		    Observable.Interval(TimeSpan.FromSeconds(10))
+			    .StartWith(0)   // initial update
+			    .Do(_ => UpdateBlockChainStats())
+			    .Subscribe();
+		}
 
-		private void PersistStats()
-	    {
-		    try
-		    {
-				logger.Debug(()=> $"[{LogCat}] Persisting stats");
-
-			    cf.RunTx((con, tx) =>
-			    {
-				    statsRepo.UpdatePoolStats(con, tx, poolConfig.Id, poolStats, blockchainStats);
-			    });
-			}
-
-			catch (Exception ex)
-		    {
-			    logger.Error(ex, ()=> $"[{LogCat}] Unable to persist stats");
-		    }
-	    }
+		protected abstract void UpdateBlockChainStats();
 
 	    private void SetupTelemetry()
 	    {

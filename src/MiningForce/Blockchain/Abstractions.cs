@@ -6,22 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MiningForce.Blockchain
 {
-	/// <summary>
-	/// By encapsulating this in an interface we can enforce a contract
-	/// in other layers consuming these metrics (such as persistence)
-	/// </summary>
-	public interface IBlockchainStats
-	{
-		string NetworkType { get; set; }
-		double NetworkHashRate { get; set; }
-		double NetworkDifficulty { get; set; }
-		DateTime? LastNetworkBlockTime { get; set; }
-		int BlockHeight { get; set; }
-		int ConnectedPeers { get; set; }
-		string RewardType { get; set; }
-	}
-
-	public class BlockchainStats : IBlockchainStats
+	public class BlockchainStats
     {
         public string NetworkType { get; set; }
         public double NetworkHashRate { get; set; }

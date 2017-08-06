@@ -2,25 +2,7 @@
 
 namespace MiningForce.Mining
 {
-	/// <summary>
-	/// By encapsulating this in an interface we can enforce a contract
-	/// in other layers consuming these metrics (such as persistence)
-	/// </summary>
-	public interface IPoolStats
-	{
-		 DateTime? LastPoolBlockTime { get; set; }
-		 int ConnectedMiners { get; set; }
-		 float PoolHashRate { get; set; }
-		 float PoolFeePercent { get; set; }
-		 float DonationsPercent { get; set; }
-
-		// Telemetry
-		 int SharesPerSecond { get; set; }
-		 int ValidSharesPerMinute { get; set; }
-		 int InvalidSharesPerMinute { get; set; }
-	}
-
-	public class PoolStats : IPoolStats
+	public class PoolStats
 	{
         public DateTime? LastPoolBlockTime { get; set; }
         public int ConnectedMiners { get; set; }

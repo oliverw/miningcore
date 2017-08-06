@@ -228,7 +228,7 @@
             // Generate payouts for recorded shares
             "paymentProcessing": {
                 "enabled": true,
-                "minimumPayment": 0, // in pool-base-currency (ie. Bitcoin, NOT Satoshis)
+                "minimumPayment": 0.01, // in pool-base-currency (ie. Bitcoin, NOT Satoshis)
                 "payoutScheme": "PPLNS",
                 "payoutSchemeConfig": {
                     "factor": 2.0

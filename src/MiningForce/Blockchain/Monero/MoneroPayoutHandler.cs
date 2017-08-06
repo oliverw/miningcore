@@ -176,8 +176,6 @@ namespace MiningForce.Blockchain.Monero
 		{
 			Contract.RequiresNonNull(balances, nameof(balances));
 
-			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
 			// build request
 			var request = new TransferRequest
 			{
@@ -191,6 +189,11 @@ namespace MiningForce.Blockchain.Monero
 
 				GetTxKey = true,
 			};
+
+			if (request.Destinations.Length == 0)
+				return;
+
+			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
 			// send command
 			var result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);

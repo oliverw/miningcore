@@ -13,10 +13,8 @@ using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 using MiningForce.Mining;
 using MiningForce.Persistence;
-using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
-using NLog;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -25,9 +23,8 @@ namespace MiningForce.Blockchain.Monero
     {
 	    public MoneroPool(IComponentContext ctx,
 		    JsonSerializerSettings serializerSettings,
-		    IConnectionFactory cf,
-		    IStatsRepository statsRepo) : 
-		    base(ctx, serializerSettings, cf, statsRepo)
+		    IConnectionFactory cf) : 
+		    base(ctx, serializerSettings, cf)
 	    {
 	    }
 

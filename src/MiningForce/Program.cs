@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,7 +12,10 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.Extensions.DependencyInjection;
 using MiningForce.Blockchain.Monero;
 using NLog;
 using MiningForce.Configuration;
@@ -37,8 +41,13 @@ namespace MiningForce
 	    private static CommandOption dumpConfigOption;
 	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
-	    private static PayoutProcessor _payoutProcessor;
+	    private static PayoutProcessor payoutProcessor;
 	    private static ClusterConfig clusterConfig;
+
+	    private static IWebHost webHost;
+	    private static readonly Dictionary<PoolConfig, IMiningPool> pools = new Dictionary<PoolConfig, IMiningPool>();
+	    public static Dictionary<PoolConfig, IMiningPool> Pools => pools;
+	    public static ClusterConfig ClusterConfig => clusterConfig;
 
 		public static void Main(string[] args)
 		{
@@ -448,6 +457,35 @@ namespace MiningForce
 			    .SingleInstance();
 		}
 
+	    private static void RunApiHost()
+	    {
+		    var address = clusterConfig.Api?.Address != null ?
+			    (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
+			    IPAddress.Parse("127.0.0.1");
+
+		    var port = clusterConfig.Api?.Port ?? 4000;
+
+		    webHost = new WebHostBuilder()
+			    .ConfigureServices(services =>
+			    {
+				    services.AddMvc();
+			    })
+			    .Configure(app =>
+			    {
+				    app.UseMvc();
+			    })
+			    .UseKestrel(options =>
+			    {
+				    options.Listen(address, port);
+			    })
+			    .Build();
+
+		    webHost.Start();
+
+		    logger.Info(() => $"Rest API online at http://{address}:{port}/api");
+
+		    Console.ReadLine();
+	    }
 		private static async Task Start()
 		{
 			// start share recorder
@@ -464,6 +502,7 @@ namespace MiningForce
 				// create and configure
 				var pool = poolImpl.Value;
 				pool.Configure(poolConfig, clusterConfig);
+				pools[poolConfig] = pool;
 
 				// record shares produced by pool
 				shareRecorder.AttachPool(pool);
@@ -476,11 +515,13 @@ namespace MiningForce
 			if (clusterConfig.PaymentProcessing?.Enabled == true &&
 			    clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
-				_payoutProcessor = container.Resolve<PayoutProcessor>();
-				_payoutProcessor.Configure(clusterConfig);
+				payoutProcessor = container.Resolve<PayoutProcessor>();
+				payoutProcessor.Configure(clusterConfig);
 
-				_payoutProcessor.Start();
+				payoutProcessor.Start();
 			}
+
+			RunApiHost();
 		}
 
 		private static void RecoverShares(string recoveryFilename)

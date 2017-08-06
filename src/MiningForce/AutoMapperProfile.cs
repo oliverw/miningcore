@@ -26,9 +26,6 @@ namespace MiningForce
 	        CreateMap<Persistence.Model.Balance, Persistence.Postgres.Entities.Balance>();
 	        CreateMap<Persistence.Model.Payment, Persistence.Postgres.Entities.Payment>();
 
-	        CreateMap<IBlockchainStats, Persistence.Postgres.Entities.PoolAndBlockchainStats>();
-	        CreateMap<IPoolStats, Persistence.Postgres.Entities.PoolAndBlockchainStats>();
-
 			//////////////////////
 			// incoming mappings
 
@@ -37,9 +34,6 @@ namespace MiningForce
 	        CreateMap<Persistence.Postgres.Entities.Block, Persistence.Model.Block>();
 	        CreateMap<Persistence.Postgres.Entities.Balance, Persistence.Model.Balance>();
 	        CreateMap<Persistence.Postgres.Entities.Payment, Persistence.Model.Payment>();
-
-	        CreateMap<Persistence.Postgres.Entities.PoolAndBlockchainStats, BlockchainStats>();
-	        CreateMap<Persistence.Postgres.Entities.PoolAndBlockchainStats, PoolStats>();
 		}
 	}
 }

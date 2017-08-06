@@ -10,5 +10,7 @@ namespace MiningForce.Mining
 	    void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
 	    Task StartAsync();
 	    IObservable<IShare> Shares { get; }
-    }
+	    PoolStats PoolStats { get; }
+		BlockchainStats NetworkStats { get; }
+	}
 }

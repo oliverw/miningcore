@@ -53,28 +53,3 @@ CREATE TABLE payments
 );
 
 CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, address);
-
-CREATE TABLE poolstats
-(
-	poolid TEXT NOT NULL PRIMARY KEY,
-
-	lastpoolblocktime TIMESTAMP NULL,
-	connectedminers INT NOT NULL DEFAULT 0,
-	poolhashrate FLOAT NOT NULL DEFAULT 0,
-	poolfeepercent FLOAT NOT NULL DEFAULT 0,
-	donationspercent FLOAT NOT NULL DEFAULT 0,
-	sharespersecond FLOAT NOT NULL DEFAULT 0,
-	validsharesperminute INT NOT NULL DEFAULT 0,
-	invalidsharesperminute INT NOT NULL DEFAULT 0,
-
-	networktype TEXT NOT NULL,
-	networkhashrate FLOAT NOT NULL DEFAULT 0,
-	lastnetworkblocktime TIMESTAMP NULL,
-	networkdifficulty FLOAT NOT NULL DEFAULT 0,
-	blockheight INT NOT NULL DEFAULT 0,
-	connectedpeers INT NOT NULL DEFAULT 0,
-	rewardtype TEXT NOT NULL,
-
-	created TIMESTAMP NOT NULL,
-	updated TIMESTAMP NOT NULL
-);

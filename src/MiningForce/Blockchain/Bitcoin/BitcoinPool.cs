@@ -8,10 +8,8 @@ using Autofac;
 using MiningForce.JsonRpc;
 using MiningForce.Mining;
 using MiningForce.Persistence;
-using MiningForce.Persistence.Repositories;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
-using NLog;
 
 namespace MiningForce.Blockchain.Bitcoin
 {
@@ -20,9 +18,8 @@ namespace MiningForce.Blockchain.Bitcoin
     {
 	    public BitcoinPool(IComponentContext ctx,
 		    JsonSerializerSettings serializerSettings,
-		    IConnectionFactory cf,
-		    IStatsRepository statsRepo) : 
-		    base(ctx, serializerSettings, cf, statsRepo)
+		    IConnectionFactory cf) : 
+		    base(ctx, serializerSettings, cf)
 	    {
 	    }
 
