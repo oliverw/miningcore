@@ -37,7 +37,7 @@ namespace MiningForce
 	    private static CommandOption dumpConfigOption;
 	    private static CommandOption shareRecoveryOption;
 	    private static ShareRecorder shareRecorder;
-	    private static PaymentProcessor paymentProcessor;
+	    private static PayoutProcessor _payoutProcessor;
 	    private static ClusterConfig clusterConfig;
 
 		public static void Main(string[] args)
@@ -476,10 +476,10 @@ namespace MiningForce
 			if (clusterConfig.PaymentProcessing?.Enabled == true &&
 			    clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
-				paymentProcessor = container.Resolve<PaymentProcessor>();
-				paymentProcessor.Configure(clusterConfig);
+				_payoutProcessor = container.Resolve<PayoutProcessor>();
+				_payoutProcessor.Configure(clusterConfig);
 
-				paymentProcessor.Start();
+				_payoutProcessor.Start();
 			}
 		}
 

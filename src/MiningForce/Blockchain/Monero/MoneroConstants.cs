@@ -20,7 +20,12 @@ namespace MiningForce.Blockchain.Monero
 		public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
 		public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 		public const double DifficultyNormalizationFactor = 14226363340d;
-		public const int PayoutMinConfirmations = 60;
+
+#if !DEBUG
+		public const int PayoutMinBlockConfirmations = 60;
+#else
+		public const int PayoutMinBlockConfirmations = 2;
+#endif
 
 		public const int InstanceIdSize = 3;
 		public const int ExtraNonceSize = 4;

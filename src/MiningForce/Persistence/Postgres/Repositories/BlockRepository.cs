@@ -16,7 +16,7 @@ namespace MiningForce.Persistence.Postgres.Repositories
 
 	    private readonly IMapper mapper;
 
-		public void Insert(IDbConnection con, IDbTransaction tx, Model.Block block)
+		public void Insert(IDbConnection con, IDbTransaction tx, Block block)
 		{
 			var mapped = mapper.Map<Entities.Block>(block);
 
@@ -26,13 +26,13 @@ namespace MiningForce.Persistence.Postgres.Repositories
 			con.Execute(query, mapped, tx);
 	    }
 
-	    public void DeleteBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
+	    public void DeleteBlock(IDbConnection con, IDbTransaction tx, Block block)
 	    {
 		    var query = "DELETE FROM blocks WHERE id = @id";
 		    con.Execute(query, block, tx);
 	    }
 
-	    public void UpdateBlock(IDbConnection con, IDbTransaction tx, Model.Block block)
+	    public void UpdateBlock(IDbConnection con, IDbTransaction tx, Block block)
 	    {
 		    var mapped = mapper.Map<Entities.Block>(block);
 
@@ -44,7 +44,7 @@ namespace MiningForce.Persistence.Postgres.Repositories
 	    {
 		    var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
-		    return con.Query<Entities.Block>(query, new { status = Model.BlockStatus.Pending.ToString().ToLower(), poolid })
+		    return con.Query<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid })
 			    .Select(mapper.Map<Block>)
 			    .ToArray();
 	    }

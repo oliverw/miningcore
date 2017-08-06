@@ -44,7 +44,7 @@ namespace MiningForce
             builder.RegisterType<DaemonClient>()
                 .AsSelf();
 
-	        builder.RegisterType<PaymentProcessor>()
+	        builder.RegisterType<PayoutProcessor>()
 		        .AsSelf()
 				.SingleInstance();
 

@@ -113,7 +113,11 @@ namespace MiningForce.Payments.PayoutSchemes
 				for (var i = start; i >= 0; i--)
 				{
 					var share = blockPage[i];
-					var score = (decimal) share.StratumDifficulty / (decimal) share.NetworkDifficulty;
+
+					// make sure that score does not go through the roof for testnets where difficulty is usually extremely low
+					var stratumDiffActual = Math.Min((decimal) share.StratumDifficulty, (decimal) share.NetworkDifficulty);
+
+					var score = stratumDiffActual / (decimal) share.NetworkDifficulty;
 
 					// if accumulated score would cross threshold, cap it to the remaining value
 					if (accumulatedScore + score >= factorX)

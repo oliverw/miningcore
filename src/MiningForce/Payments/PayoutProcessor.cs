@@ -18,9 +18,9 @@ namespace MiningForce.Payments
 	/// <summary>
 	/// Coin agnostic payment processor
 	/// </summary>
-    public class PaymentProcessor
+    public class PayoutProcessor
     {
-	    public PaymentProcessor(IComponentContext ctx, 
+	    public PayoutProcessor(IComponentContext ctx, 
 			IConnectionFactory cf, 
 			IBlockRepository blockRepo,
 		    IShareRepository shareRepo,

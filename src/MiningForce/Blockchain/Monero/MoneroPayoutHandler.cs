@@ -128,17 +128,17 @@ namespace MiningForce.Blockchain.Monero
 					}
 
 					// confirmed?
-					if (blockHeader.Depth < MoneroConstants.PayoutMinConfirmations)
+					if (blockHeader.Depth < MoneroConstants.PayoutMinBlockConfirmations)
 						continue;
 
 					// matured and spendable 
 					block.Status = BlockStatus.Confirmed;
+					block.Reward = blockHeader.Reward;
 					result.Add(block);
 				}
 			}
 
-			//return result.ToArray();
-			return new Block[0];
+			return result.ToArray();
 		}
 
 		public Task PayoutAsync(Balance[] balances)
