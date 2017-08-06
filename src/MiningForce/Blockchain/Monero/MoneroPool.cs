@@ -87,6 +87,13 @@ namespace MiningForce.Blockchain.Monero
 		private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
+
+		    if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+			    return;
+		    }
+
 			var loginRequest = request.ParamsAs<MoneroLoginRequest>();
 
 			// validate login
@@ -122,7 +129,14 @@ namespace MiningForce.Blockchain.Monero
 	    private void OnGetJob(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var getJobRequest = request.ParamsAs<MoneroGetJobRequest>();
+
+			if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+			    return;
+		    }
+
+			var getJobRequest = request.ParamsAs<MoneroGetJobRequest>();
 
 		    // validate worker
 		    if (client.ConnectionId != getJobRequest?.WorkerId || !client.Context.IsAuthorized)
@@ -165,8 +179,16 @@ namespace MiningForce.Blockchain.Monero
 
 	    private async Task OnSubmitAsync(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
-		    // check age of submission (aged submissions are usually caused by high server load)
-		    var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+		    var request = tsRequest.Value;
+
+			if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+			    return;
+		    }
+
+			// check age of submission (aged submissions are usually caused by high server load)
+			var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
 
 		    if (requestAge > maxShareAge)
 		    {
@@ -175,7 +197,6 @@ namespace MiningForce.Blockchain.Monero
 		    }
 
 			// check request
-			var request = tsRequest.Value;
 			var submitRequest = request.ParamsAs<MoneroSubmitShareRequest>();
 
 			// validate worker

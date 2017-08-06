@@ -13,6 +13,7 @@ using MiningForce.JsonRpc;
 using MiningForce.Mining;
 using MiningForce.Payments;
 using MiningForce.Payments.PayoutSchemes;
+using MiningForce.RpcApi;
 using MiningForce.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -58,7 +59,10 @@ namespace MiningForce
 	        builder.RegisterType<ShareRecorder>()
 		        .SingleInstance();
 
-	        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+	        builder.RegisterType<ApiServer>()
+		        .SingleInstance();
+
+			builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
 		        .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
 			                    .Any(i =>
 				                    i.IsAssignableFrom(typeof(IMiningPool)) ||

@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Autofac;
 using CodeContracts;
 using LibUvManaged;
-using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 
 namespace MiningForce.Stratum
@@ -14,11 +11,11 @@ namespace MiningForce.Stratum
     public class StratumClient<TContext>
 	{
         private JsonRpcConnection rpcCon;
-        private PoolEndpoint config;
+        private IPEndPoint config;
 
 		#region API-Surface
 
-		public void Init(ILibUvConnection uvCon, IComponentContext ctx, PoolEndpoint endpointConfig)
+		public void Init(ILibUvConnection uvCon, IComponentContext ctx, IPEndPoint endpointConfig)
         {
 	        Contract.RequiresNonNull(uvCon, nameof(uvCon));
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -35,7 +32,7 @@ namespace MiningForce.Stratum
 		public TContext Context { get; set; }
 		public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
 		public string ConnectionId => rpcCon.ConnectionId;
-        public PoolEndpoint PoolEndpoint => config;
+        public IPEndPoint PoolEndpoint => config;
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
 
 		public void Respond<T>(T payload, object id)
@@ -49,7 +46,6 @@ namespace MiningForce.Stratum
         public void RespondError(StratumError code, string message, object id, object result = null, object data = null)
         {
 	        Contract.RequiresNonNull(message, nameof(message));
-	        Contract.RequiresNonNull(id, nameof(id));
 
 			Respond(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }

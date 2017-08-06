@@ -11,7 +11,6 @@ using CodeContracts;
 using LibUvManaged;
 using MiningForce.Banning;
 using NLog;
-using MiningForce.Configuration;
 using MiningForce.JsonRpc;
 
 namespace MiningForce.Stratum
@@ -26,6 +25,7 @@ namespace MiningForce.Stratum
         }
 
         protected readonly IComponentContext ctx;
+		protected bool disableConnectionLogging = false;
         protected ILogger logger;
         protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
 		protected IBanManager banManager;
@@ -33,43 +33,30 @@ namespace MiningForce.Stratum
 		protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients = 
 			new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
 
-        protected void StartListeners(Dictionary<int, PoolEndpoint> stratumPorts)
+        protected void StartListeners(IPEndPoint[] stratumPorts)
         {
             Contract.RequiresNonNull(ports, nameof(ports));
 
             // start ports
-            foreach (var port in stratumPorts.Keys)
+            foreach (var endpoint in stratumPorts)
             {
-                var endpointConfig = stratumPorts[port];
-
-                // set listen addresse(s)
-                var listenAddress = IPAddress.Parse("127.0.0.1");
-                if (!string.IsNullOrEmpty(endpointConfig.ListenAddress))
-                {
-                    listenAddress = endpointConfig.ListenAddress != "*" ?
-                        IPAddress.Parse(endpointConfig.ListenAddress) : IPAddress.Any;
-                }
-
-                // create endpoint
-                var endPoint = new IPEndPoint(listenAddress, port);
-
                 // create the listener
                 var listener = new LibUvListener();
-                ports[port] = listener;
+                ports[endpoint.Port] = listener;
 
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
                 {
-                    listener.Start(endPoint, con => OnClientConnected(con, endpointConfig));
+                    listener.Start(endpoint, con => OnClientConnected(con, endpoint));
                 }, TaskCreationOptions.LongRunning);
 
                 task.Start();
 
-                logger.Info(() => $"[{LogCat}] Stratum port {port} online");
+				logger.Debug(() => $"[{LogCat}] Stratum port {endpoint.Port} online");
             }
         }
 
-        private void OnClientConnected(ILibUvConnection con, PoolEndpoint endpointConfig)
+        private void OnClientConnected(ILibUvConnection con, IPEndPoint endpointConfig)
         {
             try
             {
@@ -86,7 +73,6 @@ namespace MiningForce.Stratum
 				// setup client
 				var client = new StratumClient<TClientContext>();
 		        client.Init(con, ctx, endpointConfig);
-		        OnConnect(client);
 
 				// request subscription
 	            var sub = client.Requests
@@ -115,11 +101,12 @@ namespace MiningForce.Stratum
 			            }
 		            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
-				// done
 				lock (clients)
 		        {
 			        clients[connectionId] = Tuple.Create(client, sub);
 		        }
+
+	            OnConnect(client);
 			}
 
 			catch (Exception ex)

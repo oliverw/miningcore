@@ -5,22 +5,17 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
-using MiningForce.Blockchain.Monero;
 using NLog;
 using MiningForce.Configuration;
 using MiningForce.Mining;
 using MiningForce.Payments;
+using MiningForce.RpcApi;
 using MiningForce.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -28,9 +23,6 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
-using MiningForce.Extensions;
-using MiningForce.Native;
-using NBitcoin.BouncyCastle.Math;
 
 namespace MiningForce
 {
@@ -43,11 +35,7 @@ namespace MiningForce
 	    private static ShareRecorder shareRecorder;
 	    private static PayoutProcessor payoutProcessor;
 	    private static ClusterConfig clusterConfig;
-
-	    private static IWebHost webHost;
-	    private static readonly Dictionary<PoolConfig, IMiningPool> pools = new Dictionary<PoolConfig, IMiningPool>();
-	    public static Dictionary<PoolConfig, IMiningPool> Pools => pools;
-	    public static ClusterConfig ClusterConfig => clusterConfig;
+	    private static ApiServer apiServer;
 
 		public static void Main(string[] args)
 		{
@@ -82,7 +70,6 @@ namespace MiningForce
 
 				else
 		            RecoverShares(shareRecoveryOption.Value());
-
             }
 
             catch (PoolStartupAbortException ex)
@@ -457,43 +444,17 @@ namespace MiningForce
 			    .SingleInstance();
 		}
 
-	    private static void RunApiHost()
-	    {
-		    var address = clusterConfig.Api?.Address != null ?
-			    (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
-			    IPAddress.Parse("127.0.0.1");
-
-		    var port = clusterConfig.Api?.Port ?? 4000;
-
-		    webHost = new WebHostBuilder()
-			    .ConfigureServices(services =>
-			    {
-				    services.AddMvc();
-			    })
-			    .Configure(app =>
-			    {
-				    app.UseMvc();
-			    })
-			    .UseKestrel(options =>
-			    {
-				    options.Listen(address, port);
-			    })
-			    .Build();
-
-		    webHost.Start();
-
-		    logger.Info(() => $"Rest API online at http://{address}:{port}/api");
-
-		    Console.ReadLine();
-	    }
 		private static async Task Start()
 		{
 			// start share recorder
 			shareRecorder = container.Resolve<ShareRecorder>();
 			shareRecorder.Start(clusterConfig);
 
-			// start pools
-			foreach (var poolConfig in clusterConfig.Pools.Where(x=> x.Enabled))
+			// start API
+			apiServer = container.Resolve<ApiServer>();
+
+			// start pools in parallel
+			await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
 			{
 				// resolve pool implementation supporting coin type
 				var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
@@ -502,14 +463,13 @@ namespace MiningForce
 				// create and configure
 				var pool = poolImpl.Value;
 				pool.Configure(poolConfig, clusterConfig);
-				pools[poolConfig] = pool;
 
-				// record shares produced by pool
 				shareRecorder.AttachPool(pool);
+				apiServer.AttachPool(pool);
 
 				// start it
 				await pool.StartAsync();
-            }
+			}));
 
 			// start payment processor
 			if (clusterConfig.PaymentProcessing?.Enabled == true &&
@@ -521,7 +481,7 @@ namespace MiningForce
 				payoutProcessor.Start();
 			}
 
-			RunApiHost();
+			apiServer.Start(clusterConfig);
 		}
 
 		private static void RecoverShares(string recoveryFilename)
@@ -540,7 +500,7 @@ namespace MiningForce
 		    "libcryptonote.dll"
 		};
 
-		/// <summary>
+	    /// <summary>
 		/// work-around for libmultihash.dll not being found when running in dev-environment
 		/// </summary>
 		private static void PreloadNativeLibs()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -72,6 +73,7 @@ namespace MiningForce.Mining
 		#region API-Surface
 
 		public IObservable<IShare> Shares { get; }
+	    public PoolConfig Config => poolConfig;
 	    public PoolStats PoolStats => poolStats;
 	    public BlockchainStats NetworkStats => blockchainStats;
 
@@ -94,7 +96,12 @@ namespace MiningForce.Mining
 	        SetupBanning(clusterConfig);
 	        SetupTelemetry();
 			await InitializeJobManager();
-	        StartListeners(poolConfig.Ports);
+
+	        var ipEndpoints = poolConfig.Ports.Keys
+				.Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+		        .ToArray();
+
+			StartListeners(ipEndpoints);
 	        SetupStats();
 
 			logger.Info(() => $"[{LogCat}] Online");
@@ -112,7 +119,9 @@ namespace MiningForce.Mining
         {
 	        // client setup
 	        var context = new TWorkerContext();
-	        context.Init(poolConfig, client.PoolEndpoint.Difficulty, client.PoolEndpoint.VarDiff);
+
+	        var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+	        context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff);
 	        client.Context = context;
 
 	        // expect miner to establish communication within a certain time
@@ -167,10 +176,12 @@ namespace MiningForce.Mining
 
                 lock (varDiffManagers)
                 {
-                    if (!varDiffManagers.TryGetValue(client.PoolEndpoint, out varDiffManager))
+	                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+
+					if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
                     {
-                        varDiffManager = new VarDiffManager(client.PoolEndpoint.VarDiff);
-                        varDiffManagers[client.PoolEndpoint] = varDiffManager;
+                        varDiffManager = new VarDiffManager(poolEndpoint.VarDiff);
+                        varDiffManagers[poolEndpoint] = varDiffManager;
                     }
                 }
 
@@ -267,6 +278,18 @@ namespace MiningForce.Mining
 				}
 			}
 	    }
+
+	    private IPEndPoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
+	    {
+		    var listenAddress = IPAddress.Parse("127.0.0.1");
+		    if (!string.IsNullOrEmpty(pep.ListenAddress))
+		    {
+			    listenAddress = pep.ListenAddress != "*" ?
+				    IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
+		    }
+
+			return new IPEndPoint(listenAddress, port);
+		}
 
 		private static string FormatHashRate(double hashrate)
         {

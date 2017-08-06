@@ -77,7 +77,14 @@ namespace MiningForce.Blockchain.Bitcoin
 		private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
 		    var request = tsRequest.Value;
-		    var requestParams = request.ParamsAs<string[]>();
+
+		    if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.Other, "missing request id", request.Id);
+			    return;
+		    }
+
+			var requestParams = request.ParamsAs<string[]>();
 
 		    var data = new object[]
 			{
@@ -103,9 +110,15 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
-		    var request = tsRequest.Value;
+			var request = tsRequest.Value;
 
-			var requestParams = request.ParamsAs<string[]>();
+		    if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.Other, "missing request id", request.Id);
+			    return;
+		    }
+
+		    var requestParams = request.ParamsAs<string[]>();
 		    var workername = requestParams?.Length > 0 ? requestParams[0] : null;
 		    var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
@@ -116,6 +129,14 @@ namespace MiningForce.Blockchain.Bitcoin
 
 	    private async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
 	    {
+		    var request = tsRequest.Value;
+
+			if (request.Id == null)
+		    {
+			    client.RespondError(StratumError.Other, "missing request id", request.Id);
+			    return;
+		    }
+
 			// check age of submission (aged submissions are usually caused by high server load)
 			var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
 
@@ -126,7 +147,6 @@ namespace MiningForce.Blockchain.Bitcoin
 		    }
 
 		    // check worker state
-		    var request = tsRequest.Value;
 		    client.Context.LastActivity = DateTime.UtcNow;
 
 		    if (!client.Context.IsAuthorized)

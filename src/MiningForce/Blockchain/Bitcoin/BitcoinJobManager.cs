@@ -405,8 +405,8 @@ namespace MiningForce.Blockchain.Bitcoin
                             .OrderBy(x => x.StartingHeight)
                             .First().StartingHeight;
 
-                        var percent = ((double)totalBlocks / blockCount) * 100;
-                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.#}% of blockchain from {peers.Length} peers");
+                        var percent = ((double)blockCount / totalBlocks) * 100;
+                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                     }
                 }
             }
