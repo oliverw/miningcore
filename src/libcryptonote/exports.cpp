@@ -93,5 +93,5 @@ extern "C" MODULE_API void cn_slow_hash_export(const char* input, unsigned char 
 
 extern "C" MODULE_API void cn_fast_hash_export(const char* input, unsigned char *output, uint32_t inputSize)
 {
-	cn_fast_hash((const void *)input, (const size_t)inputSize, (char *)output);
+	cn_fast_hash((const void *)input, (const size_t) inputSize, (char *) output);
 }

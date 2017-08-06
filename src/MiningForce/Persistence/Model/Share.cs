@@ -9,7 +9,7 @@ namespace MiningForce.Persistence.Model
 	{
 		public long Id { get; set; }
 		public string PoolId { get; set; }
-		public long Blockheight { get; set; }
+		public ulong Blockheight { get; set; }
 		public string Worker { get; set; }
 		public double Difficulty { get; set; }
 		public double StratumDifficulty { get; set; }

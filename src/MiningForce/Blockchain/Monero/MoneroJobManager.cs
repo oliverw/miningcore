@@ -55,7 +55,7 @@ namespace MiningForce.Blockchain.Monero
 			    .Where(x => string.IsNullOrEmpty(x.Category))
 			    .ToArray();
 
-		    // extract dedicated wallet daemon endpoints
+		    // extract wallet daemon endpoints
 		    walletDaemonEndpoints = poolConfig.Daemons
 			    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
 			    .ToArray();
@@ -121,12 +121,10 @@ namespace MiningForce.Blockchain.Monero
 			    {
 				    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlobHash.Substring(0, 6)}");
 
-					// persist the coinbase transaction-hash to allow the payment processor 
-					// to verify later on that the pool has received the reward for the block
 					share.TransactionConfirmationData = share.BlobHash;
-			    }
+				}
 
-			    else
+				else
 			    {
 				    // clear fields that no longer apply
 				    share.TransactionConfirmationData = null;

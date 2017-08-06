@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using AutoMapper;
 using CodeContracts;
+using MiningForce.Blockchain.Monero.DaemonRequests;
+using MiningForce.Blockchain.Monero.DaemonResponses;
 using MiningForce.Configuration;
 using MiningForce.DaemonInterface;
 using MiningForce.Payments;
@@ -11,6 +14,8 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
+using MC = MiningForce.Blockchain.Monero.MoneroCommands;
+using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
 
 namespace MiningForce.Blockchain.Monero
 {
@@ -20,6 +25,7 @@ namespace MiningForce.Blockchain.Monero
 	{
 		public MoneroPayoutHandler(IConnectionFactory cf, IMapper mapper,
 			DaemonClient daemon,
+			DaemonClient walletDaemon,
 			IShareRepository shareRepo, 
 			IBlockRepository blockRepo,
 			IBalanceRepository balanceRepo,
@@ -31,9 +37,11 @@ namespace MiningForce.Blockchain.Monero
 			Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
 			this.daemon = daemon;
+			this.walletDaemon = walletDaemon;
 		}
 
 		private readonly DaemonClient daemon;
+		private readonly DaemonClient walletDaemon;
 
 		protected override string LogCategory => "Monero Payout Handler";
 
@@ -46,12 +54,19 @@ namespace MiningForce.Blockchain.Monero
 			this.poolConfig = poolConfig;
 			logger = LogUtil.GetPoolScopedLogger(typeof(MoneroPayoutHandler), poolConfig);
 
-			// extract dedicated wallet daemon endpoints
-			var walletDaemonEndpoints = poolConfig.Daemons
-				.Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
-				.ToArray();
+		    // configure standard daemon
+		    var daemonEndpoints = poolConfig.Daemons
+			    .Where(x => string.IsNullOrEmpty(x.Category))
+			    .ToArray();
 
-			daemon.Configure(walletDaemonEndpoints);
+			daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
+
+			// configure wallet daemon
+			var walletDaemonEndpoints = poolConfig.Daemons
+			    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+			    .ToArray();
+
+			walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
 		}
 
 		public string FormatRewardAmount(decimal amount)
@@ -59,7 +74,7 @@ namespace MiningForce.Blockchain.Monero
 			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
-		public Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+		public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 			Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -68,8 +83,62 @@ namespace MiningForce.Blockchain.Monero
 			var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
 			var result = new List<Block>();
 
-			// TODO
-			return Task.FromResult(blocks);
+			var immatureCount = 0;
+
+			for (var i = 0; i < pageCount; i++)
+			{
+				// get a page full of blocks
+				var page = blocks
+					.Skip(i * pageSize)
+					.Take(pageSize)
+					.ToArray();
+
+				// NOTE: monerod does not support batch-requests
+				for (var j = 0; j < page.Length; j++)
+				{
+					var block = page[j];
+
+					var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(
+						MC.GetBlockHeaderByHeight,
+						new GetBlockHeaderByHeightRequest
+						{
+							Height = block.Blockheight
+						});
+
+					if (rpcResult.Error != null)
+					{
+						logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.Blockheight}");
+						continue;
+					}
+
+					if (rpcResult.Response?.BlockHeader == null)
+					{
+						logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.Blockheight}");
+						continue;
+					}
+
+					var blockHeader = rpcResult.Response.BlockHeader;
+
+					// orphaned?
+					if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
+					{
+						block.Status = BlockStatus.Orphaned;
+						result.Add(block);
+						continue;
+					}
+
+					// confirmed?
+					if (blockHeader.Depth < MoneroConstants.PayoutMinConfirmations)
+						continue;
+
+					// matured and spendable 
+					block.Status = BlockStatus.Confirmed;
+					result.Add(block);
+				}
+			}
+
+			//return result.ToArray();
+			return new Block[0];
 		}
 
 		public Task PayoutAsync(Balance[] balances)

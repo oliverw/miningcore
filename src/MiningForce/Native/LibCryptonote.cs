@@ -100,7 +100,7 @@ namespace MiningForce.Native
 			}
 		}
 
-		public static byte[] CryptonightSlowHash(byte[] data)
+		public static byte[] CryptonightHashSlow(byte[] data)
 		{
 			var result = new byte[32];
 
@@ -115,7 +115,7 @@ namespace MiningForce.Native
 			return result;
 		}
 
-		public static byte[] CryptonightFastHash(byte[] data)
+		public static byte[] CryptonightHashFast(byte[] data)
 		{
 			var result = new byte[32];
 
