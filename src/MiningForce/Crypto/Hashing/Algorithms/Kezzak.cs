@@ -18,7 +18,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    libmultihash.kezzak(input, output, (uint) data.Length);
+				    LibMultihash.kezzak(input, output, (uint) data.Length);
 			    }
 			}
 

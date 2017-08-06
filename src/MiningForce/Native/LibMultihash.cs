@@ -2,8 +2,7 @@
 
 namespace MiningForce.Native
 {
-	// ReSharper disable once InconsistentNaming
-    public static unsafe class libmultihash
+    public static unsafe class LibMultihash
     {
 	    [DllImport("libmultihash", EntryPoint = "scrypt_export", CallingConvention = CallingConvention.Cdecl)]
 	    public static extern int scrypt(byte* input, byte* output, uint n, uint r, uint inputLength);

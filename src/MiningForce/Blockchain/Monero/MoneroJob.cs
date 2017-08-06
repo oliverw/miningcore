@@ -79,12 +79,12 @@ namespace MiningForce.Blockchain.Monero
 			Buffer.BlockCopy(nonceBytes, 0, blob, MoneroConstants.BlobNonceOffset, nonceBytes.Length);
 
 			// convert
-			var converted = libcryptonote.ConvertBlob(blob);
+			var converted = LibCryptonote.ConvertBlob(blob);
 			if(converted == null)
 				throw new StratumException(StratumError.MinusOne, "malformed blob");
 
 			// hash it
-			var hashBytes = libcryptonote.CryptonightHashSlow(converted);
+			var hashBytes = LibCryptonote.CryptonightSlowHash(converted);
 			var hash = hashBytes.ToHexString();
 
 			if (hash != workerHash)
@@ -104,7 +104,7 @@ namespace MiningForce.Blockchain.Monero
 			var result = new MoneroShare
 			{
 				Difficulty = hashDiffLong,
-				NormalizedDifficulty = hashDiffLong,
+				NormalizedDifficulty = hashDiffLong / MoneroConstants.DifficultyNormalizationFactor,
 				StratumDifficulty = stratumDifficulty,
 				BlockHeight = blockTemplate.Height
 			};
@@ -114,7 +114,7 @@ namespace MiningForce.Blockchain.Monero
 			{
 				result.IsBlockCandidate = true;
 				result.BlobHex = blob.ToHexString();
-				result.BlobHash = libcryptonote.CryptonightHashFast(converted).ToHexString();
+				result.BlobHash = LibCryptonote.CryptonightFastHash(converted).ToHexString();
 			}
 
 			return result;
@@ -141,7 +141,7 @@ namespace MiningForce.Blockchain.Monero
 			var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
 			Buffer.BlockCopy(extraNonceBytes, 0, blob, (int) blockTemplate.ReservedOffset, extraNonceBytes.Length);
 
-			var result = libcryptonote.ConvertBlob(blob).ToHexString();
+			var result = LibCryptonote.ConvertBlob(blob).ToHexString();
 			return result;
 		}
 

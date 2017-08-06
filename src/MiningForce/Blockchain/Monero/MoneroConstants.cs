@@ -35,5 +35,7 @@ namespace MiningForce.Blockchain.Monero
 		public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
 
 		public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
+
+		public const double DifficultyNormalizationFactor = 14226363340d;
 	}
 }

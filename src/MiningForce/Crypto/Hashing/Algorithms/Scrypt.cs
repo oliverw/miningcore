@@ -21,7 +21,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    libmultihash.scrypt(input, output, n, r, (uint) data.Length);
+				    LibMultihash.scrypt(input, output, n, r, (uint) data.Length);
 			    }
 			}
 

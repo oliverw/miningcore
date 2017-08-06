@@ -52,7 +52,7 @@ namespace MiningForce
 						.HexToByteArray();
 
 
-				var result = libcryptonote.ConvertBlob(blobBuf).ToHexString();
+				var result = LibCryptonote.ConvertBlob(blobBuf).ToHexString();
 
 				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))

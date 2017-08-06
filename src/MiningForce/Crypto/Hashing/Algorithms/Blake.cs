@@ -12,7 +12,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    libmultihash.blake(input, output, (uint) data.Length);
+				    LibMultihash.blake(input, output, (uint) data.Length);
 			    }
 			}
 

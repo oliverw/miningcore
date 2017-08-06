@@ -234,6 +234,8 @@ namespace MiningForce.Mining
 
 			    cf.RunTx((con, tx) =>
 			    {
+					logger.Info(FormatHashRate(poolStats.PoolHashRate));
+
 				    statsRepo.UpdatePoolStats(con, tx, poolConfig.Id, poolStats, blockchainStats);
 			    });
 			}

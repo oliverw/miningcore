@@ -12,7 +12,7 @@ namespace MiningForce.Crypto.Hashing.Algorithms
 		    {
 			    fixed (byte* output = result)
 			    {
-				    libmultihash.groestl(input, output, (uint) data.Length);
+				    LibMultihash.groestl(input, output, (uint) data.Length);
 			    }
 			}
 

@@ -4,8 +4,7 @@ using System.Text;
 
 namespace MiningForce.Native
 {
-	// ReSharper disable once InconsistentNaming
-    public static unsafe class libcryptonote
+    public static unsafe class LibCryptonote
 	{
 	    [DllImport("libcryptonote", EntryPoint = "convert_blob_export", CallingConvention = CallingConvention.Cdecl)]
 	    private static extern bool convert_blob(byte* input, int inputSize, byte* output, ref int outputSize);
@@ -101,7 +100,7 @@ namespace MiningForce.Native
 			}
 		}
 
-		public static byte[] CryptonightHashSlow(byte[] data)
+		public static byte[] CryptonightSlowHash(byte[] data)
 		{
 			var result = new byte[32];
 
@@ -116,7 +115,7 @@ namespace MiningForce.Native
 			return result;
 		}
 
-		public static byte[] CryptonightHashFast(byte[] data)
+		public static byte[] CryptonightFastHash(byte[] data)
 		{
 			var result = new byte[32];
 
