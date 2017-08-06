@@ -452,6 +452,7 @@ namespace MiningForce
 
 			// start API
 			apiServer = container.Resolve<ApiServer>();
+			apiServer.Start(clusterConfig);
 
 			// start pools in parallel
 			await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
@@ -480,8 +481,6 @@ namespace MiningForce
 
 				payoutProcessor.Start();
 			}
-
-			apiServer.Start(clusterConfig);
 		}
 
 		private static void RecoverShares(string recoveryFilename)
