@@ -120,7 +120,7 @@ namespace MiningForce.Payments
 
 			    // create and configure
 				var handler = handlerImpl.Value;
-			    handler.Configure(poolConfig);
+			    handler.Configure(clusterConfig, poolConfig);
 
 				return handler;
 		    });
@@ -166,17 +166,31 @@ namespace MiningForce.Payments
 			// get pending blockRepo for pool
 		    var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
 
-		    // ask handler to classify them
+		    // classify
 		    var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
 
 		    foreach (var block in updatedBlocks.OrderBy(x => x.Created))
 		    {
 			    logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
 
-			    if (block.Status == BlockStatus.Orphaned)
-				    cf.RunTx((con, tx) => blockRepo.DeleteBlock(con, tx, block));
-			    else
-				    await scheme.UpdateBalancesAndBlockAsync(pool, handler, block);
+			    await cf.RunTxAsync(async (con, tx) =>
+			    {
+				    if (block.Status == BlockStatus.Confirmed)
+				    {
+						// blockchains that do not support sending out block-rewards using custom coinbase tx
+						// must generate balance records for all reward recipients instead
+					    await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+
+						// update share submitter balances through configured payout scheme 
+					    await scheme.UpdateBalancesAsync(con, tx, pool, handler, block);
+
+					    // finally update block status
+					    blockRepo.UpdateBlock(con, tx, block);
+					}
+
+					else if (block.Status == BlockStatus.Orphaned)
+					    blockRepo.DeleteBlock(con, tx, block);
+			    });
 		    }
 	    }
 

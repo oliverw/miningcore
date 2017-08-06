@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Schema;
 using AutoMapper;
 using CodeContracts;
 using MiningForce.Blockchain.Monero.DaemonRequests;
@@ -14,6 +14,8 @@ using MiningForce.Persistence;
 using MiningForce.Persistence.Model;
 using MiningForce.Persistence.Repositories;
 using MiningForce.Util;
+using Block = MiningForce.Persistence.Model.Block;
+using IBlockRepository = MiningForce.Persistence.Repositories.IBlockRepository;
 using MC = MiningForce.Blockchain.Monero.MoneroCommands;
 using MWC = MiningForce.Blockchain.Monero.MoneroWalletCommands;
 
@@ -42,16 +44,19 @@ namespace MiningForce.Blockchain.Monero
 
 		private readonly DaemonClient daemon;
 		private readonly DaemonClient walletDaemon;
+		private MoneroNetworkType? networkType;
 
 		protected override string LogCategory => "Monero Payout Handler";
 
 		#region IPayoutHandler
 
-		public void Configure(PoolConfig poolConfig)
+		public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
 			this.poolConfig = poolConfig;
+			this.clusterConfig = clusterConfig;
+
 			logger = LogUtil.GetPoolScopedLogger(typeof(MoneroPayoutHandler), poolConfig);
 
 		    // configure standard daemon
@@ -67,11 +72,6 @@ namespace MiningForce.Blockchain.Monero
 			    .ToArray();
 
 			walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
-		}
-
-		public string FormatRewardAmount(decimal amount)
-		{
-			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
 		public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
@@ -133,7 +133,7 @@ namespace MiningForce.Blockchain.Monero
 
 					// matured and spendable 
 					block.Status = BlockStatus.Confirmed;
-					block.Reward = blockHeader.Reward;
+					block.Reward = (decimal)blockHeader.Reward / MoneroConstants.Piconero;
 					result.Add(block);
 				}
 			}
@@ -141,16 +141,110 @@ namespace MiningForce.Blockchain.Monero
 			return result.ToArray();
 		}
 
-		public Task PayoutAsync(Balance[] balances)
+		public async Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+		{
+			var blockRewardRemaining = block.Reward;
+
+			// Distribute funds to configured reward recipients
+			foreach (var recipient in poolConfig.RewardRecipients)
+			{
+				var amount = block.Reward * (recipient.Percentage / 100.0m);
+				var address = recipient.Address;
+
+				blockRewardRemaining -= amount;
+
+				logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+				balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+			}
+
+			// Tiny donation to MiningForce developer(s)
+			if (!clusterConfig.DisableDevDonation &&
+			    await GetNetworkTypeAsync() == MoneroNetworkType.Main)
+			{
+				var amount = block.Reward * MoneroConstants.DevReward;
+				var address = MoneroConstants.DevAddress;
+
+				blockRewardRemaining -= amount;
+
+				logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+				balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+			}
+
+			// update block-reward
+			block.Reward = blockRewardRemaining;
+		}
+
+		public async Task PayoutAsync(Balance[] balances)
 		{
 			Contract.RequiresNonNull(balances, nameof(balances));
 
-			logger.Info(() => $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-			// TODO
-			return Task.FromResult(true);
+			// build request
+			var request = new TransferRequest
+			{
+				Destinations = balances
+					.Where(x => x.Amount > 0)
+					.Select(x => new TransferDestination
+					{
+						Address = x.Address,
+						Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
+					}).ToArray(),
+
+				GetTxKey = true,
+			};
+
+			// send command
+			var result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
+
+			// gracefully handle error -4 (transaction would be too large. try /transfer_split)
+			if (result.Error?.Code == -4)
+			{
+				logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+
+				result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
+			}
+
+			HandleTransferResponse(result, balances);
+		}
+
+		public string FormatAmount(decimal amount)
+		{
+			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
 		#endregion // IPayoutHandler
+
+		void HandleTransferResponse(DaemonResponse<TransferResponse> response, Balance[] balances)
+		{
+			if (response.Error == null)
+			{
+				var txHash = response.Response.TxHash;
+
+				// check result
+				if (string.IsNullOrEmpty(txHash))
+					logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' did not return a transaction id!");
+				else
+					logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount((decimal) response.Response.Fee / MoneroConstants.Piconero)}");
+
+				PersistPayments(balances, txHash);
+			}
+
+			else
+				logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
+		}
+
+		private async Task<MoneroNetworkType> GetNetworkTypeAsync()
+		{
+			if (!networkType.HasValue)
+			{
+				var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+				var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+				networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
+			}
+
+			return networkType.Value;
+		}
 	}
 }

@@ -23,7 +23,7 @@ CREATE TABLE blocks
 	blockheight BIGINT NOT NULL,
 	status TEXT NOT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
-	reward decimal(20,8) NULL,
+	reward decimal(28,12) NULL,
 	created TIMESTAMP NOT NULL
 );
 
@@ -34,7 +34,7 @@ CREATE TABLE balances
 	poolid TEXT NOT NULL,
 	coin TEXT NOT NULL,
 	address TEXT NOT NULL,
-	amount decimal(20,8) NOT NULL DEFAULT 0,
+	amount decimal(28,12) NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL,
 	updated TIMESTAMP NOT NULL,
 
@@ -47,7 +47,7 @@ CREATE TABLE payments
 	poolid TEXT NOT NULL,
 	coin TEXT NOT NULL,
 	address TEXT NOT NULL,
-	amount decimal(20,8) NOT NULL,
+	amount decimal(28,12) NOT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
 	created TIMESTAMP NOT NULL
 );

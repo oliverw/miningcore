@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using CodeContracts;
 using MiningForce.Configuration;
@@ -45,7 +46,7 @@ namespace MiningForce.Payments.PayoutSchemes
 
 	    #region IPayoutScheme
 
-	    public Task UpdateBalancesAndBlockAsync(PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block)
+	    public Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block)
 	    {
 		    var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
 
@@ -56,32 +57,26 @@ namespace MiningForce.Payments.PayoutSchemes
 		    var payouts = new Dictionary<string, decimal>();
 			var shareCutOffDate = CalculatePayouts(poolConfig, factorX, block, payouts);
 
-		    cf.RunTx((con, tx) =>
-		    {
-				// update balances
-			    foreach (var address in payouts.Keys)
-			    {
-				    var amount = payouts[address];
+			// update balances
+			foreach (var address in payouts.Keys)
+			{
+				var amount = payouts[address];
 
-					logger.Info(() => $"Adding {payoutHandler.FormatRewardAmount(amount)} to balance of {address}");
-					balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
-			    }
+				logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address}");
+				balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+			}
 
-			    // delete obsolete shares
-			    if (shareCutOffDate.HasValue)
-			    {
-					var cutOffCount = shareRepo.CountSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+			// delete obsolete shares
+			if (shareCutOffDate.HasValue)
+			{
+				var cutOffCount = shareRepo.CountSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
-				    if (cutOffCount > 0)
-				    {
-					    logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
-					    shareRepo.DeleteSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
-				    }
-			    }
-
-			    // finally update block status
-			    blockRepo.UpdateBlock(con, tx, block);
-		    });
+				if (cutOffCount > 0)
+				{
+					logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
+					shareRepo.DeleteSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+				}
+			}
 
 		    return Task.FromResult(true);
 	    }
@@ -103,7 +98,6 @@ namespace MiningForce.Payments.PayoutSchemes
 				// fetch next page
 				var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize));
 
-				// done if no more shares
 				if (blockPage.Length == 0)
 					break;
 

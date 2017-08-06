@@ -217,7 +217,6 @@ namespace MiningForce.Blockchain.Monero
 	        if (addressResponse.Response?.Address != poolConfig.Address)
 		        logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
-			// extract results
 			var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
 			// chain detection
@@ -229,7 +228,6 @@ namespace MiningForce.Blockchain.Monero
 
 			await UpdateNetworkStats();
 
-	        SetupCrypto();
 	        SetupJobUpdates();
 		}
 
@@ -353,14 +351,5 @@ namespace MiningForce.Blockchain.Monero
 		    blockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
 		    blockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
 	    }
-
-		private void SetupCrypto()
-		{
-			// TODO
-			//coinbaseHasher = sha256d;
-			//headerHasher = sha256d;
-			//blockHasher = sha256dReverse;
-			//difficultyNormalizationFactor = 1;
-		}
     }
 }

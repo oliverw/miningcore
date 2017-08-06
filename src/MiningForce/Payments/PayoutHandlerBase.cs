@@ -43,6 +43,7 @@ namespace MiningForce.Payments
 		}
 
 		protected ILogger logger;
+	    protected ClusterConfig clusterConfig;
 	    protected PoolConfig poolConfig;
 	    protected readonly IConnectionFactory cf;
 	    protected readonly IMapper mapper;

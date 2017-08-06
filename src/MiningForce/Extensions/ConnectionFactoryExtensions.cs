@@ -30,11 +30,23 @@ namespace MiningForce.Extensions
 		    }
 	    }
 
+	    /// <summary>
+	    /// Run the specified action providing it with a fresh connection returing its result.
+	    /// </summary>
+	    /// <returns>The result returned by the action</returns>
+	    public static async Task<T> RunAsync<T>(this IConnectionFactory factory, Func<IDbConnection, Task<T>> action)
+	    {
+		    using (var con = factory.OpenConnection())
+		    {
+			    return await action(con);
+		    }
+	    }
+
 		/// <summary>
 		/// Run the specified action inside a transaction. If the action throws an exception,
 		/// the transaction is rolled back. Otherwise it is commited.
 		/// </summary>
-	    public static void RunTx(this IConnectionFactory factory, Action<IDbConnection, IDbTransaction> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+		public static void RunTx(this IConnectionFactory factory, Action<IDbConnection, IDbTransaction> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 			using (var con = factory.OpenConnection())
 			{
@@ -86,5 +98,63 @@ namespace MiningForce.Extensions
 			    }
 		    }
 	    }
-    }
+
+	    /// <summary>
+	    /// Run the specified action inside a transaction. If the action throws an exception,
+	    /// the transaction is rolled back. Otherwise it is commited. 
+	    /// </summary>
+	    /// <returns>The result returned by the action</returns>
+	    public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, Task<T>> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+	    {
+		    using (var con = factory.OpenConnection())
+		    {
+			    using (var tx = con.BeginTransaction(isolation))
+			    {
+				    try
+				    {
+					    var result = await action(con, tx);
+
+					    if (autoCommit)
+						    tx.Commit();
+
+					    return result;
+				    }
+
+				    catch
+				    {
+					    tx.Rollback();
+					    throw;
+				    }
+			    }
+		    }
+	    }
+
+	    /// <summary>
+	    /// Run the specified action inside a transaction. If the action throws an exception,
+	    /// the transaction is rolled back. Otherwise it is commited. 
+	    /// </summary>
+	    /// <returns>The result returned by the action</returns>
+	    public static async Task RunTxAsync(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, Task> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+	    {
+		    using (var con = factory.OpenConnection())
+		    {
+			    using (var tx = con.BeginTransaction(isolation))
+			    {
+				    try
+				    {
+					    await action(con, tx);
+
+					    if (autoCommit)
+						    tx.Commit();
+				    }
+
+				    catch
+				    {
+					    tx.Rollback();
+					    throw;
+				    }
+			    }
+		    }
+	    }
+	}
 }

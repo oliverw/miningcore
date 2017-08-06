@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -40,7 +41,7 @@ namespace MiningForce.Blockchain.Bitcoin
 
 		#region IPayoutHandler
 
-		public void Configure(PoolConfig poolConfig)
+		public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
 		{
 			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -48,11 +49,6 @@ namespace MiningForce.Blockchain.Bitcoin
 			logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
 			daemon.Configure(poolConfig.Daemons);
-		}
-
-		public string FormatRewardAmount(decimal amount)
-		{
-			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
 		public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
@@ -139,11 +135,17 @@ namespace MiningForce.Blockchain.Bitcoin
 			return result.ToArray();
 		}
 
+		public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+		{
+			// reward-payouts are handled through coinbase-tx for bitcoin and family
+			return Task.FromResult(false);
+		}
+
 		public async Task PayoutAsync(Balance[] balances)
 		{
 			Contract.RequiresNonNull(balances, nameof(balances));
 
-			logger.Info(() => $"[{LogCategory}] Paying out {FormatRewardAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+			logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
 			// build args
 			var amounts = balances
@@ -170,15 +172,20 @@ namespace MiningForce.Blockchain.Bitcoin
 
 				// check result
 				if (string.IsNullOrEmpty(txId))
-					logger.Error(() => $"[{LogCategory}] Daemon command 'sendmany' did not return a transaction id!");
+					logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' did not return a transaction id!");
 				else
-					logger.Info(() => $"[{LogCategory}] Payout Transaction Id is {txId}");
+					logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
 				PersistPayments(balances, txId);
 			}
 
 			else
-				logger.Error(() => $"[{LogCategory}] Daemon command 'sendmany' returned error: {result.Error.Message} code {result.Error.Code}");
+				logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
+		}
+
+		public string FormatAmount(decimal amount)
+		{
+			return $"{amount:0.#####} {poolConfig.Coin.Type}";
 		}
 
 		#endregion // IPayoutHandler
