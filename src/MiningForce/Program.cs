@@ -457,7 +457,7 @@ namespace MiningForce
 			// start pools in parallel
 			await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
 			{
-				// resolve pool implementation supporting coin type
+				// resolve pool implementation
 				var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
 					.First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
 
@@ -466,10 +466,8 @@ namespace MiningForce
 				pool.Configure(poolConfig, clusterConfig);
 
 				shareRecorder.AttachPool(pool);
-				apiServer.AttachPool(pool);
-
-				// start it
 				await pool.StartAsync();
+				apiServer.AttachPool(pool);
 			}));
 
 			// start payment processor

@@ -48,7 +48,10 @@ namespace MiningForce.RpcApi
 
 		public void AttachPool(IMiningPool pool)
 		{
-			pools.Add(pool);
+			lock (pools)
+			{
+				pools.Add(pool);
+			}
 		}
 
 		#endregion // API-Surface
@@ -96,16 +99,21 @@ namespace MiningForce.RpcApi
 
 		private void GetPools(StratumClient<Unit> client, JsonRpcRequest request, Timestamped<JsonRpcRequest> tsRequest)
 		{
-			var response = new GetPoolsResponse
+			GetPoolsResponse response;
+
+			lock (pools)
 			{
-				Pools = pools.Select(pool => new PoolInfo
+				response = new GetPoolsResponse
 				{
-					Id = pool.Config.Id,
-					Config = pool.Config,
-					PoolStats = pool.PoolStats,
-					NetworkStats = pool.NetworkStats
-				}).ToArray()
-			};
+					Pools = pools.Select(pool => new PoolInfo
+					{
+						Id = pool.Config.Id,
+						Config = pool.Config,
+						PoolStats = pool.PoolStats,
+						NetworkStats = pool.NetworkStats
+					}).ToArray()
+				};
+			}
 
 			client.Respond(response, request.Id);
 		}
