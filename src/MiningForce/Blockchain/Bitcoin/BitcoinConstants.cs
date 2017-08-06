@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Numerics;
-using System.Text;
+﻿using System.Collections.Generic;
 using MiningForce.Configuration;
 
 namespace MiningForce.Blockchain.Bitcoin
