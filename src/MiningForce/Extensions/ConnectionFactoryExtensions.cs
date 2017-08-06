@@ -34,7 +34,8 @@ namespace MiningForce.Extensions
 	    /// Run the specified action providing it with a fresh connection returing its result.
 	    /// </summary>
 	    /// <returns>The result returned by the action</returns>
-	    public static async Task<T> RunAsync<T>(this IConnectionFactory factory, Func<IDbConnection, Task<T>> action)
+	    public static async Task<T> RunAsync<T>(this IConnectionFactory factory, 
+			Func<IDbConnection, Task<T>> action)
 	    {
 		    using (var con = factory.OpenConnection())
 		    {
@@ -46,7 +47,9 @@ namespace MiningForce.Extensions
 		/// Run the specified action inside a transaction. If the action throws an exception,
 		/// the transaction is rolled back. Otherwise it is commited.
 		/// </summary>
-		public static void RunTx(this IConnectionFactory factory, Action<IDbConnection, IDbTransaction> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+		public static void RunTx(this IConnectionFactory factory, 
+			Action<IDbConnection, IDbTransaction> action, 
+			bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 			using (var con = factory.OpenConnection())
 			{
@@ -74,7 +77,9 @@ namespace MiningForce.Extensions
 		/// the transaction is rolled back. Otherwise it is commited. 
 		/// </summary>
 		/// <returns>The result returned by the action</returns>
-		public static T RunTx<T>(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, T> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+		public static T RunTx<T>(this IConnectionFactory factory, 
+			Func<IDbConnection, IDbTransaction, T> action, 
+			bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 			using (var con = factory.OpenConnection())
 			{
@@ -104,7 +109,9 @@ namespace MiningForce.Extensions
 	    /// the transaction is rolled back. Otherwise it is commited. 
 	    /// </summary>
 	    /// <returns>The result returned by the action</returns>
-	    public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, Task<T>> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+	    public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory, 
+			Func<IDbConnection, IDbTransaction, Task<T>> action, 
+			bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 		    using (var con = factory.OpenConnection())
 		    {
@@ -134,7 +141,9 @@ namespace MiningForce.Extensions
 	    /// the transaction is rolled back. Otherwise it is commited. 
 	    /// </summary>
 	    /// <returns>The result returned by the action</returns>
-	    public static async Task RunTxAsync(this IConnectionFactory factory, Func<IDbConnection, IDbTransaction, Task> action, bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
+	    public static async Task RunTxAsync(this IConnectionFactory factory, 
+			Func<IDbConnection, IDbTransaction, Task> action, 
+			bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
 	    {
 		    using (var con = factory.OpenConnection())
 		    {
