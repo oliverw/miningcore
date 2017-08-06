@@ -83,8 +83,6 @@ namespace MiningForce.Blockchain.Monero
 			var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
 			var result = new List<Block>();
 
-			var immatureCount = 0;
-
 			for (var i = 0; i < pageCount; i++)
 			{
 				// get a page full of blocks
