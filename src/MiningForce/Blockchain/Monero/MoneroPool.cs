@@ -70,7 +70,7 @@ namespace MiningForce.Blockchain.Monero
 					break;
 
 				default:
-					logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+					logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
 					client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
 					break;
