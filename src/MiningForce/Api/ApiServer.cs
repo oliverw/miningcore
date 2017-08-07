@@ -26,7 +26,6 @@ namespace MiningForce.Api
 			this.mapper = mapper;
 		}
 
-		private ClusterConfig clusterConfig;
 		private readonly List<IMiningPool> pools = new List<IMiningPool>();
 		private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -34,9 +33,10 @@ namespace MiningForce.Api
 		{
 			ContractResolver = new CamelCasePropertyNamesContractResolver(),
 			Formatting = Formatting.Indented,
+			NullValueHandling = NullValueHandling.Ignore
 		};
 
-		private IMapper mapper;
+		private readonly IMapper mapper;
 		private IWebHost webHost;
 
 		#region API-Surface
@@ -46,8 +46,6 @@ namespace MiningForce.Api
 			Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 			
 			logger.Info(() => $"Launching ...");
-
-			this.clusterConfig = clusterConfig;
 
 			var address = clusterConfig.Api?.Address != null ?
 				(clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
