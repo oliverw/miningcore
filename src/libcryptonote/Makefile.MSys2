@@ -1,6 +1,6 @@
 CC = gcc
 INC_DIRS = -I. -Icontrib/epee/include
-CFLAGS = -Wall -c -fPIC -O2 $(INC_DIRS) -DNO_AES_NI
+CFLAGS = -Wall -c -fPIC -maes -O2 $(INC_DIRS)
 CXXFLAGS = -Wall -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 $(INC_DIRS)
 LDFLAGS = -shared -static-libgcc -static-libstdc++ -static
 LDLIBS = -lboost_system-mt -lboost_date_time-mt
