@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac;
 using AutoMapper;
 using CodeContracts;
 using Microsoft.AspNetCore.Builder;
@@ -21,7 +20,7 @@ namespace MiningForce.Api
 {
     public class ApiServer
 	{
-		public ApiServer(IComponentContext ctx, IMapper mapper)
+		public ApiServer(IMapper mapper)
 		{
 			this.mapper = mapper;
 		}
@@ -96,12 +95,11 @@ namespace MiningForce.Api
 				switch (request.Path)
 				{
 					case "/api/pools":
-						await GetPools(context);
+						await HandleGetPoolsAsync(context);
 						break;
 
 					default:
 						context.Response.StatusCode = 404;
-						context.Response.Body.Close();
 						break;
 				}
 			}
@@ -109,13 +107,11 @@ namespace MiningForce.Api
 			catch (Exception ex)
 			{
 				logger.Error(ex);
-
-				context.Response.StatusCode = 500;
-				context.Response.Body.Close();
+				throw;
 			}
 		}
 
-		private async Task GetPools(HttpContext context)
+		private async Task HandleGetPoolsAsync(HttpContext context)
 		{
 			GetPoolsResponse response;
 
