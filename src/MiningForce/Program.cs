@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -10,7 +9,6 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningForce.Api;
 using NLog;
@@ -136,7 +134,7 @@ namespace MiningForce
             var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
             var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
 	        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
-	        shareRecoveryOption = app.Option("-rs", "Share recovery file", CommandOptionType.SingleValue);
+	        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
             app.HelpOption("-? | -h | --help");
 
             app.Execute(args);
