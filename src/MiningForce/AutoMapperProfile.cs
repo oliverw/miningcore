@@ -1,6 +1,8 @@
 ﻿using System;
 using AutoMapper;
+using MiningForce.Api.ApiResponses;
 using MiningForce.Blockchain;
+using MiningForce.Configuration;
 using MiningForce.Mining;
 
 namespace MiningForce
@@ -19,6 +21,10 @@ namespace MiningForce
 				.ForMember(dest => dest.Status, opt => opt.Ignore());
 
 	        CreateMap<Persistence.Model.BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
+
+			// API
+
+	        CreateMap<PoolConfig, PoolInfo>();
 
 			// PostgreSQL
 			CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();

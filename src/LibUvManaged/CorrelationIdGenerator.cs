@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 
-namespace LibUv
+namespace LibUvManaged
 {
     public static class CorrelationIdGenerator
     {
