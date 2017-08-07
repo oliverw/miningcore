@@ -3,7 +3,7 @@ using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.Mining;
 
-namespace MiningForce.Api.ApiResponses
+namespace MiningForce.Api.Responses
 {
 	public class PoolInfo
 	{

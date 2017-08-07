@@ -1,6 +1,6 @@
 ﻿using System;
 using AutoMapper;
-using MiningForce.Api.ApiResponses;
+using MiningForce.Api.Responses;
 using MiningForce.Blockchain;
 using MiningForce.Configuration;
 using MiningForce.Mining;

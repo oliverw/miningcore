@@ -10,7 +10,7 @@ using CodeContracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using MiningForce.Api.ApiResponses;
+using MiningForce.Api.Responses;
 using MiningForce.Configuration;
 using MiningForce.Mining;
 using Newtonsoft.Json;
@@ -82,7 +82,9 @@ namespace MiningForce.Api
 		private async Task SendJson(HttpContext context, object response)
 		{
 			context.Response.ContentType = "application/json";
-			await context.Response.WriteAsync(JsonConvert.SerializeObject(response, serializerSettings), Encoding.UTF8);
+
+			var json = JsonConvert.SerializeObject(response, serializerSettings);
+			await context.Response.WriteAsync(json, Encoding.UTF8);
 		}
 
 		private async Task HandleRequest(HttpContext context)
@@ -93,7 +95,7 @@ namespace MiningForce.Api
 			{
 				switch (request.Path)
 				{
-					case ApiMethods.GetPools:
+					case "/api/pools":
 						await GetPools(context);
 						break;
 
