@@ -9,6 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\MiningCore\Api\Responses\GetPoolsResponse.cs" Link="Api\GetPoolsResponse.cs" />
+    <Compile Include="..\MiningCore\Blockchain\Abstractions.cs" Link="Api\Abstractions.cs" />
+    <Compile Include="..\MiningCore\Configuration\ClusterConfig.cs" Link="Api\ClusterConfig.cs" />
+    <Compile Include="..\MiningCore\Mining\PoolStats.cs" Link="Api\PoolStats.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Api\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

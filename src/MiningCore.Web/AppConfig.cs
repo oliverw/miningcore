@@ -12,9 +12,19 @@
 
 		public EmailSenderConfig EmailSender { get; set; }
 
-	    public string SiteName { get; set; }
-	    public string SiteDescription { get; set; }
-	    public string CookieWarning { get; set; }
+		/// <summary>
+		/// MiningCore API Endpoint (displayed at pool startup)
+		/// </summary>
+	    public string MiningCoreApiEndpoint { get; set; }
+
+		/// <summary>
+		/// Pools to display served by pool running at MiningCoreApiEndpoint
+		/// </summary>
+		public string[] Pools { get; set; }
+
+		public string PoolName { get; set; }
+	    public string PoolDescription { get; set; }
+		public string CookieWarning { get; set; }
 	    public string SupportEmail { get; set; }
 	    public string NoScriptWarning { get; set; }
 	    public string NoCompatibleBrowserWarning { get; set; }

@@ -21,12 +21,12 @@
 
     @{ var ambientData = (AmbientData)ViewData["Ambient"];}
 
-    @{ var pageTitle = !string.IsNullOrEmpty(ambientData.PageTitleFull) ? ambientData.PageTitleFull : (!string.IsNullOrEmpty(ambientData.PageTitle) ? ambientData.PageTitle + " - " + appConfig.Value.SiteName : (appConfig.Value.SiteName + " | " + appConfig.Value.SiteDescription));}
-    @{ var pageTitleSimple = !string.IsNullOrEmpty(ambientData.PageTitleFull) ? ambientData.PageTitleFull : (!string.IsNullOrEmpty(ambientData.PageTitle) ? ambientData.PageTitle : appConfig.Value.SiteName);}
+    @{ var pageTitle = !string.IsNullOrEmpty(ambientData.PageTitleFull) ? ambientData.PageTitleFull : (!string.IsNullOrEmpty(ambientData.PageTitle) ? ambientData.PageTitle + " - " + appConfig.Value.PoolName : (appConfig.Value.PoolName + " | " + appConfig.Value.PoolDescription));}
+    @{ var pageTitleSimple = !string.IsNullOrEmpty(ambientData.PageTitleFull) ? ambientData.PageTitleFull : (!string.IsNullOrEmpty(ambientData.PageTitle) ? ambientData.PageTitle : appConfig.Value.PoolName);}
     <title>@pageTitle</title>
 
     <meta property="og:title" content="@pageTitle" />
-    <meta name="twitter:card" content="@appConfig.Value.SiteName">
+    <meta name="twitter:card" content="@appConfig.Value.PoolName">
     
     @if (ambientData.PageMetaKeywords != null && ambientData.PageMetaKeywords.Length > 0)
     {
@@ -43,10 +43,10 @@
 
     else
     {
-        <meta name="description" content="@(appConfig.Value.SiteName + " | " + appConfig.Value.SiteDescription)" />
-        <meta name="og:description" content="@(appConfig.Value.SiteName + " | " + appConfig.Value.SiteDescription)" />
-        <meta itemprop="description" content="@(appConfig.Value.SiteName + " | " + appConfig.Value.SiteDescription)">
-        <meta name="twitter:description" content="@(appConfig.Value.SiteName + " | " + appConfig.Value.SiteDescription)">
+        <meta name="description" content="@(appConfig.Value.PoolName + " | " + appConfig.Value.PoolDescription)" />
+        <meta name="og:description" content="@(appConfig.Value.PoolName + " | " + appConfig.Value.PoolDescription)" />
+        <meta itemprop="description" content="@(appConfig.Value.PoolName + " | " + appConfig.Value.PoolDescription)">
+        <meta name="twitter:description" content="@(appConfig.Value.PoolName + " | " + appConfig.Value.PoolDescription)">
     }
 
     <environment names="Production">
@@ -70,7 +70,7 @@
     {
         "@@context": "http://schema.org",
         "@@type": "Organization",
-        "name": "@appConfig.Value.SiteName",
+        "name": "@appConfig.Value.PoolName",
         "url": "@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}{Context.Request.QueryString}")",
         "sameAs": [
             @if (!string.IsNullOrEmpty(appConfig.Value.TwitterUrl))
@@ -93,7 +93,7 @@
             <nav class="navbar navbar-nav is-sticky @(ViewData["topbar-class"] ?? "dark")" data-topbar role="navigation">
                 <div class="wrapper">
                     <button class="navbar-toggler hidden-md-up" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"></button>
-                    <a class="navbar-brand hidden-sm-down" href="/">@appConfig.Value.SiteName.ToUpper()</a>
+                    <a class="navbar-brand hidden-sm-down" href="/">@appConfig.Value.PoolName.ToUpper()</a>
                     <div class="collapse navbar-toggleable-sm" id="navbarResponsive">
                         <ul class="nav navbar-nav float-lg-right float-md-right">
                             <li class="nav-item">
@@ -109,13 +109,13 @@
                             @if (!string.IsNullOrEmpty(appConfig.Value.TwitterUrl))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link social hidden-sm-down" title="@(appConfig.Value.SiteName) on Twitter" href="@(appConfig.Value.TwitterUrl)"><i class="fa fa-twitter"></i></a>
+                                    <a class="nav-link social hidden-sm-down" title="@(appConfig.Value.PoolName) on Twitter" href="@(appConfig.Value.TwitterUrl)"><i class="fa fa-twitter"></i></a>
                                 </li>
                             }
                             @if (!string.IsNullOrEmpty(appConfig.Value.FacebookUrl))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link social hidden-sm-down" title="@(appConfig.Value.SiteName) on Facebook" href="@(appConfig.Value.FacebookUrl)"><i class="fa fa-facebook"></i></a>
+                                    <a class="nav-link social hidden-sm-down" title="@(appConfig.Value.PoolName) on Facebook" href="@(appConfig.Value.FacebookUrl)"><i class="fa fa-facebook"></i></a>
                                 </li>
                             }
                         </ul>

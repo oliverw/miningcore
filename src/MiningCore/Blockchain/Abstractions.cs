@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
-using MiningCore.Stratum;
 using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain
