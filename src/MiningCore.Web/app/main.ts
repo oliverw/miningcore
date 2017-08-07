@@ -20,16 +20,16 @@ require("script-loader!../Vendor/js/modernizr-custom.js");
 if ((!(Modernizr.flexbox || Modernizr.flexboxtweener)) ||
 	!Modernizr.backgroundsize) {
 	$("div#upgradeBrowser").show();
-	throw "Please upgrade to a supported browser!";
+	throw new Error("Please upgrade to a supported browser!");
 }
 
 // cookie consent
 require("cookieconsent/build/cookieconsent.min.js");
 
-//import {IRuntimeEnvironment} from "./ServerSide/ViewModels";
-//declare var runtimeEnvironment: IRuntimeEnvironment;
+// import {IRuntimeEnvironment} from "./ServerSide/ViewModels";
+// declare var runtimeEnvironment: IRuntimeEnvironment;
 
-(<any> window)["cookieconsent"].initialise({
+(window as any)["cookieconsent"].initialise({
 	container: document.body,
 	palette: {
 		popup: { background: "#237afc" },
@@ -82,28 +82,30 @@ $("#navbarResponsive").on("hide.bs.collapse", () => {
 });
 
 function popupCenter(url: string, title: string, w: number, h: number) {
-    // Fixes dual-screen position                         Most browsers      Firefox
-    const dualScreenLeft = window.screenLeft != undefined ? window.screenLeft : (<any> screen)["left"];
-    const dualScreenTop = window.screenTop != undefined ? window.screenTop : (<any>screen)["top"];
+	// Fixes dual-screen position
+	const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : (screen as any)["left"];
+	const dualScreenTop = window.screenTop !== undefined ? window.screenTop : (screen as any)["top"];
 
-    const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
-    const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+	const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ?
+		document.documentElement.clientWidth : screen.width;
+	const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ?
+		document.documentElement.clientHeight : screen.height;
 
-    const left = ((width / 2) - (w / 2)) + dualScreenLeft;
-    const top = ((height / 2) - (h / 2)) + dualScreenTop;
-    const newWindow = window.open(url, title, 'scrollbars=yes, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left);
+	const left = ((width / 2) - (w / 2)) + dualScreenLeft;
+	const top = ((height / 2) - (h / 2)) + dualScreenTop;
+	const newWindow = window.open(url, title, "scrollbars=yes, width=" + w + ", height=" + h + ", top=" + top + ", left=" + left);
 
-    // Puts focus on the newWindow
-    if (window.focus) {
-        newWindow.focus();
-    }
+	// Puts focus on the newWindow
+	if (window.focus) {
+		newWindow.focus();
+	}
 }
 
 function share(e: Event) {
-    e.preventDefault();
-    popupCenter((<HTMLAnchorElement> e.currentTarget).href, "Share", 1024, 768);
+	e.preventDefault();
+	popupCenter((e.currentTarget as HTMLAnchorElement).href, "Share", 1024, 768);
 }
 
-$('.nav-link.social').on("click", share);
-$('.social-buttons.hidden-xs-down .social-button').on("click", share);
-$('.social-inline').on("click", share);
+$(".nav-link.social").click(share as any);
+$(".social-buttons.hidden-xs-down .social-button").click(share as any);
+$(".social-inline").click(share as any);

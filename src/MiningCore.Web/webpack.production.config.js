@@ -1,6 +1,5 @@
 var webpack = require("webpack");
 var path = require('path');
-var autoprefixer = require('autoprefixer');
 
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var CleanWebpackPlugin = require('clean-webpack-plugin');
@@ -42,7 +41,11 @@ module.exports = {
             { test: /\.s?css$/, exclude: [path.resolve(__dirname, "app/components")], loader: extractCSS.extract({    // we utilize the extracttext plugin to avoid issues with FOUC
                 loader: [
                     'css-loader',
-                    'postcss-loader',
+                    { loader: 'postcss-loader',
+                        options: {
+                            plugins: [require('autoprefixer')]
+                        },
+                    },
                     'sass-loader?' +
                         // OW: This is a workaround for this sass-loader issue: https://github.com/jtangelder/sass-loader/issues/59
                         '&includePaths[]=' + path.resolve(__dirname, 'node_modules', 'bootstrap', 'scss')
@@ -75,15 +78,6 @@ module.exports = {
             PRODUCTION: true,
             'process.env': {
                 NODE_ENV: '"production"'
-            }
-        }),
-
-        new webpack.LoaderOptionsPlugin({
-            options: {
-                context: __dirname,
-                postcss: [
-                  autoprefixer
-                ]
             }
         }),
 

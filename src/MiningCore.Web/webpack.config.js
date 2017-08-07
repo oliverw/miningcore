@@ -1,6 +1,5 @@
 var webpack = require("webpack");
 var path = require('path');
-var autoprefixer = require('autoprefixer');
 var StatsWriterPlugin = require("webpack-stats-plugin").StatsWriterPlugin;
 
 module.exports = {
@@ -52,7 +51,12 @@ module.exports = {
             { test: /\.html$/, include: [path.resolve(__dirname, "app/Components")], loaders: ["to-string-loader", "html-loader"] },
 
             // Other styles
-            { test: /\.s?css$/, exclude: [path.resolve(__dirname, "app/Components")], loaders: ['style-loader', 'css-loader', 'postcss-loader', 'sass-loader?' +
+            { test: /\.s?css$/, exclude: [path.resolve(__dirname, "app/Components")], loaders: ['style-loader', 'css-loader',
+                { loader: 'postcss-loader',
+                    options: {
+                      plugins: [require('autoprefixer')]
+                    },
+                }, 'sass-loader?' +
                 // OW: This is a workaround for this sass-loader issue: https://github.com/jtangelder/sass-loader/issues/59
                 '&includePaths[]=' + path.resolve(__dirname, 'node_modules', 'bootstrap', 'scss')
             ]},
@@ -75,15 +79,6 @@ module.exports = {
             filename: "_wpstats.json",
             fields: ["chunks"]
         }),
-
-        new webpack.LoaderOptionsPlugin({
-            options: {
-                context: __dirname,
-                postcss: [
-                  autoprefixer
-                ]
-            }
-        })
     ],
 
     devServer: {
