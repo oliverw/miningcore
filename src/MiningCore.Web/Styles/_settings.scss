@@ -1,0 +1,75 @@
+// Bootstrap overrides
+//
+// Copy variables from `_variables.scss` to this file to override default values
+// without modifying source files.
+
+// Custom Vars
+$raleway: "Raleway", Arial, Helvetica, sans-serif;
+$subheader-color: $gray-dark;
+$section-inset-horz-padding: 70px;
+$footer-height: 230px;
+
+$enable-flex: true;
+$enable-rounded: false;
+$enable-shadows: true;
+$enable-gradients: true;
+$enable-transitions: true;
+$enable-hover-media-query: true;
+
+$brand-primary: #0e9aef;
+//$brand-success:             #5cb85c;
+//$brand-info:                #5bc0de;
+//$brand-warning:             #f0ad4e;
+//$brand-danger:              #d9534f;
+//$brand-inverse:             $gray-dark;
+
+// Body
+//
+// Settings for the `<body>` element.
+
+$body-bg:    #f4f6fa;
+$body-color: #303030;
+
+$outer-wrapper-bg: #fefefe;
+
+$navbar-dark-bg: #373942;
+$navbar-dark-fg: $body-bg;
+
+$navbar-light-bg: #fcfcfc;
+$navbar-light-fg: #303030;
+
+// Links
+//
+// Style anchor elements.
+
+$link-color:            $brand-primary;
+$link-decoration:       none;
+$link-hover-color:      darken($link-color, 15%);
+$link-hover-decoration: underline;
+
+// Typography
+//
+// Font, line-height, and color for body text, headings, and more.
+
+$font-family-sans-serif: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+$font-family-serif:      Georgia, "Times New Roman", Times, serif;
+$font-family-monospace:  Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$font-family-base:       $font-family-sans-serif;
+
+$headings-font-family:   $raleway;
+
+
+$navbar-dark-color:                 rgba(255,255,255,.70);
+$navbar-dark-hover-color:           rgba(255,255,255,.90);
+$navbar-dark-active-color:          rgba(255,255,255,1);
+$navbar-dark-disabled-color:        rgba(255,255,255,.25);
+$navbar-dark-toggler-border:        rgba(255,255,255,.2);
+
+$navbar-light-color:                rgba(0,0,0,.75);
+$navbar-light-hover-color:          rgba(0,0,0,.95);
+$navbar-light-active-color:         rgba(0,0,0,1);
+$navbar-light-disabled-color:       rgba(0,0,0,.3);
+$navbar-light-toggler-border:       rgba(0,0,0,.2);
+
+$modal-content-xs-box-shadow:    0 2px 2px rgba(0,0,0,.25);
+$modal-content-sm-up-box-shadow: 0 2px 2px rgba(0,0,0,.25);

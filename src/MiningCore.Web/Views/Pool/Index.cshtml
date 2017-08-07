@@ -1,0 +1,44 @@
+﻿@using System.Threading.Tasks
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Task = System.Threading.Tasks.Task
+
+@{
+    ViewData["topbar-class"] = "hero";
+}
+
+<section class="inset hero">
+    <div class="content row">
+        <div class="col-sm-12 col-lg-6">
+            <div class="wrap">
+                <h1>PROTECT YOUR IDEAS</h1>
+                <h2>Ciphernote is a full-featured, cross-platform note-taking application that protects your data through zero-knowledge, client-side encryption in addition to automatic cloud-based cross-device synchronization.</h2>
+                <a class="btn btn-primary uppercase download-button platform-visible-windows" href="https://ciphernoteinstall.blob.core.windows.net/win/setup.exe"><i class="fa fa-download"></i>&nbsp;Download for Windows (Beta)</a>
+                <a class="btn btn-primary uppercase download-button platform-visible-android" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for Android</a>
+                <a class="btn btn-primary uppercase download-button platform-visible-ios" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for iOS</a>
+                <a class="btn btn-primary uppercase download-button platform-visible-mac" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for iOS</a>
+                <a class="btn btn-outline-success uppercase download-button" asp-controller="Home" asp-action="Faq">FAQ</a>
+            </div>
+        </div>
+
+        <div class="col-lg-6 hidden-md-down" style="position: relative;">
+            <div class="screenshot-montage"></div>
+        </div>
+    </div>
+</section>
+
+<section class="inset formats">
+    <div class="content row">
+        <div class="col-sm-12 col-lg-4 secure">
+            <h3>Secure</h3>
+            <h4>Your master password never leaves your device, so only you can access your encrypted notes - not even we can. All of your data is sealed with AES-256 bit encryption, and PBKDF2-SHA-256 (100k Iterations).</h4>
+        </div>
+        <div class="col-sm-12 col-lg-4 xplatform">
+            <h3>Cross Platform</h3>
+            <h4>Ciphernote will be initially released for Windows Desktop and Tablets. Versions for other platforms such as macOS, Android and iOS following after the Windows Beta Phase.</h4>
+        </div>
+        <div class="col-sm-12 col-lg-4 reliable">
+            <h3>Reliable</h3>
+            <h4>Your notes only leave your devices in encrypted form and are stored in the cloud. As additional protection we replicate your (encrypted) notes to multiple data-centers in different geographic regions.</h4>
+        </div>
+    </div>
+</section>

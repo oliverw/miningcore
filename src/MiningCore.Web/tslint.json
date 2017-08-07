@@ -1,0 +1,30 @@
+
+{
+  "extends": "tslint:latest",
+  "rules": {
+    "no-var-keyword": true,
+	"align": [
+		"statements"
+	],
+	"arrow-only-functions": true,
+    "object-literal-sort-keys": false,
+	"object-literal-key-quotes": false,
+	"no-empty": false,
+    "ordered-imports": false,
+    "no-switch-case-fall-through": true,
+    "no-unreachable": true,
+    "no-trailing-whitespace": true,
+    "indent": [true, "tabs"],
+    "max-line-length": [true, 140],
+    "member-ordering": [false,
+      "public-before-private",
+      "static-before-instance"
+    ],
+    "no-unused-variable": false,
+    "variable-name": [true,
+      "ban-keywords",
+      "check-format",
+      "allow-pascal-case"
+    ]
+  }
+}

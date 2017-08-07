@@ -1,0 +1,202 @@
+@import "variables";
+@import "mixins";
+
+// Customization
+@import "settings";
+
+
+.rect-auto  {
+  clip: rect(auto, auto, auto, auto);
+}
+
+@for $i from 51 through 100 {
+    .c100.p#{$i} .slice {
+        clip: rect(auto, auto, auto, auto);
+    }
+
+    .c100.p#{$i} .fill {
+        position: absolute;
+        border: 0.08em solid $brand-primary;
+        width: 0.84em;
+        height: 0.84em;
+        clip: rect(0em, 0.5em, 1em, 0em);
+        border-radius: 50%;
+        transform: rotate(0deg);
+    }
+
+    .c100.p#{$i} .bar:after,
+    .c100.p#{$i} .fill {
+        transform: rotate(180deg);
+    }
+}
+
+.pie,
+.c100 .bar {
+  position: absolute;
+  border: 0.08em solid $brand-primary;
+  width: 0.84em;
+  height: 0.84em;
+  clip: rect(0em, 0.5em, 1em, 0em);
+  border-radius: 50%;
+  transform: rotate(0deg);
+}
+
+.pie-fill  {
+  transform: rotate(180deg);
+}
+
+.c100 {
+  position: relative;
+  font-size: 120px;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background-color: #cccccc;
+}
+
+.c100 *,
+.c100 *:before,
+.c100 *:after {
+  box-sizing: content-box;
+}
+
+.c100.center {
+  float: none;
+  margin: 0 auto;
+}
+
+.c100.big {
+  font-size: 240px;
+}
+
+.c100.small {
+  font-size: 80px;
+}
+
+.c100 > span {
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 5em;
+  line-height: 5em;
+  font-size: 0.2em;
+  color: #cccccc;
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+  transition-property: all;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+}
+
+.c100.tiny {
+  font-size: 40px;
+
+  > span {
+      font-size: 0.3em;
+      line-height: 3.5em;
+      margin-left: -0.65em;
+  }
+}
+
+
+.c100:after {
+  position: absolute;
+  top: 0.08em;
+  left: 0.08em;
+  display: block;
+  content: " ";
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  width: 0.84em;
+  height: 0.84em;
+  transition-property: all;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in;
+}
+
+.c100 .slice {
+  position: absolute;
+  width: 1em;
+  height: 1em;
+  clip: rect(0em, 1em, 1em, 0.5em);
+}
+
+@for $i from 1 through 100 {
+    .c100.p#{$i} .bar {
+        transform: rotate((3.6deg * $i));
+    }
+}
+
+.c100:hover {
+  cursor: default;
+}
+.c100:hover > span {
+  width: 3.33em;
+  line-height: 3.33em;
+  font-size: 0.3em;
+  color: $brand-primary;
+}
+.c100:hover:after {
+  top: 0.04em;
+  left: 0.04em;
+  width: 0.92em;
+  height: 0.92em;
+}
+.c100.dark {
+  background-color: #777777;
+}
+.c100.dark .bar,
+.c100.dark .fill {
+  border-color: #c6ff00 !important;
+}
+.c100.dark > span {
+  color: #777777;
+}
+.c100.dark:after {
+  background-color: #666666;
+}
+.c100.dark:hover > span {
+  color: #c6ff00;
+}
+.c100.green .bar,
+.c100.green .fill {
+  border-color: #4db53c !important;
+}
+.c100.green:hover > span {
+  color: #4db53c;
+}
+.c100.green.dark .bar,
+.c100.green.dark .fill {
+  border-color: #5fd400 !important;
+}
+.c100.green.dark:hover > span {
+  color: #5fd400;
+}
+.c100.orange .bar,
+.c100.orange .fill {
+  border-color: #dd9d22 !important;
+}
+.c100.orange:hover > span {
+  color: #dd9d22;
+}
+.c100.orange.dark .bar,
+.c100.orange.dark .fill {
+  border-color: #e08833 !important;
+}
+.c100.orange.dark:hover > span {
+  color: #e08833;
+}
+
+
+/*
+<div v-if="item.progress > 0" :class="['c100', 'p' + 50]">
+	<span>{{item.progress | percent}}</span>
+	<div class="slice">
+		<div class="bar"></div>
+		<div class="fill"></div>
+	</div>
+</div>
+*/
