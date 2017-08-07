@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "MiningForce": {
-      "commandName": "Project",
-      "commandLineArgs": "-c config.json"
-    }
-  }
-}
