@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26724.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningForce.Web", "MiningForce.Web\MiningForce.Web.csproj", "{933BBE7C-2896-4A94-B5B9-71935CA84D69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningCore.Web", "MiningCore.Web\MiningCore.Web.csproj", "{933BBE7C-2896-4A94-B5B9-71935CA84D69}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
