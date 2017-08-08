@@ -8,8 +8,8 @@
 @using Microsoft.AspNetCore.Routing
 @using Microsoft.Extensions.Options
 
-@inject IOptions<AppConfig> appConfig
 @inject WebpackStatsProvider webpackStatsProvider;
+@inject IOptions<AppConfig> appConfig
 
 <!DOCTYPE html>
 <html lang="en" class="no-js pre-init">
@@ -93,7 +93,6 @@
             <nav class="navbar navbar-nav is-sticky @(ViewData["topbar-class"] ?? "dark")" data-topbar role="navigation">
                 <div class="wrapper">
                     <button class="navbar-toggler hidden-md-up" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"></button>
-                    <a class="navbar-brand hidden-sm-down" href="/">@appConfig.Value.PoolName.ToUpper()</a>
                     <div class="collapse navbar-toggleable-sm" id="navbarResponsive">
                         <ul class="nav navbar-nav float-lg-right float-md-right">
                             <li class="nav-item">
@@ -165,7 +164,7 @@
                 </div>
             </div>
             <div class="row small-up-1">
-                <span class="copyright columns">© @(DateTime.UtcNow.Year), MiningCore</span>
+                <span class="copyright columns">© @(DateTime.UtcNow.Year), @(appConfig.Value.PoolName)</span>
             </div>
         </footer>
     </div>

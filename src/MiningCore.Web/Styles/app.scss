@@ -129,7 +129,7 @@ h1, h2, h3, h4, h5, h6 {
     top: 60px !important;
 }
 
-.sk-cube-grid .sk-cube { 
+.sk-cube-grid .sk-cube {
     background-color: $brand-primary;
 }
 
@@ -191,7 +191,7 @@ h1.loading {
     text-transform: uppercase;
 }
 
-/* navbar Base */ 
+/* navbar Base */
 
 .navbar {
     width: 100%;
@@ -215,7 +215,7 @@ h1.loading {
             padding-top: 5rem;
         }
     }
-    
+
     .wrapper {
         @each $breakpoint, $container-max-width in $container-max-widths {
             @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
@@ -238,7 +238,7 @@ h1.loading {
     }
 }
 
-/* navbar - Light Theme */ 
+/* navbar - Light Theme */
 
 .navbar.light,
 .navbar.hero.scrolling {
@@ -272,9 +272,9 @@ h1.loading {
     }
 }
 
-/* navbar - Light Theme */ 
+/* navbar - Light Theme */
 
-/* navbar - Dark Theme */ 
+/* navbar - Dark Theme */
 
 .navbar.dark {
     background-color: $navbar-dark-bg;
@@ -322,9 +322,9 @@ h1.loading {
     }
 }
 
-/* navbar - Dark Theme */ 
+/* navbar - Dark Theme */
 
-/* navbar - Hero Theme */ 
+/* navbar - Hero Theme */
 
 $navbar-hero-bg: transparent;
 $navbar-hero-fg: $body-bg;
@@ -407,7 +407,7 @@ html.platform-android .platform-visible-android {
     display: inline-block;
 }
 
-/* navbar - Hero Theme */ 
+/* navbar - Hero Theme */
 
 .navbar-brand {
     font-family: $raleway;
@@ -660,7 +660,7 @@ html.pre-init .navbar .menu {
         &:hover {
             color: $brand-primary !important;
             border-color: $brand-primary !important;
-        } 
+        }
     }
 }
 
@@ -719,7 +719,7 @@ section.hero {
             padding-left: 10px;
             padding-right: 10px;
             padding-top: 10px;
-            padding-bottom: 4em;
+            padding-bottom: 2em;
         }
 
         .screenshot-montage {
@@ -752,8 +752,12 @@ section.hero {
             font-family: $font-family-base;
             font-size: $font-size-h6;
             line-height: 1.5;
-            margin-bottom: 1.4em;
+            margin-bottom: 0.5em;
             font-weight: 300;
+
+            &:last-of-type {
+                margin-bottom: 1.1em;
+            }
         }
     }
 }
@@ -1024,7 +1028,7 @@ table .progress-container {
 /////////////
 // App Host
 
-#app { 
+#app {
     display: block;
 }
 

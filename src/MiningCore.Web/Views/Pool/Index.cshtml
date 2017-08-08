@@ -1,6 +1,15 @@
-﻿@using System.Threading.Tasks
-@using Microsoft.AspNetCore.Mvc.Localization
-@using Task = System.Threading.Tasks.Task
+﻿@using System
+@using System.Net
+@using MiningCore.Models
+@using MiningCore.Utils
+@using MiningCore
+@using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Routing
+@using Microsoft.Extensions.Options
+
+@inject WebpackStatsProvider webpackStatsProvider;
+@inject IOptions<AppConfig> appConfig
 
 @{
     ViewData["topbar-class"] = "hero";
@@ -10,13 +19,10 @@
     <div class="content row">
         <div class="col-sm-12 col-lg-6">
             <div class="wrap">
-                <h1>PROTECT YOUR IDEAS</h1>
-                <h2>Ciphernote is a full-featured, cross-platform note-taking application that protects your data through zero-knowledge, client-side encryption in addition to automatic cloud-based cross-device synchronization.</h2>
-                <a class="btn btn-primary uppercase download-button platform-visible-windows" href="https://ciphernoteinstall.blob.core.windows.net/win/setup.exe"><i class="fa fa-download"></i>&nbsp;Download for Windows (Beta)</a>
-                <a class="btn btn-primary uppercase download-button platform-visible-android" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for Android</a>
-                <a class="btn btn-primary uppercase download-button platform-visible-ios" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for iOS</a>
-                <a class="btn btn-primary uppercase download-button platform-visible-mac" asp-controller="Account" asp-action="RequestInvitation"><i class="fa fa-bell-o"></i>&nbsp;Not yet available for iOS</a>
-                <a class="btn btn-outline-success uppercase download-button" asp-controller="Home" asp-action="Faq">FAQ</a>
+                <h1 class="uppercase">Welcome to @(appConfig.Value.PoolName)</h1>
+                <h2>Our mining pool was carefully crafted to our core values of Fairness, Reliability and Performance.</h2>
+                <h2>The pool runs on a highly-scalable, multi-currency, open-source stratum engine <a href="https://github.com/coinfoundry/mining-core">developed in-house</a> which is actively developed and properly maintained. This combined with geo-redundant hosting and automatic failover ensures smooth pool operation and timely payouts for our miners.</h2>
+                <a class="btn btn-outline-success uppercase download-button" asp-controller="Pool" asp-action="Faq">FAQ</a>
             </div>
         </div>
 
