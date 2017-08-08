@@ -46,8 +46,6 @@ namespace MiningCore.Payments
 	    private readonly IShareRepository shareRepo;
 	    private readonly IBalanceRepository balanceRepo;
 	    private ClusterConfig clusterConfig;
-	    private Dictionary<CoinType, IPayoutHandler> payoutHandlers;
-	    private Dictionary<PayoutScheme, IPayoutScheme> payoutSchemes;
 		private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
 	    private Thread thread;
 
@@ -60,9 +58,6 @@ namespace MiningCore.Payments
 
 		public void Start()
 	    {
-		    ResolvePayoutHandlers();
-		    ResolvePayoutSchemes();
-
 			thread = new Thread(async () =>
 		    {
 			    logger.Info(() => "Online");
@@ -108,36 +103,6 @@ namespace MiningCore.Payments
 
 		#endregion // API-Surface
 
-		private void ResolvePayoutHandlers()
-	    {
-		    payoutHandlers = clusterConfig.Pools
-			    .Where(x => x.PaymentProcessing?.Enabled == true)
-				.ToDictionary(x => x.Coin.Type, poolConfig =>
-		    {
-			    // resolve pool implementation supporting coin type
-			    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinMetadataAttribute>>>>()
-				    .First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
-
-			    // create and configure
-				var handler = handlerImpl.Value;
-			    handler.Configure(clusterConfig, poolConfig);
-
-				return handler;
-		    });
-		}
-
-	    private void ResolvePayoutSchemes()
-	    {
-		    payoutSchemes = clusterConfig.Pools
-			    .Where(x => x.PaymentProcessing?.Enabled == true)
-			    .Select(x => x.PaymentProcessing.PayoutScheme)
-			    .ToDictionary(x => x, x =>
-			    {
-				    var scheme = ctx.ResolveKeyed<IPayoutScheme>(x);
-				    return scheme;
-			    });
-	    }
-
 		private async Task ProcessPoolsAsync()
 	    {
 		    foreach (var pool in clusterConfig.Pools)
@@ -146,8 +111,15 @@ namespace MiningCore.Payments
 
 				try
 				{
-				    var handler = payoutHandlers[pool.Coin.Type];
-					var scheme = payoutSchemes[pool.PaymentProcessing.PayoutScheme];
+					// resolve payout handler
+					var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinMetadataAttribute>>>>()
+						.First(x => x.Value.Metadata.SupportedCoins.Contains(pool.Coin.Type)).Value;
+
+					var handler = handlerImpl.Value;
+					handler.Configure(clusterConfig, pool);
+
+					// resolve payout scheme
+					var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
 
 //GenerateTestShares(pool.Id);
 					await UpdatePoolBalancesAsync(pool, handler, scheme);
