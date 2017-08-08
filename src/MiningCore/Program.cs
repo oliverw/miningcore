@@ -25,83 +25,83 @@ using NLog.Targets;
 
 namespace MiningCore
 {
-    class Program
-    {
-	    private static ILogger logger;
-	    private static IContainer container;
-	    private static CommandOption dumpConfigOption;
-	    private static CommandOption shareRecoveryOption;
-	    private static ShareRecorder shareRecorder;
-	    private static PayoutProcessor payoutProcessor;
-	    private static ClusterConfig clusterConfig;
-	    private static ApiServer apiServer;
+	class Program
+	{
+		private static ILogger logger;
+		private static IContainer container;
+		private static CommandOption dumpConfigOption;
+		private static CommandOption shareRecoveryOption;
+		private static ShareRecorder shareRecorder;
+		private static PayoutProcessor payoutProcessor;
+		private static ClusterConfig clusterConfig;
+		private static ApiServer apiServer;
 
 		public static void Main(string[] args)
 		{
-            try
-            {
+			try
+			{
 #if DEBUG
-	            PreloadNativeLibs();
+				PreloadNativeLibs();
 #endif
 				string configFile;
-                if (!HandleCommandLineOptions(args, out configFile))
-                    return;
+				if (!HandleCommandLineOptions(args, out configFile))
+					return;
 
 				Logo();
-                clusterConfig = ReadConfig(configFile);
+				clusterConfig = ReadConfig(configFile);
 
-	            if (dumpConfigOption.HasValue())
-	            {
-		            DumpParsedConfig(clusterConfig);
-		            return;
-	            }
+				if (dumpConfigOption.HasValue())
+				{
+					DumpParsedConfig(clusterConfig);
+					return;
+				}
 
-	            ValidateConfig();
-	            Bootstrap();
+				ValidateConfig();
+				Bootstrap();
 
-	            if (!shareRecoveryOption.HasValue())
-	            {
-		            Start().Wait();
+				if (!shareRecoveryOption.HasValue())
+				{
+					Start().Wait();
 
 					Console.CancelKeyPress += OnCancelKeyPress;
-		            Console.ReadLine();
-	            }
+					Console.ReadLine();
+				}
 
 				else
-		            RecoverShares(shareRecoveryOption.Value());
-            }
+					RecoverShares(shareRecoveryOption.Value());
+			}
 
-            catch (PoolStartupAbortException ex)
-            {
-	            Console.WriteLine(ex.Message);
+			catch (PoolStartupAbortException ex)
+			{
+				Console.WriteLine(ex.Message);
 
 				Console.WriteLine("\nCluster cannot start. Good Bye!");
 			}
 
 			catch (JsonException)
-            {
+			{
 				// ignored
-            }
+			}
 
-            catch (IOException)
-            {
-	            // ignored
-            }
+			catch (IOException)
+			{
+				// ignored
+			}
 
-            catch (AggregateException ex)
-            {
-	            if (!(ex.InnerExceptions.First() is PoolStartupAbortException))
-		            Console.WriteLine(ex);
+			catch (AggregateException ex)
+			{
+				if (!(ex.InnerExceptions.First() is PoolStartupAbortException))
+					Console.WriteLine(ex);
 
 				Console.WriteLine("Cluster cannot start. Good Bye!");
-            }
+			}
 
 			catch (Exception ex)
-            {
-                Console.WriteLine(ex);
+			{
+				Console.WriteLine(ex);
 
-	            Console.WriteLine("Cluster cannot start. Good Bye!");
-            }
+				Console.WriteLine("Cluster cannot start. Good Bye!");
+			}
 		}
 
 		private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
@@ -110,69 +110,69 @@ namespace MiningCore
 		}
 
 		private static void DumpParsedConfig(ClusterConfig config)
-	    {
-		    Console.WriteLine("\nCurrent configuration as parsed from config file:");
+		{
+			Console.WriteLine("\nCurrent configuration as parsed from config file:");
 
-		    Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
-		    {
-			    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-			    Formatting = Formatting.Indented
-		    }));
-	    }
+			Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
+			{
+				ContractResolver = new CamelCasePropertyNamesContractResolver(),
+				Formatting = Formatting.Indented
+			}));
+		}
 
-	    private static bool HandleCommandLineOptions(string[] args, out string configFile)
-        {
-            configFile = null;
+		private static bool HandleCommandLineOptions(string[] args, out string configFile)
+		{
+			configFile = null;
 
-            var app = new CommandLineApplication(false)
-            {
-                FullName = "MiningCore - Pool Mining Engine",
-                ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
-                LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
-            };
+			var app = new CommandLineApplication(false)
+			{
+				FullName = "MiningCore - Pool Mining Engine",
+				ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
+				LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
+			};
 
-            var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
-            var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
-	        dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
-	        shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
-            app.HelpOption("-? | -h | --help");
+			var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
+			var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
+			dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
+			shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
+			app.HelpOption("-? | -h | --help");
 
-            app.Execute(args);
+			app.Execute(args);
 
-            if (versionOption.HasValue())
-            {
-                app.ShowVersion();
-                return false;
-            }
+			if (versionOption.HasValue())
+			{
+				app.ShowVersion();
+				return false;
+			}
 
-            if (!configFileOption.HasValue())
-            {
-                app.ShowHelp();
-                return false;
-            }
+			if (!configFileOption.HasValue())
+			{
+				app.ShowHelp();
+				return false;
+			}
 
-            configFile = configFileOption.Value();
+			configFile = configFileOption.Value();
 
-            return true;
-        }
+			return true;
+		}
 
-        private static void Bootstrap()
-        {
-            // Service collection
+		private static void Bootstrap()
+		{
+			// Service collection
 			var builder = new ContainerBuilder();
 
-            builder.RegisterAssemblyModules(new[]
-            {
-                typeof(AutofacModule).GetTypeInfo().Assembly,
-            });
+			builder.RegisterAssemblyModules(new[]
+			{
+				typeof(AutofacModule).GetTypeInfo().Assembly,
+			});
 
-	        // AutoMapper
-	        var amConf = new MapperConfiguration(cfg =>
-	        {
-		        cfg.AddProfile(new AutoMapperProfile());
-	        });
+			// AutoMapper
+			var amConf = new MapperConfiguration(cfg =>
+			{
+				cfg.AddProfile(new AutoMapperProfile());
+			});
 
-	        builder.Register((ctx, parms) => amConf.CreateMapper());
+			builder.Register((ctx, parms) => amConf.CreateMapper());
 
 			// Persistence
 			ConfigurePersistence(builder);
@@ -181,265 +181,265 @@ namespace MiningCore
 			container = builder.Build();
 
 			// Logging
-            ConfigureLogging();
+			ConfigureLogging();
 
 			ValidateRuntimeEnvironment();
-        }
+		}
 
-	    private static ClusterConfig ReadConfig(string file)
-        {
-            try
-            {
-                Console.WriteLine($"Using configuration file {file}\n");
+		private static ClusterConfig ReadConfig(string file)
+		{
+			try
+			{
+				Console.WriteLine($"Using configuration file {file}\n");
 
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings()
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
+				var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+				{
+					ContractResolver = new CamelCasePropertyNamesContractResolver()
+				});
 
-                using (var reader = new StreamReader(file, System.Text.Encoding.UTF8))
-                {
-                    using (var jsonReader = new JsonTextReader(reader))
-                    {
-                        return serializer.Deserialize<ClusterConfig>(jsonReader);
-                    }
-                }
-            }
+				using (var reader = new StreamReader(file, System.Text.Encoding.UTF8))
+				{
+					using (var jsonReader = new JsonTextReader(reader))
+					{
+						return serializer.Deserialize<ClusterConfig>(jsonReader);
+					}
+				}
+			}
 
-            catch (JsonSerializationException ex)
-            {
-	            HumanizeJsonParseException(ex);
-	            throw;
-            }
+			catch (JsonSerializationException ex)
+			{
+				HumanizeJsonParseException(ex);
+				throw;
+			}
 
 			catch (JsonException ex)
-            {
-	            Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+			{
+				Console.WriteLine($"Error: {ex.Message}");
+				throw;
+			}
 
-            catch (IOException ex)
-            {
-                logger.Error(() => $"Error: {ex.Message}");
-                throw;
-            }
-        }
+			catch (IOException ex)
+			{
+				logger.Error(() => $"Error: {ex.Message}");
+				throw;
+			}
+		}
 
 		static readonly Regex regexJsonTypeConversionError = new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
-	    private static void HumanizeJsonParseException(JsonSerializationException ex)
-	    {
-		    var m = regexJsonTypeConversionError.Match(ex.Message);
+		private static void HumanizeJsonParseException(JsonSerializationException ex)
+		{
+			var m = regexJsonTypeConversionError.Match(ex.Message);
 
-		    if (m.Success)
-		    {
-			    var value = m.Groups[1].Value;
+			if (m.Success)
+			{
+				var value = m.Groups[1].Value;
 				var type = Type.GetType(m.Groups[2].Value);
-			    var line = m.Groups[3].Value;
-			    var col = m.Groups[4].Value;
+				var line = m.Groups[3].Value;
+				var col = m.Groups[4].Value;
 
 				if (type == typeof(CoinType))
 					Console.WriteLine($"Error: Coin '{value}' is not (yet) supported (line {line}, column {col})");
-			    else if (type == typeof(PayoutScheme))
-				    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+				else if (type == typeof(PayoutScheme))
+					Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
 			}
 
 			else
-			    Console.WriteLine($"Error: {ex.Message}");
-	    }
+				Console.WriteLine($"Error: {ex.Message}");
+		}
 
-	    private static void ValidateConfig()
-	    {
-		    if (clusterConfig.Pools.Length == 0)
-			    logger.ThrowLogPoolStartupException("No pools configured!");
+		private static void ValidateConfig()
+		{
+			if (clusterConfig.Pools.Length == 0)
+				logger.ThrowLogPoolStartupException("No pools configured!");
 
-		    ValidatePoolIds();
-	    }
+			ValidatePoolIds();
+		}
 
-	    private static void ValidatePoolIds()
-	    {
-		    // check for missing ids
-		    if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-			    logger.ThrowLogPoolStartupException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+		private static void ValidatePoolIds()
+		{
+			// check for missing ids
+			if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
+				logger.ThrowLogPoolStartupException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
 
-		    // check for duplicate ids
-		    var ids = clusterConfig.Pools
-			    .GroupBy(x => x.Id)
-			    .ToArray();
+			// check for duplicate ids
+			var ids = clusterConfig.Pools
+				.GroupBy(x => x.Id)
+				.ToArray();
 
-		    if (ids.Any(id => id.Count() > 1))
-			    logger.ThrowLogPoolStartupException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
-	    }
+			if (ids.Any(id => id.Count() > 1))
+				logger.ThrowLogPoolStartupException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
+		}
 
-	    private static void ValidateRuntimeEnvironment()
-	    {
-		    // root check
-		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
-			    logger.Warn(() => "Running as root is discouraged!");
-	    }
+		private static void ValidateRuntimeEnvironment()
+		{
+			// root check
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
+				logger.Warn(() => "Running as root is discouraged!");
+		}
 
 		private static void Logo()
-        {
-            Console.WriteLine($@"
+		{
+			Console.WriteLine($@"
  ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗  ██████╗ ██████╗ ██████╗ ███████╗
  ████╗ ████║██║████╗  ██║██║████╗  ██║██╔════╝ ██╔════╝██╔═══██╗██╔══██╗██╔════╝
- ██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗██║     ██║   ██║██████╔╝█████╗  
- ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝  
- ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗                                                                                     
+ ██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗██║     ██║   ██║██████╔╝█████╗
+ ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
+ ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-	        Console.WriteLine($" https://github.com/coinfoundry/mining-core\n");
-            Console.WriteLine($" Please contribute to the development of the project by donating:\n");
-            Console.WriteLine($" BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
-            Console.WriteLine($" ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
-            Console.WriteLine($" LTC - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
-            Console.WriteLine($" XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
-            Console.WriteLine();
-        }
+			Console.WriteLine($" https://github.com/coinfoundry/mining-core\n");
+			Console.WriteLine($" Please contribute to the development of the project by donating:\n");
+			Console.WriteLine($" BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
+			Console.WriteLine($" ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
+			Console.WriteLine($" LTC - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
+			Console.WriteLine($" XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+			Console.WriteLine();
+		}
 
-	    private static void ConfigureLogging()
-	    {
+		private static void ConfigureLogging()
+		{
 			var config = clusterConfig.Logging;
 			var loggingConfig = new LoggingConfiguration();
 
-		    if (config != null)
-		    {
-			    // parse level
-			    var level = !string.IsNullOrEmpty(config.Level)
-				    ? LogLevel.FromString(config.Level)
-				    : LogLevel.Info;
+			if (config != null)
+			{
+				// parse level
+				var level = !string.IsNullOrEmpty(config.Level)
+					? LogLevel.FromString(config.Level)
+					: LogLevel.Info;
 
-			    var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+				var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
-			    if (config.EnableConsoleLog)
-			    {
-				    if (config.EnableConsoleColors)
-				    {
-					    var target = new ColoredConsoleTarget("console")
-					    {
-						    Layout = layout
-					    };
-
-					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Debug"),
-						    ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
+				if (config.EnableConsoleLog)
+				{
+					if (config.EnableConsoleColors)
+					{
+						var target = new ColoredConsoleTarget("console")
+						{
+							Layout = layout
+						};
 
 						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Debug"),
-						    ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+							ConditionParser.ParseExpression("level == LogLevel.Debug"),
+							ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
 
-					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Info"),
-						    ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+							ConditionParser.ParseExpression("level == LogLevel.Debug"),
+							ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
 
-					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Warn"),
-						    ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+							ConditionParser.ParseExpression("level == LogLevel.Info"),
+							ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
 
-					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Error"),
-						    ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+							ConditionParser.ParseExpression("level == LogLevel.Warn"),
+							ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
 
-					    target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-						    ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-						    ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+							ConditionParser.ParseExpression("level == LogLevel.Error"),
+							ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
 
-					    loggingConfig.AddTarget(target);
-					    loggingConfig.AddRule(level, LogLevel.Fatal, target);
-				    }
+						target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
+							ConditionParser.ParseExpression("level == LogLevel.Fatal"),
+							ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
+
+						loggingConfig.AddTarget(target);
+						loggingConfig.AddRule(level, LogLevel.Fatal, target);
+					}
 
 					else
-				    {
-					    var target = new ConsoleTarget("console")
-					    {
-						    Layout = layout
-					    };
+					{
+						var target = new ConsoleTarget("console")
+						{
+							Layout = layout
+						};
 
-					    loggingConfig.AddTarget(target);
-					    loggingConfig.AddRule(level, LogLevel.Fatal, target);
-				    }
+						loggingConfig.AddTarget(target);
+						loggingConfig.AddRule(level, LogLevel.Fatal, target);
+					}
 				}
 
-			    if (!string.IsNullOrEmpty(config.LogFile))
-			    {
-				    var target = new FileTarget("file")
-				    {
-					    FileName = config.LogFile,
-					    FileNameKind = FilePathKind.Unknown,
-					    Layout = layout
-				    };
+				if (!string.IsNullOrEmpty(config.LogFile))
+				{
+					var target = new FileTarget("file")
+					{
+						FileName = config.LogFile,
+						FileNameKind = FilePathKind.Unknown,
+						Layout = layout
+					};
 
-				    loggingConfig.AddTarget(target);
-				    loggingConfig.AddRule(level, LogLevel.Fatal, target);
-			    }
+					loggingConfig.AddTarget(target);
+					loggingConfig.AddRule(level, LogLevel.Fatal, target);
+				}
 
-			    if (config.PerPoolLogFile)
-			    {
-				    foreach (var poolConfig in clusterConfig.Pools)
-				    {
-					    var target = new FileTarget(poolConfig.Id)
-					    {
-						    FileName = GetLogPath(config, poolConfig.Id + ".log"),
-						    FileNameKind = FilePathKind.Unknown,
-						    Layout = layout
-					    };
+				if (config.PerPoolLogFile)
+				{
+					foreach (var poolConfig in clusterConfig.Pools)
+					{
+						var target = new FileTarget(poolConfig.Id)
+						{
+							FileName = GetLogPath(config, poolConfig.Id + ".log"),
+							FileNameKind = FilePathKind.Unknown,
+							Layout = layout
+						};
 
-					    loggingConfig.AddTarget(target);
-					    loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
-				    }
+						loggingConfig.AddTarget(target);
+						loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
+					}
 				}
 			}
 
-		    LogManager.Configuration = loggingConfig;
+			LogManager.Configuration = loggingConfig;
 
-		    logger = LogManager.GetCurrentClassLogger();
-	    }
+			logger = LogManager.GetCurrentClassLogger();
+		}
 
-	    private static Layout GetLogPath(ClusterLoggingConfig config, string name)
-	    {
-		    if (string.IsNullOrEmpty(config.LogBaseDirectory))
-			    return name;
+		private static Layout GetLogPath(ClusterLoggingConfig config, string name)
+		{
+			if (string.IsNullOrEmpty(config.LogBaseDirectory))
+				return name;
 
-		    return Path.Combine(config.LogBaseDirectory, name);
-	    }
+			return Path.Combine(config.LogBaseDirectory, name);
+		}
 
-	    private static void ConfigurePersistence(ContainerBuilder builder)
-	    {
+		private static void ConfigurePersistence(ContainerBuilder builder)
+		{
 			if(clusterConfig.Persistence == null)
 				logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-		    if (clusterConfig.Persistence.Postgres != null)
-			    ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
-	    }
+			if (clusterConfig.Persistence.Postgres != null)
+				ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
+		}
 
-	    private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
-	    {
-		    // validate config
+		private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+		{
+			// validate config
 			if (string.IsNullOrEmpty(pgConfig.Host))
-			    logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
+				logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
 
-		    if (pgConfig.Port == 0)
-			    logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
+			if (pgConfig.Port == 0)
+				logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
 
 			if (string.IsNullOrEmpty(pgConfig.Database))
-			    logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
+				logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
 
-		    if (string.IsNullOrEmpty(pgConfig.User))
-			    logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
+			if (string.IsNullOrEmpty(pgConfig.User))
+				logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
-		    // build connection string
-		    var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
+			// build connection string
+			var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
 
 			// register connection factory
-		    builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString))
+			builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString))
 				.AsImplementedInterfaces()
 				.SingleInstance();
 
 			// register repositories
 			builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-			    .Where(t =>
+				.Where(t =>
 					t.Namespace.StartsWith(typeof(Persistence.Postgres.Repositories.ShareRepository).Namespace))
-			    .AsImplementedInterfaces()
-			    .SingleInstance();
+				.AsImplementedInterfaces()
+				.SingleInstance();
 		}
 
 		private static async Task Start()
@@ -470,7 +470,7 @@ namespace MiningCore
 
 			// start payment processor
 			if (clusterConfig.PaymentProcessing?.Enabled == true &&
-			    clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+				clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
 			{
 				payoutProcessor = container.Resolve<PayoutProcessor>();
 				payoutProcessor.Configure(clusterConfig);
@@ -480,44 +480,44 @@ namespace MiningCore
 		}
 
 		private static void RecoverShares(string recoveryFilename)
-	    {
-		    shareRecorder = container.Resolve<ShareRecorder>();
-		    shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
-	    }
+		{
+			shareRecorder = container.Resolve<ShareRecorder>();
+			shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+		}
 
 #if DEBUG
 		[DllImport("kernel32.dll", SetLastError = true)]
-	    static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
+		static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 
-	    private static readonly string[] NativeLibs =
-	    {
-		    "libmultihash.dll",
-		    "libcryptonote.dll"
+		private static readonly string[] NativeLibs =
+		{
+			"libmultihash.dll",
+			"libcryptonote.dll"
 		};
 
-	    /// <summary>
+		/// <summary>
 		/// work-around for libmultihash.dll not being found when running in dev-environment
 		/// </summary>
 		private static void PreloadNativeLibs()
-	    {
-		    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-		    {
-			    Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
-			    return;
-		    }
+		{
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
+				return;
+			}
 
-		    // load it
+			// load it
 			var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
 			var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-		    foreach (var nativeLib in NativeLibs)
-		    {
-			    var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
-			    var result = LoadLibraryEx(path, IntPtr.Zero, 0);
+			foreach (var nativeLib in NativeLibs)
+			{
+				var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
+				var result = LoadLibraryEx(path, IntPtr.Zero, 0);
 
-			    if (result == IntPtr.Zero)
-				    Console.WriteLine($"Unable to load {path}");
-		    }
+				if (result == IntPtr.Zero)
+					Console.WriteLine($"Unable to load {path}");
+			}
 		}
 #endif
 	}
