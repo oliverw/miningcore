@@ -134,6 +134,7 @@ namespace MiningCore.Blockchain.Monero
 		    // enrich share with common data
 		    share.PoolId = poolConfig.Id;
 		    share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+		    share.Miner = worker.Context.MinerName;
 		    share.Worker = worker.Context.WorkerName;
 		    share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
 		    share.Created = DateTime.UtcNow;

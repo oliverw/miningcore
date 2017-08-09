@@ -24,6 +24,11 @@ namespace MiningCore.Blockchain
 		string PoolId { get; set; }
 		
 		/// <summary>
+		/// Who mined it (wallet address)
+		/// </summary>
+		string Miner { get; }
+
+		/// <summary>
 		/// Who mined it
 		/// </summary>
 		string Worker { get; }

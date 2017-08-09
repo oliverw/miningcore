@@ -208,7 +208,7 @@ namespace MiningCore.Payments
 					    Blockheight = block.Blockheight,
 					    IpAddress = "127.0.0.1",
 					    Created = shareDate,
-					    Worker = (i & 1) == 0 ? "mkeiTodVRTseFymDbgi2HAV3Re8zv3DQFf" : "n37zNp1QbtwHh9jVUThe6ZgCxvm9rdpX2f",
+					    Miner = (i & 1) == 0 ? "mkeiTodVRTseFymDbgi2HAV3Re8zv3DQFf" : "n37zNp1QbtwHh9jVUThe6ZgCxvm9rdpX2f",
 						PoolId = poolid,
 				    };
 

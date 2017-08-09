@@ -119,11 +119,15 @@ namespace MiningCore.Blockchain.Bitcoin
 		    }
 
 		    var requestParams = request.ParamsAs<string[]>();
-		    var workername = requestParams?.Length > 0 ? requestParams[0] : null;
-		    var password = requestParams?.Length > 1 ? requestParams[1] : null;
+		    var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
+		    //var password = requestParams?.Length > 1 ? requestParams[1] : null;
+
+		    // extract worker/miner
+		    var split = workerValue?.Split('.');
+		    var minerName = split?.FirstOrDefault();
 
 			// assumes that workerName is an address
-		    client.Context.IsAuthorized = await manager.ValidateAddressAsync(workername);
+			client.Context.IsAuthorized = await manager.ValidateAddressAsync(minerName);
 		    client.Respond(client.Context.IsAuthorized, request.Id);
 	    }
 

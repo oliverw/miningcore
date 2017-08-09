@@ -108,7 +108,11 @@ namespace MiningCore.Blockchain.Monero
 
 			client.Context.IsSubscribed = result;
 			client.Context.IsAuthorized = result;
-		    client.Context.WorkerName = loginRequest.Login;
+
+		    // extract worker/miner
+		    var split = loginRequest.Login.Split('.');
+		    client.Context.MinerName = split[0];
+		    client.Context.WorkerName = split.Length > 1 ? split[1] : null;
 
 		    if (!client.Context.IsAuthorized)
 		    {

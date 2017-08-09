@@ -5,6 +5,7 @@ namespace MiningCore.Blockchain.Monero
 {
     public class MoneroWorkerContext : WorkerContextBase
 	{
+		public string MinerName { get; set; }
 		public string WorkerName { get; set; }
 		public List<MoneroWorkerJob> ValidJobs { get; } = new List<MoneroWorkerJob>();
 

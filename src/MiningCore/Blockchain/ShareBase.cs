@@ -8,6 +8,7 @@ namespace MiningCore.Blockchain
 	public class ShareBase : IShare
 	{
 		public string PoolId { get; set; }
+		public string Miner { get; set; }
 		public string Worker { get; set; }
 		public string IpAddress { get; set; }
 		public double Difficulty { get; set; }

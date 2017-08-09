@@ -131,7 +131,7 @@ namespace MiningCore.Payments.PayoutSchemes
 						throw new OverflowException("blockRewardRemaining < 0");
 
 					// accumulate per-worker reward
-					var address = share.Worker.Trim();
+					var address = share.Miner.Trim();
 
 					if (!payouts.ContainsKey(address))
 						payouts[address] = reward;

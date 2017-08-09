@@ -10,6 +10,7 @@ namespace MiningCore.Persistence.Model
 		public long Id { get; set; }
 		public string PoolId { get; set; }
 		public ulong Blockheight { get; set; }
+		public string Miner { get; set; }
 		public string Worker { get; set; }
 		public double Difficulty { get; set; }
 		public double StratumDifficulty { get; set; }

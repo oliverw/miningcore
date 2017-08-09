@@ -103,13 +103,16 @@ namespace MiningCore.Blockchain.Bitcoin
 				throw new StratumException(StratumError.Other, "invalid params");
 
 			// extract params
-			var workername = (submitParams[0] as string)?.Trim();
+			var workerValue = (submitParams[0] as string)?.Trim();
 	        var jobId = submitParams[1] as string;
 	        var extraNonce2 = submitParams[2] as string;
 	        var nTime = submitParams[3] as string;
 	        var nonce = submitParams[4] as string;
 
-	        BitcoinJob job;
+	        if (string.IsNullOrEmpty(workerValue))
+		        throw new StratumException(StratumError.Other, "missing or invalid workername");
+
+			BitcoinJob job;
 
 	        lock (jobLock)
 			{
@@ -119,8 +122,13 @@ namespace MiningCore.Blockchain.Bitcoin
 			if(job == null)
 		        throw new StratumException(StratumError.JobNotFound, "job not found");
 
+			// extract worker/miner
+	        var split = workerValue.Split('.');
+	        var minerName = split[0];
+	        var workerName = split.Length > 1 ? split[1] : null;
+
 			// under testnet or regtest conditions network difficulty may be lower than statum diff
-	        var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
+			var minDiff = Math.Min(blockchainStats.NetworkDifficulty, stratumDifficulty);
 
 			// validate & process
 			var share = job.ProcessShare(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
@@ -154,7 +162,8 @@ namespace MiningCore.Blockchain.Bitcoin
 			// enrich share with common data
 	        share.PoolId = poolConfig.Id;
 	        share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-			share.Worker = workername;
+			share.Miner = minerName;
+	        share.Worker = workerName;
 	        share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
 			share.Created = DateTime.UtcNow;
 
