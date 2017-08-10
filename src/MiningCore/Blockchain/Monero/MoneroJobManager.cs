@@ -53,6 +53,8 @@ namespace MiningCore.Blockchain.Monero
 	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
 		    poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
+			if(poolAddressBase58Prefix == 0)
+				logger.ThrowLogPoolStartupException("Unable to decode pool-address)", LogCat);
 
 			// extract standard daemon endpoints
 			daemonEndpoints = poolConfig.Daemons
