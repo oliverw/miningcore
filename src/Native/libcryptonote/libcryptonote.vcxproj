@@ -198,6 +198,8 @@
     <ClInclude Include="crypto\oaes_lib.h" />
     <ClInclude Include="crypto\skein_port.h" />
     <ClInclude Include="crypto\wild_keccak.h" />
+    <ClInclude Include="serialization\binary_archive.h" />
+    <ClInclude Include="serialization\binary_utils.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

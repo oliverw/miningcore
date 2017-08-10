@@ -10,7 +10,7 @@ namespace MiningCore.Native
 	    private static extern bool convert_blob(byte* input, int inputSize, byte* output, ref int outputSize);
 
 		[DllImport("libcryptonote", EntryPoint = "decode_address_export", CallingConvention = CallingConvention.Cdecl)]
-		private static extern bool decode_address(byte* input, int inputSize, byte* output, ref int outputSize);
+		private static extern uint decode_address(byte* input, int inputSize);
 
 		[DllImport("libcryptonote", EntryPoint = "cn_slow_hash_export", CallingConvention = CallingConvention.Cdecl)]
 		private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength);
@@ -58,45 +58,13 @@ namespace MiningCore.Native
 			}
 		}
 
-		public static byte[] DecodeAddress(string address)
+		public static uint DecodeAddress(string address)
 		{
 			var data = Encoding.UTF8.GetBytes(address);
 
 			fixed (byte* input = data)
 			{
-				// provide reasonable large output buffer
-				var outputBuffer = new byte[0x100];
-				var outputBufferLength = outputBuffer.Length;
-
-				bool success = false;
-				fixed (byte* output = outputBuffer)
-				{
-					success = decode_address(input, data.Length, output, ref outputBufferLength);
-				}
-
-				if (!success)
-				{
-					// if we get false, the buffer might have been too small
-					if (outputBufferLength == 0)
-						return null;    // nope, other error
-
-					// retry with correctly sized buffer
-					outputBuffer = new byte[outputBufferLength];
-
-					fixed (byte* output = outputBuffer)
-					{
-						success = decode_address(input, data.Length, output, ref outputBufferLength);
-					}
-
-					if (!success)
-						return null;    // sorry
-				}
-
-				// build result buffer
-				var result = new byte[outputBufferLength];
-				Buffer.BlockCopy(outputBuffer, 0, result, 0, outputBufferLength);
-
-				return result;
+				return decode_address(input, data.Length);
 			}
 		}
 

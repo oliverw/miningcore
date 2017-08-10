@@ -107,6 +107,12 @@
     <ClInclude Include="common\varint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="serialization\binary_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="serialization\binary_archive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

@@ -56,7 +56,7 @@
                  {
                      "type": "op",
                      "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",    // pool
-                     "percentage": 1.5
+                     "percentage": 0
                  }
              ],
 
@@ -149,7 +149,7 @@
              },
 
              // Address to where block rewards are given (pool wallet)
-             "address": "mptkaPr5ZwRPmCs6RZEqQcvvsE5ZLi6Noy",
+             "address": "mqGVxnVAPoR9GYKGGTrFVaBYukLVWEgtsg",
 
              // Block rewards go to the configured pool wallet address to later be paid out to miners,
              // except for a percentage that can go to, for examples, pool operator(s) as pool fees or

@@ -11,6 +11,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
@@ -43,6 +44,7 @@ namespace MiningCore.Blockchain.Monero
 	    private MoneroNetworkType networkType;
 	    protected DateTime? lastBlockUpdate;
 	    private readonly byte[] instanceId;
+	    private uint poolAddressBase58Prefix;
 
 		#region API-Surface
 
@@ -50,8 +52,10 @@ namespace MiningCore.Blockchain.Monero
 
 	    public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
 	    {
-		    // extract standard daemon endpoints
-		    daemonEndpoints = poolConfig.Daemons
+		    poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
+
+			// extract standard daemon endpoints
+			daemonEndpoints = poolConfig.Daemons
 			    .Where(x => string.IsNullOrEmpty(x.Category))
 			    .ToArray();
 
@@ -70,12 +74,8 @@ namespace MiningCore.Blockchain.Monero
 	        if (address.Length != MoneroConstants.AddressLength)
 		        return false;
 
-	        if (networkType == MoneroNetworkType.Main &&
-	            !address.StartsWith(MoneroConstants.MainNetAddressPrefix))
-		        return false;
-
-	        if (networkType == MoneroNetworkType.Test &&
-	            !address.StartsWith(MoneroConstants.TestNetAddressPrefix))
+	        var addressPrefix = LibCryptonote.DecodeAddress(address);
+	        if (addressPrefix != poolAddressBase58Prefix)
 		        return false;
 
 			return true;

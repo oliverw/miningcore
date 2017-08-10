@@ -10,8 +10,10 @@ using Autofac;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Native;
 using MiningCore.Persistence;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
@@ -32,10 +34,10 @@ namespace MiningCore.Blockchain.Monero
 	    private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 	    private long jobId;
 
-		#region Overrides
+	    #region Overrides
 
 		protected override async Task InitializeJobManager()
-	    {
+		{
 		    manager = ctx.Resolve<MoneroJobManager>();
 		    manager.Configure(poolConfig, clusterConfig);
 

@@ -7,6 +7,7 @@
 #include "crypto/crypto.h"
 #include "common/base58.h"
 #include "crypto/hash-ops.h"
+#include "serialization/binary_utils.h"
 
 using namespace cryptonote;
 
@@ -58,32 +59,25 @@ extern "C" MODULE_API bool convert_blob_export(const char* input, unsigned int i
 	return true;
 }
 
-extern "C" MODULE_API bool decode_address_export(const char* input, unsigned int inputSize, unsigned char *output, unsigned int *outputSize)
+extern "C" MODULE_API uint32_t decode_address_export(const char* input, unsigned int inputSize)
 {
-	unsigned int originalOutputSize = *outputSize;
-
 	blobdata input_blob = std::string(input, inputSize);
-	blobdata result = "";
+	blobdata data = "";
 
 	uint64_t prefix;
-	tools::base58::decode_addr(input_blob, prefix, result);
+	bool decodeResult = tools::base58::decode_addr(input_blob, prefix, data);
 
-	if (result.length() == 0)
-	{
-		*outputSize = 0;
-		return false;
-	}
+	if (!decodeResult || data.length() == 0)
+		return 0;	// error
 
-	result = uint64be_to_blob(prefix) + result;
-	*outputSize = result.length();
+	account_public_address adr;
+	if (!::serialization::parse_binary(data, adr))
+		return 0;
 
-	// output buffer big enough?
-	if (result.length() > originalOutputSize)
-		return false;
+	if (!crypto::check_key(adr.m_spend_public_key) || !crypto::check_key(adr.m_view_public_key))
+		return 0;
 
-	// success
-	memcpy(output, result.data(), result.length());
-	return true;
+	return static_cast<uint32_t>(prefix);
 }
 
 extern "C" MODULE_API void cn_slow_hash_export(const char* input, unsigned char *output, uint32_t inputSize)
