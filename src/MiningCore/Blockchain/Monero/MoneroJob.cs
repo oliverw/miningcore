@@ -8,7 +8,7 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Stratum;
-using Numerics;
+using MiningCore.Util;
 
 namespace MiningCore.Blockchain.Monero
 {

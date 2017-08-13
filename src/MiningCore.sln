@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26720.2
+VisualStudioVersion = 15.0.26724.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningCore", "MiningCore\MiningCore.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeContracts", "CodeContracts\CodeContracts.csproj", "{4D9656F8-6E22-4FEF-A1DA-320D8866B63A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibUvManaged", "LibUvManaged\LibUvManaged.csproj", "{ED3E233B-D01C-46F9-B6C3-6F9176C41395}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningCore.Tests", "MiningCore.Tests\MiningCore.Tests.csproj", "{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1C1CEB28-EF68-4DC7-B34B-1FBB2D73D58E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibUvManaged", "LibUvManaged\LibUvManaged.csproj", "{3324CB57-3EE0-4469-8B48-4AC2F4322892}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,14 +27,14 @@ Global
 		{4D9656F8-6E22-4FEF-A1DA-320D8866B63A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D9656F8-6E22-4FEF-A1DA-320D8866B63A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D9656F8-6E22-4FEF-A1DA-320D8866B63A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED3E233B-D01C-46F9-B6C3-6F9176C41395}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3324CB57-3EE0-4469-8B48-4AC2F4322892}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3324CB57-3EE0-4469-8B48-4AC2F4322892}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3324CB57-3EE0-4469-8B48-4AC2F4322892}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3324CB57-3EE0-4469-8B48-4AC2F4322892}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

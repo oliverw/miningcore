@@ -11,9 +11,9 @@ using MiningCore.Configuration;
 using MiningCore.Crypto;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
+using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Numerics;
 using Transaction = NBitcoin.Transaction;
 
 namespace MiningCore.Blockchain.Bitcoin
