@@ -21,13 +21,13 @@ namespace MiningCore.Blockchain.Bitcoin
 	    /// </summary>
 	    public static IDestination AddressToScript(string address)
 	    {
-		    var decoded = Encoders.Base58Check.DecodeData(address);
-		    if (decoded.Length != 21)
-			    throw new FormatException($"{address} is an invalid");
+		    var decoded = Encoders.Base58.DecodeData(address);
+		    if (decoded.Length != 25)
+			    throw new FormatException($"{address} is invalid");
 
 			// skip first byte which is the version/application byte
 			// see: https://en.bitcoin.it/wiki/Base58Check_encoding
-		    var pubKeyHash = decoded.Skip(1).ToArray();
+		    var pubKeyHash = decoded.Skip(1).Take(20).ToArray();
 
 			// convert to IDestination
 			var keyId = new KeyId(pubKeyHash);
