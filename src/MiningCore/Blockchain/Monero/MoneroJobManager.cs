@@ -116,13 +116,13 @@ namespace MiningCore.Blockchain.Monero
 		    // if block candidate, submit & check if accepted by network
 		    if (share.IsBlockCandidate)
 		    {
-			    logger.Info(() => $"[{LogCat}] Submitting block {share.BlobHash.Substring(0, 6)}");
+			    logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
 
 			    share.IsBlockCandidate = await SubmitBlockAsync(share);
 
 			    if (share.IsBlockCandidate)
 			    {
-				    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlobHash.Substring(0, 6)}");
+				    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
 
 					share.TransactionConfirmationData = share.BlobHash;
 				}
@@ -336,7 +336,7 @@ namespace MiningCore.Blockchain.Monero
 			{
 				var error = response.Error?.Message ?? response.Response?.Status;
 
-				logger.Warn(() => $"[{LogCat}] Block submission failed with: {error}");
+				logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
 				return false;
 			}
 

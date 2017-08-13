@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
+using System.Numerics;
 using MiningCore.Configuration;
 
 namespace MiningCore.Blockchain.Bitcoin
@@ -41,6 +43,7 @@ namespace MiningCore.Blockchain.Bitcoin
 	public class BitcoinConstants
 	{
 		public const decimal SatoshisPerBitcoin = 100000000;
+		public static readonly BigInteger Diff1 = BigInteger.Parse("00000000ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
 	}
 
 	public class KnownAddresses

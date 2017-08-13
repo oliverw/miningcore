@@ -104,7 +104,7 @@ namespace MiningCore.Payments.PayoutSchemes
 				// iterate over shares
 				var start = Math.Max(0, blockPage.Length - 1);
 
-				for (var i = start; i >= 0; i--)
+				for (var i = start; i >= 0 && !done; i--)
 				{
 					var share = blockPage[i];
 

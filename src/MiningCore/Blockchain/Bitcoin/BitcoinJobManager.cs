@@ -137,7 +137,7 @@ namespace MiningCore.Blockchain.Bitcoin
 			// if block candidate, submit & check if accepted by network
 			if (share.IsBlockCandidate)
 			{
-				logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHash}");
+				logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
 				var acceptResponse = await SubmitBlockAsync(share);
 
@@ -146,7 +146,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
 				if (share.IsBlockCandidate)
 				{
-					logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHash}");
+					logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
 
 					// persist the coinbase transaction-hash to allow the payment processor 
 					// to verify later on that the pool has received the reward for the block
@@ -440,7 +440,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
 			if (!string.IsNullOrEmpty(submitError))
 		    {
-			    logger.Warn(()=> $"[{LogCat}] Block submission failed with: {submitError}");
+			    logger.Warn(()=> $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
 			    return (false, null);
 		    }
 

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using CodeContracts;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Stratum;
-using NBitcoin.BouncyCastle.Math;
+using Numerics;
 
 namespace MiningCore.Blockchain.Monero
 {
@@ -91,30 +93,26 @@ namespace MiningCore.Blockchain.Monero
 				throw new StratumException(StratumError.MinusOne, "bad hash");
 
 			// check difficulty
-			var hashDiff = MoneroConstants.Diff1.Divide(new BigInteger(hashBytes.ToReverseArray()));
-			var hashDiffLong = hashDiff.LongValue;
+			var headerValue = new BigInteger(hashBytes);
+			var shareDiff = (double)new BigRational(MoneroConstants.Diff1b, headerValue);
+			var ratio = shareDiff / stratumDifficulty;
 
 			// test if share meets at least workers current difficulty
-			var ratio = hashDiffLong / stratumDifficulty;
-
 			if (ratio < 0.99)
-				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({hashDiffLong})");
+				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
-			// valid share
+			// valid share, check if the share also meets the much harder block difficulty (block candidate)
+			var isBlockCandidate = shareDiff >= blockTemplate.Difficulty;
+
 			var result = new MoneroShare
 			{
-				Difficulty = hashDiffLong,
-				NormalizedDifficulty = hashDiffLong / MoneroConstants.DifficultyNormalizationFactor,
-				BlockHeight = blockTemplate.Height
+				Difficulty = shareDiff,
+				NormalizedDifficulty = shareDiff / MoneroConstants.DifficultyNormalizationFactor,
+				BlockHeight = blockTemplate.Height,
+				IsBlockCandidate = isBlockCandidate,
+				BlobHex = blob.ToHexString(),
+				BlobHash = ComputeBlockHash(blobConverted).ToHexString()
 			};
-
-			// now check if the share meets the much harder block difficulty (block candidate)
-			if (hashDiff.LongValue >= blockTemplate.Difficulty)
-			{
-				result.IsBlockCandidate = true;
-				result.BlobHex = blob.ToHexString();
-				result.BlobHash = ComputeBlockHash(blobConverted).ToHexString();
-			}
 
 			return result;
 		}
@@ -146,7 +144,7 @@ namespace MiningCore.Blockchain.Monero
 
 		private string EncodeTarget(double difficulty)
 		{
-			var diff = BigInteger.ValueOf((long) difficulty);
+			var diff = NBitcoin.BouncyCastle.Math.BigInteger.ValueOf((long) difficulty);
 			var quotient = MoneroConstants.Diff1.Divide(diff);
 			var bytes = quotient.ToByteArray();
 			var padded = Enumerable.Repeat((byte) 0, 32).ToArray();

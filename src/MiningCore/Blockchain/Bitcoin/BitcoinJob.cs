@@ -13,6 +13,7 @@ using MiningCore.Extensions;
 using MiningCore.Stratum;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Numerics;
 using Transaction = NBitcoin.Transaction;
 
 namespace MiningCore.Blockchain.Bitcoin
@@ -401,32 +402,30 @@ namespace MiningCore.Blockchain.Bitcoin
 			var headerValue = new BigInteger(headerHash);
 
 			// calc share-diff
+			var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * (difficultyNormalizationFactor * 1000);
 			var headerTarget = new Target(new uint256(headerHash, true));
-			var ratio = headerTarget.Difficulty / stratumDifficulty;
+			var ratio = shareDiff / stratumDifficulty;
 
 			// test if share meets at least workers current difficulty
 			if (ratio < 0.99)
 				throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({headerTarget.Difficulty})");
 
-			// valid share
+			// valid share, check if the share also meets the much harder block difficulty (block candidate)
+			var isBlockCandidate = headerValue < blockTargetValue;
+
 			var result = new BitcoinShare
 			{
 				Difficulty = headerTarget.Difficulty,
 				NormalizedDifficulty = headerTarget.Difficulty * difficultyNormalizationFactor,
-				BlockHeight = blockTemplate.Height
+				BlockHeight = blockTemplate.Height,
+				IsBlockCandidate = isBlockCandidate
 			};
 
-			// now check if the share meets the much harder block difficulty (block candidate)
-			if (headerValue < blockTargetValue)
-			{
-				result.IsBlockCandidate = true;
-
-				var blockBytes = SerializeBlock(headerBytes, coinbase);
-				result.BlockHex = blockBytes.ToHexString();
-				result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
-				result.BlockHeight = blockTemplate.Height;
-				result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-			}
+			var blockBytes = SerializeBlock(headerBytes, coinbase);
+			result.BlockHex = blockBytes.ToHexString();
+			result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+			result.BlockHeight = blockTemplate.Height;
+			result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
 
 			return result;
 		}
