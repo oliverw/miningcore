@@ -254,13 +254,14 @@ namespace MiningCore
 				logger.ThrowLogPoolStartupException("No pools configured!");
 
 			ValidatePoolIds();
+			ValidateStratumPorts();
 		}
 
 		private static void ValidatePoolIds()
 		{
 			// check for missing ids
 			if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-				logger.ThrowLogPoolStartupException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+				throw new PoolStartupAbortException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
 
 			// check for duplicate ids
 			var ids = clusterConfig.Pools
@@ -268,7 +269,20 @@ namespace MiningCore
 				.ToArray();
 
 			if (ids.Any(id => id.Count() > 1))
-				logger.ThrowLogPoolStartupException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
+				throw new PoolStartupAbortException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
+		}
+
+		private static void ValidateStratumPorts()
+		{
+			var ports = clusterConfig.Pools.SelectMany(x => x.Ports.Select(y => y.Key))
+				.GroupBy(x => x)
+				.ToArray();
+
+			foreach (var port in ports)
+			{
+				if(port.Count() > 1)
+					throw new PoolStartupAbortException($"Stratum port {port.Key} is used multiple times");
+			}
 		}
 
 		private static void ValidateRuntimeEnvironment()
