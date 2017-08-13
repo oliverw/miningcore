@@ -11,6 +11,7 @@ namespace MiningCore.Persistence.Postgres.Entities
 		public string Worker { get; set; }
 		public double Difficulty { get; set; }
 		public double StratumDifficulty { get; set; }
+		public double StratumDifficultyBase { get; set; }
 		public double NetworkDifficulty { get; set; }
 		public string IpAddress { get; set; }
 		public DateTime Created { get; set; }

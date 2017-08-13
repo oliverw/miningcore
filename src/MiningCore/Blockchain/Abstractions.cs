@@ -49,6 +49,11 @@ namespace MiningCore.Blockchain
 		double StratumDifficulty { get; set; }
 
 		/// <summary>
+		/// Base difficulty configured for stratum port the submitting worker was connected to
+		/// </summary>
+		double StratumDifficultyBase { get; set; }
+
+		/// <summary>
 		/// Difficulty relative to a Bitcoin Difficulty 1 Share (used for pool hashrate calculation)
 		/// </summary>
 		double NormalizedDifficulty { get; set; }

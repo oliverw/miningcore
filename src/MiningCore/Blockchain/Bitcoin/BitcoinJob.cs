@@ -402,8 +402,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
 			// calc share-diff
 			var headerTarget = new Target(new uint256(headerHash, true));
-			var shareDiffNormalized = headerTarget.Difficulty * difficultyNormalizationFactor;
-			var ratio = shareDiffNormalized / stratumDifficulty;
+			var ratio = headerTarget.Difficulty / stratumDifficulty;
 
 			// test if share meets at least workers current difficulty
 			if (ratio < 0.99)
@@ -413,8 +412,7 @@ namespace MiningCore.Blockchain.Bitcoin
 			var result = new BitcoinShare
 			{
 				Difficulty = headerTarget.Difficulty,
-				NormalizedDifficulty = shareDiffNormalized,
-				StratumDifficulty = stratumDifficulty,
+				NormalizedDifficulty = headerTarget.Difficulty * difficultyNormalizationFactor,
 				BlockHeight = blockTemplate.Height
 			};
 

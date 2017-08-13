@@ -13,6 +13,7 @@ namespace MiningCore.Blockchain
 		public string IpAddress { get; set; }
 		public double Difficulty { get; set; }
 		public double StratumDifficulty { get; set; }
+		public double StratumDifficultyBase { get; set; }
 		public double NetworkDifficulty { get; set; }
 		public double NormalizedDifficulty { get; set; }
 		public long BlockHeight { get; set; }

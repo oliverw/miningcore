@@ -93,7 +93,8 @@ namespace MiningCore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission, double stratumDifficulty)
+        public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission, 
+			double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
@@ -165,6 +166,8 @@ namespace MiningCore.Blockchain.Bitcoin
 			share.Miner = minerName;
 	        share.Worker = workerName;
 	        share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
+	        share.StratumDifficulty = stratumDifficulty;
+	        share.StratumDifficultyBase = stratumDifficultyBase;
 			share.Created = DateTime.UtcNow;
 
 			return share;
@@ -503,7 +506,7 @@ namespace MiningCore.Blockchain.Bitcoin
 				case CoinType.GRS:
 					coinbaseHasher = sha256s;
 					headerHasher = new Groestl();
-					blockHasher = sha256dReverse;
+					blockHasher = new DigestReverser(headerHasher);
 					difficultyNormalizationFactor = Math.Pow(2, 8) / 1000;
 					break;
 

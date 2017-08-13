@@ -105,7 +105,6 @@ namespace MiningCore.Blockchain.Monero
 			{
 				Difficulty = hashDiffLong,
 				NormalizedDifficulty = hashDiffLong / MoneroConstants.DifficultyNormalizationFactor,
-				StratumDifficulty = stratumDifficulty,
 				BlockHeight = blockTemplate.Height
 			};
 
