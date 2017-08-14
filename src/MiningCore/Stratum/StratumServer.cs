@@ -165,6 +165,7 @@ namespace MiningCore.Stratum
             var subscriptionId = client.ConnectionId;
 
             if (!string.IsNullOrEmpty(subscriptionId))
+            {
                 lock (clients)
                 {
                     Tuple<StratumClient<TClientContext>, IDisposable> item;
@@ -174,6 +175,7 @@ namespace MiningCore.Stratum
                         clients.Remove(subscriptionId);
                     }
                 }
+            }
 
             client.Disconnect();
 

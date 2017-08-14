@@ -228,9 +228,9 @@ namespace MiningCore.Util
         public BigRational(double value)
         {
             if (double.IsNaN(value))
-                throw new ArgumentException("Argument is not a number", "value");
+                throw new ArgumentException("Argument is not a number", nameof(value));
             if (double.IsInfinity(value))
-                throw new ArgumentException("Argument is infinity", "value");
+                throw new ArgumentException("Argument is infinity", nameof(value));
 
             bool isFinite;
             int sign;
@@ -266,7 +266,7 @@ namespace MiningCore.Util
             var bits = decimal.GetBits(value);
             if (bits == null || bits.Length != 4 || (bits[3] & ~(DecimalSignMask | DecimalScaleMask)) != 0 ||
                 (bits[3] & DecimalScaleMask) > 28 << 16)
-                throw new ArgumentException("invalid Decimal", "value");
+                throw new ArgumentException("invalid Decimal", nameof(value));
 
             if (value == decimal.Zero)
             {
@@ -403,7 +403,7 @@ namespace MiningCore.Util
             if (exponent.Sign < 0)
             {
                 if (baseValue == Zero)
-                    throw new ArgumentException("cannot raise zero to a negative power", "baseValue");
+                    throw new ArgumentException("cannot raise zero to a negative power", nameof(baseValue));
                 // n^(-e) -> (1/n)^e
                 baseValue = Invert(baseValue);
                 exponent = BigInteger.Negate(exponent);
@@ -764,7 +764,7 @@ namespace MiningCore.Util
         void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
-                throw new ArgumentNullException("info");
+                throw new ArgumentNullException(nameof(info));
 
             info.AddValue("Numerator", m_numerator);
             info.AddValue("Denominator", Denominator);
@@ -773,7 +773,7 @@ namespace MiningCore.Util
         private BigRational(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
-                throw new ArgumentNullException("info");
+                throw new ArgumentNullException(nameof(info));
 
             m_numerator = (BigInteger) info.GetValue("Numerator", typeof(BigInteger));
             Denominator = (BigInteger) info.GetValue("Denominator", typeof(BigInteger));
