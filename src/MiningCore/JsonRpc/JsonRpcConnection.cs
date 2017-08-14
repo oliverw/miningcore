@@ -49,13 +49,13 @@ namespace MiningCore.JsonRpc
 
                         if (!string.IsNullOrEmpty(data))
                         {
-                            sb.Append(data);
-
-                            if (sb.Length < MaxRequestLength)
+                            if (sb.Length + data.Length < MaxRequestLength)
                             {
+                                sb.Append(data);
                                 int index;
 
-                                while ((index = sb.ToString().IndexOf('\n')) != -1)
+                                // scan for lines and emit
+                                while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
                                 {
                                     var line = sb.ToString(0, index);
                                     sb.Remove(0, index + 1);
