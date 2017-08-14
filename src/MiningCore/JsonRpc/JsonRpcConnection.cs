@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -14,8 +12,6 @@ using Newtonsoft.Json;
 
 // http://www.jsonrpc.org/specification
 // https://github.com/Astn/JSON-RPC.NET
-//
-// A Notification is a Request object without an "id" member.
 
 namespace MiningCore.JsonRpc
 {
@@ -43,39 +39,39 @@ namespace MiningCore.JsonRpc
 
             // convert input into sequence of chars
             var incomingLines = Observable.Create<string>(observer =>
+            {
+                upstream.OnRead((handle, buffer) =>
                 {
-                    upstream.OnRead((handle, buffer) =>
-                    {
-                        // onAccept
-                        var data = buffer.ReadString(Encoding.UTF8, new[] {(byte) 10}).Trim();
+                    // onAccept
+                    var data = buffer.ReadString(Encoding.UTF8, new[] {(byte) 10}).Trim();
 
+                    if (!string.IsNullOrEmpty(data))
+                    {
                         if (data.Length < MaxRequestLength)
                             observer.OnNext(data);
                         else
-                            observer.OnError(
-                                new InvalidDataException(
-                                    $"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
-                    }, (handle, ex) =>
-                    {
-                        // onError
-                        observer.OnError(ex);
-                    }, handle =>
-                    {
-                        // onCompleted
-                        observer.OnCompleted();
-                    });
+                            observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                    }
+                }, (handle, ex) =>
+                {
+                    // onError
+                    observer.OnError(ex);
+                }, handle =>
+                {
+                    // onCompleted
+                    observer.OnCompleted();
+                });
 
-                    return Disposable.Create(() =>
-                    {
-                        if (upstream.IsValid)
-                            logger.Debug(
-                                () => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
+                return Disposable.Create(() =>
+                {
+                    if (upstream.IsValid)
+                        logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
 
-                        upstream.Dispose();
-                    });
-                })
-                .Publish()
-                .RefCount();
+                    upstream.Dispose();
+                });
+            })
+            .Publish()
+            .RefCount();
 
             Received = incomingLines
                 .Where(line => line.Length > 0) // ignore empty lines
