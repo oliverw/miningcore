@@ -69,7 +69,7 @@ namespace MiningCore.Blockchain.Monero
                     if (isNew)
                     {
                         currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
-                            poolConfig, clusterConfig, networkType);
+                            poolConfig, clusterConfig);
 
                         currentJob.Init();
 
@@ -172,8 +172,7 @@ namespace MiningCore.Blockchain.Monero
 
         public bool ValidateAddress(string address)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address),
-                $"{nameof(address)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             if (address.Length != MoneroConstants.AddressLength)
                 return false;
@@ -218,8 +217,7 @@ namespace MiningCore.Blockchain.Monero
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
-                logger.Info(
-                    () => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
+                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
 
                 share.IsBlockCandidate = await SubmitBlockAsync(share);
 
@@ -304,8 +302,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (!syncPendingNotificationShown)
                 {
-                    logger.Info(
-                        () => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -322,12 +319,10 @@ namespace MiningCore.Blockchain.Monero
             var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
 
             if (infoResponse.Error != null)
-                logger.ThrowLogPoolStartupException(
-                    $"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
+                logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
             if (addressResponse.Response?.Address != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'",
-                    LogCat);
+                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 

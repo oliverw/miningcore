@@ -226,12 +226,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public async Task<bool> ValidateAddressAsync(string address)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address),
-                $"{nameof(address)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result =
-                await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(BitcoinCommands.ValidateAddress,
-                    new[] {address});
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
+                BitcoinCommands.ValidateAddress, new[] {address});
+
             return result.Response != null && result.Response.IsValid;
         }
 
@@ -373,8 +372,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 if (!syncPendingNotificationShown)
                 {
-                    logger.Info(
-                        () => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -405,8 +403,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     .ToArray();
 
                 if (errors.Any())
-                    logger.ThrowLogPoolStartupException(
-                        $"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", LogCat);
+                    logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", LogCat);
             }
 
             // extract results
@@ -417,8 +414,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.IsValid)
-                logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid",
-                    LogCat);
+                logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
             if (!validateAddressResponse.IsMine)
                 logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);

@@ -44,9 +44,7 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public const decimal SatoshisPerBitcoin = 100000000;
 
-        public static readonly BigInteger Diff1 =
-            BigInteger.Parse("00000000ffff0000000000000000000000000000000000000000000000000000",
-                NumberStyles.HexNumber);
+        public static readonly BigInteger Diff1 = BigInteger.Parse("00000000ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
     }
 
     public class KnownAddresses

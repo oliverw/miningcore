@@ -19,46 +19,6 @@ namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinJob
     {
-        // serialization constants
-        private static byte[] scriptSigFinalBytes =
-            new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
-
-        private static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
-
-        private static uint txVersion = 1u
-            ; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
-
-        private static uint txInputCount = 1u;
-        private static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
-        private static uint txInSequence;
-        private static uint txLockTime;
-        private readonly IHashAlgorithm blockHasher;
-        private readonly ClusterConfig clusterConfig;
-        private readonly IHashAlgorithm coinbaseHasher;
-        private readonly double difficultyNormalizationFactor;
-        private readonly int extraNoncePlaceHolderLength;
-        private readonly IHashAlgorithm headerHasher;
-        private readonly bool isPoS;
-
-        private readonly BitcoinNetworkType networkType;
-        private readonly IDestination poolAddressDestination;
-        private readonly PoolConfig poolConfig;
-        private readonly HashSet<string> submissions = new HashSet<string>();
-        private BigInteger blockTargetValue;
-        private byte[] coinbaseFinal;
-        private string coinbaseFinalHex;
-        private byte[] coinbaseInitial;
-        private string coinbaseInitialHex;
-        private string[] merkleBranchesHex;
-        private MerkleTree mt;
-
-        ///////////////////////////////////////////
-        // GetJobParams related properties
-
-        private string previousBlockHashReversedHex;
-        private Money rewardToPool;
-        private Transaction txOut;
-
         public BitcoinJob(GetBlockTemplateResponse blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
@@ -90,6 +50,42 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
         }
+
+        // serialization constants
+        private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+        private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
+        private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+
+        private static uint txInputCount = 1u;
+        private static uint txInPrevOutIndex = (uint)(Math.Pow(2, 32) - 1);
+        private static uint txInSequence;
+        private static uint txLockTime;
+        private readonly IHashAlgorithm blockHasher;
+        private readonly ClusterConfig clusterConfig;
+        private readonly IHashAlgorithm coinbaseHasher;
+        private readonly double difficultyNormalizationFactor;
+        private readonly int extraNoncePlaceHolderLength;
+        private readonly IHashAlgorithm headerHasher;
+        private readonly bool isPoS;
+
+        private readonly BitcoinNetworkType networkType;
+        private readonly IDestination poolAddressDestination;
+        private readonly PoolConfig poolConfig;
+        private readonly HashSet<string> submissions = new HashSet<string>();
+        private BigInteger blockTargetValue;
+        private byte[] coinbaseFinal;
+        private string coinbaseFinalHex;
+        private byte[] coinbaseInitial;
+        private string coinbaseInitialHex;
+        private string[] merkleBranchesHex;
+        private MerkleTree mt;
+
+        ///////////////////////////////////////////
+        // GetJobParams related properties
+
+        private string previousBlockHashReversedHex;
+        private Money rewardToPool;
+        private Transaction txOut;
 
         private void BuildMerkleBranches()
         {
