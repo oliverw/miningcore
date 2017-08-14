@@ -37,7 +37,6 @@ namespace MiningCore.JsonRpc
 
             this.upstream = upstream;
 
-            // convert input into sequence of chars
             var incomingLines = Observable.Create<string>(observer =>
             {
                 upstream.OnRead((handle, buffer) =>
@@ -110,7 +109,7 @@ namespace MiningCore.JsonRpc
 
         public void Close()
         {
-            upstream.CloseHandle();
+            upstream?.Dispose();
         }
 
         #endregion
