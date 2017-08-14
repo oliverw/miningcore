@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
-using LibUvManaged;
 
-namespace MiningForce.Tests.Util
+namespace MiningCore.Tests.Util
 {
+	/*
     public class MockLibUvConnection : ILibUvConnection
     {
 	    public MockLibUvConnection(IPEndPoint remoteEndPoint = null, string connectionId = "MOCKCONN")
@@ -90,4 +89,5 @@ namespace MiningForce.Tests.Util
 		    ReceiveSubject.OnError(ex);
 	    }
 	}
+	*/
 }

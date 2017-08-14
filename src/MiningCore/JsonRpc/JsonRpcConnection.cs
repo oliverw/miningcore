@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using CodeContracts;
-using LibUvManaged;
+using NetUV.Core.Handles;
 using NLog;
 using Newtonsoft.Json;
 
@@ -28,28 +30,46 @@ namespace MiningCore.JsonRpc
 
         private readonly JsonSerializerSettings serializerSettings;
         private readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private ILibUvConnection upstream;
+        private Tcp upstream;
         private const int MaxRequestLength = 8192;
 
         #region Implementation of IJsonRpcConnection
 
-        public void Init(ILibUvConnection upstream)
+        public void Init(Tcp upstream)
         {
             Contract.RequiresNonNull(upstream, nameof(upstream));
 
             this.upstream = upstream;
 
             // convert input into sequence of chars
-            var incomingChars = upstream.Received
-                .SelectMany(bytes => Encoding.UTF8.GetChars(bytes))
-                .Publish()
-                .RefCount();
+            var incomingLines = Observable.Create<string>(observer =>
+	        {
+		        upstream.OnRead((handle, buffer) =>
+		        {
+					// onAccept
+					var data = buffer.ReadString(Encoding.UTF8, new []{(byte) 10}).Trim();
 
-            // buffer until newline detected
-            var incomingLines = incomingChars
-                .Buffer(incomingChars.Where(c => c == '\n' || c == '\r')) // scan for newline
-                .TakeWhile(ValidateInput)  // flood protetion
-                .Select(c => new string(c.ToArray()).Trim()); // transform back to string
+			        if (data.Length < MaxRequestLength)
+				        observer.OnNext(data);
+					else
+				        observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+		        }, (handle, ex) =>
+		        {
+					// onError
+					observer.OnError(ex);
+				}, handle =>
+		        {
+					// onCompleted
+					observer.OnCompleted();
+				});
+
+		        return Disposable.Create(() =>
+		        {
+			        upstream.Dispose();
+		        });
+	        })
+            .Publish()
+            .RefCount();
 
             Received = incomingLines
 		        .Where(line => line.Length > 0) // ignore empty lines
@@ -68,7 +88,7 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
 	        logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
-			upstream.Send(Encoding.UTF8.GetBytes(json));
+			upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
         }
 
         public void Send<T>(JsonRpcRequest<T> request)
@@ -76,27 +96,17 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
 	        logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
-			upstream.Send(Encoding.UTF8.GetBytes(json));
+			upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
         }
 
-        public IPEndPoint RemoteEndPoint => upstream?.RemoteEndpoint;
-        public string ConnectionId => upstream?.ConnectionId;
+        public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
+        public string ConnectionId => (string) upstream?.UserToken;
 
         public void Close()
         {
-            upstream.Close();
+            upstream.CloseHandle();
         }
 
         #endregion
-
-        private bool ValidateInput(IList<char> chars)
-        {
-            var isInvalid = chars.Count > MaxRequestLength;
-
-            if (isInvalid)
-                logger.Error(() => $"[{upstream.ConnectionId}] Incoming message too big. Closing");
-
-            return !isInvalid;
-        }
     }
 }

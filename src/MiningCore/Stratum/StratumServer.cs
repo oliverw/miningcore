@@ -8,10 +8,12 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
-using LibUvManaged;
 using MiningCore.Banning;
 using NLog;
 using MiningCore.JsonRpc;
+using MiningCore.Util;
+using NetUV.Core.Handles;
+using NetUV.Core.Native;
 
 namespace MiningCore.Stratum
 {
@@ -27,7 +29,7 @@ namespace MiningCore.Stratum
         protected readonly IComponentContext ctx;
 		protected bool disableConnectionLogging = false;
         protected ILogger logger;
-        protected readonly Dictionary<int, LibUvListener> ports = new Dictionary<int, LibUvListener>();
+        protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
 		protected IBanManager banManager;
 
 		protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients = 
@@ -40,14 +42,30 @@ namespace MiningCore.Stratum
             // start ports
             foreach (var endpoint in stratumPorts)
             {
-                // create the listener
-                var listener = new LibUvListener();
-                ports[endpoint.Port] = listener;
-
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
                 {
-                    listener.Start(endpoint, con => OnClientConnected(con, endpoint));
+	                var loop = new Loop();
+
+	                var listener = loop
+						.CreateTcp()
+		                .SimultaneousAccepts(true)
+		                .KeepAlive(false, 0)
+		                .NoDelay(false)
+		                .Listen(endpoint, (con, ex) =>
+		                {
+			                if (ex == null)
+				                OnClientConnected(con, endpoint);
+							else
+				                logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
+		                });
+
+	                lock (ports)
+	                {
+						ports[endpoint.Port] = listener;
+					}
+
+	                loop.RunDefault();
                 }, TaskCreationOptions.LongRunning);
 
                 task.Start();
@@ -56,17 +74,19 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void OnClientConnected(ILibUvConnection con, IPEndPoint endpointConfig)
+        private void OnClientConnected(Tcp con, IPEndPoint endpointConfig)
         {
             try
             {
-                var connectionId = con.ConnectionId;
+	            var remoteEndPoint = con.GetPeerEndPoint();
+				var connectionId = CorrelationIdGenerator.GetNextId();
+	            con.UserToken = connectionId;
 
 				// get rid of banned clients as early as possible
-	            if (banManager?.IsBanned(con.RemoteEndpoint.Address) == true)
+	            if (banManager?.IsBanned(remoteEndPoint.Address) == true)
 	            {
-		            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
-		            con.Close();
+		            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+		            con.Dispose();
 		            return;
 	            }
 
@@ -87,7 +107,7 @@ namespace MiningCore.Stratum
 				            // boot pre-connected clients
 				            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
 				            {
-					            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {con.RemoteEndpoint.Address}");
+					            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
 					            DisconnectClient(client);
 					            return;
 				            }
@@ -117,7 +137,11 @@ namespace MiningCore.Stratum
 
         private void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
-            logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+	        var opEx = ex as OperationException;
+
+			// log everything but ECONNRESET which just indicates the client disconnecting
+			if (opEx?.ErrorCode != ErrorCode.ECONNRESET)
+	            logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }

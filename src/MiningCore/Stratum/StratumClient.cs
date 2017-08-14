@@ -3,8 +3,8 @@ using System.Net;
 using System.Reactive;
 using Autofac;
 using CodeContracts;
-using LibUvManaged;
 using MiningCore.JsonRpc;
+using NetUV.Core.Handles;
 
 namespace MiningCore.Stratum
 {
@@ -15,7 +15,7 @@ namespace MiningCore.Stratum
 
 		#region API-Surface
 
-		public void Init(ILibUvConnection uvCon, IComponentContext ctx, IPEndPoint endpointConfig)
+		public void Init(Tcp uvCon, IComponentContext ctx, IPEndPoint endpointConfig)
         {
 	        Contract.RequiresNonNull(uvCon, nameof(uvCon));
             Contract.RequiresNonNull(ctx, nameof(ctx));
