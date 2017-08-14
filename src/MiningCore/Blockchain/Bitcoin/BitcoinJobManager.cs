@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
-using CodeContracts;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Crypto;
@@ -17,6 +16,7 @@ using MiningCore.Util;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin
 {

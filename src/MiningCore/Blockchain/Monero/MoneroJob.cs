@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using CodeContracts;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -8,6 +7,7 @@ using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NBitcoin.BouncyCastle.Math;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Monero
 {

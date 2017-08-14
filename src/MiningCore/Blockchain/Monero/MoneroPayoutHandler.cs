@@ -4,7 +4,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using CodeContracts;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
@@ -14,6 +13,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
+using Contract = MiningCore.Contracts.Contract;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
 using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
 

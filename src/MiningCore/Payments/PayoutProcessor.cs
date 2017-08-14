@@ -5,13 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
-using CodeContracts;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments
 {

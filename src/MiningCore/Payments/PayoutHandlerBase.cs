@@ -2,7 +2,6 @@
 using System.Data.Common;
 using System.Linq;
 using AutoMapper;
-using CodeContracts;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Persistence;
@@ -11,6 +10,7 @@ using MiningCore.Persistence.Repositories;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments
 {

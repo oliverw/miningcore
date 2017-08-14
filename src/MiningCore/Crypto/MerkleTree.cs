@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using CodeContracts;
 using MiningCore.Extensions;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Crypto
 {

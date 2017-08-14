@@ -1,7 +1,7 @@
 ﻿using System;
-using CodeContracts;
 using MiningCore.Configuration;
 using MiningCore.Util;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.VarDiff
 {

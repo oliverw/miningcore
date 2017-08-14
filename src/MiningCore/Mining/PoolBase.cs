@@ -7,7 +7,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Autofac;
-using CodeContracts;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
@@ -17,6 +16,7 @@ using MiningCore.Stratum;
 using MiningCore.Util;
 using MiningCore.VarDiff;
 using Newtonsoft.Json;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Mining
 {

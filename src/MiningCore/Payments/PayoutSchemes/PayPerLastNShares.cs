@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using CodeContracts;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments.PayoutSchemes
 {

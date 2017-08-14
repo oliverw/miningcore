@@ -5,10 +5,10 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using CodeContracts;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 // http://www.jsonrpc.org/specification
 // https://github.com/Astn/JSON-RPC.NET

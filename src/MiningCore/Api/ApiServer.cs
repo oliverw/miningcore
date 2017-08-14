@@ -5,7 +5,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using CodeContracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +14,7 @@ using MiningCore.Mining;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Api
 {

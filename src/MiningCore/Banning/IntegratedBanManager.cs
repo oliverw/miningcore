@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
-using CodeContracts;
 using Microsoft.Extensions.Caching.Memory;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Banning
 {

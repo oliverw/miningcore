@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using CodeContracts;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Crypto;
@@ -14,6 +13,7 @@ using MiningCore.Stratum;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin
 {

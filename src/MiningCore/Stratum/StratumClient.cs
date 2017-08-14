@@ -2,9 +2,9 @@
 using System.Net;
 using System.Reactive;
 using Autofac;
-using CodeContracts;
 using MiningCore.JsonRpc;
 using NetUV.Core.Handles;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Stratum
 {

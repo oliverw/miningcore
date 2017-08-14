@@ -9,7 +9,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 using AutoMapper;
-using CodeContracts;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -21,6 +20,7 @@ using Newtonsoft.Json;
 using NLog;
 using Polly;
 using Polly.CircuitBreaker;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments
 {

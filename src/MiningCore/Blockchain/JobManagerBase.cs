@@ -3,12 +3,12 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using CodeContracts;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Util;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain
 {

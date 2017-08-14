@@ -5,7 +5,6 @@ using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
-using CodeContracts;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
@@ -15,6 +14,7 @@ using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
 using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
 

@@ -7,13 +7,13 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
-using CodeContracts;
 using MiningCore.Banning;
 using MiningCore.JsonRpc;
 using MiningCore.Util;
 using NetUV.Core.Handles;
 using NetUV.Core.Native;
 using NLog;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Stratum
 {

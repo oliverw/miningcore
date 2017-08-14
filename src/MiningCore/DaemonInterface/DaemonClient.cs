@@ -7,11 +7,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using CodeContracts;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
 {
