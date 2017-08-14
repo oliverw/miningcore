@@ -8,7 +8,7 @@ namespace MiningCore.Extensions
     public static class ConnectionFactoryExtensions
     {
         /// <summary>
-        /// Run the specified action providing it with a fresh connection. 
+        ///     Run the specified action providing it with a fresh connection.
         /// </summary>
         public static void Run(this IConnectionFactory factory, Action<IDbConnection> action)
         {
@@ -19,7 +19,7 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action providing it with a fresh connection returing its result.
+        ///     Run the specified action providing it with a fresh connection returing its result.
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action)
@@ -31,7 +31,7 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action providing it with a fresh connection returing its result.
+        ///     Run the specified action providing it with a fresh connection returing its result.
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static async Task<T> RunAsync<T>(this IConnectionFactory factory,
@@ -44,8 +44,8 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited.
+        ///     Run the specified action inside a transaction. If the action throws an exception,
+        ///     the transaction is rolled back. Otherwise it is commited.
         /// </summary>
         public static void RunTx(this IConnectionFactory factory,
             Action<IDbConnection, IDbTransaction> action,
@@ -73,8 +73,8 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited. 
+        ///     Run the specified action inside a transaction. If the action throws an exception,
+        ///     the transaction is rolled back. Otherwise it is commited.
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static T RunTx<T>(this IConnectionFactory factory,
@@ -105,8 +105,8 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited. 
+        ///     Run the specified action inside a transaction. If the action throws an exception,
+        ///     the transaction is rolled back. Otherwise it is commited.
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory,
@@ -137,8 +137,8 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited. 
+        ///     Run the specified action inside a transaction. If the action throws an exception,
+        ///     the transaction is rolled back. Otherwise it is commited.
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static async Task RunTxAsync(this IConnectionFactory factory,

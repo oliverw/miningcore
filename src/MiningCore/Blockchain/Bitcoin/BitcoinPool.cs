@@ -16,66 +16,17 @@ namespace MiningCore.Blockchain.Bitcoin
     [BitcoinCoinsMetaData]
     public class BitcoinPool : PoolBase<BitcoinWorkerContext>
     {
+        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
+
+        private object currentJobParams;
+        private BitcoinJobManager manager;
+
         public BitcoinPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
             base(ctx, serializerSettings, cf)
         {
         }
-
-        private object currentJobParams;
-        private BitcoinJobManager manager;
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
-
-        #region Overrides
-
-        protected override async Task InitializeJobManager()
-        {
-            manager = ctx.Resolve<BitcoinJobManager>();
-            manager.Configure(poolConfig, clusterConfig);
-
-            await manager.StartAsync();
-            manager.Jobs.Subscribe(OnNewJob);
-
-            // we need work before opening the gates
-            await manager.Jobs.Take(1).ToTask();
-        }
-
-        protected override async Task OnRequestAsync(StratumClient<BitcoinWorkerContext> client,
-            Timestamped<JsonRpcRequest> tsRequest)
-        {
-            var request = tsRequest.Value;
-
-            switch (request.Method)
-            {
-                case BitcoinStratumMethods.Subscribe:
-                    OnSubscribe(client, tsRequest);
-                    break;
-
-                case BitcoinStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest);
-                    break;
-
-                case BitcoinStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest);
-                    break;
-
-                default:
-                    logger.Debug(
-                        () =>
-                            $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
-
-                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
-            }
-        }
-
-        protected override void UpdateBlockChainStats()
-        {
-            blockchainStats = manager.BlockchainStats;
-        }
-
-        #endregion // Overrides
 
         private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
@@ -95,7 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         new object[] {BitcoinStratumMethods.SetDifficulty, client.ConnectionId},
                         new object[] {BitcoinStratumMethods.MiningNotify, client.ConnectionId}
-                    },
+                    }
                 }
                 .Concat(manager.GetSubscriberData(client))
                 .ToArray();
@@ -151,9 +102,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (requestAge > maxShareAge)
             {
-                logger.Debug(
-                    () =>
-                        $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                 return;
             }
 
@@ -232,9 +181,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         // varDiff: if the client has a pending difficulty change, apply it now
                         if (client.Context.ApplyPendingDifficulty())
                         {
-                            logger.Debug(
-                                () =>
-                                    $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
+                            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
 
                             client.Notify(BitcoinStratumMethods.SetDifficulty,
                                 new object[] {client.Context.Difficulty});
@@ -246,13 +193,60 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     else
                     {
-                        logger.Info(
-                            () => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
 
                         DisconnectClient(client);
                     }
                 }
             });
         }
+
+        #region Overrides
+
+        protected override async Task InitializeJobManager()
+        {
+            manager = ctx.Resolve<BitcoinJobManager>();
+            manager.Configure(poolConfig, clusterConfig);
+
+            await manager.StartAsync();
+            manager.Jobs.Subscribe(OnNewJob);
+
+            // we need work before opening the gates
+            await manager.Jobs.Take(1).ToTask();
+        }
+
+        protected override async Task OnRequestAsync(StratumClient<BitcoinWorkerContext> client,
+            Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+
+            switch (request.Method)
+            {
+                case BitcoinStratumMethods.Subscribe:
+                    OnSubscribe(client, tsRequest);
+                    break;
+
+                case BitcoinStratumMethods.Authorize:
+                    await OnAuthorizeAsync(client, tsRequest);
+                    break;
+
+                case BitcoinStratumMethods.SubmitShare:
+                    await OnSubmitAsync(client, tsRequest);
+                    break;
+
+                default:
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+
+                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    break;
+            }
+        }
+
+        protected override void UpdateBlockChainStats()
+        {
+            blockchainStats = manager.BlockchainStats;
+        }
+
+        #endregion // Overrides
     }
 }

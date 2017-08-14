@@ -20,6 +20,8 @@ namespace MiningCore.Blockchain.Bitcoin
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
+        private readonly DaemonClient daemon;
+
         public BitcoinPayoutHandler(IConnectionFactory cf, IMapper mapper,
             DaemonClient daemon,
             IShareRepository shareRepo,
@@ -34,8 +36,6 @@ namespace MiningCore.Blockchain.Bitcoin
 
             this.daemon = daemon;
         }
-
-        private readonly DaemonClient daemon;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
@@ -96,10 +96,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                         else
                         {
-                            logger.Warn(
-                                () =>
-                                    $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
-                            continue;
+                            logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
                         }
                     }
 
@@ -155,9 +152,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (amounts.Count == 0)
                 return;
 
-            logger.Info(
-                () =>
-                    $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             var subtractFeesFrom = amounts.Keys.ToArray();
 
@@ -179,9 +174,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // check result
                 if (string.IsNullOrEmpty(txId))
-                    logger.Error(
-                        () =>
-                            $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' did not return a transaction id!");
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' did not return a transaction id!");
                 else
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
@@ -190,9 +183,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             else
             {
-                logger.Error(
-                    () =>
-                        $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
             }
         }
 

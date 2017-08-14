@@ -16,10 +16,20 @@ using NLog;
 namespace MiningCore.Payments
 {
     /// <summary>
-    /// Coin agnostic payment processor
+    ///     Coin agnostic payment processor
     /// </summary>
     public class PayoutProcessor
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IBalanceRepository balanceRepo;
+        private readonly IBlockRepository blockRepo;
+        private readonly IConnectionFactory cf;
+        private readonly IComponentContext ctx;
+        private readonly IShareRepository shareRepo;
+        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+        private ClusterConfig clusterConfig;
+        private Thread thread;
+
         public PayoutProcessor(IComponentContext ctx,
             IConnectionFactory cf,
             IBlockRepository blockRepo,
@@ -38,70 +48,6 @@ namespace MiningCore.Payments
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
         }
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private readonly IComponentContext ctx;
-        private readonly IConnectionFactory cf;
-        private readonly IBlockRepository blockRepo;
-        private readonly IShareRepository shareRepo;
-        private readonly IBalanceRepository balanceRepo;
-        private ClusterConfig clusterConfig;
-        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
-        private Thread thread;
-
-        #region API-Surface
-
-        public void Configure(ClusterConfig clusterConfig)
-        {
-            this.clusterConfig = clusterConfig;
-        }
-
-        public void Start()
-        {
-            thread = new Thread(async () =>
-            {
-                logger.Info(() => "Online");
-
-                var interval = TimeSpan.FromSeconds(
-                    clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
-
-                while (true)
-                {
-                    try
-                    {
-                        await ProcessPoolsAsync();
-                    }
-
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
-                }
-            });
-
-            thread.IsBackground = true;
-            thread.Priority = ThreadPriority.AboveNormal;
-            thread.Name = "Payment Processing";
-            thread.Start();
-        }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            stopEvent.Set();
-            thread.Join();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
 
         private async Task ProcessPoolsAsync()
         {
@@ -213,7 +159,7 @@ namespace MiningCore.Payments
                         Miner = (i & 1) == 0
                             ? "mkeiTodVRTseFymDbgi2HAV3Re8zv3DQFf"
                             : "n37zNp1QbtwHh9jVUThe6ZgCxvm9rdpX2f",
-                        PoolId = poolid,
+                        PoolId = poolid
                     };
 
                     shareDate -= shareOffset;
@@ -223,5 +169,59 @@ namespace MiningCore.Payments
             });
 #endif
         }
+
+        #region API-Surface
+
+        public void Configure(ClusterConfig clusterConfig)
+        {
+            this.clusterConfig = clusterConfig;
+        }
+
+        public void Start()
+        {
+            thread = new Thread(async () =>
+            {
+                logger.Info(() => "Online");
+
+                var interval = TimeSpan.FromSeconds(
+                    clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
+
+                while (true)
+                {
+                    try
+                    {
+                        await ProcessPoolsAsync();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+
+                    var waitResult = stopEvent.WaitOne(interval);
+
+                    // check if stop was signalled
+                    if (waitResult)
+                        break;
+                }
+            });
+
+            thread.IsBackground = true;
+            thread.Priority = ThreadPriority.AboveNormal;
+            thread.Name = "Payment Processing";
+            thread.Start();
+        }
+
+        public void Stop()
+        {
+            logger.Info(() => "Stopping ..");
+
+            stopEvent.Set();
+            thread.Join();
+
+            logger.Info(() => "Stopped");
+        }
+
+        #endregion // API-Surface
     }
 }

@@ -7,6 +7,8 @@ namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinExtraNonceProvider
     {
+        private uint counter;
+
         public BitcoinExtraNonceProvider()
         {
             uint instanceId;
@@ -21,12 +23,9 @@ namespace MiningCore.Blockchain.Bitcoin
             counter = instanceId << 27;
         }
 
-        private readonly byte[] extraNoncePlaceholder = "f000000ff111111f".HexToByteArray();
-        private uint counter;
+        public byte[] PlaceHolder { get; } = "f000000ff111111f".HexToByteArray();
 
-        public byte[] PlaceHolder => extraNoncePlaceholder;
-
-        public int Size => extraNoncePlaceholder.Length - Marshal.SizeOf(counter);
+        public int Size => PlaceHolder.Length - Marshal.SizeOf(counter);
 
         public uint Next()
         {

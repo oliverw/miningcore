@@ -14,14 +14,22 @@ using MiningCore.DaemonInterface;
 using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
+using NLog;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
 using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
-using NLog;
 
 namespace MiningCore.Blockchain.Monero
 {
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
+        private readonly byte[] instanceId;
+        private DaemonEndpointConfig[] daemonEndpoints;
+        protected DateTime? lastBlockUpdate;
+        private MoneroNetworkType networkType;
+        private uint poolAddressBase58Prefix;
+        private DaemonClient walletDaemon;
+        private DaemonEndpointConfig[] walletDaemonEndpoints;
+
         public MoneroJobManager(
             IComponentContext ctx,
             DaemonClient daemon) :
@@ -37,14 +45,107 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        private readonly BlockchainStats blockchainStats = new BlockchainStats();
-        private DaemonEndpointConfig[] daemonEndpoints;
-        private DaemonEndpointConfig[] walletDaemonEndpoints;
-        private DaemonClient walletDaemon;
-        private MoneroNetworkType networkType;
-        protected DateTime? lastBlockUpdate;
-        private readonly byte[] instanceId;
-        private uint poolAddressBase58Prefix;
+        protected async Task<bool> UpdateJob()
+        {
+            try
+            {
+                var response = await GetBlockTemplateAsync();
+
+                // may happen if daemon is currently not connected to peers
+                if (response.Error != null)
+                {
+                    logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+                    return false;
+                }
+
+                var blockTemplate = response.Response;
+
+                lock (jobLock)
+                {
+                    var isNew = currentJob == null ||
+                                currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                                currentJob.BlockTemplate.Height < blockTemplate.Height;
+
+                    if (isNew)
+                    {
+                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
+                            poolConfig, clusterConfig, networkType);
+
+                        currentJob.Init();
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+                    }
+
+                    return isNew;
+                }
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+            }
+
+            return false;
+        }
+
+        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
+        {
+            var request = new GetBlockTemplateRequest
+            {
+                WalletAddress = poolConfig.Address,
+                ReserveSize = MoneroConstants.ReserveSize
+            };
+
+            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(MC.GetBlockTemplate, request);
+        }
+
+        private async Task ShowDaemonSyncProgressAsync()
+        {
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
+            var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
+
+            if (firstValidResponse != null)
+            {
+                var lowestHeight = infos.Where(x => x.Error == null && x.Response != null)
+                    .Min(x => x.Response.Height);
+
+                var totalBlocks = firstValidResponse.TargetHeight;
+                var percent = (double) lowestHeight / totalBlocks * 100;
+
+                logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
+            }
+        }
+
+        private async Task<bool> SubmitBlockAsync(MoneroShare share)
+        {
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] {share.BlobHex});
+
+            if (response.Error != null || response?.Response?.Status != "OK")
+            {
+                var error = response.Error?.Message ?? response.Response?.Status;
+
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
+                return false;
+            }
+
+            return true;
+        }
+
+        protected async Task UpdateNetworkStats()
+        {
+            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+
+            if (infoResponse.Error != null)
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+
+            var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+            BlockchainStats.BlockHeight = (int) info.TargetHeight;
+            BlockchainStats.NetworkDifficulty = info.Difficulty;
+            BlockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
+            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+        }
 
         #region API-Surface
 
@@ -84,7 +185,7 @@ namespace MiningCore.Blockchain.Monero
             return true;
         }
 
-        public BlockchainStats BlockchainStats => blockchainStats;
+        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
 
         public void PrepareWorkerJob(MoneroWorkerJob workerJob, out string blob, out string target)
         {
@@ -124,9 +225,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(
-                        () =>
-                            $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
 
                     share.TransactionConfirmationData = share.BlobHash;
                 }
@@ -143,7 +242,7 @@ namespace MiningCore.Blockchain.Monero
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = worker.Context.MinerName;
             share.Worker = worker.Context.WorkerName;
-            share.NetworkDifficulty = blockchainStats.NetworkDifficulty;
+            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
@@ -189,7 +288,7 @@ namespace MiningCore.Blockchain.Monero
                 var request = new GetBlockTemplateRequest
                 {
                     WalletAddress = poolConfig.Address,
-                    ReserveSize = MoneroConstants.ReserveSize,
+                    ReserveSize = MoneroConstants.ReserveSize
                 };
 
                 var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
@@ -236,8 +335,8 @@ namespace MiningCore.Blockchain.Monero
             networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
 
             // update stats
-            blockchainStats.RewardType = "POW";
-            blockchainStats.NetworkType = networkType.ToString();
+            BlockchainStats.RewardType = "POW";
+            BlockchainStats.NetworkType = networkType.ToString();
 
             await UpdateNetworkStats();
 
@@ -262,115 +361,5 @@ namespace MiningCore.Blockchain.Monero
         }
 
         #endregion // Overrides
-
-        protected async Task<bool> UpdateJob()
-        {
-            try
-            {
-                var response = await GetBlockTemplateAsync();
-
-                // may happen if daemon is currently not connected to peers
-                if (response.Error != null)
-                {
-                    logger.Warn(
-                        () =>
-                            $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
-                    return false;
-                }
-
-                var blockTemplate = response.Response;
-
-                lock (jobLock)
-                {
-                    var isNew = currentJob == null ||
-                                currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                                currentJob.BlockTemplate.Height < blockTemplate.Height;
-
-                    if (isNew)
-                    {
-                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
-                            poolConfig, clusterConfig, networkType);
-
-                        currentJob.Init();
-
-                        // update stats
-                        blockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
-                    }
-
-                    return isNew;
-                }
-            }
-
-            catch (Exception ex)
-            {
-                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
-            }
-
-            return false;
-        }
-
-        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
-        {
-            var request = new GetBlockTemplateRequest
-            {
-                WalletAddress = poolConfig.Address,
-                ReserveSize = MoneroConstants.ReserveSize,
-            };
-
-            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(MC.GetBlockTemplate, request);
-        }
-
-        private async Task ShowDaemonSyncProgressAsync()
-        {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
-            var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
-
-            if (firstValidResponse != null)
-            {
-                var lowestHeight = infos.Where(x => x.Error == null && x.Response != null)
-                    .Min(x => x.Response.Height);
-
-                var totalBlocks = firstValidResponse.TargetHeight;
-                var percent = (double) lowestHeight / totalBlocks * 100;
-
-                logger.Info(
-                    () =>
-                        $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
-            }
-        }
-
-        private async Task<bool> SubmitBlockAsync(MoneroShare share)
-        {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] {share.BlobHex});
-
-            if (response.Error != null || response?.Response?.Status != "OK")
-            {
-                var error = response.Error?.Message ?? response.Response?.Status;
-
-                logger.Warn(
-                    () =>
-                        $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
-                return false;
-            }
-
-            return true;
-        }
-
-        protected async Task UpdateNetworkStats()
-        {
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-
-            if (infoResponse.Error != null)
-                logger.Warn(
-                    () =>
-                        $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
-
-            var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-            blockchainStats.BlockHeight = (int) info.TargetHeight;
-            blockchainStats.NetworkDifficulty = info.Difficulty;
-            blockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
-            blockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
-        }
     }
 }

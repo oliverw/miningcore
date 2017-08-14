@@ -14,8 +14,6 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
-using Block = MiningCore.Persistence.Model.Block;
-using IBlockRepository = MiningCore.Persistence.Repositories.IBlockRepository;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
 using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
 
@@ -25,6 +23,10 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
+        private readonly DaemonClient daemon;
+        private readonly DaemonClient walletDaemon;
+        private MoneroNetworkType? networkType;
+
         public MoneroPayoutHandler(IConnectionFactory cf, IMapper mapper,
             DaemonClient daemon,
             DaemonClient walletDaemon,
@@ -42,11 +44,41 @@ namespace MiningCore.Blockchain.Monero
             this.walletDaemon = walletDaemon;
         }
 
-        private readonly DaemonClient daemon;
-        private readonly DaemonClient walletDaemon;
-        private MoneroNetworkType? networkType;
-
         protected override string LogCategory => "Monero Payout Handler";
+
+        private void HandleTransferResponse(DaemonResponse<TransferResponse> response, Balance[] balances)
+        {
+            if (response.Error == null)
+            {
+                var txHash = response.Response.TxHash;
+
+                // check result
+                if (string.IsNullOrEmpty(txHash))
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' did not return a transaction id!");
+                else
+                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount((decimal) response.Response.Fee / MoneroConstants.Piconero)}");
+
+                PersistPayments(balances, txHash);
+            }
+
+            else
+            {
+                logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
+            }
+        }
+
+        private async Task<MoneroNetworkType> GetNetworkTypeAsync()
+        {
+            if (!networkType.HasValue)
+            {
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+                var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+                networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
+            }
+
+            return networkType.Value;
+        }
 
         #region IPayoutHandler
 
@@ -105,9 +137,7 @@ namespace MiningCore.Blockchain.Monero
 
                     if (rpcResult.Error != null)
                     {
-                        logger.Debug(
-                            () =>
-                                $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.Blockheight}");
+                        logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.Blockheight}");
                         continue;
                     }
 
@@ -190,15 +220,13 @@ namespace MiningCore.Blockchain.Monero
                         Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
                     }).ToArray(),
 
-                GetTxKey = true,
+                GetTxKey = true
             };
 
             if (request.Destinations.Length == 0)
                 return;
 
-            logger.Info(
-                () =>
-                    $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             // send command
             var result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
@@ -220,44 +248,5 @@ namespace MiningCore.Blockchain.Monero
         }
 
         #endregion // IPayoutHandler
-
-        private void HandleTransferResponse(DaemonResponse<TransferResponse> response, Balance[] balances)
-        {
-            if (response.Error == null)
-            {
-                var txHash = response.Response.TxHash;
-
-                // check result
-                if (string.IsNullOrEmpty(txHash))
-                    logger.Error(
-                        () => $"[{LogCategory}] Daemon command '{MWC.Transfer}' did not return a transaction id!");
-                else
-                    logger.Info(
-                        () =>
-                            $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount((decimal) response.Response.Fee / MoneroConstants.Piconero)}");
-
-                PersistPayments(balances, txHash);
-            }
-
-            else
-            {
-                logger.Error(
-                    () =>
-                        $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
-            }
-        }
-
-        private async Task<MoneroNetworkType> GetNetworkTypeAsync()
-        {
-            if (!networkType.HasValue)
-            {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-                var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-                networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
-            }
-
-            return networkType.Value;
-        }
     }
 }

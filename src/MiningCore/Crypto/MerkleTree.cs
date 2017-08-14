@@ -1,43 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using CodeContracts;
 using MiningCore.Extensions;
 
 namespace MiningCore.Crypto
 {
     /// <summary>
-    /// Merkle tree builder.
+    ///     Merkle tree builder.
     /// </summary>
     /// <remarks>
-    /// To get a better understanding of merkle trees check: http://www.youtube.com/watch?v=gUwXCt1qkBU#t=09m09s 
+    ///     To get a better understanding of merkle trees check: http://www.youtube.com/watch?v=gUwXCt1qkBU#t=09m09s
     /// </remarks>
     /// <specification>https://en.bitcoin.it/wiki/Protocol_specification#Merkle_Trees</specification>
     /// <example>
-    /// Python implementation: http://runnable.com/U3HnDaMrJFk3gkGW/bitcoin-block-merkle-root-2-for-python
-    /// Original implementation: https://code.google.com/p/bitcoinsharp/source/browse/src/Core/Block.cs#330
+    ///     Python implementation: http://runnable.com/U3HnDaMrJFk3gkGW/bitcoin-block-merkle-root-2-for-python
+    ///     Original implementation: https://code.google.com/p/bitcoinsharp/source/browse/src/Core/Block.cs#330
     /// </example>
     public class MerkleTree
     {
         /// <summary>
-        /// The steps in tree.
-        /// </summary>
-        public IList<byte[]> Steps { get; }
-
-        /// <summary>
-        /// List of hashes, will be used for calculation of merkle root. 
-        /// <remarks>This is not a list of all transactions, it only contains prepared hashes of steps of merkle tree algorithm. Please read some materials (http://en.wikipedia.org/wiki/Hash_tree) for understanding how merkle trees calculation works. (http://mining.bitcoin.cz/stratum-mining)</remarks>
-        /// <remarks>The coinbase transaction is hashed against the merkle branches to build the final merkle root.</remarks>
-        /// </summary>
-        public List<string> Branches
-        {
-            get { return Steps.Select(step => step.ToHexString()).ToList(); }
-        }
-
-        /// <summary>
-        /// Creates a new merkle-tree instance.
+        ///     Creates a new merkle-tree instance.
         /// </summary>
         /// <param name="hashList"></param>
         public MerkleTree(IEnumerable<byte[]> hashList)
@@ -46,11 +29,29 @@ namespace MiningCore.Crypto
         }
 
         /// <summary>
-        /// 
+        ///     The steps in tree.
+        /// </summary>
+        public IList<byte[]> Steps { get; }
+
+        /// <summary>
+        ///     List of hashes, will be used for calculation of merkle root.
+        ///     <remarks>
+        ///         This is not a list of all transactions, it only contains prepared hashes of steps of merkle tree
+        ///         algorithm. Please read some materials (http://en.wikipedia.org/wiki/Hash_tree) for understanding how merkle
+        ///         trees calculation works. (http://mining.bitcoin.cz/stratum-mining)
+        ///     </remarks>
+        ///     <remarks>The coinbase transaction is hashed against the merkle branches to build the final merkle root.</remarks>
+        /// </summary>
+        public List<string> Branches
+        {
+            get { return Steps.Select(step => step.ToHexString()).ToList(); }
+        }
+
+        /// <summary>
         /// </summary>
         /// <example>
-        /// python: http://runnable.com/U3jqtyYUmAUxtsSS/bitcoin-block-merkle-root-python
-        /// nodejs: https://github.com/zone117x/node-stratum-pool/blob/master/lib/merkleTree.js#L9
+        ///     python: http://runnable.com/U3jqtyYUmAUxtsSS/bitcoin-block-merkle-root-python
+        ///     nodejs: https://github.com/zone117x/node-stratum-pool/blob/master/lib/merkleTree.js#L9
         /// </example>
         /// <param name="hashList"></param>
         /// <returns></returns>
@@ -91,10 +92,9 @@ namespace MiningCore.Crypto
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <example>
-        /// nodejs: https://github.com/zone117x/node-stratum-pool/blob/master/lib/merkleTree.js#L11
+        ///     nodejs: https://github.com/zone117x/node-stratum-pool/blob/master/lib/merkleTree.js#L11
         /// </example>
         /// <param name="hash1"></param>
         /// <param name="hash2"></param>

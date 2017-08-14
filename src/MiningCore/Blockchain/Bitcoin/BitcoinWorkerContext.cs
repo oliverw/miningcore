@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MiningCore.Configuration;
-using MiningCore.Mining;
-using MiningCore.Stratum;
+﻿using MiningCore.Mining;
 
 namespace MiningCore.Blockchain.Bitcoin
 {

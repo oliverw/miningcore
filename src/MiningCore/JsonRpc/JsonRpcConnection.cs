@@ -7,9 +7,8 @@ using System.Reactive.Linq;
 using System.Text;
 using CodeContracts;
 using NetUV.Core.Handles;
-using NLog;
 using Newtonsoft.Json;
-using NLog.LayoutRenderers;
+using NLog;
 
 // http://www.jsonrpc.org/specification
 // https://github.com/Astn/JSON-RPC.NET
@@ -18,17 +17,18 @@ namespace MiningCore.JsonRpc
 {
     public class JsonRpcConnection
     {
+        private const int MaxRequestLength = 8192;
+        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        private readonly JsonSerializerSettings serializerSettings;
+        private Tcp upstream;
+
         public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
         }
-
-        private readonly JsonSerializerSettings serializerSettings;
-        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private Tcp upstream;
-        private const int MaxRequestLength = 8192;
 
         #region Implementation of IJsonRpcConnection
 
@@ -39,54 +39,56 @@ namespace MiningCore.JsonRpc
             this.upstream = upstream;
 
             var incomingLines = Observable.Create<string>(observer =>
-            {
-                var sb = new StringBuilder();
-
-                upstream.OnRead((handle, buffer) =>
                 {
-                    // onAccept
-                    var data = buffer.ReadString(Encoding.UTF8);
+                    var sb = new StringBuilder();
 
-                    if (!string.IsNullOrEmpty(data))
+                    upstream.OnRead((handle, buffer) =>
                     {
-                        sb.Append(data);
+                        // onAccept
+                        var data = buffer.ReadString(Encoding.UTF8);
 
-                        if (sb.Length < MaxRequestLength)
+                        if (!string.IsNullOrEmpty(data))
                         {
-                            int index;
+                            sb.Append(data);
 
-                            while ((index = sb.ToString().IndexOf('\n')) != -1)
+                            if (sb.Length < MaxRequestLength)
                             {
-                                var line = sb.ToString(0, index);
-                                sb.Remove(0, index + 1);
+                                int index;
 
-                                observer.OnNext(line);
+                                while ((index = sb.ToString().IndexOf('\n')) != -1)
+                                {
+                                    var line = sb.ToString(0, index);
+                                    sb.Remove(0, index + 1);
+
+                                    observer.OnNext(line);
+                                }
+                            }
+
+                            else
+                            {
+                                observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
                             }
                         }
+                    }, (handle, ex) =>
+                    {
+                        // onError
+                        observer.OnError(ex);
+                    }, handle =>
+                    {
+                        // onCompleted
+                        observer.OnCompleted();
+                    });
 
-                        else
-                            observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
-                    }
-                }, (handle, ex) =>
-                {
-                    // onError
-                    observer.OnError(ex);
-                }, handle =>
-                {
-                    // onCompleted
-                    observer.OnCompleted();
-                });
+                    return Disposable.Create(() =>
+                    {
+                        if (upstream.IsValid)
+                            logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
 
-                return Disposable.Create(() =>
-                {
-                    if (upstream.IsValid)
-                        logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
-
-                    upstream.Dispose();
-                });
-            })
-            .Publish()
-            .RefCount();
+                        upstream.Dispose();
+                    });
+                })
+                .Publish()
+                .RefCount();
 
             Received = incomingLines
                 .Where(line => line.Length > 0) // ignore empty lines

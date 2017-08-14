@@ -7,6 +7,14 @@ namespace MiningCore.VarDiff
 {
     public class VarDiffManager
     {
+        private readonly int bufferSize;
+
+        private readonly VarDiffConfig options;
+        private readonly double tMax;
+        private readonly double tMin;
+        private double maxDiff;
+        private readonly double minDiff;
+
         public VarDiffManager(VarDiffConfig varDiffOptions)
         {
             options = varDiffOptions;
@@ -19,13 +27,6 @@ namespace MiningCore.VarDiff
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
         }
-
-        private readonly VarDiffConfig options;
-        private readonly int bufferSize;
-        private readonly double tMin;
-        private readonly double tMax;
-        private double minDiff;
-        private double maxDiff;
 
         public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
         {

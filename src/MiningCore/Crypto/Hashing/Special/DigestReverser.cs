@@ -1,16 +1,15 @@
 ﻿using System.Linq;
-using MiningCore.Extensions;
 
 namespace MiningCore.Crypto.Hashing.Special
 {
     public class DigestReverser : IHashAlgorithm
     {
+        private readonly IHashAlgorithm upstream;
+
         public DigestReverser(IHashAlgorithm upstream)
         {
             this.upstream = upstream;
         }
-
-        private readonly IHashAlgorithm upstream;
 
         public byte[] Digest(byte[] data, ulong nTime)
         {

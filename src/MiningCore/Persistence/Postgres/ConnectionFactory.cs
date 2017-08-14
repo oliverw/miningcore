@@ -1,21 +1,19 @@
 ﻿using System.Data;
-using System.Threading.Tasks;
-using NLog;
 using Npgsql;
 
 namespace MiningCore.Persistence.Postgres
 {
     public class ConnectionFactory : IConnectionFactory
     {
+        private readonly string connectionString;
+
         public ConnectionFactory(string connectionString)
         {
             this.connectionString = connectionString;
         }
 
-        private readonly string connectionString;
-
         /// <summary>
-        /// This implementation ensures that Glimpse.ADO is able to collect data
+        ///     This implementation ensures that Glimpse.ADO is able to collect data
         /// </summary>
         /// <returns></returns>
         public IDbConnection OpenConnection()

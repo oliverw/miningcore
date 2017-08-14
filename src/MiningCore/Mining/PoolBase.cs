@@ -24,6 +24,29 @@ namespace MiningCore.Mining
         IMiningPool
         where TWorkerContext : WorkerContextBase, new()
     {
+        private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
+        protected readonly IConnectionFactory cf;
+        protected readonly IObservable<Unit> invalidShares;
+
+        protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
+        protected readonly PoolStats poolStats = new PoolStats();
+        protected readonly JsonSerializerSettings serializerSettings;
+
+        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
+
+        protected readonly IObservable<IShare> validShares;
+
+        // Telemetry
+        protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
+
+        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
+            new Dictionary<PoolEndpoint, VarDiffManager>();
+
+        protected BlockchainStats blockchainStats;
+        protected ClusterConfig clusterConfig;
+
+        protected PoolConfig poolConfig;
+
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
@@ -49,72 +72,9 @@ namespace MiningCore.Mining
                 .Synchronize();
         }
 
-        protected PoolConfig poolConfig;
-        protected ClusterConfig clusterConfig;
-        protected readonly JsonSerializerSettings serializerSettings;
-        protected readonly IConnectionFactory cf;
-        protected readonly PoolStats poolStats = new PoolStats();
-        protected BlockchainStats blockchainStats;
-
-        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
-            new Dictionary<PoolEndpoint, VarDiffManager>();
-
-        private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
-
-        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
-
-        // Telemetry
-        protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
-
-        protected readonly IObservable<IShare> validShares;
-
-        protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
-        protected readonly IObservable<Unit> invalidShares;
-
-        #region API-Surface
-
-        public IObservable<IShare> Shares { get; }
-        public PoolConfig Config => poolConfig;
-        public PoolStats PoolStats => poolStats;
-        public BlockchainStats NetworkStats => blockchainStats;
-
-        public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
-        {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-
-            logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinJobManager), poolConfig);
-            this.poolConfig = poolConfig;
-            this.clusterConfig = clusterConfig;
-        }
-
-        public virtual async Task StartAsync()
-        {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-
-            logger.Info(() => $"[{LogCat}] Launching ...");
-
-            SetupBanning(clusterConfig);
-            SetupTelemetry();
-            await InitializeJobManager();
-
-            var ipEndpoints = poolConfig.Ports.Keys
-                .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-                .ToArray();
-
-            StartListeners(ipEndpoints);
-            SetupStats();
-
-            logger.Info(() => $"[{LogCat}] Online");
-
-            OutputPoolInfo();
-        }
-
-        #endregion // API-Surface
+        protected override string LogCat => "Pool";
 
         protected abstract Task InitializeJobManager();
-
-        protected override string LogCat => "Pool";
 
         protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
@@ -153,14 +113,13 @@ namespace MiningCore.Mining
             var timeout = Observable.Timer(DateTime.UtcNow.AddSeconds(10))
                 .Select(_ => false);
 
-            Observable.Merge(isAlive, timeout)
+            isAlive.Merge(timeout)
                 .Take(1)
                 .Subscribe(alive =>
                 {
                     if (!alive)
                     {
-                        logger.Info(
-                            () => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -239,7 +198,7 @@ namespace MiningCore.Mining
         private void SetupTelemetry()
         {
             // Shares per second
-            Observable.Merge(validShares.Select(_ => Unit.Default), invalidShares)
+            validShares.Select(_ => Unit.Default).Merge(invalidShares)
                 .Buffer(TimeSpan.FromSeconds(1))
                 .Select(shares => shares.Count)
                 .Subscribe(count => poolStats.SharesPerSecond = count);
@@ -274,9 +233,7 @@ namespace MiningCore.Mining
 
                 else
                 {
-                    logger.Warn(
-                        () =>
-                            $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
                     banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
@@ -324,5 +281,46 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
             logger.Info(() => msg);
         }
+
+        #region API-Surface
+
+        public IObservable<IShare> Shares { get; }
+        public PoolConfig Config => poolConfig;
+        public PoolStats PoolStats => poolStats;
+        public BlockchainStats NetworkStats => blockchainStats;
+
+        public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+
+            logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinJobManager), poolConfig);
+            this.poolConfig = poolConfig;
+            this.clusterConfig = clusterConfig;
+        }
+
+        public virtual async Task StartAsync()
+        {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+
+            logger.Info(() => $"[{LogCat}] Launching ...");
+
+            SetupBanning(clusterConfig);
+            SetupTelemetry();
+            await InitializeJobManager();
+
+            var ipEndpoints = poolConfig.Ports.Keys
+                .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+                .ToArray();
+
+            StartListeners(ipEndpoints);
+            SetupStats();
+
+            logger.Info(() => $"[{LogCat}] Online");
+
+            OutputPoolInfo();
+        }
+
+        #endregion // API-Surface
     }
 }

@@ -11,7 +11,6 @@ namespace MiningCore.Stratum
     public class StratumClient<TContext>
     {
         private JsonRpcConnection rpcCon;
-        private IPEndPoint config;
 
         #region API-Surface
 
@@ -21,7 +20,7 @@ namespace MiningCore.Stratum
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(endpointConfig, nameof(endpointConfig));
 
-            config = endpointConfig;
+            PoolEndpoint = endpointConfig;
 
             rpcCon = ctx.Resolve<JsonRpcConnection>();
             rpcCon.Init(uvCon);
@@ -32,7 +31,8 @@ namespace MiningCore.Stratum
         public TContext Context { get; set; }
         public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
         public string ConnectionId => rpcCon.ConnectionId;
-        public IPEndPoint PoolEndpoint => config;
+        public IPEndPoint PoolEndpoint { get; private set; }
+
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
 
         public void Respond<T>(T payload, object id)

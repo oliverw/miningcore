@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace MiningCore.Blockchain.Monero.DaemonRequests
+﻿namespace MiningCore.Blockchain.Monero.DaemonRequests
 {
     public class GetBlockHeaderByHeightRequest
     {

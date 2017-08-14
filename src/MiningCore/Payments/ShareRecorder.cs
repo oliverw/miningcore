@@ -25,10 +25,29 @@ using Polly.CircuitBreaker;
 namespace MiningCore.Payments
 {
     /// <summary>
-    /// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
+    ///     Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
     /// </summary>
     public class ShareRecorder
     {
+        private const int RetryCount = 3;
+        private const string PolicyContextKeyShares = "share";
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IBlockRepository blockRepo;
+
+        private readonly IConnectionFactory cf;
+        private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly IMapper mapper;
+        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+        private readonly IShareRepository shareRepo;
+        private Policy faultPolicy;
+        private bool hasLoggedPolicyFallbackFailure;
+        private bool hasWarnedAboutBacklogSize;
+
+        private readonly int QueueSizeWarningThreshold = 1024;
+        private IDisposable queueSub;
+        private string recoveryFilename;
+
         public ShareRecorder(IConnectionFactory cf, IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo)
@@ -48,130 +67,6 @@ namespace MiningCore.Payments
 
             BuildFaultHandlingPolicy();
         }
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        private readonly IConnectionFactory cf;
-        private readonly IMapper mapper;
-        private readonly JsonSerializerSettings jsonSerializerSettings;
-        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
-        private IDisposable queueSub;
-        private bool hasWarnedAboutBacklogSize;
-        private readonly IShareRepository shareRepo;
-        private readonly IBlockRepository blockRepo;
-
-        private const int RetryCount = 3;
-        private const string PolicyContextKeyShares = "share";
-        private Policy faultPolicy;
-        private bool hasLoggedPolicyFallbackFailure = false;
-        private string recoveryFilename;
-
-        private int QueueSizeWarningThreshold = 1024;
-
-        #region API-Surface
-
-        public void AttachPool(IMiningPool pool)
-        {
-            pool.Shares.Subscribe(share => { queue.Add(share); });
-        }
-
-        public void Start(ClusterConfig clusterConfig)
-        {
-            ConfigureRecovery(clusterConfig);
-            InitializeQueue();
-
-            logger.Info(() => "Online");
-        }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            queueSub?.Dispose();
-            queueSub = null;
-
-            logger.Info(() => "Stopped");
-        }
-
-        private void InitializeQueue()
-        {
-            queueSub = queue.GetConsumingEnumerable()
-                .ToObservable(TaskPoolScheduler.Default)
-                .Do(_ => CheckQueueBacklog())
-                .Buffer(TimeSpan.FromSeconds(1), 20)
-                .Where(shares => shares.Any())
-                .Subscribe(shares =>
-                {
-                    try
-                    {
-                        PersistSharesFaulTolerant(shares);
-                    }
-
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                });
-        }
-
-        private void ConfigureRecovery(ClusterConfig clusterConfig)
-        {
-            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
-                ? clusterConfig.PaymentProcessing.ShareRecoveryFile
-                : "recovered-shares.txt";
-        }
-
-        private void CheckQueueBacklog()
-        {
-            if (queue.Count > QueueSizeWarningThreshold)
-            {
-                if (!hasWarnedAboutBacklogSize)
-                {
-                    logger.Warn(() => $"Share persistence queue backlog has crossed {QueueSizeWarningThreshold}");
-                    hasWarnedAboutBacklogSize = true;
-                }
-            }
-
-            else if (hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
-            {
-                hasWarnedAboutBacklogSize = false;
-            }
-        }
-
-        private void BuildFaultHandlingPolicy()
-        {
-            // retry with increasing delay (1s, 2s, 4s etc) 
-            var retry = Policy
-                .Handle<DbException>()
-                .Or<SocketException>()
-                .Or<TimeoutException>()
-                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    OnPolicyRetry);
-
-            // after retries failed several times, break the circuit and fall through to
-            // fallback action for one minute, not attempting further retries during that period
-            var breaker = Policy
-                .Handle<DbException>()
-                .Or<SocketException>()
-                .Or<TimeoutException>()
-                .CircuitBreaker(2, TimeSpan.FromMinutes(1));
-
-            var fallback = Policy
-                .Handle<DbException>()
-                .Or<SocketException>()
-                .Or<TimeoutException>()
-                .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
-
-            var fallbackOnBrokenCircuit = Policy
-                .Handle<BrokenCircuitException>()
-                .Fallback(OnExecutePolicyFallback, (Exception ex, Context context) => { });
-
-            faultPolicy = Policy.Wrap(
-                fallbackOnBrokenCircuit,
-                Policy.Wrap(fallback, breaker, retry));
-        }
-
-        #endregion // API-Surface
 
         private void PersistSharesFaulTolerant(IList<IShare> shares)
         {
@@ -347,5 +242,110 @@ namespace MiningCore.Payments
                 logger.Error(() => $"Recovery file {recoveryFilename} was not found");
             }
         }
+
+        #region API-Surface
+
+        public void AttachPool(IMiningPool pool)
+        {
+            pool.Shares.Subscribe(share => { queue.Add(share); });
+        }
+
+        public void Start(ClusterConfig clusterConfig)
+        {
+            ConfigureRecovery(clusterConfig);
+            InitializeQueue();
+
+            logger.Info(() => "Online");
+        }
+
+        public void Stop()
+        {
+            logger.Info(() => "Stopping ..");
+
+            queueSub?.Dispose();
+            queueSub = null;
+
+            logger.Info(() => "Stopped");
+        }
+
+        private void InitializeQueue()
+        {
+            queueSub = queue.GetConsumingEnumerable()
+                .ToObservable(TaskPoolScheduler.Default)
+                .Do(_ => CheckQueueBacklog())
+                .Buffer(TimeSpan.FromSeconds(1), 20)
+                .Where(shares => shares.Any())
+                .Subscribe(shares =>
+                {
+                    try
+                    {
+                        PersistSharesFaulTolerant(shares);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                });
+        }
+
+        private void ConfigureRecovery(ClusterConfig clusterConfig)
+        {
+            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
+                ? clusterConfig.PaymentProcessing.ShareRecoveryFile
+                : "recovered-shares.txt";
+        }
+
+        private void CheckQueueBacklog()
+        {
+            if (queue.Count > QueueSizeWarningThreshold)
+            {
+                if (!hasWarnedAboutBacklogSize)
+                {
+                    logger.Warn(() => $"Share persistence queue backlog has crossed {QueueSizeWarningThreshold}");
+                    hasWarnedAboutBacklogSize = true;
+                }
+            }
+
+            else if (hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
+            {
+                hasWarnedAboutBacklogSize = false;
+            }
+        }
+
+        private void BuildFaultHandlingPolicy()
+        {
+            // retry with increasing delay (1s, 2s, 4s etc) 
+            var retry = Policy
+                .Handle<DbException>()
+                .Or<SocketException>()
+                .Or<TimeoutException>()
+                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    OnPolicyRetry);
+
+            // after retries failed several times, break the circuit and fall through to
+            // fallback action for one minute, not attempting further retries during that period
+            var breaker = Policy
+                .Handle<DbException>()
+                .Or<SocketException>()
+                .Or<TimeoutException>()
+                .CircuitBreaker(2, TimeSpan.FromMinutes(1));
+
+            var fallback = Policy
+                .Handle<DbException>()
+                .Or<SocketException>()
+                .Or<TimeoutException>()
+                .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
+
+            var fallbackOnBrokenCircuit = Policy
+                .Handle<BrokenCircuitException>()
+                .Fallback(OnExecutePolicyFallback, (ex, context) => { });
+
+            faultPolicy = Policy.Wrap(
+                fallbackOnBrokenCircuit,
+                Policy.Wrap(fallback, breaker, retry));
+        }
+
+        #endregion // API-Surface
     }
 }

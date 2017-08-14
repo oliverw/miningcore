@@ -20,12 +20,6 @@ namespace MiningCore.Api
 {
     public class ApiServer
     {
-        public ApiServer(IMapper mapper)
-        {
-            this.mapper = mapper;
-        }
-
-        private readonly List<IMiningPool> pools = new List<IMiningPool>();
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
@@ -36,41 +30,14 @@ namespace MiningCore.Api
         };
 
         private readonly IMapper mapper;
+
+        private readonly List<IMiningPool> pools = new List<IMiningPool>();
         private IWebHost webHost;
 
-        #region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
+        public ApiServer(IMapper mapper)
         {
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-
-            logger.Info(() => $"Launching ...");
-
-            var address = clusterConfig.Api?.Address != null
-                ? (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any)
-                : IPAddress.Parse("127.0.0.1");
-
-            var port = clusterConfig.Api?.Port ?? 4000;
-
-            webHost = new WebHostBuilder()
-                .Configure(app => { app.Run(HandleRequest); })
-                .UseKestrel(options => { options.Listen(address, port); })
-                .Build();
-
-            webHost.Start();
-
-            logger.Info(() => $"Online @ {address}:{port}");
+            this.mapper = mapper;
         }
-
-        public void AttachPool(IMiningPool pool)
-        {
-            lock (pools)
-            {
-                pools.Add(pool);
-            }
-        }
-
-        #endregion // API-Surface
 
         private async Task SendJson(HttpContext context, object response)
         {
@@ -127,5 +94,39 @@ namespace MiningCore.Api
 
             await SendJson(context, response);
         }
+
+        #region API-Surface
+
+        public void Start(ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+
+            logger.Info(() => $"Launching ...");
+
+            var address = clusterConfig.Api?.Address != null
+                ? (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.Port ?? 4000;
+
+            webHost = new WebHostBuilder()
+                .Configure(app => { app.Run(HandleRequest); })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHost.Start();
+
+            logger.Info(() => $"Online @ {address}:{port}");
+        }
+
+        public void AttachPool(IMiningPool pool)
+        {
+            lock (pools)
+            {
+                pools.Add(pool);
+            }
+        }
+
+        #endregion // API-Surface
     }
 }

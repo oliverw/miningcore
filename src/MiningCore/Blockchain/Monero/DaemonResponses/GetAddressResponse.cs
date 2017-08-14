@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace MiningCore.Blockchain.Monero.DaemonResponses
+﻿namespace MiningCore.Blockchain.Monero.DaemonResponses
 {
     public class GetAddressResponse
     {

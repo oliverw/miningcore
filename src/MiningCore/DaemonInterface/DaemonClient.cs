@@ -16,22 +16,23 @@ using Newtonsoft.Json.Linq;
 namespace MiningCore.DaemonInterface
 {
     /// <summary>
-    /// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
+    ///     Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
     /// </summary>
     public class DaemonClient
     {
+        private readonly Random random = new Random();
+        private readonly JsonSerializerSettings serializerSettings;
+
+        protected DaemonEndpointConfig[] endPoints;
+        private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
+        private string rpcLocation;
+
         public DaemonClient(JsonSerializerSettings serializerSettings)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
         }
-
-        protected DaemonEndpointConfig[] endPoints;
-        private readonly Random random = new Random();
-        private readonly JsonSerializerSettings serializerSettings;
-        private string rpcLocation;
-        private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
 
         #region API-Surface
 
@@ -55,7 +56,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
+        ///     Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
@@ -65,7 +66,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        /// Executes the request against all configured demons and returns their responses as an array
+        ///     Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
@@ -96,7 +97,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
+        ///     Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
@@ -106,7 +107,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
+        ///     Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
@@ -125,7 +126,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        /// Executes the requests against all configured demons and returns the first successful response array
+        ///     Executes the requests against all configured demons and returns the first successful response array
         /// </summary>
         /// <returns></returns>
         public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params DaemonCmd[] batch)

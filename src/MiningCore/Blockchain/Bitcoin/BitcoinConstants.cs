@@ -15,27 +15,27 @@ namespace MiningCore.Blockchain.Bitcoin
     public enum BitcoinTransactionCategory
     {
         /// <summary>
-        /// wallet sending payment
+        ///     wallet sending payment
         /// </summary>
         Send = 1,
 
         /// <summary>
-        /// wallet receiving payment in a regular transaction
+        ///     wallet receiving payment in a regular transaction
         /// </summary>
         Receive,
 
         /// <summary>
-        /// matured and spendable coinbase transaction 
+        ///     matured and spendable coinbase transaction
         /// </summary>
         Generate,
 
         /// <summary>
-        /// coinbase transaction that is not spendable yet
+        ///     coinbase transaction that is not spendable yet
         /// </summary>
         Immature,
 
         /// <summary>
-        /// coinbase transaction from a block that’s not in the local best block chain
+        ///     coinbase transaction from a block that’s not in the local best block chain
         /// </summary>
         Orphan
     }
@@ -59,7 +59,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o"},
             {CoinType.DGB, "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn"},
             {CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2"},
-            {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"},
+            {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"}
         };
     }
 

@@ -10,12 +10,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class ShareRepository : IShareRepository
     {
+        private readonly IMapper mapper;
+
         public ShareRepository(IMapper mapper)
         {
             this.mapper = mapper;
         }
-
-        private readonly IMapper mapper;
 
         public void Insert(IDbConnection con, IDbTransaction tx, Share share)
         {

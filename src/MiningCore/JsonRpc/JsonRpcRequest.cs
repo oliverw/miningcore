@@ -29,14 +29,6 @@ namespace MiningCore.JsonRpc
             Id = id;
         }
 
-        public TParam ParamsAs<TParam>() where TParam : class
-        {
-            if (Params is JToken)
-                return ((JToken) Params)?.ToObject<TParam>();
-
-            return (TParam) Params;
-        }
-
         [JsonProperty("jsonrpc")]
         public string JsonRpc => "2.0";
 
@@ -48,5 +40,13 @@ namespace MiningCore.JsonRpc
 
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public object Id { get; set; }
+
+        public TParam ParamsAs<TParam>() where TParam : class
+        {
+            if (Params is JToken)
+                return ((JToken) Params)?.ToObject<TParam>();
+
+            return (TParam) Params;
+        }
     }
 }

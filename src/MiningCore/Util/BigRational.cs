@@ -93,8 +93,11 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DoubleUlong
         {
-            [FieldOffset(0)] public double dbl;
-            [FieldOffset(0)] public ulong uu;
+            [FieldOffset(0)]
+            public double dbl;
+
+            [FieldOffset(0)]
+            public ulong uu;
         }
 
         private const int DoubleMaxScale = 308;
@@ -105,8 +108,11 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DecimalUInt32
         {
-            [FieldOffset(0)] public decimal dec;
-            [FieldOffset(0)] public int flags;
+            [FieldOffset(0)]
+            public decimal dec;
+
+            [FieldOffset(0)]
+            public int flags;
         }
 
         private const int DecimalScaleMask = 0x00FF0000;

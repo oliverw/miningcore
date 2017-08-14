@@ -1,9 +1,8 @@
-﻿using System;
-using AutoMapper;
+﻿using AutoMapper;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
-using MiningCore.Mining;
+using MiningCore.Persistence.Model;
 
 namespace MiningCore
 {
@@ -14,32 +13,32 @@ namespace MiningCore
             //////////////////////
             // outgoing mappings
 
-            CreateMap<IShare, Persistence.Model.Share>();
+            CreateMap<IShare, Share>();
 
-            CreateMap<IShare, Persistence.Model.Block>()
+            CreateMap<IShare, Block>()
                 .ForMember(dest => dest.Reward, opt => opt.MapFrom(src => src.BlockReward))
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
-            CreateMap<Persistence.Model.BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
+            CreateMap<BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
 
             // API
 
             CreateMap<PoolConfig, PoolInfo>();
 
             // PostgreSQL
-            CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();
-            CreateMap<Persistence.Model.Block, Persistence.Postgres.Entities.Block>();
-            CreateMap<Persistence.Model.Balance, Persistence.Postgres.Entities.Balance>();
-            CreateMap<Persistence.Model.Payment, Persistence.Postgres.Entities.Payment>();
+            CreateMap<Share, Persistence.Postgres.Entities.Share>();
+            CreateMap<Block, Persistence.Postgres.Entities.Block>();
+            CreateMap<Balance, Persistence.Postgres.Entities.Balance>();
+            CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
 
             //////////////////////
             // incoming mappings
 
             // PostgreSQL
-            CreateMap<Persistence.Postgres.Entities.Share, Persistence.Model.Share>();
-            CreateMap<Persistence.Postgres.Entities.Block, Persistence.Model.Block>();
-            CreateMap<Persistence.Postgres.Entities.Balance, Persistence.Model.Balance>();
-            CreateMap<Persistence.Postgres.Entities.Payment, Persistence.Model.Payment>();
+            CreateMap<Persistence.Postgres.Entities.Share, Share>();
+            CreateMap<Persistence.Postgres.Entities.Block, Block>();
+            CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
+            CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
         }
     }
 }

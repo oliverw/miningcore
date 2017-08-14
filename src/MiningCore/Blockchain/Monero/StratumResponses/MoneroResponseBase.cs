@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MiningCore.Blockchain.Monero.StratumResponses
+﻿namespace MiningCore.Blockchain.Monero.StratumResponses
 {
     public class MoneroResponseBase
     {

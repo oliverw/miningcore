@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MiningCore.Stratum
 {
@@ -12,7 +10,7 @@ namespace MiningCore.Stratum
         LowDifficultyShare = 23,
         UnauthorizedWorker = 24,
         NotSubscribed = 25,
-        MinusOne = -1,
+        MinusOne = -1
     }
 
     public class StratumException : Exception

@@ -13,10 +13,16 @@ using NLog;
 namespace MiningCore.Payments.PayoutSchemes
 {
     /// <summary>
-    /// PPLNS payout scheme implementation
+    ///     PPLNS payout scheme implementation
     /// </summary>
     public class PayPerLastNShares : IPayoutScheme
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IBalanceRepository balanceRepo;
+        private readonly IBlockRepository blockRepo;
+        private readonly IConnectionFactory cf;
+        private readonly IShareRepository shareRepo;
+
         public PayPerLastNShares(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
@@ -31,17 +37,6 @@ namespace MiningCore.Payments.PayoutSchemes
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
-        }
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private readonly IConnectionFactory cf;
-        private readonly IShareRepository shareRepo;
-        private readonly IBlockRepository blockRepo;
-        private readonly IBalanceRepository balanceRepo;
-
-        private class Config
-        {
-            public decimal Factor { get; set; }
         }
 
         #region IPayoutScheme
@@ -148,6 +143,11 @@ namespace MiningCore.Payments.PayoutSchemes
             }
 
             return shareCutOffDate;
+        }
+
+        private class Config
+        {
+            public decimal Factor { get; set; }
         }
     }
 }

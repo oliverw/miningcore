@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace MiningCore.Extensions
 {
@@ -25,7 +23,7 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every 
+        /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
         /// block of 4 bytes must be reversed before reversing the entire buffer
         /// </summary>
         public static byte[] ReverseByteOrder(this byte[] bytes)

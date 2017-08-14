@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using AutoMapper;
 using CodeContracts;
-using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NLog;
 using Polly;
 
@@ -19,6 +16,19 @@ namespace MiningCore.Payments
 {
     public abstract class PayoutHandlerBase
     {
+        private const int RetryCount = 8;
+        protected readonly IBalanceRepository balanceRepo;
+        protected readonly IBlockRepository blockRepo;
+        protected readonly IConnectionFactory cf;
+        protected readonly IMapper mapper;
+        protected readonly IPaymentRepository paymentRepo;
+        protected readonly IShareRepository shareRepo;
+        protected ClusterConfig clusterConfig;
+        private Policy faultPolicy;
+
+        protected ILogger logger;
+        protected PoolConfig poolConfig;
+
         protected PayoutHandlerBase(IConnectionFactory cf, IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
@@ -41,19 +51,6 @@ namespace MiningCore.Payments
 
             BuildFaultHandlingPolicy();
         }
-
-        protected ILogger logger;
-        protected ClusterConfig clusterConfig;
-        protected PoolConfig poolConfig;
-        protected readonly IConnectionFactory cf;
-        protected readonly IMapper mapper;
-        protected readonly IShareRepository shareRepo;
-        protected readonly IBlockRepository blockRepo;
-        protected readonly IBalanceRepository balanceRepo;
-        protected readonly IPaymentRepository paymentRepo;
-
-        private const int RetryCount = 8;
-        private Policy faultPolicy;
 
         protected abstract string LogCategory { get; }
 
@@ -90,7 +87,7 @@ namespace MiningCore.Payments
                                 Address = balance.Address,
                                 Amount = balance.Amount,
                                 Created = DateTime.UtcNow,
-                                TransactionConfirmationData = transactionConfirmation,
+                                TransactionConfirmationData = transactionConfirmation
                             };
 
                             paymentRepo.Insert(con, tx, payment);

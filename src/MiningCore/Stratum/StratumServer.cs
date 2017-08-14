@@ -9,16 +9,25 @@ using System.Threading.Tasks;
 using Autofac;
 using CodeContracts;
 using MiningCore.Banning;
-using NLog;
 using MiningCore.JsonRpc;
 using MiningCore.Util;
 using NetUV.Core.Handles;
 using NetUV.Core.Native;
+using NLog;
 
 namespace MiningCore.Stratum
 {
     public abstract class StratumServer<TClientContext>
     {
+        protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients =
+            new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
+
+        protected readonly IComponentContext ctx;
+        protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
+        protected IBanManager banManager;
+        protected bool disableConnectionLogging = false;
+        protected ILogger logger;
+
         protected StratumServer(IComponentContext ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -26,14 +35,7 @@ namespace MiningCore.Stratum
             this.ctx = ctx;
         }
 
-        protected readonly IComponentContext ctx;
-        protected bool disableConnectionLogging = false;
-        protected ILogger logger;
-        protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
-        protected IBanManager banManager;
-
-        protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients =
-            new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
+        protected abstract string LogCat { get; }
 
         protected void StartListeners(IPEndPoint[] stratumPorts)
         {
@@ -101,18 +103,14 @@ namespace MiningCore.Stratum
                     .Subscribe(async tsRequest =>
                     {
                         var request = tsRequest.Value;
-                        logger.Debug(
-                            () =>
-                                $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
 
                         try
                         {
                             // boot pre-connected clients
                             if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
                             {
-                                logger.Trace(
-                                    () =>
-                                        $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                                logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
                                 DisconnectClient(client);
                                 return;
                             }
@@ -165,7 +163,6 @@ namespace MiningCore.Stratum
             var subscriptionId = client.ConnectionId;
 
             if (!string.IsNullOrEmpty(subscriptionId))
-            {
                 lock (clients)
                 {
                     Tuple<StratumClient<TClientContext>, IDisposable> item;
@@ -175,7 +172,6 @@ namespace MiningCore.Stratum
                         clients.Remove(subscriptionId);
                     }
                 }
-            }
 
             client.Disconnect();
 
@@ -194,8 +190,6 @@ namespace MiningCore.Stratum
             foreach (var client in tmp)
                 action(client);
         }
-
-        protected abstract string LogCat { get; }
 
         protected abstract void OnConnect(StratumClient<TClientContext> client);
         protected abstract void OnDisconnect(string subscriptionId);

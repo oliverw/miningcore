@@ -10,10 +10,8 @@ using Autofac;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
-using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
-using MiningCore.Native;
 using MiningCore.Persistence;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
@@ -23,71 +21,17 @@ namespace MiningCore.Blockchain.Monero
     [CoinMetadata(CoinType.XMR)]
     public class MoneroPool : PoolBase<MoneroWorkerContext>
     {
+        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
+        private long jobId;
+
+        private MoneroJobManager manager;
+
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
             base(ctx, serializerSettings, cf)
         {
         }
-
-        private MoneroJobManager manager;
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
-        private long jobId;
-
-        #region Overrides
-
-        protected override async Task InitializeJobManager()
-        {
-            manager = ctx.Resolve<MoneroJobManager>();
-            manager.Configure(poolConfig, clusterConfig);
-
-            await manager.StartAsync();
-
-            manager.Blocks.Subscribe(_ => OnNewJob());
-
-            // we need work before opening the gates
-            await manager.Blocks.Take(1).ToTask();
-        }
-
-        protected override async Task OnRequestAsync(StratumClient<MoneroWorkerContext> client,
-            Timestamped<JsonRpcRequest> tsRequest)
-        {
-            var request = tsRequest.Value;
-
-            switch (request.Method)
-            {
-                case MoneroStratumMethods.Login:
-                    OnLogin(client, tsRequest);
-                    break;
-
-                case MoneroStratumMethods.GetJob:
-                    OnGetJob(client, tsRequest);
-                    break;
-
-                case MoneroStratumMethods.Submit:
-                    await OnSubmitAsync(client, tsRequest);
-                    break;
-
-                case MoneroStratumMethods.KeepAlive:
-                    // ignored
-                    break;
-
-                default:
-                    logger.Debug(
-                        () =>
-                            $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
-
-                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
-            }
-        }
-
-        protected override void UpdateBlockChainStats()
-        {
-            blockchainStats = manager.BlockchainStats;
-        }
-
-        #endregion // Overrides
 
         private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
@@ -129,7 +73,7 @@ namespace MiningCore.Blockchain.Monero
             var loginResponse = new MoneroLoginResponse
             {
                 Id = client.ConnectionId,
-                Job = CreateWorkerJob(client),
+                Job = CreateWorkerJob(client)
             };
 
             client.Respond(loginResponse, request.Id);
@@ -202,9 +146,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (requestAge > maxShareAge)
             {
-                logger.Debug(
-                    () =>
-                        $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                 return;
             }
 
@@ -302,9 +244,7 @@ namespace MiningCore.Blockchain.Monero
                     {
                         // varDiff: if the client has a pending difficulty change, apply it now
                         if (client.Context.ApplyPendingDifficulty())
-                            logger.Debug(
-                                () =>
-                                    $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
+                            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
 
                         // send job
                         var job = CreateWorkerJob(client);
@@ -313,13 +253,65 @@ namespace MiningCore.Blockchain.Monero
 
                     else
                     {
-                        logger.Info(
-                            () => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
 
                         DisconnectClient(client);
                     }
                 }
             });
         }
+
+        #region Overrides
+
+        protected override async Task InitializeJobManager()
+        {
+            manager = ctx.Resolve<MoneroJobManager>();
+            manager.Configure(poolConfig, clusterConfig);
+
+            await manager.StartAsync();
+
+            manager.Blocks.Subscribe(_ => OnNewJob());
+
+            // we need work before opening the gates
+            await manager.Blocks.Take(1).ToTask();
+        }
+
+        protected override async Task OnRequestAsync(StratumClient<MoneroWorkerContext> client,
+            Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+
+            switch (request.Method)
+            {
+                case MoneroStratumMethods.Login:
+                    OnLogin(client, tsRequest);
+                    break;
+
+                case MoneroStratumMethods.GetJob:
+                    OnGetJob(client, tsRequest);
+                    break;
+
+                case MoneroStratumMethods.Submit:
+                    await OnSubmitAsync(client, tsRequest);
+                    break;
+
+                case MoneroStratumMethods.KeepAlive:
+                    // ignored
+                    break;
+
+                default:
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+
+                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    break;
+            }
+        }
+
+        protected override void UpdateBlockChainStats()
+        {
+            blockchainStats = manager.BlockchainStats;
+        }
+
+        #endregion // Overrides
     }
 }

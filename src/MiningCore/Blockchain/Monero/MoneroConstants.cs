@@ -7,7 +7,7 @@ namespace MiningCore.Blockchain.Monero
     public enum MoneroNetworkType
     {
         Main = 1,
-        Test,
+        Test
     }
 
     public class MoneroConstants

@@ -1,11 +1,8 @@
 ﻿using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using Autofac;
 using MiningCore.Api;
 using MiningCore.Banning;
-using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Configuration;
@@ -14,7 +11,6 @@ using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Payments;
 using MiningCore.Payments.PayoutSchemes;
-using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
@@ -24,10 +20,10 @@ namespace MiningCore
     public class AutofacModule : Module
     {
         /// <summary>
-        /// Override to add registrations to the container.
+        ///     Override to add registrations to the container.
         /// </summary>
         /// <remarks>
-        /// Note that the ContainerBuilder parameter is unique to this module.
+        ///     Note that the ContainerBuilder parameter is unique to this module.
         /// </remarks>
         /// <param name="builder">The builder through which components can be registered.</param>
         protected override void Load(ContainerBuilder builder)

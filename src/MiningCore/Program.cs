@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
@@ -11,13 +12,15 @@ using Autofac.Features.Metadata;
 using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
-using NLog;
 using MiningCore.Configuration;
 using MiningCore.Mining;
 using MiningCore.Payments;
+using MiningCore.Persistence.Postgres;
+using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using NLog;
 using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
@@ -35,6 +38,9 @@ namespace MiningCore
         private static PayoutProcessor payoutProcessor;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
+
+        private static readonly Regex regexJsonTypeConversionError =
+            new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
         public static void Main(string[] args)
         {
@@ -167,10 +173,7 @@ namespace MiningCore
             // Service collection
             var builder = new ContainerBuilder();
 
-            builder.RegisterAssemblyModules(new[]
-            {
-                typeof(AutofacModule).GetTypeInfo().Assembly,
-            });
+            builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
 
             // AutoMapper
             var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
@@ -195,12 +198,12 @@ namespace MiningCore
             {
                 Console.WriteLine($"Using configuration file {file}\n");
 
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
 
-                using (var reader = new StreamReader(file, System.Text.Encoding.UTF8))
+                using (var reader = new StreamReader(file, Encoding.UTF8))
                 {
                     using (var jsonReader = new JsonTextReader(reader))
                     {
@@ -227,9 +230,6 @@ namespace MiningCore
                 throw;
             }
         }
-
-        private static readonly Regex regexJsonTypeConversionError =
-            new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
         private static void HumanizeJsonParseException(JsonSerializationException ex)
         {
@@ -449,14 +449,14 @@ namespace MiningCore
                 $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
 
             // register connection factory
-            builder.RegisterInstance(new Persistence.Postgres.ConnectionFactory(connectionString))
+            builder.RegisterInstance(new ConnectionFactory(connectionString))
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t =>
-                    t.Namespace.StartsWith(typeof(Persistence.Postgres.Repositories.ShareRepository).Namespace))
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
@@ -515,7 +515,7 @@ namespace MiningCore
         };
 
         /// <summary>
-        /// work-around for libmultihash.dll not being found when running in dev-environment
+        ///     work-around for libmultihash.dll not being found when running in dev-environment
         /// </summary>
         private static void PreloadNativeLibs()
         {
