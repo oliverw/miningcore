@@ -33,10 +33,7 @@ namespace MiningCore.Crypto
         /// </summary>
         public List<string> Branches
         {
-            get
-            {
-                return Steps.Select(step => step.ToHexString()).ToList();
-            }
+            get { return Steps.Select(step => step.ToHexString()).ToList(); }
         }
 
         /// <summary>
@@ -59,18 +56,17 @@ namespace MiningCore.Crypto
         /// <returns></returns>
         private IList<byte[]> CalculateSteps(IEnumerable<byte[]> hashList)
         {
-	        Contract.RequiresNonNull(hashList, nameof(hashList));
+            Contract.RequiresNonNull(hashList, nameof(hashList));
 
-			var steps = new List<byte[]>();
+            var steps = new List<byte[]>();
 
-            var L = new List<byte[]> { null };
+            var L = new List<byte[]> {null};
             L.AddRange(hashList);
 
             var startL = 2;
             var Ll = L.Count;
 
             if (Ll > 1)
-            {
                 while (true)
                 {
                     if (Ll == 1)
@@ -84,16 +80,13 @@ namespace MiningCore.Crypto
                     var Ld = new List<byte[]>();
 
                     //foreach (int i in Range.From(startL).To(Ll).WithStepSize(2))
-                    for(int i = startL; i < Ll; i += 2)
-                    {
+                    for (var i = startL; i < Ll; i += 2)
                         Ld.Add(MerkleJoin(L[i], L[i + 1]));
-                    }
 
-                    L = new List<byte[]> { null };
+                    L = new List<byte[]> {null};
                     L.AddRange(Ld);
                     Ll = L.Count;
                 }
-            }
             return steps;
         }
 
@@ -115,28 +108,26 @@ namespace MiningCore.Crypto
 
         public byte[] WithFirst(byte[] first)
         {
-	        Contract.RequiresNonNull(first, nameof(first));
+            Contract.RequiresNonNull(first, nameof(first));
 
-			foreach (var step in Steps)
-            {
+            foreach (var step in Steps)
                 first = DoubleDigest(first.Concat(step)).ToArray();
-            }
 
             return first;
         }
 
-		private static byte[] DoubleDigest(byte[] input)
-	    {
-		    using (var hash = SHA256.Create())
-		    {
-			    var first = hash.ComputeHash(input, 0, input.Length);
-			    return hash.ComputeHash(first);
-		    }
-	    }
+        private static byte[] DoubleDigest(byte[] input)
+        {
+            using (var hash = SHA256.Create())
+            {
+                var first = hash.ComputeHash(input, 0, input.Length);
+                return hash.ComputeHash(first);
+            }
+        }
 
-	    private static IEnumerable<byte> DoubleDigest(IEnumerable<byte> input)
-	    {
-		    return DoubleDigest(input.ToArray());
-	    }
-	}
+        private static IEnumerable<byte> DoubleDigest(IEnumerable<byte> input)
+        {
+            return DoubleDigest(input.ToArray());
+        }
+    }
 }

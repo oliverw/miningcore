@@ -3,7 +3,7 @@
 namespace MiningCore.Blockchain.Monero.DaemonResponses
 {
     public class SubmitResponse
-	{
-		public string Status { get; set; }
-	}
+    {
+        public string Status { get; set; }
+    }
 }

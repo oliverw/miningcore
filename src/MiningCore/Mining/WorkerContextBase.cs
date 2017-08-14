@@ -13,19 +13,19 @@ namespace MiningCore.Mining
 
     public class WorkerContextBase
     {
-		public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig)
-		{
-			Difficulty = difficulty;
-			LastActivity = DateTime.UtcNow;
+        public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig)
+        {
+            Difficulty = difficulty;
+            LastActivity = DateTime.UtcNow;
 
-			if (poolConfig.Banning != null)
-				Stats = new BanningStats();
+            if (poolConfig.Banning != null)
+                Stats = new BanningStats();
 
-			if (varDiffConfig != null)
-				VarDiff = new VarDiffContext();
-		}
+            if (varDiffConfig != null)
+                VarDiff = new VarDiffContext();
+        }
 
-		private double? pendingDifficulty;
+        private double? pendingDifficulty;
 
         public BanningStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }
@@ -34,16 +34,16 @@ namespace MiningCore.Mining
         public bool IsSubscribed { get; set; }
         public double Difficulty { get; set; }
         public double? PreviousDifficulty { get; set; }
-	    public string UserAgent { get; set; }
+        public string UserAgent { get; set; }
 
-	    public void EnqueueNewDifficulty(double difficulty)
+        public void EnqueueNewDifficulty(double difficulty)
         {
             pendingDifficulty = difficulty;
         }
 
-	    public bool HasPendingDifficulty => pendingDifficulty.HasValue;
+        public bool HasPendingDifficulty => pendingDifficulty.HasValue;
 
-		public bool ApplyPendingDifficulty()
+        public bool ApplyPendingDifficulty()
         {
             if (pendingDifficulty.HasValue)
             {

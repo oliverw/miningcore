@@ -18,22 +18,22 @@ using NetUV.Core.Native;
 namespace MiningCore.Stratum
 {
     public abstract class StratumServer<TClientContext>
-	{
+    {
         protected StratumServer(IComponentContext ctx)
         {
-	        Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(ctx, nameof(ctx));
 
-			this.ctx = ctx;
+            this.ctx = ctx;
         }
 
         protected readonly IComponentContext ctx;
-		protected bool disableConnectionLogging = false;
+        protected bool disableConnectionLogging = false;
         protected ILogger logger;
         protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
-		protected IBanManager banManager;
+        protected IBanManager banManager;
 
-		protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients = 
-			new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
+        protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients =
+            new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
 
         protected void StartListeners(IPEndPoint[] stratumPorts)
         {
@@ -45,32 +45,32 @@ namespace MiningCore.Stratum
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
                 {
-	                var loop = new Loop();
+                    var loop = new Loop();
 
-	                var listener = loop
-						.CreateTcp()
-		                .SimultaneousAccepts(true)
-		                .KeepAlive(false, 0)
-		                .NoDelay(false)
-		                .Listen(endpoint, (con, ex) =>
-		                {
-			                if (ex == null)
-				                OnClientConnected(con, endpoint);
-							else
-				                logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
-		                });
+                    var listener = loop
+                        .CreateTcp()
+                        .SimultaneousAccepts(true)
+                        .KeepAlive(false, 0)
+                        .NoDelay(false)
+                        .Listen(endpoint, (con, ex) =>
+                        {
+                            if (ex == null)
+                                OnClientConnected(con, endpoint);
+                            else
+                                logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
+                        });
 
-	                lock (ports)
-	                {
-						ports[endpoint.Port] = listener;
-					}
+                    lock (ports)
+                    {
+                        ports[endpoint.Port] = listener;
+                    }
 
-	                loop.RunDefault();
+                    loop.RunDefault();
                 }, TaskCreationOptions.LongRunning);
 
                 task.Start();
 
-				logger.Debug(() => $"[{LogCat}] Stratum port {endpoint.Port} online");
+                logger.Debug(() => $"[{LogCat}] Stratum port {endpoint.Port} online");
             }
         }
 
@@ -78,58 +78,63 @@ namespace MiningCore.Stratum
         {
             try
             {
-	            var remoteEndPoint = con.GetPeerEndPoint();
-				var connectionId = CorrelationIdGenerator.GetNextId();
-	            con.UserToken = connectionId;
+                var remoteEndPoint = con.GetPeerEndPoint();
+                var connectionId = CorrelationIdGenerator.GetNextId();
+                con.UserToken = connectionId;
 
-				// get rid of banned clients as early as possible
-	            if (banManager?.IsBanned(remoteEndPoint.Address) == true)
-	            {
-		            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
-		            con.Dispose();
-		            return;
-	            }
+                // get rid of banned clients as early as possible
+                if (banManager?.IsBanned(remoteEndPoint.Address) == true)
+                {
+                    logger.Trace(
+                        () => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                    con.Dispose();
+                    return;
+                }
 
-				// setup client
-				var client = new StratumClient<TClientContext>();
-		        client.Init(con, ctx, endpointConfig);
+                // setup client
+                var client = new StratumClient<TClientContext>();
+                client.Init(con, ctx, endpointConfig);
 
-				// request subscription
-	            var sub = client.Requests
-		            .ObserveOn(TaskPoolScheduler.Default)
-		            .Subscribe(async tsRequest =>
-		            {
-			            var request = tsRequest.Value;
-			            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+                // request subscription
+                var sub = client.Requests
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Subscribe(async tsRequest =>
+                    {
+                        var request = tsRequest.Value;
+                        logger.Debug(
+                            () =>
+                                $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
 
-			            try
-			            {
-				            // boot pre-connected clients
-				            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
-				            {
-					            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
-					            DisconnectClient(client);
-					            return;
-				            }
+                        try
+                        {
+                            // boot pre-connected clients
+                            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                            {
+                                logger.Trace(
+                                    () =>
+                                        $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                                DisconnectClient(client);
+                                return;
+                            }
 
-				            await OnRequestAsync(client, tsRequest);
-			            }
+                            await OnRequestAsync(client, tsRequest);
+                        }
 
-			            catch (Exception ex)
-			            {
-				            logger.Error(ex, () => $"Error handling request: {request.Method}");
-			            }
-		            }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, () => $"Error handling request: {request.Method}");
+                        }
+                    }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
-				lock (clients)
-		        {
-			        clients[connectionId] = Tuple.Create(client, sub);
-		        }
+                lock (clients)
+                {
+                    clients[connectionId] = Tuple.Create(client, sub);
+                }
 
-	            OnConnect(client);
-			}
+                OnConnect(client);
+            }
 
-			catch (Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => nameof(OnClientConnected));
             }
@@ -137,11 +142,11 @@ namespace MiningCore.Stratum
 
         private void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
-	        var opEx = ex as OperationException;
+            var opEx = ex as OperationException;
 
-			// log everything but ECONNRESET which just indicates the client disconnecting
-			if (opEx?.ErrorCode != ErrorCode.ECONNRESET)
-	            logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+            // log everything but ECONNRESET which just indicates the client disconnecting
+            if (opEx?.ErrorCode != ErrorCode.ECONNRESET)
+                logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
 
             DisconnectClient(client);
         }
@@ -160,42 +165,40 @@ namespace MiningCore.Stratum
             var subscriptionId = client.ConnectionId;
 
             if (!string.IsNullOrEmpty(subscriptionId))
-            {
                 lock (clients)
                 {
-	                Tuple<StratumClient<TClientContext>, IDisposable> item;
-					if (clients.TryGetValue(subscriptionId, out item))
-	                {
-		                item.Item2.Dispose();
-		                clients.Remove(subscriptionId);
-	                }
+                    Tuple<StratumClient<TClientContext>, IDisposable> item;
+                    if (clients.TryGetValue(subscriptionId, out item))
+                    {
+                        item.Item2.Dispose();
+                        clients.Remove(subscriptionId);
+                    }
                 }
-            }
 
-	        client.Disconnect();
+            client.Disconnect();
 
-			OnDisconnect(subscriptionId);
+            OnDisconnect(subscriptionId);
         }
 
         protected void ForEachClient(Action<StratumClient<TClientContext>> action)
         {
-	        StratumClient<TClientContext>[] tmp;
+            StratumClient<TClientContext>[] tmp;
 
-	        lock (clients)
-	        {
-		        tmp = clients.Values.Select(x => x.Item1).ToArray();
-	        }
+            lock (clients)
+            {
+                tmp = clients.Values.Select(x => x.Item1).ToArray();
+            }
 
-	        foreach (var client in tmp)
-	        {
-		        action(client);
-	        }
+            foreach (var client in tmp)
+                action(client);
         }
 
-		protected abstract string LogCat { get; }
+        protected abstract string LogCat { get; }
 
         protected abstract void OnConnect(StratumClient<TClientContext> client);
         protected abstract void OnDisconnect(string subscriptionId);
-	    protected abstract Task OnRequestAsync(StratumClient<TClientContext> client, Timestamped<JsonRpcRequest> request);
+
+        protected abstract Task OnRequestAsync(StratumClient<TClientContext> client,
+            Timestamped<JsonRpcRequest> request);
     }
 }

@@ -7,11 +7,11 @@ namespace MiningCore.Mining
 {
     public interface IMiningPool
     {
-	    void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
-	    Task StartAsync();
-	    IObservable<IShare> Shares { get; }
-		PoolConfig Config { get; }
-	    PoolStats PoolStats { get; }
-		BlockchainStats NetworkStats { get; }
-	}
+        void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
+        Task StartAsync();
+        IObservable<IShare> Shares { get; }
+        PoolConfig Config { get; }
+        PoolStats PoolStats { get; }
+        BlockchainStats NetworkStats { get; }
+    }
 }

@@ -30,17 +30,17 @@ namespace MiningCore.JsonRpc
         [JsonProperty(PropertyName = "code")]
         public int Code { get; set; }
 
-	    [JsonProperty(PropertyName = "message")]
+        [JsonProperty(PropertyName = "message")]
         public string Message { get; set; }
 
-	    [JsonProperty(PropertyName = "data")]
+        [JsonProperty(PropertyName = "data")]
         public object Data { get; set; }
 
         public JsonRpcException(int code, string message, object data)
         {
-            this.Code = code;
-            this.Message = message;
-            this.Data = data;
+            Code = code;
+            Message = message;
+            Data = data;
         }
     }
 }

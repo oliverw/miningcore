@@ -22,10 +22,10 @@
         /// </summary>
         public const string SubmitShare = "mining.submit";
 
-		/// <summary>
-		/// Used to signal the miner to stop submitting shares under the new difficulty.
-		/// </summary>
-		public const string SetDifficulty = "mining.set_difficulty";
+        /// <summary>
+        /// Used to signal the miner to stop submitting shares under the new difficulty.
+        /// </summary>
+        public const string SetDifficulty = "mining.set_difficulty";
 
         public const string GetTx = "mining.get_transactions";
     }

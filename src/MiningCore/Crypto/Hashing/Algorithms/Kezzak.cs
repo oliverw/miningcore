@@ -6,23 +6,23 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Kezzak : IHashAlgorithm
     {
-		public byte[] Digest(byte[] data, ulong nTime)
-		{
-			// concat nTime as hex string to data
-			var dataEx = data.Concat(
-				nTime.ToString("X").HexToByteArray()).ToArray();
+        public byte[] Digest(byte[] data, ulong nTime)
+        {
+            // concat nTime as hex string to data
+            var dataEx = data.Concat(
+                nTime.ToString("X").HexToByteArray()).ToArray();
 
-		    var result = new byte[32];
+            var result = new byte[32];
 
-			fixed (byte* input = dataEx)
-		    {
-			    fixed (byte* output = result)
-			    {
-				    LibMultihash.kezzak(input, output, (uint) data.Length);
-			    }
-			}
+            fixed (byte* input = dataEx)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.kezzak(input, output, (uint) data.Length);
+                }
+            }
 
-		    return result;
-	    }
+            return result;
+        }
     }
 }

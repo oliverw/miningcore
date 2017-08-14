@@ -16,25 +16,23 @@ namespace MiningCore.Extensions
         /// <returns></returns>
         public static byte[] HexToByteArray(this string str)
         {
-            byte[] arr = new byte[str.Length >> 1];
+            var arr = new byte[str.Length >> 1];
 
-            for (int i = 0; i < str.Length >> 1; ++i)
-            {
-                arr[i] = (byte)((GetHexVal(str[i << 1]) << 4) + (GetHexVal(str[(i << 1) + 1])));
-            }
+            for (var i = 0; i < str.Length >> 1; ++i)
+                arr[i] = (byte) ((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
 
             return arr;
         }
 
         private static int GetHexVal(char hex)
         {
-            int val = (int)hex;
+            var val = (int) hex;
             return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
         }
 
-	    public static string ToStringHex8(this uint value)
-	    {
-		    return value.ToString("x8", CultureInfo.InvariantCulture);
-	    }
+        public static string ToStringHex8(this uint value)
+        {
+            return value.ToString("x8", CultureInfo.InvariantCulture);
+        }
     }
 }

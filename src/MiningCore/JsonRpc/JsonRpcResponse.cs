@@ -39,19 +39,19 @@ namespace MiningCore.JsonRpc
         {
             Error = ex;
             Id = id;
-	        Result = JToken.FromObject(result);
+            Result = JToken.FromObject(result);
         }
 
-		//[JsonProperty(PropertyName = "jsonrpc")]
-		//public string JsonRpc => "2.0";
+        //[JsonProperty(PropertyName = "jsonrpc")]
+        //public string JsonRpc => "2.0";
 
-		[JsonProperty(PropertyName = "result", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "result", NullValueHandling = NullValueHandling.Ignore)]
         public object Result { get; set; }
 
         [JsonProperty(PropertyName = "error")]
         public JsonRpcException Error { get; set; }
 
         [JsonProperty(PropertyName = "id", NullValueHandling = NullValueHandling.Ignore)]
-		public object Id { get; set; }
+        public object Id { get; set; }
     }
 }

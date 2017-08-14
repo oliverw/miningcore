@@ -37,7 +37,7 @@ namespace MiningCore
             builder.RegisterInstance(new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
-			});
+            });
 
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
@@ -45,52 +45,52 @@ namespace MiningCore
             builder.RegisterType<DaemonClient>()
                 .AsSelf();
 
-	        builder.RegisterType<PayoutProcessor>()
-		        .AsSelf()
-				.SingleInstance();
+            builder.RegisterType<PayoutProcessor>()
+                .AsSelf()
+                .SingleInstance();
 
             builder.RegisterType<BitcoinExtraNonceProvider>()
                 .AsSelf();
 
-	        builder.RegisterType<IntegratedBanManager>()
-		        .Keyed<IBanManager>(BanManagerKind.Integrated)
-				.SingleInstance();
+            builder.RegisterType<IntegratedBanManager>()
+                .Keyed<IBanManager>(BanManagerKind.Integrated)
+                .SingleInstance();
 
-	        builder.RegisterType<ShareRecorder>()
-		        .SingleInstance();
+            builder.RegisterType<ShareRecorder>()
+                .SingleInstance();
 
-	        builder.RegisterType<ApiServer>()
-		        .SingleInstance();
+            builder.RegisterType<ApiServer>()
+                .SingleInstance();
 
-			builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-		        .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
-			                    .Any(i =>
-				                    i.IsAssignableFrom(typeof(IMiningPool)) ||
-				                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
-				                    i.IsAssignableFrom(typeof(IPayoutScheme))))
-		        .WithMetadataFrom<CoinMetadataAttribute>()
-		        .AsImplementedInterfaces();
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
+                                .Any(i =>
+                                    i.IsAssignableFrom(typeof(IMiningPool)) ||
+                                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
+                                    i.IsAssignableFrom(typeof(IPayoutScheme))))
+                .WithMetadataFrom<CoinMetadataAttribute>()
+                .AsImplementedInterfaces();
 
-	        //////////////////////
-	        // Payment Schemes
+            //////////////////////
+            // Payment Schemes
 
-	        builder.RegisterType<PayPerLastNShares>()
-		        .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
-		        .SingleInstance();
+            builder.RegisterType<PayPerLastNShares>()
+                .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
+                .SingleInstance();
 
-			//////////////////////
-			// Bitcoin and family
+            //////////////////////
+            // Bitcoin and family
 
-			builder.RegisterType<BitcoinJobManager>()
-		        .AsSelf();
+            builder.RegisterType<BitcoinJobManager>()
+                .AsSelf();
 
-			//////////////////////
-			// Monero
+            //////////////////////
+            // Monero
 
-			builder.RegisterType<MoneroJobManager>()
-				.AsSelf();
+            builder.RegisterType<MoneroJobManager>()
+                .AsSelf();
 
-			base.Load(builder);
+            base.Load(builder);
         }
     }
 }

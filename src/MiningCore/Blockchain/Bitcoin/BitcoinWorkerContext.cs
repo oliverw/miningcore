@@ -8,7 +8,7 @@ using MiningCore.Stratum;
 namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinWorkerContext : WorkerContextBase
-	{
-		public string ExtraNonce1 { get; set; }
-	}
+    {
+        public string ExtraNonce1 { get; set; }
+    }
 }

@@ -11,10 +11,10 @@ namespace MiningCore.VarDiff
         {
             options = varDiffOptions;
 
-	        minDiff = options.MinDiff;
-	        maxDiff = options.MaxDiff;
+            minDiff = options.MinDiff;
+            maxDiff = options.MaxDiff;
 
-	        var variance = (varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0));
+            var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
             bufferSize = (int) (varDiffOptions.RetargetTime / varDiffOptions.TargetTime * 4.0);
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
@@ -24,16 +24,16 @@ namespace MiningCore.VarDiff
         private readonly int bufferSize;
         private readonly double tMin;
         private readonly double tMax;
-	    private double minDiff;
-	    private double maxDiff;
+        private double minDiff;
+        private double maxDiff;
 
-	    public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
+        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
         {
-	        Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(ctx, nameof(ctx));
 
-			lock (ctx)
+            lock (ctx)
             {
-	            maxDiff = networkDifficulty > maxDiff ? options.MaxDiff : networkDifficulty;
+                maxDiff = networkDifficulty > maxDiff ? options.MaxDiff : networkDifficulty;
 
                 var ts = (DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) | 0;
 
@@ -50,7 +50,7 @@ namespace MiningCore.VarDiff
                 ctx.TimeBuffer.PushBack(sinceLast);
                 ctx.LastTs = ts;
 
-                if ((ts - ctx.LastRtc) < options.RetargetTime && ctx.TimeBuffer.Size > 0)
+                if (ts - ctx.LastRtc < options.RetargetTime && ctx.TimeBuffer.Size > 0)
                     return null;
 
                 ctx.LastRtc = ts;
@@ -72,7 +72,9 @@ namespace MiningCore.VarDiff
                 }
 
                 else
+                {
                     return null;
+                }
 
                 var newDiff = difficulty * ddiff;
                 ctx.TimeBuffer = new CircularLongBuffer(bufferSize);

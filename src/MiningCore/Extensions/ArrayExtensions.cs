@@ -46,17 +46,17 @@ namespace MiningCore.Extensions
             }
         }
 
-	    public static T[] ToReverseArray<T>(this IEnumerable<T> bytes)
-	    {
-		    var arr = bytes.ToArray();
-			Array.Reverse(arr);
-		    return arr;
-	    }
+        public static T[] ToReverseArray<T>(this IEnumerable<T> bytes)
+        {
+            var arr = bytes.ToArray();
+            Array.Reverse(arr);
+            return arr;
+        }
 
-	    public static T[] ToReverseArray<T>(this T[] arr)
-	    {
-		    Array.Reverse(arr);
-		    return arr;
-	    }
-	}
+        public static T[] ToReverseArray<T>(this T[] arr)
+        {
+            Array.Reverse(arr);
+            return arr;
+        }
+    }
 }

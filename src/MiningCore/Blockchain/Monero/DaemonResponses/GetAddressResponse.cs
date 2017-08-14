@@ -3,7 +3,7 @@
 namespace MiningCore.Blockchain.Monero.DaemonResponses
 {
     public class GetAddressResponse
-	{
-	    public string Address { get; set; }
+    {
+        public string Address { get; set; }
     }
 }

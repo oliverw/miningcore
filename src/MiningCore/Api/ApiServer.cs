@@ -19,119 +19,113 @@ using NLog;
 namespace MiningCore.Api
 {
     public class ApiServer
-	{
-		public ApiServer(IMapper mapper)
-		{
-			this.mapper = mapper;
-		}
+    {
+        public ApiServer(IMapper mapper)
+        {
+            this.mapper = mapper;
+        }
 
-		private readonly List<IMiningPool> pools = new List<IMiningPool>();
-		private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly List<IMiningPool> pools = new List<IMiningPool>();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-		private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
-		{
-			ContractResolver = new CamelCasePropertyNamesContractResolver(),
-			Formatting = Formatting.Indented,
-			NullValueHandling = NullValueHandling.Ignore
-		};
+        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            Formatting = Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore
+        };
 
-		private readonly IMapper mapper;
-		private IWebHost webHost;
+        private readonly IMapper mapper;
+        private IWebHost webHost;
 
-		#region API-Surface
+        #region API-Surface
 
-		public void Start(ClusterConfig clusterConfig)
-		{
-			Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-			
-			logger.Info(() => $"Launching ...");
+        public void Start(ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-			var address = clusterConfig.Api?.Address != null ?
-				(clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any) :
-				IPAddress.Parse("127.0.0.1");
+            logger.Info(() => $"Launching ...");
 
-			var port = clusterConfig.Api?.Port ?? 4000;
+            var address = clusterConfig.Api?.Address != null
+                ? (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
 
-			webHost = new WebHostBuilder()
-				.Configure(app =>
-				{
-					app.Run(HandleRequest);
-				})
-				.UseKestrel(options =>
-				{
-					options.Listen(address, port);
-				})
-				.Build();
+            var port = clusterConfig.Api?.Port ?? 4000;
 
-			webHost.Start();
+            webHost = new WebHostBuilder()
+                .Configure(app => { app.Run(HandleRequest); })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
 
-			logger.Info(() => $"Online @ {address}:{port}");
-		}
+            webHost.Start();
 
-		public void AttachPool(IMiningPool pool)
-		{
-			lock (pools)
-			{
-				pools.Add(pool);
-			}
-		}
+            logger.Info(() => $"Online @ {address}:{port}");
+        }
 
-		#endregion // API-Surface
+        public void AttachPool(IMiningPool pool)
+        {
+            lock (pools)
+            {
+                pools.Add(pool);
+            }
+        }
 
-		private async Task SendJson(HttpContext context, object response)
-		{
-			context.Response.ContentType = "application/json";
+        #endregion // API-Surface
 
-			var json = JsonConvert.SerializeObject(response, serializerSettings);
-			await context.Response.WriteAsync(json, Encoding.UTF8);
-		}
+        private async Task SendJson(HttpContext context, object response)
+        {
+            context.Response.ContentType = "application/json";
 
-		private async Task HandleRequest(HttpContext context)
-		{
-			var request = context.Request;
+            var json = JsonConvert.SerializeObject(response, serializerSettings);
+            await context.Response.WriteAsync(json, Encoding.UTF8);
+        }
 
-			try
-			{
-				switch (request.Path)
-				{
-					case "/api/pools":
-						await HandleGetPoolsAsync(context);
-						break;
+        private async Task HandleRequest(HttpContext context)
+        {
+            var request = context.Request;
 
-					default:
-						context.Response.StatusCode = 404;
-						break;
-				}
-			}
+            try
+            {
+                switch (request.Path)
+                {
+                    case "/api/pools":
+                        await HandleGetPoolsAsync(context);
+                        break;
 
-			catch (Exception ex)
-			{
-				logger.Error(ex);
-				throw;
-			}
-		}
+                    default:
+                        context.Response.StatusCode = 404;
+                        break;
+                }
+            }
 
-		private async Task HandleGetPoolsAsync(HttpContext context)
-		{
-			GetPoolsResponse response;
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+        }
 
-			lock (pools)
-			{
-				response = new GetPoolsResponse
-				{
-					Pools = pools.Select(pool =>
-					{
-						var poolInfo = mapper.Map<PoolInfo>(pool.Config);
+        private async Task HandleGetPoolsAsync(HttpContext context)
+        {
+            GetPoolsResponse response;
 
-						poolInfo.PoolStats = pool.PoolStats;
-						poolInfo.NetworkStats = pool.NetworkStats;
+            lock (pools)
+            {
+                response = new GetPoolsResponse
+                {
+                    Pools = pools.Select(pool =>
+                    {
+                        var poolInfo = mapper.Map<PoolInfo>(pool.Config);
 
-						return poolInfo;
-					}).ToArray()
-				};
-			}
+                        poolInfo.PoolStats = pool.PoolStats;
+                        poolInfo.NetworkStats = pool.NetworkStats;
 
-			await SendJson(context, response);
-		}
-	}
+                        return poolInfo;
+                    }).ToArray()
+                };
+            }
+
+            await SendJson(context, response);
+        }
+    }
 }

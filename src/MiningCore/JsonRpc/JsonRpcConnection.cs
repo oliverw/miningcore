@@ -23,9 +23,9 @@ namespace MiningCore.JsonRpc
     {
         public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {
-	        Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+            Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
-			this.serializerSettings = serializerSettings;
+            this.serializerSettings = serializerSettings;
         }
 
         private readonly JsonSerializerSettings serializerSettings;
@@ -43,43 +43,50 @@ namespace MiningCore.JsonRpc
 
             // convert input into sequence of chars
             var incomingLines = Observable.Create<string>(observer =>
-	        {
-		        upstream.OnRead((handle, buffer) =>
-		        {
-					// onAccept
-					var data = buffer.ReadString(Encoding.UTF8, new []{(byte) 10}).Trim();
+                {
+                    upstream.OnRead((handle, buffer) =>
+                    {
+                        // onAccept
+                        var data = buffer.ReadString(Encoding.UTF8, new[] {(byte) 10}).Trim();
 
-			        if (data.Length < MaxRequestLength)
-				        observer.OnNext(data);
-					else
-				        observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
-		        }, (handle, ex) =>
-		        {
-					// onError
-					observer.OnError(ex);
-				}, handle =>
-		        {
-					// onCompleted
-					observer.OnCompleted();
-				});
+                        if (data.Length < MaxRequestLength)
+                            observer.OnNext(data);
+                        else
+                            observer.OnError(
+                                new InvalidDataException(
+                                    $"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                    }, (handle, ex) =>
+                    {
+                        // onError
+                        observer.OnError(ex);
+                    }, handle =>
+                    {
+                        // onCompleted
+                        observer.OnCompleted();
+                    });
 
-		        return Disposable.Create(() =>
-		        {
-					if(upstream.IsValid)
-						logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
+                    return Disposable.Create(() =>
+                    {
+                        if (upstream.IsValid)
+                            logger.Debug(
+                                () => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
 
-					upstream.Dispose();
-		        });
-	        })
-            .Publish()
-            .RefCount();
+                        upstream.Dispose();
+                    });
+                })
+                .Publish()
+                .RefCount();
 
             Received = incomingLines
-		        .Where(line => line.Length > 0) // ignore empty lines
-				.Select(line => new { Json = line, Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings) })
+                .Where(line => line.Length > 0) // ignore empty lines
+                .Select(line => new
+                {
+                    Json = line,
+                    Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings)
+                })
                 .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
                 .Select(x => x.Request)
-				.Timestamp()
+                .Timestamp()
                 .Publish()
                 .RefCount();
         }
@@ -89,17 +96,17 @@ namespace MiningCore.JsonRpc
         public void Send<T>(JsonRpcResponse<T> response)
         {
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-	        logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
+            logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
-			upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
         }
 
         public void Send<T>(JsonRpcRequest<T> request)
         {
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
-	        logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
+            logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
-			upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();

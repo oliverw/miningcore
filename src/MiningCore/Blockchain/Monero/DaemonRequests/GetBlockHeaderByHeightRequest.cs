@@ -3,7 +3,7 @@
 namespace MiningCore.Blockchain.Monero.DaemonRequests
 {
     public class GetBlockHeaderByHeightRequest
-	{
-		public ulong Height { get; set; }
-	}
+    {
+        public ulong Height { get; set; }
+    }
 }
