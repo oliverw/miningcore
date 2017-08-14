@@ -16,7 +16,7 @@ namespace CodeContracts
             if (!predicate)
             {
                 var constructor = constructors.GetOrAdd(typeof(TException), CreateConstructor);
-                throw constructor(new object[] { message });
+                throw constructor(new object[] {message});
             }
         }
 
@@ -39,18 +39,18 @@ namespace CodeContracts
             var parameters = new[] {typeof(string)};
             var constructorInfo = type.GetTypeInfo().DeclaredConstructors.First(
                 x => x.GetParameters().Length == 1 && x.GetParameters().First().ParameterType == typeof(string));
-            var paramExpr = Expression.Parameter(typeof(Object[]));
+            var paramExpr = Expression.Parameter(typeof(object[]));
 
             // To feed the constructor with the right parameters, we need to generate an array 
             // of parameters that will be read from the initialize object array argument.
             var constructorParameters = parameters.Select((paramType, index) =>
                 // convert the object[index] to the right constructor parameter type.
-                Expression.Convert(
-                    // read a value from the object[index]
-                    Expression.ArrayAccess(
-                        paramExpr,
-                        Expression.Constant(index)),
-                    paramType)).ToArray();
+                    Expression.Convert(
+                        // read a value from the object[index]
+                        Expression.ArrayAccess(
+                            paramExpr,
+                            Expression.Constant(index)),
+                        paramType)).ToArray();
 
             // just call the constructor.
             var body = Expression.New(constructorInfo, constructorParameters);

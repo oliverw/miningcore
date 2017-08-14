@@ -9,12 +9,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class BlockRepository : IBlockRepository
     {
-        private readonly IMapper mapper;
-
         public BlockRepository(IMapper mapper)
         {
             this.mapper = mapper;
         }
+
+        private readonly IMapper mapper;
 
         public void Insert(IDbConnection con, IDbTransaction tx, Block block)
         {

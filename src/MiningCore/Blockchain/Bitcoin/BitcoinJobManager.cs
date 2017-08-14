@@ -22,14 +22,18 @@ namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinJobManager : JobManagerBase<BitcoinJob>
     {
-        private static readonly object[] getBlockTemplateParams =
+        public BitcoinJobManager(
+            IComponentContext ctx,
+            DaemonClient daemon,
+            BitcoinExtraNonceProvider extraNonceProvider) :
+            base(ctx, daemon)
         {
-            new
-            {
-                capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
-                rules = new[] {"segwit"}
-            }
-        };
+            Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(daemon, nameof(daemon));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+
+            this.extraNonceProvider = extraNonceProvider;
+        }
 
         private readonly BitcoinExtraNonceProvider extraNonceProvider;
         private readonly IHashAlgorithm sha256d = new Sha256D();
@@ -48,18 +52,14 @@ namespace MiningCore.Blockchain.Bitcoin
         private BitcoinNetworkType networkType;
         private IDestination poolAddressDestination;
 
-        public BitcoinJobManager(
-            IComponentContext ctx,
-            DaemonClient daemon,
-            BitcoinExtraNonceProvider extraNonceProvider) :
-            base(ctx, daemon)
+        private static readonly object[] getBlockTemplateParams =
         {
-            Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(daemon, nameof(daemon));
-            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
-
-            this.extraNonceProvider = extraNonceProvider;
-        }
+            new
+            {
+                capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
+                rules = new[] {"segwit"}
+            }
+        };
 
         protected virtual void SetupJobUpdates()
         {

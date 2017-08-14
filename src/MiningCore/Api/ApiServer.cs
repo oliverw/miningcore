@@ -20,6 +20,15 @@ namespace MiningCore.Api
 {
     public class ApiServer
     {
+        public ApiServer(IMapper mapper)
+        {
+            this.mapper = mapper;
+        }
+
+        private readonly IMapper mapper;
+
+        private readonly List<IMiningPool> pools = new List<IMiningPool>();
+        private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
@@ -28,16 +37,6 @@ namespace MiningCore.Api
             Formatting = Formatting.Indented,
             NullValueHandling = NullValueHandling.Ignore
         };
-
-        private readonly IMapper mapper;
-
-        private readonly List<IMiningPool> pools = new List<IMiningPool>();
-        private IWebHost webHost;
-
-        public ApiServer(IMapper mapper)
-        {
-            this.mapper = mapper;
-        }
 
         private async Task SendJson(HttpContext context, object response)
         {

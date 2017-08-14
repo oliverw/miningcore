@@ -29,25 +29,6 @@ namespace MiningCore.Payments
     /// </summary>
     public class ShareRecorder
     {
-        private const int RetryCount = 3;
-        private const string PolicyContextKeyShares = "share";
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private readonly IBlockRepository blockRepo;
-
-        private readonly IConnectionFactory cf;
-        private readonly JsonSerializerSettings jsonSerializerSettings;
-        private readonly IMapper mapper;
-        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
-        private readonly IShareRepository shareRepo;
-        private Policy faultPolicy;
-        private bool hasLoggedPolicyFallbackFailure;
-        private bool hasWarnedAboutBacklogSize;
-
-        private readonly int QueueSizeWarningThreshold = 1024;
-        private IDisposable queueSub;
-        private string recoveryFilename;
-
         public ShareRecorder(IConnectionFactory cf, IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo)
@@ -67,6 +48,25 @@ namespace MiningCore.Payments
 
             BuildFaultHandlingPolicy();
         }
+
+        private readonly IBlockRepository blockRepo;
+
+        private readonly IConnectionFactory cf;
+        private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly IMapper mapper;
+        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+
+        private readonly int QueueSizeWarningThreshold = 1024;
+        private readonly IShareRepository shareRepo;
+        private Policy faultPolicy;
+        private bool hasLoggedPolicyFallbackFailure;
+        private bool hasWarnedAboutBacklogSize;
+        private IDisposable queueSub;
+        private string recoveryFilename;
+        private const int RetryCount = 3;
+        private const string PolicyContextKeyShares = "share";
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private void PersistSharesFaulTolerant(IList<IShare> shares)
         {

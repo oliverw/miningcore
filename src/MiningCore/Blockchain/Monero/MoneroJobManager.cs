@@ -22,14 +22,6 @@ namespace MiningCore.Blockchain.Monero
 {
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
-        private readonly byte[] instanceId;
-        private DaemonEndpointConfig[] daemonEndpoints;
-        protected DateTime? lastBlockUpdate;
-        private MoneroNetworkType networkType;
-        private uint poolAddressBase58Prefix;
-        private DaemonClient walletDaemon;
-        private DaemonEndpointConfig[] walletDaemonEndpoints;
-
         public MoneroJobManager(
             IComponentContext ctx,
             DaemonClient daemon) :
@@ -44,6 +36,14 @@ namespace MiningCore.Blockchain.Monero
                 rng.GetNonZeroBytes(instanceId);
             }
         }
+
+        private readonly byte[] instanceId;
+        private DaemonEndpointConfig[] daemonEndpoints;
+        protected DateTime? lastBlockUpdate;
+        private MoneroNetworkType networkType;
+        private uint poolAddressBase58Prefix;
+        private DaemonClient walletDaemon;
+        private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob()
         {

@@ -24,29 +24,6 @@ namespace MiningCore.Mining
         IMiningPool
         where TWorkerContext : WorkerContextBase, new()
     {
-        private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
-        protected readonly IConnectionFactory cf;
-        protected readonly IObservable<Unit> invalidShares;
-
-        protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
-        protected readonly PoolStats poolStats = new PoolStats();
-        protected readonly JsonSerializerSettings serializerSettings;
-
-        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
-
-        protected readonly IObservable<IShare> validShares;
-
-        // Telemetry
-        protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
-
-        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
-            new Dictionary<PoolEndpoint, VarDiffManager>();
-
-        protected BlockchainStats blockchainStats;
-        protected ClusterConfig clusterConfig;
-
-        protected PoolConfig poolConfig;
-
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
@@ -71,6 +48,29 @@ namespace MiningCore.Mining
                 .AsObservable()
                 .Synchronize();
         }
+
+        protected readonly IConnectionFactory cf;
+        protected readonly IObservable<Unit> invalidShares;
+
+        protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
+        protected readonly PoolStats poolStats = new PoolStats();
+        protected readonly JsonSerializerSettings serializerSettings;
+
+        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
+
+        protected readonly IObservable<IShare> validShares;
+
+        // Telemetry
+        protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
+
+        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
+            new Dictionary<PoolEndpoint, VarDiffManager>();
+
+        protected BlockchainStats blockchainStats;
+        protected ClusterConfig clusterConfig;
+
+        protected PoolConfig poolConfig;
+        private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
 
         protected override string LogCat => "Pool";
 

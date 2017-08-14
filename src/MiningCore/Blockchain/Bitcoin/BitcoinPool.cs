@@ -16,17 +16,16 @@ namespace MiningCore.Blockchain.Bitcoin
     [BitcoinCoinsMetaData]
     public class BitcoinPool : PoolBase<BitcoinWorkerContext>
     {
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
-
-        private object currentJobParams;
-        private BitcoinJobManager manager;
-
         public BitcoinPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
             base(ctx, serializerSettings, cf)
         {
         }
+
+        private object currentJobParams;
+        private BitcoinJobManager manager;
+        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 
         private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {

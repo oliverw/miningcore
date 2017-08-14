@@ -17,18 +17,18 @@ namespace MiningCore.JsonRpc
 {
     public class JsonRpcConnection
     {
-        private const int MaxRequestLength = 8192;
-        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        private readonly JsonSerializerSettings serializerSettings;
-        private Tcp upstream;
-
         public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
         }
+
+        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        private readonly JsonSerializerSettings serializerSettings;
+        private Tcp upstream;
+        private const int MaxRequestLength = 8192;
 
         #region Implementation of IJsonRpcConnection
 

@@ -20,8 +20,6 @@ namespace MiningCore.Blockchain.Bitcoin
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
-        private readonly DaemonClient daemon;
-
         public BitcoinPayoutHandler(IConnectionFactory cf, IMapper mapper,
             DaemonClient daemon,
             IShareRepository shareRepo,
@@ -36,6 +34,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             this.daemon = daemon;
         }
+
+        private readonly DaemonClient daemon;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 

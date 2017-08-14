@@ -21,17 +21,17 @@ namespace MiningCore.Blockchain.Monero
     [CoinMetadata(CoinType.XMR)]
     public class MoneroPool : PoolBase<MoneroWorkerContext>
     {
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
-        private long jobId;
-
-        private MoneroJobManager manager;
-
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf) :
             base(ctx, serializerSettings, cf)
         {
         }
+
+        private long jobId;
+
+        private MoneroJobManager manager;
+        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 
         private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {

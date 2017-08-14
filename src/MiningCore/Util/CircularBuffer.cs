@@ -23,23 +23,6 @@ namespace MiningCore.Util
     /// </summary>
     public class CircularBuffer<T> : IEnumerable<T>
     {
-        private readonly T[] _buffer;
-
-        /// <summary>
-        ///     The _end. Index after the last element in the buffer.
-        /// </summary>
-        private int _end;
-
-        /// <summary>
-        ///     The _size. Buffer size.
-        /// </summary>
-        private int _size;
-
-        /// <summary>
-        ///     The _start. Index of the first element in buffer.
-        /// </summary>
-        private int _start;
-
         public CircularBuffer(int capacity)
             : this(capacity, new T[] { })
         {
@@ -75,6 +58,23 @@ namespace MiningCore.Util
             _start = 0;
             _end = _size == capacity ? 0 : _size;
         }
+
+        private readonly T[] _buffer;
+
+        /// <summary>
+        ///     The _end. Index after the last element in the buffer.
+        /// </summary>
+        private int _end;
+
+        /// <summary>
+        ///     The _size. Buffer size.
+        /// </summary>
+        private int _size;
+
+        /// <summary>
+        ///     The _start. Index of the first element in buffer.
+        /// </summary>
+        private int _start;
 
         /// <summary>
         ///     Maximum capacity of the buffer. Elements pushed into the buffer after

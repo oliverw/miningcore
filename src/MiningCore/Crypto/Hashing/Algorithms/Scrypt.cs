@@ -4,14 +4,14 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Scrypt : IHashAlgorithm
     {
-        private readonly uint n;
-        private readonly uint r;
-
         public Scrypt(uint n, uint r)
         {
             this.n = n;
             this.r = r;
         }
+
+        private readonly uint n;
+        private readonly uint r;
 
         public byte[] Digest(byte[] data, ulong nTime)
         {

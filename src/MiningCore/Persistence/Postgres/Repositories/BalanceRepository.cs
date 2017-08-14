@@ -11,12 +11,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class BalanceRepository : IBalanceRepository
     {
-        private readonly IMapper mapper;
-
         public BalanceRepository(IMapper mapper)
         {
             this.mapper = mapper;
         }
+
+        private readonly IMapper mapper;
 
         public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address,
             decimal amount)

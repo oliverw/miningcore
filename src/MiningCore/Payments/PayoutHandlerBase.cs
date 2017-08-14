@@ -16,19 +16,6 @@ namespace MiningCore.Payments
 {
     public abstract class PayoutHandlerBase
     {
-        private const int RetryCount = 8;
-        protected readonly IBalanceRepository balanceRepo;
-        protected readonly IBlockRepository blockRepo;
-        protected readonly IConnectionFactory cf;
-        protected readonly IMapper mapper;
-        protected readonly IPaymentRepository paymentRepo;
-        protected readonly IShareRepository shareRepo;
-        protected ClusterConfig clusterConfig;
-        private Policy faultPolicy;
-
-        protected ILogger logger;
-        protected PoolConfig poolConfig;
-
         protected PayoutHandlerBase(IConnectionFactory cf, IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
@@ -51,6 +38,19 @@ namespace MiningCore.Payments
 
             BuildFaultHandlingPolicy();
         }
+
+        protected readonly IBalanceRepository balanceRepo;
+        protected readonly IBlockRepository blockRepo;
+        protected readonly IConnectionFactory cf;
+        protected readonly IMapper mapper;
+        protected readonly IPaymentRepository paymentRepo;
+        protected readonly IShareRepository shareRepo;
+        protected ClusterConfig clusterConfig;
+        private Policy faultPolicy;
+
+        protected ILogger logger;
+        protected PoolConfig poolConfig;
+        private const int RetryCount = 8;
 
         protected abstract string LogCategory { get; }
 

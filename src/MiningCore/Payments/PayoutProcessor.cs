@@ -20,16 +20,6 @@ namespace MiningCore.Payments
     /// </summary>
     public class PayoutProcessor
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private readonly IBalanceRepository balanceRepo;
-        private readonly IBlockRepository blockRepo;
-        private readonly IConnectionFactory cf;
-        private readonly IComponentContext ctx;
-        private readonly IShareRepository shareRepo;
-        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
-        private ClusterConfig clusterConfig;
-        private Thread thread;
-
         public PayoutProcessor(IComponentContext ctx,
             IConnectionFactory cf,
             IBlockRepository blockRepo,
@@ -48,6 +38,16 @@ namespace MiningCore.Payments
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
         }
+
+        private readonly IBalanceRepository balanceRepo;
+        private readonly IBlockRepository blockRepo;
+        private readonly IConnectionFactory cf;
+        private readonly IComponentContext ctx;
+        private readonly IShareRepository shareRepo;
+        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+        private ClusterConfig clusterConfig;
+        private Thread thread;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private async Task ProcessPoolsAsync()
         {

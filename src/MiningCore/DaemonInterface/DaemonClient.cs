@@ -20,19 +20,19 @@ namespace MiningCore.DaemonInterface
     /// </summary>
     public class DaemonClient
     {
-        private readonly Random random = new Random();
-        private readonly JsonSerializerSettings serializerSettings;
-
-        protected DaemonEndpointConfig[] endPoints;
-        private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
-        private string rpcLocation;
-
         public DaemonClient(JsonSerializerSettings serializerSettings)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
         }
+
+        private readonly Random random = new Random();
+        private readonly JsonSerializerSettings serializerSettings;
+
+        protected DaemonEndpointConfig[] endPoints;
+        private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
+        private string rpcLocation;
 
         #region API-Surface
 

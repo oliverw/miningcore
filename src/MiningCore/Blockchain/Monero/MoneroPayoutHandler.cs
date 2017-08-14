@@ -23,10 +23,6 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
-        private readonly DaemonClient daemon;
-        private readonly DaemonClient walletDaemon;
-        private MoneroNetworkType? networkType;
-
         public MoneroPayoutHandler(IConnectionFactory cf, IMapper mapper,
             DaemonClient daemon,
             DaemonClient walletDaemon,
@@ -43,6 +39,10 @@ namespace MiningCore.Blockchain.Monero
             this.daemon = daemon;
             this.walletDaemon = walletDaemon;
         }
+
+        private readonly DaemonClient daemon;
+        private readonly DaemonClient walletDaemon;
+        private MoneroNetworkType? networkType;
 
         protected override string LogCategory => "Monero Payout Handler";
 

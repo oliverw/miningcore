@@ -1,10 +1,3 @@
-using System.Reactive.Linq;
-using System.Threading.Tasks;
-using MiningCore.JsonRpc;
-using MiningCore.Tests.Util;
-using MiningForce.Tests.Util;
-using Xunit;
-
 namespace MiningCore.Tests.JsonRpc
 {
     public class JsonRpcConnectionTests
@@ -22,5 +15,5 @@ namespace MiningCore.Tests.JsonRpc
 	        await upstream.Closed.Take(1);
         }
 */
-	}
+    }
 }

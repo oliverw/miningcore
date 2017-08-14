@@ -51,15 +51,6 @@ namespace MiningCore.Blockchain.Bitcoin
             this.blockHasher = blockHasher;
         }
 
-        // serialization constants
-        private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
-        private static byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
-        private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
-
-        private static uint txInputCount = 1u;
-        private static uint txInPrevOutIndex = (uint)(Math.Pow(2, 32) - 1);
-        private static uint txInSequence;
-        private static uint txLockTime;
         private readonly IHashAlgorithm blockHasher;
         private readonly ClusterConfig clusterConfig;
         private readonly IHashAlgorithm coinbaseHasher;
@@ -86,6 +77,17 @@ namespace MiningCore.Blockchain.Bitcoin
         private string previousBlockHashReversedHex;
         private Money rewardToPool;
         private Transaction txOut;
+
+        // serialization constants
+        private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+
+        private static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
+        private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+
+        private static uint txInputCount = 1u;
+        private static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
+        private static uint txInSequence;
+        private static uint txLockTime;
 
         private void BuildMerkleBranches()
         {

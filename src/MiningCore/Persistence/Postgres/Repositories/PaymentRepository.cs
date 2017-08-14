@@ -8,12 +8,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class PaymentRepository : IPaymentRepository
     {
-        private readonly IMapper mapper;
-
         public PaymentRepository(IMapper mapper)
         {
             this.mapper = mapper;
         }
+
+        private readonly IMapper mapper;
 
         public void Insert(IDbConnection con, IDbTransaction tx, Payment payment)
         {

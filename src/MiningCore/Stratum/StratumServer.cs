@@ -19,6 +19,13 @@ namespace MiningCore.Stratum
 {
     public abstract class StratumServer<TClientContext>
     {
+        protected StratumServer(IComponentContext ctx)
+        {
+            Contract.RequiresNonNull(ctx, nameof(ctx));
+
+            this.ctx = ctx;
+        }
+
         protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients =
             new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
 
@@ -27,13 +34,6 @@ namespace MiningCore.Stratum
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
         protected ILogger logger;
-
-        protected StratumServer(IComponentContext ctx)
-        {
-            Contract.RequiresNonNull(ctx, nameof(ctx));
-
-            this.ctx = ctx;
-        }
 
         protected abstract string LogCat { get; }
 
@@ -87,8 +87,7 @@ namespace MiningCore.Stratum
                 // get rid of banned clients as early as possible
                 if (banManager?.IsBanned(remoteEndPoint.Address) == true)
                 {
-                    logger.Trace(
-                        () => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                    logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
                     con.Dispose();
                     return;
                 }

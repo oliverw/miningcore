@@ -25,8 +25,7 @@ namespace MiningCore.Banning
         public void Ban(IPAddress address, TimeSpan duration)
         {
             Contract.RequiresNonNull(address, nameof(address));
-            Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0,
-                $"{nameof(duration)} must not be empty");
+            Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
 
             cache.Set(address.ToString(), string.Empty, duration);
         }
