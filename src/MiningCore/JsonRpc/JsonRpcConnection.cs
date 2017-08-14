@@ -9,6 +9,7 @@ using CodeContracts;
 using NetUV.Core.Handles;
 using NLog;
 using Newtonsoft.Json;
+using NLog.LayoutRenderers;
 
 // http://www.jsonrpc.org/specification
 // https://github.com/Astn/JSON-RPC.NET
@@ -39,15 +40,30 @@ namespace MiningCore.JsonRpc
 
             var incomingLines = Observable.Create<string>(observer =>
             {
+                var sb = new StringBuilder();
+
                 upstream.OnRead((handle, buffer) =>
                 {
                     // onAccept
-                    var data = buffer.ReadString(Encoding.UTF8, new[] {(byte) 10}).Trim();
+                    var data = buffer.ReadString(Encoding.UTF8);
 
                     if (!string.IsNullOrEmpty(data))
                     {
-                        if (data.Length < MaxRequestLength)
-                            observer.OnNext(data);
+                        sb.Append(data);
+
+                        if (sb.Length < MaxRequestLength)
+                        {
+                            var index = sb.ToString().IndexOf('\n');
+
+                            if (index != -1)
+                            {
+                                var line = sb.ToString(0, index);
+                                sb.Remove(0, index + 1);
+
+                                observer.OnNext(line);
+                            }
+                        }
+
                         else
                             observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
                     }
