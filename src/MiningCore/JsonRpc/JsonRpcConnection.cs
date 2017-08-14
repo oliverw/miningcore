@@ -65,7 +65,10 @@ namespace MiningCore.JsonRpc
 
 		        return Disposable.Create(() =>
 		        {
-			        upstream.Dispose();
+					if(upstream.IsValid)
+						logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
+
+					upstream.Dispose();
 		        });
 	        })
             .Publish()
