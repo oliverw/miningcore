@@ -49,15 +49,16 @@ namespace MiningCore.JsonRpc
 
                         if (!string.IsNullOrEmpty(data))
                         {
+                            // flooding prevent check
                             if (sb.Length + data.Length < MaxRequestLength)
                             {
                                 sb.Append(data);
-                                int index;
 
                                 // scan for lines and emit
+                                int index;
                                 while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
                                 {
-                                    var line = sb.ToString(0, index);
+                                    var line = sb.ToString(0, index).Trim();
                                     sb.Remove(0, index + 1);
 
                                     observer.OnNext(line);
