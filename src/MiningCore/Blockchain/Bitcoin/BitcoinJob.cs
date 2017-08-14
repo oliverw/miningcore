@@ -278,7 +278,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     Percentage = 0.2m
                 });
 
-            foreach (var recipient in rewardRecipients)
+            foreach (var recipient in rewardRecipients.Where(x => x.Percentage > 0))
             {
                 var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
                 var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * reward.Satoshi));

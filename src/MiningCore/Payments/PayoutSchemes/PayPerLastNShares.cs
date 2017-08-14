@@ -98,9 +98,7 @@ namespace MiningCore.Payments.PayoutSchemes
             while (!done)
             {
                 // fetch next page
-                var blockPage =
-                    cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++,
-                        pageSize));
+                var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize));
 
                 if (blockPage.Length == 0)
                     break;
@@ -108,9 +106,10 @@ namespace MiningCore.Payments.PayoutSchemes
                 // iterate over shares
                 var start = Math.Max(0, blockPage.Length - 1);
 
-                for (var i = start; i >= 0 && !done; i--)
+                for (var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
+                    shareCutOffDate = share.Created;
 
                     // make sure that score does not go through the roof for testnets where difficulty is usually extremely low
                     var stratumDiff = Math.Min((decimal) share.StratumDifficulty, (decimal) share.NetworkDifficulty);
@@ -124,7 +123,6 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (accumulatedScore + score >= factorX)
                     {
                         score = factorX - accumulatedScore;
-                        shareCutOffDate = share.Created;
                         done = true;
                     }
 

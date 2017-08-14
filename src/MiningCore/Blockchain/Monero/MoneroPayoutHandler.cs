@@ -177,7 +177,7 @@ namespace MiningCore.Blockchain.Monero
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach (var recipient in poolConfig.RewardRecipients)
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x=> x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -200,6 +200,9 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
                 balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
+
+            // Deduct static reserve for tx fees
+            blockRewardRemaining -= MoneroConstants.StaticTransactionFeeReserve;
 
             // update block-reward
             block.Reward = blockRewardRemaining;

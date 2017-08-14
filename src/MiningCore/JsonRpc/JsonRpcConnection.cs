@@ -49,7 +49,7 @@ namespace MiningCore.JsonRpc
 
                         if (!string.IsNullOrEmpty(data))
                         {
-                            // flooding prevent check
+                            // flood-prevention check
                             if (sb.Length + data.Length < MaxRequestLength)
                             {
                                 sb.Append(data);
@@ -61,7 +61,8 @@ namespace MiningCore.JsonRpc
                                     var line = sb.ToString(0, index).Trim();
                                     sb.Remove(0, index + 1);
 
-                                    observer.OnNext(line);
+                                    if(line.Length > 0)
+                                        observer.OnNext(line);
                                 }
                             }
 
@@ -87,12 +88,9 @@ namespace MiningCore.JsonRpc
 
                         upstream.Dispose();
                     });
-                })
-                .Publish()
-                .RefCount();
+                });
 
             Received = incomingLines
-                .Where(line => line.Length > 0) // ignore empty lines
                 .Select(line => new
                 {
                     Json = line,

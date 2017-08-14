@@ -53,7 +53,7 @@ namespace MiningCore.Payments
         {
             foreach (var pool in clusterConfig.Pools)
             {
-                logger.Info(() => $"Processing payments for pool '{pool.Id}'");
+                logger.Info(() => $"Processing payments for pool {pool.Id}");
 
                 try
                 {
@@ -89,7 +89,7 @@ namespace MiningCore.Payments
 
             foreach (var block in updatedBlocks.OrderBy(x => x.Created))
             {
-                logger.Info(() => $"Processing payments for pool '{pool.Id}', block {block.Blockheight}");
+                logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.Blockheight}");
 
                 await cf.RunTxAsync(async (con, tx) =>
                 {
@@ -122,7 +122,7 @@ namespace MiningCore.Payments
             if (poolBalancesOverMinimum.Length > 0)
                 await handler.PayoutAsync(poolBalancesOverMinimum);
             else
-                logger.Info(() => $"No balances over configured minimum payout for pool '{pool.Id}'");
+                logger.Info(() => $"No balances over configured minimum payout for pool {pool.Id}");
         }
 
         private void GenerateTestShares(string poolid)

@@ -42,7 +42,7 @@ namespace MiningCore.Blockchain.Monero
         public const int BlobNonceOffset = 39;
 
         public const long Piconero = (long) 1e12;
-        public const decimal StaticTransactionFeeReserve = 0.01m; // in monero
+        public const decimal StaticTransactionFeeReserve = 0.03m; // in monero
         public const decimal DevReward = 0.002m;
 
         public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
