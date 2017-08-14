@@ -53,9 +53,9 @@ namespace MiningCore.JsonRpc
 
                         if (sb.Length < MaxRequestLength)
                         {
-                            var index = sb.ToString().IndexOf('\n');
+                            int index;
 
-                            if (index != -1)
+                            while ((index = sb.ToString().IndexOf('\n')) != -1)
                             {
                                 var line = sb.ToString(0, index);
                                 sb.Remove(0, index + 1);
