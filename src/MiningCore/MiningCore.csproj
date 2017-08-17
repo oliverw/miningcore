@@ -46,12 +46,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="runtimes\linux-x64\native\libcryptonote.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="runtimes\linux-x64\native\libmultihash.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="runtimes\win-x64\native\libcryptonote.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
