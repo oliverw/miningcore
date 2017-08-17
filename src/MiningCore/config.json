@@ -89,11 +89,9 @@
       // be configured to use its own pool difficulty and variable difficulty settings. varDiff is
       // optional and will only be used for the ports you configure it for.
       "ports": {
-        "4032": { // A port for your miners to connect to
-          "difficulty": 1600, // the pool difficulty for this port
+        "4032": {
+          "difficulty": 1600,
 
-          // Variable difficulty is a feature that will automatically adjust difficulty for
-          // individual miners based on their hashrate in order to lower networking overhead
           "varDiff": {
             "minDiff": 1, // Minimum difficulty
             "maxDiff": 512, // Network difficulty will be used if it is lower than this
@@ -103,8 +101,8 @@
           }
         },
 
-        "4256": { //  Another port for your miners to connect to, this port does not use varDiff
-          "difficulty": 1000 // 256 //  The pool difficulty
+        "4256": {
+          "difficulty": 1000
         }
       },
 
