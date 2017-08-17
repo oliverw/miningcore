@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
@@ -30,6 +32,7 @@ namespace MiningCore
 {
     internal class Program
     {
+        private static CancellationTokenSource startupCts;
         private static ILogger logger;
         private static IContainer container;
         private static CommandOption dumpConfigOption;
@@ -67,9 +70,11 @@ namespace MiningCore
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    Start().Wait();
-
                     Console.CancelKeyPress += OnCancelKeyPress;
+
+                    startupCts = new CancellationTokenSource();
+                    Start().Wait(startupCts.Token);
+
                     Console.ReadLine();
                 }
 
@@ -104,6 +109,11 @@ namespace MiningCore
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
 
+            catch (OperationCanceledException)
+            {
+                // Ctrl+C
+            }
+
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
@@ -115,6 +125,9 @@ namespace MiningCore
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             logger.Info(() => "SIGINT received. Exiting.");
+
+            startupCts.Cancel();
+            Process.GetCurrentProcess().Close();
         }
 
         private static void DumpParsedConfig(ClusterConfig config)
