@@ -153,7 +153,8 @@ namespace MiningCore.Configuration
 
     public class ApiConfig
     {
-        public string Address { get; set; }
+        public bool Enabled { get; set; }
+        public string ListenAddress { get; set; }
         public int Port { get; set; }
     }
 

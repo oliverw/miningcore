@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -102,8 +103,8 @@ namespace MiningCore.Api
 
             logger.Info(() => $"Launching ...");
 
-            var address = clusterConfig.Api?.Address != null
-                ? (clusterConfig.Api.Address != "*" ? IPAddress.Parse(clusterConfig.Api.Address) : IPAddress.Any)
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
                 : IPAddress.Parse("127.0.0.1");
 
             var port = clusterConfig.Api?.Port ?? 4000;

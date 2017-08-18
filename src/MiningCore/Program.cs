@@ -481,8 +481,11 @@ namespace MiningCore
             shareRecorder.Start(clusterConfig);
 
             // start API
-            apiServer = container.Resolve<ApiServer>();
-            apiServer.Start(clusterConfig);
+            if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
+            {
+                apiServer = container.Resolve<ApiServer>();
+                apiServer.Start(clusterConfig);
+            }
 
             // start pools in parallel
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
