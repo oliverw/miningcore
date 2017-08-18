@@ -499,9 +499,8 @@ namespace MiningCore
                 pool.Configure(poolConfig, clusterConfig);
 
                 shareRecorder.AttachPool(pool);
-                apiServer.AttachPool(pool);
-
                 await pool.StartAsync();
+                apiServer.AttachPool(pool);
             }));
 
             // start payment processor
