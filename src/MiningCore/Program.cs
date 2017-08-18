@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -32,7 +35,7 @@ namespace MiningCore
 {
     internal class Program
     {
-        private static CancellationTokenSource startupCts;
+        private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static ILogger logger;
         private static IContainer container;
         private static CommandOption dumpConfigOption;
@@ -72,10 +75,7 @@ namespace MiningCore
                 {
                     Console.CancelKeyPress += OnCancelKeyPress;
 
-                    startupCts = new CancellationTokenSource();
-                    Start().Wait(startupCts.Token);
-
-                    Console.ReadLine();
+                    Start().Wait(cts.Token);
                 }
 
                 else
@@ -126,7 +126,7 @@ namespace MiningCore
         {
             logger.Info(() => "SIGINT received. Exiting.");
 
-            startupCts.Cancel();
+            cts.Cancel();
             Process.GetCurrentProcess().Close();
         }
 
@@ -509,6 +509,9 @@ namespace MiningCore
 
                 payoutProcessor.Start();
             }
+
+            // keep running
+            await Observable.Never<Unit>().ToTask();
         }
 
         private static void RecoverShares(string recoveryFilename)
