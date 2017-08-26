@@ -272,7 +272,7 @@ namespace MiningCore.Blockchain.Monero
                 return false;
 
             // test wallet daemons
-            var responses2 = await walletDaemon.ExecuteCmdAllAsync<string>(MWC.GetAddress);
+            var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
 
             return responses2.All(x => x.Error == null);
         }
