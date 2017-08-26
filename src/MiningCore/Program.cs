@@ -18,7 +18,10 @@ using AutoMapper;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Configuration;
+using MiningCore.Crypto.Hashing.Algorithms;
+using MiningCore.Extensions;
 using MiningCore.Mining;
+using MiningCore.Native;
 using MiningCore.Payments;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
@@ -55,6 +58,8 @@ namespace MiningCore
 #if DEBUG
                 PreloadNativeLibs();
 #endif
+                //TouchNativeLibs();
+
                 string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
@@ -521,6 +526,12 @@ namespace MiningCore
         {
             shareRecorder = container.Resolve<ShareRecorder>();
             shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+        }
+
+        private static void TouchNativeLibs()
+        {
+            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test")).ToHexString());
+            Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
         }
 
 #if DEBUG
