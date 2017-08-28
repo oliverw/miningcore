@@ -265,9 +265,16 @@ namespace MiningCore.Blockchain.Monero
 
         protected override async Task<bool> IsDaemonHealthy()
         {
+            // test daemons
             var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
 
-            return responses.All(x => x.Error == null);
+            if (!responses.All(x => x.Error == null))
+                return false;
+
+            // test wallet daemons
+            var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
+
+            return responses2.All(x => x.Error == null);
         }
 
         protected override async Task<bool> IsDaemonConnected()
