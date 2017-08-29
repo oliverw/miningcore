@@ -240,6 +240,7 @@ namespace MiningCore.Blockchain.Monero
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = worker.Context.MinerName;
             share.Worker = worker.Context.WorkerName;
+            share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;

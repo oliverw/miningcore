@@ -9,6 +9,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public long Blockheight { get; set; }
         public string Miner { get; set; }
         public string Worker { get; set; }
+        public string UserAgent { get; set; }
         public double Difficulty { get; set; }
         public double StratumDifficulty { get; set; }
         public double StratumDifficultyBase { get; set; }

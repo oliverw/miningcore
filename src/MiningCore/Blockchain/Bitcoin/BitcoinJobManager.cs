@@ -323,6 +323,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = minerName;
             share.Worker = workerName;
+            share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;

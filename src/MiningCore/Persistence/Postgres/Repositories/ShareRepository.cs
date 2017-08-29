@@ -22,8 +22,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.Share>(share);
 
             var query =
-                "INSERT INTO shares(poolid, blockheight, difficulty, stratumdifficulty, stratumdifficultyBase, networkdifficulty, miner, worker, ipaddress, created) " +
-                "VALUES(@poolid, @blockheight, @difficulty, @stratumdifficulty, @stratumdifficultyBase, @networkdifficulty, @miner, @worker, @ipaddress, @created)";
+                "INSERT INTO shares(poolid, blockheight, difficulty, stratumdifficulty, stratumdifficultyBase, networkdifficulty, miner, worker, useragent, ipaddress, created) " +
+                "VALUES(@poolid, @blockheight, @difficulty, @stratumdifficulty, @stratumdifficultyBase, @networkdifficulty, @miner, @worker, @useragent, @ipaddress, @created)";
 
             con.Execute(query, mapped, tx);
         }

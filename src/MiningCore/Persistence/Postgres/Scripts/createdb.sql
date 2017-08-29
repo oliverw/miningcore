@@ -11,6 +11,7 @@ CREATE TABLE shares
 	stratumdifficultybase REAL NOT NULL,
 	miner TEXT NOT NULL,
 	worker TEXT NULL,
+	useragent TEXT NULL,
 	ipaddress TEXT NOT NULL,
 	created TIMESTAMP NOT NULL
 );

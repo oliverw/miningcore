@@ -28,7 +28,7 @@ namespace MiningCore.Blockchain.Monero
         {
         }
 
-        private long jobId;
+        private long currentJobId;
 
         private MoneroJobManager manager;
         private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
@@ -57,6 +57,7 @@ namespace MiningCore.Blockchain.Monero
 
             client.Context.IsSubscribed = result;
             client.Context.IsAuthorized = result;
+            client.Context.UserAgent = loginRequest.UserAgent;
 
             // extract worker/miner
             var split = loginRequest.Login.Split('.');
@@ -168,12 +169,14 @@ namespace MiningCore.Blockchain.Monero
 
                 lock (client.Context)
                 {
-                    if (string.IsNullOrEmpty(submitRequest?.JobId) ||
-                        !client.Context.ValidJobs.Any(x => x.Id == submitRequest.JobId))
+                    var jobId = submitRequest?.JobId;
+
+                    if (string.IsNullOrEmpty(jobId) ||
+                        !client.Context.ValidJobs.Any(x => x.Id == jobId))
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
 
                     // look it up
-                    job = client.Context.ValidJobs.First(x => x.Id == submitRequest.JobId);
+                    job = client.Context.ValidJobs.First(x => x.Id == jobId);
                 }
 
                 // dupe check
@@ -227,7 +230,7 @@ namespace MiningCore.Blockchain.Monero
 
         private string NextJobId()
         {
-            return Interlocked.Increment(ref jobId).ToString(CultureInfo.InvariantCulture);
+            return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
         }
 
         private void OnNewJob()
