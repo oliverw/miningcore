@@ -1,7 +1,7 @@
-# Mining Core
-Mining Core is a multi-currency mining pool engine.
+## Miningcore
+Miningcore is the multi-currency pool-engine powering [poolmining.org](https://poolmining.org)
 
-## Features
+### Features
 
 - Supports clusters of pools each running individual currencies
 - Ultra-low-latency Stratum implementation using asynchronous I/O (LibUv)
@@ -13,6 +13,6 @@ Mining Core is a multi-currency mining pool engine.
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
-## Requirements
+### Requirements
 
 - .Net Core 2.0
