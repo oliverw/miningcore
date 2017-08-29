@@ -248,7 +248,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private Transaction CreateOutputTransaction()
         {
-            var blockReward = new Money(BlockTemplate.CoinbaseValue);
+            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+
             var reward = blockReward;
             var tx = new Transaction();
             rewardToPool = blockReward;
