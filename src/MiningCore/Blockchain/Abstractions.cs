@@ -31,6 +31,11 @@ namespace MiningCore.Blockchain
         string Worker { get; }
 
         /// <summary>
+        ///     Mining Software
+        /// </summary>
+        string UserAgent { get; }
+
+        /// <summary>
         ///     From where was it submitted
         /// </summary>
         string IpAddress { get; }

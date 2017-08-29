@@ -110,7 +110,14 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
             logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
-            upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            try
+            {
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            }
+            catch (ObjectDisposedException)
+            {
+                // ignored
+            }
         }
 
         public void Send<T>(JsonRpcRequest<T> request)
@@ -118,7 +125,14 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
             logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
-            upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            try
+            {
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+            }
+            catch (ObjectDisposedException)
+            {
+                // ignored
+            }
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
