@@ -299,7 +299,8 @@ namespace MiningCore.Blockchain.Monero
                     break;
 
                 case MoneroStratumMethods.KeepAlive:
-                    // ignored
+                    // recognize activity
+                    client.Context.LastActivity = DateTime.UtcNow;
                     break;
 
                 default:
