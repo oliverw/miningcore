@@ -138,7 +138,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     // build address
                     var address = share.Miner;
                     if (!string.IsNullOrEmpty(share.PayoutInfo))
-                        address += PaymentConstants.PayoutInfoSeperator + share.PayoutInfo;
+                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
                     // accumulate per-worker reward
                     if (!payouts.ContainsKey(address))

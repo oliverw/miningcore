@@ -4,8 +4,8 @@ using System.Text;
 
 namespace MiningCore.Payments
 {
-    public static class PaymentConstants
+    public static class PayoutConstants
     {
-        public const char PayoutInfoSeperator = '#';
+        public const char PayoutInfoSeperator = '.';
     }
 }

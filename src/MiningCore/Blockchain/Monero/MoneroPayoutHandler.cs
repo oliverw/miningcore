@@ -124,7 +124,7 @@ namespace MiningCore.Blockchain.Monero
             var address = (string)null;
             var paymentId = (string)null;
 
-            var index = balance.Address.IndexOf(PaymentConstants.PayoutInfoSeperator);
+            var index = balance.Address.IndexOf(PayoutConstants.PayoutInfoSeperator);
             if (index != -1)
             {
                 paymentId = balance.Address.Substring(index + 1);
@@ -299,7 +299,7 @@ namespace MiningCore.Blockchain.Monero
 
             // simple balances first
             var simpleBalances = balances
-                .Where(x => !x.Address.Contains(PaymentConstants.PayoutInfoSeperator))
+                .Where(x => !x.Address.Contains(PayoutConstants.PayoutInfoSeperator))
                 .ToArray();
 
             if(simpleBalances.Length > 0)
