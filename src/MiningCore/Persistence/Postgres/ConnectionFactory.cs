@@ -13,7 +13,7 @@ namespace MiningCore.Persistence.Postgres
         private readonly string connectionString;
 
         /// <summary>
-        ///     This implementation ensures that Glimpse.ADO is able to collect data
+        /// This implementation ensures that Glimpse.ADO is able to collect data
         /// </summary>
         /// <returns></returns>
         public IDbConnection OpenConnection()

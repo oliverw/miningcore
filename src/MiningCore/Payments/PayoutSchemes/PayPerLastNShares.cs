@@ -13,7 +13,7 @@ using Contract = MiningCore.Contracts.Contract;
 namespace MiningCore.Payments.PayoutSchemes
 {
     /// <summary>
-    ///     PPLNS payout scheme implementation
+    /// PPLNS payout scheme implementation
     /// </summary>
     public class PayPerLastNShares : IPayoutScheme
     {
@@ -135,9 +135,12 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-                    // accumulate per-worker reward
-                    var address = share.Miner.Trim();
+                    // build address
+                    var address = share.Miner;
+                    if (!string.IsNullOrEmpty(share.PayoutInfo))
+                        address += PaymentConstants.PayoutInfoSeperator + share.PayoutInfo;
 
+                    // accumulate per-worker reward
                     if (!payouts.ContainsKey(address))
                         payouts[address] = reward;
                     else

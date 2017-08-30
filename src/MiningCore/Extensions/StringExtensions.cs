@@ -5,7 +5,7 @@ namespace MiningCore.Extensions
     public static class StringExtensions
     {
         /// <summary>
-        ///     Converts a str string to byte array.
+        /// Converts a str string to byte array.
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>

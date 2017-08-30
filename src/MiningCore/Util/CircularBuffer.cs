@@ -13,13 +13,13 @@ using System.Collections.Generic;
 namespace MiningCore.Util
 {
     /// <summary>
-    ///     Circular buffer.
-    ///     When writting to a full buffer:
-    ///     PushBack -> removes this[0] / Front()
-    ///     PushFront -> removes this[Size-1] / Back()
-    ///     this implementation is inspired by
-    ///     http://www.boost.org/doc/libs/1_53_0/libs/circular_buffer/doc/circular_buffer.html
-    ///     because I liked their interface.
+    /// Circular buffer.
+    /// When writting to a full buffer:
+    /// PushBack -> removes this[0] / Front()
+    /// PushFront -> removes this[Size-1] / Back()
+    /// this implementation is inspired by
+    /// http://www.boost.org/doc/libs/1_53_0/libs/circular_buffer/doc/circular_buffer.html
+    /// because I liked their interface.
     /// </summary>
     public class CircularBuffer<T> : IEnumerable<T>
     {
@@ -29,15 +29,15 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="CircularBuffer{T}" /> class.
+        /// Initializes a new instance of the <see cref="CircularBuffer{T}" /> class.
         /// </summary>
         /// <param name='capacity'>
-        ///     Buffer capacity. Must be positive.
+        /// Buffer capacity. Must be positive.
         /// </param>
         /// <param name='items'>
-        ///     Items to fill buffer with. Items length must be less than capacity.
-        ///     Sugestion: use Skip(x).Take(y).ToArray() to build this argument from
-        ///     any enumerable.
+        /// Items to fill buffer with. Items length must be less than capacity.
+        /// Sugestion: use Skip(x).Take(y).ToArray() to build this argument from
+        /// any enumerable.
         /// </param>
         public CircularBuffer(int capacity, T[] items)
         {
@@ -62,23 +62,23 @@ namespace MiningCore.Util
         private readonly T[] _buffer;
 
         /// <summary>
-        ///     The _end. Index after the last element in the buffer.
+        /// The _end. Index after the last element in the buffer.
         /// </summary>
         private int _end;
 
         /// <summary>
-        ///     The _size. Buffer size.
+        /// The _size. Buffer size.
         /// </summary>
         private int _size;
 
         /// <summary>
-        ///     The _start. Index of the first element in buffer.
+        /// The _start. Index of the first element in buffer.
         /// </summary>
         private int _start;
 
         /// <summary>
-        ///     Maximum capacity of the buffer. Elements pushed into the buffer after
-        ///     maximum capacity is reached (IsFull = true), will remove an element.
+        /// Maximum capacity of the buffer. Elements pushed into the buffer after
+        /// maximum capacity is reached (IsFull = true), will remove an element.
         /// </summary>
         public int Capacity => _buffer.Length;
 
@@ -87,7 +87,7 @@ namespace MiningCore.Util
         public bool IsEmpty => Size == 0;
 
         /// <summary>
-        ///     Current buffer size (the number of elements that the buffer has).
+        /// Current buffer size (the number of elements that the buffer has).
         /// </summary>
         public int Size => _size;
 
@@ -139,7 +139,7 @@ namespace MiningCore.Util
         #endregion
 
         /// <summary>
-        ///     Element at the front of the buffer - this[0].
+        /// Element at the front of the buffer - this[0].
         /// </summary>
         /// <returns>The value of the element of type T at the front of the buffer.</returns>
         public T Front()
@@ -149,7 +149,7 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Element at the back of the buffer - this[Size - 1].
+        /// Element at the back of the buffer - this[Size - 1].
         /// </summary>
         /// <returns>The value of the element of type T at the back of the buffer.</returns>
         public T Back()
@@ -159,10 +159,10 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Pushes a new element to the back of the buffer. Back()/this[Size-1]
-        ///     will now return this element.
-        ///     When the buffer is full, the element at Front()/this[0] will be
-        ///     popped to allow for this new element to fit.
+        /// Pushes a new element to the back of the buffer. Back()/this[Size-1]
+        /// will now return this element.
+        /// When the buffer is full, the element at Front()/this[0] will be
+        /// popped to allow for this new element to fit.
         /// </summary>
         /// <param name="item">Item to push to the back of the buffer</param>
         public void PushBack(T item)
@@ -182,10 +182,10 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Pushes a new element to the front of the buffer. Front()/this[0]
-        ///     will now return this element.
-        ///     When the buffer is full, the element at Back()/this[Size-1] will be
-        ///     popped to allow for this new element to fit.
+        /// Pushes a new element to the front of the buffer. Front()/this[0]
+        /// will now return this element.
+        /// When the buffer is full, the element at Back()/this[Size-1] will be
+        /// popped to allow for this new element to fit.
         /// </summary>
         /// <param name="item">Item to push to the front of the buffer</param>
         public void PushFront(T item)
@@ -205,8 +205,8 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Removes the element at the back of the buffer. Decreassing the
-        ///     Buffer size by 1.
+        /// Removes the element at the back of the buffer. Decreassing the
+        /// Buffer size by 1.
         /// </summary>
         public void PopBack()
         {
@@ -217,8 +217,8 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Removes the element at the front of the buffer. Decreassing the
-        ///     Buffer size by 1.
+        /// Removes the element at the front of the buffer. Decreassing the
+        /// Buffer size by 1.
         /// </summary>
         public void PopFront()
         {
@@ -229,9 +229,9 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Copies the buffer contents to an array, acording to the logical
-        ///     contents of the buffer (i.e. independent of the internal
-        ///     order/contents)
+        /// Copies the buffer contents to an array, acording to the logical
+        /// contents of the buffer (i.e. independent of the internal
+        /// order/contents)
         /// </summary>
         /// <returns>A new array with a copy of the buffer contents.</returns>
         public T[] ToArray()
@@ -254,8 +254,8 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Increments the provided index variable by one, wrapping
-        ///     around if necessary.
+        /// Increments the provided index variable by one, wrapping
+        /// around if necessary.
         /// </summary>
         /// <param name="index"></param>
         private void Increment(ref int index)
@@ -265,8 +265,8 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Decrements the provided index variable by one, wrapping
-        ///     around if necessary.
+        /// Decrements the provided index variable by one, wrapping
+        /// around if necessary.
         /// </summary>
         /// <param name="index"></param>
         private void Decrement(ref int index)
@@ -277,13 +277,13 @@ namespace MiningCore.Util
         }
 
         /// <summary>
-        ///     Converts the index in the argument to an index in <code>_buffer</code>
+        /// Converts the index in the argument to an index in <code>_buffer</code>
         /// </summary>
         /// <returns>
-        ///     The transformed index.
+        /// The transformed index.
         /// </returns>
         /// <param name='index'>
-        ///     External index.
+        /// External index.
         /// </param>
         private int InternalIndex(int index)
         {

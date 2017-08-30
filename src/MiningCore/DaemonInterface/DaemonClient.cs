@@ -16,7 +16,7 @@ using Contract = MiningCore.Contracts.Contract;
 namespace MiningCore.DaemonInterface
 {
     /// <summary>
-    ///     Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
+    /// Provides JsonRpc based interface to a cluster of blockchain daemons for improved fault tolerance
     /// </summary>
     public class DaemonClient
     {
@@ -56,7 +56,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        ///     Executes the request against all configured demons and returns their responses as an array
+        /// Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
@@ -66,7 +66,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        ///     Executes the request against all configured demons and returns their responses as an array
+        /// Executes the request against all configured demons and returns their responses as an array
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
@@ -97,7 +97,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        ///     Executes the request against all configured demons and returns the first successful response
+        /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
@@ -107,7 +107,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        ///     Executes the request against all configured demons and returns the first successful response
+        /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <param name="method"></param>
@@ -126,7 +126,7 @@ namespace MiningCore.DaemonInterface
         }
 
         /// <summary>
-        ///     Executes the requests against all configured demons and returns the first successful response array
+        /// Executes the requests against all configured demons and returns the first successful response array
         /// </summary>
         /// <returns></returns>
         public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params DaemonCmd[] batch)

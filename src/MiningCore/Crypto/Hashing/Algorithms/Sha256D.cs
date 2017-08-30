@@ -3,7 +3,7 @@
 namespace MiningCore.Crypto.Hashing.Algorithms
 {
     /// <summary>
-    ///     Sha-256 double round
+    /// Sha-256 double round
     /// </summary>
     public class Sha256D : IHashAlgorithm
     {

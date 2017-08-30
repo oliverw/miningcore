@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Configuration
@@ -79,27 +80,27 @@ namespace MiningCore.Configuration
     public class VarDiffConfig
     {
         /// <summary>
-        ///     Minimum difficulty
+        /// Minimum difficulty
         /// </summary>
         public double MinDiff { get; set; }
 
         /// <summary>
-        ///     Network difficulty will be used if it is lower than this
+        /// Network difficulty will be used if it is lower than this
         /// </summary>
         public double? MaxDiff { get; set; }
 
         /// <summary>
-        ///     Try to get 1 share per this many seconds
+        /// Try to get 1 share per this many seconds
         /// </summary>
         public double TargetTime { get; set; }
 
         /// <summary>
-        ///     Check to see if we should retarget every this many seconds
+        /// Check to see if we should retarget every this many seconds
         /// </summary>
         public double RetargetTime { get; set; }
 
         /// <summary>
-        ///     Allow time to very this % from target without retargeting
+        /// Allow time to very this % from target without retargeting
         /// </summary>
         public double VariancePercent { get; set; }
     }
@@ -129,6 +130,9 @@ namespace MiningCore.Configuration
         public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
         public PayoutScheme PayoutScheme { get; set; }
         public JToken PayoutSchemeConfig { get; set; }
+
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
     }
 
     public class ClusterPaymentProcessingConfig

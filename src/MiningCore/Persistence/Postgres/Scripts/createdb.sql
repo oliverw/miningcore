@@ -9,6 +9,7 @@ CREATE TABLE shares
 	networkdifficulty REAL NOT NULL,
 	stratumdifficulty REAL NOT NULL,
 	stratumdifficultybase REAL NOT NULL,
+	payoutinfo TEXT NULL,
 	miner TEXT NOT NULL,
 	worker TEXT NULL,
 	useragent TEXT NULL,

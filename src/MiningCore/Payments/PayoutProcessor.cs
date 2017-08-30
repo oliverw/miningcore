@@ -16,7 +16,7 @@ using Contract = MiningCore.Contracts.Contract;
 namespace MiningCore.Payments
 {
     /// <summary>
-    ///     Coin agnostic payment processor
+    /// Coin agnostic payment processor
     /// </summary>
     public class PayoutProcessor
     {

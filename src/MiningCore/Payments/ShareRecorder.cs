@@ -25,7 +25,7 @@ using Contract = MiningCore.Contracts.Contract;
 namespace MiningCore.Payments
 {
     /// <summary>
-    ///     Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
+    /// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
     /// </summary>
     public class ShareRecorder
     {

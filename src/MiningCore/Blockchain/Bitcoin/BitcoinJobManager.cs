@@ -281,7 +281,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
-            // extract worker/miner
+            // extract worker/miner/payoutid
             var split = workerValue.Split('.');
             var minerName = split[0];
             var workerName = split.Length > 1 ? split[1] : null;

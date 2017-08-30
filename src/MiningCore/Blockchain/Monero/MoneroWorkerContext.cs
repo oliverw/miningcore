@@ -7,6 +7,7 @@ namespace MiningCore.Blockchain.Monero
     {
         public string MinerName { get; set; }
         public string WorkerName { get; set; }
+        public string PaymentId { get; set; }
         public List<MoneroWorkerJob> ValidJobs { get; } = new List<MoneroWorkerJob>();
 
         public void AddJob(MoneroWorkerJob job)

@@ -45,24 +45,31 @@ namespace MiningCore.Blockchain.Monero
 
             var loginRequest = request.ParamsAs<MoneroLoginRequest>();
 
-            // validate login
             if (string.IsNullOrEmpty(loginRequest?.Login))
             {
                 client.RespondError(request.Id, -1, "missing login");
                 return;
             }
 
-            // assumes that StratumLoginRequest.Login is an address
-            var result = manager.ValidateAddress(loginRequest.Login);
-
-            client.Context.IsSubscribed = result;
-            client.Context.IsAuthorized = result;
-
-            // extract worker/miner
+            // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
             client.Context.MinerName = split[0];
             client.Context.WorkerName = split.Length > 1 ? split[1] : null;
             client.Context.UserAgent = loginRequest.UserAgent;
+
+            // extract paymentid
+            var index = client.Context.MinerName.IndexOf('#');
+            if (index != -1)
+            {
+                client.Context.PaymentId = client.Context.MinerName.Substring(index + 1);
+                client.Context.MinerName = client.Context.MinerName.Substring(0, index);
+            }
+
+            // validate login
+            var result = manager.ValidateAddress(client.Context.MinerName);
+
+            client.Context.IsSubscribed = result;
+            client.Context.IsAuthorized = result;
 
             if (!client.Context.IsAuthorized)
             {

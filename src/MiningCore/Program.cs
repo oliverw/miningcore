@@ -545,7 +545,7 @@ namespace MiningCore
         };
 
         /// <summary>
-        ///     work-around for libmultihash.dll not being found when running in dev-environment
+        /// work-around for libmultihash.dll not being found when running in dev-environment
         /// </summary>
         private static void PreloadNativeLibs()
         {

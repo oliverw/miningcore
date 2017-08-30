@@ -10,7 +10,7 @@ namespace MiningCore.Persistence.Model
         public string Address { get; set; }
 
         /// <summary>
-        ///     Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
+        /// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
         /// </summary>
         public decimal Amount { get; set; }
 

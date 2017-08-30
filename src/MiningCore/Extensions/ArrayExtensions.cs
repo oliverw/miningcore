@@ -23,8 +23,8 @@ namespace MiningCore.Extensions
         }
 
         /// <summary>
-        ///     Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
-        ///     block of 4 bytes must be reversed before reversing the entire buffer
+        /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
+        /// block of 4 bytes must be reversed before reversing the entire buffer
         /// </summary>
         public static byte[] ReverseByteOrder(this byte[] bytes)
         {

@@ -20,7 +20,7 @@ namespace MiningCore.JsonRpc
     }
 
     /// <summary>
-    ///     Represents a Json Rpc Response
+    /// Represents a Json Rpc Response
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class JsonRpcResponse<T>
