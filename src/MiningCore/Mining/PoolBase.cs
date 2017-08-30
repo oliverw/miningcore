@@ -78,6 +78,12 @@ namespace MiningCore.Mining
 
         protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
+            // update stats
+            lock (clients)
+            {
+                poolStats.ConnectedMiners = clients.Count;
+            }
+
             // client setup
             var context = new TWorkerContext();
 
@@ -87,12 +93,6 @@ namespace MiningCore.Mining
 
             // expect miner to establish communication within a certain time
             EnsureNoZombieClient(client);
-
-            // update stats
-            lock (clients)
-            {
-                poolStats.ConnectedMiners = clients.Count;
-            }
         }
 
         protected override void OnDisconnect(string subscriptionId)

@@ -91,12 +91,11 @@ namespace MiningCore.Stratum
                 }
 
                 var connectionId = CorrelationIdGenerator.GetNextId();
-                con.UserToken = connectionId;
                 logger.Trace(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
 
                 // setup client
                 var client = new StratumClient<TClientContext>();
-                client.Init(con, ctx, endpointConfig);
+                client.Init(con, ctx, endpointConfig, connectionId);
 
                 // request subscription
                 var sub = client.Requests
@@ -164,6 +163,7 @@ namespace MiningCore.Stratum
             var subscriptionId = client.ConnectionId;
 
             if (!string.IsNullOrEmpty(subscriptionId))
+            {
                 lock (clients)
                 {
                     Tuple<StratumClient<TClientContext>, IDisposable> item;
@@ -173,6 +173,7 @@ namespace MiningCore.Stratum
                         clients.Remove(subscriptionId);
                     }
                 }
+            }
 
             client.Disconnect();
 

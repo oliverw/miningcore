@@ -32,11 +32,12 @@ namespace MiningCore.JsonRpc
 
         #region Implementation of IJsonRpcConnection
 
-        public void Init(Tcp upstream)
+        public void Init(Tcp upstream, string connectionId)
         {
             Contract.RequiresNonNull(upstream, nameof(upstream));
 
             this.upstream = upstream;
+            this.ConnectionId = connectionId;
 
             var incomingLines = Observable.Create<string>(observer =>
                 {
@@ -68,7 +69,7 @@ namespace MiningCore.JsonRpc
 
                             else
                             {
-                                observer.OnError(new InvalidDataException($"[{upstream.UserToken}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                                observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
                             }
                         }
                     }, (handle, ex) =>
@@ -84,7 +85,7 @@ namespace MiningCore.JsonRpc
                     return Disposable.Create(() =>
                     {
                         if (upstream.IsValid)
-                            logger.Debug(() => $"[{upstream.UserToken}] Last subscriber disconnected from receiver stream");
+                            logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
                         upstream.Dispose();
                     });
@@ -136,7 +137,7 @@ namespace MiningCore.JsonRpc
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
-        public string ConnectionId => (string) upstream?.UserToken;
+        public string ConnectionId { get; private set; }
 
         public void Close()
         {
