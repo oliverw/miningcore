@@ -85,9 +85,11 @@ namespace MiningCore.JsonRpc
                     return Disposable.Create(() =>
                     {
                         if (upstream.IsValid)
+                        {
                             logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
-                        upstream.Dispose();
+                            upstream.Dispose();
+                        }
                     });
                 });
 
@@ -138,11 +140,6 @@ namespace MiningCore.JsonRpc
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
         public string ConnectionId { get; private set; }
-
-        public void Close()
-        {
-            upstream?.Dispose();
-        }
 
         #endregion
     }

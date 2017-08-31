@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
@@ -26,8 +28,8 @@ namespace MiningCore.Stratum
             this.ctx = ctx;
         }
 
-        protected readonly Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>> clients =
-            new Dictionary<string, Tuple<StratumClient<TClientContext>, IDisposable>>();
+        protected readonly Dictionary<string, StratumClient<TClientContext>> clients =
+            new Dictionary<string, StratumClient<TClientContext>>();
 
         protected readonly IComponentContext ctx;
         protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
@@ -96,10 +98,10 @@ namespace MiningCore.Stratum
                 // setup client
                 var client = new StratumClient<TClientContext>();
                 client.Init(con, ctx, endpointConfig, connectionId);
-
+                TODO
                 // request subscription
                 var sub = client.Requests
-                    .ObserveOn(TaskPoolScheduler.Default)
+                    .ObserveOn(TaskPoolScheduler.Default)   // WARN: never add .SubscribeOn here (must sub/unsub on UV event-loop thread)
                     .Subscribe(async tsRequest =>
                     {
                         var request = tsRequest.Value;
@@ -126,7 +128,7 @@ namespace MiningCore.Stratum
 
                 lock (clients)
                 {
-                    clients[connectionId] = Tuple.Create(client, sub);
+                    clients[connectionId] = client;
                 }
 
                 OnConnect(client);

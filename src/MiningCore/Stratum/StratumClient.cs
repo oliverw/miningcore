@@ -79,10 +79,6 @@ namespace MiningCore.Stratum
 
         public void Disconnect()
         {
-            lock (rpcCon)
-            {
-                rpcCon?.Close();
-            }
         }
 
         public void RespondError(object id, int code, string message)
