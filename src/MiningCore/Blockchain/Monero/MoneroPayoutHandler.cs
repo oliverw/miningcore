@@ -9,6 +9,7 @@ using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -306,9 +307,7 @@ namespace MiningCore.Blockchain.Monero
                 await PayoutBatch(simpleBalances);
 
             // balances with paymentIds
-            var extraConfig = poolConfig.PaymentProcessing.Extra != null ?
-                JToken.FromObject(poolConfig.PaymentProcessing.Extra).ToObject<MoneroPoolPaymentProcessingConfigExtra>()
-                : null;
+            var extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<MoneroPoolPaymentProcessingConfigExtra>();
 
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
