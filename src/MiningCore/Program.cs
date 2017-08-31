@@ -351,6 +351,7 @@ namespace MiningCore
                     "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
                 if (config.EnableConsoleLog)
+                {
                     if (config.EnableConsoleColors)
                     {
                         var target = new ColoredConsoleTarget("console")
@@ -396,21 +397,25 @@ namespace MiningCore
                         loggingConfig.AddTarget(target);
                         loggingConfig.AddRule(level, LogLevel.Fatal, target);
                     }
+                }
+
+                FileTarget coreLogTarget = null;
 
                 if (!string.IsNullOrEmpty(config.LogFile))
                 {
-                    var target = new FileTarget("file")
+                    coreLogTarget = new FileTarget("file")
                     {
                         FileName = config.LogFile,
                         FileNameKind = FilePathKind.Unknown,
                         Layout = layout
                     };
 
-                    loggingConfig.AddTarget(target);
-                    loggingConfig.AddRule(level, LogLevel.Fatal, target);
+                    loggingConfig.AddTarget(coreLogTarget);
+                    loggingConfig.AddRule(level, LogLevel.Fatal, coreLogTarget);
                 }
 
                 if (config.PerPoolLogFile)
+                {
                     foreach (var poolConfig in clusterConfig.Pools)
                     {
                         var target = new FileTarget(poolConfig.Id)
@@ -422,7 +427,12 @@ namespace MiningCore
 
                         loggingConfig.AddTarget(target);
                         loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
+
+                        // suppress pool in core-log
+                        if (coreLogTarget != null)
+                            loggingConfig.AddRule(LogLevel.Off, LogLevel.Off, coreLogTarget, poolConfig.Id);
                     }
+                }
             }
 
             LogManager.Configuration = loggingConfig;
