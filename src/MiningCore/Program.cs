@@ -330,8 +330,7 @@ namespace MiningCore
             Console.WriteLine($" BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
             Console.WriteLine($" ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
             Console.WriteLine($" LTC - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
-            Console.WriteLine(
-                $" XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+            Console.WriteLine($" XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
             Console.WriteLine();
         }
 
@@ -347,8 +346,7 @@ namespace MiningCore
                     ? LogLevel.FromString(config.Level)
                     : LogLevel.Info;
 
-                var layout =
-                    "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+                var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
                 if (config.EnableConsoleLog)
                 {
@@ -399,19 +397,17 @@ namespace MiningCore
                     }
                 }
 
-                FileTarget coreLogTarget = null;
-
                 if (!string.IsNullOrEmpty(config.LogFile))
                 {
-                    coreLogTarget = new FileTarget("file")
+                    var target = new FileTarget("file")
                     {
-                        FileName = config.LogFile,
+                        FileName = GetLogPath(config, config.LogFile),
                         FileNameKind = FilePathKind.Unknown,
                         Layout = layout
                     };
 
-                    loggingConfig.AddTarget(coreLogTarget);
-                    loggingConfig.AddRule(level, LogLevel.Fatal, coreLogTarget);
+                    loggingConfig.AddTarget(target);
+                    loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
                 if (config.PerPoolLogFile)
@@ -427,10 +423,6 @@ namespace MiningCore
 
                         loggingConfig.AddTarget(target);
                         loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
-
-                        // suppress pool in core-log
-                        if (coreLogTarget != null)
-                            loggingConfig.AddRule(LogLevel.Off, LogLevel.Off, coreLogTarget, poolConfig.Id);
                     }
                 }
             }
