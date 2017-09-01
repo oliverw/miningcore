@@ -13,6 +13,10 @@ Miningcore is the multi-currency pool-engine powering [poolmining.org](https://p
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
-### Requirements
+### Runtime Requirements
 
-- .Net Core 2.0
+- [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
+
+### Compiling from Source
+
+- Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
