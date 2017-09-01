@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,7 +60,7 @@ namespace MiningCore.Stratum
                         .Listen(endpoint, (con, ex) =>
                         {
                             if (ex == null)
-                                OnClientConnected(con, endpoint);
+                                OnClientConnected(con, endpoint, loop);
                             else
                                 logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
                         });
@@ -78,7 +79,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void OnClientConnected(Tcp con, IPEndPoint endpointConfig)
+        private void OnClientConnected(Tcp con, IPEndPoint endpointConfig, Loop loop)
         {
             try
             {
@@ -98,7 +99,7 @@ namespace MiningCore.Stratum
                 // setup client
                 var client = new StratumClient<TClientContext>();
                 client.Init(con, ctx, endpointConfig, connectionId);
-                TODO
+
                 // request subscription
                 var sub = client.Requests
                     .ObserveOn(TaskPoolScheduler.Default)   // WARN: never add .SubscribeOn here (must sub/unsub on UV event-loop thread)
@@ -125,6 +126,19 @@ namespace MiningCore.Stratum
                             logger.Error(ex, () => $"Error handling request: {request.Method}");
                         }
                     }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+
+                // ensure subscription is disposed on loop thread
+                var disposer = loop.CreateAsync((handle) =>
+                {
+                    sub.Dispose();
+
+                    handle.CloseHandle();
+                });
+
+                client.Subscription = Disposable.Create(() =>
+                {
+                    disposer.Send();
+                });
 
                 lock (clients)
                 {
@@ -164,20 +178,15 @@ namespace MiningCore.Stratum
 
             var subscriptionId = client.ConnectionId;
 
+            client.Disconnect();
+
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 lock (clients)
                 {
-                    Tuple<StratumClient<TClientContext>, IDisposable> item;
-                    if (clients.TryGetValue(subscriptionId, out item))
-                    {
-                        item.Item2.Dispose();
-                        clients.Remove(subscriptionId);
-                    }
+                    clients.Remove(subscriptionId);
                 }
             }
-
-            client.Disconnect();
 
             OnDisconnect(subscriptionId);
         }
@@ -188,7 +197,7 @@ namespace MiningCore.Stratum
 
             lock (clients)
             {
-                tmp = clients.Values.Select(x => x.Item1).ToArray();
+                tmp = clients.Values.ToArray();
             }
 
             foreach (var client in tmp)

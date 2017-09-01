@@ -34,6 +34,7 @@ namespace MiningCore.Stratum
         public IPEndPoint PoolEndpoint { get; private set; }
 
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
+        public IDisposable Subscription { get; set; }
 
         public void Respond<T>(T payload, object id)
         {
@@ -79,6 +80,7 @@ namespace MiningCore.Stratum
 
         public void Disconnect()
         {
+            Subscription?.Dispose();
         }
 
         public void RespondError(object id, int code, string message)

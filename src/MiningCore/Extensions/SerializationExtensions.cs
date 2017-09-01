@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using MiningCore.Blockchain.Monero.Configuration;
 using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Extensions
