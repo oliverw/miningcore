@@ -132,7 +132,7 @@ namespace MiningCore.Stratum
                 {
                     sub.Dispose();
 
-                    handle.CloseHandle();
+                    handle.Dispose();
                 });
 
                 client.Subscription = Disposable.Create(() =>
@@ -140,6 +140,7 @@ namespace MiningCore.Stratum
                     disposer.Send();
                 });
 
+                // register client
                 lock (clients)
                 {
                     clients[connectionId] = client;
@@ -182,6 +183,7 @@ namespace MiningCore.Stratum
 
             if (!string.IsNullOrEmpty(subscriptionId))
             {
+                // unregister client
                 lock (clients)
                 {
                     clients.Remove(subscriptionId);
