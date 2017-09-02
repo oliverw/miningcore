@@ -22,6 +22,7 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
@@ -198,13 +199,12 @@ namespace MiningCore
 
             builder.Register((ctx, parms) => amConf.CreateMapper());
 
-            // Persistence
             ConfigurePersistence(builder);
+            ConfigureNotifications(builder);
 
             // Autofac Container
             container = builder.Build();
 
-            // Logging
             ConfigureLogging();
 
             ValidateRuntimeEnvironment();
@@ -286,8 +286,7 @@ namespace MiningCore
         {
             // check for missing ids
             if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-                throw new PoolStartupAbortException(
-                    $"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
+                throw new PoolStartupAbortException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
 
             // check for duplicate ids
             var ids = clusterConfig.Pools
@@ -305,8 +304,10 @@ namespace MiningCore
                 .ToArray();
 
             foreach (var port in ports)
+            {
                 if (port.Count() > 1)
                     throw new PoolStartupAbortException($"Stratum port {port.Key} is used multiple times");
+            }
         }
 
         private static void ValidateRuntimeEnvironment()
@@ -465,13 +466,11 @@ namespace MiningCore
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
             // build connection string
-            var connectionString =
-                $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
+            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
 
             // register connection factory
             builder.RegisterInstance(new ConnectionFactory(connectionString))
-                .AsImplementedInterfaces()
-                .SingleInstance();
+                .AsImplementedInterfaces();
 
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
@@ -479,6 +478,18 @@ namespace MiningCore
                     t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
+        }
+
+        private static void ConfigureNotifications(ContainerBuilder builder)
+        {
+            if (clusterConfig.Notifications != null && clusterConfig.Notifications.Enabled)
+            {
+                if (clusterConfig.Notifications?.Email != null)
+                {
+                    builder.RegisterInstance(new EmailSender(clusterConfig.Notifications.Email))
+                        .AsImplementedInterfaces();
+                }
+            }
         }
 
         private static async Task Start()
@@ -494,7 +505,16 @@ namespace MiningCore
                 apiServer.Start(clusterConfig);
             }
 
-            // start pools in parallel
+            // admin notifications
+            AdminNotifier adminNotifier = null;
+            if (clusterConfig.Notifications != null && clusterConfig.Notifications.Enabled &&
+                clusterConfig.Notifications.Admin != null && clusterConfig.Notifications.Admin.Enabled)
+            {
+                adminNotifier = container.Resolve<AdminNotifier>();
+                adminNotifier.Configure(clusterConfig.Notifications.Admin);
+            }
+
+            // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
             {
                 // resolve pool implementation
@@ -505,9 +525,14 @@ namespace MiningCore
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
 
+                // pre-start attachments
                 shareRecorder.AttachPool(pool);
+
                 await pool.StartAsync();
+
+                // post-start attachments
                 apiServer.AttachPool(pool);
+                adminNotifier?.AttachPool(pool);
             }));
 
             // start payment processor

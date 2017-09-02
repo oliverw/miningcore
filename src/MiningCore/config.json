@@ -12,6 +12,23 @@
     "manager": "integrated" // "integrated" or "iptables" (linux only)
   },
 
+  "notifications": {
+    "enabled": true,
+    "email": {
+      "host": "smtp.example.com",
+      "port": 587,
+      "user": "user",
+      "password": "password",
+      "fromAddress": "info@poolmining.org",
+      "fromName": "poolmining support"
+    },
+    "admin": {
+      "enabled": false,
+      "emailAddress": "user@example.com",
+      "notifyBlockFound": true
+    }
+  },
+
   // Where to persist shares and blocks to
   "persistence": {
     // Persist to postgresql database

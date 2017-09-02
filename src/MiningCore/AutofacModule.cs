@@ -9,6 +9,7 @@ using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Payments.PayoutSchemes;
 using Newtonsoft.Json;
@@ -56,6 +57,9 @@ namespace MiningCore
                 .SingleInstance();
 
             builder.RegisterType<ApiServer>()
+                .SingleInstance();
+
+            builder.RegisterType<AdminNotifier>()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())

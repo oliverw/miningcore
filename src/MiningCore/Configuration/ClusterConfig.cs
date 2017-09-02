@@ -37,7 +37,7 @@ namespace MiningCore.Configuration
         PPLNS = 1
     }
 
-    public class ClusterLoggingConfig
+    public partial class ClusterLoggingConfig
     {
         public string Level { get; set; }
         public bool EnableConsoleLog { get; set; }
@@ -77,7 +77,7 @@ namespace MiningCore.Configuration
         public VarDiffConfig VarDiff { get; set; }
     }
 
-    public class VarDiffConfig
+    public partial class VarDiffConfig
     {
         /// <summary>
         /// Minimum difficulty
@@ -116,7 +116,7 @@ namespace MiningCore.Configuration
         public BanManagerKind Manager { get; set; }
     }
 
-    public class PoolBanningConfig
+    public partial class PoolBanningConfig
     {
         public bool Enabled { get; set; }
         public int CheckThreshold { get; set; } // Check stats when this many shares have been submitted
@@ -124,7 +124,7 @@ namespace MiningCore.Configuration
         public int Time { get; set; } // How many seconds to ban worker for
     }
 
-    public class PoolPaymentProcessingConfig
+    public partial class PoolPaymentProcessingConfig
     {
         public bool Enabled { get; set; }
         public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
@@ -135,7 +135,7 @@ namespace MiningCore.Configuration
         public IDictionary<string, object> Extra { get; set; }
     }
 
-    public class ClusterPaymentProcessingConfig
+    public partial class ClusterPaymentProcessingConfig
     {
         public bool Enabled { get; set; }
         public int Interval { get; set; }
@@ -143,7 +143,7 @@ namespace MiningCore.Configuration
         public string ShareRecoveryFile { get; set; }
     }
 
-    public class PersistenceConfig
+    public partial class PersistenceConfig
     {
         public DatabaseConfig Postgres { get; set; }
     }
@@ -155,14 +155,35 @@ namespace MiningCore.Configuration
         public decimal Percentage { get; set; }
     }
 
-    public class ApiConfig
+    public partial class EmailSenderConfig : AuthenticatedNetworkEndpointConfig
+    {
+        public string FromAddress { get; set; }
+        public string FromName { get; set; }
+    }
+
+    public partial class AdminNotifications
+    {
+        public bool Enabled { get; set; }
+        public string EmailAddress { get; set; }
+        public bool NotifyBlockFound { get; set; }
+    }
+
+    public partial class NotificationsConfig
+    {
+        public bool Enabled { get; set; }
+
+        public EmailSenderConfig Email { get; set; }
+        public AdminNotifications Admin { get; set; }
+    }
+
+    public partial class ApiConfig
     {
         public bool Enabled { get; set; }
         public string ListenAddress { get; set; }
         public int Port { get; set; }
     }
 
-    public class PoolConfig
+    public partial class PoolConfig
     {
         public string Id { get; set; }
         public bool Enabled { get; set; }
@@ -178,12 +199,13 @@ namespace MiningCore.Configuration
         public int BlockRefreshInterval { get; set; }
     }
 
-    public class ClusterConfig
+    public partial class ClusterConfig
     {
         public ClusterLoggingConfig Logging { get; set; }
         public ClusterBanningConfig Banning { get; set; }
         public PersistenceConfig Persistence { get; set; }
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
+        public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
         public bool DisableDevDonation { get; set; }
 
