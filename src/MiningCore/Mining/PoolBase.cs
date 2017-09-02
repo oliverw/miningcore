@@ -120,6 +120,8 @@ namespace MiningCore.Mining
 
             if (context.VarDiff != null)
             {
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff");
+
                 // get or create manager
                 VarDiffManager varDiffManager;
 
@@ -137,7 +139,11 @@ namespace MiningCore.Mining
                 // update it
                 var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, networkDifficulty);
                 if (newDiff != null)
+                {
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
+
                     context.EnqueueNewDifficulty(newDiff.Value);
+                }
             }
         }
 

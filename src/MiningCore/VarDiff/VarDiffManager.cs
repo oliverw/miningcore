@@ -73,9 +73,7 @@ namespace MiningCore.VarDiff
                 }
 
                 else
-                {
                     return null;
-                }
 
                 var newDiff = difficulty * ddiff;
                 ctx.TimeBuffer = new CircularLongBuffer(bufferSize);

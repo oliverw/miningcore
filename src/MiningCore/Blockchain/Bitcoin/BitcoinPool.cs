@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
-using MiningCore.Persistence;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 
@@ -170,31 +169,25 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 if (client.Context.IsSubscribed)
                 {
-                    // check if turned zombie
+                    // check alive
                     var lastActivityAgo = DateTime.UtcNow - client.Context.LastActivity;
 
-                    if (poolConfig.ClientConnectionTimeout == 0 ||
-                        lastActivityAgo.TotalSeconds < poolConfig.ClientConnectionTimeout)
-                    {
-                        // varDiff: if the client has a pending difficulty change, apply it now
-                        if (client.Context.ApplyPendingDifficulty())
-                        {
-                            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {client.Context.Difficulty}");
-
-                            client.Notify(BitcoinStratumMethods.SetDifficulty,
-                                new object[] {client.Context.Difficulty});
-                        }
-
-                        // send job
-                        client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
-                    }
-
-                    else
+                    if (poolConfig.ClientConnectionTimeout > 0 &&
+                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
                         logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-
                         DisconnectClient(client);
+                        return;
                     }
+
+                    UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+
+                    // varDiff: if the client has a pending difficulty change, apply it now
+                    if (client.Context.ApplyPendingDifficulty())
+                        client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
+
+                    // send job
+                    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
             });
         }
