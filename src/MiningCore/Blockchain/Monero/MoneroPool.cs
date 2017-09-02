@@ -22,9 +22,8 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroPool : PoolBase<MoneroWorkerContext>
     {
         public MoneroPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf) :
-            base(ctx, serializerSettings, cf)
+            JsonSerializerSettings serializerSettings) :
+            base(ctx, serializerSettings)
         {
         }
 

@@ -17,9 +17,8 @@ namespace MiningCore.Blockchain.Bitcoin
     public class BitcoinPool : PoolBase<BitcoinWorkerContext>
     {
         public BitcoinPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf) :
-            base(ctx, serializerSettings, cf)
+            JsonSerializerSettings serializerSettings) :
+            base(ctx, serializerSettings)
         {
         }
 

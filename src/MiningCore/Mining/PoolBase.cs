@@ -25,16 +25,13 @@ namespace MiningCore.Mining
         where TWorkerContext : WorkerContextBase, new()
     {
         protected PoolBase(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf) :
+            JsonSerializerSettings serializerSettings) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
-            Contract.RequiresNonNull(cf, nameof(cf));
 
             this.serializerSettings = serializerSettings;
-            this.cf = cf;
 
             Shares = shareSubject
                 .AsObservable()
@@ -49,29 +46,20 @@ namespace MiningCore.Mining
                 .Synchronize();
         }
 
-        protected readonly IConnectionFactory cf;
         protected readonly IObservable<Unit> invalidShares;
-
         protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
         protected readonly PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-
         protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
-
         protected readonly IObservable<IShare> validShares;
-
-        // Telemetry
+        protected BlockchainStats blockchainStats;
+        protected ClusterConfig clusterConfig;
+        protected PoolConfig poolConfig;
         protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
-
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        protected BlockchainStats blockchainStats;
-        protected ClusterConfig clusterConfig;
-
-        protected PoolConfig poolConfig;
         private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
-
         protected override string LogCat => "Pool";
 
         protected abstract Task InitializeJobManager();
@@ -215,8 +203,7 @@ namespace MiningCore.Mining
                 .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
         }
 
-        protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context,
-            PoolBanningConfig config)
+        protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolBanningConfig config)
         {
             var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 
