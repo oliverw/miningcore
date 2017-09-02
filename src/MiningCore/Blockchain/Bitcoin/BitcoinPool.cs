@@ -180,8 +180,6 @@ namespace MiningCore.Blockchain.Bitcoin
                         return;
                     }
 
-                    UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
-
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (client.Context.ApplyPendingDifficulty())
                         client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
@@ -194,13 +192,13 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region Overrides
 
-        protected override async Task InitializeJobManager()
+        protected override async Task SetupJobManager()
         {
             manager = ctx.Resolve<BitcoinJobManager>();
             manager.Configure(poolConfig, clusterConfig);
 
             await manager.StartAsync();
-            manager.Jobs.Subscribe(OnNewJob);
+            disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
             // we need work before opening the gates
             await manager.Jobs.Take(1).ToTask();
@@ -230,6 +228,16 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
+            }
+        }
+
+        protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)
+        {
+            UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+
+            if (client.Context.ApplyPendingDifficulty())
+            {
+                client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
             }
         }
 

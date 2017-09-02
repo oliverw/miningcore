@@ -236,7 +236,7 @@
     //      }
     //  },
 
-    //{
+    // {
     //    // DON'T change the id after a production pool has begun collecting shares!
     //    "id": "ltc1",
     //    "enabled": true,
@@ -245,7 +245,7 @@
     //    },
 
     //    // Address to where block rewards are given (pool wallet)
-    //    "address": "mytFDfarqgFK88qwg8amrfgNNjy9wcxyU9",
+    //    "address": "mwkc7fx4UWBDAjnpiGaHmkWh9RYiNZzsvN",
 
     //    // Block rewards go to the configured pool wallet address to later be paid out to miners,
     //    // except for a percentage that can go to, for examples, pool operator(s) as pool fees or
@@ -288,13 +288,13 @@
     //    // optional and will only be used for the ports you configure it for.
     //    "ports": {
     //        "3032": { // A port for your miners to connect to
-    //            "difficulty": 1, // the pool difficulty for this port
+    //            "difficulty": 10000000, // the pool difficulty for this port
 
     //            // Variable difficulty is a feature that will automatically adjust difficulty for
     //            // individual miners based on their hashrate in order to lower networking overhead
     //            "varDiff": {
-    //                "minDiff": 1, // Minimum difficulty
-    //                "maxDiff": 512, // Network difficulty will be used if it is lower than this
+    //                "minDiff": 10, // Minimum difficulty
+    //                "maxDiff": 512000000, // Network difficulty will be used if it is lower than this
     //                "targetTime": 15, // Try to get 1 share per this many seconds
     //                "retargetTime": 90, // Check to see if we should retarget every this many seconds
     //                "variancePercent": 30 // Allow time to very this % from target without retargeting
@@ -315,7 +315,7 @@
     //    "daemons": [
     //        {
     //            "host": "127.0.0.1",
-    //            "port": 19001, // 18332 = testnet, 19001 = regtest (bob)
+    //            "port": 16001, // 18332 = testnet, 19001 = regtest (bob)
     //            "user": "user",
     //            "password": "pass"
     //        }
@@ -330,6 +330,6 @@
     //            "factor": 2.0
     //        }
     //    }
-    //}
+    // }
   ]
 }

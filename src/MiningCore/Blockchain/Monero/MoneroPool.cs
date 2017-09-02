@@ -255,8 +255,6 @@ namespace MiningCore.Blockchain.Monero
                         return;
                     }
 
-                    UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
-
                     // send job
                     var job = CreateWorkerJob(client);
                     client.Notify(MoneroStratumMethods.JobNotify, job);
@@ -266,14 +264,14 @@ namespace MiningCore.Blockchain.Monero
 
         #region Overrides
 
-        protected override async Task InitializeJobManager()
+        protected override async Task SetupJobManager()
         {
             manager = ctx.Resolve<MoneroJobManager>();
             manager.Configure(poolConfig, clusterConfig);
 
             await manager.StartAsync();
 
-            manager.Blocks.Subscribe(_ => OnNewJob());
+            disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
             // we need work before opening the gates
             await manager.Blocks.Take(1).ToTask();
@@ -308,6 +306,18 @@ namespace MiningCore.Blockchain.Monero
 
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
+            }
+        }
+
+        protected override void UpdateVarDiff(StratumClient<MoneroWorkerContext> client)
+        {
+            UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+
+            if (client.Context.ApplyPendingDifficulty())
+            {
+                // send job
+                var job = CreateWorkerJob(client);
+                client.Notify(MoneroStratumMethods.JobNotify, job);
             }
         }
 

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
-using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
-using MiningCore.Persistence;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using MiningCore.VarDiff;
@@ -52,6 +52,7 @@ namespace MiningCore.Mining
         protected readonly JsonSerializerSettings serializerSettings;
         protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
         protected readonly IObservable<IShare> validShares;
+        protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
@@ -62,7 +63,7 @@ namespace MiningCore.Mining
         private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
         protected override string LogCat => "Pool";
 
-        protected abstract Task InitializeJobManager();
+        protected abstract Task SetupJobManager();
 
         protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
@@ -114,6 +115,8 @@ namespace MiningCore.Mining
                 });
         }
 
+        #region VarDiff
+
         protected void UpdateVarDiff(StratumClient<TWorkerContext> client, double networkDifficulty)
         {
             var context = client.Context;
@@ -147,6 +150,37 @@ namespace MiningCore.Mining
             }
         }
 
+        private void SetupVarDiff()
+        {
+            if (poolConfig.Ports.Values.Any(x => x.VarDiff != null))
+            {
+                // Periodically update vardiff
+                var interval = poolConfig.Ports.Values
+                    .Where(x=> x.VarDiff != null)
+                    .Min(x => x.VarDiff.RetargetTime);
+
+                disposables.Add(Observable.Interval(TimeSpan.FromSeconds(interval))
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Do(_ => UpdateVarDiffs())
+                    .Subscribe());
+            }
+        }
+
+        private void UpdateVarDiffs()
+        {
+            ForEachClient(client =>
+            {
+                if (client.Context.IsSubscribed)
+                {
+                    UpdateVarDiff(client);
+                }
+            });
+        }
+
+        protected abstract void UpdateVarDiff(StratumClient<TWorkerContext> client);
+
+        #endregion // VarDiff
+
         protected void SetupBanning(ClusterConfig clusterConfig)
         {
             if (poolConfig.Banning?.Enabled == true)
@@ -169,7 +203,7 @@ namespace MiningCore.Mining
             // Pool Hashrate
             var poolHashRateSampleInterval = 30;
 
-            validSharesSubject
+            disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleInterval))
                 .Select(shares =>
                 {
@@ -177,14 +211,14 @@ namespace MiningCore.Mining
                                                      poolHashRateSampleInterval);
                     return (float) result;
                 })
-                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate);
+                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
 
 
             // Periodically persist pool- and blockchain-stats to persistent storage
-            Observable.Interval(TimeSpan.FromSeconds(10))
+            disposables.Add(Observable.Interval(TimeSpan.FromSeconds(10))
                 .StartWith(0) // initial update
                 .Do(_ => UpdateBlockChainStats())
-                .Subscribe();
+                .Subscribe());
         }
 
         protected abstract void UpdateBlockChainStats();
@@ -192,21 +226,21 @@ namespace MiningCore.Mining
         private void SetupTelemetry()
         {
             // Shares per second
-            validShares.Select(_ => Unit.Default).Merge(invalidShares)
+            disposables.Add(validShares.Select(_ => Unit.Default).Merge(invalidShares)
                 .Buffer(TimeSpan.FromSeconds(1))
                 .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.SharesPerSecond = count);
+                .Subscribe(count => poolStats.SharesPerSecond = count));
 
             // Valid/Invalid shares per minute
-            validShares
+            disposables.Add(validShares
                 .Buffer(TimeSpan.FromMinutes(1))
                 .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.ValidSharesPerMinute = count);
+                .Subscribe(count => poolStats.ValidSharesPerMinute = count));
 
-            invalidShares
+            disposables.Add(invalidShares
                 .Buffer(TimeSpan.FromMinutes(1))
                 .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.InvalidSharesPerMinute = count);
+                .Subscribe(count => poolStats.InvalidSharesPerMinute = count));
         }
 
         protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolBanningConfig config)
@@ -287,7 +321,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinJobManager), poolConfig);
+            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase<TWorkerContext>), poolConfig);
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
         }
@@ -300,7 +334,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
             SetupBanning(clusterConfig);
             SetupTelemetry();
-            await InitializeJobManager();
+            await SetupJobManager();
 
             var ipEndpoints = poolConfig.Ports.Keys
                 .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
@@ -308,6 +342,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
             StartListeners(ipEndpoints);
             SetupStats();
+            SetupVarDiff();
 
             logger.Info(() => $"[{LogCat}] Online");
 

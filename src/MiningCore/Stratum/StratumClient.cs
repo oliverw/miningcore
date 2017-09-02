@@ -32,7 +32,6 @@ namespace MiningCore.Stratum
         public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
         public string ConnectionId => rpcCon.ConnectionId;
         public IPEndPoint PoolEndpoint { get; private set; }
-
         public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
         public IDisposable Subscription { get; set; }
 

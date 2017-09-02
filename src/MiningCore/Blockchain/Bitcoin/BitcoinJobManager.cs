@@ -121,7 +121,7 @@ namespace MiningCore.Blockchain.Bitcoin
                             .OrderBy(x => x.StartingHeight)
                             .First().StartingHeight;
 
-                        var percent = (double) blockCount / totalBlocks * 100;
+                        var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
                         logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                     }
                 }
