@@ -1,375 +1,267 @@
 ﻿using FluentValidation;
 using System.Linq;
+using FluentValidation.Attributes;
 
 namespace MiningCore.Configuration
 {
-    /// <summary>
-    /// Tagging interface
-    /// </summary>
-    public interface IValidateable
+    #region Validators 
+
+    public class NetworkEndpointConfigValidator<T> : AbstractValidator<T>
+        where T : NetworkEndpointConfig
     {
-    }
-
-    public static class ValidateableExtensions
-    {
-        public static void Validate<T>(this T validationTarget, InlineValidator<T> validator)
-            where T: IValidateable
+        public NetworkEndpointConfigValidator()
         {
-            var result = validator.Validate(validationTarget);
+            RuleFor(j => j.Host)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("Host missing or empty");
 
-            if (!result.IsValid)
-                throw new ValidationException(result.Errors);
-        }
-    }
-
-    public partial class ClusterLoggingConfig : IValidateable
-    {
-        static readonly InlineValidator<ClusterLoggingConfig> validator;
-
-        static ClusterLoggingConfig()
-        {
-            validator = new InlineValidator<ClusterLoggingConfig>
-            {
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.Port)
+                .GreaterThan(0)
+                .WithMessage("Invalid port number '{PropertyValue}'");
         }
     }
 
-    public partial class VarDiffConfig : IValidateable
+    public class AuthenticatedNetworkEndpointConfigValidator : NetworkEndpointConfigValidator<AuthenticatedNetworkEndpointConfig>
     {
-        static readonly InlineValidator<VarDiffConfig> validator;
-
-        static VarDiffConfig()
+        public AuthenticatedNetworkEndpointConfigValidator()
         {
-            validator = new InlineValidator<VarDiffConfig>
-            {
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.User)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("User missing or empty");
         }
     }
 
-    public partial class PoolBanningConfig : IValidateable
+    public class PoolEndpointValidator : AbstractValidator<PoolEndpoint>
     {
-        static readonly InlineValidator<PoolBanningConfig> validator;
-
-        static PoolBanningConfig()
+        public PoolEndpointValidator()
         {
-            validator = new InlineValidator<PoolBanningConfig>
-            {
-            };
-        }
+            RuleFor(j => j.Difficulty)
+                .GreaterThan(0)
+                .WithMessage("Pool Endpoint: Difficulty missing or invalid");
 
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.VarDiff)
+                .SetValidator(new VarDiffConfigValidator())
+                .When(x=> x.VarDiff != null);
         }
     }
 
-    public partial class PoolPaymentProcessingConfig : IValidateable
+    public class ApiConfigValidator : AbstractValidator<ApiConfig>
     {
-        static readonly InlineValidator<PoolPaymentProcessingConfig> validator;
-
-        static PoolPaymentProcessingConfig()
+        public ApiConfigValidator()
         {
-            validator = new InlineValidator<PoolPaymentProcessingConfig>
-            {
-            };
-        }
+            RuleFor(j => j.ListenAddress)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("API: listenAddress missing or empty");
 
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.Port)
+                .GreaterThan(0)
+                .WithMessage("API: Invalid port number '{PropertyValue}'");
         }
     }
 
-    public partial class ClusterPaymentProcessingConfig : IValidateable
+    public class VarDiffConfigValidator : AbstractValidator<VarDiffConfig>
     {
-        static readonly InlineValidator<ClusterPaymentProcessingConfig> validator;
-
-        static ClusterPaymentProcessingConfig()
+        public VarDiffConfigValidator()
         {
-            validator = new InlineValidator<ClusterPaymentProcessingConfig>
-            {
-            };
-        }
+            RuleFor(j => j.MaxDiff)
+                .GreaterThanOrEqualTo(x=> x.MinDiff)
+                .When(x=> x.MaxDiff.HasValue)
+                .WithMessage("VarDiff: max value must be greater or equal min value");
 
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.VariancePercent)
+                .InclusiveBetween(1, 100)
+                .WithMessage("VarDiff: variancePercent must be a percentage betwen 1 and 100");
+
+            RuleFor(j => j.TargetTime)
+                .GreaterThan(0)
+                .WithMessage("VarDiff: targetTime invalid");
+
+            RuleFor(j => j.RetargetTime)
+                .GreaterThan(0)
+                .WithMessage("VarDiff: retargetTime invalid");
         }
     }
 
-    public partial class PersistenceConfig : IValidateable
+    public class PoolConfigValidator : AbstractValidator<PoolConfig>
     {
-        static readonly InlineValidator<PersistenceConfig> validator;
-
-        static PersistenceConfig()
+        public PoolConfigValidator()
         {
-            validator = new InlineValidator<PersistenceConfig>
-            {
-            };
-        }
+            RuleFor(j => j.Id)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("Pool: id missing or empty");
 
-        public void Validate()
-        {
-            this.Validate(validator);
+            RuleFor(j => j.Coin)
+                .NotNull()
+                .WithMessage("Pool: Coin config missing or empty");
+
+            RuleFor(j => j.Ports)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("Pool: Stratum port config missing or empty");
+
+            RuleFor(j => j.Ports)
+                .Must((pc, ports, ctx) =>
+                {
+                    if (ports.Keys.Any(port => port < 0))
+                    {
+                        ctx.MessageFormatter.AppendArgument("port", ports.Keys.First(port => port < 0));
+                        return false;
+                    }
+
+                    return true;
+                })
+                .WithMessage("Pool: Invalid stratum port number {port}");
+
+            RuleFor(j => j.Ports.Values)
+                .SetCollectionValidator(x=> new PoolEndpointValidator())
+                .When(x=> x.Ports != null);
+
+            RuleFor(j => j.Address)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("Pool: Wallet address missing or empty");
+
+            RuleFor(j => j.Daemons)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("Pool: Daemons missing or empty");
+
+            RuleFor(j => j.Daemons)
+                .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator());
         }
     }
 
-    public partial class NetworkEndpointConfig : IValidateable
+    public class ClusterConfigValidator : AbstractValidator<ClusterConfig>
     {
-        static readonly InlineValidator<NetworkEndpointConfig> validator;
-
-        static NetworkEndpointConfig()
+        public ClusterConfigValidator()
         {
-            validator = new InlineValidator<NetworkEndpointConfig>
-            {
-                v => v.RuleFor(j => j.Host)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Host missing or empty"),
+            RuleFor(j => j.PaymentProcessing)
+                .NotNull();
 
-                v => v.RuleFor(j => j.Port)
-                    .GreaterThan(0)
-                    .WithMessage("Invalid port number '{PropertyValue}'"),
-            };
+            RuleFor(j => j.Persistence)
+                .NotNull();
+
+            RuleFor(j => j.Pools)
+                .NotNull()
+                .NotEmpty();
+
+            // ensure pool ids are unique
+            RuleFor(j => j.Pools)
+                .Must((pc, pools, ctx) =>
+                {
+                    var ids = pools
+                        .GroupBy(x => x.Id)
+                        .ToArray();
+
+                    if (ids.Any(id => id.Count() > 1))
+                    {
+                        ctx.MessageFormatter.AppendArgument("poolId", ids.First(id => id.Count() > 1).Key);
+                        return false;
+                    }
+
+                    return true;
+                })
+                .WithMessage("Duplicate pool id '{poolId}'");
+
+            // ensure stratum ports are not assigned multiple times
+            RuleFor(j => j.Pools)
+                .Must((pc, pools, ctx) =>
+                {
+                    var ports = pools.SelectMany(x => x.Ports.Select(y => y.Key))
+                        .GroupBy(x => x)
+                        .ToArray();
+
+                    foreach (var port in ports)
+                    {
+                        if (port.Count() > 1)
+                        {
+                            ctx.MessageFormatter.AppendArgument("port", port.Key);
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .WithMessage("Stratum port {port} assigned multiple times");
+
+            RuleFor(j => j.Pools)
+                .SetCollectionValidator(new PoolConfigValidator());
         }
     }
 
+    #endregion // Validators
+
+    public partial class ClusterLoggingConfig
+    {
+    }
+
+    [Validator(typeof(VarDiffConfigValidator))]
+    public partial class VarDiffConfig
+    {
+    }
+
+    public partial class PoolBanningConfig
+    {
+    }
+
+    public partial class PoolPaymentProcessingConfig
+    {
+    }
+
+    public partial class ClusterPaymentProcessingConfig
+    {
+    }
+
+    public partial class PersistenceConfig
+    {
+    }
+
+    [Validator(typeof(NetworkEndpointConfigValidator<NetworkEndpointConfig>))]
+    public partial class NetworkEndpointConfig
+    {
+    }
+
+    [Validator(typeof(AuthenticatedNetworkEndpointConfigValidator))]
     public partial class AuthenticatedNetworkEndpointConfig
     {
-        public static readonly InlineValidator<AuthenticatedNetworkEndpointConfig> validator;
-
-        static AuthenticatedNetworkEndpointConfig()
-        {
-            validator = new InlineValidator<AuthenticatedNetworkEndpointConfig>
-            {
-                v => v.RuleFor(j => j.Host)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Host missing or empty"),
-
-                v => v.RuleFor(j => j.Port)
-                    .GreaterThan(0)
-                    .WithMessage("Invalid port number '{PropertyValue}'"),
-            };
-        }
     }
 
     public partial class EmailSenderConfig
     {
-        static readonly InlineValidator<EmailSenderConfig> validator;
-
-        static EmailSenderConfig()
-        {
-            validator = new InlineValidator<EmailSenderConfig>
-            {
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
-        }
     }
 
-    public partial class AdminNotifications : IValidateable
+    public partial class AdminNotifications
     {
-        static readonly InlineValidator<AdminNotifications> validator;
-
-        static AdminNotifications()
-        {
-            validator = new InlineValidator<AdminNotifications>
-            {
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
-        }
     }
 
-    public partial class NotificationsConfig : IValidateable
+    public partial class NotificationsConfig
     {
-        static readonly InlineValidator<NotificationsConfig> validator;
-
-        static NotificationsConfig()
-        {
-            validator = new InlineValidator<NotificationsConfig>
-            {
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
-        }
     }
 
-    public partial class ApiConfig : IValidateable
+    [Validator(typeof(ApiConfigValidator))]
+    public partial class ApiConfig
     {
-        static readonly InlineValidator<ApiConfig> validator;
-
-        static ApiConfig()
-        {
-            validator = new InlineValidator<ApiConfig>
-            {
-                v => v.RuleFor(j => j.ListenAddress)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("API listenAddress missing or empty"),
-
-                v => v.RuleFor(j => j.Port)
-                    .GreaterThan(0)
-                    .WithMessage("Invalid API port number '{PropertyValue}'"),
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
-        }
     }
 
-    public partial class PoolConfig : IValidateable
+    [Validator(typeof(PoolConfigValidator))]
+    public partial class PoolConfig
     {
-        public static readonly InlineValidator<PoolConfig> validator;
-
-        static PoolConfig()
-        {
-            validator = new InlineValidator<PoolConfig>
-            {
-                v => v.RuleFor(j => j.Id)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Pool id missing or empty"),
-
-                v => v.RuleFor(j => j.Coin)
-                    .NotNull()
-                    .WithMessage("Coin config missing or empty"),
-
-                v => v.RuleFor(j => j.Ports)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Stratum port config missing or empty"),
-
-                v => v.RuleFor(j => j.Ports)
-                    .Must((pc, ports, ctx)=>
-                    {
-                        if (ports.Keys.Any(port => port < 0))
-                        {
-                            ctx.MessageFormatter.AppendArgument("port", ports.Keys.First(port => port < 0));
-                            return false;
-                        }
-
-                        return true;
-                    })
-                    .WithMessage("Invalid stratum port number {port}"),
-
-                v => v.RuleFor(j => j.Address)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Pool wallet address missing or empty"),
-
-                v => v.RuleFor(j => j.Daemons)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("Pool daemons missing or empty"),
-
-                v => v.RuleFor(j => j.Daemons)
-                    .SetCollectionValidator(AuthenticatedNetworkEndpointConfig.validator),
-            };
-        }
-
-        public void Validate()
-        {
-            this.Validate(validator);
-        }
     }
 
-    public partial class ClusterConfig : IValidateable
+    [Validator(typeof(ClusterConfigValidator))]
+    public partial class ClusterConfig
     {
-        static readonly InlineValidator<ClusterConfig> validator;
-
-        static ClusterConfig()
-        {
-            validator = new InlineValidator<ClusterConfig>
-            {
-                v => v.RuleFor(j => j.PaymentProcessing)
-                    .NotNull(),
-
-                v => v.RuleFor(j => j.Persistence)
-                    .NotNull(),
-
-                v => v.RuleFor(j => j.Pools)
-                    .NotNull()
-                    .NotEmpty(),
-
-                // ensure pool ids are unique
-                v => v.RuleFor(j => j.Pools)
-                    .Must((pc, pools, ctx)=>
-                    {
-                        var ids = pools
-                            .GroupBy(x => x.Id)
-                            .ToArray();
-
-                        if (ids.Any(id => id.Count() > 1))
-                        {
-                            ctx.MessageFormatter.AppendArgument("poolId", ids.First(id => id.Count() > 1).Key);
-                            return false;
-                        }
-
-                        return true;
-                    })
-                    .WithMessage("Duplicate pool id '{poolId}'"),
-
-                // ensure stratum ports are not assigned multiple times
-                v => v.RuleFor(j => j.Pools)
-                    .Must((pc, pools, ctx)=>
-                    {
-                        var ports = pools.SelectMany(x => x.Ports.Select(y => y.Key))
-                            .GroupBy(x => x)
-                            .ToArray();
-
-                        foreach (var port in ports)
-                        {
-                            if (port.Count() > 1)
-                            {
-                                ctx.MessageFormatter.AppendArgument("port", port.Key);
-                                return false;
-                            }
-                        }
-
-                        return true;
-                    })
-                    .WithMessage("Stratum port {port} assigned multiple times"),
-
-                v => v.RuleFor(j => j.Pools)
-                    .SetCollectionValidator(PoolConfig.validator),
-            };
-        }
-
         public void Validate()
         {
-            this.Validate(validator);
+            var validator = new ClusterConfigValidator();
+            var result = validator.Validate(this);
 
-            // optional
-            Api?.Validate();
-            Logging?.Validate();
-            Notifications?.Validate();
-
-            // mandatory
-            Persistence.Validate();
-            PaymentProcessing.Validate();
+            if (!result.IsValid)
+                throw new ValidationException(result.Errors);
         }
     }
 }
