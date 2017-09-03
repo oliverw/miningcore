@@ -47,13 +47,13 @@ namespace MiningCore.Configuration
         public string LogBaseDirectory { get; set; }
     }
 
-    public class NetworkEndpointConfig
+    public partial class NetworkEndpointConfig
     {
         public string Host { get; set; }
         public int Port { get; set; }
     }
 
-    public class AuthenticatedNetworkEndpointConfig : NetworkEndpointConfig
+    public partial class AuthenticatedNetworkEndpointConfig : NetworkEndpointConfig
     {
         public string User { get; set; }
         public string Password { get; set; }

@@ -53,7 +53,7 @@ namespace MiningCore.Notifications
 
             try
             {
-                await emailSender.NotifyAsync(config.EmailAddress, "Block found", $"Pool {share.PoolId} found block {share.BlockHeight}");
+                await emailSender.NotifyAsync(config.EmailAddress, "Block Notification", $"Pool {share.PoolId} found block candidate {share.BlockHeight}");
             }
 
             catch (Exception ex)

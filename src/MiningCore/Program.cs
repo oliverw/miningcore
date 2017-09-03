@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Configuration;
@@ -92,7 +93,8 @@ namespace MiningCore
 
             catch (PoolStartupAbortException ex)
             {
-                Console.WriteLine(ex.Message);
+                if(!string.IsNullOrEmpty(ex.Message))
+                    Console.WriteLine(ex.Message);
 
                 Console.WriteLine("\nCluster cannot start. Good Bye!");
             }
@@ -125,6 +127,20 @@ namespace MiningCore
                 Console.WriteLine(ex);
 
                 Console.WriteLine("Cluster cannot start. Good Bye!");
+            }
+        }
+
+        private static void ValidateConfig()
+        {
+            try
+            {
+                clusterConfig.Validate();
+            }
+
+            catch (ValidationException ex)
+            {
+                Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
+                throw new PoolStartupAbortException(string.Empty);
             }
         }
 
@@ -270,43 +286,6 @@ namespace MiningCore
             else
             {
                 Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
-
-        private static void ValidateConfig()
-        {
-            if (clusterConfig.Pools.Length == 0)
-                logger.ThrowLogPoolStartupException("No pools configured!");
-
-            ValidatePoolIds();
-            ValidateStratumPorts();
-        }
-
-        private static void ValidatePoolIds()
-        {
-            // check for missing ids
-            if (clusterConfig.Pools.Any(pool => string.IsNullOrEmpty(pool.Id)))
-                throw new PoolStartupAbortException($"Pool {clusterConfig.Pools.ToList().IndexOf(clusterConfig.Pools.First(pool => string.IsNullOrEmpty(pool.Id)))} has an empty id!");
-
-            // check for duplicate ids
-            var ids = clusterConfig.Pools
-                .GroupBy(x => x.Id)
-                .ToArray();
-
-            if (ids.Any(id => id.Count() > 1))
-                throw new PoolStartupAbortException($"Duplicate pool id '{ids.First(id => id.Count() > 1).Key}'!");
-        }
-
-        private static void ValidateStratumPorts()
-        {
-            var ports = clusterConfig.Pools.SelectMany(x => x.Ports.Select(y => y.Key))
-                .GroupBy(x => x)
-                .ToArray();
-
-            foreach (var port in ports)
-            {
-                if (port.Count() > 1)
-                    throw new PoolStartupAbortException($"Stratum port {port.Key} is used multiple times");
             }
         }
 
