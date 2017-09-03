@@ -7,11 +7,14 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using AutoMapper;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Persistence;
+using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 
@@ -21,8 +24,11 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroPool : PoolBase<MoneroWorkerContext>
     {
         public MoneroPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings) :
-            base(ctx, serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            IConnectionFactory cf,
+            IStatsRepository statsRepo,
+            IMapper mapper) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper)
         {
         }
 

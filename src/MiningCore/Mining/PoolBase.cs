@@ -9,13 +9,18 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Autofac;
+using AutoMapper;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
+using MiningCore.Persistence;
+using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using MiningCore.VarDiff;
 using Newtonsoft.Json;
+using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Mining
@@ -25,13 +30,22 @@ namespace MiningCore.Mining
         where TWorkerContext : WorkerContextBase, new()
     {
         protected PoolBase(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings) :
+            JsonSerializerSettings serializerSettings,
+            IConnectionFactory cf,
+            IStatsRepository statsRepo,
+            IMapper mapper) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+            Contract.RequiresNonNull(cf, nameof(cf));
+            Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
+            Contract.RequiresNonNull(mapper, nameof(mapper));
 
             this.serializerSettings = serializerSettings;
+            this.cf = cf;
+            this.statsRepo = statsRepo;
+            this.mapper = mapper;
 
             Shares = shareSubject
                 .AsObservable()
@@ -50,6 +64,9 @@ namespace MiningCore.Mining
         protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
         protected readonly PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
+        protected readonly IConnectionFactory cf;
+        protected readonly IStatsRepository statsRepo;
+        private readonly IMapper mapper;
         protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
         protected readonly IObservable<IShare> validShares;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
@@ -213,16 +230,36 @@ namespace MiningCore.Mining
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
 
-
             // Periodically persist pool- and blockchain-stats to persistent storage
             disposables.Add(Observable.Interval(TimeSpan.FromSeconds(10))
                 .StartWith(0) // initial update
                 .Do(_ => UpdateBlockChainStats())
-                .Subscribe());
+                .Subscribe(_ => PersistStats()));
         }
 
         protected abstract void UpdateBlockChainStats();
 
+        private void PersistStats()
+        {
+            try
+            {
+                logger.Debug(() => $"[{LogCat}] Persisting pool stats");
+
+                cf.RunTx((con, tx) =>
+                {
+                    var mapped = mapper.Map<Persistence.Model.PoolStats>(poolStats);
+                    mapped.PoolId = poolConfig.Id;
+                    mapped.Created = DateTime.UtcNow;
+
+                    statsRepo.Insert(con, tx, mapped);
+                });
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex, () => $"[{LogCat}] Unable to persist pool stats");
+            }
+        }
         private void SetupTelemetry()
         {
             // Shares per second

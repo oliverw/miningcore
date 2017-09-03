@@ -21,8 +21,11 @@ namespace MiningCore
 
             CreateMap<BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
 
-            // API
+            CreateMap<Mining.PoolStats, PoolStats>()
+                .ForMember(dest => dest.PoolId, opt => opt.Ignore())
+                .ForMember(dest => dest.Created, opt => opt.Ignore());
 
+            // API
             CreateMap<PoolConfig, PoolInfo>();
 
             // PostgreSQL
@@ -30,6 +33,7 @@ namespace MiningCore
             CreateMap<Block, Persistence.Postgres.Entities.Block>();
             CreateMap<Balance, Persistence.Postgres.Entities.Balance>();
             CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
+            CreateMap<PoolStats, Persistence.Postgres.Entities.PoolStats>();
 
             //////////////////////
             // incoming mappings
@@ -39,6 +43,7 @@ namespace MiningCore
             CreateMap<Persistence.Postgres.Entities.Block, Block>();
             CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
+            CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
         }
     }
 }

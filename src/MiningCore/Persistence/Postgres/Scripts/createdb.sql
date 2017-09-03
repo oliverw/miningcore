@@ -57,3 +57,19 @@ CREATE TABLE payments
 );
 
 CREATE INDEX IDX_PAYMENTS_POOL_COIN_WALLET on payments(poolid, coin, address);
+
+CREATE TABLE poolstats
+(
+	id BIGSERIAL NOT NULL PRIMARY KEY,
+	poolid TEXT NOT NULL,
+
+	connectedminers INT NOT NULL DEFAULT 0,
+	poolhashrate FLOAT NOT NULL DEFAULT 0,
+	sharespersecond FLOAT NOT NULL DEFAULT 0,
+	validsharesperminute INT NOT NULL DEFAULT 0,
+	invalidsharesperminute INT NOT NULL DEFAULT 0,
+
+	created TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IDX_POOLSTATS_POOL_CREATED on poolstats(poolid, created);

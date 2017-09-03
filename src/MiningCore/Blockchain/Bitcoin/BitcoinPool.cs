@@ -5,8 +5,11 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Autofac;
+using AutoMapper;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Persistence;
+using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 
@@ -16,8 +19,11 @@ namespace MiningCore.Blockchain.Bitcoin
     public class BitcoinPool : PoolBase<BitcoinWorkerContext>
     {
         public BitcoinPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings) :
-            base(ctx, serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            IConnectionFactory cf,
+            IStatsRepository statsRepo,
+            IMapper mapper) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper)
         {
         }
 

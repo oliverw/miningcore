@@ -1,18 +1,20 @@
 ﻿using System;
 
-namespace MiningCore.Mining
+namespace MiningCore.Persistence.Model
 {
     public class PoolStats
     {
-        public DateTime? LastPoolBlockTime { get; set; }
+        public long Id { get; set; }
+        public string PoolId { get; set; }
+
         public int ConnectedMiners { get; set; }
         public float PoolHashRate { get; set; }
-        public float PoolFeePercent { get; set; }
-        public float DonationsPercent { get; set; }
 
         // Telemetry
         public int SharesPerSecond { get; set; }
         public int ValidSharesPerMinute { get; set; }
         public int InvalidSharesPerMinute { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }
