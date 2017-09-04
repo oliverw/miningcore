@@ -185,6 +185,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 // SHA256
                 case CoinType.BTC:
+                case CoinType.BCC:
                 case CoinType.NMC:
                 case CoinType.PPC:
                     coinbaseHasher = sha256d;

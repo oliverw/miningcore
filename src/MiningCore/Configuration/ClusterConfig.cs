@@ -8,6 +8,7 @@ namespace MiningCore.Configuration
     {
         // ReSharper disable InconsistentNaming
         BTC = 1, // Bitcoin
+        BCC,  // Bitcoin Cash
         LTC, // Litecoin
         DOGE, // Dogecoin,
         XMR, // Monero

@@ -65,6 +65,7 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinCoinsMetaData() : base(
             CoinType.BTC,
+            CoinType.BCC,
             CoinType.NMC,
             CoinType.PPC,
             CoinType.LTC,
