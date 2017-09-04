@@ -167,6 +167,14 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
+        private void OnSuggestDifficulty(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+
+            // success
+            client.Respond(true, request.Id);
+        }
+
         private void OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
@@ -227,6 +235,10 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 case BitcoinStratumMethods.SubmitShare:
                     await OnSubmitAsync(client, tsRequest);
+                    break;
+
+                case BitcoinStratumMethods.SuggestDifficulty:
+                    OnSuggestDifficulty(client, tsRequest);
                     break;
 
                 default:

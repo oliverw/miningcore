@@ -13,6 +13,11 @@
         public const string Authorize = "mining.authorize";
 
         /// <summary>
+        /// Basically the idea is that miner remember the last difficulty given by the previous mining session and it sends mining.suggest_difficulty(difficulty) on the beginning of the next session (it may be sent before mining.subscribe or mining.resume, but it should not be a requirement)
+        /// </summary>
+        public const string SuggestDifficulty = "mining.suggest_difficulty";
+
+        /// <summary>
         /// Used to push new work to the miner.  Previous work should be aborted if Clean Jobs = true!
         /// </summary>
         public const string MiningNotify = "mining.notify";
