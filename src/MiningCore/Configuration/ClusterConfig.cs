@@ -18,7 +18,12 @@ namespace MiningCore.Configuration
         DGB, // Digibyte
         NMC, // Namecoin
         PPC, // Peercoin
-        VIA // Viacoin
+        VIA, // Viacoin
+
+        ZEC, // Zcash
+        ETH, // Ethereum
+        ETC, // Ethereum Classic
+        DASH, // Dash
     }
 
     public class CoinConfig
