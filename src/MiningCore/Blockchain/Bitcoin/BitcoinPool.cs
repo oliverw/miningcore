@@ -12,6 +12,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
+using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
@@ -171,8 +172,29 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var request = tsRequest.Value;
 
-            // success
+            // acknowledge
             client.Respond(true, request.Id);
+
+            try
+            {
+                var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
+
+                // client may suggest higher-than-base difficulty, but not a lower one
+                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+
+                if (requestedDiff > poolEndpoint.Difficulty)
+                {
+                    client.Context.SetDifficulty(requestedDiff);
+                    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+
+                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner");
+                }
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex, () => $"[{LogCat}] Enable to convert suggested difficulty {request.Params}");
+            }
         }
 
         private void OnNewJob(object jobParams)
