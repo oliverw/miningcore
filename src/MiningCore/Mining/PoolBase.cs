@@ -343,7 +343,8 @@ namespace MiningCore.Mining
             {
                 hashrate = hashrate / 1024;
                 i++;
-            } while (hashrate > 1024);
+            } while (hashrate > 1024 && i < HashRateUnits.Length - 1);
+
             return (int) Math.Abs(hashrate) + HashRateUnits[i];
         }
 
@@ -389,21 +390,30 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
             logger.Info(() => $"[{LogCat}] Launching ...");
 
-            SetupBanning(clusterConfig);
-            SetupTelemetry();
-            await SetupJobManager();
+            try
+            {
+                SetupBanning(clusterConfig);
+                SetupTelemetry();
+                await SetupJobManager();
 
-            var ipEndpoints = poolConfig.Ports.Keys
-                .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-                .ToArray();
+                var ipEndpoints = poolConfig.Ports.Keys
+                    .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+                    .ToArray();
 
-            StartListeners(ipEndpoints);
-            SetupStats();
-            SetupVarDiff();
+                StartListeners(ipEndpoints);
+                SetupStats();
+                SetupVarDiff();
 
-            logger.Info(() => $"[{LogCat}] Online");
+                logger.Info(() => $"[{LogCat}] Online");
 
-            OutputPoolInfo();
+                OutputPoolInfo();
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
         }
 
         #endregion // API-Surface

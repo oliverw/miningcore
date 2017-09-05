@@ -527,7 +527,15 @@ namespace MiningCore
                 // pre-start attachments
                 shareRecorder.AttachPool(pool);
 
-                await pool.StartAsync();
+                try
+                {
+                    await pool.StartAsync();
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(ex);
+                }
 
                 // post-start attachments
                 apiServer.AttachPool(pool);
