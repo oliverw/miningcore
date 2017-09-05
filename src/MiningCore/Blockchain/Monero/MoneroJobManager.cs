@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Monero
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-            BlockchainStats.BlockHeight = (int) info.TargetHeight;
+            BlockchainStats.BlockHeight = (int) info.Height;
             BlockchainStats.NetworkDifficulty = info.Difficulty;
             BlockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
             BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
