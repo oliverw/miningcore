@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             catch (Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Enable to convert suggested difficulty {request.Params}");
+                logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
             }
         }
 
