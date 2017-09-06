@@ -37,7 +37,7 @@ Viacoin | Yes | No |
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
 
-### Compiling from Source
+### Building from Source (shell)
 
 Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
 
