@@ -13,6 +13,25 @@ Miningcore is the multi-currency pool-engine powering [poolmining.org](https://p
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
+### Coins
+
+Coin | Implemented | Tested | Planned
+--- | :---: | :---: | :---: 
+Monero | Yes | Yes |  
+Litecoin | Yes | Yes |  
+Bitcoin | Yes | Yes |  
+Bitcoin Cash | Yes | Yes |  
+Zcash | No |  | Oct 2017
+Ethereum | No |  | Nov 2017
+Ethereum Classic | No |  | Nov 2017
+DASH | No |  | Dec 2017
+Groestlcoin | Yes | Yes |  
+Dogecoin | Yes | No |  
+Einsteinium | Yes | No |  
+DigiByte | Yes | No |  
+Namecoin | Yes | No |  
+Viacoin | Yes | No |  
+
 ### Runtime Requirements
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
