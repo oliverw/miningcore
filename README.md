@@ -46,11 +46,11 @@ git clone https://github.com/coinfoundry/miningcore
 cd miningcore
 dotnet publish -c Release --framework netcoreapp2.0 -o bin
 ```
-Copy config.json to <code>bin</code>, edit it to your liking and run:
+Copy <code>config.json</code> to <code>bin</code>, edit it to your liking and run:
 
 ```bash
 cd bin
-dotnet dotnet MiningCore.dll -c config.json
+dotnet MiningCore.dll -c config.json
 ```
 
 ### Building from Source (Visual Studio)
