@@ -1,6 +1,6 @@
-## Miningcore
+## MiningCore
 
-Miningcore is the multi-currency pool-engine powering [poolmining.org](https://poolmining.org)
+MiningCore is the multi-currency pool-engine powering [poolmining.org](https://poolmining.org)
 
 ### Features
 
