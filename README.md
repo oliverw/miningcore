@@ -16,7 +16,7 @@ Miningcore is the multi-currency pool-engine powering [poolmining.org](https://p
 ### Coins
 
 Coin | Implemented | Tested | Planned
---- | :---: | :---: | :---: 
+:--- | :---: | :---: | :---: 
 Monero | Yes | Yes |  
 Litecoin | Yes | Yes |  
 Bitcoin | Yes | Yes |  
