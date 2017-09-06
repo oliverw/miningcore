@@ -44,7 +44,7 @@ git clone https://github.com/coinfoundry/miningcore
 cd miningcore
 dotnet publish -c Release --framework netcoreapp2.0 -o bin
 ```
-Copy config.json from to <code>bin</code>, edit it to your liking and run:
+Copy config.json to <code>bin</code>, edit it to your liking and run:
 
 ```bash
 cd bin
