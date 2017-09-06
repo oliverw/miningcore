@@ -53,3 +53,8 @@ cd bin
 dotnet dotnet MiningCore.dll -c config.json
 ```
 
+### Building from Source (Visual Studio)
+
+- Install Visual Studio 2017 (Community Edition is sufficient)
+- Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
+- Open MiningCore.sln in VS 2017
