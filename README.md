@@ -37,4 +37,17 @@ Viacoin | Yes | No |
 
 ### Compiling from Source
 
-- Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
+Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
+
+```bash
+git clone https://github.com/coinfoundry/miningcore
+cd miningcore
+dotnet publish -c Release --framework netcoreapp2.0 -o bin
+```
+Copy config.json from to <code>bin</code>, edit it to your liking and run:
+
+```bash
+cd bin
+dotnet dotnet MiningCore.dll -c config.json
+```
+
