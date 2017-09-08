@@ -22,7 +22,7 @@ build_script:
 
 # to run tests again only selected assemblies and/or categories
 test_script:
- - cd src\MiningCore.Tests
+ - cd ..\MiningCore.Tests
  - dotnet test
 
 #---------------------------------#
