@@ -2,7 +2,7 @@
 
 MiningCore is the multi-currency pool-engine powering [poolmining.org](https://poolmining.org)
 
-Even though the pool engine can be used to run a production-pool, doing so currently requires to 
+Even though the pool engine can be used to run a production-pool, doing so currently requires to
 develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
 This is going to change in the future.
 
@@ -21,21 +21,21 @@ This is going to change in the future.
 ### Coins
 
 Coin | Implemented | Tested | Planned
-:--- | :---: | :---: | :---: 
-Monero | Yes | Yes |  
-Litecoin | Yes | Yes |  
-Bitcoin | Yes | Yes |  
-Bitcoin Cash | Yes | Yes |  
+:--- | :---: | :---: | :---:
+Monero | Yes | Yes |
+Litecoin | Yes | Yes |
+Bitcoin | Yes | Yes |
+Bitcoin Cash | Yes | Yes |
 Zcash | No |  | Oct 2017
 Ethereum | No |  | Nov 2017
 Ethereum Classic | No |  | Nov 2017
 DASH | No |  | Dec 2017
-Groestlcoin | Yes | Yes |  
-Dogecoin | Yes | No |  
-Einsteinium | Yes | No |  
-DigiByte | Yes | No |  
-Namecoin | Yes | No |  
-Viacoin | Yes | No |  
+Groestlcoin | Yes | Yes |
+Dogecoin | Yes | No |
+Einsteinium | Yes | No |
+DigiByte | Yes | No |
+Namecoin | Yes | No |
+Viacoin | Yes | No |
 
 ### Runtime Requirements
 
@@ -43,40 +43,44 @@ Viacoin | Yes | No |
 
 ### Building from Source (Shell)
 
-Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
+Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
 
 ```bash
 git clone https://github.com/coinfoundry/miningcore
 cd miningcore/src/miningcore
-dotnet publish -c Release --framework netcoreapp2.0 -o bin
 ```
 
-On Linux the following steps are required to build the native libraries: 
+#### Linux
+
+Install dev-dependencies (Ubuntu)
 
 ```bash
-# install dev dependencies (Ubuntu)
 apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev
+```
 
-# build libcryptonote
-cd miningcore/src/Native/libcryptonote
-make
-cp libcryptonote.so <dotnet-publish-output-directory>
+Build
 
-# build libmultihash
-cd miningcore/src/Native/libmultihash
-make
-cp libmultihash.so <dotnet-publish-output-directory>
+```bash
+./linux-build.sh
+```
+
+#### Windows
+
+Build
+
+```bash
+windows-build.bat
 ```
 
 Now copy <code>config.json</code> to <code>bin</code>, edit it to your liking and run:
 
 ```bash
-cd bin
+cd ../../build
 dotnet MiningCore.dll -c config.json
 ```
 
 ### Building from Source (Visual Studio)
 
 - Install Visual Studio 2017 (Community Edition is sufficient)
-- Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform 
+- Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
 - Open MiningCore.sln in VS 2017
