@@ -9,43 +9,21 @@ image: Visual Studio 2017
 #       build configuration       #
 #---------------------------------#
 
-# build platform, i.e. x86, x64, Any CPU. This setting is optional.
-platform: Any CPU
-
-# to add several platforms to build matrix:
-#platform:
-#  - x86
-#  - Any CPU
-
-# build Configuration, i.e. Debug, Release, etc.
-configuration: Release
-
-# to add several configurations to build matrix:
-#configuration:
-#  - Debug
-#  - Release
-
-build:
-  parallel: true                  # enable MSBuild parallel builds
-  project: src\MiningCore.sln      # path to Visual Studio solution or project
-
-  # MSBuild verbosity level
-  verbosity: normal # quiet|minimal|normal|detailed
-
 # scripts to run before build
 before_build: dotnet restore src
+
+build_script:
+  - cd src\MiningCore
+  - dotnet build -c Release --framework netcoreapp2.0
 
 #---------------------------------#
 #       tests configuration       #
 #---------------------------------#
 
 # to run tests again only selected assemblies and/or categories
-test:
-  assemblies:
-    only:
-      - MiningCore.Tests.dll
-
-
+test_script:
+ - cd src\MiningCore.Tests
+ - dotnet test
 
 #---------------------------------#
 #         notifications           #
