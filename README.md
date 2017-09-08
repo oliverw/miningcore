@@ -1,5 +1,4 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/cdnjs/cdnjs.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 ## MiningCore
