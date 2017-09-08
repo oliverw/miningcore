@@ -1,0 +1,56 @@
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
+# Build worker image (VM template)
+image: Visual Studio 2017
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+# build platform, i.e. x86, x64, Any CPU. This setting is optional.
+platform: Any CPU
+
+# to add several platforms to build matrix:
+#platform:
+#  - x86
+#  - Any CPU
+
+# build Configuration, i.e. Debug, Release, etc.
+configuration: Release
+
+# to add several configurations to build matrix:
+#configuration:
+#  - Debug
+#  - Release
+
+build:
+  parallel: true                  # enable MSBuild parallel builds
+  project: src\MiningCore.sln      # path to Visual Studio solution or project
+
+  # MSBuild verbosity level
+  verbosity: normal # quiet|minimal|normal|detailed
+
+#---------------------------------#
+#       tests configuration       #
+#---------------------------------#
+
+# to run tests again only selected assemblies and/or categories
+test:
+  assemblies:
+    only:
+      - MiningCore.Tests.dll
+
+
+
+#---------------------------------#
+#         notifications           #
+#---------------------------------#
+
+notifications:
+  # Webhook
+  - provider: Webhook
+    url: https://registry.hub.docker.com/u/coinfoundry/miningcore-docker/trigger/5cea19ab-b489-4f7c-9fb2-da4112c51e66/
+    on_build_success: true
+    on_build_failure: false
