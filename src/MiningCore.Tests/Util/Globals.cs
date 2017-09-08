@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace MiningForce.Tests.Util
+namespace MiningCore.Tests.Util
 {
     public class Globals
     {

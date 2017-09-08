@@ -35,7 +35,15 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.JsonRpc
 {
-    public class JsonRpcConnection
+    public interface IJsonRpcConnection
+    {
+        IObservable<Timestamped<JsonRpcRequest>> Received { get; }
+        string ConnectionId { get; }
+        void Send<T>(JsonRpcResponse<T> response);
+        void Send<T>(JsonRpcRequest<T> request);
+    }
+
+    public class JsonRpcConnection : IJsonRpcConnection
     {
         public JsonRpcConnection(JsonSerializerSettings serializerSettings)
         {

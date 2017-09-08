@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Security.Cryptography;
+using MiningCore.Contracts;
 
 namespace MiningCore.Crypto.Hashing.Algorithms
 {
@@ -29,6 +30,8 @@ namespace MiningCore.Crypto.Hashing.Algorithms
     {
         public byte[] Digest(byte[] data, ulong nTime)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             using (var hasher = SHA256.Create())
             {
                 return hasher.ComputeHash(hasher.ComputeHash(data));

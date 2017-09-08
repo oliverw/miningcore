@@ -58,7 +58,7 @@ using NLog.Targets;
 
 namespace MiningCore
 {
-    internal class Program
+    public class Program
     {
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static ILogger logger;
@@ -574,7 +574,7 @@ namespace MiningCore
         /// <summary>
         /// work-around for libmultihash.dll not being found when running in dev-environment
         /// </summary>
-        private static void PreloadNativeLibs()
+        public static void PreloadNativeLibs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -584,7 +584,7 @@ namespace MiningCore
 
             // load it
             var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
-            var appRoot = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var appRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             foreach (var nativeLib in NativeLibs)
             {

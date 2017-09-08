@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Linq;
+using MiningCore.Contracts;
 using MiningCore.Extensions;
 using MiningCore.Native;
 
@@ -28,9 +29,10 @@ namespace MiningCore.Crypto.Hashing.Algorithms
     {
         public byte[] Digest(byte[] data, ulong nTime)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             // concat nTime as hex string to data
-            var dataEx = data.Concat(
-                nTime.ToString("X").HexToByteArray()).ToArray();
+            var dataEx = data.Concat(nTime.ToString("X").HexToByteArray()).ToArray();
 
             var result = new byte[32];
 

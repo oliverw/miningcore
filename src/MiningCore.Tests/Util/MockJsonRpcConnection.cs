@@ -1,14 +1,21 @@
-﻿namespace MiningCore.Tests.Util
+﻿using System;
+using System.Net;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Text;
+using MiningCore.JsonRpc;
+
+namespace MiningCore.Tests.Util
 {
-    /*
-    public class MockLibUvConnection : ILibUvConnection
+    public class MockJsonRpcConnection : IJsonRpcConnection
     {
-        public MockLibUvConnection(IPEndPoint remoteEndPoint = null, string connectionId = "MOCKCONN")
+        public MockJsonRpcConnection(IPEndPoint remoteEndPoint = null, string connectionId = "MOCKCONN")
         {
             RemoteEndpoint = remoteEndPoint ?? new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4444);
             ConnectionId = connectionId;
 
-            Received = ReceiveSubject.AsObservable();
+            Received = ReceiveSubject.AsObservable().Timestamp();
             Sent = sentSubject.AsObservable();
             Closed = closedSubject.AsObservable();
         }
@@ -18,7 +25,7 @@
 
         #region ILibUvConnection
 
-        public IObservable<byte[]> Received { get; }
+        public IObservable<Timestamped<JsonRpcRequest>> Received { get; }
 
         public void Send(byte[] data)
         {
@@ -33,12 +40,22 @@
         public IPEndPoint RemoteEndpoint { get; }
         public string ConnectionId { get; }
 
+        public void Send<T>(JsonRpcResponse<T> response)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Send<T>(JsonRpcRequest<T> request)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion // ILibUvConnection
 
         /// <summary>
         /// Inject data into the "Received" stream
         /// </summary>
-        public ISubject<byte[]> ReceiveSubject { get; } = new ReplaySubject<byte[]>();
+        public ISubject<JsonRpcRequest> ReceiveSubject { get; } = new ReplaySubject<JsonRpcRequest>();
 
         /// <summary>
         /// Allows observing data sent through the connection
@@ -53,17 +70,9 @@
         /// <summary>
         /// Inject data into the "Received" stream
         /// </summary>
-        public void Receive(byte[] data)
+        public void Receive(JsonRpcRequest data)
         {
             ReceiveSubject.OnNext(data);
-        }
-
-        /// <summary>
-        /// Inject data into the "Received" stream
-        /// </summary>
-        public void Receive(string data)
-        {
-            Receive(Encoding.UTF8.GetBytes(data));
         }
 
         /// <summary>
@@ -82,5 +91,4 @@
             ReceiveSubject.OnError(ex);
         }
     }
-    */
 }

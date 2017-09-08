@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using MiningCore.Contracts;
 using MiningCore.Native;
 
 namespace MiningCore.Crypto.Hashing.Algorithms
@@ -35,6 +36,8 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 
         public byte[] Digest(byte[] data, ulong nTime)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             var result = new byte[32];
 
             fixed (byte* input = data)

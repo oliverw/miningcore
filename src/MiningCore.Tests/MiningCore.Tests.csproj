@@ -22,4 +22,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="JsonRpc\" />
+  </ItemGroup>
+
 </Project>

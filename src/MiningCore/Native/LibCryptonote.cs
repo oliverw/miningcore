@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using MiningCore.Contracts;
 
 namespace MiningCore.Native
 {
@@ -80,6 +81,8 @@ namespace MiningCore.Native
 
         public static uint DecodeAddress(string address)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+
             var data = Encoding.UTF8.GetBytes(address);
 
             fixed (byte* input = data)
@@ -90,6 +93,8 @@ namespace MiningCore.Native
 
         public static byte[] CryptonightHashSlow(byte[] data)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             var result = new byte[32];
 
             fixed (byte* input = data)
@@ -105,6 +110,8 @@ namespace MiningCore.Native
 
         public static byte[] CryptonightHashFast(byte[] data)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+
             var result = new byte[32];
 
             fixed (byte* input = data)
