@@ -67,7 +67,7 @@ apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg
 windows-build.bat
 ```
 
-Now copy <code>config.json</code> to <code>bin</code>, edit it to your liking and run:
+Now copy <code>config.json</code> to <code>../../build</code>, edit it to your liking and run:
 
 ```bash
 cd ../../build
