@@ -32,6 +32,9 @@ build:
   # MSBuild verbosity level
   verbosity: normal # quiet|minimal|normal|detailed
 
+# scripts to run before build
+before_build: dotnet restore src
+
 #---------------------------------#
 #       tests configuration       #
 #---------------------------------#
