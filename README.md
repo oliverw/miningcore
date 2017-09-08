@@ -57,16 +57,11 @@ Install dev-dependencies (Ubuntu)
 ```bash
 apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev
 ```
-
-Build
-
 ```bash
 ./linux-build.sh
 ```
 
 #### Windows
-
-Build
 
 ```bash
 windows-build.bat
