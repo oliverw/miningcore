@@ -47,7 +47,7 @@ Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for
 
 ```bash
 git clone https://github.com/coinfoundry/miningcore
-cd miningcore/src/miningcore
+cd miningcore/src/MiningCore
 ```
 
 #### Linux
