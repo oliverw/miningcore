@@ -2,6 +2,10 @@
 
 MiningCore is the multi-currency pool-engine powering [poolmining.org](https://poolmining.org)
 
+Even though the pool engine can be used to run a production-pool, doing so currently requires to 
+develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
+This is going to change in the future.
+
 ### Features
 
 - Supports clusters of pools each running individual currencies
