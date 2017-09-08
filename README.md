@@ -47,10 +47,28 @@ Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for
 
 ```bash
 git clone https://github.com/coinfoundry/miningcore
-cd miningcore
+cd miningcore/src/miningcore
 dotnet publish -c Release --framework netcoreapp2.0 -o bin
 ```
-Copy <code>config.json</code> to <code>bin</code>, edit it to your liking and run:
+
+On Linux the following steps are required to build the native libraries: 
+
+```bash
+# install dev dependencies (Ubuntu)
+apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev
+
+# build libcryptonote
+cd miningcore/src/Native/libcryptonote
+make
+cp libcryptonote.so <dotnet-publish-output-directory>
+
+# build libmultihash
+cd miningcore/src/Native/libmultihash
+make
+cp libmultihash.so <dotnet-publish-output-directory>
+```
+
+Now copy <code>config.json</code> to <code>bin</code>, edit it to your liking and run:
 
 ```bash
 cd bin
