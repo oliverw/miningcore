@@ -133,6 +133,7 @@ PRAGMA_WARNING_DISABLE_VS(4355)
     boost::system::error_code ec;
     auto remote_ep = socket_.remote_endpoint(ec);
     CHECK_AND_NO_ASSERT_MES(!ec, false, "Failed to get remote endpoint: " << ec.message() << ':' << ec.value());
+    CHECK_AND_NO_ASSERT_MES(remote_ep.address().is_v4(), false, "IPv6 not supported here");
 
     auto local_ep = socket_.local_endpoint(ec);
     CHECK_AND_NO_ASSERT_MES(!ec, false, "Failed to get local endpoint: " << ec.message() << ':' << ec.value());
@@ -145,14 +146,14 @@ PRAGMA_WARNING_DISABLE_VS(4355)
     // that stuff turns out to be included, even though it's from src... Taking advantage
     random_uuid = crypto::rand<boost::uuids::uuid>();
 
-    context.set_details(random_uuid, ip_, remote_ep.port(), is_income);
+    context.set_details(random_uuid, new epee::net_utils::ipv4_network_address(ip_, remote_ep.port()), is_income);
     _dbg3("[sock " << socket_.native_handle() << "] new connection from " << print_connection_context_short(context) <<
       " to " << local_ep.address().to_string() << ':' << local_ep.port() <<
       ", total sockets objects " << m_ref_sock_count);
 
-    if(m_pfilter && !m_pfilter->is_remote_ip_allowed(context.m_remote_ip))
+    if(m_pfilter && !m_pfilter->is_remote_host_allowed(context.m_remote_address))
     {
-      _dbg2("[sock " << socket_.native_handle() << "] ip denied " << string_tools::get_ip_string_from_int32(context.m_remote_ip) << ", shutdowning connection");
+      _dbg2("[sock " << socket_.native_handle() << "] host denied " << context.m_remote_address.host_str() << ", shutdowning connection");
       close();
       return false;
     }
@@ -208,14 +209,14 @@ PRAGMA_WARNING_DISABLE_VS(4355)
   bool connection<t_protocol_handler>::add_ref()
   {
     TRY_ENTRY();
-    //_dbg3("[sock " << socket_.native_handle() << "] add_ref, m_peer_number=" << mI->m_peer_number);
-    CRITICAL_REGION_LOCAL(m_self_refs_lock);
-    //_dbg3("[sock " << socket_.native_handle() << "] add_ref 2, m_peer_number=" << mI->m_peer_number);
 
     // Use safe_shared_from_this, because of this is public method and it can be called on the object being deleted
     auto self = safe_shared_from_this();
     if(!self)
       return false;
+    //_dbg3("[sock " << socket_.native_handle() << "] add_ref, m_peer_number=" << mI->m_peer_number);
+    CRITICAL_REGION_LOCAL(self->m_self_refs_lock);
+    //_dbg3("[sock " << socket_.native_handle() << "] add_ref 2, m_peer_number=" << mI->m_peer_number);
     if(m_was_shutdown)
       return false;
     m_self_refs.push_back(self);

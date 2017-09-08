@@ -42,9 +42,7 @@
 
 #if defined(_MSC_VER)
 #define alloca(x) _alloca(x)
-#endif
-
-/*** 
+#endif/*** 
 * Round to power of two, for count>=3 and for count being not too large (as reasonable for tree hash calculations)
 */
 size_t tree_hash_cnt(size_t count) {

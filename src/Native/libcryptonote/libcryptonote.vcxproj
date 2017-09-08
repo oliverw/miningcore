@@ -205,6 +205,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common\base58.cpp" />
+    <ClCompile Include="contrib\epee\src\hex.cpp" />
     <ClCompile Include="crypto\aesb.c" />
     <ClCompile Include="crypto\blake256.c" />
     <ClCompile Include="crypto\chacha8.c" />

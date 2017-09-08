@@ -47,7 +47,7 @@
 extern int aesb_single_round(const uint8_t *in, uint8_t*out, const uint8_t *expandedKey);
 extern int aesb_pseudo_round(const uint8_t *in, uint8_t *out, const uint8_t *expandedKey);
 
-#if !defined(NO_AES_NI) && (defined(__x86_64__) || (defined(_MSC_VER) && defined(_WIN64)))
+#if defined(__x86_64__) || (defined(_MSC_VER) && defined(_WIN64))
 // Optimised code below, uses x86-specific intrinsics, SSE2, AES-NI
 // Fall back to more portable code is down at the bottom
 
@@ -722,32 +722,24 @@ union cn_slow_hash_state
  * key schedule. Don't try to use this for vanilla AES.
 */
 static void aes_expand_key(const uint8_t *key, uint8_t *expandedKey) {
-__asm__("mov x2, %1\n\t" : : "r"(key), "r"(expandedKey));
+static const int rcon[] = {
+	0x01,0x01,0x01,0x01,
+	0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d,	// rotate-n-splat
+	0x1b,0x1b,0x1b,0x1b };
 __asm__(
-"	adr	x3,Lrcon\n"
-"\n"
 "	eor	v0.16b,v0.16b,v0.16b\n"
-"	ld1	{v3.16b},[x0],#16\n"
-"	ld1	{v1.4s,v2.4s},[x3],#32\n"
-"	b	L256\n"
-".align 5\n"
-"Lrcon:\n"
-".long	0x01,0x01,0x01,0x01\n"
-".long	0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d	// rotate-n-splat\n"
-".long	0x1b,0x1b,0x1b,0x1b\n"
+"	ld1	{v3.16b},[%0],#16\n"
+"	ld1	{v1.4s,v2.4s},[%2],#32\n"
+"	ld1	{v4.16b},[%0]\n"
+"	mov	w2,#5\n"
+"	st1	{v3.4s},[%1],#16\n"
 "\n"
-".align 4\n"
-"L256:\n"
-"	ld1	{v4.16b},[x0]\n"
-"	mov	w1,#5\n"
-"	st1	{v3.4s},[x2],#16\n"
-"\n"
-"Loop256:\n"
+"1:\n"
 "	tbl	v6.16b,{v4.16b},v2.16b\n"
 "	ext	v5.16b,v0.16b,v3.16b,#12\n"
-"	st1	{v4.4s},[x2],#16\n"
+"	st1	{v4.4s},[%1],#16\n"
 "	aese	v6.16b,v0.16b\n"
-"	subs	w1,w1,#1\n"
+"	subs	w2,w2,#1\n"
 "\n"
 "	eor	v3.16b,v3.16b,v5.16b\n"
 "	ext	v5.16b,v0.16b,v5.16b,#12\n"
@@ -757,8 +749,8 @@ __asm__(
 "	eor	v3.16b,v3.16b,v5.16b\n"
 "	shl	v1.16b,v1.16b,#1\n"
 "	eor	v3.16b,v3.16b,v6.16b\n"
-"	st1	{v3.4s},[x2],#16\n"
-"	b.eq	Ldone\n"
+"	st1	{v3.4s},[%1],#16\n"
+"	b.eq	2f\n"
 "\n"
 "	dup	v6.4s,v3.s[3]		// just splat\n"
 "	ext	v5.16b,v0.16b,v4.16b,#12\n"
@@ -771,9 +763,9 @@ __asm__(
 "	eor	v4.16b,v4.16b,v5.16b\n"
 "\n"
 "	eor	v4.16b,v4.16b,v6.16b\n"
-"	b	Loop256\n"
+"	b	1b\n"
 "\n"
-"Ldone:\n");
+"2:\n" : : "r"(key), "r"(expandedKey), "r"(rcon));
 }
 
 /* An ordinary AES round is a sequence of SubBytes, ShiftRows, MixColumns, AddRoundKey. There
@@ -987,34 +979,31 @@ STATIC void cn_mul128(const uint64_t *a, const uint64_t *b, uint64_t *r)
   r[1] = lo;
 }
 #else /* ARM32 */
-/* Can work as inline, but actually runs slower. Keep it separate */
 #define mul(a, b, c)	cn_mul128((const uint32_t *)a, (const uint32_t *)b, (uint32_t *)c)
-void cn_mul128(const uint32_t *aa, const uint32_t *bb, uint32_t *r)
+STATIC void cn_mul128(const uint32_t *aa, const uint32_t *bb, uint32_t *r)
 {
-  uint32_t t0, t1;
+  uint32_t t0, t1, t2=0, t3=0;
 __asm__ __volatile__(
   "umull %[t0], %[t1], %[a], %[b]\n\t"
-  "str   %[t0], [%[r], #8]\n\t"
+  "str   %[t0], %[ll]\n\t"
 
   // accumulating with 0 can never overflow/carry
-  "mov   %[t0], #0\n\t"
+  "eor   %[t0], %[t0]\n\t"
   "umlal %[t1], %[t0], %[a], %[B]\n\t"
 
-  "mov   %[a], #0\n\t"
-  "umlal %[t1], %[a], %[A], %[b]\n\t"
-  "str   %[t1], [%[r], #12]\n\t"
+  "umlal %[t1], %[t2], %[A], %[b]\n\t"
+  "str   %[t1], %[lh]\n\t"
 
-  "mov   %[b], #0\n\t"
-  "umlal %[t0], %[b], %[A], %[B]\n\t"
+  "umlal %[t0], %[t3], %[A], %[B]\n\t"
 
   // final add may have a carry
-  "adds  %[t0], %[t0], %[a]\n\t"
-  "adc   %[t1], %[b], #0\n\t"
+  "adds  %[t0], %[t0], %[t2]\n\t"
+  "adc   %[t1], %[t3], #0\n\t"
 
-  "str   %[t0], [%[r]]\n\t"
-  "str   %[t1], [%[r], #4]\n\t"
-  : [t0]"=&r"(t0), [t1]"=&r"(t1), "=m"(r[0]), "=m"(r[1]), "=m"(r[2]), "=m"(r[3])
-  : [A]"r"(aa[1]), [a]"r"(aa[0]), [B]"r"(bb[1]), [b]"r"(bb[0]), [r]"r"(r)
+  "str   %[t0], %[hl]\n\t"
+  "str   %[t1], %[hh]\n\t"
+  : [t0]"=&r"(t0), [t1]"=&r"(t1), [t2]"+r"(t2), [t3]"+r"(t3), [hl]"=m"(r[0]), [hh]"=m"(r[1]), [ll]"=m"(r[2]), [lh]"=m"(r[3])
+  : [A]"r"(aa[1]), [a]"r"(aa[0]), [B]"r"(bb[1]), [b]"r"(bb[0])
   : "cc");
 }
 #endif /* !aarch64 */
@@ -1222,10 +1211,7 @@ union cn_slow_hash_state {
 #pragma pack(pop)
 
 void cn_slow_hash(const void *data, size_t length, char *hash) {
-  // OW: causes stack overflow
-  // uint8_t long_state[MEMORY];
-  uint8_t *long_state = malloc(MEMORY);
-
+  uint8_t long_state[MEMORY];
   union cn_slow_hash_state state;
   uint8_t text[INIT_SIZE_BYTE];
   uint8_t a[AES_BLOCK_SIZE];
@@ -1293,8 +1279,6 @@ void cn_slow_hash(const void *data, size_t length, char *hash) {
   /*memcpy(hash, &state, 32);*/
   extra_hashes[state.hs.b[0] & 3](&state, 200, hash);
   oaes_free((OAES_CTX **) &aes_ctx);
-
-  free(long_state);
 }
 
 #endif

@@ -43,6 +43,16 @@
 #include "storages/portable_storage_template_helper.h"
 #include "boost/logic/tribool.hpp"
 
+#ifdef __APPLE__
+  #include <sys/times.h>
+  #include <IOKit/IOKitLib.h>
+  #include <IOKit/ps/IOPSKeys.h>
+  #include <IOKit/ps/IOPowerSources.h>
+  #include <mach/mach_host.h>
+  #include <AvailabilityMacros.h>
+  #include <TargetConditionals.h>
+#endif
+
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "miner"
 
@@ -64,8 +74,8 @@ namespace cryptonote
     const command_line::arg_descriptor<bool>        arg_bg_mining_enable =  {"bg-mining-enable", "enable/disable background mining", true, true};
     const command_line::arg_descriptor<bool>        arg_bg_mining_ignore_battery =  {"bg-mining-ignore-battery", "if true, assumes plugged in when unable to query system power status", false, true};    
     const command_line::arg_descriptor<uint64_t>    arg_bg_mining_min_idle_interval_seconds =  {"bg-mining-min-idle-interval", "Specify min lookback interval in seconds for determining idle state", miner::BACKGROUND_MINING_DEFAULT_MIN_IDLE_INTERVAL_IN_SECONDS, true};
-    const command_line::arg_descriptor<uint8_t>     arg_bg_mining_idle_threshold_percentage =  {"bg-mining-idle-threshold", "Specify minimum avg idle percentage over lookback interval", miner::BACKGROUND_MINING_DEFAULT_IDLE_THRESHOLD_PERCENTAGE, true};
-    const command_line::arg_descriptor<uint8_t>     arg_bg_mining_miner_target_percentage =  {"bg-mining-miner-target", "Specificy maximum percentage cpu use by miner(s)", miner::BACKGROUND_MINING_DEFAULT_MINING_TARGET_PERCENTAGE, true};
+    const command_line::arg_descriptor<uint16_t>     arg_bg_mining_idle_threshold_percentage =  {"bg-mining-idle-threshold", "Specify minimum avg idle percentage over lookback interval", miner::BACKGROUND_MINING_DEFAULT_IDLE_THRESHOLD_PERCENTAGE, true};
+    const command_line::arg_descriptor<uint16_t>     arg_bg_mining_miner_target_percentage =  {"bg-mining-miner-target", "Specificy maximum percentage cpu use by miner(s)", miner::BACKGROUND_MINING_DEFAULT_MINING_TARGET_PERCENTAGE, true};
   }
 
 
@@ -122,13 +132,15 @@ namespace cryptonote
     block bl = AUTO_VAL_INIT(bl);
     difficulty_type di = AUTO_VAL_INIT(di);
     uint64_t height = AUTO_VAL_INIT(height);
+    uint64_t expected_reward; //only used for RPC calls - could possibly be useful here too?
+
     cryptonote::blobdata extra_nonce;
     if(m_extra_messages.size() && m_config.current_extra_message_index < m_extra_messages.size())
     {
       extra_nonce = m_extra_messages[m_config.current_extra_message_index];
     }
 
-    if(!m_phandler->get_block_template(bl, m_mine_address, di, height, extra_nonce))
+    if(!m_phandler->get_block_template(bl, m_mine_address, di, height, expected_reward, extra_nonce))
     {
       LOG_ERROR("Failed to get_block_template(), stopping mining");
       return false;
@@ -370,13 +382,14 @@ namespace cryptonote
       boost::thread::attributes attrs;
       attrs.set_stack_size(THREAD_STACK_SIZE);
 
-      start(m_mine_address, m_threads_total, attrs, get_is_background_mining_enabled());
+      start(m_mine_address, m_threads_total, attrs, get_is_background_mining_enabled(), get_ignore_battery());
     }
   }
   //-----------------------------------------------------------------------------------------------------
   void miner::pause()
   {
     CRITICAL_REGION_LOCAL(m_miners_count_lock);
+    MDEBUG("miner::pause: " << m_pausers_count << " -> " << (m_pausers_count + 1));
     ++m_pausers_count;
     if(m_pausers_count == 1 && is_mining())
       MDEBUG("MINING PAUSED");
@@ -385,6 +398,7 @@ namespace cryptonote
   void miner::resume()
   {
     CRITICAL_REGION_LOCAL(m_miners_count_lock);
+    MDEBUG("miner::resume: " << m_pausers_count << " -> " << (m_pausers_count - 1));
     --m_pausers_count;
     if(m_pausers_count < 0)
     {
@@ -398,8 +412,8 @@ namespace cryptonote
   bool miner::worker_thread()
   {
     uint32_t th_local_index = boost::interprocess::ipcdetail::atomic_inc32(&m_thread_index);
-    MGINFO("Miner thread was started ["<< th_local_index << "]");
     MLOG_SET_THREAD_NAME(std::string("[miner ") + std::to_string(th_local_index) + "]");
+    MGINFO("Miner thread was started ["<< th_local_index << "]");
     uint32_t nonce = m_starter_nonce + th_local_index;
     uint64_t height = 0;
     difficulty_type local_diff = 0;
@@ -753,6 +767,23 @@ namespace cryptonote
 
       return true;
 
+    #elif defined(__APPLE__)
+
+      mach_msg_type_number_t count;
+      kern_return_t status;
+      host_cpu_load_info_data_t stats;      
+      count = HOST_CPU_LOAD_INFO_COUNT;
+      status = host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, (host_info_t)&stats, &count);
+      if(status != KERN_SUCCESS)
+      {
+        return false;
+      }
+
+      idle_time = stats.cpu_ticks[CPU_STATE_IDLE];
+      total_time = idle_time + stats.cpu_ticks[CPU_STATE_USER] + stats.cpu_ticks[CPU_STATE_SYSTEM];
+      
+      return true;
+
     #endif
 
     return false; // unsupported systemm..
@@ -775,7 +806,7 @@ namespace cryptonote
         return true;
       }
 
-    #elif defined(__linux__) && defined(_SC_CLK_TCK)
+    #elif (defined(__linux__) && defined(_SC_CLK_TCK)) || defined(__APPLE__)
 
       struct tms tms;
       if ( times(&tms) != (clock_t)-1 )
@@ -804,40 +835,111 @@ namespace cryptonote
         return boost::logic::tribool(power_status.ACLineStatus != 1);
     	}
 
+    #elif defined(__APPLE__) 
+      
+      #if TARGET_OS_MAC && (!defined(MAC_OS_X_VERSION_MIN_REQUIRED) || MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
+        return boost::logic::tribool(IOPSGetTimeRemainingEstimate() != kIOPSTimeRemainingUnlimited);
+      #else
+        // iOS or OSX <10.7
+        return boost::logic::tribool(boost::logic::indeterminate);
+      #endif
+
     #elif defined(__linux__)
 
-      // i've only tested on UBUNTU, these paths might be different on other systems
-      // need to figure out a way to make this more flexible
-      std::string power_supply_path = "";
-      const std::string POWER_SUPPLY_STATUS_PATHS[] = 
+      // Use the power_supply class http://lxr.linux.no/#linux+v4.10.1/Documentation/power/power_supply_class.txt
+      std::string power_supply_class_path = "/sys/class/power_supply";
+
+      boost::tribool on_battery = boost::logic::tribool(boost::logic::indeterminate);
+      if (boost::filesystem::is_directory(power_supply_class_path))
       {
-        "/sys/class/power_supply/ACAD/online",
-        "/sys/class/power_supply/AC/online"        
-      };
-      
-      for(const std::string& path : POWER_SUPPLY_STATUS_PATHS)
-      {
-        if( epee::file_io_utils::is_file_exist(path) )
+        const boost::filesystem::directory_iterator end_itr;
+        for (boost::filesystem::directory_iterator iter(power_supply_class_path); iter != end_itr; ++iter)
         {
-          power_supply_path = path;
-          break;
+          const boost::filesystem::path& power_supply_path = iter->path();
+          if (boost::filesystem::is_directory(power_supply_path))
+          {
+            std::ifstream power_supply_present_stream((power_supply_path / "present").string());
+            if (power_supply_present_stream.fail())
+            {
+              LOG_PRINT_L0("Unable to read from " << power_supply_path << " to check if power supply present");
+              continue;
+            }
+
+            if (power_supply_present_stream.get() != '1')
+            {
+              LOG_PRINT_L4("Power supply not present at " << power_supply_path);
+              continue;
+            }
+
+            boost::filesystem::path power_supply_type_path = power_supply_path / "type";
+            if (boost::filesystem::is_regular_file(power_supply_type_path))
+            {
+              std::ifstream power_supply_type_stream(power_supply_type_path.string());
+              if (power_supply_type_stream.fail())
+              {
+                LOG_PRINT_L0("Unable to read from " << power_supply_type_path << " to check power supply type");
+                continue;
+              }
+
+              std::string power_supply_type;
+              std::getline(power_supply_type_stream, power_supply_type);
+
+              // If there is an AC adapter that's present and online we can break early
+              if (boost::starts_with(power_supply_type, "Mains"))
+              {
+                boost::filesystem::path power_supply_online_path = power_supply_path / "online";
+                if (boost::filesystem::is_regular_file(power_supply_online_path))
+                {
+                  std::ifstream power_supply_online_stream(power_supply_online_path.string());
+                  if (power_supply_online_stream.fail())
+                  {
+                    LOG_PRINT_L0("Unable to read from " << power_supply_online_path << " to check ac power supply status");
+                    continue;
+                  }
+
+                  if (power_supply_online_stream.get() == '1')
+                  {
+                    return boost::logic::tribool(false);
+                  }
+                }
+              }
+              else if (boost::starts_with(power_supply_type, "Battery") && boost::logic::indeterminate(on_battery))
+              {
+                boost::filesystem::path power_supply_status_path = power_supply_path / "status";
+                if (boost::filesystem::is_regular_file(power_supply_status_path))
+                {
+                  std::ifstream power_supply_status_stream(power_supply_status_path.string());
+                  if (power_supply_status_stream.fail())
+                  {
+                    LOG_PRINT_L0("Unable to read from " << power_supply_status_path << " to check battery power supply status");
+                    continue;
+                  }
+
+                  // Possible status are Charging, Full, Discharging, Not Charging, and Unknown
+                  // We are only need to handle negative states right now
+                  std::string power_supply_status;
+                  std::getline(power_supply_status_stream, power_supply_status);
+                  if (boost::starts_with(power_supply_status, "Charging") || boost::starts_with(power_supply_status, "Full"))
+                  {
+                    on_battery = boost::logic::tribool(false);
+                  }
+
+                  if (boost::starts_with(power_supply_status, "Discharging"))
+                  {
+                    on_battery = boost::logic::tribool(true);
+                  }
+                }
+              }
+            }
+          }
         }
       }
-      
-      if( power_supply_path.empty() )
-      {
-        LOG_ERROR("Couldn't find battery/power status file, can't determine if plugged in!");
-        return boost::logic::tribool(boost::logic::indeterminate);;
-      }
 
-      std::ifstream power_stream(power_supply_path);
-      if( power_stream.fail() )
+      if (boost::logic::indeterminate(on_battery))
       {
-        LOG_ERROR("failed to open '" << power_supply_path << "'");
-        return boost::logic::tribool(boost::logic::indeterminate);;
+        LOG_ERROR("couldn't query power status from " << power_supply_class_path);
       }
-
-      return boost::logic::tribool( (power_stream.get() != '1') );
+      return on_battery;
 
     #endif
     
