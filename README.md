@@ -41,6 +41,16 @@ Viacoin | Yes | No |
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
 
+### Docker
+
+The official [MiningCore docker-image](https://hub.docker.com/r/coinfoundry/miningcore-docker/) expects a valid pool configuration file as volume argument:
+
+```bash
+$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro coinfoundry/miningcore-docker
+```
+
+You also need to expose all stratum ports specified in your configuration file.
+
 ### Building from Source (Shell)
 
 Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
