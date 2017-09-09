@@ -41,6 +41,9 @@ namespace MiningCore.Native
 
         public static byte[] ConvertBlob(byte[] data)
         {
+            Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
+
             fixed (byte* input = data)
             {
                 // provide reasonable large output buffer
