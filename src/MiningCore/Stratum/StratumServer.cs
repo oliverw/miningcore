@@ -53,14 +53,14 @@ namespace MiningCore.Stratum
             new Dictionary<string, StratumClient<TClientContext>>();
 
         protected readonly IComponentContext ctx;
-        protected readonly Dictionary<int, IDisposable> ports = new Dictionary<int, IDisposable>();
+        protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
         protected ILogger logger;
 
         protected abstract string LogCat { get; }
 
-        protected void StartListeners(IPEndPoint[] stratumPorts)
+        public void StartListeners(params IPEndPoint[] stratumPorts)
         {
             Contract.RequiresNonNull(ports, nameof(ports));
 
@@ -96,6 +96,25 @@ namespace MiningCore.Stratum
                 task.Start();
 
                 logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
+            }
+        }
+
+        public void StopListeners()
+        {
+            lock (ports)
+            {
+                var portValues = ports.Values.ToArray();
+
+                for (int i = 0; i < portValues.Length; i++)
+                {
+                    var listener = portValues[i];
+
+                    listener.Shutdown((tcp, ex) =>
+                    {
+                        if(tcp?.IsValid == true)
+                            tcp.Dispose();
+                    });
+                }
             }
         }
 
@@ -175,7 +194,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
+        protected virtual void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
             var opEx = ex as OperationException;
 
@@ -186,7 +205,7 @@ namespace MiningCore.Stratum
             DisconnectClient(client);
         }
 
-        private void OnReceiveComplete(StratumClient<TClientContext> client)
+        protected virtual void OnReceiveComplete(StratumClient<TClientContext> client)
         {
             logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received EOF");
 
