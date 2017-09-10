@@ -36,6 +36,7 @@ using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -61,7 +62,7 @@ namespace MiningCore.Api
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
                 {new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync},
-                {new Regex("^/api/pool/(?<poolId>[^/]+)/stats$", RegexOptions.Compiled), HandleGetPoolStatsAsync}
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync}
             };
         }
 
@@ -160,10 +161,44 @@ namespace MiningCore.Api
                 }
             }
 
-            var stats = cf.Run(con => statsRepo.PageStatsBetween(
-                con, poolId, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, 0, 20));
+            // set range
+            var end = DateTime.UtcNow;
+            if (end.Minute < 30)
+                end = end.AddHours(-1);
+            var start = end.AddDays(-1);
 
-            await SendJson(context, stats);
+            var stats = cf.Run(con => statsRepo.GetHourlyStatsBetween(
+                con, poolId, start, end));
+
+            var response = new GetPoolStatsResponse
+            {
+                Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
+            };
+
+            // Remap hashrate baseline according to best fitting unit
+            var maxHashrate = response.Stats.Max(x => x.PoolHashRate);
+
+            if (maxHashrate > 0)
+            {
+                var hashRate = maxHashrate;
+
+                var i = -1;
+
+                do
+                {
+                    hashRate = hashRate / 1024;
+                    i++;
+                } while (hashRate > 1024 && i < FormatUtil.HashRateUnits.Length - 1);
+
+                var multiplier = hashRate / maxHashrate;
+
+                foreach (var stat in response.Stats)
+                    stat.PoolHashRate *= multiplier;
+
+                response.HashrateUnit = FormatUtil.HashRateUnits[i];
+            }
+
+            await SendJson(context, response);
         }
 
         #region API-Surface

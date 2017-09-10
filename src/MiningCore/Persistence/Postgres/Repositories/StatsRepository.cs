@@ -58,5 +58,20 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .Select(mapper.Map<PoolStats>)
                 .ToArray();
         }
+
+        public PoolStats[] GetHourlyStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end)
+        {
+            var query = "SELECT date_trunc('hour', created) AS created, " +
+                        "   AVG(poolhashrate) AS poolhashrate, " +
+                        "   CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
+                        "FROM poolstats " +
+                        "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
+                        "GROUP BY date_trunc('hour', created) " +
+                        "ORDER BY created;";
+
+            return con.Query<Entities.PoolStats>(query, new { poolId, start, end })
+                .Select(mapper.Map<PoolStats>)
+                .ToArray();
+        }
     }
 }

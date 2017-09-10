@@ -73,3 +73,4 @@ CREATE TABLE poolstats
 );
 
 CREATE INDEX IDX_POOLSTATS_POOL_CREATED on poolstats(poolid, created);
+CREATE INDEX IDX_POOLSTATS_POOL_CREATED_HOUR on poolstats(poolid, date_trunc('hour',created));

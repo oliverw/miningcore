@@ -47,6 +47,7 @@ namespace MiningCore
 
             // API
             CreateMap<PoolConfig, PoolInfo>();
+            CreateMap<PoolStats, AggregatedPoolStats>();
 
             // PostgreSQL
             CreateMap<Share, Persistence.Postgres.Entities.Share>();

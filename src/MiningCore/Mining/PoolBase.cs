@@ -97,7 +97,6 @@ namespace MiningCore.Mining
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        private static readonly string[] HashRateUnits = {" KH", " MH", " GH", " TH", " PH"};
         protected override string LogCat => "Pool";
 
         protected abstract Task SetupJobManager();
@@ -335,19 +334,6 @@ namespace MiningCore.Mining
             return new IPEndPoint(listenAddress, port);
         }
 
-        private static string FormatHashRate(double hashrate)
-        {
-            var i = -1;
-
-            do
-            {
-                hashrate = hashrate / 1024;
-                i++;
-            } while (hashrate > 1024 && i < HashRateUnits.Length - 1);
-
-            return (int) Math.Abs(hashrate) + HashRateUnits[i];
-        }
-
         private void OutputPoolInfo()
         {
             var msg = $@"
@@ -359,7 +345,7 @@ Detected Reward Type:   {blockchainStats.RewardType}
 Current Block Height:   {blockchainStats.BlockHeight}
 Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
-Network Hash Rate:      {FormatHashRate(blockchainStats.NetworkHashRate)}
+Network Hash Rate:      {FormatUtil.FormatHashRate(blockchainStats.NetworkHashRate)}
 Stratum Port(s):        {string.Join(", ", poolConfig.Ports.Keys)}
 Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 ";

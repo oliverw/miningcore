@@ -19,19 +19,20 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
-using Dapper;
-using MiningCore.Persistence.Model;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Api.Responses
 {
-    public interface IStatsRepository
+    public class AggregatedPoolStats
     {
-        void Insert(IDbConnection con, IDbTransaction tx, PoolStats share);
+        public float PoolHashRate { get; set; }
+        //public int ConnectedMiners { get; set; }
 
-        PoolStats[] PageStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page,
-            int pageSize);
+        public DateTime Created { get; set; }
+    }
 
-        PoolStats[] GetHourlyStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end);
+    public class GetPoolStatsResponse
+    {
+        public AggregatedPoolStats[] Stats { get; set; }
+        public string HashrateUnit { get; set; }
     }
 }
