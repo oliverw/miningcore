@@ -244,7 +244,7 @@ namespace MiningCore.Api
                 foreach (var stat in response.Stats)
                     stat.PoolHashRate *= multiplier;
 
-                response.HashrateUnit = FormatUtil.HashRateUnits[i];
+                response.HashrateUnit = FormatUtil.HashRateUnits[i].Trim();
             }
 
             await SendJson(context, response);
