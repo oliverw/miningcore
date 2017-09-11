@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Data;
+using System.Linq;
 using AutoMapper;
 using Dapper;
 using MiningCore.Persistence.Model;
@@ -43,6 +44,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
             con.Execute(query, mapped, tx);
+        }
+
+        public Payment[] PagePayments(IDbConnection con, string poolId, int page, int pageSize)
+        {
+            var query = "SELECT * FROM payments WHERE poolid = @poolid " +
+                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.Payment>(query, new { poolId, offset = page * pageSize, pageSize })
+                .Select(mapper.Map<Payment>)
+                .ToArray();
         }
     }
 }

@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Data;
 using System.Linq;
 using AutoMapper;
@@ -59,6 +60,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var query = "UPDATE blocks SET status = @status, reward = @reward WHERE id = @id";
             con.Execute(query, mapped, tx);
+        }
+
+        public Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus status, int page, int pageSize)
+        {
+            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status " +
+                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.Block>(query, new { poolId, status = status.ToString().ToLower(), offset = page * pageSize, pageSize })
+                .Select(mapper.Map<Block>)
+                .ToArray();
         }
 
         public Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)

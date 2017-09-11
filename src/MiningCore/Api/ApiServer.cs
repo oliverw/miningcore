@@ -35,6 +35,7 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Persistence;
+using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -49,25 +50,35 @@ namespace MiningCore.Api
         public ApiServer(
             IMapper mapper,
             IConnectionFactory cf,
+            IBlockRepository blocksRepo,
+            IPaymentRepository paymentsRepo,
             IStatsRepository statsRepo)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
+            Contract.RequiresNonNull(blocksRepo, nameof(blocksRepo));
+            Contract.RequiresNonNull(paymentsRepo, nameof(paymentsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
 
             this.cf = cf;
             this.statsRepo = statsRepo;
+            this.blocksRepo = blocksRepo;
+            this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
                 {new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync},
-                {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync}
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync}
             };
         }
 
-        protected readonly IConnectionFactory cf;
-        protected readonly IStatsRepository statsRepo;
+        private readonly IConnectionFactory cf;
+        private readonly IStatsRepository statsRepo;
+        private readonly IBlockRepository blocksRepo;
+        private readonly IPaymentRepository paymentsRepo;
         private readonly IMapper mapper;
 
         private readonly List<IMiningPool> pools = new List<IMiningPool>();
@@ -119,6 +130,25 @@ namespace MiningCore.Api
             }
         }
 
+        private IMiningPool GetPool(HttpContext context, Match m)
+        {
+            var poolId = m.Groups["poolId"]?.Value;
+
+            if (!string.IsNullOrEmpty(poolId))
+            {
+                lock (pools)
+                {
+                    var pool = pools.FirstOrDefault(x => x.Config.Id == poolId);
+
+                    if (pool != null)
+                        return pool;
+                }
+            }
+
+            context.Response.StatusCode = 404;
+            return null;
+        }
+
         private async Task HandleGetPoolsAsync(HttpContext context, Match m)
         {
             GetPoolsResponse response;
@@ -144,22 +174,9 @@ namespace MiningCore.Api
 
         private async Task HandleGetPoolStatsAsync(HttpContext context, Match m)
         {
-            var poolId = m.Groups["poolId"].Value;
-
-            if (string.IsNullOrEmpty(poolId))
-            {
-                context.Response.StatusCode = 404;
+            var pool = GetPool(context, m);
+            if (pool == null)
                 return;
-            }
-
-            lock (pools)
-            {
-                if(!pools.Any(x => x.Config.Id == poolId))
-                {
-                    context.Response.StatusCode = 404;
-                    return;
-                }
-            }
 
             // set range
             var end = DateTime.UtcNow;
@@ -168,7 +185,7 @@ namespace MiningCore.Api
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetHourlyStatsBetween(
-                con, poolId, start, end));
+                con, pool.Config.Id, start, end));
 
             var response = new GetPoolStatsResponse
             {
@@ -199,6 +216,52 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, response);
+        }
+
+        private async Task HandleGetBlocksPagedAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var page = context.GetQueryParameter<int>("page");
+            var pageSize = context.GetQueryParameter<int?>("pageSize") ?? 20;
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var blocks = cf.Run(con => blocksRepo.PageBlocks(
+                    con, pool.Config.Id, BlockStatus.Confirmed, page, pageSize))
+                .Select(mapper.Map<Responses.Block>)
+                .ToArray();
+
+            await SendJson(context, blocks);
+        }
+
+        private async Task HandleGetPaymentsPagedAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var page = context.GetQueryParameter<int>("page");
+            var pageSize = context.GetQueryParameter<int?>("pageSize") ?? 20;
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var payments = cf.Run(con => paymentsRepo.PagePayments(
+                    con, pool.Config.Id, page, pageSize))
+                .Select(mapper.Map<Responses.Payment>)
+                .ToArray();
+
+            await SendJson(context, payments);
         }
 
         #region API-Surface

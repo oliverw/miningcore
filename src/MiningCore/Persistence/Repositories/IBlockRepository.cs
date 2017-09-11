@@ -27,8 +27,9 @@ namespace MiningCore.Persistence.Repositories
     {
         void Insert(IDbConnection con, IDbTransaction tx, Block block);
         void DeleteBlock(IDbConnection con, IDbTransaction tx, Block block);
-
         void UpdateBlock(IDbConnection con, IDbTransaction tx, Block block);
+
+        Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus status, int page, int pageSize);
         Block[] GetPendingBlocksForPool(IDbConnection con, string poolid);
     }
 }

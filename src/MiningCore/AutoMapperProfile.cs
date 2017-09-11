@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using AutoMapper;
-using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Persistence.Model;
@@ -46,8 +45,10 @@ namespace MiningCore
                 .ForMember(dest => dest.Created, opt => opt.Ignore());
 
             // API
-            CreateMap<PoolConfig, PoolInfo>();
-            CreateMap<PoolStats, AggregatedPoolStats>();
+            CreateMap<PoolConfig, Api.Responses.PoolInfo>();
+            CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
+            CreateMap<Block, Api.Responses.Block>();
+            CreateMap<Payment, Api.Responses.Payment>();
 
             // PostgreSQL
             CreateMap<Share, Persistence.Postgres.Entities.Share>();

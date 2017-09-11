@@ -18,15 +18,17 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
+using System;
 using MiningCore.Persistence.Model;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Api.Responses
 {
-    public interface IPaymentRepository
+    public class Block
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Payment payment);
-
-        Payment[] PagePayments(IDbConnection con, string poolId, int page, int pageSize);
+        public ulong Blockheight { get; set; }
+        public BlockStatus Status { get; set; }
+        public string TransactionConfirmationData { get; set; }
+        public decimal Reward { get; set; }
+        public DateTime Created { get; set; }
     }
 }
