@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 
 namespace MiningCore.Extensions
 {
     public static class HttpContextExtensions
     {
-        public static T GetQueryParameter<T>(this HttpContext ctx, string name)
+        public static T GetQueryParameter<T>(this HttpContext ctx, string name, T defaultValue)
         {
-            var stringVal = ctx.Request.Query[name];
+            var stringVal = ctx.Request.Query[name].FirstOrDefault();
             if (string.IsNullOrEmpty(stringVal))
-                return default(T);
+                return defaultValue;
 
             return (T) Convert.ChangeType(stringVal, typeof(T));
         }

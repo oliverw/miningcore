@@ -224,8 +224,8 @@ namespace MiningCore.Api
             if (pool == null)
                 return;
 
-            var page = context.GetQueryParameter<int>("page");
-            var pageSize = context.GetQueryParameter<int?>("pageSize") ?? 20;
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
 
             if (pageSize == 0)
             {
@@ -247,8 +247,8 @@ namespace MiningCore.Api
             if (pool == null)
                 return;
 
-            var page = context.GetQueryParameter<int>("page");
-            var pageSize = context.GetQueryParameter<int?>("pageSize") ?? 20;
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
 
             if (pageSize == 0)
             {
