@@ -33,11 +33,9 @@ namespace MiningCore.Configuration
         DOGE, // Dogecoin,
         XMR, // Monero
 
-        EMC2, // Einsteinium
         GRS, // GroestlCoin
         DGB, // Digibyte
         NMC, // Namecoin
-        PPC, // Peercoin
         VIA, // Viacoin
 
         ZEC, // Zcash

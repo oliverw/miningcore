@@ -76,7 +76,8 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q"},
             {CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o"},
             {CoinType.DGB, "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn"},
-            {CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2"},
+            {CoinType.ETH, "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1"},
+            {CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp"},
             {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"}
         };
     }
@@ -87,10 +88,8 @@ namespace MiningCore.Blockchain.Bitcoin
             CoinType.BTC,
             CoinType.BCC,
             CoinType.NMC,
-            CoinType.PPC,
             CoinType.LTC,
             CoinType.DOGE,
-            CoinType.EMC2,
             CoinType.DGB,
             CoinType.VIA,
             CoinType.GRS)

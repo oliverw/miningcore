@@ -29,6 +29,7 @@ namespace MiningCore.Api.Responses
         public BlockStatus Status { get; set; }
         public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }
+        public string InfoLink { get; set; }
         public DateTime Created { get; set; }
     }
 }

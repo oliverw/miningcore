@@ -38,7 +38,6 @@ Ethereum Classic | No |  | Nov 2017
 DASH | No |  | Dec 2017
 Groestlcoin | Yes | Yes |
 Dogecoin | Yes | No |
-Einsteinium | Yes | No |
 DigiByte | Yes | No |
 Namecoin | Yes | No |
 Viacoin | Yes | No |
