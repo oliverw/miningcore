@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reactive;
@@ -237,20 +238,22 @@ namespace MiningCore.Mining
                 .Sum(x => x.Percentage);
 
             // Pool Hashrate
-            var poolHashRateSampleInterval = 30;
+            var poolHashRateSampleIntervalSeconds = 600;
 
             disposables.Add(validSharesSubject
-                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleInterval))
+                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
+                .Where(shares=> shares.Any())
                 .Select(shares =>
                 {
-                    var result = shares.Sum(share => share.NormalizedDifficulty * Math.Pow(2, 32) /
-                                                     poolHashRateSampleInterval);
+                    var result = shares.Sum(share => 
+                        share.NormalizedDifficulty * Math.Pow(2, 32) / poolHashRateSampleIntervalSeconds);
+
                     return (float) result;
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
 
             // Periodically persist pool- and blockchain-stats to persistent storage
-            disposables.Add(Observable.Interval(TimeSpan.FromSeconds(10))
+            disposables.Add(Observable.Interval(TimeSpan.FromSeconds(60))
                 .StartWith(0) // initial update
                 .Do(_ => UpdateBlockChainStats())
                 .Subscribe(_ => PersistStats()));

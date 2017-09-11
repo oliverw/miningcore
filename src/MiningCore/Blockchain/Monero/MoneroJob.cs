@@ -79,7 +79,8 @@ namespace MiningCore.Blockchain.Monero
             var bytes = quotient.ToByteArray();
             var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
 
-            Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+            if(padded.Length - bytes.Length > 0)
+                Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
 
             var result = new ArraySegment<byte>(padded, 0, 4)
                 .Reverse()
