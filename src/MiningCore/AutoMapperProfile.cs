@@ -50,6 +50,10 @@ namespace MiningCore
             CreateMap<Block, Api.Responses.Block>();
             CreateMap<Payment, Api.Responses.Payment>();
 
+            CreateMap<MinerStats, Api.Responses.MinerStats>()
+                .ForMember(dest => dest.LastPayment, opt => opt.Ignore())
+                .ForMember(dest => dest.LastPaymentLink, opt => opt.Ignore());
+
             // PostgreSQL
             CreateMap<Share, Persistence.Postgres.Entities.Share>();
             CreateMap<Block, Persistence.Postgres.Entities.Block>();

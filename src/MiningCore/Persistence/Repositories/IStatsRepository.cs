@@ -28,10 +28,8 @@ namespace MiningCore.Persistence.Repositories
     public interface IStatsRepository
     {
         void Insert(IDbConnection con, IDbTransaction tx, PoolStats share);
-
-        PoolStats[] PageStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page,
-            int pageSize);
-
-        PoolStats[] GetHourlyStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end);
+        PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
+        PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end);
+        MinerStats GetMinerStats(IDbConnection con, string poolId, string miner);
     }
 }

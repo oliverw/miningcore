@@ -71,7 +71,8 @@ namespace MiningCore.Api
                 {new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync},
                 {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync},
                 {new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync},
-                {new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync}
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync},
             };
         }
 
@@ -216,7 +217,7 @@ namespace MiningCore.Api
                 end = end.AddHours(-1);
             var start = end.AddDays(-1);
 
-            var stats = cf.Run(con => statsRepo.GetHourlyStatsBetween(
+            var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(
                 con, pool.Config.Id, start, end));
 
             var response = new GetPoolStatsResponse
@@ -316,6 +317,42 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, payments);
+        }
+
+        private async Task HandleGetMinerStatsAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var statsResult = cf.Run(con => statsRepo.GetMinerStats(con, pool.Config.Id, address));
+            Responses.MinerStats stats = null;
+
+            if (statsResult != null)
+            {
+                stats = mapper.Map<Responses.MinerStats>(statsResult);
+
+                // optional fields
+                if (statsResult.LastPayment != null)
+                {
+                    // Set timestamp of last payment
+                    stats.LastPayment = statsResult.LastPayment.Created;
+
+                    // Compute info link
+                    string baseUrl;
+                    if (paymentInfoLinkMap.TryGetValue(pool.Config.Coin.Type, out baseUrl))
+                        stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
+                }
+            }
+
+            await SendJson(context, stats);
         }
 
         #region API-Surface

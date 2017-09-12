@@ -19,20 +19,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
-using MiningCore.Persistence.Model;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Persistence.Model
 {
-    public interface IShareRepository
+    public class MinerStats
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Share share);
-        Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize);
-        Share[] PageSharesBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
-
-        long CountPoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-        void DeletePoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-
-        long CountMinerSharesBetween(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
+        public ulong PendingShares { get; set; }
+        public decimal PendingBalance { get; set; }
+        public decimal TotalPaid { get; set; }
+        public Payment LastPayment { get; set; }
     }
 }

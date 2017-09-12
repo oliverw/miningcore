@@ -70,18 +70,32 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public long CountSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public long CountPoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             var query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
             return con.QuerySingle<long>(query, new {poolId, before}, tx);
         }
 
-        public void DeleteSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public void DeletePoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             var query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
 
             con.Execute(query, new {poolId, before}, tx);
+        }
+
+        public long CountMinerSharesBetween(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
+        {
+            var whereClause = "poolid = @poolId AND miner = @miner";
+
+            if (start.HasValue)
+                whereClause += " AND created >= @start ";
+            if (end.HasValue)
+                whereClause += " AND created <= @end";
+
+            var query = $"SELECT count(*) FROM shares WHERE {whereClause}";
+
+            return con.QuerySingle<long>(query, new { poolId, miner, start, end });
         }
     }
 }

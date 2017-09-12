@@ -18,7 +18,7 @@ CREATE TABLE shares
 );
 
 CREATE INDEX IDX_SHARES_POOL_BLOCK on shares(poolid, blockheight);
-CREATE INDEX IDX_SHARES_POOL_CREATED on shares(poolid, created);
+CREATE INDEX IDX_SHARES_POOL_MINER_CREATED on shares(poolid, miner, created);
 
 CREATE TABLE blocks
 (
