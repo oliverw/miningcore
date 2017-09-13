@@ -30,11 +30,13 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -54,19 +56,21 @@ namespace MiningCore.Mining
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
-            IMapper mapper) :
-            base(ctx)
+            IMapper mapper,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) : base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
+            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
+            this.notificationSenders = notificationSenders;
 
             Shares = shareSubject
                 .AsObservable()
@@ -85,6 +89,7 @@ namespace MiningCore.Mining
         protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
         protected readonly PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
+        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         private readonly IMapper mapper;
@@ -356,6 +361,38 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             logger.Info(() => msg);
         }
 
+        protected virtual void SetupAdminNotifications()
+        {
+            if (clusterConfig.Notifications?.Admin?.Enabled == true)
+            {
+                if (clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
+
+                    disposables.Add(Shares
+                        .ObserveOn(TaskPoolScheduler.Default)
+                        .Where(x => x.IsBlockCandidate)
+                        .Subscribe(async share =>
+                        {
+                            try
+                            {
+                                await emailSender.NotifyAsync(adminEmail, "Block Notification", $"Pool {share.PoolId} found block candidate {share.BlockHeight}");
+                            }
+
+                            catch (Exception ex)
+                            {
+                                logger.Error(ex);
+                            }
+                        }));
+                }
+            }
+        }
+
         #region API-Surface
 
         public IObservable<IShare> Shares { get; }
@@ -392,6 +429,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                 StartListeners(ipEndpoints);
                 SetupStats();
                 SetupVarDiff();
+                SetupAdminNotifications();
 
                 logger.Info(() => $"[{LogCat}] Online");
 

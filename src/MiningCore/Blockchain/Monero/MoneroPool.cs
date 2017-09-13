@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -27,12 +28,14 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -47,8 +50,9 @@ namespace MiningCore.Blockchain.Monero
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
-            IMapper mapper) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper)
+            IMapper mapper,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationSenders)
         {
         }
 

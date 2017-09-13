@@ -79,9 +79,6 @@ namespace MiningCore
             builder.RegisterType<ApiServer>()
                 .SingleInstance();
 
-            builder.RegisterType<AdminNotifier>()
-                .SingleInstance();
-
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
                                 .Any(i =>

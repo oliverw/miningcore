@@ -19,11 +19,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading.Tasks;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -40,7 +44,8 @@ namespace MiningCore.Payments
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo)
+            IPaymentRepository paymentRepo,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -48,6 +53,7 @@ namespace MiningCore.Payments
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
 
             this.cf = cf;
             this.mapper = mapper;
@@ -55,6 +61,7 @@ namespace MiningCore.Payments
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
             this.paymentRepo = paymentRepo;
+            this.notificationSenders = notificationSenders;
 
             BuildFaultHandlingPolicy();
         }
@@ -65,6 +72,7 @@ namespace MiningCore.Payments
         protected readonly IMapper mapper;
         protected readonly IPaymentRepository paymentRepo;
         protected readonly IShareRepository shareRepo;
+        protected readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
         protected ClusterConfig clusterConfig;
         private Policy faultPolicy;
 
@@ -125,6 +133,36 @@ namespace MiningCore.Payments
                 logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
                                        $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
+            }
+        }
+
+        public string FormatAmount(decimal amount)
+        {
+            return $"{amount:0.#####} {poolConfig.Coin.Type}";
+        }
+
+        protected virtual async Task NotifyPayoutSuccess(Balance[] balances, string txHash, decimal? txFee)
+        {
+            // admin notifications
+            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
+            {
+                try
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
+
+                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} {poolConfig.Coin.Type} from pool {poolConfig.Id} to {balances.Length} recipients in Tx {txHash}. TxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
+                }
+
+                catch (Exception ex2)
+                {
+                    logger.Error(ex2);
+                }
             }
         }
     }

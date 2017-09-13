@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Monero.Configuration;
 using MiningCore.Blockchain.Monero.DaemonRequests;
@@ -30,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -53,8 +55,9 @@ namespace MiningCore.Blockchain.Monero
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo)
+            IPaymentRepository paymentRepo,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
         {
             Contract.RequiresNonNull(daemon, nameof(daemon));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -70,19 +73,22 @@ namespace MiningCore.Blockchain.Monero
 
         protected override string LogCategory => "Monero Payout Handler";
 
-        private void HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private async Task HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
             if (response.Error == null)
             {
                 var txHash = response.Response.TxHash;
+                var txFee = (decimal) response.Response.Fee / MoneroConstants.Piconero;
 
                 // check result
                 if (string.IsNullOrEmpty(txHash))
                     logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' did not return a transaction id!");
                 else
-                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount((decimal) response.Response.Fee / MoneroConstants.Piconero)}");
+                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
+
+                await NotifyPayoutSuccess(balances, txHash, txFee);
             }
 
             else
@@ -136,7 +142,7 @@ namespace MiningCore.Blockchain.Monero
                 result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
             }
 
-            HandleTransferResponse(result, balances);
+            await HandleTransferResponseAsync(result, balances);
         }
 
         private async Task PayoutToPaymentId(Balance balance)
@@ -183,7 +189,7 @@ namespace MiningCore.Blockchain.Monero
                 result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
             }
 
-            HandleTransferResponse(result, balance);
+            await HandleTransferResponseAsync(result, balance);
         }
 
         #region IPayoutHandler
@@ -337,11 +343,6 @@ namespace MiningCore.Blockchain.Monero
 
             foreach (var balance in paymentIdBalances)
                 await PayoutToPaymentId(balance);
-        }
-
-        public string FormatAmount(decimal amount)
-        {
-            return $"{amount:0.#####} {poolConfig.Coin.Type}";
         }
 
         #endregion // IPayoutHandler

@@ -504,15 +504,6 @@ namespace MiningCore
                 apiServer.Start(clusterConfig);
             }
 
-            // admin notifications
-            AdminNotifier adminNotifier = null;
-            if (clusterConfig.Notifications != null && clusterConfig.Notifications.Enabled &&
-                clusterConfig.Notifications.Admin != null && clusterConfig.Notifications.Admin.Enabled)
-            {
-                adminNotifier = container.Resolve<AdminNotifier>();
-                adminNotifier.Configure(clusterConfig.Notifications.Admin);
-            }
-
             // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
             {
@@ -531,7 +522,6 @@ namespace MiningCore
 
                 // post-start attachments
                 apiServer.AttachPool(pool);
-                adminNotifier?.AttachPool(pool);
             }));
 
             // start payment processor

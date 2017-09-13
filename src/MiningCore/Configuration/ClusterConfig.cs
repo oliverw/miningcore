@@ -190,6 +190,7 @@ namespace MiningCore.Configuration
         public bool Enabled { get; set; }
         public string EmailAddress { get; set; }
         public bool NotifyBlockFound { get; set; }
+        public bool NotifyPaymentSuccess { get; set; }
     }
 
     public partial class NotificationsConfig

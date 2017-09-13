@@ -27,6 +27,7 @@ using Autofac;
 using Autofac.Features.Metadata;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -44,19 +45,22 @@ namespace MiningCore.Payments
             IConnectionFactory cf,
             IBlockRepository blockRepo,
             IShareRepository shareRepo,
-            IBalanceRepository balanceRepo)
+            IBalanceRepository balanceRepo,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
+            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
 
             this.ctx = ctx;
             this.cf = cf;
             this.blockRepo = blockRepo;
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
+            this.notificationSenders = notificationSenders;
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -64,6 +68,7 @@ namespace MiningCore.Payments
         private readonly IConnectionFactory cf;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
+        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private ClusterConfig clusterConfig;
         private Thread thread;
@@ -139,9 +144,45 @@ namespace MiningCore.Payments
                 balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
 
             if (poolBalancesOverMinimum.Length > 0)
-                await handler.PayoutAsync(poolBalancesOverMinimum);
+            {
+                try
+                {
+                    await handler.PayoutAsync(poolBalancesOverMinimum);
+                }
+
+                catch (Exception ex)
+                {
+                    await NotifyPayoutFailureAsync(poolBalancesOverMinimum, pool, ex);
+                    throw;
+                }
+            }
+
             else
                 logger.Info(() => $"No balances over configured minimum payout for pool {pool.Id}");
+        }
+
+        private async Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
+        {
+            // admin notifications
+            if (clusterConfig.Notifications?.Admin?.Enabled == true)
+            {
+                try
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
+
+                    await emailSender.NotifyAsync(adminEmail, "Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {pool.Coin.Type} from pool {pool.Id}: {ex.Message}");
+                }
+
+                catch (Exception ex2)
+                {
+                    logger.Error(ex2);
+                }
+            }
         }
 
         #region API-Surface

@@ -23,10 +23,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -45,8 +47,9 @@ namespace MiningCore.Blockchain.Bitcoin
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo)
+            IPaymentRepository paymentRepo,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
         {
             Contract.RequiresNonNull(daemon, nameof(daemon));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -199,17 +202,14 @@ namespace MiningCore.Blockchain.Bitcoin
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
                 PersistPayments(balances, txId);
+
+                await NotifyPayoutSuccess(balances, txId, null);
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
             }
-        }
-
-        public string FormatAmount(decimal amount)
-        {
-            return $"{amount:0.#####} {poolConfig.Coin.Type}";
         }
 
         #endregion // IPayoutHandler
