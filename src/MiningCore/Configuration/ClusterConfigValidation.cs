@@ -26,6 +26,40 @@ namespace MiningCore.Configuration
 {
     #region Validators 
 
+    public class EmailSenderConfigValidator : AuthenticatedNetworkEndpointConfigValidator<EmailSenderConfig>
+    {
+        public EmailSenderConfigValidator()
+        {
+            RuleFor(j => j.FromAddress)
+                .NotNull()
+                .NotEmpty()
+                .WithMessage("EmailSender fromAddress missing or empty");
+        }
+    }
+
+    public class AdminNotificationsValidator : AbstractValidator<AdminNotifications>
+    {
+        public AdminNotificationsValidator()
+        {
+            RuleFor(j => j.EmailAddress)
+                .NotNull()
+                .NotEmpty()
+                .When(x => x.Enabled)
+                .WithMessage("Admin notification recipient missing or empty");
+        }
+    }
+
+    public class NotificationsConfigValidator : AbstractValidator<NotificationsConfig>
+    {
+        public NotificationsConfigValidator()
+        {
+            RuleFor(j => j.Email)
+                .NotNull()
+                .When(x => x.Enabled)
+                .WithMessage("You must configure at least one notifications provider when notifications are enabled");
+        }
+    }
+
     public class NetworkEndpointConfigValidator<T> : AbstractValidator<T>
         where T : NetworkEndpointConfig
     {
@@ -42,7 +76,8 @@ namespace MiningCore.Configuration
         }
     }
 
-    public class AuthenticatedNetworkEndpointConfigValidator : NetworkEndpointConfigValidator<AuthenticatedNetworkEndpointConfig>
+    public class AuthenticatedNetworkEndpointConfigValidator<T> : NetworkEndpointConfigValidator<T>
+        where T : AuthenticatedNetworkEndpointConfig
     {
         public AuthenticatedNetworkEndpointConfigValidator()
         {
@@ -151,7 +186,7 @@ namespace MiningCore.Configuration
                 .WithMessage("Pool: Daemons missing or empty");
 
             RuleFor(j => j.Daemons)
-                .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator());
+                .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
         }
     }
 
@@ -245,19 +280,22 @@ namespace MiningCore.Configuration
     {
     }
 
-    [Validator(typeof(AuthenticatedNetworkEndpointConfigValidator))]
+    [Validator(typeof(AuthenticatedNetworkEndpointConfigValidator<AuthenticatedNetworkEndpointConfig>))]
     public partial class AuthenticatedNetworkEndpointConfig
     {
     }
 
+    [Validator(typeof(EmailSenderConfigValidator))]
     public partial class EmailSenderConfig
     {
     }
 
+    [Validator(typeof(AdminNotificationsValidator))]
     public partial class AdminNotifications
     {
     }
 
+    [Validator(typeof(NotificationsConfigValidator))]
     public partial class NotificationsConfig
     {
     }
