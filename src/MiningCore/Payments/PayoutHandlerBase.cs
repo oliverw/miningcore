@@ -165,5 +165,29 @@ namespace MiningCore.Payments
                 }
             }
         }
+
+        protected virtual async Task NotifyPayoutFailureAsync(Balance[] balances, string error, Exception ex)
+        {
+            // admin notifications
+            if (clusterConfig.Notifications?.Admin?.Enabled == true)
+            {
+                try
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
+
+                    await emailSender.NotifyAsync(adminEmail, "Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {poolConfig.Coin.Type} from pool {poolConfig.Id}: {error ?? ex?.Message}");
+                }
+
+                catch (Exception ex2)
+                {
+                    logger.Error(ex2);
+                }
+            }
+        }
     }
 }

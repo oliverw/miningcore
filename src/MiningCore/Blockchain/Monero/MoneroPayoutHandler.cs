@@ -94,6 +94,8 @@ namespace MiningCore.Blockchain.Monero
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
+
+                await NotifyPayoutFailureAsync(balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
             }
         }
 

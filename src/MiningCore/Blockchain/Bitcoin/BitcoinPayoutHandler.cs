@@ -209,6 +209,8 @@ namespace MiningCore.Blockchain.Bitcoin
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
+
+                await NotifyPayoutFailureAsync(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
             }
         }
 
