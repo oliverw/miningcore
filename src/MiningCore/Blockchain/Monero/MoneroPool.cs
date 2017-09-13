@@ -353,8 +353,6 @@ namespace MiningCore.Blockchain.Monero
                 .Select(shares =>
                 {
                     var result = shares.Sum(share => share.StratumDifficulty) / poolHashRateSampleIntervalSeconds;
-                    Debug.WriteLine(result);
-
                     return (float)result;
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
