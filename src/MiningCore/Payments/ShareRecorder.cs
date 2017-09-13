@@ -28,11 +28,13 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
+using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -51,17 +53,20 @@ namespace MiningCore.Payments
     {
         public ShareRecorder(IConnectionFactory cf, IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
-            IShareRepository shareRepo, IBlockRepository blockRepo)
+            IShareRepository shareRepo, IBlockRepository blockRepo,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
+            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
+            this.notificationSenders = notificationSenders;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
@@ -73,6 +78,8 @@ namespace MiningCore.Payments
 
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
+        private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
         private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
 
@@ -85,6 +92,7 @@ namespace MiningCore.Payments
         private string recoveryFilename;
         private const int RetryCount = 3;
         private const string PolicyContextKeyShares = "share";
+        private bool notifiedAdminOnPolicyFallback = false;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -144,6 +152,8 @@ namespace MiningCore.Payments
                         }
                     }
                 }
+
+                NotifyAdminOnPolicyFallback();
             }
 
             catch (Exception ex)
@@ -263,6 +273,33 @@ namespace MiningCore.Payments
             }
         }
 
+        private async void NotifyAdminOnPolicyFallback()
+        {
+            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true &&
+                !notifiedAdminOnPolicyFallback)
+            {
+                notifiedAdminOnPolicyFallback = true;
+
+                try
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
+
+                    await emailSender.NotifyAsync(adminEmail, "Share Recorder Policy Fallback", $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(ex);
+                }
+            }
+        }
+
         #region API-Surface
 
         public void AttachPool(IMiningPool pool)
@@ -311,6 +348,8 @@ namespace MiningCore.Payments
 
         private void ConfigureRecovery(ClusterConfig clusterConfig)
         {
+            this.clusterConfig = clusterConfig;
+
             recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
                 ? clusterConfig.PaymentProcessing.ShareRecoveryFile
                 : "recovered-shares.txt";
