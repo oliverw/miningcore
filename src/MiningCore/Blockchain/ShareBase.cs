@@ -34,7 +34,6 @@ namespace MiningCore.Blockchain
         public double StratumDifficulty { get; set; }
         public double StratumDifficultyBase { get; set; }
         public double NetworkDifficulty { get; set; }
-        public double NormalizedDifficulty { get; set; }
         public long BlockHeight { get; set; }
         public decimal BlockReward { get; set; }
         public bool IsBlockCandidate { get; set; }

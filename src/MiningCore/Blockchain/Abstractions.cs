@@ -82,11 +82,6 @@ namespace MiningCore.Blockchain
         double StratumDifficultyBase { get; set; }
 
         /// <summary>
-        /// Difficulty relative to a Bitcoin Difficulty 1 Share (used for pool hashrate calculation)
-        /// </summary>
-        double NormalizedDifficulty { get; set; }
-
-        /// <summary>
         /// Block this share refers to
         /// </summary>
         long BlockHeight { get; set; }

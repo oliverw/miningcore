@@ -43,8 +43,6 @@ namespace MiningCore.Blockchain.Monero
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
 
-        public const double DifficultyNormalizationFactor = 14226363340d;
-
 #if !DEBUG
 		public const int PayoutMinBlockConfirmations = 60;
 #else

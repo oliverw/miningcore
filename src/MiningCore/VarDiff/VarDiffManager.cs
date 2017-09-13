@@ -32,7 +32,6 @@ namespace MiningCore.VarDiff
             options = varDiffOptions;
 
             minDiff = options.MinDiff;
-            maxDiff = options.MaxDiff;
 
             var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
             bufferSize = (int) (varDiffOptions.RetargetTime / varDiffOptions.TargetTime * 4.0);
@@ -46,7 +45,6 @@ namespace MiningCore.VarDiff
         private readonly VarDiffConfig options;
         private readonly double tMax;
         private readonly double tMin;
-        private double? maxDiff;
 
         public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
         {
@@ -54,7 +52,7 @@ namespace MiningCore.VarDiff
 
             lock (ctx)
             {
-                maxDiff = maxDiff.HasValue && networkDifficulty > maxDiff ? options.MaxDiff : networkDifficulty;
+                var maxDiff = options.MaxDiff ?? networkDifficulty;
 
                 var ts = (DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) | 0;
 
@@ -89,7 +87,7 @@ namespace MiningCore.VarDiff
                     var diffMax = maxDiff;
 
                     if (ddiff * difficulty > diffMax)
-                        ddiff = diffMax.Value / difficulty;
+                        ddiff = diffMax / difficulty;
                 }
 
                 else

@@ -166,7 +166,6 @@ namespace MiningCore.Blockchain.Monero
             var result = new MoneroShare
             {
                 Difficulty = shareDiff,
-                NormalizedDifficulty = shareDiff / MoneroConstants.DifficultyNormalizationFactor,
                 BlockHeight = BlockTemplate.Height,
                 IsBlockCandidate = isBlockCandidate,
                 BlobHex = blob.ToHexString(),

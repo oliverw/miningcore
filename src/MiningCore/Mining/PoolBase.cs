@@ -232,7 +232,7 @@ namespace MiningCore.Mining
             }
         }
 
-        private void SetupStats()
+        protected virtual void SetupStats()
         {
             poolStats.PoolFeePercent = (float) poolConfig.RewardRecipients
                 .Where(x => x.Type == RewardRecipientType.Op)
@@ -241,21 +241,6 @@ namespace MiningCore.Mining
             poolStats.DonationsPercent = (float) poolConfig.RewardRecipients
                 .Where(x => x.Type == RewardRecipientType.Dev)
                 .Sum(x => x.Percentage);
-
-            // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 600;
-
-            disposables.Add(validSharesSubject
-                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
-                .Where(shares=> shares.Any())
-                .Select(shares =>
-                {
-                    var result = shares.Sum(share => 
-                        share.NormalizedDifficulty * Math.Pow(2, 32) / poolHashRateSampleIntervalSeconds);
-
-                    return (float) result;
-                })
-                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
 
             // Periodically persist pool- and blockchain-stats to persistent storage
             disposables.Add(Observable.Interval(TimeSpan.FromSeconds(60))

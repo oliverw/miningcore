@@ -295,6 +295,29 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
+        protected override void SetupStats()
+        {
+            base.SetupStats();
+
+            // Pool Hashrate
+            var poolHashRateSampleIntervalSeconds = 600;
+
+            disposables.Add(validSharesSubject
+                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
+                .Where(shares => shares.Any())
+                .Select(shares =>
+                {
+                    var result = shares.Sum(share =>
+                    {
+                        var btShare = (BitcoinShare) share;
+                        return btShare.NormalizedDifficulty * Math.Pow(2, 32) / poolHashRateSampleIntervalSeconds;
+                    });
+
+                    return (float)result;
+                })
+                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
+        }
+
         protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)
         {
             UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);

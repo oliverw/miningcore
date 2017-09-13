@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -337,6 +338,26 @@ namespace MiningCore.Blockchain.Monero
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
             }
+        }
+
+        protected override void SetupStats()
+        {
+            base.SetupStats();
+
+            // Pool Hashrate
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
+
+            disposables.Add(validSharesSubject
+                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
+                .Where(shares => shares.Any())
+                .Select(shares =>
+                {
+                    var result = shares.Sum(share => share.StratumDifficulty) / poolHashRateSampleIntervalSeconds;
+                    Debug.WriteLine(result);
+
+                    return (float)result;
+                })
+                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
         protected override void UpdateVarDiff(StratumClient<MoneroWorkerContext> client)
