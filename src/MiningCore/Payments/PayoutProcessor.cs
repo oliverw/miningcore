@@ -87,7 +87,6 @@ namespace MiningCore.Payments
                     // resolve payout scheme
                     var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
 
-//GenerateTestShares(pool.Id);
                     await UpdatePoolBalancesAsync(pool, handler, scheme);
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
@@ -115,7 +114,7 @@ namespace MiningCore.Payments
                 {
                     if (block.Status == BlockStatus.Confirmed)
                     {
-                        // blockchains that do not support sending out block-rewards using custom coinbase tx
+                        // blockchains that do not support block-reward payments via coinbase Tx
                         // must generate balance records for all reward recipients instead
                         await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
@@ -143,51 +142,6 @@ namespace MiningCore.Payments
                 await handler.PayoutAsync(poolBalancesOverMinimum);
             else
                 logger.Info(() => $"No balances over configured minimum payout for pool {pool.Id}");
-        }
-
-        private void GenerateTestShares(string poolid)
-        {
-#if DEBUG
-            var numShares = 10000;
-            var shareOffset = TimeSpan.FromSeconds(10);
-
-            cf.RunTx((con, tx) =>
-            {
-                var block = new Block
-                {
-                    Created = DateTime.UtcNow,
-                    Id = 4,
-                    Blockheight = 334324,
-                    PoolId = "btc1",
-                    Status = BlockStatus.Pending,
-                    TransactionConfirmationData = "foobar"
-                };
-
-                blockRepo.Insert(con, tx, block);
-
-                var shareDate = block.Created;
-
-                for (var i = 0; i < numShares; i++)
-                {
-                    var share = new Share
-                    {
-                        Difficulty = (i & 1) == 0 ? 16 : 32,
-                        NetworkDifficulty = 236000,
-                        Blockheight = block.Blockheight,
-                        IpAddress = "127.0.0.1",
-                        Created = shareDate,
-                        Miner = (i & 1) == 0
-                            ? "mkeiTodVRTseFymDbgi2HAV3Re8zv3DQFf"
-                            : "n37zNp1QbtwHh9jVUThe6ZgCxvm9rdpX2f",
-                        PoolId = poolid
-                    };
-
-                    shareDate -= shareOffset;
-
-                    shareRepo.Insert(con, tx, share);
-                }
-            });
-#endif
         }
 
         #region API-Surface

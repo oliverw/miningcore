@@ -74,16 +74,17 @@ namespace MiningCore.Payments.PayoutSchemes
             // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
             var factorX = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
-            // holds pending balances per address (in our case workername = address)
-            var payouts = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculatePayouts(poolConfig, factorX, block, payouts);
+            // calculate rewards 
+            var shares = new Dictionary<string, ulong>();
+            var rewards = new Dictionary<string, decimal>();
+            var shareCutOffDate = CalculateRewards(poolConfig, factorX, block, shares, rewards);
 
             // update balances
-            foreach (var address in payouts.Keys)
+            foreach (var address in rewards.Keys)
             {
-                var amount = payouts[address];
+                var amount = rewards[address];
 
-                logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address}");
+                logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
                 balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
 
@@ -104,8 +105,8 @@ namespace MiningCore.Payments.PayoutSchemes
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculatePayouts(PoolConfig poolConfig, decimal factorX, Block block,
-            Dictionary<string, decimal> payouts)
+        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal factorX, Block block,
+            Dictionary<string, ulong> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
             var pageSize = 10000;
@@ -129,15 +130,19 @@ namespace MiningCore.Payments.PayoutSchemes
                 for (var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
+
+                    var address = share.Miner;
                     shareCutOffDate = share.Created;
+
+                    // record attributed shares for diagnostic purposes
+                    if (!shares.ContainsKey(address))
+                        shares[address] = 0;
+                    else
+                        shares[address] += 1;
 
                     // make sure that score does not go through the roof for testnets where difficulty is usually extremely low
                     var stratumDiff = Math.Min((decimal) share.StratumDifficulty, (decimal) share.NetworkDifficulty);
-                    var stratumDiffBase = Math.Min((decimal) share.StratumDifficultyBase,
-                        (decimal) share.NetworkDifficulty);
-
-                    var diffRatio = stratumDiff / stratumDiffBase;
-                    var score = diffRatio / (decimal) share.NetworkDifficulty;
+                    var score = stratumDiff / (decimal) share.NetworkDifficulty;
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if (accumulatedScore + score >= factorX)
@@ -156,15 +161,14 @@ namespace MiningCore.Payments.PayoutSchemes
                         throw new OverflowException("blockRewardRemaining < 0");
 
                     // build address
-                    var address = share.Miner;
                     if (!string.IsNullOrEmpty(share.PayoutInfo))
                         address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
-                    // accumulate per-worker reward
-                    if (!payouts.ContainsKey(address))
-                        payouts[address] = reward;
+                    // accumulate miner reward
+                    if (!rewards.ContainsKey(address))
+                        rewards[address] = reward;
                     else
-                        payouts[address] += reward;
+                        rewards[address] += reward;
                 }
             }
 
