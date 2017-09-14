@@ -37,6 +37,7 @@ namespace MiningCore.Configuration
         DGB, // Digibyte
         NMC, // Namecoin
         VIA, // Viacoin
+        PPC, // Peercoin
 
         ZEC, // Zcash
         ETH, // Ethereum

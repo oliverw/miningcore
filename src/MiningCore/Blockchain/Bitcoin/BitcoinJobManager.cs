@@ -207,6 +207,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 case CoinType.BTC:
                 case CoinType.BCC:
                 case CoinType.NMC:
+                case CoinType.PPC:
                     coinbaseHasher = sha256d;
                     headerHasher = sha256d;
                     blockHasher = sha256dReverse;
