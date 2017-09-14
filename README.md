@@ -47,6 +47,8 @@ Viacoin | Yes | No |
 ### Runtime Requirements
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
+- [PostgreSQL Database](https://www.postgresql.org/)
+- Coin Daemon (per pool)
 
 ### Docker
 
