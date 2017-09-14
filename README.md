@@ -14,7 +14,7 @@ This is going to change in the future.
 
 ### Features
 
-- Supports clusters of pools each running individual currencies with multiple stratum ports per pool
+- Supports clusters of pools each running individual currencies
 - Ultra-low-latency Stratum implementation using asynchronous I/O (LibUv)
 - Adaptive share difficulty ("vardiff")
 - PoW validation (hashing) using native code for maximum performance
