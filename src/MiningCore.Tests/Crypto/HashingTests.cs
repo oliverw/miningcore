@@ -108,6 +108,22 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void X11_Hash_Should_Match()
+        {
+            var hasher = new X11();
+            var result = hasher.Digest(testValue, 0).ToHexString();
+
+            Assert.Equal("a5c7a5b1f019fab056867b53b2ca349555847082da8ec26c85066e7cb1f76559", result);
+        }
+
+        [Fact]
+        public void X11_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha256S();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, 0));
+        }
+
+        [Fact]
         public void DigestReverser_Hash_Should_Match()
         {
             var hasher = new DigestReverser(new Sha256S());

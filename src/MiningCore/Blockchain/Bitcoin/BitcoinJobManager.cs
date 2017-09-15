@@ -233,9 +233,16 @@ namespace MiningCore.Blockchain.Bitcoin
                     difficultyNormalizationFactor = Math.Pow(2, 8) / 1000;
                     break;
 
+                // DASH
+                case CoinType.DASH:
+                    coinbaseHasher = sha256s;
+                    headerHasher = new X11();
+                    blockHasher = new DigestReverser(headerHasher);
+                    difficultyNormalizationFactor = 1;
+                    break;
+
                 default:
-                    logger.ThrowLogPoolStartupException(
-                        "Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
+                    logger.ThrowLogPoolStartupException($"Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
                     break;
             }
         }

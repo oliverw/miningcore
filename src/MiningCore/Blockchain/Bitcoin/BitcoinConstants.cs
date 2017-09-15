@@ -94,7 +94,8 @@ namespace MiningCore.Blockchain.Bitcoin
             CoinType.DOGE,
             CoinType.DGB,
             CoinType.VIA,
-            CoinType.GRS)
+            CoinType.GRS,
+            CoinType.DASH)
         {
         }
     }
