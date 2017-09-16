@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Monero.Configuration;
@@ -38,7 +39,6 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Contract = MiningCore.Contracts.Contract;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
 using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
@@ -49,9 +49,10 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
-        public MoneroPayoutHandler(IConnectionFactory cf, IMapper mapper,
-            DaemonClient daemon,
-            DaemonClient walletDaemon,
+        public MoneroPayoutHandler(
+            IComponentContext ctx,
+            IConnectionFactory cf, 
+            IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
@@ -59,16 +60,16 @@ namespace MiningCore.Blockchain.Monero
             IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
             base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
         {
-            Contract.RequiresNonNull(daemon, nameof(daemon));
+            Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
-            this.daemon = daemon;
-            this.walletDaemon = walletDaemon;
+            this.ctx = ctx;
         }
 
-        private readonly DaemonClient daemon;
-        private readonly DaemonClient walletDaemon;
+        private readonly IComponentContext ctx;
+        private DaemonClient daemon;
+        private DaemonClient walletDaemon;
         private MoneroNetworkType? networkType;
 
         protected override string LogCategory => "Monero Payout Handler";
@@ -206,10 +207,13 @@ namespace MiningCore.Blockchain.Monero
             logger = LogUtil.GetPoolScopedLogger(typeof(MoneroPayoutHandler), poolConfig);
 
             // configure standard daemon
+            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
+
             var daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .ToArray();
 
+            daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
             // configure wallet daemon
@@ -217,6 +221,7 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
                 .ToArray();
 
+            walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
         }
 

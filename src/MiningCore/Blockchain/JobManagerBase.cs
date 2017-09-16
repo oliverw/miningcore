@@ -34,20 +34,17 @@ namespace MiningCore.Blockchain
 {
     public abstract class JobManagerBase<TJob>
     {
-        protected JobManagerBase(IComponentContext ctx, DaemonClient daemon)
+        protected JobManagerBase(IComponentContext ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(daemon, nameof(daemon));
 
             this.ctx = ctx;
-            this.daemon = daemon;
         }
 
         protected readonly IComponentContext ctx;
         protected ClusterConfig clusterConfig;
 
         protected TJob currentJob;
-        protected DaemonClient daemon;
         private long jobId;
         protected object jobLock = new object();
         protected ILogger logger;
@@ -55,10 +52,7 @@ namespace MiningCore.Blockchain
 
         protected virtual string LogCat { get; } = "Job Manager";
 
-        protected virtual void ConfigureDaemons()
-        {
-            daemon.Configure(poolConfig.Daemons);
-        }
+        protected abstract void ConfigureDaemons();
 
         protected virtual async Task StartDaemonAsync()
         {

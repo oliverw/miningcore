@@ -66,11 +66,6 @@ namespace MiningCore.Blockchain
         string IpAddress { get; }
 
         /// <summary>
-        /// Share difficulty as submitted by miner
-        /// </summary>
-        double Difficulty { get; set; }
-
-        /// <summary>
         /// Stratum difficulty assigned to the miner at the time the share was submitted/accepted (used for payout
         /// calculations)
         /// </summary>

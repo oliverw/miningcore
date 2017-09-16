@@ -31,6 +31,7 @@ using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
@@ -45,6 +46,11 @@ namespace MiningCore.DaemonInterface
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
 
             this.serializerSettings = serializerSettings;
+
+            serializer = new JsonSerializer
+            {
+                ContractResolver = serializerSettings.ContractResolver
+            };
         }
 
         private readonly Random random = new Random();
@@ -53,6 +59,7 @@ namespace MiningCore.DaemonInterface
         protected DaemonEndpointConfig[] endPoints;
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
         private string rpcLocation;
+        private readonly JsonSerializer serializer;
 
         #region API-Surface
 
@@ -160,8 +167,7 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method,
-            object payload)
+        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload)
         {
             var rpcRequestId = GetRequestId();
 
@@ -192,7 +198,7 @@ namespace MiningCore.DaemonInterface
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
-            var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json);
+            var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json, serializerSettings);
             return result;
         }
 
@@ -226,7 +232,7 @@ namespace MiningCore.DaemonInterface
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
-            var result = JsonConvert.DeserializeObject<JsonRpcResponse<JToken>[]>(json);
+            var result = JsonConvert.DeserializeObject<JsonRpcResponse<JToken>[]>(json, serializerSettings);
             return result;
         }
 
@@ -260,7 +266,7 @@ namespace MiningCore.DaemonInterface
                 Debug.Assert(x.IsCompletedSuccessfully);
 
                 if (x.Result?.Result is JToken)
-                    resp.Response = ((JToken) x.Result?.Result)?.ToObject<TResponse>();
+                    resp.Response = ((JToken) x.Result?.Result)?.ToObject<TResponse>(serializer);
                 else
                     resp.Response = (TResponse) x.Result?.Result;
 

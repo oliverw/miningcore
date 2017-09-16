@@ -33,6 +33,7 @@ using MiningCore.DaemonInterface;
 using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
+using Newtonsoft.Json;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 using MC = MiningCore.Blockchain.Monero.MoneroCommands;
@@ -43,12 +44,10 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
         public MoneroJobManager(
-            IComponentContext ctx,
-            DaemonClient daemon) :
-            base(ctx, daemon)
+            IComponentContext ctx) :
+            base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(daemon, nameof(daemon));
 
             using (var rng = RandomNumberGenerator.Create())
             {
@@ -59,10 +58,11 @@ namespace MiningCore.Blockchain.Monero
 
         private readonly byte[] instanceId;
         private DaemonEndpointConfig[] daemonEndpoints;
-        protected DateTime? lastBlockUpdate;
+        private DaemonClient daemon;
+        private DaemonClient walletDaemon;
+        private DateTime? lastBlockUpdate;
         private MoneroNetworkType networkType;
         private uint poolAddressBase58Prefix;
-        private DaemonClient walletDaemon;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob()
@@ -278,10 +278,13 @@ namespace MiningCore.Blockchain.Monero
 
         protected override void ConfigureDaemons()
         {
+            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
+
+            daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
             // also setup wallet daemon
-            walletDaemon = ctx.Resolve<DaemonClient>();
+            walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
         }
 

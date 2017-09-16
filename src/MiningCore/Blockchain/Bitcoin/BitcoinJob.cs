@@ -42,7 +42,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public BitcoinJob(GetBlockTemplateResponse blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double difficultyNormalizationFactor,
+            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -64,7 +64,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
             this.isPoS = isPoS;
-            this.difficultyNormalizationFactor = difficultyNormalizationFactor;
+            this.shareMultiplier = shareMultiplier;
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;
@@ -74,7 +74,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private readonly IHashAlgorithm blockHasher;
         private readonly ClusterConfig clusterConfig;
         private readonly IHashAlgorithm coinbaseHasher;
-        private readonly double difficultyNormalizationFactor;
+        private readonly double shareMultiplier;
         private readonly int extraNoncePlaceHolderLength;
         private readonly IHashAlgorithm headerHasher;
         private readonly bool isPoS;
@@ -269,22 +269,13 @@ namespace MiningCore.Blockchain.Bitcoin
         private Transaction CreateOutputTransaction()
         {
             var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
-            var reward = blockReward;
             var tx = new Transaction();
-            rewardToPool = blockReward;
 
-            // Payee funds (DASH Coin only)
-            if (!string.IsNullOrEmpty(BlockTemplate.Payee))
-            {
-                var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Payee);
-                var payeeReward = reward / 5;
-
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
-
-                tx.AddOutput(payeeReward, payeeAddress);
-            }
+            // optional DASH stuff
+            if (poolConfig.Coin.Type == CoinType.DASH)
+                blockReward = CreateDashOutputs(tx, blockReward);
 
             // Distribute funds to configured reward recipients
             var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
@@ -302,7 +293,7 @@ namespace MiningCore.Blockchain.Bitcoin
             foreach (var recipient in rewardRecipients.Where(x => x.Percentage > 0))
             {
                 var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
-                var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * reward.Satoshi));
+                var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * blockReward.Satoshi));
 
                 rewardToPool -= recipientReward;
 
@@ -322,6 +313,50 @@ namespace MiningCore.Blockchain.Bitcoin
             return tx;
         }
 
+        private Money CreateDashOutputs(Transaction tx, Money reward)
+        {
+            if (BlockTemplate.Masternode != null && BlockTemplate.SuperBlocks != null)
+            {
+                if (!string.IsNullOrEmpty(BlockTemplate.Masternode.Payee))
+                {
+                    var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Masternode.Payee);
+                    var payeeReward = BlockTemplate.Masternode.Amount;
+
+                    reward -= payeeReward;
+                    rewardToPool -= payeeReward;
+
+                    tx.AddOutput(payeeReward, payeeAddress);
+                }
+
+                else if (BlockTemplate.SuperBlocks.Length > 0)
+                {
+                    foreach (var superBlock in BlockTemplate.SuperBlocks)
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToScript(superBlock.Payee);
+                        var payeeReward = superBlock.Amount;
+
+                        reward -= payeeReward;
+                        rewardToPool -= payeeReward;
+
+                        tx.AddOutput(payeeReward, payeeAddress);
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(BlockTemplate.Payee))
+            {
+                var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Payee);
+                var payeeReward = BlockTemplate.PayeeAmount ?? (reward / 5);
+
+                reward -= payeeReward;
+                rewardToPool -= payeeReward;
+
+                tx.AddOutput(payeeReward, payeeAddress);
+            }
+
+            return reward;
+        }
+
         private bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
             var key = extraNonce1 + extraNonce2 + nTime + nonce;
@@ -332,8 +367,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return true;
         }
 
-        private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce,
-            double stratumDifficulty)
+        private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
         {
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
@@ -360,23 +394,18 @@ namespace MiningCore.Blockchain.Bitcoin
             var headerValue = new BigInteger(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) *
-                            (difficultyNormalizationFactor * 1000);
-            var headerTarget = new Target(new uint256(headerHash, true));
+            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;
             var ratio = shareDiff / stratumDifficulty;
 
             // test if share meets at least workers current difficulty
             if (ratio < 0.99)
-                throw new StratumException(StratumError.LowDifficultyShare,
-                    $"low difficulty share ({headerTarget.Difficulty})");
+                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
             // valid share, check if the share also meets the much harder block difficulty (block candidate)
             var isBlockCandidate = headerValue < blockTargetValue;
 
             var result = new BitcoinShare
             {
-                Difficulty = headerTarget.Difficulty,
-                NormalizedDifficulty = headerTarget.Difficulty * difficultyNormalizationFactor,
                 BlockHeight = BlockTemplate.Height,
                 IsBlockCandidate = isBlockCandidate
             };
@@ -479,13 +508,10 @@ namespace MiningCore.Blockchain.Bitcoin
             };
         }
 
-        public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce,
-            double stratumDifficulty)
+        public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce1),
-                $"{nameof(extraNonce1)} must not be empty");
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2),
-                $"{nameof(extraNonce2)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce1), $"{nameof(extraNonce1)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 

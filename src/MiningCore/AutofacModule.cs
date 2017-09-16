@@ -59,9 +59,6 @@ namespace MiningCore
             builder.RegisterType<JsonRpcConnection>()
                 .AsSelf();
 
-            builder.RegisterType<DaemonClient>()
-                .AsSelf();
-
             builder.RegisterType<PayoutProcessor>()
                 .AsSelf()
                 .SingleInstance();

@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
@@ -64,7 +65,9 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public const decimal SatoshisPerBitcoin = 100000000;
 
-        public static readonly BigInteger Diff1 = BigInteger.Parse("00000000ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
+        public static double Pow2x32 = Math.Pow(2, 32);
+
+        public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
     }
 
     public class KnownAddresses

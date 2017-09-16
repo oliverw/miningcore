@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Contracts;
 using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
@@ -34,9 +35,9 @@ using MiningCore.Extensions;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NBitcoin;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
-using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
@@ -44,17 +45,16 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
-            DaemonClient daemon,
             BitcoinExtraNonceProvider extraNonceProvider) :
-            base(ctx, daemon)
+            base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(daemon, nameof(daemon));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
             this.extraNonceProvider = extraNonceProvider;
         }
 
+        protected DaemonClient daemon;
         private readonly BitcoinExtraNonceProvider extraNonceProvider;
         private readonly IHashAlgorithm sha256d = new Sha256D();
         private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
@@ -63,7 +63,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly Dictionary<string, BitcoinJob> validJobs = new Dictionary<string, BitcoinJob>();
         private IHashAlgorithm blockHasher;
         private IHashAlgorithm coinbaseHasher;
-        private double difficultyNormalizationFactor;
+        private double shareMultiplier;
         private bool hasSubmitBlockMethod;
         private IHashAlgorithm headerHasher;
         private bool isPoS;
@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Bitcoin
                             .OrderBy(x => x.StartingHeight)
                             .First().StartingHeight;
 
-                        var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
+                        var percent = blockCount > 0 ? (double)totalBlocks / blockCount * 100 : 0;
                         logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                     }
                 }
@@ -211,7 +211,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = sha256d;
                     blockHasher = sha256dReverse;
-                    difficultyNormalizationFactor = 1;
+                    shareMultiplier = 1;
                     break;
 
                 // Scrypt
@@ -222,7 +222,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new Scrypt(1024, 1);
                     blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
-                    difficultyNormalizationFactor = Math.Pow(2, 16) / 1000;
+                    shareMultiplier = Math.Pow(2, 16);
                     break;
 
                 // Groestl
@@ -230,15 +230,15 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256s;
                     headerHasher = new Groestl();
                     blockHasher = new DigestReverser(headerHasher);
-                    difficultyNormalizationFactor = Math.Pow(2, 8) / 1000;
+                    shareMultiplier = Math.Pow(2, 8);
                     break;
 
-                // DASH
+                // X11
                 case CoinType.DASH:
-                    coinbaseHasher = sha256s;
+                    coinbaseHasher = sha256d;
                     headerHasher = new X11();
                     blockHasher = new DigestReverser(headerHasher);
-                    difficultyNormalizationFactor = 1;
+                    shareMultiplier = 1;
                     break;
 
                 default:
@@ -351,6 +351,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
+            share.NormalizedDifficulty = stratumDifficulty / shareMultiplier;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
@@ -366,6 +367,14 @@ namespace MiningCore.Blockchain.Bitcoin
         #region Overrides
 
         protected override string LogCat => "Bitcoin Job Manager";
+
+        protected override void ConfigureDaemons()
+        {
+            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
+
+            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon.Configure(poolConfig.Daemons);
+        }
 
         protected override async Task<bool> IsDaemonHealthy()
         {
@@ -506,7 +515,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         currentJob = new BitcoinJob(blockTemplate, NextJobId(),
                             poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS,
-                            difficultyNormalizationFactor,
+                            shareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 
                         currentJob.Init();

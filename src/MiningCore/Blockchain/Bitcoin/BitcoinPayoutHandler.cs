@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
@@ -34,6 +35,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
+using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin
@@ -42,8 +44,10 @@ namespace MiningCore.Blockchain.Bitcoin
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
-        public BitcoinPayoutHandler(IConnectionFactory cf, IMapper mapper,
-            DaemonClient daemon,
+        public BitcoinPayoutHandler(
+            IComponentContext ctx,
+            IConnectionFactory cf, 
+            IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
@@ -51,14 +55,15 @@ namespace MiningCore.Blockchain.Bitcoin
             IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
             base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
         {
-            Contract.RequiresNonNull(daemon, nameof(daemon));
+            Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
 
-            this.daemon = daemon;
+            this.ctx = ctx;
         }
 
-        private readonly DaemonClient daemon;
+        private readonly IComponentContext ctx;
+        private DaemonClient daemon;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
@@ -69,8 +74,12 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
             this.poolConfig = poolConfig;
+            this.clusterConfig = clusterConfig;
+
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
+            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
+            daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(poolConfig.Daemons);
         }
 

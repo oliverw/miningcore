@@ -80,9 +80,9 @@ namespace MiningCore
 #if DEBUG
                 PreloadNativeLibs();
 #endif
-                //TouchNativeLibs();
+				//TouchNativeLibs();
 
-                string configFile;
+				string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
 

@@ -5,7 +5,6 @@ CREATE TABLE shares
 	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
 	blockheight BIGINT NOT NULL,
-	difficulty REAL NOT NULL,
 	networkdifficulty REAL NOT NULL,
 	stratumdifficulty REAL NOT NULL,
 	stratumdifficultybase REAL NOT NULL,

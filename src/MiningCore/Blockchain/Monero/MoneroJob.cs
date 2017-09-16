@@ -116,8 +116,7 @@ namespace MiningCore.Blockchain.Monero
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash,
-            double stratumDifficulty)
+        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, double stratumDifficulty)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -165,7 +164,6 @@ namespace MiningCore.Blockchain.Monero
 
             var result = new MoneroShare
             {
-                Difficulty = shareDiff,
                 BlockHeight = BlockTemplate.Height,
                 IsBlockCandidate = isBlockCandidate,
                 BlobHex = blob.ToHexString(),

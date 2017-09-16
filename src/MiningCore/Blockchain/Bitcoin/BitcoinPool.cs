@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -300,22 +301,19 @@ namespace MiningCore.Blockchain.Bitcoin
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 600;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
                 .Where(shares => shares.Any())
                 .Select(shares =>
                 {
-                    var result = shares.Sum(share =>
-                    {
-                        var btShare = (BitcoinShare) share;
-                        return btShare.NormalizedDifficulty * Math.Pow(2, 32) / poolHashRateSampleIntervalSeconds;
-                    });
+                    var sum = shares.Sum(share => ((BitcoinShare)share).NormalizedDifficulty);
+                    var result = sum * BitcoinConstants.Pow2x32 / poolHashRateSampleIntervalSeconds;
 
-                    return (float)result;
+	                return result;
                 })
-                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
+                .Subscribe(hashRate => poolStats.PoolHashRate = (float) hashRate));
         }
 
         protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)
@@ -325,6 +323,9 @@ namespace MiningCore.Blockchain.Bitcoin
             if (client.Context.ApplyPendingDifficulty())
             {
                 client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+
+                // send job
+                client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
 

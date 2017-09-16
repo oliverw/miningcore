@@ -421,6 +421,12 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                 OutputPoolInfo();
             }
 
+            catch (PoolStartupAbortException)
+            {
+                // just forward these
+                throw;
+            }
+
             catch (Exception ex)
             {
                 logger.Error(ex);
