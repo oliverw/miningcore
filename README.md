@@ -43,6 +43,7 @@ Dogecoin | Yes | No |
 DigiByte | Yes | No |
 Namecoin | Yes | No |
 Viacoin | Yes | No |
+Peercoin | Yes | No |
 
 ### Runtime Requirements
 
