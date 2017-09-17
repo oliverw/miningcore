@@ -1,0 +1,97 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "integrated"
+    },
+    "notifications": {
+        "enabled": true,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "disableDevDonation": false,
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "pools": [{
+      "id": "ltc1",
+      "enabled": true,
+      "coin": {
+        "type": "LTC"
+      },
+      "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
+      "rewardRecipients": [
+        {
+          "type": "op",
+          "address": "LUWYwkz6DQLVeqJqHRtGjNhWUxBvBmE3SX",
+          "percentage": 0
+        }
+      ],
+      "blockRefreshInterval": 1000,
+      "jobRebroadcastTimeout": 55,
+      "clientConnectionTimeout": 600,
+      "banning": {
+        "enabled": true,
+        "time": 600,
+        "invalidPercent": 50,
+        "checkThreshold": 50
+      },
+      "ports": {
+        "3042": {
+          "listenAddress": "0.0.0.0",
+          "difficulty": 1024,
+          "name": "ASIC Mining",
+          "varDiff": {
+            "minDiff": 512,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        }
+      },
+      "daemons": [
+        {
+          "host": "127.0.0.1",
+          "port": 9332,
+          "user": "user",
+          "password": "password"
+    }
+      ],
+      "paymentProcessing": {
+        "enabled": true,
+        "minimumPayment": 0.5,
+        "payoutScheme": "PPLNS",
+        "payoutSchemeConfig": {
+          "factor": 2.0
+        }
+      }
+    }]
+}
