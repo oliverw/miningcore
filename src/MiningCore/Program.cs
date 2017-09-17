@@ -77,6 +77,8 @@ namespace MiningCore
         {
             try
             {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Environment.Is64BitProcess)
+                    throw new PoolStartupAbortException("MiningCore cannot run on 32-Bit Windows!");
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -280,7 +282,7 @@ namespace MiningCore
 
             catch (IOException ex)
             {
-                logger.Error(() => $"Error: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
         }
@@ -325,7 +327,7 @@ namespace MiningCore
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-            Console.WriteLine($" https://github.com/coinfoundry/mining-core\n");
+            Console.WriteLine($" https://github.com/coinfoundry/miningcore\n");
             Console.WriteLine($" Please contribute to the development of the project by donating:\n");
             Console.WriteLine($" BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
             Console.WriteLine($" ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
@@ -556,6 +558,7 @@ namespace MiningCore
 
         private static readonly string[] NativeLibs =
         {
+            "libsodium.dll",
             "libmultihash.dll",
             "libcryptonote.dll"
         };

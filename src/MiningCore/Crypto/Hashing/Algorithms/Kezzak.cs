@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Linq;
 using MiningCore.Contracts;
 using MiningCore.Extensions;
@@ -27,11 +28,14 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Kezzak : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
+            Contract.RequiresNonNull(extra, nameof(extra));
+            Contract.Requires<ArgumentException>(extra.Length > 0, $"{nameof(extra)} must not be empty");
 
             // concat nTime as hex string to data
+            var nTime = (ulong) extra[0];
             var dataEx = data.Concat(nTime.ToString("X").HexToByteArray()).ToArray();
 
             var result = new byte[32];

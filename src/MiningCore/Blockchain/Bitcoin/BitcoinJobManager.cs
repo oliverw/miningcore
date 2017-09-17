@@ -68,7 +68,6 @@ namespace MiningCore.Blockchain.Bitcoin
         private IHashAlgorithm headerHasher;
         private bool isPoS;
         private TimeSpan jobRebroadcastTimeout;
-        protected DateTime? lastBlockUpdate;
         private BitcoinNetworkType networkType;
         private IDestination poolAddressDestination;
 

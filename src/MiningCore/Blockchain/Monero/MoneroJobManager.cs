@@ -60,7 +60,6 @@ namespace MiningCore.Blockchain.Monero
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
-        private DateTime? lastBlockUpdate;
         private MoneroNetworkType networkType;
         private uint poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;

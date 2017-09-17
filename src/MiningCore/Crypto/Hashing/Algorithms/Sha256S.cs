@@ -28,7 +28,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
     /// </summary>
     public class Sha256S : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
 

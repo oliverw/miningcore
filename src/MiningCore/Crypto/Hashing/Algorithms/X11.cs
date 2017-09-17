@@ -25,7 +25,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class X11 : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
 

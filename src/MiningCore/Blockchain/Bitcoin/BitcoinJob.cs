@@ -371,7 +371,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
-            var coinbaseHash = coinbaseHasher.Digest(coinbase, 0);
+            var coinbaseHash = coinbaseHasher.Digest(coinbase);
 
             // build merkle-root
             var merkleRoot = mt.WithFirst(coinbaseHash)
@@ -390,7 +390,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // hash block-header
             var headerBytes = blockHeader.ToBytes();
-            var headerHash = headerHasher.Digest(headerBytes, nTime);
+            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
             var headerValue = new BigInteger(headerHash);
 
             // calc share-diff

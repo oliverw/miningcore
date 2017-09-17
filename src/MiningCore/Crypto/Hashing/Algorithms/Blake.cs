@@ -25,7 +25,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Blake : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
 

@@ -34,7 +34,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
         private readonly uint n;
         private readonly uint r;
 
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
 

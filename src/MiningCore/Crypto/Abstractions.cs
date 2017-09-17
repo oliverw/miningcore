@@ -22,6 +22,6 @@ namespace MiningCore.Crypto
 {
     public interface IHashAlgorithm
     {
-        byte[] Digest(byte[] data, ulong nTime);
+        byte[] Digest(byte[] data, params object[] extra);
     }
 }

@@ -31,9 +31,9 @@ namespace MiningCore.Crypto.Hashing.Special
 
         private readonly IHashAlgorithm upstream;
 
-        public byte[] Digest(byte[] data, ulong nTime)
+        public byte[] Digest(byte[] data, params object[] extra)
         {
-            return upstream.Digest(data, nTime)
+            return upstream.Digest(data, extra)
                 .Reverse()
                 .ToArray();
         }

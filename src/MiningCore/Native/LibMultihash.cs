@@ -89,5 +89,8 @@ namespace MiningCore.Native
 
         [DllImport("libmultihash", EntryPoint = "c11_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int c11(byte* input, byte* output, uint inputLength);
+
+        [DllImport("libmultihash", EntryPoint = "equihash_verify_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool equihash_verify(byte* header, byte* solution);
     }
 }

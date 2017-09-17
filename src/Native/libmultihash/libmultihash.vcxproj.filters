@@ -146,6 +146,12 @@
     <ClInclude Include="sha3\sph_whirlpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="equi\equi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -275,6 +281,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="exports.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\equi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\endian.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

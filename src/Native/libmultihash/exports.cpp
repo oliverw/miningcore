@@ -38,6 +38,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "dcrypt.h"
 #include "jh.h"
 #include "c11.h"
+#include "equi/equi.h"
 
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)
@@ -155,4 +156,9 @@ extern "C" MODULE_API void jh_export(const char* input, char* output, uint32_t i
 extern "C" MODULE_API void c11_export(const char* input, char* output)
 {
 	c11_hash(input, output);
+}
+
+extern "C" MODULE_API bool equihash_verify_export(const char* header, const char* solution)
+{
+	return verifyEH(header, solution);
 }
