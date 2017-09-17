@@ -313,7 +313,7 @@ Example Response:
 }
 ```
 
-#### /api/pool/&lt;poolid&gt;/miner/&lt;miner wallet address&gt;/stats
+#### /api/pool/&lt;poolid&gt;/miner/&lt;miner-wallet-address&gt;/stats
 
 Provides current stats about a miner on a specific pool
 
