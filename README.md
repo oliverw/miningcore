@@ -74,7 +74,7 @@ psql -d miningcore -U miningcore -f createdb.sql
 
 MiningCore is configured using a single JSON configuration file which may be used to initialize a cluster of multiple pool each supporting a different crypto-currency.
 
-Please refer to [this page](https://github.com/coinfoundry/miningcore/blob/master/src/MiningCore/Configuration/ClusterConfig.cs#L27) for a list of supported coins and other configuration options.
+**Note:** Please refer to [this page](https://github.com/coinfoundry/miningcore/blob/master/src/MiningCore/Configuration/ClusterConfig.cs#L27) for a list of supported coins and other configuration options.
 
 Example configuration:
 
