@@ -215,13 +215,13 @@ Example configuration:
 
 ### API
 
-MiningCore exposes a simple REST API at http://localhost:4000 (port can be changed by config). The primary purpose of the API is to power custom web-frontend for pool.
+MiningCore exposes a simple REST API at http://localhost:4000. The primary purpose of the API is to power custom web-frontends for the pool.
 
 #### /api/pools
 
 Returns configuration data and current stats for all configured pools.
 
-Example Response
+Example Response:
 
 ```javascript
 {
@@ -285,11 +285,11 @@ Example Response
 }
 ```
 
-#### /api/pool/<poolid>/stats/hourly
+#### /api/pool/&lt;poolid&gt;/stats/hourly
 
 Returns pool stats for the last 24 hours (<code>stats</code> array contains 24 entries)
 
-Example Response
+Example Response:
 
 ```javascript
 {
@@ -313,11 +313,11 @@ Example Response
 }
 ```
 
-#### /api/pool/<poolid>/miner/<miner wallet address>/stats
+#### /api/pool/&lt;poolid&gt;/miner/&lt;miner wallet address&gt;/stats
 
-Provides current stats about miner on a specific pool
+Provides current stats about a miner on a specific pool
 
-Example Response
+Example Response:
 
 ```javascript
 {
@@ -327,13 +327,13 @@ Example Response
 }
 ```
 
-#### /api/pool/<poolid>/blocks
+#### /api/pool/&lt;poolid&gt;/blocks
 
-Returns blocks mined by the pool. Results can be paged by using the <code>page</code> and <code>pageSize</code> query parameters
+Returns information about blocks mined by the pool. Results can be paged by using the <code>page</code> and <code>pageSize</code> query parameters
 
 http://localhost:4000/api/pool/xmr1/blocks?page=2&pageSize=3
 
-Example Response
+Example Response:
 
 ```javascript
 [
@@ -364,13 +364,13 @@ Example Response
 ]
 ```
 
-#### /api/pool/<poolid>/payments
+#### /api/pool/&lt;poolid&gt;/payments
 
 Returns information about payments issued by the pool. Results can be paged by using the <code>page</code> and <code>pageSize</code> query parameters
 
 http://localhost:4000/api/pool/xmr1/payments?page=2&pageSize=3
 
-Example Response
+Example Response:
 
 ```javascript
 [
