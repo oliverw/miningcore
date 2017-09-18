@@ -33,6 +33,5 @@ namespace MiningCore.Api.Responses
     public class GetPoolStatsResponse
     {
         public AggregatedPoolStats[] Stats { get; set; }
-        public string HashrateUnit { get; set; }
     }
 }

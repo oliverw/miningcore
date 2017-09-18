@@ -223,29 +223,6 @@ namespace MiningCore.Api
                 Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
             };
 
-            // Remap hashrate baseline according to best fitting unit
-            var maxHashrate = response.Stats.Max(x => x.PoolHashRate);
-
-            if (maxHashrate > 0)
-            {
-                var hashRate = maxHashrate;
-
-                var i = -1;
-
-                do
-                {
-                    hashRate = hashRate / 1024;
-                    i++;
-                } while (hashRate > 1024 && i < FormatUtil.HashRateUnits.Length - 1);
-
-                var multiplier = hashRate / maxHashrate;
-
-                foreach (var stat in response.Stats)
-                    stat.PoolHashRate = stat.PoolHashRate * multiplier;
-
-                response.HashrateUnit = FormatUtil.HashRateUnits[i].Trim();
-            }
-
             await SendJson(context, response);
         }
 
