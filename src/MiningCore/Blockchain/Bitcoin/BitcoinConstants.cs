@@ -86,23 +86,6 @@ namespace MiningCore.Blockchain.Bitcoin
         };
     }
 
-    public class BitcoinCoinsMetaData : CoinMetadataAttribute
-    {
-        public BitcoinCoinsMetaData() : base(
-            CoinType.BTC,
-            CoinType.BCC,
-            CoinType.NMC,
-            CoinType.PPC,
-            CoinType.LTC,
-            CoinType.DOGE,
-            CoinType.DGB,
-            CoinType.VIA,
-            CoinType.GRS,
-            CoinType.DASH)
-        {
-        }
-    }
-
     public static class BitcoinCommands
     {
         public const string GetInfo = "getinfo";

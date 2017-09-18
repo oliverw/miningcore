@@ -34,20 +34,8 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
         public string Flags { get; set; }
     }
 
-    public class DashMasternode
-    {
-        public string Payee { get; set; }
-        public string Script { get; set; }
-        public long Amount { get; set; }
-    }
 
-    public class DashSuperBlock
-    {
-        public string Payee { get; set; }
-        public long Amount { get; set; }
-    }
-
-    public class GetBlockTemplateResponse
+    public class BlockTemplate
     {
         /// <summary>
         /// The preferred block version
@@ -104,32 +92,5 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
         /// </summary>
         [JsonProperty("default_witness_commitment")]
         public string DefaultWitnessCommitment { get; set; }
-
-        #region DASH Coin specific extensions
-
-        public string Payee { get; set; }
-
-        [JsonProperty("payee_amount")]
-        public long? PayeeAmount { get; set; }
-
-        public DashMasternode Masternode { get; set; }
-
-        [JsonProperty("masternode_payments_started")]
-        public bool MasternodePaymentsStarted { get; set; }
-
-        [JsonProperty("masternode_payments_enforced")]
-        public bool MasternodePaymentsEnforced { get; set; }
-
-        [JsonProperty("superblock")]
-        public DashSuperBlock[] SuperBlocks { get; set; }
-
-        [JsonProperty("superblocks_started")]
-        public bool SuperblocksStarted { get; set; }
-
-        [JsonProperty("superblocks_enabled")]
-        public bool SuperblocksEnabled { get; set; }
-
-        #endregion // DASH Coin specific extensions
-
     }
 }

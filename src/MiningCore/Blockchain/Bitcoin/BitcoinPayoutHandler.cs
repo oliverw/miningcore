@@ -40,7 +40,10 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    [BitcoinCoinsMetaData]
+    [CoinMetadata(
+        CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
+        CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
+        CoinType.GRS, CoinType.DASH, CoinType.ZEC)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -113,7 +116,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     var cmdResult = results[j];
 
-                    var transactionInfo = cmdResult.Response?.ToObject<GetTransactionResponse>();
+                    var transactionInfo = cmdResult.Response?.ToObject<Transaction>();
                     var block = page[j];
 
                     // check error

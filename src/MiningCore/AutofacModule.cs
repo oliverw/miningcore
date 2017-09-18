@@ -24,12 +24,15 @@ using Autofac;
 using MiningCore.Api;
 using MiningCore.Banning;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.Dash;
+using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Monero;
+using MiningCore.Blockchain.ZCash;
+using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
-using MiningCore.DaemonInterface;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
-using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Payments.PayoutSchemes;
 using Newtonsoft.Json;
@@ -95,7 +98,13 @@ namespace MiningCore
             //////////////////////
             // Bitcoin and family
 
-            builder.RegisterType<BitcoinJobManager>()
+            builder.RegisterType<BitcoinJobManager<BitcoinJob<BlockTemplate>, BlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<DashJob, DashBlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()
                 .AsSelf();
 
             //////////////////////

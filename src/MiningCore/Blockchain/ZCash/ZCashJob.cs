@@ -18,18 +18,21 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
+using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.ZCash.DaemonResponses;
+using NBitcoin;
+
+namespace MiningCore.Blockchain.ZCash
 {
-    public class PeerInfo
+    public class ZCashJob : BitcoinJob<ZCashBlockTemplate>
     {
-        public int Id { get; set; }
-        public string Addr { get; set; }
-        public int Version { get; set; }
-        public string SubVer { get; set; }
-        public int Blocks { get; set; }
-        public int StartingHeight { get; set; }
-        public int TimeOffset { get; set; }
-        public double BanScore { get; set; }
-        public int ConnTime { get; set; }
+        #region Overrides of BitcoinJob<ZCashBlockTemplate>
+
+        protected override Transaction CreateOutputTransaction()
+        {
+            return base.CreateOutputTransaction();
+        }
+
+        #endregion
     }
 }

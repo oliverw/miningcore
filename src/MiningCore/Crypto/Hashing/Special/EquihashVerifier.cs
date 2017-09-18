@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Threading;
 using MiningCore.Contracts;
 using MiningCore.Native;
 
@@ -26,6 +27,15 @@ namespace MiningCore.Crypto.Hashing.Special
 {
     public unsafe class EquihashVerifier
     {
+        public EquihashVerifier(int maxConcurrency = 2)
+        {
+            // need to limit concurrency here due to the enormous memory 
+            // requirements of the equihash algorithm (up 1GB per thread)
+            sem = new Semaphore(0, maxConcurrency);
+        }
+
+        private readonly Semaphore sem;
+
         /// <summary>
         /// Verify an Equihash solution
         /// </summary>
@@ -39,12 +49,22 @@ namespace MiningCore.Crypto.Hashing.Special
             Contract.RequiresNonNull(solution, nameof(solution));
             Contract.Requires<ArgumentException>(solution.Length == 1344, $"{nameof(solution)} must be exactly 1344 bytes");
 
-            fixed (byte* _header = header)
+            try
             {
-                fixed (byte* _solution = solution)
+                sem.WaitOne();
+
+                fixed (byte* _header = header)
                 {
-                    return LibMultihash.equihash_verify(_header, _solution);
+                    fixed (byte* _solution = solution)
+                    {
+                        return LibMultihash.equihash_verify(_header, _solution);
+                    }
                 }
+            }
+
+            finally
+            {
+                sem.Release();
             }
         }
     }

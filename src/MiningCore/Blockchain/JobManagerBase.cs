@@ -23,9 +23,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
-using MiningCore.DaemonInterface;
 using MiningCore.Util;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
@@ -90,7 +88,7 @@ namespace MiningCore.Blockchain
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinJobManager), poolConfig);
+            logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<TJob>), poolConfig);
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 

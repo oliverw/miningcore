@@ -34,82 +34,52 @@ using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Contract = MiningCore.Contracts.Contract;
+using Transaction = NBitcoin.Transaction;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinJob
+    public class BitcoinJob<TBlockTemplate>
+        where TBlockTemplate: BlockTemplate
     {
-        public BitcoinJob(GetBlockTemplateResponse blockTemplate, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
-            IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
-        {
-            Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-            Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
-            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
-            Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
-            Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
-            Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+        protected IHashAlgorithm blockHasher;
+        protected ClusterConfig clusterConfig;
+        protected IHashAlgorithm coinbaseHasher;
+        protected double shareMultiplier;
+        protected int extraNoncePlaceHolderLength;
+        protected IHashAlgorithm headerHasher;
+        protected bool isPoS;
 
-            this.poolConfig = poolConfig;
-            this.clusterConfig = clusterConfig;
-            this.poolAddressDestination = poolAddressDestination;
-            this.networkType = networkType;
-            BlockTemplate = blockTemplate;
-            JobId = jobId;
-
-            extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
-            this.isPoS = isPoS;
-            this.shareMultiplier = shareMultiplier;
-
-            this.coinbaseHasher = coinbaseHasher;
-            this.headerHasher = headerHasher;
-            this.blockHasher = blockHasher;
-        }
-
-        private readonly IHashAlgorithm blockHasher;
-        private readonly ClusterConfig clusterConfig;
-        private readonly IHashAlgorithm coinbaseHasher;
-        private readonly double shareMultiplier;
-        private readonly int extraNoncePlaceHolderLength;
-        private readonly IHashAlgorithm headerHasher;
-        private readonly bool isPoS;
-
-        private readonly BitcoinNetworkType networkType;
-        private readonly IDestination poolAddressDestination;
-        private readonly PoolConfig poolConfig;
-        private readonly HashSet<string> submissions = new HashSet<string>();
-        private BigInteger blockTargetValue;
-        private byte[] coinbaseFinal;
-        private string coinbaseFinalHex;
-        private byte[] coinbaseInitial;
-        private string coinbaseInitialHex;
-        private string[] merkleBranchesHex;
-        private MerkleTree mt;
+        protected BitcoinNetworkType networkType;
+        protected IDestination poolAddressDestination;
+        protected PoolConfig poolConfig;
+        protected HashSet<string> submissions = new HashSet<string>();
+        protected BigInteger blockTargetValue;
+        protected byte[] coinbaseFinal;
+        protected string coinbaseFinalHex;
+        protected byte[] coinbaseInitial;
+        protected string coinbaseInitialHex;
+        protected string[] merkleBranchesHex;
+        protected MerkleTree mt;
 
         ///////////////////////////////////////////
         // GetJobParams related properties
 
-        private string previousBlockHashReversedHex;
-        private Money rewardToPool;
-        private Transaction txOut;
+        protected string previousBlockHashReversedHex;
+        protected Money rewardToPool;
+        protected Transaction txOut;
 
         // serialization constants
-        private static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
 
-        private static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
-        private static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+        protected static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
+        protected static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
 
-        private static uint txInputCount = 1u;
-        private static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
-        private static uint txInSequence;
-        private static uint txLockTime;
+        protected static uint txInputCount = 1u;
+        protected static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
+        protected static uint txInSequence;
+        protected static uint txLockTime;
 
-        private void BuildMerkleBranches()
+        protected virtual void BuildMerkleBranches()
         {
             var transactionHashes = BlockTemplate.Transactions
                 .Select(tx => (tx.TxId ?? tx.Hash)
@@ -125,7 +95,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .ToArray();
         }
 
-        private void BuildCoinbase()
+        protected virtual void BuildCoinbase()
         {
             var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
 
@@ -198,7 +168,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private byte[] SerializeOutputTransaction(Transaction tx)
+        protected virtual byte[] SerializeOutputTransaction(Transaction tx)
         {
             var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
 
@@ -246,7 +216,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private Script GenerateScriptSigInitial()
+        protected virtual Script GenerateScriptSigInitial()
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); // 1501244088
 
@@ -266,16 +236,12 @@ namespace MiningCore.Blockchain.Bitcoin
             return new Script(ops);
         }
 
-        private Transaction CreateOutputTransaction()
+        protected virtual Transaction CreateOutputTransaction()
         {
             var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
-
-            // optional DASH stuff
-            if (poolConfig.Coin.Type == CoinType.DASH)
-                blockReward = CreateDashOutputs(tx, blockReward);
 
             // Distribute funds to configured reward recipients
             var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
@@ -313,50 +279,6 @@ namespace MiningCore.Blockchain.Bitcoin
             return tx;
         }
 
-        private Money CreateDashOutputs(Transaction tx, Money reward)
-        {
-            if (BlockTemplate.Masternode != null && BlockTemplate.SuperBlocks != null)
-            {
-                if (!string.IsNullOrEmpty(BlockTemplate.Masternode.Payee))
-                {
-                    var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Masternode.Payee);
-                    var payeeReward = BlockTemplate.Masternode.Amount;
-
-                    reward -= payeeReward;
-                    rewardToPool -= payeeReward;
-
-                    tx.AddOutput(payeeReward, payeeAddress);
-                }
-
-                else if (BlockTemplate.SuperBlocks.Length > 0)
-                {
-                    foreach (var superBlock in BlockTemplate.SuperBlocks)
-                    {
-                        var payeeAddress = BitcoinUtils.AddressToScript(superBlock.Payee);
-                        var payeeReward = superBlock.Amount;
-
-                        reward -= payeeReward;
-                        rewardToPool -= payeeReward;
-
-                        tx.AddOutput(payeeReward, payeeAddress);
-                    }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(BlockTemplate.Payee))
-            {
-                var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Payee);
-                var payeeReward = BlockTemplate.PayeeAmount ?? (reward / 5);
-
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
-
-                tx.AddOutput(payeeReward, payeeAddress);
-            }
-
-            return reward;
-        }
-
         private bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
             var key = extraNonce1 + extraNonce2 + nTime + nonce;
@@ -367,7 +289,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return true;
         }
 
-        private BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
+        protected virtual BitcoinShare ProcessShareInternal(string extraNonce1, string extraNonce2, uint nTime, uint nonce, double stratumDifficulty)
         {
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
@@ -419,7 +341,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return result;
         }
 
-        private byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
+        protected virtual byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
         {
             var extraNonce1Bytes = extraNonce1.HexToByteArray();
             var extraNonce2Bytes = extraNonce2.HexToByteArray();
@@ -435,7 +357,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private byte[] SerializeBlock(byte[] header, byte[] coinbase)
+        protected virtual byte[] SerializeBlock(byte[] header, byte[] coinbase)
         {
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
@@ -459,7 +381,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private byte[] BuildRawTransactionBuffer()
+        protected virtual byte[] BuildRawTransactionBuffer()
         {
             using (var stream = new MemoryStream())
             {
@@ -475,12 +397,41 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region API-Surface
 
-        public GetBlockTemplateResponse BlockTemplate { get; }
+        public TBlockTemplate BlockTemplate { get; private set; }
 
-        public string JobId { get; }
+        public string JobId { get; private set; }
 
-        public void Init()
+        public void Init(TBlockTemplate blockTemplate, string jobId,
+            PoolConfig poolConfig, ClusterConfig clusterConfig,
+            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
+            IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
+            Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+            Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
+            Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
+            Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+
+            this.poolConfig = poolConfig;
+            this.clusterConfig = clusterConfig;
+            this.poolAddressDestination = poolAddressDestination;
+            this.networkType = networkType;
+            BlockTemplate = blockTemplate;
+            JobId = jobId;
+
+            extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
+            this.isPoS = isPoS;
+            this.shareMultiplier = shareMultiplier;
+
+            this.coinbaseHasher = coinbaseHasher;
+            this.headerHasher = headerHasher;
+            this.blockHasher = blockHasher;
+
             blockTargetValue = BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber);
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
@@ -508,7 +459,7 @@ namespace MiningCore.Blockchain.Bitcoin
             };
         }
 
-        public BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
+        public virtual BitcoinShare ProcessShare(string extraNonce1, string extraNonce2, string nTime, string nonce, double stratumDifficulty)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce1), $"{nameof(extraNonce1)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");

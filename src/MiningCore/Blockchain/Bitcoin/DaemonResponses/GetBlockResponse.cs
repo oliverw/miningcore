@@ -22,7 +22,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetBlockResponse
+    public class Blocks
     {
         public uint Version { get; set; }
         public string Hash { get; set; }

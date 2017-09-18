@@ -241,7 +241,7 @@ namespace MiningCore.Api
                 var multiplier = hashRate / maxHashrate;
 
                 foreach (var stat in response.Stats)
-                    stat.PoolHashRate *= multiplier;
+                    stat.PoolHashRate = (float) Math.Ceiling(stat.PoolHashRate * multiplier);
 
                 response.HashrateUnit = FormatUtil.HashRateUnits[i].Trim();
             }

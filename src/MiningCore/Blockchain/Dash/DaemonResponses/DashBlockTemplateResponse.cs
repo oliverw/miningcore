@@ -20,33 +20,43 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
+namespace MiningCore.Blockchain.Dash.DaemonResponses
 {
-    public class TransactionDetails
+    public class DashMasternode
     {
-        public string Address { get; set; }
-        public string Category { get; set; }
-        public decimal Amount { get; set; }
-        public string Label { get; set; }
-        public int Vout { get; set; }
+        public string Payee { get; set; }
+        public string Script { get; set; }
+        public long Amount { get; set; }
     }
 
-    public class Transaction
+    public class DashSuperBlock
     {
-        public decimal Amount { get; set; }
-        public uint Confirmations { get; set; }
-        public bool Generated { get; set; }
-        public string BlockHash { get; set; }
-        public long BlockIndex { get; set; }
-        public ulong BlockTime { get; set; }
-        public string TxId { get; set; }
-        public string[] WalletConflicts { get; set; }
-        public ulong Time { get; set; }
-        public ulong TimeReceived { get; set; }
+        public string Payee { get; set; }
+        public long Amount { get; set; }
+    }
 
-        [JsonProperty("bip125-replaceable")]
-        public string Bip125Replaceable { get; set; }
+    public class DashBlockTemplate : Bitcoin.DaemonResponses.BlockTemplate
+    {
+        public string Payee { get; set; }
 
-        public TransactionDetails[] Details { get; set; }
+        [JsonProperty("payee_amount")]
+        public long? PayeeAmount { get; set; }
+
+        public DashMasternode Masternode { get; set; }
+
+        [JsonProperty("masternode_payments_started")]
+        public bool MasternodePaymentsStarted { get; set; }
+
+        [JsonProperty("masternode_payments_enforced")]
+        public bool MasternodePaymentsEnforced { get; set; }
+
+        [JsonProperty("superblock")]
+        public DashSuperBlock[] SuperBlocks { get; set; }
+
+        [JsonProperty("superblocks_started")]
+        public bool SuperblocksStarted { get; set; }
+
+        [JsonProperty("superblocks_enabled")]
+        public bool SuperblocksEnabled { get; set; }
     }
 }

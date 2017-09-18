@@ -18,18 +18,31 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
+using System.Collections.Generic;
+using Autofac;
+using Autofac.Features.Metadata;
+using AutoMapper;
+using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Configuration;
+using MiningCore.Notifications;
+using MiningCore.Persistence;
+using MiningCore.Persistence.Repositories;
+using Newtonsoft.Json;
+
+namespace MiningCore.Blockchain.ZCash
 {
-    public class PeerInfo
+    [CoinMetadata(CoinType.ZEC)]
+    public class ZCashPool : BitcoinPoolBase<ZCashJob, ZCashBlockTemplate>
     {
-        public int Id { get; set; }
-        public string Addr { get; set; }
-        public int Version { get; set; }
-        public string SubVer { get; set; }
-        public int Blocks { get; set; }
-        public int StartingHeight { get; set; }
-        public int TimeOffset { get; set; }
-        public double BanScore { get; set; }
-        public int ConnTime { get; set; }
+        public ZCashPool(IComponentContext ctx,
+            JsonSerializerSettings serializerSettings,
+            IConnectionFactory cf,
+            IStatsRepository statsRepo,
+            IMapper mapper,
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationSenders)
+        {
+        }
     }
 }

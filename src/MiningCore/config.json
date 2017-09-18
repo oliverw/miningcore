@@ -105,16 +105,16 @@
         }
     },
     {
-        "id": "dash1",
+        "id": "btc1",
         "enabled": true,
         "coin": {
-            "type": "DASH"
+            "type": "BTC"
         },
-        "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+        "address": "myhrXHY9pPLS8wcsCrdpg4FxVEEaXRM3YU",
         "rewardRecipients": [
             {
                 "type": "op",
-                "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+                "address": "myhrXHY9pPLS8wcsCrdpg4FxVEEaXRM3YU",
                 "percentage": 1.5
             }
         ],
@@ -145,6 +145,61 @@
         "daemons": [
             {
                 "host": "127.0.0.1",
+                "port": 12001,
+                "user": "user",
+                "password": "pass"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.01,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+    },
+    {
+        "id": "dash1",
+        "enabled": true,
+        "coin": {
+            "type": "DASH"
+        },
+        "address": "ybxqVg6R2pSPRQVXDTtrWP9yBsCzqAGfgf",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "ybxqVg6R2pSPRQVXDTtrWP9yBsCzqAGfgf",
+                "percentage": 1.5
+            }
+        ],
+        "blockRefreshInterval": 1000,
+        "jobRebroadcastTimeout": 55,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3062": {
+                "difficulty": 0.02,
+                "varDiff": {
+                    "minDiff": 0.01,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            },
+            "3063": {
+                "difficulty": 100
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
                 "port": 15001,
                 "user": "user",
                 "password": "pass"
@@ -158,5 +213,61 @@
                 "factor": 2.0
             }
         }
-    }]
+    },
+    // {
+    //     "id": "zcash1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "ZEC"
+    //     },
+    //     "address": "tmPADTRiqd65B1LLfUv2FBbgVsHLe89AAWE",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "tmPADTRiqd65B1LLfUv2FBbgVsHLe89AAWE",
+    //             "percentage": 1.5
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "3072": {
+    //             "difficulty": 0.02,
+    //             "varDiff": {
+    //                 "minDiff": 0.01,
+    //                 "maxDiff": null,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "3073": {
+    //             "difficulty": 100
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 14001,
+    //             "user": "user",
+    //             "password": "pass"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         }
+    //     }
+    // }
+    ]
 }

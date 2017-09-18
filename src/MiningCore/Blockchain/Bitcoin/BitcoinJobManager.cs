@@ -41,7 +41,9 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinJobManager : JobManagerBase<BitcoinJob>
+    public class BitcoinJobManager<TJob, TBlockTemplate> : JobManagerBase<TJob>
+        where TBlockTemplate: BlockTemplate
+        where TJob: BitcoinJob<TBlockTemplate>, new()
     {
         public BitcoinJobManager(
             IComponentContext ctx,
@@ -60,7 +62,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 
         private readonly IHashAlgorithm sha256s = new Sha256S();
-        protected readonly Dictionary<string, BitcoinJob> validJobs = new Dictionary<string, BitcoinJob>();
+        protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
         private IHashAlgorithm blockHasher;
         private IHashAlgorithm coinbaseHasher;
         private double shareMultiplier;
@@ -111,9 +113,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Select(GetJobParamsForStratum);
         }
 
-        private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
+        private async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
         {
-            var result = await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(
+            var result = await daemon.ExecuteCmdAnyAsync<TBlockTemplate>(
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
             return result;
@@ -121,7 +123,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
 
             if (infos.Length > 0)
             {
@@ -131,16 +133,13 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (blockCount.HasValue)
                 {
                     // get list of peers and their highest block height to compare to ours
-                    var peerInfo = await daemon.ExecuteCmdAnyAsync<GetPeerInfoResponse[]>(BitcoinCommands.GetPeerInfo);
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(BitcoinCommands.GetPeerInfo);
                     var peers = peerInfo.Response;
 
                     if (peers != null && peers.Length > 0)
                     {
-                        var totalBlocks = peers
-                            .OrderBy(x => x.StartingHeight)
-                            .First().StartingHeight;
-
-                        var percent = blockCount > 0 ? (double)totalBlocks / blockCount * 100 : 0;
+                        var totalBlocks = peers.Max(x=> x.StartingHeight);
+                        var percent = totalBlocks > 0 ? (double)blockCount / totalBlocks * 100 : 0;
                         logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                     }
                 }
@@ -168,7 +167,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // was it accepted?
             var acceptResult = results[1];
-            var block = acceptResult.Response?.ToObject<GetBlockResponse>();
+            var block = acceptResult.Response?.ToObject<Blocks>();
             var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
 
             return (accepted, block?.Transactions.FirstOrDefault());
@@ -189,8 +188,8 @@ namespace MiningCore.Blockchain.Bitcoin
                     logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
             }
 
-            var infoResponse = results[0].Response.ToObject<GetInfoResponse>();
-            var miningInfoResponse = results[1].Response.ToObject<GetMiningInfoResponse>();
+            var infoResponse = results[0].Response.ToObject<Info>();
+            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
 
             BlockchainStats.BlockHeight = infoResponse.Blocks;
             BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
@@ -237,6 +236,14 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new X11();
                     blockHasher = new DigestReverser(headerHasher);
+                    shareMultiplier = 1;
+                    break;
+
+                // Equihash
+                case CoinType.ZEC:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new DummyHasher();  // N/A
+                    blockHasher = sha256dReverse;
                     shareMultiplier = 1;
                     break;
 
@@ -297,7 +304,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (string.IsNullOrEmpty(workerValue))
                 throw new StratumException(StratumError.Other, "missing or invalid workername");
 
-            BitcoinJob job;
+            TJob job;
 
             lock (jobLock)
             {
@@ -377,14 +384,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override async Task<bool> IsDaemonHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
 
             return responses.All(x => x.Error == null);
         }
 
         protected override async Task<bool> IsDaemonConnected()
         {
-            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(BitcoinCommands.GetInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<Info>(BitcoinCommands.GetInfo);
 
             return response.Error == null && response.Response.Connections > 0;
         }
@@ -395,7 +402,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
+                var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
                     BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
@@ -446,7 +453,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var validateAddressResponse = results[0].Response.ToObject<ValidateAddressResponse>();
             var difficultyResponse = results[1].Response.ToObject<JToken>();
             var submitBlockResponse = results[2];
-            var blockchainInfoResponse = results[3].Response.ToObject<GetBlockchainInfoResponse>();
+            var blockchainInfoResponse = results[3].Response.ToObject<BlockchainInfo>();
 
             // validate pool-address for pool-fee payout
             if (!validateAddressResponse.IsValid)
@@ -507,17 +514,17 @@ namespace MiningCore.Blockchain.Bitcoin
                 lock (jobLock)
                 {
                     var isNew = currentJob == null ||
-                                currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                                currentJob.BlockTemplate.Height < blockTemplate.Height;
+                                currentJob.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                                currentJob.BlockTemplate?.Height < blockTemplate.Height;
 
                     if (isNew || forceUpdate)
                     {
-                        currentJob = new BitcoinJob(blockTemplate, NextJobId(),
+                        currentJob = new TJob();
+
+                        currentJob.Init(blockTemplate, NextJobId(),
                             poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS,
                             shareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
-
-                        currentJob.Init();
 
                         if (isNew)
                         {

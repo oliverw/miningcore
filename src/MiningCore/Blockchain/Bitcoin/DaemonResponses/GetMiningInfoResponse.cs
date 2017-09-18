@@ -20,7 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
 {
-    public class GetMiningInfoResponse
+    public class MiningInfo
     {
         public int Blocks { get; set; }
         public int CurrentBlockSize { get; set; }
