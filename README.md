@@ -409,7 +409,7 @@ cd miningcore/src/MiningCore
 Install dev-dependencies (Ubuntu)
 
 ```bash
-apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev
+apt-get update -y && apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
 ```
 ```bash
 ./linux-build.sh
