@@ -39,6 +39,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "jh.h"
 #include "c11.h"
 #include "equi/equi.h"
+#include "libethash/ethash.h"
 
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)

@@ -152,6 +152,36 @@
     <ClInclude Include="equi\endian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="libethash\compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\data_sizes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\ethash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\fnv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\mmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\sha3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libethash\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -287,6 +317,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="equi\endian.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\internal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\io_win32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\mmap_win32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\sha3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libethash\util_win32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
