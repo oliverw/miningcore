@@ -77,8 +77,6 @@ namespace MiningCore
         {
             try
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Environment.Is64BitProcess)
-                    throw new PoolStartupAbortException("MiningCore cannot run on 32-Bit Windows!");
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -558,7 +556,6 @@ namespace MiningCore
 
         private static readonly string[] NativeLibs =
         {
-            "libsodium.dll",
             "libmultihash.dll",
             "libcryptonote.dll"
         };
