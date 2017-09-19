@@ -23,7 +23,7 @@ using System.Threading;
 using MiningCore.Contracts;
 using MiningCore.Native;
 
-namespace MiningCore.Crypto.Hashing.Special
+namespace MiningCore.Crypto.Hashing.Equihash
 {
     public unsafe class EquihashVerifier
     {
