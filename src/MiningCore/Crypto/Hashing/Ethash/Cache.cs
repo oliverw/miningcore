@@ -2,30 +2,59 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using MiningCore.Crypto.Hashing.Algorithms;
+using MiningCore.Extensions;
+using MiningCore.Native;
+using NLog;
 
 namespace MiningCore.Crypto.Hashing.Ethash
 {
     public class Cache : IDisposable
     {
-        public ulong Epoch { get; set; }
-        public DateTime? Used { get; set; }
-        public bool Test { get; set; }  // If set, use a smaller cache size
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private LightClient lightClient;
+        private LightHandler lightHandler;
 
-        public Task GenerateAsync()
+        public async Task GenerateAsync(ulong block)
         {
-            throw new NotImplementedException();
+            await Task.Run(() =>
+            {
+                var epoch = block / EthashConstants.EpochLength;
+                var started = DateTime.Now;
+
+                logger.Debug(() => $"Generating cache for epoch {epoch}");
+
+                lightHandler = new LightHandler(block, 1);
+
+                logger.Debug(() => $"Done generating cache for epoch {epoch} after {DateTime.Now - started}");
+            });
         }
 
-        public bool Compute(ulong dagSize, string hash, ulong nonce)
-        {
-            throw new NotImplementedException();
-        }
+        //public bool Compute(ulong dagSize, string hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        //{
+        //}
 
         public void Dispose()
         {
-            lightClient?.Dispose();
+            lightHandler?.Dispose();
+        }
+
+        byte[] MakeSeedHashBlock(ulong block)
+        {
+            return MakeSeedHashEpoch(block / EthashConstants.EpochLength);
+        }
+
+        byte[] MakeSeedHashEpoch(ulong epoch)
+        {
+            var result = new byte[32];
+            var hasher = new Sha3_256();
+
+            for(var i = 0ul; i < epoch; i++)
+            {
+                result = hasher.Digest(result);
+            }
+
+            return result;
         }
     }
 }

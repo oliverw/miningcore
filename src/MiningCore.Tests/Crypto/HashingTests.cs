@@ -174,5 +174,37 @@ namespace MiningCore.Tests.Crypto
             Assert.Throws<ArgumentException>(() => hasher.Verify(new byte[140], new byte[3]));
         }
         */
+
+        [Fact]
+        public void Sha3_256_Hash_Should_Match()
+        {
+            var hasher = new Sha3_256();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("00b11e72b948db16a181437150237fa247f9b5932758b7d3f648832ed88e7919", result);
+        }
+
+        [Fact]
+        public void Sha3_256_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha3_256();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void Sha3_512_Hash_Should_Match()
+        {
+            var hasher = new Sha3_512();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("e0883cffc9ff0ecf41fca8ade29dba1fc0df4b15beccc06ca03283805e176e497f0dd33db3bda375b199a4bb5eb1bb3ba884f3cc26f65f7acf08e1307058cc8d", result);
+        }
+
+        [Fact]
+        public void Sha3_512_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha3_512();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
     }
 }

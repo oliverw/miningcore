@@ -39,6 +39,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "jh.h"
 #include "c11.h"
 #include "equi/equi.h"
+#include "libethash/sha3.h"
+#include "libethash/internal.h"
 #include "libethash/ethash.h"
 
 #ifdef _WIN32
@@ -162,4 +164,75 @@ extern "C" MODULE_API void c11_export(const char* input, char* output)
 extern "C" MODULE_API bool equihash_verify_export(const char* header, const char* solution)
 {
 	return verifyEH(header, solution);
+}
+
+extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)
+{
+	SHA3_256((ethash_h256 const*) output, (uint8_t const*) input, input_len);
+}
+
+extern "C" MODULE_API void sha3_512_export(const char* input, char* output, uint32_t input_len)
+{
+	SHA3_512((uint8_t*) output, (uint8_t const*)input, input_len);
+}
+
+extern "C" MODULE_API uint64_t ethash_get_datasize_export(uint64_t const block_number)
+{
+	return ethash_get_datasize(block_number);
+}
+
+extern "C" MODULE_API uint64_t ethash_get_cachesize_export(uint64_t const block_number)
+{
+	return ethash_get_cachesize(block_number);
+}
+
+extern "C" MODULE_API ethash_light_t ethash_light_new_export(uint64_t block_number)
+{
+	return ethash_light_new(block_number);
+}
+
+extern "C" MODULE_API void ethash_light_delete_export(ethash_light_t light)
+{
+	ethash_light_delete(light);
+}
+
+extern "C" MODULE_API ethash_return_value_t ethash_light_compute_export(
+	ethash_light_t light,
+	ethash_h256_t const header_hash,
+	uint64_t nonce)
+{
+	return ethash_light_compute(light, header_hash, nonce);
+}
+
+extern "C" MODULE_API ethash_full_t ethash_full_new_export(ethash_light_t light, ethash_callback_t callback)
+{
+	return ethash_full_new(light, callback);
+}
+
+extern "C" MODULE_API void ethash_full_delete_export(ethash_full_t full)
+{
+	ethash_full_delete(full);
+}
+
+extern "C" MODULE_API ethash_return_value_t ethash_full_compute_export(
+	ethash_full_t full,
+	ethash_h256_t const header_hash,
+	uint64_t nonce)
+{
+	 return ethash_full_compute(full, header_hash, nonce);
+}
+
+extern "C" MODULE_API void const* ethash_full_dag_export(ethash_full_t full)
+{
+	return ethash_full_dag(full);
+}
+
+extern "C" MODULE_API uint64_t ethash_full_dag_size_export(ethash_full_t full)
+{
+	return ethash_full_dag_size(full);
+}
+
+extern "C" MODULE_API ethash_h256_t ethash_get_seedhash_export(uint64_t block_number)
+{
+	return ethash_get_seedhash(block_number);
 }

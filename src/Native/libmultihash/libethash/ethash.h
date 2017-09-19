@@ -40,12 +40,6 @@
 #define ETHASH_DAG_MAGIC_NUM_SIZE 8
 #define ETHASH_DAG_MAGIC_NUM 0xFEE1DEADBADDCAFE
 
-#ifdef _WIN32
-#define MODULE_API __declspec(dllexport)
-#else
-#define MODULE_API
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,12 +74,12 @@ typedef struct ethash_return_value {
  * @return               Newly allocated ethash_light handler or NULL in case of
  *                       ERRNOMEM or invalid parameters used for @ref ethash_compute_cache_nodes()
  */
-MODULE_API ethash_light_t ethash_light_new(uint64_t block_number);
+ethash_light_t ethash_light_new(uint64_t block_number);
 /**
  * Frees a previously allocated ethash_light handler
  * @param light        The light handler to free
  */
-MODULE_API void ethash_light_delete(ethash_light_t light);
+void ethash_light_delete(ethash_light_t light);
 /**
  * Calculate the light client data
  *
@@ -94,7 +88,7 @@ MODULE_API void ethash_light_delete(ethash_light_t light);
  * @param nonce          The nonce to pack into the mix
  * @return               an object of ethash_return_value_t holding the return values
  */
-MODULE_API ethash_return_value_t ethash_light_compute(
+ethash_return_value_t ethash_light_compute(
 	ethash_light_t light,
 	ethash_h256_t const header_hash,
 	uint64_t nonce
@@ -114,13 +108,13 @@ MODULE_API ethash_return_value_t ethash_light_compute(
  * @return              Newly allocated ethash_full handler or NULL in case of
  *                      ERRNOMEM or invalid parameters used for @ref ethash_compute_full_data()
  */
-MODULE_API ethash_full_t ethash_full_new(ethash_light_t light, ethash_callback_t callback);
+ethash_full_t ethash_full_new(ethash_light_t light, ethash_callback_t callback);
 
 /**
  * Frees a previously allocated ethash_full handler
  * @param full    The light handler to free
  */
-MODULE_API void ethash_full_delete(ethash_full_t full);
+void ethash_full_delete(ethash_full_t full);
 /**
  * Calculate the full client data
  *
@@ -129,7 +123,7 @@ MODULE_API void ethash_full_delete(ethash_full_t full);
  * @param nonce          The nonce to pack into the mix
  * @return               An object of ethash_return_value to hold the return value
  */
-MODULE_API ethash_return_value_t ethash_full_compute(
+ethash_return_value_t ethash_full_compute(
 	ethash_full_t full,
 	ethash_h256_t const header_hash,
 	uint64_t nonce
@@ -137,16 +131,16 @@ MODULE_API ethash_return_value_t ethash_full_compute(
 /**
  * Get a pointer to the full DAG data
  */
-MODULE_API void const* ethash_full_dag(ethash_full_t full);
+void const* ethash_full_dag(ethash_full_t full);
 /**
  * Get the size of the DAG data
  */
-MODULE_API uint64_t ethash_full_dag_size(ethash_full_t full);
+uint64_t ethash_full_dag_size(ethash_full_t full);
 
 /**
  * Calculate the seedhash for a given block number
  */
-MODULE_API ethash_h256_t ethash_get_seedhash(uint64_t block_number);
+ethash_h256_t ethash_get_seedhash(uint64_t block_number);
 
 #ifdef __cplusplus
 }

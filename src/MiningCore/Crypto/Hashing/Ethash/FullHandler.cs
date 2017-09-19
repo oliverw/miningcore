@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MiningCore.Crypto.Hashing.Ethash
 {
-    public class FullClient : IDisposable
+    public class FullHandler : IDisposable
     {
         public void Dispose()
         {
