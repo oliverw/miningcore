@@ -35,10 +35,10 @@ Bitcoin Cash | Yes | Yes |
 Litecoin | Yes | Yes |
 Monero | Yes | Yes |
 DASH | Yes | Yes |
-Zcash | No |  | Oct 2017
-Ethereum | No |  | Nov 2017
-Ethereum Classic | No |  | Nov 2017
 Groestlcoin | Yes | Yes |
+Ethereum | No |  | Oct 2017
+Ethereum Classic | No |  | Oct 2017
+Zcash | No |  | Nov 2017
 Dogecoin | Yes | No |
 DigiByte | Yes | No |
 Namecoin | Yes | No |
