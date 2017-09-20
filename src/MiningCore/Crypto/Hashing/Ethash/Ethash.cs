@@ -102,8 +102,10 @@ namespace MiningCore.Crypto.Hashing.Ethash
                     {
                         var toEvict = caches.Values.OrderBy(x => x.LastUsed).First();
                         var key = caches.First(pair => pair.Value == toEvict).Key;
+                        var epochToEvict = toEvict.Epoch;
 
-                        logger.Debug(() => $"Evicting DAG for epoch {toEvict.Epoch} in favour of epoch {epoch}");
+                        logger.Debug(() => $"Evicting DAG for epoch {epochToEvict} in favour of epoch {epoch}");
+                        toEvict.Dispose();
                         caches.Remove(key);
                     }
 
