@@ -143,7 +143,7 @@ namespace MiningCore.Native
         /// <param name="nonce">The nonce to pack into the mix</param>
         /// <returns>an object of ethash_return_value_t holding the return values</returns>
         [DllImport("libmultihash", EntryPoint = "ethash_light_compute_export", CallingConvention = CallingConvention.Cdecl)]
-        public static extern ethash_return_value ethash_light_compute(IntPtr handle, byte[] header_hash, ulong nonce);
+        public static extern void ethash_light_compute(IntPtr handle, byte[] header_hash, ulong nonce, out ethash_return_value result);
 
         /// <summary>
         /// Allocate and initialize a new ethash_full handler
@@ -177,7 +177,7 @@ namespace MiningCore.Native
         /// <param name="nonce">The nonce to pack into the mix</param>
         /// <returns>an object of ethash_return_value_t holding the return values</returns>
         [DllImport("libmultihash", EntryPoint = "ethash_full_compute_export", CallingConvention = CallingConvention.Cdecl)]
-        public static extern ethash_return_value ethash_full_compute(IntPtr handle, byte[] header_hash, ulong nonce);
+        public static extern void ethash_full_compute(IntPtr handle, byte[] header_hash, ulong nonce, out ethash_return_value result);
 
         /// <summary>
         /// Get a pointer to the full DAG data

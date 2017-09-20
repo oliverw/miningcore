@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
+using MiningCore.Contracts;
 using MiningCore.Native;
 using NLog;
 
@@ -54,18 +55,21 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
+            Contract.RequiresNonNull(hash, nameof(hash));
+
             mixDigest = null;
             result = null;
 
-            var tmp = LibMultihash.ethash_light_compute(handle, hash, nonce);
+            LibMultihash.ethash_return_value value;
+            LibMultihash.ethash_light_compute(handle, hash, nonce, out value);
 
-            if (tmp.success)
+            if (value.success)
             {
-                mixDigest = tmp.mix_hash.value;
-                result = tmp.result.value;
+                mixDigest = value.mix_hash.value;
+                result = value.result.value;
             }
 
-            return tmp.success;
+            return value.success;
         }
     }
 }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
+using MiningCore.Contracts;
+using MiningCore.Extensions;
 using NLog;
 
 namespace MiningCore.Crypto.Hashing.Ethash
@@ -54,6 +56,8 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public async Task<bool> VerifyAsync(Block block)
         {
+            Contract.RequiresNonNull(block, nameof(block));
+
             if (block.Height > EthereumConstants.EpochLength * 2048)
             {
                 logger.Debug(() => $"Block height {block.Height} exceeds limit of {EthereumConstants.EpochLength * 2048}");
@@ -81,7 +85,8 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             // The actual check.
             var target = BigInteger.Divide(EthereumConstants.BigMaxValue, block.Difficulty);
-            var result = new BigInteger(resultBytes).CompareTo(target) <= 0;
+            var resultValue = new BigInteger(resultBytes.ToReverseArray());
+            var result = resultValue.CompareTo(target) <= 0;
             return result;
         }
 
