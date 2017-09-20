@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using MiningCore.Crypto.Hashing.Algorithms;
-using MiningCore.Extensions;
+using MiningCore.Blockchain.Ethereum;
 using MiningCore.Native;
 using NLog;
 
@@ -11,50 +8,64 @@ namespace MiningCore.Crypto.Hashing.Ethash
 {
     public class Cache : IDisposable
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        private LightHandler lightHandler;
-
-        public async Task GenerateAsync(ulong block)
+        public Cache(ulong epoch)
         {
-            await Task.Run(() =>
-            {
-                var epoch = block / EthashConstants.EpochLength;
-                var started = DateTime.Now;
-
-                logger.Debug(() => $"Generating cache for epoch {epoch}");
-
-                lightHandler = new LightHandler(block, 1);
-
-                logger.Debug(() => $"Done generating cache for epoch {epoch} after {DateTime.Now - started}");
-            });
+            Epoch = epoch;
+            LastUsed = DateTime.Now;
         }
 
-        //public bool Compute(ulong dagSize, string hash, ulong nonce, out byte[] mixDigest, out byte[] result)
-        //{
-        //}
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private IntPtr handle = IntPtr.Zero;
+        private bool isGenerated = false;
+        private readonly object genLock = new object();
+
+        public ulong Epoch { get; }
+        public DateTime LastUsed { get; set; }
 
         public void Dispose()
         {
-            lightHandler?.Dispose();
-        }
-
-        byte[] MakeSeedHashBlock(ulong block)
-        {
-            return MakeSeedHashEpoch(block / EthashConstants.EpochLength);
-        }
-
-        byte[] MakeSeedHashEpoch(ulong epoch)
-        {
-            var result = new byte[32];
-            var hasher = new Sha3_256();
-
-            for(var i = 0ul; i < epoch; i++)
+            if (handle != IntPtr.Zero)
             {
-                result = hasher.Digest(result);
+                LibMultihash.ethash_light_delete(handle);
+                handle = IntPtr.Zero;
+            }
+        }
+
+        public async Task GenerateAsync()
+        {
+            await Task.Run(() =>
+            {
+                lock (genLock)
+                {
+                    if (!isGenerated)
+                    {
+                        var started = DateTime.Now;
+                        logger.Debug(() => $"Generating cache for epoch {Epoch}");
+
+                        var block = Epoch * EthereumConstants.EpochLength;
+                        handle = LibMultihash.ethash_light_new(block);
+
+                        logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
+                        isGenerated = true;
+                    }
+                }
+            });
+        }
+
+        public bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        {
+            mixDigest = null;
+            result = null;
+
+            var tmp = LibMultihash.ethash_light_compute(handle, hash, nonce);
+
+            if (tmp.success)
+            {
+                mixDigest = tmp.mix_hash.value;
+                result = tmp.result.value;
             }
 
-            return result;
+            return tmp.success;
         }
     }
 }
