@@ -357,7 +357,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
-            share.NormalizedDifficulty = stratumDifficulty / shareMultiplier;
+            share.NormalizedDifficulty = stratumDifficulty * shareMultiplier > 1.0 ? (1d / (BitcoinConstants.Pow2x32 / shareMultiplier)) : 1;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
