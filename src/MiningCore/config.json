@@ -160,16 +160,16 @@
     //     }
     // },
     {
-        "id": "dash1",
+        "id": "bcc1",
         "enabled": true,
         "coin": {
-            "type": "DASH"
+            "type": "BCC"
         },
-        "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+        "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
         "rewardRecipients": [
             {
                 "type": "op",
-                "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+                "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
                 "percentage": 1.5
             }
         ],
@@ -183,7 +183,7 @@
             "checkThreshold": 50
         },
         "ports": {
-            "3062": {
+            "3052": {
                 "difficulty": 0.02,
                 "varDiff": {
                     "minDiff": 0.01,
@@ -193,14 +193,14 @@
                     "variancePercent": 30
                 }
             },
-            "3063": {
+            "3053": {
                 "difficulty": 100
             }
         },
         "daemons": [
             {
                 "host": "127.0.0.1",
-                "port": 15001,
+                "port": 16001,
                 "user": "user",
                 "password": "pass"
             }
@@ -214,6 +214,61 @@
             }
         }
     },
+    // {
+    //     "id": "dash1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "DASH"
+    //     },
+    //     "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+    //             "percentage": 1.5
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "3062": {
+    //             "difficulty": 0.02,
+    //             "varDiff": {
+    //                 "minDiff": 0.01,
+    //                 "maxDiff": null,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "3063": {
+    //             "difficulty": 100
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 15001,
+    //             "user": "user",
+    //             "password": "pass"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         }
+    //     }
+    // },
     // {
     //     "id": "zcash1",
     //     "enabled": true,

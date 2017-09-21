@@ -167,8 +167,7 @@ namespace MiningCore.Blockchain.Monero
             return result;
         }
 
-        private async Task OnSubmitAsync(StratumClient<MoneroWorkerContext> client,
-            Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubmitAsync(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -179,7 +178,7 @@ namespace MiningCore.Blockchain.Monero
             }
 
             // check age of submission (aged submissions are usually caused by high server load)
-            var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+            var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
             if (requestAge > maxShareAge)
             {

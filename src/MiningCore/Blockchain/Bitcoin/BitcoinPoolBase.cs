@@ -117,8 +117,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Respond(client.Context.IsAuthorized, request.Id);
         }
 
-        private async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client,
-            Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -129,7 +128,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             // check age of submission (aged submissions are usually caused by high server load)
-            var requestAge = DateTime.UtcNow - tsRequest.Timestamp;
+            var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
             if (requestAge > maxShareAge)
             {
@@ -141,13 +140,9 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Context.LastActivity = DateTime.UtcNow;
 
             if (!client.Context.IsAuthorized)
-            {
                 client.RespondError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
-            }
             else if (!client.Context.IsSubscribed)
-            {
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
-            }
             else
             {
                 UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
