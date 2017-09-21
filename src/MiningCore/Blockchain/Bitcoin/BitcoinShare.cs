@@ -24,11 +24,5 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public string BlockHex { get; set; }
         public string BlockHash { get; set; }
-
-
-        /// <summary>
-        /// Difficulty relative to a Bitcoin Difficulty 1 Share (used for pool hashrate calculation)
-        /// </summary>
-        public double NormalizedDifficulty { get; set; }
     }
 }

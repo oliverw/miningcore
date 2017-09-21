@@ -305,8 +305,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Where(shares => shares.Any())
                 .Select(shares =>
                 {
-                    var sum = shares.Sum(share => ((BitcoinShare)share).NormalizedDifficulty);
-                    var result = sum * BitcoinConstants.Pow2x32 / poolHashRateSampleIntervalSeconds;
+                    var sum = shares.Sum(share => share.StratumDifficulty);
+                    var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
+                    var result = sum * multiplier / poolHashRateSampleIntervalSeconds;
 
 	                return result;
                 })

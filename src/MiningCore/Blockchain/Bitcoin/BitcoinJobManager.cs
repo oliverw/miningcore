@@ -65,7 +65,6 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
         private IHashAlgorithm blockHasher;
         private IHashAlgorithm coinbaseHasher;
-        private double shareMultiplier;
         private bool hasSubmitBlockMethod;
         private IHashAlgorithm headerHasher;
         private bool isPoS;
@@ -209,7 +208,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = sha256d;
                     blockHasher = sha256dReverse;
-                    shareMultiplier = 1;
+                    ShareMultiplier = 1;
                     break;
 
                 // Scrypt
@@ -220,7 +219,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new Scrypt(1024, 1);
                     blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
-                    shareMultiplier = Math.Pow(2, 16);
+                    ShareMultiplier = Math.Pow(2, 16);
                     break;
 
                 // Groestl
@@ -228,7 +227,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256s;
                     headerHasher = new Groestl();
                     blockHasher = new DigestReverser(headerHasher);
-                    shareMultiplier = Math.Pow(2, 8);
+                    ShareMultiplier = Math.Pow(2, 8);
                     break;
 
                 // X11
@@ -236,7 +235,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new X11();
                     blockHasher = new DigestReverser(headerHasher);
-                    shareMultiplier = 1;
+                    ShareMultiplier = 1;
                     break;
 
                 // Equihash
@@ -244,7 +243,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new DummyHasher();  // N/A
                     blockHasher = sha256dReverse;
-                    shareMultiplier = 1;
+                    ShareMultiplier = 1;
                     break;
 
                 default:
@@ -357,7 +356,6 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
-            share.NormalizedDifficulty = stratumDifficulty * shareMultiplier > 1.0 ? (1d / (BitcoinConstants.Pow2x32 / shareMultiplier)) : 1;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
@@ -367,6 +365,7 @@ namespace MiningCore.Blockchain.Bitcoin
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public double ShareMultiplier { get; private set; }
 
         #endregion // API-Surface
 
@@ -523,7 +522,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                         currentJob.Init(blockTemplate, NextJobId(),
                             poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS,
-                            shareMultiplier,
+                            ShareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 
                         if (isNew)
