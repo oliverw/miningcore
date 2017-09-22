@@ -352,7 +352,7 @@ namespace MiningCore.Blockchain.Monero
                 .Select(shares =>
                 {
                     if (!shares.Any())
-                        return 0;
+                        return 0ul;
 
                     try
                     {
@@ -362,16 +362,16 @@ namespace MiningCore.Blockchain.Monero
                     catch (Exception ex)
                     {
                         logger.Error(ex);
-                        return 0;
+                        return 0ul;
                     }
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override double HashrateFromShares(IEnumerable<IShare> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
         {
-            var result = shares.Sum(share => share.StratumDifficulty) / interval;
-            return (float)result;
+            var result = Math.Ceiling(shares.Sum(share => share.StratumDifficulty) / interval);
+            return (ulong)result;
         }
 
         protected override void UpdateVarDiff(StratumClient<MoneroWorkerContext> client)

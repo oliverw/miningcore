@@ -39,7 +39,7 @@ namespace MiningCore.Configuration
         VIA, // Viacoin
         PPC, // Peercoin
 
-        ZEC, // Zcash
+        ZEC, // Zcashn
         ETH, // Ethereum
         ETC, // Ethereum Classic
         DASH, // Dash

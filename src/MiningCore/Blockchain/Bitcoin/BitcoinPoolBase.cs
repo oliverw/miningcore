@@ -306,7 +306,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Select(shares =>
                 {
                     if (!shares.Any())
-                        return 0;
+                        return 0ul;
 
                     try
                     {
@@ -316,18 +316,18 @@ namespace MiningCore.Blockchain.Bitcoin
                     catch (Exception ex)
                     {
                         logger.Error(ex);
-                        return 0;
+                        return 0ul;
                     }
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override double HashrateFromShares(IEnumerable<IShare> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
         {
             var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
             var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
-            var result = sum * multiplier / interval;
-            return result;
+            var result = Math.Ceiling(sum * multiplier / interval);
+            return (ulong) result;
         }
 
         protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)

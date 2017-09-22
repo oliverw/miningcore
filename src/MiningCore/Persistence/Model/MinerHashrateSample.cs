@@ -8,8 +8,8 @@ namespace MiningCore.Persistence.Model
     {
         public string PoolId { get; set; }
         public string Miner { get; set; }
-        public double Hashrate { get; set; }
-        public Dictionary<string, double> WorkerHashrates { get; set; }
+        public ulong Hashrate { get; set; }
+        public Dictionary<string, ulong> WorkerHashrates { get; set; }
         public DateTime Created { get; set; }
     }
 }
