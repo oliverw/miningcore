@@ -34,6 +34,7 @@ using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
+using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
@@ -93,8 +94,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
-        private async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client,
-            Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -302,18 +302,32 @@ namespace MiningCore.Blockchain.Bitcoin
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
+                .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>
                 {
                     if (!shares.Any())
                         return 0;
 
-                    var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
-                    var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
-                    var result = sum * multiplier / poolHashRateSampleIntervalSeconds;
+                    try
+                    {
+                        return CalculateHashrateForShares(shares, poolHashRateSampleIntervalSeconds);
+                    }
 
-                    return result;
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                        return 0;
+                    }
                 })
-                .Subscribe(hashRate => poolStats.PoolHashRate = (float) hashRate));
+                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
+        }
+
+        protected override double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval)
+        {
+            var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
+            var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
+            var result = sum * multiplier / interval;
+            return result;
         }
 
         protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)

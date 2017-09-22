@@ -28,5 +28,6 @@ namespace MiningCore.Persistence.Model
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
         public Payment LastPayment { get; set; }
+        public MinerHashrateSample[] Hashrate { get; set; }
     }
 }

@@ -344,19 +344,34 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
+                .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>
                 {
                     if (!shares.Any())
                         return 0;
 
-                    var result = shares.Sum(share => share.StratumDifficulty) / poolHashRateSampleIntervalSeconds;
-                    return (float)result;
+                    try
+                    {
+                        return CalculateHashrateForShares(shares, poolHashRateSampleIntervalSeconds);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                        return 0;
+                    }
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
+        }
+
+        protected override double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval)
+        {
+            var result = shares.Sum(share => share.StratumDifficulty) / interval;
+            return (float)result;
         }
 
         protected override void UpdateVarDiff(StratumClient<MoneroWorkerContext> client)

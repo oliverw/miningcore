@@ -23,12 +23,14 @@ using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
+using MiningCore.Persistence.Common.Repositories;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 
 namespace MiningCore.Persistence.Postgres.Repositories
 {
-    public class StatsRepository : IStatsRepository
+    public class StatsRepository : StatsRepositoryBase,
+        IStatsRepository
     {
         public StatsRepository(IMapper mapper)
         {
@@ -88,6 +90,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         " ORDER BY created DESC LIMIT 1";
 
                 result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new {poolId, miner});
+                result.Hashrate = GetMinerHashrateSamples(poolId, miner);
             }
 
             return result;

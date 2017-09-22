@@ -34,10 +34,12 @@ using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
+using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using MiningCore.Util;
@@ -375,6 +377,58 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                             }
                         }));
                 }
+            }
+        }
+
+        protected abstract double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval);
+
+        protected virtual void UpdateMinerHashrates(IList<IShare> shares, int interval)
+        {
+            try
+            {
+                var sharesByMiner = shares.GroupBy(x => x.Miner);
+
+                foreach (var minerShares in sharesByMiner)
+                {
+                    // Total hashrate
+                    var miner = minerShares.Key;
+                    var hashRate = CalculateHashrateForShares(minerShares, interval);
+
+                    var sample = new MinerHashrateSample
+                    {
+                        PoolId = poolConfig.Id,
+                        Miner = miner,
+                        Hashrate = hashRate,
+                        Created = DateTime.UtcNow
+                    };
+
+                    // Per worker hashrates
+                    var sharesPerWorker = minerShares
+                        .GroupBy(x => x.Worker)
+                        .Where(x => !string.IsNullOrEmpty(x.Key));
+
+                    foreach (var workerShares in sharesPerWorker)
+                    {
+                        var worker = workerShares.Key;
+                        hashRate = CalculateHashrateForShares(workerShares, interval);
+
+                        if(sample.WorkerHashrates == null)
+                            sample.WorkerHashrates = new Dictionary<string, double>();
+
+                        sample.WorkerHashrates[worker] = hashRate;
+                    }
+
+                    // Persist
+                    cf.RunTx((con, tx) =>
+                    {
+                        statsRepo.RecordMinerHashrateSample(con, tx, sample);
+                    });
+                }
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex);
             }
         }
 

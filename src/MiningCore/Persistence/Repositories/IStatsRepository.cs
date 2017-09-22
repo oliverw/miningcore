@@ -31,5 +31,6 @@ namespace MiningCore.Persistence.Repositories
         PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
         PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end);
         MinerStats GetMinerStats(IDbConnection con, string poolId, string miner);
+        void RecordMinerHashrateSample(IDbConnection con, IDbTransaction tx, MinerHashrateSample sample);
     }
 }

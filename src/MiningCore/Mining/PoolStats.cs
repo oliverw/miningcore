@@ -26,7 +26,7 @@ namespace MiningCore.Mining
     {
         public DateTime? LastPoolBlockTime { get; set; }
         public int ConnectedMiners { get; set; }
-        public float PoolHashRate { get; set; }
+        public double PoolHashRate { get; set; }
         public float PoolFeePercent { get; set; }
         public float DonationsPercent { get; set; }
 

@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using MiningCore.Persistence.Model;
 
 namespace MiningCore.Api.Responses
 {
@@ -29,5 +30,6 @@ namespace MiningCore.Api.Responses
         public decimal TotalPaid { get; set; }
         public DateTime? LastPayment { get; set; }
         public string LastPaymentLink { get; set; }
+        public MinerHashrateSample[] Hashrate { get; set; }
     }
 }
