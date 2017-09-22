@@ -302,9 +302,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
-                .Where(shares => shares.Any())
                 .Select(shares =>
                 {
+                    if (!shares.Any())
+                        return 0;
+
                     var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
                     var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
                     var result = sum * multiplier / poolHashRateSampleIntervalSeconds;

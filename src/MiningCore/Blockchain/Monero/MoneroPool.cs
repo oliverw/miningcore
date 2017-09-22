@@ -348,9 +348,11 @@ namespace MiningCore.Blockchain.Monero
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
-                .Where(shares => shares.Any())
                 .Select(shares =>
                 {
+                    if (!shares.Any())
+                        return 0;
+
                     var result = shares.Sum(share => share.StratumDifficulty) / poolHashRateSampleIntervalSeconds;
                     return (float)result;
                 })
