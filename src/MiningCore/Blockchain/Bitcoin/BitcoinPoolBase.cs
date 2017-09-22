@@ -305,11 +305,11 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Where(shares => shares.Any())
                 .Select(shares =>
                 {
-                    var sum = shares.Sum(share => share.StratumDifficulty);
+                    var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
                     var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
                     var result = sum * multiplier / poolHashRateSampleIntervalSeconds;
 
-	                return result;
+                    return result;
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = (float) hashRate));
         }
