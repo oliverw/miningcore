@@ -52,7 +52,7 @@ namespace MiningCore.VarDiff
 
             lock (ctx)
             {
-                var maxDiff = options.MaxDiff ?? networkDifficulty;
+                var maxDiff = options.MaxDiff ?? Math.Max(minDiff, networkDifficulty);  // for regtest 
 
                 var ts = (DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) | 0;
 
@@ -94,6 +94,7 @@ namespace MiningCore.VarDiff
                     return null;
 
                 var newDiff = difficulty * ddiff;
+
                 ctx.TimeBuffer = new CircularLongBuffer(bufferSize);
                 return newDiff;
             }

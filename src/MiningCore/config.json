@@ -183,7 +183,13 @@
         },
         "ports": {
             "3042": {
-                "difficulty": 20
+                "difficulty": 20,
+                "varDiff": {
+                    "minDiff": 10,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
             },
             "3043": {
                 "difficulty": 100
