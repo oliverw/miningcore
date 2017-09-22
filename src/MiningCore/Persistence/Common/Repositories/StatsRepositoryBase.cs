@@ -28,32 +28,17 @@ namespace MiningCore.Persistence.Common.Repositories
             Contract.RequiresNonNull(sample, nameof(sample));
 
             var key = BuildSampleKey(sample.PoolId, sample.Miner);
-            var samples = cache.Get<List<MinerHashrateSample>>(key);
-            var isNew = samples == null;
+            var samples = cache.Get<List<MinerHashrateSample>>(key) ?? new List<MinerHashrateSample>(MaxHistorySize) { sample };
 
-            if (isNew)
+            while(samples.Count >= MaxHistorySize)
+                samples.Remove(samples.Last());
+
+            samples.Insert(0, sample);
+
+            cache.Set(key, samples, new MemoryCacheEntryOptions
             {
-                samples = new List<MinerHashrateSample>(MaxHistorySize)
-                {
-                    sample
-                };
-            }
-
-            else
-            {
-                while(samples.Count >= MaxHistorySize)
-                    samples.Remove(samples.Last());
-
-                samples.Insert(0, sample);
-            }
-
-            if (isNew)
-            {
-                cache.Set(key, samples, new MemoryCacheEntryOptions
-                {
-                    SlidingExpiration = TimeSpan.FromMinutes(15)
-                });
-            }
+                AbsoluteExpiration = DateTime.Now.AddMinutes(15)
+            });
         }
 
         protected MinerHashrateSample[] GetMinerHashrateSamples(string poolId, string miner)
