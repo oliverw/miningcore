@@ -344,7 +344,7 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
