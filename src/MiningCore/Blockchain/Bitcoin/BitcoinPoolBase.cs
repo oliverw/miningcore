@@ -310,7 +310,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     try
                     {
-                        return CalculateHashrateForShares(shares, poolHashRateSampleIntervalSeconds);
+                        return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
                     catch (Exception ex)
@@ -322,7 +322,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval)
+        protected override double HashrateFromShares(IEnumerable<IShare> shares, int interval)
         {
             var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
             var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;

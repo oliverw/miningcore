@@ -380,7 +380,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             }
         }
 
-        protected abstract double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval);
+        protected abstract double HashrateFromShares(IEnumerable<IShare> shares, int interval);
 
         protected virtual void UpdateMinerHashrates(IList<IShare> shares, int interval)
         {
@@ -392,7 +392,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                 {
                     // Total hashrate
                     var miner = minerShares.Key;
-                    var hashRate = CalculateHashrateForShares(minerShares, interval);
+                    var hashRate = HashrateFromShares(minerShares, interval);
 
                     var sample = new MinerHashrateSample
                     {
@@ -410,7 +410,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                     foreach (var workerShares in sharesPerWorker)
                     {
                         var worker = workerShares.Key;
-                        hashRate = CalculateHashrateForShares(workerShares, interval);
+                        hashRate = HashrateFromShares(workerShares, interval);
 
                         if(sample.WorkerHashrates == null)
                             sample.WorkerHashrates = new Dictionary<string, double>();

@@ -344,7 +344,7 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 5;// * 10;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
@@ -356,7 +356,7 @@ namespace MiningCore.Blockchain.Monero
 
                     try
                     {
-                        return CalculateHashrateForShares(shares, poolHashRateSampleIntervalSeconds);
+                        return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
                     catch (Exception ex)
@@ -368,7 +368,7 @@ namespace MiningCore.Blockchain.Monero
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override double CalculateHashrateForShares(IEnumerable<IShare> shares, int interval)
+        protected override double HashrateFromShares(IEnumerable<IShare> shares, int interval)
         {
             var result = shares.Sum(share => share.StratumDifficulty) / interval;
             return (float)result;
