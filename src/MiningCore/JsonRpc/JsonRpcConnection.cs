@@ -116,7 +116,10 @@ namespace MiningCore.JsonRpc
                         {
                             logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
-                            upstream.Dispose();
+                            upstream.Shutdown((tcp, ex) =>
+                            {
+                                upstream.Dispose();
+                            });
                         }
                     });
                 });
@@ -143,7 +146,8 @@ namespace MiningCore.JsonRpc
 
             try
             {
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                if(!upstream.IsClosing)
+                    upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
             }
             catch (ObjectDisposedException)
             {
@@ -158,7 +162,8 @@ namespace MiningCore.JsonRpc
 
             try
             {
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                if (!upstream.IsClosing)
+                    upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
             }
             catch (ObjectDisposedException)
             {
