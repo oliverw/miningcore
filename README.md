@@ -56,9 +56,11 @@ Peercoin | Yes | No |
 Create the database:
 
 ```bash
-psql (enter the password for postgressql)
 createuser miningcore
 createdb miningcore
+psql (enter the password for postgressql)
+```
+```sql
 alter user miningcore with encrypted password 'some-secure-password';
 grant all privileges on database miningcore to miningcore;
 ```
@@ -127,6 +129,12 @@ Example configuration:
     // Path to a file used to backup shares under emergency conditions such as database outage
     "shareRecoveryFile": "recovered-shares.txt"
   },
+  // Api Settings
+  "api": {
+    "enabled": true,
+    "listenAddress": "0.0.0.0", // Binding address for API, Default: 127.0.0.1
+    "port": 80 // Binding port for API, Default: 4000
+  },
   "pools": [{
     // DON'T change the id after a production pool has begun collecting shares!
     "id": "dash1",
@@ -172,6 +180,7 @@ Example configuration:
     // optional and will only be used for the ports you configure it for.
     "ports": {
       "3052": { // A port for your miners to connect to
+        "listenAddress": "0.0.0.0", // the binding address for the port, default: 127.0.0.1
         "difficulty": 0.02, // the pool difficulty for this port
         // Variable difficulty is a feature that will automatically adjust difficulty for
         // individual miners based on their hashrate in order to lower networking overhead
@@ -184,6 +193,7 @@ Example configuration:
         }
       },
       "3053": { //  Another port for your miners to connect to, this port does not use varDiff
+        "listenAddress": "0.0.0.0", // the binding address for the port, default: 127.0.0.1
         "difficulty": 100 // 256 //  The pool difficulty
       }
     },
