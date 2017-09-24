@@ -56,9 +56,11 @@ Peercoin | Yes | No |
 Create the database:
 
 ```bash
-psql (enter the password for postgressql)
 createuser miningcore
 createdb miningcore
+psql (enter the password for postgressql)
+```
+```sql
 alter user miningcore with encrypted password 'some-secure-password';
 grant all privileges on database miningcore to miningcore;
 ```
