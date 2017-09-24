@@ -69,7 +69,7 @@ namespace MiningCore.VarDiff
                 ctx.TimeBuffer.PushBack(sinceLast);
                 ctx.LastTs = ts;
 
-                if (ts - ctx.LastRtc < options.RetargetTime && ctx.TimeBuffer.Size > 0)
+                if (ts - ctx.LastRtc < options.RetargetTime || ctx.TimeBuffer.Size <= 0)
                     return null;
 
                 ctx.LastRtc = ts;
