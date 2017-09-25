@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using Newtonsoft.Json;
 
 namespace MiningCore.JsonRpc
@@ -48,11 +49,12 @@ namespace MiningCore.JsonRpc
     [JsonObject(MemberSerialization.OptIn)]
     public class JsonRpcException
     {
-        public JsonRpcException(int code, string message, object data)
+        public JsonRpcException(int code, string message, object data, Exception inner = null)
         {
             Code = code;
             Message = message;
             Data = data;
+            InnerException = inner;
         }
 
         [JsonProperty(PropertyName = "code")]
@@ -63,5 +65,8 @@ namespace MiningCore.JsonRpc
 
         [JsonProperty(PropertyName = "data")]
         public object Data { get; set; }
+
+        [JsonIgnore]
+        public Exception InnerException { get; set; }
     }
 }

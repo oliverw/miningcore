@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Linq;
+using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
@@ -292,11 +293,21 @@ namespace MiningCore.Blockchain.Monero
             // test daemons
             var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
 
+            if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
+
             if (!responses.All(x => x.Error == null))
                 return false;
 
             // test wallet daemons
             var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
+
+            if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
 
             return responses2.All(x => x.Error == null);
         }

@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -255,6 +256,11 @@ namespace MiningCore.Blockchain.Ethereum
         protected override async Task<bool> IsDaemonHealthy()
         {
             var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
+
+            if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
             return responses.All(x => x.Error == null);
         }

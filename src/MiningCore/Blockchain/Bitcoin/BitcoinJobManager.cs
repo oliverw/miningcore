@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -384,6 +385,11 @@ namespace MiningCore.Blockchain.Bitcoin
         protected override async Task<bool> IsDaemonHealthy()
         {
             var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
+
+            if(responses.Where(x=> x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x=> (DaemonClientException) x.Error.InnerException)
+                .Any(x=> x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
             return responses.All(x => x.Error == null);
         }

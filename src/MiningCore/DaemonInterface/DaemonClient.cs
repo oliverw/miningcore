@@ -195,6 +195,12 @@ namespace MiningCore.DaemonInterface
             // send request
             var httpClient = httpClients[endPoint];
             var response = await httpClient.SendAsync(request);
+
+            // check success
+            if(!response.IsSuccessStatusCode)
+                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+
+            // read response
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
@@ -229,6 +235,12 @@ namespace MiningCore.DaemonInterface
             // send request
             var httpClient = httpClients[endPoint];
             var response = await httpClient.SendAsync(request);
+
+            // check success
+            if (!response.IsSuccessStatusCode)
+                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+
+            // read response
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
@@ -258,7 +270,14 @@ namespace MiningCore.DaemonInterface
 
             if (x.IsFaulted)
             {
-                resp.Error = new JsonRpcException(-500, x.Exception.Message, null);
+                Exception inner;
+
+                if (x.Exception.InnerExceptions.Count == 1)
+                    inner = x.Exception.InnerException;
+                else
+                    inner = x.Exception;
+
+                resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
             else
