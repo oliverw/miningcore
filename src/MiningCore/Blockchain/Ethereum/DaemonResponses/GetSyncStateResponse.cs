@@ -18,11 +18,29 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Monero
+using MiningCore.Serialization;
+using Newtonsoft.Json;
+
+namespace MiningCore.Blockchain.Ethereum.DaemonResponses
 {
-    public class EthereumShare : ShareBase
+    public class SyncState
     {
-        public string BlobHex { get; set; }
-        public string BlobHash { get; set; }
+        /// <summary>
+        /// The block at which the import started (will only be reset, after the sync reached his head)
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong StartingBlock { get; set; }
+
+        /// <summary>
+        /// The current block, same as eth_blockNumber
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong CurrentBlock { get; set; }
+
+        /// <summary>
+        /// The estimated highest block
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong HighestBlock { get; set; }
     }
 }

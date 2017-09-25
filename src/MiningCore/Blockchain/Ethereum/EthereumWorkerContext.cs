@@ -18,11 +18,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Monero
+using System.Collections.Generic;
+using MiningCore.Blockchain.Monero;
+using MiningCore.Mining;
+
+namespace MiningCore.Blockchain.Ethereum
 {
-    public class EthereumShare : ShareBase
+    public class EthereumWorkerContext : WorkerContextBase
     {
-        public string BlobHex { get; set; }
-        public string BlobHash { get; set; }
+        public string MinerName { get; set; }
+        public string WorkerName { get; set; }
+        public string PaymentId { get; set; }
+        public List<MoneroWorkerJob> ValidJobs { get; } = new List<MoneroWorkerJob>();
+
+        public void AddJob(MoneroWorkerJob job)
+        {
+            ValidJobs.Add(job);
+
+            while (ValidJobs.Count > 4)
+                ValidJobs.RemoveAt(0);
+        }
     }
 }

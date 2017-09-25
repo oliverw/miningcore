@@ -440,8 +440,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (results.Any(x => x.Error != null))
             {
                 var resultList = results.ToList();
-                var errors = results.Where(x => x.Error != null &&
-                                                commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
+                var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
                     .ToArray();
 
                 if (errors.Any())
@@ -454,7 +453,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var submitBlockResponse = results[2];
             var blockchainInfoResponse = results[3].Response.ToObject<BlockchainInfo>();
 
-            // validate pool-address for pool-fee payout
+            // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
