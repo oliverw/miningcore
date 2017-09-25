@@ -62,7 +62,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         private readonly IComponentContext ctx;
         private DaemonClient daemon;
-        private DaemonClient walletDaemon;
         private EthereumNetworkType? networkType;
 
         protected override string LogCategory => "Ethereum Payout Handler";

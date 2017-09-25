@@ -20,7 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace MiningCore.Blockchain.Monero
 {
-    public class EthereumShare : ShareBase
+    public class MoneroShare : ShareBase
     {
         public string BlobHex { get; set; }
         public string BlobHash { get; set; }

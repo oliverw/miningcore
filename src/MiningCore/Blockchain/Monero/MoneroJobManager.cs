@@ -136,7 +136,7 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        private async Task<bool> SubmitBlockAsync(EthereumShare share)
+        private async Task<bool> SubmitBlockAsync(MoneroShare share)
         {
             var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] {share.BlobHex});
 
@@ -354,7 +354,7 @@ namespace MiningCore.Blockchain.Monero
 
             // ensure pool owns wallet
             if (addressResponse.Response?.Address != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
