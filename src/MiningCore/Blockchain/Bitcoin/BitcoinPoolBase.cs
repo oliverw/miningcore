@@ -145,8 +145,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
-
+                /* Update VarDiff with Share Submitted. */
+                UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty, true);
+                
                 try
                 {
                     // submit 

@@ -104,7 +104,7 @@ namespace MiningCore.Mining
         protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
-
+        protected IDisposable submitIdleSubscription;
         protected override string LogCat => "Pool";
 
         protected abstract Task SetupJobManager();
@@ -123,7 +123,21 @@ namespace MiningCore.Mining
             var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff);
             client.Context = context;
-
+    
+            // Create VarDiff Manager
+            if (context.VarDiff != null)
+            {
+                lock (varDiffManagers)
+                {
+                    VarDiffManager varDiffManager;
+                    if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
+                    {
+                        varDiffManager = new VarDiffManager(poolEndpoint.VarDiff);
+                        varDiffManagers[poolEndpoint] = varDiffManager;
+                    }
+                }
+            }
+                
             // expect miner to establish communication within a certain time
             EnsureNoZombieClient(client);
         }
@@ -161,7 +175,7 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected void UpdateVarDiff(StratumClient<TWorkerContext> client, double networkDifficulty)
+        protected void UpdateVarDiff(StratumClient<TWorkerContext> client, double networkDifficulty, bool isOnSubmit)
         {
             var context = client.Context;
 
@@ -169,56 +183,42 @@ namespace MiningCore.Mining
             {
                 logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff");
 
-                // get or create manager
-                VarDiffManager varDiffManager;
-
-                lock (varDiffManagers)
-                {
-                    var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-
-                    if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
-                    {
-                        varDiffManager = new VarDiffManager(poolEndpoint.VarDiff);
-                        varDiffManagers[poolEndpoint] = varDiffManager;
-                    }
-                }
-
+                // get manager
+                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+                VarDiffManager varDiffManager = varDiffManagers[poolEndpoint];
+                                
                 // update it
-                var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, networkDifficulty);
+                var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, networkDifficulty, isOnSubmit);
                 if (newDiff != null)
                 {
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
 
                     context.EnqueueNewDifficulty(newDiff.Value);
                 }
-            }
-        }
-
-        private void SetupVarDiff()
-        {
-            if (poolConfig.Ports.Values.Any(x => x.VarDiff != null))
-            {
-                // Periodically update vardiff
-                var interval = poolConfig.Ports.Values
-                    .Where(x=> x.VarDiff != null)
-                    .Min(x => x.VarDiff.RetargetTime);
-
-                disposables.Add(Observable.Interval(TimeSpan.FromSeconds(interval))
-                    .ObserveOn(TaskPoolScheduler.Default)
-                    .Do(_ => UpdateVarDiffs())
-                    .Subscribe());
-            }
-        }
-
-        private void UpdateVarDiffs()
-        {
-            ForEachClient(client =>
-            {
-                if (client.Context.IsSubscribed)
+                
+                /* Idle Check Timer - Possiblily Diff is Too High */
+                if (isOnSubmit)
                 {
-                    UpdateVarDiff(client);
+                    if (submitIdleSubscription != null)
+                    {
+                        submitIdleSubscription.Dispose();
+                    }
+                    
+                    // Check Every Target Time as we adjust the diff to meet target
+                    // Diff may not be changed , only be changed when avg is out of the range.
+                    // Diff must be dropped once changed. Will not affect reject rate.
+                    var interval = poolEndpoint.VarDiff.TargetTime;
+
+                    submitIdleSubscription = Observable
+                        .Interval(TimeSpan.FromSeconds(interval))
+                        .Subscribe(_ => UpdateVarDiff(client));
                 }
-            });
+            }
+        }
+
+        protected void UpdateVarDiff(StratumClient<TWorkerContext> client, double networkDifficulty)
+        {
+            UpdateVarDiff(client, networkDifficulty, false);
         }
 
         protected abstract void UpdateVarDiff(StratumClient<TWorkerContext> client);
@@ -334,7 +334,7 @@ namespace MiningCore.Mining
             var msg = $@"
 
 Mining Pool:            {poolConfig.Id} 
-Coin Type:		{poolConfig.Coin.Type} 
+Coin Type:        {poolConfig.Coin.Type} 
 Network Connected:      {blockchainStats.NetworkType}
 Detected Reward Type:   {blockchainStats.RewardType}
 Current Block Height:   {blockchainStats.BlockHeight}
@@ -467,7 +467,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
                 StartListeners(ipEndpoints);
                 SetupStats();
-                SetupVarDiff();
                 SetupAdminNotifications();
 
                 logger.Info(() => $"[{LogCat}] Online");
