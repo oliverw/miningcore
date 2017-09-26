@@ -111,31 +111,37 @@ namespace MiningCore.Payments
             // classify
             var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
 
-            foreach (var block in updatedBlocks.OrderBy(x => x.Created))
+            if (updatedBlocks.Any())
             {
-                logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.Blockheight}");
-
-                await cf.RunTxAsync(async (con, tx) =>
+                foreach (var block in updatedBlocks.OrderBy(x => x.Created))
                 {
-                    if (block.Status == BlockStatus.Confirmed)
+                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.Blockheight}");
+
+                    await cf.RunTxAsync(async (con, tx) =>
                     {
-                        // blockchains that do not support block-reward payments via coinbase Tx
-                        // must generate balance records for all reward recipients instead
-                        await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+                        if (block.Status == BlockStatus.Confirmed)
+                        {
+                            // blockchains that do not support block-reward payments via coinbase Tx
+                            // must generate balance records for all reward recipients instead
+                            await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-                        // update share submitter balances through configured payout scheme 
-                        await scheme.UpdateBalancesAsync(con, tx, pool, handler, block);
+                            // update share submitter balances through configured payout scheme 
+                            await scheme.UpdateBalancesAsync(con, tx, pool, handler, block);
 
-                        // finally update block status
-                        blockRepo.UpdateBlock(con, tx, block);
-                    }
+                            // finally update block status
+                            blockRepo.UpdateBlock(con, tx, block);
+                        }
 
-                    else if (block.Status == BlockStatus.Orphaned)
-                    {
-                        blockRepo.DeleteBlock(con, tx, block);
-                    }
-                });
+                        else if (block.Status == BlockStatus.Orphaned)
+                        {
+                            blockRepo.DeleteBlock(con, tx, block);
+                        }
+                    });
+                }
             }
+
+            else
+                logger.Info(() => $"No updated blocks for {pool.Id}");
         }
 
         private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)

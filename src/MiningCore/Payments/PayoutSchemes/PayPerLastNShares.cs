@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -100,6 +101,11 @@ namespace MiningCore.Payments.PayoutSchemes
                 }
             }
 
+            // diagnostics
+            var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
+            var totalRewards = rewards.Values.ToList().Sum(x => x);
+            logger.Info(() => $"{totalShareCount} contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({(block.Reward/totalRewards):0.00}% of block reward)");
+
             return Task.FromResult(true);
         }
 
@@ -131,12 +137,16 @@ namespace MiningCore.Payments.PayoutSchemes
                 {
                     var share = blockPage[i];
 
+                    // build address
                     var address = share.Miner;
+                    if (!string.IsNullOrEmpty(share.PayoutInfo))
+                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
+
                     shareCutOffDate = share.Created;
 
                     // record attributed shares for diagnostic purposes
                     if (!shares.ContainsKey(address))
-                        shares[address] = 0;
+                        shares[address] = 1;
                     else
                         shares[address] += 1;
 
@@ -159,10 +169,6 @@ namespace MiningCore.Payments.PayoutSchemes
                     // this should never happen
                     if (blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
-
-                    // build address
-                    if (!string.IsNullOrEmpty(share.PayoutInfo))
-                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
                     // accumulate miner reward
                     if (!rewards.ContainsKey(address))
