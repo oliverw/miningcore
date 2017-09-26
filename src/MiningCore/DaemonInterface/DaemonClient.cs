@@ -100,12 +100,12 @@ namespace MiningCore.DaemonInterface
         /// <param name="payload"></param>
         /// <returns></returns>
         public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method,
-            object payload = null)
+            object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
             try
             {
@@ -140,12 +140,13 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null)
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null, 
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
@@ -167,7 +168,8 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload)
+        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload, 
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             var rpcRequestId = GetRequestId();
 
@@ -181,7 +183,7 @@ namespace MiningCore.DaemonInterface
 
             // build http request
             var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-            var json = JsonConvert.SerializeObject(rpcRequest, serializerSettings);
+            var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // build auth header
@@ -195,6 +197,12 @@ namespace MiningCore.DaemonInterface
             // send request
             var httpClient = httpClients[endPoint];
             var response = await httpClient.SendAsync(request);
+
+            // check success
+            if(!response.IsSuccessStatusCode)
+                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+
+            // read response
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
@@ -229,6 +237,12 @@ namespace MiningCore.DaemonInterface
             // send request
             var httpClient = httpClients[endPoint];
             var response = await httpClient.SendAsync(request);
+
+            // check success
+            if (!response.IsSuccessStatusCode)
+                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+
+            // read response
             json = await response.Content.ReadAsStringAsync();
 
             // deserialize response
@@ -258,7 +272,14 @@ namespace MiningCore.DaemonInterface
 
             if (x.IsFaulted)
             {
-                resp.Error = new JsonRpcException(-500, x.Exception.Message, null);
+                Exception inner;
+
+                if (x.Exception.InnerExceptions.Count == 1)
+                    inner = x.Exception.InnerException;
+                else
+                    inner = x.Exception;
+
+                resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
             else

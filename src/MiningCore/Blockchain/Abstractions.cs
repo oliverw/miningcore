@@ -28,7 +28,7 @@ namespace MiningCore.Blockchain
         public double NetworkHashRate { get; set; }
         public double NetworkDifficulty { get; set; }
         public DateTime? LastNetworkBlockTime { get; set; }
-        public int BlockHeight { get; set; }
+        public long BlockHeight { get; set; }
         public int ConnectedPeers { get; set; }
         public string RewardType { get; set; }
     }
