@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Notifications;
@@ -156,7 +157,13 @@ namespace MiningCore.Payments
                         .Select(x => x.Value)
                         .First();
 
-                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} {poolConfig.Coin.Type} from pool {poolConfig.Id} to {balances.Length} recipients in Tx {txHash}. TxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
+                    var txInfo = txHash;
+
+                    string baseUrl;
+                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out baseUrl))
+                        txInfo = $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>";
+
+                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
                 }
 
                 catch (Exception ex2)

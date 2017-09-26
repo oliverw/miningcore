@@ -31,6 +31,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using MiningCore.Api.Responses;
+using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
@@ -94,38 +95,6 @@ namespace MiningCore.Api
         };
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
-
-        private static readonly Dictionary<CoinType, string> blockInfoLinkMap = new Dictionary<CoinType, string>
-        {
-            { CoinType.XMR,  "https://chainradar.com/xmr/block/{0}" },
-            { CoinType.ETH,  "https://etherscan.io/block/{0}" },
-            { CoinType.ETC,  "https://gastracker.io/block/{0}" },
-            { CoinType.LTC,  "http://explorer.litecoin.net/tx/{0}" },
-            { CoinType.BCC,  "http://blockdozer.com/insight/tx/{0}" },
-            { CoinType.DASH, "https://chainz.cryptoid.info/dash/block.dws?{0}.htm" },
-            { CoinType.BTC,  "https://blockchain.info/block/{0}" },
-            { CoinType.DOGE, "https://dogechain.info/tx/{0}" },
-            { CoinType.ZEC,  "https://explorer.zcha.in/transactions/{0}" },
-            { CoinType.DGB,  "https://digiexplorer.info/tx/{0}" },
-            { CoinType.NMC,  "https://explorer.namecoin.info/tx/{0}" },
-            { CoinType.GRS,  "https://bchain.info/GRS/tx/{0}" },
-        };
-
-        private static readonly Dictionary<CoinType, string> paymentInfoLinkMap = new Dictionary<CoinType, string>
-        {
-            { CoinType.XMR,  "https://chainradar.com/xmr/transaction/{0}" },
-            { CoinType.ETH,  "https://etherscan.io/tx/{0}" },
-            { CoinType.ETC,  "https://gastracker.io/tx/{0}" },
-            { CoinType.LTC,  "http://explorer.litecoin.net/tx/{0}" },
-            { CoinType.BCC,  "http://blockdozer.com/insight/tx/{0}" },
-            { CoinType.DASH, "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm" },
-            { CoinType.BTC,  "https://blockchain.info/block/{0}" },
-            { CoinType.DOGE, "https://dogechain.info/tx/{0}" },
-            { CoinType.ZEC,  "https://explorer.zcha.in/transactions/{0}" },
-            { CoinType.DGB,  "https://digiexplorer.info/tx/{0}" },
-            { CoinType.NMC,  "https://explorer.namecoin.info/tx/{0}" },
-            { CoinType.GRS,  "https://bchain.info/GRS/tx/{0}" },
-        };
 
         private async Task SendJson(HttpContext context, object response)
         {
@@ -248,7 +217,7 @@ namespace MiningCore.Api
 
             // enrich blocks
             string baseUrl;
-            blockInfoLinkMap.TryGetValue(pool.Config.Coin.Type, out baseUrl);
+            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl);
 
             foreach (var block in blocks)
             {
@@ -282,7 +251,7 @@ namespace MiningCore.Api
 
             // enrich blocks
             string baseUrl;
-            paymentInfoLinkMap.TryGetValue(pool.Config.Coin.Type, out baseUrl);
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl);
 
             foreach (var payment in payments)
             {
@@ -322,7 +291,7 @@ namespace MiningCore.Api
 
                     // Compute info link
                     string baseUrl;
-                    if (paymentInfoLinkMap.TryGetValue(pool.Config.Coin.Type, out baseUrl))
+                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
             }
