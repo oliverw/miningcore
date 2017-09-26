@@ -157,6 +157,7 @@ namespace MiningCore.Payments
                         .Select(x => x.Value)
                         .First();
 
+                    // prepare tx link
                     var txInfo = txHash;
 
                     string baseUrl;
