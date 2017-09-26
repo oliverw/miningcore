@@ -97,7 +97,7 @@ namespace MiningCore.Api
 
         private static readonly Dictionary<CoinType, string> blockInfoLinkMap = new Dictionary<CoinType, string>
         {
-            { CoinType.XMR,  "https://xmrchain.net/block/{0}" },
+            { CoinType.XMR,  "https://chainradar.com/xmr/block/{0}" },
             { CoinType.ETH,  "https://etherscan.io/block/{0}" },
             { CoinType.ETC,  "https://gastracker.io/block/{0}" },
             { CoinType.LTC,  "http://explorer.litecoin.net/tx/{0}" },
@@ -113,7 +113,7 @@ namespace MiningCore.Api
 
         private static readonly Dictionary<CoinType, string> paymentInfoLinkMap = new Dictionary<CoinType, string>
         {
-            { CoinType.XMR,  "https://xmrchain.net/tx/{0}" },
+            { CoinType.XMR,  "https://chainradar.com/xmr/transaction/{0}" },
             { CoinType.ETH,  "https://etherscan.io/tx/{0}" },
             { CoinType.ETC,  "https://gastracker.io/tx/{0}" },
             { CoinType.LTC,  "http://explorer.litecoin.net/tx/{0}" },
