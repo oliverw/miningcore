@@ -243,7 +243,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region Overrides
 
-        protected override string LogCat => "Monero Job Manager";
+        protected override string LogCat => "Ethereum Job Manager";
 
         protected override void ConfigureDaemons()
         {

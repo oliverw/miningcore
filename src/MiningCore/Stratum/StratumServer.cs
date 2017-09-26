@@ -212,7 +212,7 @@ namespace MiningCore.Stratum
             DisconnectClient(client);
         }
 
-        protected void DisconnectClient(StratumClient<TClientContext> client)
+        protected virtual void DisconnectClient(StratumClient<TClientContext> client)
         {
             Contract.RequiresNonNull(client, nameof(client));
 

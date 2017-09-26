@@ -374,7 +374,7 @@ namespace MiningCore.Blockchain.Monero
             return (ulong)result;
         }
 
-        protected override void UpdateVarDiff(StratumClient<MoneroWorkerContext> client)
+        protected override void UpdateVarDiffAndNotifyClient(StratumClient<MoneroWorkerContext> client)
         {
             UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
 
