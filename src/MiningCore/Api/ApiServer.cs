@@ -241,8 +241,8 @@ namespace MiningCore.Api
                 return;
             }
 
-            var blocks = cf.Run(con => blocksRepo.PageBlocks(
-                    con, pool.Config.Id, BlockStatus.Confirmed, page, pageSize))
+            var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Config.Id, 
+                    new[] { BlockStatus.Confirmed, BlockStatus.Pending }, page, pageSize))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
