@@ -223,7 +223,7 @@ namespace MiningCore.Api
             {
                 // compute infoLink
                 if (!string.IsNullOrEmpty(baseUrl))
-                    block.InfoLink = string.Format(baseUrl, block.TransactionConfirmationData);
+                    block.InfoLink = string.Format(baseUrl, block.Blockheight);
             }
 
             await SendJson(context, blocks);
