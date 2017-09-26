@@ -145,7 +145,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                /* Update VarDiff with Share Submitted. */
                 UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty, true);
                 
                 try
@@ -331,7 +330,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return (ulong) result;
         }
 
-        protected override void UpdateVarDiff(StratumClient<BitcoinWorkerContext> client)
+        protected override void UpdateVarDiffAndNotifyClient(StratumClient<BitcoinWorkerContext> client)
         {
             UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
 

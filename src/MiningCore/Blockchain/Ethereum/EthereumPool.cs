@@ -133,7 +133,7 @@ namespace MiningCore.Blockchain.Ethereum
             return (ulong)result;
         }
 
-        protected override void UpdateVarDiff(StratumClient<EthereumWorkerContext> client)
+        protected override void UpdateVarDiffAndNotifyClient(StratumClient<EthereumWorkerContext> client)
         {
             //UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
 

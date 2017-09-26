@@ -239,7 +239,7 @@
         },
         "ports": {
             "3052": {
-                "difficulty": 0.02,
+                "difficulty": 1000,
                 "varDiff": {
                     "minDiff": 0.01,
                     "maxDiff": null,

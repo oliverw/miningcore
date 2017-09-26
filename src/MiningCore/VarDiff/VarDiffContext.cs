@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using MiningCore.Util;
 
 namespace MiningCore.VarDiff
@@ -27,5 +28,7 @@ namespace MiningCore.VarDiff
         public double LastTs { get; set; }
         public double LastRtc { get; set; }
         public CircularDoubleBuffer TimeBuffer { get; set; }
+
+        public IDisposable IdleUpdateSub { get; set; }
     }
 }

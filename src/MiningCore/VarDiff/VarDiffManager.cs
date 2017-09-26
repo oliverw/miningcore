@@ -46,7 +46,7 @@ namespace MiningCore.VarDiff
         private readonly double tMax;
         private readonly double tMin;
 
-        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty, bool isOnSubmitted)
+        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty, bool onSubmission)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
 
@@ -64,46 +64,40 @@ namespace MiningCore.VarDiff
                     return null;
                 } 
                 
-                double minDiff = options.MinDiff;
-                double maxDiff = options.MaxDiff ?? Math.Max(minDiff, networkDifficulty);  // for regtest 
+                var minDiff = options.MinDiff;
+                var maxDiff = options.MaxDiff ?? Math.Max(minDiff, networkDifficulty);  // for regtest 
 
-                double sinceLast = ts - ctx.LastTs;
+                var sinceLast = ts - ctx.LastTs;
+                
                 // Always calculate the time until now even there is no share submitted.
-                double timeTotal = ctx.TimeBuffer.Sum();
-                double timeCount = ctx.TimeBuffer.Size;
-                double avg = (timeTotal + sinceLast) / (timeCount + 1);
+                var timeTotal = ctx.TimeBuffer.Sum();
+                var timeCount = ctx.TimeBuffer.Size;
+                var avg = (timeTotal + sinceLast) / (timeCount + 1);
                 
                 // Once there is a share submitted, store the time into the buffer and update the last time.
-                if (isOnSubmitted)
+                if (onSubmission)
                 {
                     ctx.TimeBuffer.PushBack(sinceLast);
                     ctx.LastTs = ts;
                 }
                 
-                /* Check if we need to change the difficulty */
-                if (
-                    ts - ctx.LastRtc < options.RetargetTime ||
-                   (avg >= tMin && avg <= tMax)
-                )
-                {
+                // Check if we need to change the difficulty
+                if (ts - ctx.LastRtc < options.RetargetTime || avg >= tMin && avg <= tMax)
                     return null;
-                }
                                 
-                /* Possible New Diff */
-                double newDiff = difficulty * options.TargetTime / avg;
+                // Possible New Diff
+                var newDiff = difficulty * options.TargetTime / avg;
                 if (newDiff < minDiff)
-                {
                     newDiff = minDiff;
-                }
                 if (newDiff > maxDiff)
-                {
                     newDiff = maxDiff;
-                }
-                /* RTC if the Diff is changed. */
+                
+                // RTC if the Diff is changed
                 if (newDiff != difficulty)
                 {
                     ctx.LastRtc = ts;
-                    /* Due to change of diff, Buffer need to be clear. */
+
+                    // Due to change of diff, Buffer needs to be cleared
                     ctx.TimeBuffer = new CircularDoubleBuffer(bufferSize);
                     return newDiff;
                 }
