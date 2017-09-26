@@ -18,17 +18,38 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using MiningCore.Util;
+using System.Linq;
 
-namespace MiningCore.VarDiff
+namespace MiningCore.Util
 {
-    public class VarDiffContext
+    public class CircularDoubleBuffer : CircularBuffer<double>
     {
-        public double LastTs { get; set; }
-        public double LastRtc { get; set; }
-        public CircularDoubleBuffer TimeBuffer { get; set; }
+        public CircularDoubleBuffer(int capacity) : base(capacity)
+        {
+        }
 
-        public IDisposable IdleUpdateSub { get; set; }
+        public CircularDoubleBuffer(int capacity, double[] items) : base(capacity, items)
+        {
+        }
+
+        public double Average()
+        {
+            return ToArray().Average();
+        }
+        
+        public double Sum()
+        {
+            double sum = 0;
+            using (var enumerator = GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    sum += enumerator.Current;
+                }
+            }
+            
+            return sum;
+        }
+        
     }
 }

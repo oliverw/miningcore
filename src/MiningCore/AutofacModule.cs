@@ -27,6 +27,7 @@ using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
+using MiningCore.Blockchain.Ethereum;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
@@ -111,6 +112,12 @@ namespace MiningCore
             // Monero
 
             builder.RegisterType<MoneroJobManager>()
+                .AsSelf();
+
+            //////////////////////
+            // Ethereum
+
+            builder.RegisterType<EthereumJobManager>()
                 .AsSelf();
 
             base.Load(builder);

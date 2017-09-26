@@ -42,16 +42,16 @@
         "shareRecoveryFile": "recovered-shares.txt"
     },
     "pools": [{
-        "id": "xmr1",
+        "id": "eth1",
         "enabled": true,
         "coin": {
-            "type": "XMR"
+            "type": "ETH"
         },
-        "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",
+        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
         "rewardRecipients": [
             {
                 "type": "op",
-                "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",
+                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
                 "percentage": 0
             }
         ],
@@ -65,7 +65,7 @@
             "checkThreshold": 50
         },
         "ports": {
-            "4032": {
+            "3072": {
                 "difficulty": 1600,
                 "varDiff": {
                     "minDiff": 1600,
@@ -75,23 +75,16 @@
                     "variancePercent": 30
                 }
             },
-            "4256": {
+            "3073": {
                 "difficulty": 5000
             }
         },
         "daemons": [
             {
                 "host": "127.0.0.1",
-                "port": 28081,
-                "user": "monerorpc",
-                "password": "rpcpassword"
-            },
-            {
-                "host": "127.0.0.1",
-                "port": 28082,
-                "user": "monerorpc",
-                "password": "rpcpassword",
-                "category": "wallet"
+                "port": 8545,
+                "user": "user",
+                "password": "password"
             }
         ],
         "paymentProcessing": {
@@ -104,6 +97,69 @@
             }
         }
     },
+    // {
+    //     "id": "xmr1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "XMR"
+    //     },
+    //     "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",
+    //             "percentage": 0
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "4032": {
+    //             "difficulty": 1600,
+    //             "varDiff": {
+    //                 "minDiff": 1600,
+    //                 "maxDiff": 160000,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "4256": {
+    //             "difficulty": 5000
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 28081,
+    //             "user": "monerorpc",
+    //             "password": "rpcpassword"
+    //         },
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 28082,
+    //             "user": "monerorpc",
+    //             "password": "rpcpassword",
+    //             "category": "wallet"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "minimumPaymentToPaymentId": 5.0,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         }
+    //     }
+    // },
     // {
     //     "id": "ltc1",
     //     "enabled": true,
@@ -183,7 +239,7 @@
         },
         "ports": {
             "3052": {
-                "difficulty": 0.02,
+                "difficulty": 1000,
                 "varDiff": {
                     "minDiff": 0.01,
                     "maxDiff": null,

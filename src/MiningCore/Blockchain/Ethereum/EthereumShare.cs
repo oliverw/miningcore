@@ -18,18 +18,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using MiningCore.Persistence.Model;
-
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Blockchain.Ethereum
 {
-    public interface IBlockRepository
+    public class EthereumShare : ShareBase
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Block block);
-        void DeleteBlock(IDbConnection con, IDbTransaction tx, Block block);
-        void UpdateBlock(IDbConnection con, IDbTransaction tx, Block block);
-
-        Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
-        Block[] GetPendingBlocksForPool(IDbConnection con, string poolid);
     }
 }

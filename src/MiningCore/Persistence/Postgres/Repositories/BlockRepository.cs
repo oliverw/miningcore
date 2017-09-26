@@ -62,12 +62,18 @@ namespace MiningCore.Persistence.Postgres.Repositories
             con.Execute(query, mapped, tx);
         }
 
-        public Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus status, int page, int pageSize)
+        public Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize)
         {
-            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status " +
+            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
                         "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Block>(query, new { poolId, status = status.ToString().ToLower(), offset = page * pageSize, pageSize })
+            return con.Query<Entities.Block>(query, new
+                {
+                    poolId,
+                    status = status.Select(x=> x.ToString().ToLower()).ToArray(),
+                    offset = page * pageSize,
+                    pageSize
+                })
                 .Select(mapper.Map<Block>)
                 .ToArray();
         }

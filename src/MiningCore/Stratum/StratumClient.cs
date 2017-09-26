@@ -45,6 +45,7 @@ namespace MiningCore.Stratum
             rpcCon = ctx.Resolve<JsonRpcConnection>();
             rpcCon.Init(uvCon, connectionId);
 
+            RemoteEndpoint = rpcCon.RemoteEndPoint;
             Requests = rpcCon.Received;
         }
 
@@ -52,7 +53,7 @@ namespace MiningCore.Stratum
         public IObservable<Timestamped<JsonRpcRequest>> Requests { get; private set; }
         public string ConnectionId => rpcCon.ConnectionId;
         public IPEndPoint PoolEndpoint { get; private set; }
-        public IPEndPoint RemoteEndpoint => rpcCon.RemoteEndPoint;
+        public IPEndPoint RemoteEndpoint { get; private set; }
         public IDisposable Subscription { get; set; }
 
         public void Respond<T>(T payload, object id)

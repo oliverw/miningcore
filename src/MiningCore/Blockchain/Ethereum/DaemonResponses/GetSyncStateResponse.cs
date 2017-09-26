@@ -18,18 +18,29 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using MiningCore.Persistence.Model;
+using MiningCore.Serialization;
+using Newtonsoft.Json;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Blockchain.Ethereum.DaemonResponses
 {
-    public interface IBlockRepository
+    public class SyncState
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Block block);
-        void DeleteBlock(IDbConnection con, IDbTransaction tx, Block block);
-        void UpdateBlock(IDbConnection con, IDbTransaction tx, Block block);
+        /// <summary>
+        /// The block at which the import started (will only be reset, after the sync reached his head)
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong StartingBlock { get; set; }
 
-        Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
-        Block[] GetPendingBlocksForPool(IDbConnection con, string poolid);
+        /// <summary>
+        /// The current block, same as eth_blockNumber
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong CurrentBlock { get; set; }
+
+        /// <summary>
+        /// The estimated highest block
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
+        public ulong HighestBlock { get; set; }
     }
 }

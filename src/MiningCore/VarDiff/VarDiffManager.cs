@@ -30,74 +30,86 @@ namespace MiningCore.VarDiff
         public VarDiffManager(VarDiffConfig varDiffOptions)
         {
             options = varDiffOptions;
-
-            minDiff = options.MinDiff;
-
+            
             var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
-            bufferSize = (int) (varDiffOptions.RetargetTime / varDiffOptions.TargetTime * 4.0);
+            
+            /* We need to decided the size of buffer to calculate average. */
+            bufferSize = 10; // Last 10 shares is always enough
+            
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
+            
         }
 
         private readonly int bufferSize;
-        private readonly double minDiff;
-
         private readonly VarDiffConfig options;
         private readonly double tMax;
         private readonly double tMin;
 
-        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
+        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty, bool onSubmission)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
 
             lock (ctx)
             {
+                // Get Current Time
+                double ts = DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000.0;
+                
+                // For the first time, won't change diff.
+                if (ctx.LastTs == 0)
+                {
+                    ctx.LastRtc = ts;
+                    ctx.LastTs = ts;
+                    ctx.TimeBuffer = new CircularDoubleBuffer(bufferSize);
+                    return null;
+                } 
+                
+                var minDiff = options.MinDiff;
                 var maxDiff = options.MaxDiff ?? Math.Max(minDiff, networkDifficulty);  // for regtest 
 
-                var ts = (DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) | 0;
-
-                if (ctx.LastRtc == 0)
-                {
-                    ctx.LastRtc = (long) (ts - options.RetargetTime / 2);
-                    ctx.LastTs = ts;
-                    ctx.TimeBuffer = new CircularLongBuffer(bufferSize);
-                    return null;
-                }
-
                 var sinceLast = ts - ctx.LastTs;
-
-                ctx.TimeBuffer.PushBack(sinceLast);
-                ctx.LastTs = ts;
-
-                if (ts - ctx.LastRtc < options.RetargetTime && ctx.TimeBuffer.Size > 0)
-                    return null;
-
-                ctx.LastRtc = ts;
-                var avg = ctx.TimeBuffer.Average();
-                var ddiff = options.TargetTime / avg;
-
-                if (avg > tMax && difficulty > minDiff)
+                
+                // Always calculate the time until now even there is no share submitted.
+                var timeTotal = ctx.TimeBuffer.Sum();
+                var timeCount = ctx.TimeBuffer.Size;
+                var avg = (timeTotal + sinceLast) / (timeCount + 1);
+                
+                // Once there is a share submitted, store the time into the buffer and update the last time.
+                if (onSubmission)
                 {
-                    if (ddiff * difficulty < minDiff)
-                        ddiff = minDiff / difficulty;
+                    ctx.TimeBuffer.PushBack(sinceLast);
+                    ctx.LastTs = ts;
                 }
-
-                else if (avg < tMin)
-                {
-                    var diffMax = maxDiff;
-
-                    if (ddiff * difficulty > diffMax)
-                        ddiff = diffMax / difficulty;
-                }
-
-                else
+                
+                // Check if we need to change the difficulty
+                if (ts - ctx.LastRtc < options.RetargetTime || avg >= tMin && avg <= tMax)
                     return null;
+                                
+                // Possible New Diff
+                var newDiff = difficulty * options.TargetTime / avg;
+                if (newDiff < minDiff)
+                    newDiff = minDiff;
+                if (newDiff > maxDiff)
+                    newDiff = maxDiff;
+                
+                // RTC if the Diff is changed
+                if (newDiff != difficulty)
+                {
+                    ctx.LastRtc = ts;
 
-                var newDiff = difficulty * ddiff;
-
-                ctx.TimeBuffer = new CircularLongBuffer(bufferSize);
-                return newDiff;
+                    // Due to change of diff, Buffer needs to be cleared
+                    ctx.TimeBuffer = new CircularDoubleBuffer(bufferSize);
+                    return newDiff;
+                }
             }
+            
+            return null;
         }
+        
+        public double? Update(VarDiffContext ctx, double difficulty, double networkDifficulty)
+        {
+            return Update(ctx, difficulty, networkDifficulty, false);
+        }
+        
     }
 }

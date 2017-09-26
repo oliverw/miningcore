@@ -182,7 +182,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // build args
             var amounts = balances
                 .Where(x => x.Amount > 0)
-                .ToDictionary(x => x.Address, x => x.Amount);
+                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 8));
 
             if (amounts.Count == 0)
                 return;
@@ -193,15 +193,15 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var args = new object[]
             {
-                string.Empty, // default account 
-                amounts, // addresses and asscociated amounts
-                1, // only spend funds covered by this many confirmations
-                "MiningCore Payout", // comment
-                subtractFeesFrom // distribute transaction fee equally over all recipients
+                string.Empty,           // default account 
+                amounts,                // addresses and associated amounts
+                1,                      // only spend funds covered by this many confirmations
+                "MiningCore Payout",    // comment
+                subtractFeesFrom        // distribute transaction fee equally over all recipients
             };
 
             // send command
-            var result = await daemon.ExecuteCmdAnyAsync<string>(BitcoinCommands.SendMany, args);
+            var result = await daemon.ExecuteCmdAnyAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {

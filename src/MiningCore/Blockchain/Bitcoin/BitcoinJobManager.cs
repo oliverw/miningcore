@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -385,6 +386,11 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
 
+            if(responses.Where(x=> x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x=> (DaemonClientException) x.Error.InnerException)
+                .Any(x=> x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
+
             return responses.All(x => x.Error == null);
         }
 
@@ -440,8 +446,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (results.Any(x => x.Error != null))
             {
                 var resultList = results.ToList();
-                var errors = results.Where(x => x.Error != null &&
-                                                commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
+                var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
                     .ToArray();
 
                 if (errors.Any())
@@ -454,7 +459,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var submitBlockResponse = results[2];
             var blockchainInfoResponse = results[3].Response.ToObject<BlockchainInfo>();
 
-            // validate pool-address for pool-fee payout
+            // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
