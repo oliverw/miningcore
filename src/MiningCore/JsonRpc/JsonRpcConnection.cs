@@ -118,7 +118,10 @@ namespace MiningCore.JsonRpc
 
                             upstream.Shutdown((tcp, ex) =>
                             {
-                                upstream.Dispose();
+                                upstream.CloseHandle(handle =>
+                                {
+                                    handle.Dispose();
+                                });
                             });
                         }
                     });
@@ -140,8 +143,7 @@ namespace MiningCore.JsonRpc
 
             try
             {
-                if(!upstream.IsClosing)
-                    upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
             }
             catch (ObjectDisposedException)
             {
@@ -156,8 +158,7 @@ namespace MiningCore.JsonRpc
 
             try
             {
-                if (!upstream.IsClosing)
-                    upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
             }
             catch (ObjectDisposedException)
             {
