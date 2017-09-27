@@ -284,6 +284,31 @@ namespace MiningCore.Blockchain.Bitcoin
             return responseData;
         }
 
+        public string[] GetTransactions(StratumClient<BitcoinWorkerContext> worker, object requestParams)
+        {
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(requestParams, nameof(requestParams));
+
+            var queryParams = requestParams as object[];
+            if (queryParams == null)
+                throw new StratumException(StratumError.Other, "invalid params");
+
+            // extract params
+            var jobId = queryParams[0] as string;
+
+            TJob job;
+
+            lock (jobLock)
+            {
+                validJobs.TryGetValue(jobId, out job);
+            }
+
+            if (job == null)
+                throw new StratumException(StratumError.JobNotFound, "job not found");
+
+            return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
+        }
+
         public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
             double stratumDifficulty, double stratumDifficultyBase)
         {

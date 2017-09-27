@@ -52,6 +52,11 @@ namespace MiningCore.Blockchain.Bitcoin
         /// </summary>
         public const string SetDifficulty = "mining.set_difficulty";
 
-        public const string GetTx = "mining.get_transactions";
+        /// <summary>
+        /// This call simply dumps transactions used for given job. Thanks to this, miners now have 
+        /// everything needed to reconstruct source block template used by the pool and they can 
+        /// check if pool isn't doing something nasty
+        /// </summary>
+        public const string GetTransactions = "mining.get_transactions";
     }
 }

@@ -101,6 +101,7 @@ namespace MiningCore.Stratum
         public void Disconnect()
         {
             Subscription?.Dispose();
+            Subscription = null;
         }
 
         public void RespondError(object id, int code, string message)

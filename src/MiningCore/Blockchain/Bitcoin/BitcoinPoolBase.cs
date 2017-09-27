@@ -223,6 +223,28 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
+        private void OnGetTransactions(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+
+            try
+            {
+                var transactions = manager.GetTransactions(client, request.ParamsAs<object[]>());
+
+                client.Respond(transactions, request.Id);
+            }
+
+            catch (StratumException ex)
+            {
+                client.RespondError(ex.Code, ex.Message, request.Id, false);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
+            }
+        }
+
         private void OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
@@ -289,6 +311,10 @@ namespace MiningCore.Blockchain.Bitcoin
                     OnSuggestDifficulty(client, tsRequest);
                     break;
 
+                case BitcoinStratumMethods.GetTransactions:
+                    OnGetTransactions(client, tsRequest);
+                    break;
+                    
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
