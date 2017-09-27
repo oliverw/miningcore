@@ -7,7 +7,7 @@ namespace MiningCore.Blockchain
     {
         public static readonly Dictionary<CoinType, string> BlockInfoLinks = new Dictionary<CoinType, string>
         {
-            { CoinType.XMR,  "https://chainradar.com/xmr/block/{0}" },
+            { CoinType.XMR,  "https://moneroblocks.info/block/{0}" },
             { CoinType.ETH,  "https://etherscan.io/block/{0}" },
             { CoinType.ETC,  "https://gastracker.io/block/{0}" },
             { CoinType.LTC,  "http://explorer.litecoin.net/block/{0}" },
@@ -23,7 +23,7 @@ namespace MiningCore.Blockchain
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
         {
-            { CoinType.XMR,  "https://chainradar.com/xmr/transaction/{0}" },
+            { CoinType.XMR,  "https://moneroblocks.info/tx/{0}" },
             { CoinType.ETH,  "https://etherscan.io/tx/{0}" },
             { CoinType.ETC,  "https://gastracker.io/tx/{0}" },
             { CoinType.LTC,  "http://explorer.litecoin.net/tx/{0}" },

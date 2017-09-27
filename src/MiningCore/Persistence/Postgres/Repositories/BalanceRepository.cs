@@ -38,8 +38,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         private readonly IMapper mapper;
 
-        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address,
-            decimal amount)
+        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount)
         {
             var query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
@@ -68,12 +67,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             else
             {
-                balance.Updated = now;
-                balance.Amount += amount;
-
-                query = "UPDATE balances SET amount = @amount, updated = @updated " +
+                query = "UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc' " +
                         "WHERE poolid = @poolId AND coin = @coin AND address = @address";
-                con.Execute(query, balance, tx);
+
+                con.Execute(query, new
+                {
+                    poolId,
+                    address,
+                    coin = coin.ToString().ToUpper(),
+                    amount
+                }, tx);
             }
         }
 

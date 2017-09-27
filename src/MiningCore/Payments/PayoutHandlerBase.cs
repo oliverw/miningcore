@@ -121,9 +121,10 @@ namespace MiningCore.Payments
 
                             paymentRepo.Insert(con, tx, payment);
 
-                            // subtract balance
-                            balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address,
-                                -balance.Amount);
+                            // reset balance
+                            logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
+
+                            balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
                         }
                     });
                 });

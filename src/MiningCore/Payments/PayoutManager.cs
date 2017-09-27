@@ -39,9 +39,9 @@ namespace MiningCore.Payments
     /// <summary>
     /// Coin agnostic payment processor
     /// </summary>
-    public class PayoutProcessor
+    public class PayoutManager
     {
-        public PayoutProcessor(IComponentContext ctx,
+        public PayoutManager(IComponentContext ctx,
             IConnectionFactory cf,
             IBlockRepository blockRepo,
             IShareRepository shareRepo,

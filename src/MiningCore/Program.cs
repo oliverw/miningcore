@@ -66,7 +66,7 @@ namespace MiningCore
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
-        private static PayoutProcessor payoutProcessor;
+        private static PayoutManager payoutManager;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
 
@@ -528,10 +528,10 @@ namespace MiningCore
             if (clusterConfig.PaymentProcessing?.Enabled == true &&
                 clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
             {
-                payoutProcessor = container.Resolve<PayoutProcessor>();
-                payoutProcessor.Configure(clusterConfig);
+                payoutManager = container.Resolve<PayoutManager>();
+                payoutManager.Configure(clusterConfig);
 
-                payoutProcessor.Start();
+                payoutManager.Start();
             }
 
             // keep running
