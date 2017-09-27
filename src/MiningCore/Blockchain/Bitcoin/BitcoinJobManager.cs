@@ -173,30 +173,6 @@ namespace MiningCore.Blockchain.Bitcoin
             return (accepted, block?.Transactions.FirstOrDefault());
         }
 
-        protected async Task UpdateNetworkStatsAsync()
-        {
-            var results = await daemon.ExecuteBatchAnyAsync(
-                new DaemonCmd(BitcoinCommands.GetInfo),
-                new DaemonCmd(BitcoinCommands.GetMiningInfo)
-            );
-
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null).ToArray();
-
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
-            }
-
-            var infoResponse = results[0].Response.ToObject<Info>();
-            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
-
-            BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
-            BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = infoResponse.Connections;
-        }
-
         private void SetupCrypto()
         {
             switch (poolConfig.Coin.Type)
@@ -388,6 +364,30 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Created = DateTime.UtcNow;
 
             return share;
+        }
+
+        public async Task UpdateNetworkStatsAsync()
+        {
+            var results = await daemon.ExecuteBatchAnyAsync(
+                new DaemonCmd(BitcoinCommands.GetInfo),
+                new DaemonCmd(BitcoinCommands.GetMiningInfo)
+            );
+
+            if (results.Any(x => x.Error != null))
+            {
+                var errors = results.Where(x => x.Error != null).ToArray();
+
+                if (errors.Any())
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+            }
+
+            var infoResponse = results[0].Response.ToObject<Info>();
+            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
+
+            BlockchainStats.BlockHeight = infoResponse.Blocks;
+            BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
+            BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+            BlockchainStats.ConnectedPeers = infoResponse.Connections;
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();

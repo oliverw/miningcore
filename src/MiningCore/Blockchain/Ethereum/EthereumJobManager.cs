@@ -182,35 +182,6 @@ namespace MiningCore.Blockchain.Ethereum
             return true;
         }
 
-        protected async Task UpdateNetworkStats()
-        {
-            var commands = new[]
-            {
-                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
-                new DaemonCmd(EC.GetPeerCount),
-            };
-
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
-
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null)
-                    .ToArray();
-
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
-            }
-
-            // extract results
-            var block = results[0].Response.ToObject<Block>();
-            var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
-
-            BlockchainStats.BlockHeight = block.Height.HasValue ? (long) block.Height.Value : -1;
-            BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
-            BlockchainStats.NetworkHashRate = 0;    // TODO
-            BlockchainStats.ConnectedPeers = peerCount;
-        }
-
         #region API-Surface
 
         public IObservable<Unit> Blocks { get; private set; }
@@ -235,6 +206,35 @@ namespace MiningCore.Blockchain.Ethereum
                 return false;
 
             return true;
+        }
+
+        public async Task UpdateNetworkStatsAsync()
+        {
+            var commands = new[]
+            {
+                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
+                new DaemonCmd(EC.GetPeerCount),
+            };
+
+            var results = await daemon.ExecuteBatchAnyAsync(commands);
+
+            if (results.Any(x => x.Error != null))
+            {
+                var errors = results.Where(x => x.Error != null)
+                    .ToArray();
+
+                if (errors.Any())
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
+            }
+
+            // extract results
+            var block = results[0].Response.ToObject<Block>();
+            var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
+
+            BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
+            BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
+            BlockchainStats.NetworkHashRate = 0;    // TODO
+            BlockchainStats.ConnectedPeers = peerCount;
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
@@ -345,7 +345,7 @@ namespace MiningCore.Blockchain.Ethereum
             BlockchainStats.RewardType = "POW";
             BlockchainStats.NetworkType = networkType.ToString();
 
-            await UpdateNetworkStats();
+            await UpdateNetworkStatsAsync();
 
             SetupJobUpdates();
         }

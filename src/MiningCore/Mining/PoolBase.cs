@@ -269,12 +269,22 @@ namespace MiningCore.Mining
 
             // Periodically persist pool- and blockchain-stats to persistent storage
             disposables.Add(Observable.Interval(TimeSpan.FromSeconds(60))
-                .StartWith(0) // initial update
-                .Do(_ => UpdateBlockChainStats())
+                .Select(_ => Observable.FromAsync(async () =>
+                {
+                    try
+                    {
+                        await UpdateBlockChainStatsAsync();
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }))
+                .Concat()
                 .Subscribe(_ => PersistStats()));
         }
 
-        protected abstract void UpdateBlockChainStats();
+        protected abstract Task UpdateBlockChainStatsAsync();
 
         private void PersistStats()
         {
@@ -491,9 +501,9 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                 StartListeners(ipEndpoints);
                 SetupStats();
                 SetupAdminNotifications();
+                await UpdateBlockChainStatsAsync();
 
                 logger.Info(() => $"[{LogCat}] Online");
-
                 OutputPoolInfo();
             }
 

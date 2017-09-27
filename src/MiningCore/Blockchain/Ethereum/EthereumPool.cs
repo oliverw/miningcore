@@ -145,8 +145,10 @@ namespace MiningCore.Blockchain.Ethereum
             //}
         }
 
-        protected override void UpdateBlockChainStats()
+        protected override async Task UpdateBlockChainStatsAsync()
         {
+            await manager.UpdateNetworkStatsAsync();
+
             blockchainStats = manager.BlockchainStats;
         }
 

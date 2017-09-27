@@ -152,21 +152,6 @@ namespace MiningCore.Blockchain.Monero
             return true;
         }
 
-        protected async Task UpdateNetworkStats()
-        {
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-
-            if (infoResponse.Error != null)
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
-
-            var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-            BlockchainStats.BlockHeight = (int) info.Height;
-            BlockchainStats.NetworkDifficulty = info.Difficulty;
-            BlockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
-            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
-        }
-
         #region API-Surface
 
         public IObservable<Unit> Blocks { get; private set; }
@@ -268,6 +253,21 @@ namespace MiningCore.Blockchain.Monero
             share.Created = DateTime.UtcNow;
 
             return share;
+        }
+
+        public async Task UpdateNetworkStatsAsync()
+        {
+            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+
+            if (infoResponse.Error != null)
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+
+            var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+            BlockchainStats.BlockHeight = (int)info.Height;
+            BlockchainStats.NetworkDifficulty = info.Difficulty;
+            BlockchainStats.NetworkHashRate = (double)info.Difficulty / info.Target;
+            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
         #endregion // API-Surface
@@ -376,7 +376,7 @@ namespace MiningCore.Blockchain.Monero
             BlockchainStats.RewardType = "POW";
             BlockchainStats.NetworkType = networkType.ToString();
 
-            await UpdateNetworkStats();
+            await UpdateNetworkStatsAsync();
 
             SetupJobUpdates();
         }
