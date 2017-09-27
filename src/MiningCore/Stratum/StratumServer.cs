@@ -76,7 +76,7 @@ namespace MiningCore.Stratum
                         .CreateTcp()
                         .SimultaneousAccepts(true)
                         .KeepAlive(false, 0)
-                        .NoDelay(false)
+                        .NoDelay(true)
                         .Listen(endpoint, (con, ex) =>
                         {
                             if (ex == null)
@@ -141,8 +141,7 @@ namespace MiningCore.Stratum
 
                 // request subscription
                 var sub = client.Requests
-                    .ObserveOn(TaskPoolScheduler.Default)   // WARN: never add .SubscribeOn here (must sub/unsub on UV event-loop thread)
-                    .Subscribe(async tsRequest =>
+                    .Select(tsRequest => Observable.FromAsync(()=> Task.Run(()=>  // get off of LibUV event-loop-thread immediately
                     {
                         var request = tsRequest.Value;
                         logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
@@ -157,14 +156,16 @@ namespace MiningCore.Stratum
                                 return;
                             }
 
-                            await OnRequestAsync(client, tsRequest);
+                            OnRequestAsync(client, tsRequest).Wait();
                         }
 
                         catch (Exception ex)
                         {
                             logger.Error(ex, () => $"Error handling request: {request.Method}");
                         }
-                    }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+                    })))
+                    .Concat()
+                    .Subscribe(_ => { }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
                 // ensure subscription is disposed on loop thread
                 var disposer = loop.CreateAsync((handle) =>

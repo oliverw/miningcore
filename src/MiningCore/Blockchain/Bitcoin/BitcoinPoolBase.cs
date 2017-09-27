@@ -153,14 +153,16 @@ namespace MiningCore.Blockchain.Bitcoin
                     var requestParams = request.ParamsAs<string[]>();
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                    var share = await manager.SubmitShareAsync(client, requestParams, client.Context.Difficulty,
-                        poolEndpoint.Difficulty);
+                    var share = await manager.SubmitShareAsync(client, requestParams, 
+                        client.Context.Difficulty, poolEndpoint.Difficulty);
 
                     // success
                     client.Respond(true, request.Id);
 
                     // record it
                     shareSubject.OnNext(share);
+
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: Diff {share.StratumDifficulty}");
 
                     // update pool stats
                     if (share.IsBlockCandidate)
@@ -182,6 +184,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     // telemetry
                     invalidSharesSubject.OnNext(Unit.Default);
+
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                     // banning
                     if (poolConfig.Banning?.Enabled == true)

@@ -37,6 +37,7 @@ using MiningCore.Blockchain;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.JsonRpc;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -188,8 +189,6 @@ namespace MiningCore.Mining
 
             if (context.VarDiff != null)
             {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff");
-
                 // get or create manager
                 VarDiffManager varDiffManager;
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];

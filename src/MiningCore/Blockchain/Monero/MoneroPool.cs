@@ -236,6 +236,8 @@ namespace MiningCore.Blockchain.Monero
                 // record it
                 shareSubject.OnNext(share);
 
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: Diff {share.StratumDifficulty}");
+
                 // update pool stats
                 if (share.IsBlockCandidate)
                     poolStats.LastPoolBlockTime = DateTime.UtcNow;
@@ -256,6 +258,8 @@ namespace MiningCore.Blockchain.Monero
 
                 // telemetry
                 invalidSharesSubject.OnNext(Unit.Default);
+
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
                 if (poolConfig.Banning?.Enabled == true)

@@ -125,13 +125,7 @@ namespace MiningCore.JsonRpc
                 });
 
             Received = incomingLines
-                .Select(line => new
-                {
-                    Json = line,
-                    Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings)
-                })
-                .Do(x => logger.Debug(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
-                .Select(x => x.Request)
+                .Select(line => JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings))
                 .Timestamp()
                 .Publish()
                 .RefCount();
