@@ -158,9 +158,16 @@ namespace MiningCore.Blockchain.Monero
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+
+            logger = LogUtil.GetPoolScopedLogger(typeof(JobManagerBase<MoneroJob>), poolConfig);
+            this.poolConfig = poolConfig;
+            this.clusterConfig = clusterConfig;
+
             poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
             if (poolAddressBase58Prefix == 0)
-                logger.ThrowLogPoolStartupException("Unable to decode pool-address)", LogCat);
+                logger.ThrowLogPoolStartupException("Unable to decode pool-address", LogCat);
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
@@ -172,7 +179,10 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
                 .ToArray();
 
-            base.Configure(poolConfig, clusterConfig);
+            if(walletDaemonEndpoints.Length == 0)
+                logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
+
+            ConfigureDaemons();
         }
 
         public bool ValidateAddress(string address)
