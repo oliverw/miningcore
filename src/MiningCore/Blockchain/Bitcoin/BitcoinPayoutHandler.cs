@@ -215,7 +215,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 PersistPayments(balances, txId);
 
-                await NotifyPayoutSuccess(balances, txId, null);
+                await NotifyPayoutSuccess(balances, new []{ txId }, null);
             }
 
             else

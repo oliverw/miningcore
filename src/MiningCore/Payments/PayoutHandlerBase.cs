@@ -146,7 +146,7 @@ namespace MiningCore.Payments
             return $"{amount:0.#####} {poolConfig.Coin.Type}";
         }
 
-        protected virtual async Task NotifyPayoutSuccess(Balance[] balances, string txHash, decimal? txFee)
+        protected virtual async Task NotifyPayoutSuccess(Balance[] balances, string[] txHashes, decimal? txFee)
         {
             // admin notifications
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
@@ -162,13 +162,13 @@ namespace MiningCore.Payments
                         .First();
 
                     // prepare tx link
-                    var txInfo = txHash;
+                    var txInfo = string.Join(", ", txHashes);
 
                     string baseUrl;
                     if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out baseUrl))
-                        txInfo = $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>";
+                        txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
-                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
+                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
                 }
 
                 catch (Exception ex2)

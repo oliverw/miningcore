@@ -81,15 +81,31 @@ namespace MiningCore.Blockchain.Monero
                 var txHash = response.Response.TxHash;
                 var txFee = (decimal) response.Response.Fee / MoneroConstants.Piconero;
 
-                // check result
-                if (string.IsNullOrEmpty(txHash))
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' did not return a transaction id!");
-                else
-                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
+                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
+                await NotifyPayoutSuccess(balances, new [] { txHash }, txFee);
+            }
 
-                await NotifyPayoutSuccess(balances, txHash, txFee);
+            else
+            {
+                logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
+
+                await NotifyPayoutFailureAsync(balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+            }
+        }
+
+        private async Task HandleTransferResponseAsync(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        {
+            if (response.Error == null)
+            {
+                var txHashes = response.Response.TxHashList;
+                var txFees = response.Response.FeeList.Select(x => (decimal) x / MoneroConstants.Piconero).ToArray();
+
+                logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
+
+                PersistPayments(balances, txHashes.First());
+                await NotifyPayoutSuccess(balances, txHashes, txFees.Sum());
             }
 
             else
@@ -135,17 +151,19 @@ namespace MiningCore.Blockchain.Monero
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             // send command
-            var result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
+            var transferResponse = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (result.Error?.Code == -4)
+            if (transferResponse.Error?.Code == -4)
             {
                 logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
+                var transferSplitResponse = await walletDaemon.ExecuteCmdAnyAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+                await HandleTransferResponseAsync(transferSplitResponse, balances);
             }
 
-            await HandleTransferResponseAsync(result, balances);
+            else
+                await HandleTransferResponseAsync(transferResponse, balances);
         }
 
         private async Task PayoutToPaymentId(Balance balance)
