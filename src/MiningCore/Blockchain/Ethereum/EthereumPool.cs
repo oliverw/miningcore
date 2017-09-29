@@ -133,16 +133,19 @@ namespace MiningCore.Blockchain.Ethereum
             return (ulong)result;
         }
 
-        protected override void UpdateVarDiffAndNotifyClient(StratumClient<EthereumWorkerContext> client)
+        protected override void OnVarDiffUpdate(StratumClient<EthereumWorkerContext> client, double newDiffValue)
         {
-            //UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+            base.OnVarDiffUpdate(client, newDiffValue);
 
-            //if (client.Context.ApplyPendingDifficulty())
-            //{
-            //    // send job
-            //    var job = CreateWorkerJob(client);
-            //    client.Notify(MoneroStratumMethods.JobNotify, job);
-            //}
+            // apply immediately and notify client
+            if (client.Context.HasPendingDifficulty)
+            {
+                client.Context.ApplyPendingDifficulty();
+
+                //    // send job
+                //    var job = CreateWorkerJob(client);
+                //    client.Notify(MoneroStratumMethods.JobNotify, job);
+            }
         }
 
         protected override async Task UpdateBlockChainStatsAsync()

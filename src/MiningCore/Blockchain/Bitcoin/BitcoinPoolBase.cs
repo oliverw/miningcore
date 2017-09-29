@@ -145,10 +145,10 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
             else
             {
-                UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty, true);
-                
                 try
                 {
+                    RegisterShareSubmission(client);
+
                     // submit 
                     var requestParams = request.ParamsAs<string[]>();
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
@@ -360,15 +360,16 @@ namespace MiningCore.Blockchain.Bitcoin
             return (ulong) result;
         }
 
-        protected override void UpdateVarDiffAndNotifyClient(StratumClient<BitcoinWorkerContext> client)
+        protected override void OnVarDiffUpdate(StratumClient<BitcoinWorkerContext> client, double newDiffValue)
         {
-            UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+            base.OnVarDiffUpdate(client, newDiffValue);
 
-            if (client.Context.ApplyPendingDifficulty())
+            // apply immediately and notify client
+            if (client.Context.HasPendingDifficulty)
             {
-                client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+                client.Context.ApplyPendingDifficulty();
 
-                // send job
+                client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }

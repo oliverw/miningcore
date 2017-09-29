@@ -196,10 +196,10 @@ namespace MiningCore.Blockchain.Monero
             // recognize activity
             client.Context.LastActivity = DateTime.UtcNow;
 
-            UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
-
             try
             {
+                RegisterShareSubmission(client);
+
                 MoneroWorkerJob job;
 
                 lock (client.Context)
@@ -378,13 +378,16 @@ namespace MiningCore.Blockchain.Monero
             return (ulong)result;
         }
 
-        protected override void UpdateVarDiffAndNotifyClient(StratumClient<MoneroWorkerContext> client)
+        protected override void OnVarDiffUpdate(StratumClient<MoneroWorkerContext> client, double newDiffValue)
         {
-            UpdateVarDiff(client, manager.BlockchainStats.NetworkDifficulty);
+            base.OnVarDiffUpdate(client, newDiffValue);
 
-            if (client.Context.ApplyPendingDifficulty())
+            // apply immediately and notify client
+            if (client.Context.HasPendingDifficulty)
             {
-                // send job
+                client.Context.ApplyPendingDifficulty();
+
+                // re-send job
                 var job = CreateWorkerJob(client);
                 client.Notify(MoneroStratumMethods.JobNotify, job);
             }

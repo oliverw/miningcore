@@ -74,4 +74,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Payments\PayoutSchemes\" />
+  </ItemGroup>
+
 </Project>

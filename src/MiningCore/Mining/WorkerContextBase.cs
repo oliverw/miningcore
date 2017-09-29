@@ -39,10 +39,25 @@ namespace MiningCore.Mining
         public DateTime LastActivity { get; set; }
         public bool IsAuthorized { get; set; } = false;
         public bool IsSubscribed { get; set; }
+
+        /// <summary>
+        /// Difficulty assigned to this worker, either static or updated through VarDiffManager
+        /// </summary>
         public double Difficulty { get; set; }
+
+        /// <summary>
+        /// Previous difficulty assigned to this worker
+        /// </summary>
         public double? PreviousDifficulty { get; set; }
+
+        /// <summary>
+        /// UserAgent reported by Stratum
+        /// </summary>
         public string UserAgent { get; set; }
 
+        /// <summary>
+        /// True if there's a difficulty update queued for this worker
+        /// </summary>
         public bool HasPendingDifficulty => pendingDifficulty.HasValue;
 
         public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig)
@@ -79,6 +94,10 @@ namespace MiningCore.Mining
         {
             PreviousDifficulty = Difficulty;
             Difficulty = difficulty;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

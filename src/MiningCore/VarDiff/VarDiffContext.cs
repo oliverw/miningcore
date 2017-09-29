@@ -19,16 +19,35 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using MiningCore.Util;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace MiningCore.VarDiff
 {
-    public class VarDiffContext
+    public class VarDiffContext : IDisposable
     {
-        public double LastTs { get; set; }
-        public double LastRtc { get; set; }
-        public CircularDoubleBuffer TimeBuffer { get; set; }
+        public VarDiffContext()
+        {
+            SubmittedShares = sharesSubject.AsObservable();
+        }
 
-        public IDisposable IdleUpdateSub { get; set; }
+        private readonly Subject<Unit> sharesSubject = new Subject<Unit>();
+
+        public IObservable<Unit> SubmittedShares { get; }
+        public IDisposable Subscription { get; set; }
+        public long? LastShareTs { get; set; }
+        public int SilenceCount { get; set; }
+
+        public void RegisterShareSubmission()
+        {
+            sharesSubject.OnNext(Unit.Default);
+        }
+
+        public void Dispose()
+        {
+            Subscription?.Dispose();
+            sharesSubject.Dispose();
+        }
     }
 }

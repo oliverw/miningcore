@@ -125,7 +125,7 @@ namespace MiningCore.Configuration
         public double RetargetTime { get; set; }
 
         /// <summary>
-        /// Allow time to very this % from target without retargeting
+        /// Allow submission frequency to diverge this much (%) from target time without triggering a retarget
         /// </summary>
         public double VariancePercent { get; set; }
     }
