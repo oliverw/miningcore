@@ -108,18 +108,21 @@ namespace MiningCore.Payments
                     {
                         foreach (var balance in balances)
                         {
-                            // record payment
-                            var payment = new Payment
+                            if (!string.IsNullOrEmpty(transactionConfirmation))
                             {
-                                PoolId = poolConfig.Id,
-                                Coin = poolConfig.Coin.Type,
-                                Address = balance.Address,
-                                Amount = balance.Amount,
-                                Created = DateTime.UtcNow,
-                                TransactionConfirmationData = transactionConfirmation
-                            };
+                                // record payment
+                                var payment = new Payment
+                                {
+                                    PoolId = poolConfig.Id,
+                                    Coin = poolConfig.Coin.Type,
+                                    Address = balance.Address,
+                                    Amount = balance.Amount,
+                                    Created = DateTime.UtcNow,
+                                    TransactionConfirmationData = transactionConfirmation
+                                };
 
-                            paymentRepo.Insert(con, tx, payment);
+                                paymentRepo.Insert(con, tx, payment);
+                            }
 
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");

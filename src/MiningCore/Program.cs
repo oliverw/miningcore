@@ -534,6 +534,9 @@ namespace MiningCore
                 payoutManager.Start();
             }
 
+            else
+                logger.Info("Payment processing is not enabled");
+
             // keep running
             await Observable.Never<Unit>().ToTask();
         }

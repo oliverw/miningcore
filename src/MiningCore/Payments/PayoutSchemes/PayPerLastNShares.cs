@@ -144,8 +144,6 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (!string.IsNullOrEmpty(share.PayoutInfo))
                         address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
-                    shareCutOffDate = share.Created;
-
                     // record attributed shares for diagnostic purposes
                     if (!shares.ContainsKey(address))
                         shares[address] = 1;
@@ -160,6 +158,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (accumulatedScore + score >= factorX)
                     {
                         score = factorX - accumulatedScore;
+                        shareCutOffDate = share.Created;
                         done = true;
                     }
 
