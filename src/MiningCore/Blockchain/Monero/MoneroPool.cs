@@ -206,12 +206,9 @@ namespace MiningCore.Blockchain.Monero
                 {
                     var jobId = submitRequest?.JobId;
 
-                    if (string.IsNullOrEmpty(jobId) ||
-                        !client.Context.ValidJobs.Any(x => x.Id == jobId))
+                    if (string.IsNullOrEmpty(jobId) || 
+                        (job = client.Context.ValidJobs.FirstOrDefault(x => x.Id == jobId)) == null)
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
-
-                    // look it up
-                    job = client.Context.ValidJobs.First(x => x.Id == jobId);
                 }
 
                 // dupe check
@@ -236,7 +233,7 @@ namespace MiningCore.Blockchain.Monero
                 // record it
                 shareSubject.OnNext(share);
 
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: Diff {share.StratumDifficulty}");
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D{share.StratumDifficulty}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)

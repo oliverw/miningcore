@@ -80,7 +80,7 @@ namespace MiningCore.VarDiff
                     if (avg < tMin || avg > tMax)
                     {
                         var change = options.TargetTime / avg;
-                        newDiff = difficulty * change;
+                        newDiff = Math.Round(difficulty * change / 100d, 0) * 100;
                     }
 
                     // store
