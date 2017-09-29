@@ -62,7 +62,7 @@ namespace MiningCore.Stratum
 
         public void StartListeners(params IPEndPoint[] stratumPorts)
         {
-            Contract.RequiresNonNull(ports, nameof(ports));
+            Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             // start ports
             foreach (var endpoint in stratumPorts)
@@ -75,7 +75,7 @@ namespace MiningCore.Stratum
                     var listener = loop
                         .CreateTcp()
                         .SimultaneousAccepts(true)
-                        .KeepAlive(false, 0)
+                        .KeepAlive(true, 1)
                         .NoDelay(true)
                         .Listen(endpoint, (con, ex) =>
                         {
