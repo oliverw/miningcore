@@ -74,15 +74,13 @@ namespace MiningCore.VarDiff
 
                     // add penalty for missing shares
                     if (tsRelative.Count < desiredShares - 1)
-                        avg += options.TargetTime * 0.5 * ((double)tsRelative.Count / (desiredShares - 1));
+                        avg += options.TargetTime * 0.5 * (tsRelative.Count / (desiredShares - 1));
 
                     // re-target if outside bounds
                     if (avg < tMin || avg > tMax)
                     {
                         var change = options.TargetTime / avg;
                         newDiff = difficulty * change;
-
-                        Debug.WriteLine(newDiff.Value);
                     }
 
                     // store
@@ -106,10 +104,6 @@ namespace MiningCore.VarDiff
                     else if (newDiff > maxDiff)
                         newDiff = maxDiff;
                 }
-
-                if (newDiff.HasValue && (newDiff.Value < 0.00001 || double.IsNegativeInfinity(newDiff.Value) ||
-                                         double.IsPositiveInfinity(newDiff.Value)))
-                    ;
 
                 return newDiff;
             }
