@@ -248,14 +248,6 @@ namespace MiningCore.Mining
 
         protected virtual void SetupStats()
         {
-            poolStats.PoolFeePercent = (float) poolConfig.RewardRecipients
-                .Where(x => x.Type == RewardRecipientType.Op)
-                .Sum(x => x.Percentage);
-
-            poolStats.DonationsPercent = (float) poolConfig.RewardRecipients
-                .Where(x => x.Type == RewardRecipientType.Dev)
-                .Sum(x => x.Percentage);
-
             // Periodically persist pool- and blockchain-stats to persistent storage
             disposables.Add(Observable.Interval(TimeSpan.FromSeconds(60))
                 .Select(_ => Observable.FromAsync(async () =>

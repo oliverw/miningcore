@@ -22,10 +22,10 @@ using System;
 
 namespace MiningCore.Api.Responses
 {
-    public class AggregatedPoolStats
+    public partial class AggregatedPoolStats
     {
         public float PoolHashRate { get; set; }
-        //public int ConnectedMiners { get; set; }
+        public int ConnectedMiners { get; set; }
 
         public DateTime Created { get; set; }
     }

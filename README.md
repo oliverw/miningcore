@@ -238,7 +238,7 @@ Example Response:
   "pools": [{
       "id": "xmr1",
       "coin": {
-        "type": 5
+        "type": "XMR"
       },
       "ports": {
         "4032": {
@@ -258,7 +258,7 @@ Example Response:
       "paymentProcessing": {
         "enabled": true,
         "minimumPayment": 0.01,
-        "payoutScheme": 1,
+        "payoutScheme": "PPLNS",
         "payoutSchemeConfig": {
           "factor": 2.0
         },
@@ -273,11 +273,11 @@ Example Response:
       "clientConnectionTimeout": 600,
       "jobRebroadcastTimeout": 55,
       "blockRefreshInterval": 1000,
+      "poolFeePercent": 0.0,
+      "donationsPercent": 0.0,
       "poolStats": {
         "connectedMiners": 0,
         "poolHashRate": 0.0,
-        "poolFeePercent": 0.0,
-        "donationsPercent": 0.0,
         "sharesPerSecond": 0,
         "validSharesPerMinute": 0,
         "invalidSharesPerMinute": 0
@@ -306,10 +306,12 @@ Example Response:
   "stats": [
     {
       "poolHashRate": 20.0,
+      "connectedMiners": 12,
       "created": "2017-09-16T10:00:00"
     },
     {
       "poolHashRate": 25.0,
+      "connectedMiners": 15,
       "created": "2017-09-16T11:00:00"
     },
 
@@ -317,6 +319,7 @@ Example Response:
 
     {
       "poolHashRate": 23.0,
+      "connectedMiners": 13,
       "created": "2017-09-17T10:00:00"
     }
   ]
@@ -349,7 +352,7 @@ Example Response:
 [
   {
     "blockheight": 197,
-    "status": 3,
+    "status": "pending",
     "transactionConfirmationData": "6e7f68c7891e0f2fdbfd0086d88be3b0d57f1d8f4e1cb78ddc509506e312d94d",
     "reward": 17.558881241740,
     "infoLink": "https://xmrchain.net/block/6e7f68c7891e0f2fdbfd0086d88be3b0d57f1d8f4e1cb78ddc509506e312d94d",
@@ -357,7 +360,7 @@ Example Response:
   },
   {
     "blockheight": 196,
-    "status": 3,
+    "status": "confirmed",
     "transactionConfirmationData": "bb0b42b4936cfa210da7308938ad6d2d34c5339d45b61c750c1e0be2475ec039",
     "reward": 17.558898015821,
     "infoLink": "https://xmrchain.net/block/bb0b42b4936cfa210da7308938ad6d2d34c5339d45b61c750c1e0be2475ec039",
@@ -365,7 +368,7 @@ Example Response:
   },
   {
     "blockheight": 195,
-    "status": 3,
+    "status": "orphaned",
     "transactionConfirmationData": "b9b5943b2646ebfd19311da8031c66b164ace54a7f74ff82556213d9b54daaeb",
     "reward": 17.558914789917,
     "infoLink": "https://xmrchain.net/block/b9b5943b2646ebfd19311da8031c66b164ace54a7f74ff82556213d9b54daaeb",
@@ -385,7 +388,7 @@ Example Response:
 ```javascript
 [
   {
-    "coin": 5,
+    "coin": "XMR",
     "address": "9wviCeWe2D8XS82k2ovp5EUYLzBt9pYNW2LXUFsZiv8S3Mt21FZ5qQaAroko1enzw3eGr9qC7X1D7Geoo2RrAotYPwq9Gm8",
     "amount": 7.5354,
     "transactionConfirmationData": "9e7f68c7891e0f2fdbfd0086d88be3b0d57f1d8f4e1cb78ddc509506e312d94d",

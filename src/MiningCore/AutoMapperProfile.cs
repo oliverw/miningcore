@@ -49,6 +49,8 @@ namespace MiningCore
             CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
             CreateMap<Block, Api.Responses.Block>();
             CreateMap<Payment, Api.Responses.Payment>();
+            CreateMap<CoinConfig, Api.Responses.ApiCoinConfig>();
+            CreateMap<PoolPaymentProcessingConfig, Api.Responses.ApiPoolPaymentProcessingConfig>();
 
             CreateMap<MinerStats, Api.Responses.MinerStats>()
                 .ForMember(dest => dest.LastPayment, opt => opt.Ignore())

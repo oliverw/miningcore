@@ -166,6 +166,14 @@ namespace MiningCore.Api
                         poolInfo.PoolStats = pool.PoolStats;
                         poolInfo.NetworkStats = pool.NetworkStats;
 
+                        poolInfo.PoolFeePercent = (float) pool.Config.RewardRecipients
+                            .Where(x => x.Type == RewardRecipientType.Op)
+                            .Sum(x => x.Percentage);
+
+                        poolInfo.DonationsPercent = (float)pool.Config.RewardRecipients
+                            .Where(x => x.Type == RewardRecipientType.Dev)
+                            .Sum(x => x.Percentage);
+
                         return poolInfo;
                     }).ToArray()
                 };

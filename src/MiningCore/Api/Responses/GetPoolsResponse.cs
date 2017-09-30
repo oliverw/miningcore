@@ -22,25 +22,44 @@ using System.Collections.Generic;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Mining;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Api.Responses
 {
+    public class ApiCoinConfig
+    {
+        public string Type { get; set; }
+    }
+
+    public class ApiPoolPaymentProcessingConfig
+    {
+        public bool Enabled { get; set; }
+        public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
+        public string PayoutScheme { get; set; }
+        public JToken PayoutSchemeConfig { get; set; }
+
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
+    }
+
     public class PoolInfo
     {
         // Configuration Properties directly mapping to PoolConfig (omitting security relevant fields)
         public string Id { get; set; }
 
-        public CoinConfig Coin { get; set; }
+        public ApiCoinConfig Coin { get; set; }
         public Dictionary<int, PoolEndpoint> Ports { get; set; }
-        public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
+        public ApiPoolPaymentProcessingConfig PaymentProcessing { get; set; }
         public PoolBanningConfig Banning { get; set; }
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
+        public float PoolFeePercent { get; set; }
+        public float DonationsPercent { get; set; }
 
         // Stats
         public PoolStats PoolStats { get; set; }
-
         public BlockchainStats NetworkStats { get; set; }
     }
 

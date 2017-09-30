@@ -25,7 +25,7 @@ namespace MiningCore.Api.Responses
 {
     public class Payment
     {
-        public CoinType Coin { get; set; }
+        public string Coin { get; set; }
         public string Address { get; set; }
         public decimal Amount { get; set; }
         public string TransactionConfirmationData { get; set; }
