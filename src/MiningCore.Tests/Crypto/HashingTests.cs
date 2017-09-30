@@ -124,6 +124,54 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void Skein_Hash_Should_Match()
+        {
+            var hasher = new Skein();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("460ed04dc407e0fd5ca4fcb1e2e93a766f5fc5991b23899d8da43f571722df27", result);
+        }
+
+        [Fact]
+        public void Skein_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha256S();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void Qubit_Hash_Should_Match()
+        {
+            var hasher = new Qubit();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("93c1471bb55081ae14ffb78d18f1e1d77844013efb5b32e95269c1a9afe88a71", result);
+        }
+
+        [Fact]
+        public void Qubit_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha256S();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void GroestlMyriad_Hash_Should_Match()
+        {
+            var hasher = new GroestlMyriad();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("79fd64cd7f4b9e59ea469c6dbfdfb6388c912240ab0b6065d65d21fcda3618ce", result);
+        }
+
+        [Fact]
+        public void GroestlMyriad_Hash_Should_Throw_On_Null_Argument()
+        {
+            var hasher = new Sha256S();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
         public void DigestReverser_Hash_Should_Match()
         {
             var hasher = new DigestReverser(new Sha256S());

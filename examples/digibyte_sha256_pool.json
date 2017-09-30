@@ -42,16 +42,17 @@
         "shareRecoveryFile": "recovered-shares.txt"
     },
     "pools": [{
-      "id": "xmr1",
+      "id": "dgb-sha256-1",
       "enabled": true,
       "coin": {
-        "type": "XMR"
+        "type": "DGB",
+        "algorithm": "sha256d"
       },
-      "address": "43g9avHw8WYHnq749LU1Nw1BZ8FCwS2B7GLoW4vif7cPjJB7e9f6WgU8ptDFM7kyNS9kz1zy334dAYFKgP2KJU8vMoZ3hYD",
+      "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
       "rewardRecipients": [
         {
           "type": "op",
-          "address": "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH",
+          "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
           "percentage": 0
         }
       ],
@@ -65,39 +66,13 @@
         "checkThreshold": 50
       },
       "ports": {
-        "3032": {
+        "3062": {
           "listenAddress": "0.0.0.0",
-          "difficulty": 7500,
-          "name": "CPU Mining",
+          "difficulty": 1024,
           "varDiff": {
-            "minDiff": 1000,
-            "maxDiff": null,
+            "minDiff": 512,
             "targetTime": 15,
             "retargetTime": 90,
-            "variancePercent": 30
-          }
-        },
-        "3033": {
-          "listenAddress": "0.0.0.0",
-          "difficulty": 25000,
-          "name": "GPU Mining",
-          "varDiff": {
-            "minDiff": 10000,
-            "maxDiff": null,
-            "targetTime": 15,
-            "retargetTime": 90,
-            "variancePercent": 30
-          }
-        },
-        "3034": {
-          "listenAddress": "0.0.0.0",
-          "difficulty": 200000,
-          "name": "High-End Multi GPU Mining",
-          "varDiff": {
-            "minDiff": 200000,
-            "maxDiff": null,
-            "targetTime": 15,
-            "retargetTime": 120,
             "variancePercent": 30
           }
         }
@@ -105,22 +80,14 @@
       "daemons": [
         {
           "host": "127.0.0.1",
-          "port": 18081,
-           "user": "user",
-          "password": "password"
-       },
-        {
-          "host": "127.0.0.1",
-          "port": 18082,
+          "port": 9998,
           "user": "user",
-          "password": "password",
-          "category": "wallet"
+          "password": "password"
         }
       ],
       "paymentProcessing": {
         "enabled": true,
-        "minimumPayment": 0.25,
-        "minimumPaymentToPaymentId": 1.0,
+        "minimumPayment": 0.5,
         "payoutScheme": "PPLNS",
         "payoutSchemeConfig": {
           "factor": 2.0

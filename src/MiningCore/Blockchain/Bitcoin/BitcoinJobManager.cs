@@ -191,12 +191,52 @@ namespace MiningCore.Blockchain.Bitcoin
                 // Scrypt
                 case CoinType.LTC:
                 case CoinType.DOGE:
-                case CoinType.DGB:
                 case CoinType.VIA:
                     coinbaseHasher = sha256d;
                     headerHasher = new Scrypt(1024, 1);
                     blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
                     ShareMultiplier = Math.Pow(2, 16);
+                    break;
+
+                case CoinType.DGB:
+                    switch (poolConfig.Coin.Algorithm)
+                    {
+                        case "sha256d":
+                            coinbaseHasher = sha256d;
+                            headerHasher = sha256d;
+                            blockHasher = sha256dReverse;
+                            ShareMultiplier = 1;
+                            break;
+
+                        case "skein":
+                            coinbaseHasher = sha256d;
+                            headerHasher = new Skein();
+                            blockHasher = sha256dReverse;
+                            ShareMultiplier = 1;
+                            break;
+
+                        case "qubit":
+                            coinbaseHasher = sha256d;
+                            headerHasher = new Qubit();
+                            blockHasher = sha256dReverse;
+                            ShareMultiplier = 1;
+                            break;
+
+                        case "groestl":
+                        case "groestl-myriad":
+                            coinbaseHasher = sha256s;
+                            headerHasher = new GroestlMyriad();
+                            blockHasher = sha256dReverse;
+                            ShareMultiplier = Math.Pow(2, 8);
+                            break;
+
+                        default:    // scrypt
+                            coinbaseHasher = sha256d;
+                            headerHasher = new Scrypt(1024, 1);
+                            blockHasher = sha256dReverse;
+                            ShareMultiplier = Math.Pow(2, 16);
+                            break;
+                    }
                     break;
 
                 // Groestl

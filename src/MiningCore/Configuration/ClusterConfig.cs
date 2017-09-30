@@ -48,6 +48,11 @@ namespace MiningCore.Configuration
     public class CoinConfig
     {
         public CoinType Type { get; set; }
+
+        /// <summary>
+        /// For coins like DGB which support multiple POW methods
+        /// </summary>
+        public string Algorithm { get; set; }
     }
 
     public enum RewardRecipientType
