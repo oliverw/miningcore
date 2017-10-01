@@ -351,7 +351,7 @@ Example Response:
 ```javascript
 [
   {
-    "blockheight": 197,
+    "blockHeight": 197,
     "status": "pending",
     "transactionConfirmationData": "6e7f68c7891e0f2fdbfd0086d88be3b0d57f1d8f4e1cb78ddc509506e312d94d",
     "reward": 17.558881241740,
@@ -359,7 +359,7 @@ Example Response:
     "created": "2017-09-16T07:41:50.242856"
   },
   {
-    "blockheight": 196,
+    "blockHeight": 196,
     "status": "confirmed",
     "transactionConfirmationData": "bb0b42b4936cfa210da7308938ad6d2d34c5339d45b61c750c1e0be2475ec039",
     "reward": 17.558898015821,
@@ -367,7 +367,7 @@ Example Response:
     "created": "2017-09-16T07:41:39.664172"
   },
   {
-    "blockheight": 195,
+    "blockHeight": 195,
     "status": "orphaned",
     "transactionConfirmationData": "b9b5943b2646ebfd19311da8031c66b164ace54a7f74ff82556213d9b54daaeb",
     "reward": 17.558914789917,
