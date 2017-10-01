@@ -269,18 +269,18 @@ namespace MiningCore.Blockchain.Monero
                         MC.GetBlockHeaderByHeight,
                         new GetBlockHeaderByHeightRequest
                         {
-                            Height = block.Blockheight
+                            Height = block.BlockHeight
                         });
 
                     if (rpcResult.Error != null)
                     {
-                        logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.Blockheight}");
+                        logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.BlockHeight}");
                         continue;
                     }
 
                     if (rpcResult.Response?.BlockHeader == null)
                     {
-                        logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.Blockheight}");
+                        logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.BlockHeight}");
                         continue;
                     }
 

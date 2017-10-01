@@ -24,7 +24,7 @@ namespace MiningCore.Api.Responses
 {
     public class Block
     {
-        public ulong Blockheight { get; set; }
+        public ulong BlockHeight { get; set; }
         public string Status { get; set; }
         public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }

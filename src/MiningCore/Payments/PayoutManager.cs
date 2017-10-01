@@ -115,7 +115,7 @@ namespace MiningCore.Payments
             {
                 foreach (var block in updatedBlocks.OrderBy(x => x.Created))
                 {
-                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.Blockheight}");
+                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
