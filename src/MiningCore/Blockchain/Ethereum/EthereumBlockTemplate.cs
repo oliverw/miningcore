@@ -15,17 +15,22 @@ namespace MiningCore.Blockchain.Ethereum
         /// <summary>
         /// current block header pow-hash (32 Bytes)
         /// </summary>
-        public byte[] Header { get; set; }
+        public string Header { get; set; }
 
         /// <summary>
         /// the seed hash used for the DAG. (32 Bytes)
         /// </summary>
-        public byte[] Seed { get; set; }
+        public string Seed { get; set; }
 
         /// <summary>
         /// the boundary condition ("target"), 2^256 / difficulty. (32 Bytes)
         /// </summary>
         public BigInteger Target { get; set; }
+
+        /// <summary>
+        /// Target Difficulty
+        /// </summary>
+        public BigInteger TargetDifficulty { get; set; }
 
         /// <summary>
         /// hash of the parent block.

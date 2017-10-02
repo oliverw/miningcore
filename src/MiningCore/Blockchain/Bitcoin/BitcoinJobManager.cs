@@ -349,11 +349,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
             lock (jobLock)
             {
-                validJobs.TryGetValue(jobId, out job);
+                if(!validJobs.TryGetValue(jobId, out job))
+                    throw new StratumException(StratumError.JobNotFound, "job not found");
             }
-
-            if (job == null)
-                throw new StratumException(StratumError.JobNotFound, "job not found");
 
             // extract worker/miner/payoutid
             var split = workerValue.Split('.');

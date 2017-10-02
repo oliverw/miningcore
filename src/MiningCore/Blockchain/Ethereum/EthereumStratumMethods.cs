@@ -25,26 +25,21 @@ namespace MiningCore.Blockchain.Ethereum
         /// <summary>
         /// Used to subscribe to work
         /// </summary>
-        public const string Login = "login";
-
-        /// <summary>
-        /// New job notification
-        /// </summary>
-        public const string JobNotify = "job";
+        public const string Login = "eth_submitLogin";
 
         /// <summary>
         /// Get Job request
         /// </summary>
-        public const string GetJob = "getjob";
+        public const string GetWork = "eth_getWork";
 
         /// <summary>
         /// Submit share request
         /// </summary>
-        public const string Submit = "submit";
+        public const string Submit = "eth_submitWork";
 
         /// <summary>
         /// Keep alive request
         /// </summary>
-        public const string KeepAlive = "keepalived";
+        public const string SubmitHashrate = "eth_submitHashrate";
     }
 }

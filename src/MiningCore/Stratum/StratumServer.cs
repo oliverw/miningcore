@@ -243,7 +243,17 @@ namespace MiningCore.Stratum
             }
 
             foreach (var client in tmp)
-                action(client);
+            {
+                try
+                {
+                    action(client);
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(ex);
+                }
+            }
         }
 
         protected abstract void OnConnect(StratumClient<TClientContext> client);

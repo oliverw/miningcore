@@ -19,71 +19,77 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
-using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using Block = MiningCore.Blockchain.Ethereum.DaemonResponses.Block;
 using Contract = MiningCore.Contracts.Contract;
 using EC = MiningCore.Blockchain.Ethereum.GethCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    public class EthereumJobManager : JobManagerBase<EthereumJob>
+    public class EthereumJobManager : JobManagerBase<EthereumBlockTemplate>
     {
         public EthereumJobManager(
             IComponentContext ctx) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                instanceId = new byte[EthereumConstants.InstanceIdSize];
-                rng.GetNonZeroBytes(instanceId);
-            }
         }
 
-        private readonly byte[] instanceId;
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
+        private const int MaxBlockBacklog = 3;
+        private readonly Ethash ethash = new Ethash(MaxBlockBacklog);
+        protected readonly Dictionary<string, EthereumJob> validJobs = new Dictionary<string, EthereumJob>();
 
         protected async Task<bool> UpdateJob()
         {
             try
             {
-                var blockTemplate = await GetBlockTemplateAsync();
+                var result = await GetBlockTemplateAsync();
 
                 // may happen if daemon is currently not connected to peers
-                if (blockTemplate == null)
+                if (result == null || result.Header.Length == 0)
                     return false;
 
                 lock (jobLock)
                 {
                     var isNew = currentJob == null ||
-                                currentJob.BlockTemplate.ParentHash != blockTemplate.ParentHash ||
-                                currentJob.BlockTemplate.Height < blockTemplate.Height;
+                                currentJob.ParentHash != result.ParentHash ||
+                                currentJob.Height < result.Height ||
+                                currentJob.Seed != result.Seed;
 
                     if (isNew)
                     {
-                        currentJob = new EthereumJob(blockTemplate, instanceId, NextJobId(),
-                            poolConfig, clusterConfig);
+                        // update template
+                        currentJob = result;
 
-                        currentJob.Init();
+                        // add jobs
+                        validJobs[currentJob.Header] = new EthereumJob(currentJob.Height, currentJob.TargetDifficulty);
+
+                        // remove old ones
+                        var obsoleteKeys = validJobs.Keys
+                            .Where(key=> validJobs[key].BlockHeight < currentJob.Height - MaxBlockBacklog).ToArray();
+
+                        foreach (var key in obsoleteKeys)
+                            validJobs.Remove(key);
 
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
@@ -129,9 +135,10 @@ namespace MiningCore.Blockchain.Ethereum
 
             var result = new EthereumBlockTemplate
             {
-                Header = work[0].HexToByteArray(),
-                Seed = work[1].HexToByteArray(),
+                Header = work[0],
+                Seed = work[1],
                 Target = new BigInteger(work[2].HexToByteArray().ToReverseArray()), // BigInteger.Parse(work[2], NumberStyles.HexNumber | NumberStyles.AllowHexSpecifier)
+                TargetDifficulty = TargetHexToDiff(work[2]),
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
                 Height = block.Height.Value,
                 ParentHash = block.ParentHash,
@@ -167,19 +174,59 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        private async Task<bool> SubmitBlockAsync(EthereumShare share)
+        private async Task<bool> SubmitBlockAsync(EthereumShare share, string[] request)
         {
-            //var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(EC.SubmitBlock, new[] {share.BlobHex});
+            var response = await daemon.ExecuteCmdAnyAsync<object>(EC.SubmitWork, request);
 
-            //if (response.Error != null || response?.Response?.Status != "OK")
-            //{
-            //    var error = response.Error?.Message ?? response.Response?.Status;
+            if (response.Error != null || (bool?) response.Response == false)
+            {
+                var error = response.Error?.Message;
 
-            //    logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
-            //    return false;
-            //}
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
+                return false;
+            }
 
+            // get block hash
+            var blockResponse = await daemon.ExecuteCmdAnyAsync<Block>(EC.GetBlockByNumber, new[] { (object) share.BlockHeight, true });
+
+            if (blockResponse.Error != null || response.Response == null)
+            {
+                var error = response.Error?.Message;
+
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} block lookup for submission failed with: {error}");
+                return false;
+            }
+
+            share.TransactionConfirmationData = blockResponse.Response.Hash;
             return true;
+        }
+
+        private string EncodeDifficulty(double difficulty)
+        {
+            var quotient = BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(difficulty));
+            var bytes = quotient.ToByteArray();
+            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
+
+            if (padded.Length - bytes.Length > 0)
+                Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+
+            var result = ToEthHex(padded);
+            return result;
+        }
+
+        private static string ToEthHex(byte[] bytes)
+        {
+            if (bytes.Length == 0)
+                return "0x0";
+
+            return "0x" + bytes.ToHexString();
+        }
+
+        private static BigInteger TargetHexToDiff(string val)
+        {
+            var targetBytes = val.HexToByteArray();
+            var result = BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(targetBytes));
+            return result;
         }
 
         #region API-Surface
@@ -200,12 +247,120 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var addressBytes = address.HexToByteArray();
-
-            if (addressBytes.Length != EthereumConstants.AddressLength)
+            if (EthereumConstants.ZeroHashPattern.IsMatch(address) ||
+                !EthereumConstants.ValidAddressPattern.IsMatch(address))
                 return false;
 
             return true;
+        }
+
+        public string[] GetJobParamsForStratum(StratumClient<EthereumWorkerContext> client)
+        {
+            string difficultyEncoded;
+            var clientContext = client.Context;
+
+            // attempt to use pre-encoded difficulty
+            lock (clientContext)
+            {
+                if (string.IsNullOrEmpty(clientContext.DifficulityEncoded) ||
+                    !clientContext.DifficulityEncodedForDiff.HasValue ||
+                    clientContext.DifficulityEncodedForDiff.Value != clientContext.Difficulty)
+                {
+                    difficultyEncoded = EncodeDifficulty(clientContext.Difficulty);
+
+                    clientContext.DifficulityEncoded = difficultyEncoded;
+                    clientContext.DifficulityEncodedForDiff = clientContext.Difficulty;
+                }
+
+                else
+                    difficultyEncoded = clientContext.DifficulityEncoded;
+            }
+
+            lock (jobLock)
+            {
+                if(currentJob == null)
+                    return new string[0];
+
+                return new[]
+                {
+                    currentJob.Header,
+                    currentJob.Seed,
+                    difficultyEncoded,
+                };
+            }
+        }
+
+        public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
+            string[] request, double stratumDifficulty, double stratumDifficultyBase)
+        {
+            var nonceHex = request[0];
+            var hashNoNonce = request[1];
+            var mixDigest = request[2];
+            EthereumJob job;
+
+            // stale?
+            lock (jobLock)
+            {
+                if(!validJobs.TryGetValue(hashNoNonce, out job))
+                    throw new StratumException(StratumError.MinusOne, "stale share");
+            }
+
+            // convert nonce
+            var nonce = nonceHex.IntegralFromHex<ulong>();
+
+            // duplicate nonce?
+            lock (job)
+            {
+                job.RegisterNonce(worker, nonce);
+            }
+
+            // validate share
+            var block = new Crypto.Hashing.Ethash.Block
+            {
+                Height = job.BlockHeight,
+                HashNoNonce = hashNoNonce.HexToByteArray(),
+                Difficulty = new BigInteger(worker.Context.Difficulty),
+                Nonce = nonce,
+                MixDigest = mixDigest.HexToByteArray(),
+            };
+
+            if(await ethash.VerifyAsync(block))
+                throw new StratumException(StratumError.MinusOne, "bad hash");
+
+            // create share
+            var share = new EthereumShare
+            {
+                BlockHeight = (long) job.BlockHeight,
+                PoolId = poolConfig.Id,
+                IpAddress = worker.RemoteEndpoint.Address.ToString(),
+                Miner = worker.Context.MinerName,
+                Worker = worker.Context.WorkerName,
+                UserAgent = worker.Context.UserAgent,
+                NetworkDifficulty = BlockchainStats.NetworkDifficulty,
+                StratumDifficulty = stratumDifficulty,
+                StratumDifficultyBase = stratumDifficultyBase,
+                Created = DateTime.UtcNow
+            };
+
+            // block candidate?
+            block.Difficulty = job.Difficulty;
+
+            share.IsBlockCandidate = await ethash.VerifyAsync(block);
+
+            // if block candidate, submit & check if accepted by network
+            if (share.IsBlockCandidate)
+            {
+                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight}");
+
+                share.IsBlockCandidate = await SubmitBlockAsync(share, request);
+
+                if (share.IsBlockCandidate)
+                {
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight}");
+                }
+            }
+
+            return share;
         }
 
         public async Task UpdateNetworkStatsAsync()

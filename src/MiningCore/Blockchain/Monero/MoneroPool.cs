@@ -76,7 +76,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (string.IsNullOrEmpty(loginRequest?.Login))
             {
-                client.RespondError(request.Id, -1, "missing login");
+                client.RespondError(StratumError.MinusOne, "missing login", request.Id);
                 return;
             }
 
@@ -102,7 +102,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (!client.Context.IsAuthorized)
             {
-                client.RespondError(request.Id, -1, "invalid login");
+                client.RespondError(StratumError.MinusOne, "invalid login", request.Id);
                 return;
             }
 
@@ -131,7 +131,7 @@ namespace MiningCore.Blockchain.Monero
             // validate worker
             if (client.ConnectionId != getJobRequest?.WorkerId || !client.Context.IsAuthorized)
             {
-                client.RespondError(request.Id, -1, "unauthorized");
+                client.RespondError(StratumError.MinusOne, "unauthorized", request.Id);
                 return;
             }
 

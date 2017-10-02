@@ -77,6 +77,7 @@ namespace MiningCore
         {
             try
             {
+                AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -237,12 +238,8 @@ namespace MiningCore
 
             ConfigurePersistence(builder);
             ConfigureNotifications(builder);
-
-            // Autofac Container
             container = builder.Build();
-
             ConfigureLogging();
-
             ValidateRuntimeEnvironment();
         }
 
@@ -545,6 +542,13 @@ namespace MiningCore
         {
             shareRecorder = container.Resolve<ShareRecorder>();
             shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+        }
+
+        private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            logger?.Error(e.ExceptionObject);
+
+            Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
 
         private static void TouchNativeLibs()

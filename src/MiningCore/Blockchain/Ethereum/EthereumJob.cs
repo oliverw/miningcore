@@ -1,33 +1,40 @@
-﻿using System;
-using MiningCore.Configuration;
-using MiningCore.Contracts;
+﻿using System.Collections.Generic;
+using System.Numerics;
+using MiningCore.Stratum;
 
 namespace MiningCore.Blockchain.Ethereum
 {
     public class EthereumJob
     {
-        public EthereumJob(EthereumBlockTemplate blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig)
+        public EthereumJob(ulong height, BigInteger diff)
         {
-            Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-            Contract.RequiresNonNull(instanceId, nameof(instanceId));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
-
-            BlockTemplate = blockTemplate;
+            BlockHeight = height;
+            Difficulty = diff;
         }
 
-        protected PoolConfig poolConfig;
+        private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<ulong>> workerNonces = 
+            new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<ulong>>();
 
-        #region API-Surface
+        public ulong BlockHeight { get; }
+        public BigInteger Difficulty { get; }
 
-        public EthereumBlockTemplate BlockTemplate { get; private set; }
-
-        public void Init()
+        public void RegisterNonce(StratumClient<EthereumWorkerContext> worker, ulong nonce)
         {
-        }
+            HashSet<ulong> nonces;
 
-        #endregion // API-Surface
+            if (!workerNonces.TryGetValue(worker, out nonces))
+            {
+                nonces = new HashSet<ulong>(new[] { nonce });
+                workerNonces[worker] = nonces;
+            }
+
+            else
+            {
+                if (nonces.Contains(nonce))
+                    throw new StratumException(StratumError.MinusOne, "duplicate share");
+
+                nonces.Add(nonce);
+            }
+        }
     }
 }

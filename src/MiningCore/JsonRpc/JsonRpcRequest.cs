@@ -52,7 +52,7 @@ namespace MiningCore.JsonRpc
         [JsonProperty("jsonrpc")]
         public string JsonRpc => "2.0";
 
-        [JsonProperty("method")]
+        [JsonProperty("method", NullValueHandling = NullValueHandling.Ignore)]
         public string Method { get; set; }
 
         [JsonProperty("params")]

@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Text.RegularExpressions;
 
 namespace MiningCore.Blockchain.Ethereum
 {
@@ -9,6 +10,11 @@ namespace MiningCore.Blockchain.Ethereum
         public const ulong DagSizeForTesting = 1024 * 32;
         public static BigInteger BigMaxValue = BigInteger.Pow(2, 256);
         public const int AddressLength = 20;
+        public static readonly Regex ValidAddressPattern = new Regex("^0x[0-9a-fA-F]{40}$", RegexOptions.Compiled);
+        public static readonly Regex ZeroHashPattern = new Regex("^0?x?0+$", RegexOptions.Compiled);
+        public static readonly Regex NoncePattern = new Regex("^0x[0-9a-f]{16}$", RegexOptions.Compiled);
+        public static readonly Regex HashPattern =  new Regex("^0x[0-9a-f]{64}$", RegexOptions.Compiled);
+        public static readonly Regex WorkerPattern = new Regex("^[0-9a-zA-Z-_]{1,8}$", RegexOptions.Compiled);
 
         public const int InstanceIdSize = 3;
     }
