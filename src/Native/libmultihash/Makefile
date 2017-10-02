@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -c -fPIC -O2
-CXXFLAGS = -Wall -fPIC -fpermissive -O2
+CFLAGS = -Wall -c -fPIC -O2 -Wno-pointer-sign -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers
+CXXFLAGS = -Wall -fPIC -fpermissive -O2 -Wno-unused-function -Wno-strict-aliasing
 LDFLAGS = -shared
 LDLIBS = -lsodium
 TARGET  = libmultihash.so
