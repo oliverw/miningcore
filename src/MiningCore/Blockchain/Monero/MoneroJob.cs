@@ -116,7 +116,7 @@ namespace MiningCore.Blockchain.Monero
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, double stratumDifficulty)
+        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient<MoneroWorkerContext> worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -153,11 +153,25 @@ namespace MiningCore.Blockchain.Monero
             // check difficulty
             var headerValue = new System.Numerics.BigInteger(hashBytes);
             var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
-            var ratio = shareDiff / stratumDifficulty;
+            var ratio = shareDiff / worker.Context.Difficulty;
 
             // test if share meets at least workers current difficulty
             if (ratio < 0.99)
-                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            {
+                // allow grace period where the previous difficulty from before a vardiff update is also acceptable
+                if (worker.Context.VarDiff != null && worker.Context.VarDiff.LastUpdate.HasValue &&
+                    worker.Context.PreviousDifficulty.HasValue &&
+                    DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(10))
+                {
+                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+
+                    if (ratio < 0.99)
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                }
+
+                else
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            }
 
             // valid share, check if the share also meets the much harder block difficulty (block candidate)
             var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;

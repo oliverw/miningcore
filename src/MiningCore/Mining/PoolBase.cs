@@ -150,7 +150,7 @@ namespace MiningCore.Mining
                             {
                                 var newDiff = varDiffManager.Update(context, timestamps);
 
-                                if (newDiff.HasValue && newDiff.Value != context.Difficulty)
+                                if (newDiff.HasValue)
                                 {
                                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
 

@@ -74,15 +74,21 @@ namespace MiningCore.Blockchain.Ethereum
             var ratio = shareDiff / worker.Context.Difficulty;
 
             if (ratio < 0.99)
-                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            {
+                // allow grace period where the previous difficulty from before a vardiff update is also acceptable
+                if (worker.Context.VarDiff != null && worker.Context.VarDiff.LastUpdate.HasValue &&
+                    worker.Context.PreviousDifficulty.HasValue &&
+                    DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(10))
+                {
+                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
 
-            // Matches miner difficulty?
-            //var minerTarget = BigInteger.Divide(
-            //    EthereumConstants.BigMaxValue, 
-            //    new BigInteger((ulong) (worker.Context.Difficulty * EthereumConstants.Pow2x32)));
+                    if (ratio < 0.99)
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                }
 
-            //if(resultValue.CompareTo(minerTarget) > 0)
-            //    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share");
+                else
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            }
 
             // create share
             var share = new EthereumShare

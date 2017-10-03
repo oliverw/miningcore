@@ -1,6 +1,6 @@
 ﻿{
     "logging": {
-        "level": "trace",
+        "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",

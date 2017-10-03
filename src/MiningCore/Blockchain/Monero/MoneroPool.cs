@@ -224,8 +224,7 @@ namespace MiningCore.Blockchain.Monero
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, submitRequest, job, client.Context.Difficulty,
-                    poolEndpoint.Difficulty);
+                var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty);
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);

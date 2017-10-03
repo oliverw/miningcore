@@ -38,6 +38,7 @@ namespace MiningCore.VarDiff
         public IDisposable Subscription { get; set; }
         public long? LastShareTs { get; set; }
         public int SilenceCount { get; set; }
+        public DateTime? LastUpdate { get; set; }
 
         public void RegisterShareSubmission()
         {

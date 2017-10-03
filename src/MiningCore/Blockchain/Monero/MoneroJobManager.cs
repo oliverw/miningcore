@@ -213,8 +213,7 @@ namespace MiningCore.Blockchain.Monero
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,
-            MoneroSubmitShareRequest request, MoneroWorkerJob workerJob,
-            double stratumDifficulty, double stratumDifficultyBase)
+            MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             MoneroJob job;
 
@@ -227,7 +226,7 @@ namespace MiningCore.Blockchain.Monero
             }
 
             // validate & process
-            var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, stratumDifficulty);
+            var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
@@ -258,7 +257,7 @@ namespace MiningCore.Blockchain.Monero
             share.PayoutInfo = worker.Context.PaymentId;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.StratumDifficulty = stratumDifficulty;
+            share.StratumDifficulty = worker.Context.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
 

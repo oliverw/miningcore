@@ -21,12 +21,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Concurrency;
 using MiningCore.Configuration;
 using MiningCore.Mining;
-using MiningCore.Util;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.VarDiff
@@ -107,6 +104,10 @@ namespace MiningCore.VarDiff
                         newDiff = minDiff;
                     else if (newDiff > maxDiff)
                         newDiff = maxDiff;
+
+                    // check if different
+                    if (newDiff.Value != ctx.Difficulty)
+                        ctx.VarDiff.LastUpdate = DateTime.UtcNow;
                 }
 
                 return newDiff;
