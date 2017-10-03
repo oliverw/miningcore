@@ -209,13 +209,6 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        private static BigInteger TargetHexToDiff(string val)
-        {
-            var targetBytes = val.HexToByteArray();
-            var result = BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(targetBytes));
-            return result;
-        }
-
         #region API-Surface
 
         public IObservable<object> Jobs { get; private set; }
