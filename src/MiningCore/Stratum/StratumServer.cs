@@ -141,10 +141,11 @@ namespace MiningCore.Stratum
 
                 // request subscription
                 var sub = client.Requests
+                    .Do(x => logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request {x.Value.Method} [{x.Value.Id}]"))
                     .Select(tsRequest => Observable.FromAsync(()=> Task.Run(()=>  // get off of LibUV event-loop-thread immediately
                     {
                         var request = tsRequest.Value;
-                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received request {request.Method} [{request.Id}]");
+                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request {request.Method} [{request.Id}]");
 
                         try
                         {

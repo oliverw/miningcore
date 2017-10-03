@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace MiningCore.Blockchain.Ethereum
@@ -9,7 +10,10 @@ namespace MiningCore.Blockchain.Ethereum
         public const ulong CacheSizeForTesting = 1024;
         public const ulong DagSizeForTesting = 1024 * 32;
         public static BigInteger BigMaxValue = BigInteger.Pow(2, 256);
+        public static double Pow2x32 = Math.Pow(2, 32);
+        public static BigInteger BigPow2x32 = new BigInteger(Pow2x32);
         public const int AddressLength = 20;
+        public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
         public static readonly Regex ValidAddressPattern = new Regex("^0x[0-9a-fA-F]{40}$", RegexOptions.Compiled);
         public static readonly Regex ZeroHashPattern = new Regex("^0?x?0+$", RegexOptions.Compiled);
         public static readonly Regex NoncePattern = new Regex("^0x[0-9a-f]{16}$", RegexOptions.Compiled);

@@ -355,8 +355,8 @@ namespace MiningCore
                         };
 
                         target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                            ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
+                            ConditionParser.ParseExpression("level == LogLevel.Trace"),
+                            ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
 
                         target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
                             ConditionParser.ParseExpression("level == LogLevel.Debug"),

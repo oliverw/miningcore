@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -54,7 +55,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             return result;
         }
 
-        public async Task<bool> VerifyAsync(Block block)
+        public async Task<bool> VerifyBlockAsync(Block block)
         {
             Contract.RequiresNonNull(block, nameof(block));
 
@@ -73,7 +74,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             // look up cache
             var cache = await GetCacheAsync(block.Height);
 
-            // Recompute the hash using the cache.
+            // Recompute the hash using the cache
             byte[] mixDigest;
             byte[] resultBytes;
             if (!cache.Compute(block.HashNoNonce, block.Nonce, out mixDigest, out resultBytes))

@@ -128,7 +128,13 @@ namespace MiningCore.JsonRpc
                 });
 
             Received = incomingLines
-                .Select(line => JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings))
+                .Select(line => new
+                {
+                    Json = line,
+                    Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings)
+                })
+                .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
+                .Select(x => x.Request)
                 .Timestamp()
                 .Publish()
                 .RefCount();
@@ -139,7 +145,7 @@ namespace MiningCore.JsonRpc
         public void Send<T>(JsonRpcResponse<T> response)
         {
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-            logger.Debug(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
+            logger.Trace(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
             try
             {
@@ -154,7 +160,7 @@ namespace MiningCore.JsonRpc
         public void Send<T>(JsonRpcRequest<T> request)
         {
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
-            logger.Debug(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
+            logger.Trace(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
             try
             {

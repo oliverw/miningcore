@@ -18,6 +18,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Numerics;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Mining;
 
 namespace MiningCore.Blockchain.Ethereum
@@ -27,7 +29,6 @@ namespace MiningCore.Blockchain.Ethereum
         public string MinerName { get; set; }
         public string WorkerName { get; set; }
 
-        public string DifficulityEncoded { get; set; }
-        public double? DifficulityEncodedForDiff { get; set; }
+        public string ExtraNonce1 { get; set; }
     }
 }

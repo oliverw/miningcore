@@ -71,9 +71,14 @@ namespace MiningCore.Blockchain
             }
         }
 
-        protected string NextJobId()
+        protected string NextJobId(string format = null)
         {
-            return Interlocked.Increment(ref jobId).ToString(CultureInfo.InvariantCulture);
+            var value = Interlocked.Increment(ref jobId);
+
+            if(format != null)
+                return value.ToString(format);
+
+            return value.ToString(CultureInfo.InvariantCulture);
         }
 
         protected abstract Task<bool> IsDaemonHealthy();

@@ -76,15 +76,12 @@ namespace MiningCore.Mining
             this.notificationSenders = notificationSenders;
 
             Shares = shareSubject
-                .AsObservable()
                 .Synchronize();
 
             validShares = validSharesSubject
-                .AsObservable()
                 .Synchronize();
 
             invalidShares = invalidSharesSubject
-                .AsObservable()
                 .Synchronize();
         }
 
@@ -153,7 +150,7 @@ namespace MiningCore.Mining
                             {
                                 var newDiff = varDiffManager.Update(context, timestamps);
 
-                                if (newDiff != null)
+                                if (newDiff.HasValue && newDiff.Value != context.Difficulty)
                                 {
                                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
 
@@ -378,7 +375,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                     disposables.Add(Shares
                         .ObserveOn(TaskPoolScheduler.Default)
                         .Where(x => x.IsBlockCandidate)
-                        .Subscribe(async share =>
+                        .Select(share => Observable.FromAsync(async ()=>
                         {
                             try
                             {
@@ -389,7 +386,9 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                             {
                                 logger.Error(ex);
                             }
-                        }));
+                        }))
+                        .Concat()
+                        .Subscribe());
                 }
             }
         }

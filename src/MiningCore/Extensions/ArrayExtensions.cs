@@ -32,9 +32,14 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
-        public static string ToHexString(this byte[] byteArray)
+        public static string ToHexString(this byte[] byteArray, bool withPrefix = false)
         {
-            return byteArray.Aggregate("", (current, b) => current + b.ToString("x2"));
+            var result = byteArray.Aggregate("", (current, b) => current + b.ToString("x2"));
+
+            if (withPrefix)
+                result = "0x" + result;
+
+            return result;
         }
 
         public static string ToFormatedHexString(this byte[] byteArray)

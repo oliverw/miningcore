@@ -47,9 +47,9 @@ namespace MiningCore.Tests.Crypto
 
             using (var ethash = new Ethash(3))
             {
-                Assert.True(await ethash.VerifyAsync(validBlocks[0]));
-                Assert.True(await ethash.VerifyAsync(validBlocks[1]));
-                Assert.True(await ethash.VerifyAsync(validBlocks[2]));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[0]));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[1]));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[2]));
             }
         }
 
@@ -99,10 +99,10 @@ namespace MiningCore.Tests.Crypto
 
             using (var ethash = new Ethash(3))
             {
-                Assert.False(await ethash.VerifyAsync(invalidBlocks[0]));
-                Assert.False(await ethash.VerifyAsync(invalidBlocks[1]));
-                Assert.False(await ethash.VerifyAsync(invalidBlocks[2]));
-                Assert.False(await ethash.VerifyAsync(invalidBlocks[3]));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[0]));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[1]));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[2]));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[3]));
             }
         }
 
@@ -111,7 +111,7 @@ namespace MiningCore.Tests.Crypto
         {
             using (var ethash = new Ethash(3))
             {
-                await Assert.ThrowsAsync<ArgumentNullException>(async () => await ethash.VerifyAsync(null));
+                await Assert.ThrowsAsync<ArgumentNullException>(async () => await ethash.VerifyBlockAsync(null));
             }
         }
     }

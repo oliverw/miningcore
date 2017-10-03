@@ -34,7 +34,7 @@ namespace MiningCore.JsonRpc
         {
         }
 
-        public JsonRpcResponse(JsonRpcException ex, object id = null, object result = null) : base(ex, id)
+        public JsonRpcResponse(JsonRpcException ex, object id = null, object result = null) : base(ex, id, result)
         {
         }
     }
@@ -55,11 +55,13 @@ namespace MiningCore.JsonRpc
             Id = id;
         }
 
-        public JsonRpcResponse(JsonRpcException ex, string id, object result)
+        public JsonRpcResponse(JsonRpcException ex, object id, object result)
         {
             Error = ex;
             Id = id;
-            Result = JToken.FromObject(result);
+
+            if(result != null)
+                Result = JToken.FromObject(result);
         }
 
         //[JsonProperty(PropertyName = "jsonrpc")]

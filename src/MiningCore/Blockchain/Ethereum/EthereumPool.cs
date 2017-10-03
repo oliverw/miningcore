@@ -54,75 +54,77 @@ namespace MiningCore.Blockchain.Ethereum
         {
         }
 
-        private long currentJobId;
-
+        private object currentJobParams;
         private EthereumJobManager manager;
         private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 
-        private string NextJobId()
-        {
-            return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
-        }
-
-        private void OnLogin(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        private void OnSubscribe(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+                client.RespondError(StratumError.Other, "missing request id", request.Id);
                 return;
             }
 
-            var loginRequest = request.ParamsAs<string[]>();
+            var requestParams = request.ParamsAs<string[]>();
 
-            if(loginRequest == null || loginRequest.Length == 0 || string.IsNullOrEmpty(loginRequest[0]))
+            if (requestParams == null || requestParams.Length < 2 || requestParams.Any(string.IsNullOrEmpty))
             {
-                client.RespondError(StratumError.MinusOne, "missing login", request.Id);
+                client.RespondError(StratumError.MinusOne, "invalid request", request.Id);
                 return;
             }
 
-            // extract worker/miner/paymentid
-            var split = loginRequest[0].Split('.');
-            client.Context.MinerName = split[0];
-            client.Context.WorkerName = split.Length > 1 ? split[1] : null;
+            manager.PrepareWorker(client);
 
-            // validate login
-            var result = manager.ValidateAddress(client.Context.MinerName);
+            var data = new object[]
+                {
+                    new object[]
+                    {
+                        EthereumStratumMethods.MiningNotify,
+                        client.ConnectionId,
+                        EthereumConstants.EthereumStratumVersion
+                    },
+                    client.Context.ExtraNonce1
+                }
+                .ToArray();
 
-            client.Context.IsSubscribed = result;
-            client.Context.IsAuthorized = result;
+            client.Respond(data, request.Id);
 
-            if (!client.Context.IsAuthorized)
-            {
-                client.RespondError(StratumError.MinusOne, "missing login", request.Id);
-                return;
-            }
-
-            // respond
-            client.Respond(true, request.Id);
+            // setup worker context
+            client.Context.IsSubscribed = true;
+            client.Context.UserAgent = requestParams[0].Trim();
         }
 
-        private void OnGetJob(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        private void OnAuthorize(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+                client.RespondError(StratumError.Other, "missing request id", request.Id);
                 return;
             }
 
-            // validate worker
-            if (!client.Context.IsAuthorized)
-            {
-                client.RespondError(StratumError.MinusOne, "unauthorized", request.Id);
-                return;
-            }
+            var requestParams = request.ParamsAs<string[]>();
+            var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
+            //var password = requestParams?.Length > 1 ? requestParams[1] : null;
 
-            // respond
-            var jobParams = manager.GetJobParamsForStratum(client);
-            client.Respond(jobParams, request.Id);
+            // extract worker/miner
+            var split = workerValue?.Split('.');
+            var minerName = split?.FirstOrDefault();
+            var workerName = split?.LastOrDefault();
+
+            // assumes that workerName is an address
+            client.Context.IsAuthorized = manager.ValidateAddress(minerName);
+            client.Context.MinerName = minerName;
+            client.Context.WorkerName = workerName;
+            client.Respond(client.Context.IsAuthorized, request.Id);
+
+            // send intial update
+            client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+            client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
         }
 
         private async Task OnSubmitAsync(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
@@ -152,62 +154,70 @@ namespace MiningCore.Blockchain.Ethereum
             var submitRequest = request.ParamsAs<string[]>();
 
             if (submitRequest.Length != 3 || 
-                submitRequest.Any(x=> string.IsNullOrEmpty(x)) || 
-                !EthereumConstants.NoncePattern.IsMatch(submitRequest[0]) ||
-                !EthereumConstants.HashPattern.IsMatch(submitRequest[1]) ||
-                !EthereumConstants.HashPattern.IsMatch(submitRequest[2]))
+                submitRequest.Any(x=> string.IsNullOrEmpty(x)))
                 throw new StratumException(StratumError.MinusOne, "malformed PoW result");
 
             // recognize activity
             client.Context.LastActivity = DateTime.UtcNow;
 
-            try
+            if (!client.Context.IsAuthorized)
+                client.RespondError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
+            else if (!client.Context.IsSubscribed)
+                client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
+            else
             {
-                RegisterShareSubmission(client);
 
-                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+                try
+                {
+                    RegisterShareSubmission(client);
 
-                var share = await manager.SubmitShareAsync(client, submitRequest, client.Context.Difficulty, poolEndpoint.Difficulty);
+                    var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                // success
-                client.Respond(true, request.Id);
+                    var share = await manager.SubmitShareAsync(client, submitRequest, client.Context.Difficulty,
+                        poolEndpoint.Difficulty);
 
-                // record it
-                shareSubject.OnNext(share);
+                    // success
+                    client.Respond(true, request.Id);
 
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D{share.StratumDifficulty}");
+                    // record it
+                    shareSubject.OnNext(share);
 
-                // update pool stats
-                if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = DateTime.UtcNow;
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
-                // update client stats
-                client.Context.Stats.ValidShares++;
+                    // update pool stats
+                    if (share.IsBlockCandidate)
+                        poolStats.LastPoolBlockTime = DateTime.UtcNow;
 
-                // telemetry
-                validSharesSubject.OnNext(share);
-            }
+                    // update client stats
+                    client.Context.Stats.ValidShares++;
 
-            catch (StratumException ex)
-            {
-                client.RespondError(ex.Code, ex.Message, request.Id, false);
+                    // telemetry
+                    validSharesSubject.OnNext(share);
+                }
 
-                // update client stats
-                client.Context.Stats.InvalidShares++;
+                catch (StratumException ex)
+                {
+                    client.RespondError(ex.Code, ex.Message, request.Id, false);
 
-                // telemetry
-                invalidSharesSubject.OnNext(Unit.Default);
+                    // update client stats
+                    client.Context.Stats.InvalidShares++;
 
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                    // telemetry
+                    invalidSharesSubject.OnNext(Unit.Default);
 
-                // banning
-                if (poolConfig.Banning?.Enabled == true)
-                    ConsiderBan(client, client.Context, poolConfig.Banning);
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+
+                    // banning
+                    if (poolConfig.Banning?.Enabled == true)
+                        ConsiderBan(client, client.Context, poolConfig.Banning);
+                }
             }
         }
 
-        private void OnNewJob()
+        private void OnNewJob(object jobParams)
         {
+            currentJobParams = jobParams;
+
             ForEachClient(client =>
             {
                 if (client.Context.IsSubscribed)
@@ -223,9 +233,12 @@ namespace MiningCore.Blockchain.Ethereum
                         return;
                     }
 
+                    // varDiff: if the client has a pending difficulty change, apply it now
+                    if (client.Context.ApplyPendingDifficulty())
+                        client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+
                     // send job
-                    var jobParams = manager.GetJobParamsForStratum(client);
-                    client.Notify(new JsonRpcRequest(null, jobParams, 0));
+                    client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
                 }
             });
         }
@@ -239,10 +252,10 @@ namespace MiningCore.Blockchain.Ethereum
 
             await manager.StartAsync();
 
-            disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
+            disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
             // we need work before opening the gates
-            await manager.Blocks.Take(1).ToTask();
+            await manager.Jobs.Take(1).ToTask();
         }
 
         protected override async Task OnRequestAsync(StratumClient<EthereumWorkerContext> client,
@@ -252,22 +265,20 @@ namespace MiningCore.Blockchain.Ethereum
 
             switch (request.Method)
             {
-                case EthereumStratumMethods.Login:
-                    OnLogin(client, tsRequest);
+                case EthereumStratumMethods.Subscribe:
+                    OnSubscribe(client, tsRequest);
                     break;
 
-                case EthereumStratumMethods.GetWork:
-                    OnGetJob(client, tsRequest);
+                case EthereumStratumMethods.Authorize:
+                    OnAuthorize(client, tsRequest);
                     break;
 
-                case EthereumStratumMethods.Submit:
+                case EthereumStratumMethods.SubmitShare:
                     await OnSubmitAsync(client, tsRequest);
                     break;
 
-                case EthereumStratumMethods.SubmitHashrate:
-                    // recognize activity
-                    client.Context.LastActivity = DateTime.UtcNow;
-                    client.Respond("", request.Id);
+                case EthereumStratumMethods.ExtraNonceSubscribe:
+                    client.Respond(true, request.Id);
                     break;
 
                 default:
@@ -323,8 +334,8 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Context.ApplyPendingDifficulty();
 
                 // send job
-                var jobParams = manager.GetJobParamsForStratum(client);
-                client.Notify(new JsonRpcRequest(null, jobParams, 0));
+                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+                client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }
 

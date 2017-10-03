@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
+using MiningCore.Contracts;
 using MiningCore.Native;
 using NLog;
 
@@ -71,6 +72,25 @@ namespace MiningCore.Crypto.Hashing.Ethash
                     }
                 }
             });
+        }
+
+        public bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        {
+            Contract.RequiresNonNull(hash, nameof(hash));
+
+            mixDigest = null;
+            result = null;
+
+            LibMultihash.ethash_return_value value;
+            LibMultihash.ethash_full_compute(handle, hash, nonce, out value);
+
+            if (value.success)
+            {
+                mixDigest = value.mix_hash.value;
+                result = value.result.value;
+            }
+
+            return value.success;
         }
     }
 }

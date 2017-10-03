@@ -162,7 +162,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     // record it
                     shareSubject.OnNext(share);
 
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D{share.StratumDifficulty}");
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
                     // update pool stats
                     if (share.IsBlockCandidate)

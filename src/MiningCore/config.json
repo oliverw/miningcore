@@ -1,6 +1,6 @@
 ﻿{
     "logging": {
-        "level": "debug",
+        "level": "trace",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",
@@ -66,9 +66,9 @@
         },
         "ports": {
             "3072": {
-                "difficulty": 5000000,
+                "difficulty": 1,
                 "varDiff": {
-                    "minDiff": 5000000,
+                    "minDiff": 0.05,
                     "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
