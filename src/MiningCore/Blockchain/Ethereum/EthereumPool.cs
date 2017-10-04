@@ -294,7 +294,7 @@ namespace MiningCore.Blockchain.Ethereum
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 5;// * 10;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
@@ -320,7 +320,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.StratumDifficulty) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.StratumDifficulty * EthereumConstants.Pow2x32) / interval);
             return (ulong)result;
         }
 
