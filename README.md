@@ -277,10 +277,7 @@ Example Response:
       "donationsPercent": 0.0,
       "poolStats": {
         "connectedMiners": 0,
-        "poolHashRate": 0.0,
-        "sharesPerSecond": 0,
-        "validSharesPerMinute": 0,
-        "invalidSharesPerMinute": 0
+        "poolHashRate": 0.0
       },
       "networkStats": {
         "networkType": "Test",

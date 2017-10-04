@@ -72,30 +72,20 @@ namespace MiningCore.Mining
 
             Shares = shareSubject
                 .Synchronize();
-
-            validShares = validSharesSubject
-                .Synchronize();
-
-            invalidShares = invalidSharesSubject
-                .Synchronize();
         }
 
-        protected readonly IObservable<Unit> invalidShares;
-        protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
         protected readonly PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
         protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         private readonly IMapper mapper;
-        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
-        protected readonly IObservable<IShare> validShares;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 16;
-        protected readonly Subject<IShare> validSharesSubject = new Subject<IShare>();
+        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
         protected override string LogCat => "Pool";
@@ -135,7 +125,7 @@ namespace MiningCore.Mining
                 // wire updates
                 lock (context.VarDiff)
                 {
-                    context.VarDiff.Subscription = context.VarDiff.SubmittedShares
+                    context.VarDiff.Subscription = Shares
                         .Timestamp()
                         .Select(x => x.Timestamp.ToUnixTimeSeconds())
                         .Buffer(TimeSpan.FromSeconds(poolEndpoint.VarDiff.RetargetTime), VarDiffSampleCount)
@@ -147,7 +137,7 @@ namespace MiningCore.Mining
 
                                 if (newDiff.HasValue)
                                 {
-                                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
+                                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {newDiff}");
 
                                     OnVarDiffUpdate(client, newDiff.Value);
                                 }
@@ -211,17 +201,6 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected void RegisterShareSubmission(StratumClient<TWorkerContext> client)
-        {
-            if (client.Context.VarDiff != null)
-            {
-                lock (client.Context.VarDiff)
-                {
-                    client.Context.VarDiff.RegisterShareSubmission();
-                }
-            }
-        }
-
         protected virtual void OnVarDiffUpdate(StratumClient<TWorkerContext> client, double newDiffValue)
         {
             client.Context.EnqueueNewDifficulty(newDiffValue);
@@ -279,25 +258,6 @@ namespace MiningCore.Mining
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to persist pool stats");
             }
-        }
-        private void SetupTelemetry()
-        {
-            // Shares per second
-            disposables.Add(validShares.Select(_ => Unit.Default).Merge(invalidShares)
-                .Buffer(TimeSpan.FromSeconds(1))
-                .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.SharesPerSecond = count));
-
-            // Valid/Invalid shares per minute
-            disposables.Add(validShares
-                .Buffer(TimeSpan.FromMinutes(1))
-                .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.ValidSharesPerMinute = count));
-
-            disposables.Add(invalidShares
-                .Buffer(TimeSpan.FromMinutes(1))
-                .Select(shares => shares.Count)
-                .Subscribe(count => poolStats.InvalidSharesPerMinute = count));
         }
 
         protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolBanningConfig config)
@@ -432,7 +392,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             try
             {
                 SetupBanning(clusterConfig);
-                SetupTelemetry();
                 await SetupJobManager();
 
                 var ipEndpoints = poolConfig.Ports.Keys

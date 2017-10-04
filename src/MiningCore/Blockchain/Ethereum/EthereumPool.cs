@@ -20,15 +20,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
@@ -169,8 +166,6 @@ namespace MiningCore.Blockchain.Ethereum
 
                 try
                 {
-                    RegisterShareSubmission(client);
-
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                     var share = await manager.SubmitShareAsync(client, submitRequest, client.Context.Difficulty,
@@ -178,11 +173,9 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // success
                     client.Respond(true, request.Id);
-
-                    // record it
                     shareSubject.OnNext(share);
 
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
+                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
                     // update pool stats
                     if (share.IsBlockCandidate)
@@ -190,9 +183,6 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // update client stats
                     client.Context.Stats.ValidShares++;
-
-                    // telemetry
-                    validSharesSubject.OnNext(share);
                 }
 
                 catch (StratumException ex)
@@ -201,11 +191,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // update client stats
                     client.Context.Stats.InvalidShares++;
-
-                    // telemetry
-                    invalidSharesSubject.OnNext(Unit.Default);
-
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                     // banning
                     if (poolConfig.Banning?.Enabled == true)
@@ -296,7 +282,7 @@ namespace MiningCore.Blockchain.Ethereum
             // Pool Hashrate
             var poolHashRateSampleIntervalSeconds = 60 * 10;
 
-            disposables.Add(validSharesSubject
+            disposables.Add(Shares
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
                 .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>

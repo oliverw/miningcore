@@ -65,9 +65,6 @@ CREATE TABLE poolstats
 
 	connectedminers INT NOT NULL DEFAULT 0,
 	poolhashrate FLOAT NOT NULL DEFAULT 0,
-	sharespersecond FLOAT NOT NULL DEFAULT 0,
-	validsharesperminute INT NOT NULL DEFAULT 0,
-	invalidsharesperminute INT NOT NULL DEFAULT 0,
 
 	created TIMESTAMP NOT NULL
 );

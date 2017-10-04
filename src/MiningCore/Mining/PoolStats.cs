@@ -27,10 +27,5 @@ namespace MiningCore.Mining
         public DateTime? LastPoolBlockTime { get; set; }
         public int ConnectedMiners { get; set; }
         public ulong PoolHashRate { get; set; }
-
-        // Telemetry
-        public int SharesPerSecond { get; set; }
-        public int ValidSharesPerMinute { get; set; }
-        public int InvalidSharesPerMinute { get; set; }
     }
 }

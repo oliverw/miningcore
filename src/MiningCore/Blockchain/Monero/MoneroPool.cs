@@ -198,8 +198,6 @@ namespace MiningCore.Blockchain.Monero
 
             try
             {
-                RegisterShareSubmission(client);
-
                 MoneroWorkerJob job;
 
                 lock (client.Context)
@@ -228,11 +226,9 @@ namespace MiningCore.Blockchain.Monero
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-
-                // record it
                 shareSubject.OnNext(share);
 
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -240,9 +236,6 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 client.Context.Stats.ValidShares++;
-
-                // telemetry
-                validSharesSubject.OnNext(share);
             }
 
             catch (StratumException ex)
@@ -251,11 +244,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 client.Context.Stats.InvalidShares++;
-
-                // telemetry
-                invalidSharesSubject.OnNext(Unit.Default);
-
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
                 if (poolConfig.Banning?.Enabled == true)
@@ -346,7 +335,7 @@ namespace MiningCore.Blockchain.Monero
             // Pool Hashrate
             var poolHashRateSampleIntervalSeconds = 60 * 10;
 
-            disposables.Add(validSharesSubject
+            disposables.Add(Shares
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
                 .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>
