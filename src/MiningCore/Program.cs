@@ -546,7 +546,11 @@ namespace MiningCore
 
         private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            logger?.Error(e.ExceptionObject);
+            if (logger != null)
+            {
+                logger.Error(e.ExceptionObject);
+                LogManager.Flush(TimeSpan.Zero);
+            }
 
             Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
