@@ -50,8 +50,8 @@ namespace MiningCore.Blockchain.Ethereum
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
+            NotificationService notificationService) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));

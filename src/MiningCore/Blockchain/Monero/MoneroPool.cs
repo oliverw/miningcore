@@ -52,8 +52,8 @@ namespace MiningCore.Blockchain.Monero
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationSenders)
+            NotificationService notificationService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
         {
         }
 

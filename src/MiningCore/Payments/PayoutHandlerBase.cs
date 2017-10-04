@@ -46,7 +46,7 @@ namespace MiningCore.Payments
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
+            NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -54,7 +54,7 @@ namespace MiningCore.Payments
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
-            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
@@ -62,7 +62,7 @@ namespace MiningCore.Payments
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
             this.paymentRepo = paymentRepo;
-            this.notificationSenders = notificationSenders;
+            this.notificationService = notificationService;
 
             BuildFaultHandlingPolicy();
         }
@@ -73,7 +73,7 @@ namespace MiningCore.Payments
         protected readonly IMapper mapper;
         protected readonly IPaymentRepository paymentRepo;
         protected readonly IShareRepository shareRepo;
-        protected readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
+        protected readonly NotificationService notificationService;
         protected ClusterConfig clusterConfig;
         private Policy faultPolicy;
 
@@ -146,59 +146,33 @@ namespace MiningCore.Payments
             return $"{amount:0.#####} {poolConfig.Coin.Type}";
         }
 
-        protected virtual async Task NotifyPayoutSuccess(Balance[] balances, string[] txHashes, decimal? txFee)
+        protected virtual void NotifyPayoutSuccess(Balance[] balances, string[] txHashes, decimal? txFee)
         {
             // admin notifications
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
             {
-                try
-                {
-                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
+                // prepare tx link
+                var txInfo = string.Join(", ", txHashes);
 
-                    var emailSender = notificationSenders
-                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
-                        .Select(x => x.Value)
-                        .First();
+                string baseUrl;
+                if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out baseUrl))
+                    txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
-                    // prepare tx link
-                    var txInfo = string.Join(", ", txHashes);
-
-                    string baseUrl;
-                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out baseUrl))
-                        txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
-
-                    await emailSender.NotifyAsync(adminEmail, "Payout Success Notification", $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
-                }
-
-                catch (Exception ex2)
-                {
-                    logger.Error(ex2);
-                }
+                notificationService.NotifyAdmin(
+                    "Payout Success Notification", 
+                    $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
             }
         }
 
-        protected virtual async Task NotifyPayoutFailureAsync(Balance[] balances, string error, Exception ex)
+        protected virtual void NotifyPayoutFailure(Balance[] balances, string error, Exception ex)
         {
             // admin notifications
             if (clusterConfig.Notifications?.Admin?.Enabled == true)
             {
-                try
-                {
-                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
-
-                    var emailSender = notificationSenders
-                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
-                        .Select(x => x.Value)
-                        .First();
-
-                    await emailSender.NotifyAsync(adminEmail, "Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {poolConfig.Coin.Type} from pool {poolConfig.Id}: {error ?? ex?.Message}");
-                }
-
-                catch (Exception ex2)
-                {
-                    logger.Error(ex2);
-                }
+                notificationService.NotifyAdmin(
+                    "Payout Failure Notification", 
+                    $"Failed to pay out {balances.Sum(x => x.Amount)} {poolConfig.Coin.Type} from pool {poolConfig.Id}: {error ?? ex?.Message}");
             }
         }
     }

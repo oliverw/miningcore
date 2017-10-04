@@ -49,8 +49,8 @@ namespace MiningCore.Blockchain.Ethereum
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationSenders)
+            NotificationService notificationService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
         {
         }
 
@@ -294,7 +294,7 @@ namespace MiningCore.Blockchain.Ethereum
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;// * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(validSharesSubject
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))

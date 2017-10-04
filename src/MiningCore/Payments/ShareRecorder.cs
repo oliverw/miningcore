@@ -54,19 +54,19 @@ namespace MiningCore.Payments
         public ShareRecorder(IConnectionFactory cf, IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
+            NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
-            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
-            this.notificationSenders = notificationSenders;
+            this.notificationService = notificationService;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
@@ -78,7 +78,7 @@ namespace MiningCore.Payments
 
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
-        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
+        private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
         private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
@@ -117,6 +117,11 @@ namespace MiningCore.Payments
                         var blockEntity = mapper.Map<Block>(share);
                         blockEntity.Status = BlockStatus.Pending;
                         blockRepo.Insert(con, tx, blockEntity);
+
+                        // Queue notification
+                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                            clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
+                            notificationService.NotifyAdmin("Block Notification", $"Pool {share.PoolId} found block candidate {share.BlockHeight}");
                     }
                 }
             });
@@ -273,7 +278,7 @@ namespace MiningCore.Payments
             }
         }
 
-        private async void NotifyAdminOnPolicyFallback()
+        private void NotifyAdminOnPolicyFallback()
         {
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true &&
@@ -281,22 +286,9 @@ namespace MiningCore.Payments
             {
                 notifiedAdminOnPolicyFallback = true;
 
-                try
-                {
-                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
-
-                    var emailSender = notificationSenders
-                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
-                        .Select(x => x.Value)
-                        .First();
-
-                    await emailSender.NotifyAsync(adminEmail, "Share Recorder Policy Fallback", $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
-                }
-
-                catch (Exception ex)
-                {
-                    logger.Error(ex);
-                }
+                notificationService.NotifyAdmin(
+                    "Share Recorder Policy Fallback", 
+                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
             }
         }
 

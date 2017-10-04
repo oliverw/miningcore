@@ -20,21 +20,18 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
-using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
@@ -51,8 +48,8 @@ namespace MiningCore.Blockchain.Bitcoin
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationSenders)
+            NotificationService notificationService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
         {
         }
 

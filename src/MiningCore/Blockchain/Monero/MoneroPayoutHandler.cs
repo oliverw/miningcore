@@ -57,8 +57,8 @@ namespace MiningCore.Blockchain.Monero
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
+            NotificationService notificationService) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -74,7 +74,7 @@ namespace MiningCore.Blockchain.Monero
 
         protected override string LogCategory => "Monero Payout Handler";
 
-        private async Task HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private void HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
             if (response.Error == null)
             {
@@ -84,18 +84,18 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
-                await NotifyPayoutSuccess(balances, new [] { txHash }, txFee);
+                NotifyPayoutSuccess(balances, new [] { txHash }, txFee);
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                await NotifyPayoutFailureAsync(balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
             }
         }
 
-        private async Task HandleTransferResponseAsync(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        private void HandleTransferResponse(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
         {
             if (response.Error == null)
             {
@@ -105,14 +105,14 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
                 PersistPayments(balances, txHashes.First());
-                await NotifyPayoutSuccess(balances, txHashes, txFees.Sum());
+                NotifyPayoutSuccess(balances, txHashes, txFees.Sum());
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                await NotifyPayoutFailureAsync(balances, $"Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(balances, $"Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
             }
         }
 
@@ -159,11 +159,11 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
                 var transferSplitResponse = await walletDaemon.ExecuteCmdAnyAsync<TransferSplitResponse>(MWC.TransferSplit, request);
-                await HandleTransferResponseAsync(transferSplitResponse, balances);
+                HandleTransferResponse(transferSplitResponse, balances);
             }
 
             else
-                await HandleTransferResponseAsync(transferResponse, balances);
+                HandleTransferResponse(transferResponse, balances);
         }
 
         private async Task PayoutToPaymentId(Balance balance)
@@ -210,7 +210,7 @@ namespace MiningCore.Blockchain.Monero
                 result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
             }
 
-            await HandleTransferResponseAsync(result, balance);
+            HandleTransferResponse(result, balance);
         }
 
         #region IPayoutHandler

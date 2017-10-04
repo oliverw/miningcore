@@ -24,7 +24,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
@@ -55,8 +54,8 @@ namespace MiningCore.Blockchain.Bitcoin
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationSenders)
+            NotificationService notificationService) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -215,14 +214,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 PersistPayments(balances, txId);
 
-                await NotifyPayoutSuccess(balances, new []{ txId }, null);
+                NotifyPayoutSuccess(balances, new []{ txId }, null);
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
 
-                await NotifyPayoutFailureAsync(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
+                NotifyPayoutFailure(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
             }
         }
 

@@ -20,24 +20,19 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Banning;
 using MiningCore.Blockchain;
-using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.JsonRpc;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -60,20 +55,20 @@ namespace MiningCore.Mining
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders) : base(ctx)
+            NotificationService notificationService) : base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
-            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.notificationSenders = notificationSenders;
+            this.notificationService = notificationService;
 
             Shares = shareSubject
                 .Synchronize();
@@ -89,7 +84,7 @@ namespace MiningCore.Mining
         protected readonly Subject<Unit> invalidSharesSubject = new Subject<Unit>();
         protected readonly PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
+        protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         private readonly IMapper mapper;
@@ -359,40 +354,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             logger.Info(() => msg);
         }
 
-        protected virtual void SetupAdminNotifications()
-        {
-            if (clusterConfig.Notifications?.Admin?.Enabled == true)
-            {
-                if (clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
-                {
-                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
-
-                    var emailSender = notificationSenders
-                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
-                        .Select(x => x.Value)
-                        .First();
-
-                    disposables.Add(Shares
-                        .ObserveOn(TaskPoolScheduler.Default)
-                        .Where(x => x.IsBlockCandidate)
-                        .Select(share => Observable.FromAsync(async ()=>
-                        {
-                            try
-                            {
-                                await emailSender.NotifyAsync(adminEmail, "Block Notification", $"Pool {share.PoolId} found block candidate {share.BlockHeight}");
-                            }
-
-                            catch (Exception ex)
-                            {
-                                logger.Error(ex);
-                            }
-                        }))
-                        .Concat()
-                        .Subscribe());
-                }
-            }
-        }
-
         protected abstract ulong HashrateFromShares(IEnumerable<IShare> shares, int interval);
 
         protected virtual void UpdateMinerHashrates(IList<IShare> shares, int interval)
@@ -480,7 +441,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
                 StartListeners(ipEndpoints);
                 SetupStats();
-                SetupAdminNotifications();
                 await UpdateBlockChainStatsAsync();
 
                 logger.Info(() => $"[{LogCat}] Online");

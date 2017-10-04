@@ -34,6 +34,7 @@ using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Payments.PayoutSchemes;
 using Newtonsoft.Json;
@@ -78,6 +79,9 @@ namespace MiningCore
                 .SingleInstance();
 
             builder.RegisterType<ApiServer>()
+                .SingleInstance();
+
+            builder.RegisterType<NotificationService>()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())

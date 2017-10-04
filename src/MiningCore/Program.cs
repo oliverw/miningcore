@@ -230,10 +230,10 @@ namespace MiningCore
             var builder = new ContainerBuilder();
 
             builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
+            builder.RegisterInstance(clusterConfig);
 
             // AutoMapper
             var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
-
             builder.Register((ctx, parms) => amConf.CreateMapper());
 
             ConfigurePersistence(builder);
