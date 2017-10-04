@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Numerics;
@@ -138,7 +139,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = new BigInteger(work[2].HexToByteArray().ToReverseArray()), // BigInteger.Parse(work[2], NumberStyles.HexNumber | NumberStyles.AllowHexSpecifier)
+                Target = BigInteger.Parse("0" + work[2].Substring(2), NumberStyles.HexNumber),
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
                 Height = block.Height.Value,
                 ParentHash = block.ParentHash,

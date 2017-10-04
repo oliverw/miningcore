@@ -101,7 +101,6 @@ namespace MiningCore.Blockchain.Ethereum
                 FullNonceHex = "0x" + fullNonceHex,
                 HeaderHash = BlockTemplate.Header,
                 MixHash = mixDigest.ToHexString(true),
-                RealDifficulty = BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue),
             };
 
             // Matches block difficulty?

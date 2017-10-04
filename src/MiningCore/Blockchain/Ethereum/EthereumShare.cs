@@ -18,8 +18,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Numerics;
-
 namespace MiningCore.Blockchain.Ethereum
 {
     public class EthereumShare : ShareBase
@@ -27,10 +25,5 @@ namespace MiningCore.Blockchain.Ethereum
         public string FullNonceHex { get; set; }
         public string HeaderHash { get; set; }
         public string MixHash { get; set; }
-
-        /// <summary>
-        /// Difficulty computed from hash - only relevant for logging
-        /// </summary>
-        public BigInteger RealDifficulty { get; set; }
     }
 }
