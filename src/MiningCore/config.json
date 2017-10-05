@@ -41,62 +41,63 @@
         "interval": 600,
         "shareRecoveryFile": "recovered-shares.txt"
     },
-    "pools": [{
-        "id": "eth1",
-        "enabled": true,
-        "coin": {
-            "type": "ETH"
-        },
-        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
-        "rewardRecipients": [
-            {
-                "type": "op",
-                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
-                "percentage": 0
-            }
-        ],
-        "blockRefreshInterval": 1000,
-        "jobRebroadcastTimeout": 55,
-        "clientConnectionTimeout": 600,
-        "banning": {
-            "enabled": true,
-            "time": 600,
-            "invalidPercent": 50,
-            "checkThreshold": 50
-        },
-        "ports": {
-            "3072": {
-                "difficulty": 1,
-                "varDiff": {
-                    "minDiff": 0.05,
-                    "maxDiff": null,
-                    "targetTime": 15,
-                    "retargetTime": 90,
-                    "variancePercent": 30
-                }
-            },
-            "3073": {
-                "difficulty": 5000
-            }
-        },
-        "daemons": [
-            {
-                "host": "127.0.0.1",
-                "port": 8545,
-                "user": "user",
-                "password": "password"
-            }
-        ],
-        "paymentProcessing": {
-            "enabled": true,
-            "minimumPayment": 0.01,
-            "minimumPaymentToPaymentId": 5.0,
-            "payoutScheme": "PPLNS",
-            "payoutSchemeConfig": {
-                "factor": 2.0
-            }
-        }
-    },
+    "pools": [
+    //     {
+    //     "id": "eth1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "ETH"
+    //     },
+    //     "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+    //             "percentage": 0
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "3072": {
+    //             "difficulty": 1,
+    //             "varDiff": {
+    //                 "minDiff": 0.05,
+    //                 "maxDiff": null,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "3073": {
+    //             "difficulty": 5000
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 8545,
+    //             "user": "user",
+    //             "password": "password"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "minimumPaymentToPaymentId": 5.0,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         }
+    //     }
+    // },
     {
         "id": "xmr1",
         "enabled": true,
@@ -122,7 +123,7 @@
         },
         "ports": {
             "4032": {
-                "difficulty": 5000,
+                "difficulty": 1000,
                 "varDiff": {
                     "minDiff": 750,
                     "targetTime": 15,
@@ -213,61 +214,61 @@
     //         }
     //     }
     // },
-    {
-        "id": "bcc1",
-        "enabled": true,
-        "coin": {
-            "type": "BCC"
-        },
-        "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
-        "rewardRecipients": [
-            {
-                "type": "op",
-                "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
-                "percentage": 1.5
-            }
-        ],
-        "blockRefreshInterval": 1000,
-        "jobRebroadcastTimeout": 55,
-        "clientConnectionTimeout": 600,
-        "banning": {
-            "enabled": true,
-            "time": 600,
-            "invalidPercent": 50,
-            "checkThreshold": 50
-        },
-        "ports": {
-            "3052": {
-                "difficulty": 5,
-                "varDiff": {
-                    "minDiff": 0.01,
-                    "maxDiff": null,
-                    "targetTime": 15,
-                    "retargetTime": 90,
-                    "variancePercent": 30
-                }
-            },
-            "3053": {
-                "difficulty": 100
-            }
-        },
-        "daemons": [
-            {
-                "host": "127.0.0.1",
-                "port": 16001,
-                "user": "user",
-                "password": "pass"
-            }
-        ],
-        "paymentProcessing": {
-            "enabled": true,
-            "minimumPayment": 0.01,
-            "payoutScheme": "PPLNS",
-            "payoutSchemeConfig": {
-                "factor": 2.0
-            }
-        }
-    },
+    // {
+    //     "id": "bcc1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "BCC"
+    //     },
+    //     "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh",
+    //             "percentage": 1.5
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "3052": {
+    //             "difficulty": 5,
+    //             "varDiff": {
+    //                 "minDiff": 0.01,
+    //                 "maxDiff": null,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "3053": {
+    //             "difficulty": 100
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 16001,
+    //             "user": "user",
+    //             "password": "pass"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         }
+    //     }
+    // },
     //{
     //     "id": "dash1",
     //     "enabled": true,

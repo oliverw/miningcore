@@ -25,6 +25,7 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using NLog;
@@ -58,6 +59,10 @@ namespace MiningCore.JsonRpc
         private Tcp upstream;
         private const int MaxRequestLength = 8192;
 
+        private bool shutDownPending = false;
+        private bool deferShutdown = false;
+        private int writesInFlight = 0;
+
         #region Implementation of IJsonRpcConnection
 
         public void Init(Tcp upstream, string connectionId)
@@ -68,64 +73,64 @@ namespace MiningCore.JsonRpc
             this.ConnectionId = connectionId;
 
             var incomingLines = Observable.Create<string>(observer =>
+            {
+                var sb = new StringBuilder();
+
+                upstream.OnRead((handle, buffer) =>
                 {
-                    var sb = new StringBuilder();
+                    // onAccept
+                    var data = buffer.ReadString(Encoding.UTF8);
 
-                    upstream.OnRead((handle, buffer) =>
+                    if (!string.IsNullOrEmpty(data))
                     {
-                        // onAccept
-                        var data = buffer.ReadString(Encoding.UTF8);
-
-                        if (!string.IsNullOrEmpty(data))
+                        // flood-prevention check
+                        if (sb.Length + data.Length < MaxRequestLength)
                         {
-                            // flood-prevention check
-                            if (sb.Length + data.Length < MaxRequestLength)
+                            sb.Append(data);
+
+                            // scan for lines and emit
+                            int index;
+                            while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
                             {
-                                sb.Append(data);
+                                var line = sb.ToString(0, index).Trim();
+                                sb.Remove(0, index + 1);
 
-                                // scan for lines and emit
-                                int index;
-                                while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
-                                {
-                                    var line = sb.ToString(0, index).Trim();
-                                    sb.Remove(0, index + 1);
-
-                                    if(line.Length > 0)
-                                        observer.OnNext(line);
-                                }
-                            }
-
-                            else
-                            {
-                                observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                                if (line.Length > 0)
+                                    observer.OnNext(line);
                             }
                         }
-                    }, (handle, ex) =>
-                    {
-                        // onError
-                        observer.OnError(ex);
-                    }, handle =>
-                    {
-                        // onCompleted
-                        observer.OnCompleted();
-                    });
 
-                    return Disposable.Create(() =>
-                    {
-                        if (upstream.IsValid)
+                        else
                         {
-                            logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
-
-                            upstream.Shutdown((tcp, ex) =>
-                            {
-                                upstream.CloseHandle(handle =>
-                                {
-                                    handle.Dispose();
-                                });
-                            });
+                            observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
                         }
-                    });
+                    }
+                }, (handle, ex) =>
+                {
+                    // onError
+                    observer.OnError(ex);
+                }, handle =>
+                {
+                    // onCompleted
+                    observer.OnCompleted();
                 });
+
+                return Disposable.Create(() =>
+                {
+                    shutDownPending = true;
+
+                    logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
+
+                    if (writesInFlight == 0)
+                        DoShutdown();
+                    else
+                    {
+                        deferShutdown = true;
+                        logger.Info(() => $"[{ConnectionId}] Deferring shutdown due to writes in flight");
+                        LogManager.Flush();
+                    }
+                });
+            });
 
             Received = incomingLines
                 .Select(line => new
@@ -144,31 +149,43 @@ namespace MiningCore.JsonRpc
 
         public void Send<T>(JsonRpcResponse<T> response)
         {
+            if (shutDownPending)
+                return;
+
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
             logger.Trace(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
 
             try
             {
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                Interlocked.Increment(ref writesInFlight);
+
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json), OnWriteCompleted);
             }
             catch (ObjectDisposedException)
             {
                 // ignored
+                Interlocked.Decrement(ref writesInFlight);
             }
         }
 
         public void Send<T>(JsonRpcRequest<T> request)
         {
+            if (shutDownPending)
+                return;
+
             var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
             logger.Trace(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
 
             try
             {
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json));
+                Interlocked.Increment(ref writesInFlight);
+
+                upstream.QueueWrite(Encoding.UTF8.GetBytes(json), OnWriteCompleted);
             }
             catch (ObjectDisposedException)
             {
                 // ignored
+                Interlocked.Decrement(ref writesInFlight);
             }
         }
 
@@ -176,5 +193,27 @@ namespace MiningCore.JsonRpc
         public string ConnectionId { get; private set; }
 
         #endregion
+
+        private void DoShutdown()
+        {
+            if (upstream?.IsValid == true)
+            {
+                upstream.Shutdown((tcp, ex) =>
+                {
+                    tcp?.CloseHandle(handle =>
+                    {
+                        handle?.Dispose();
+                    });
+                });
+            }
+        }
+
+        private void OnWriteCompleted(Tcp tcp, Exception ex)
+        {
+            if (Interlocked.Decrement(ref writesInFlight) == 0 && deferShutdown)
+            {
+                DoShutdown();
+            }
+        }
     }
 }
