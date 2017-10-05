@@ -18,7 +18,7 @@ namespace MiningCore.Blockchain.Ethereum
             BlockTemplate = blockTemplate;
         }
 
-        private static readonly Ethash ethash = new Ethash(3);
+        private static readonly EthashFull ethash = new EthashFull(3);
 
         private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();

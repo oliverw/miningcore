@@ -122,7 +122,7 @@
         },
         "ports": {
             "4032": {
-                "difficulty": 5000,
+                "difficulty": 1000,
                 "varDiff": {
                     "minDiff": 750,
                     "targetTime": 15,
