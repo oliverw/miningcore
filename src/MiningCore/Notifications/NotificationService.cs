@@ -24,6 +24,7 @@ namespace MiningCore.Notifications
             this.notificationSenders = notificationSenders;
 
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
+            adminPhone = null;
 
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)
