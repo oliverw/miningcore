@@ -108,6 +108,8 @@ namespace MiningCore.JsonRpc
                     {
                         // onCompleted
                         observer.OnCompleted();
+
+                        upstream.CloseHandle();
                     });
 
                     return Disposable.Create(() =>
@@ -116,13 +118,7 @@ namespace MiningCore.JsonRpc
                         {
                             logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
-                            upstream.Shutdown((tcp, ex) =>
-                            {
-                                upstream.CloseHandle(handle =>
-                                {
-                                    handle.Dispose();
-                                });
-                            });
+                            upstream.Shutdown();
                         }
                     });
                 });
