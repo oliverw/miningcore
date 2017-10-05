@@ -326,7 +326,7 @@ namespace MiningCore.Blockchain.Bitcoin
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
-            double stratumDifficulty, double stratumDifficultyBase)
+            double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
@@ -358,11 +358,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var minerName = split[0];
             var workerName = split.Length > 1 ? split[1] : null;
 
-            // under testnet or regtest conditions network difficulty may be lower than statum diff
-            var minDiff = Math.Min(BlockchainStats.NetworkDifficulty, stratumDifficulty);
-
             // validate & process
-            var share = job.ProcessShare(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce, minDiff);
+            var share = job.ProcessShare(worker, extraNonce2, nTime, nonce);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
@@ -397,7 +394,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.StratumDifficulty = stratumDifficulty;
+            share.StratumDifficulty = worker.Context.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
 

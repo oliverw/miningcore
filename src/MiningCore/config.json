@@ -238,7 +238,7 @@
         },
         "ports": {
             "3052": {
-                "difficulty": 1000,
+                "difficulty": 5,
                 "varDiff": {
                     "minDiff": 0.01,
                     "maxDiff": null,

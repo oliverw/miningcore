@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Ethereum
                 // allow grace period where the previous difficulty from before a vardiff update is also acceptable
                 if (worker.Context.VarDiff != null && worker.Context.VarDiff.LastUpdate.HasValue &&
                     worker.Context.PreviousDifficulty.HasValue &&
-                    DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(10))
+                    DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(15))
                 {
                     ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
 

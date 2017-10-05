@@ -148,8 +148,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     var requestParams = request.ParamsAs<string[]>();
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                    var share = await manager.SubmitShareAsync(client, requestParams, 
-                        client.Context.Difficulty, poolEndpoint.Difficulty);
+                    var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty);
 
                     // success
                     client.Respond(true, request.Id);
