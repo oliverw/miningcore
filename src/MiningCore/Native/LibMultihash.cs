@@ -200,6 +200,12 @@ namespace MiningCore.Native
         [DllImport("libmultihash", EntryPoint = "ethash_get_seedhash_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern ethash_h256_t ethash_get_seedhash(ulong block_number);
 
+        /// <summary>
+        /// Get the default DAG directory
+        /// </summary>
+        [DllImport("libmultihash", EntryPoint = "ethash_get_default_dirname_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool ethash_get_default_dirname(byte* data, int length);
+
         #endregion // Ethash
     }
 }

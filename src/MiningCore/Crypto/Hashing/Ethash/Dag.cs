@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
@@ -23,6 +23,30 @@ namespace MiningCore.Crypto.Hashing.Ethash
         private bool isGenerated = false;
         private readonly object genLock = new object();
 
+        public DateTime LastUsed { get; set; }
+
+        public static unsafe string GetDefaultDirectory()
+        {
+            var chars = new byte[512];
+
+            fixed (byte* data = chars)
+            {
+                if (LibMultihash.ethash_get_default_dirname(data, chars.Length))
+                {
+                    int length;
+                    for (length = 0; length < chars.Length; length++)
+                    {
+                        if (data[length] == 0)
+                            break;
+                    }
+
+                    return Encoding.UTF8.GetString(data, length);
+                }
+            }
+
+            return null;
+        }
+
         public void Dispose()
         {
             if (handle != IntPtr.Zero)
@@ -40,7 +64,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 {
                     if (!isGenerated)
                     {
-                        logger.Debug(() => $"Generating DAG for epoch {Epoch}");
+                        logger.Info(() => $"Generating DAG for epoch {Epoch}");
 
                         var started = DateTime.Now;
                         var block = Epoch * EthereumConstants.EpochLength;
@@ -53,14 +77,14 @@ namespace MiningCore.Crypto.Hashing.Ethash
                             // Generate the actual DAG
                             handle = LibMultihash.ethash_full_new(light, progress =>
                             {
-                                logger.Debug(() => $"Generating DAG: {progress}%");
+                                logger.Info(() => $"Generating DAG: {progress}%");
                                 return 0;
                             });
 
                             if(handle == IntPtr.Zero)
                                 throw new OutOfMemoryException("ethash_full_new IO or memory error");
 
-                            logger.Debug(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
+                            logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
                             isGenerated = true;
                         }
 

@@ -43,6 +43,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "libethash/internal.h"
 #include "libethash/ethash.h"
 
+extern "C" bool ethash_get_default_dirname(char* strbuf, size_t buffsize);
+
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)
 #else
@@ -237,4 +239,9 @@ extern "C" MODULE_API uint64_t ethash_full_dag_size_export(ethash_full_t full)
 extern "C" MODULE_API ethash_h256_t ethash_get_seedhash_export(uint64_t block_number)
 {
 	return ethash_get_seedhash(block_number);
+}
+
+extern "C" MODULE_API bool ethash_get_default_dirname_export(char *buf, size_t buf_size)
+{
+	return ethash_get_default_dirname(buf, buf_size);
 }
