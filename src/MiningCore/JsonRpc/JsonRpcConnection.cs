@@ -112,7 +112,8 @@ namespace MiningCore.JsonRpc
                     // onCompleted
                     observer.OnCompleted();
 
-                    upstream.CloseHandle();
+                    if (upstream.IsValid)
+                        upstream.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
@@ -143,6 +144,8 @@ namespace MiningCore.JsonRpc
 
         public void Send(object payload)
         {
+            Contract.RequiresNonNull(payload, nameof(payload));
+
             var json = JsonConvert.SerializeObject(payload, serializerSettings);
             logger.Trace(() => $"[{ConnectionId}] Sending: {json}");
 
@@ -156,22 +159,19 @@ namespace MiningCore.JsonRpc
 
         private void SendInternal(byte[] data)
         {
-            try
+            Contract.RequiresNonNull(data, nameof(data));
+
+            var marshaller = loop.CreateAsync(handle =>
             {
-                var marshaller = loop.CreateAsync(handle =>
+                if (upstream.IsValid && !upstream.IsClosing && upstream.IsWritable)
                 {
-                    upstream.QueueWriteStream(data, null);
+                    upstream.QueueWrite(data);
+                }
 
-                    handle.Dispose();
-                });
+                handle.Dispose();
+            });
 
-                marshaller.Send();
-            }
-
-            catch (ObjectDisposedException)
-            {
-                // ignored
-            }
+            marshaller.Send();
         }
     }
 }

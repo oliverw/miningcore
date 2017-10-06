@@ -77,7 +77,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon.Send(response);
+                rpcCon?.Send(response);
             }
         }
 
@@ -94,7 +94,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon.Send(request);
+                rpcCon?.Send(request);
             }
         }
 
@@ -107,8 +107,7 @@ namespace MiningCore.Stratum
         public void RespondError(object id, int code, string message)
         {
             Contract.RequiresNonNull(id, nameof(id));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message),
-                $"{nameof(message)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
 
             Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
