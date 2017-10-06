@@ -112,16 +112,16 @@ namespace MiningCore.JsonRpc
                     // onCompleted
                     observer.OnCompleted();
 
-                    this.upstream.CloseHandle();
+                    upstream.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
                 {
-                    if (this.upstream.IsValid)
+                    if (upstream.IsValid)
                     {
                         logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
-                        this.upstream.Shutdown();
+                        upstream.Shutdown();
                     }
                 });
             });
