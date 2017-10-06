@@ -146,7 +146,11 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(payload, serializerSettings);
             logger.Trace(() => $"[{ConnectionId}] Sending: {json}");
 
-            SendInternal(Encoding.UTF8.GetBytes(json + '\n'));
+            var buffer = upstream.Allocate(json.Length);
+            buffer.WriteString(json, Encoding.UTF8);
+            buffer.WriteByte(0xa); // append newline
+
+            SendInternal(buffer);
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
@@ -154,13 +158,16 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void SendInternal(byte[] data)
+        private void SendInternal(WritableBuffer data)
         {
             try
             {
                 var marshaller = loop.CreateAsync(handle =>
                 {
-                    upstream.QueueWriteStream(data, null);
+                    upstream.QueueWriteStream(data, (tcp, ex) =>
+                    {
+                        data.Dispose();
+                    });
 
                     handle.Dispose();
                 });
