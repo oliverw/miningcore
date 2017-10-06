@@ -33,6 +33,7 @@ using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.JsonRpc;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;

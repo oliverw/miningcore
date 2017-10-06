@@ -34,7 +34,7 @@ namespace MiningCore.Stratum
 
         #region API-Surface
 
-        public void Init(Tcp uvCon, IComponentContext ctx, IPEndPoint endpointConfig, string connectionId)
+        public void Init(Loop loop, Tcp uvCon, IComponentContext ctx, IPEndPoint endpointConfig, string connectionId)
         {
             Contract.RequiresNonNull(uvCon, nameof(uvCon));
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -43,7 +43,7 @@ namespace MiningCore.Stratum
             PoolEndpoint = endpointConfig;
 
             rpcCon = ctx.Resolve<JsonRpcConnection>();
-            rpcCon.Init(uvCon, connectionId);
+            rpcCon.Init(loop, uvCon, connectionId);
 
             RemoteEndpoint = rpcCon.RemoteEndPoint;
             Requests = rpcCon.Received;
@@ -77,7 +77,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon?.Send(response);
+                rpcCon.Send(response);
             }
         }
 
@@ -94,7 +94,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon?.Send(request);
+                rpcCon.Send(request);
             }
         }
 
