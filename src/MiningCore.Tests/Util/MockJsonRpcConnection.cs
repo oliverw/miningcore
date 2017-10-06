@@ -40,12 +40,7 @@ namespace MiningCore.Tests.Util
         public IPEndPoint RemoteEndpoint { get; }
         public string ConnectionId { get; }
 
-        public void Send<T>(JsonRpcResponse<T> response)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Send<T>(JsonRpcRequest<T> request)
+        public void Send(object payload)
         {
             throw new NotImplementedException();
         }
