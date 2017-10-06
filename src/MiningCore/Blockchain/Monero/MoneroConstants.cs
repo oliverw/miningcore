@@ -43,10 +43,10 @@ namespace MiningCore.Blockchain.Monero
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
 
-#if !DEBUG
-		public const int PayoutMinBlockConfirmations = 60;
-#else
+#if DEBUG
         public const int PayoutMinBlockConfirmations = 2;
+#else
+		public const int PayoutMinBlockConfirmations = 60;
 #endif
 
         public const int InstanceIdSize = 3;
