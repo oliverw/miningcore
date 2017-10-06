@@ -19,13 +19,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using System.Threading;
+using NetUV.Core.Buffers;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using NLog;
@@ -40,8 +41,7 @@ namespace MiningCore.JsonRpc
     {
         IObservable<Timestamped<JsonRpcRequest>> Received { get; }
         string ConnectionId { get; }
-        void Send<T>(JsonRpcResponse<T> response);
-        void Send<T>(JsonRpcRequest<T> request);
+        void Send(object payload);
     }
 
     public class JsonRpcConnection : IJsonRpcConnection
@@ -57,26 +57,24 @@ namespace MiningCore.JsonRpc
 
         private readonly JsonSerializerSettings serializerSettings;
         private Tcp upstream;
+        private Loop loop;
         private const int MaxRequestLength = 8192;
-
-        private bool shutDownPending = false;
-        private bool deferShutdown = false;
-        private int writesInFlight = 0;
 
         #region Implementation of IJsonRpcConnection
 
-        public void Init(Tcp upstream, string connectionId)
+        public void Init(Loop loop, Tcp tcp, string connectionId)
         {
-            Contract.RequiresNonNull(upstream, nameof(upstream));
+            Contract.RequiresNonNull(tcp, nameof(tcp));
 
-            this.upstream = upstream;
-            this.ConnectionId = connectionId;
+            this.loop = loop;
+            upstream = tcp;
+            ConnectionId = connectionId;
 
             var incomingLines = Observable.Create<string>(observer =>
             {
                 var sb = new StringBuilder();
 
-                upstream.OnRead((handle, buffer) =>
+                this.upstream.OnRead((handle, buffer) =>
                 {
                     // onAccept
                     var data = buffer.ReadString(Encoding.UTF8);
@@ -113,21 +111,17 @@ namespace MiningCore.JsonRpc
                 {
                     // onCompleted
                     observer.OnCompleted();
+
+                    this.upstream.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
                 {
-                    shutDownPending = true;
-
-                    logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
-
-                    if (writesInFlight == 0)
-                        DoShutdown();
-                    else
+                    if (this.upstream.IsValid)
                     {
-                        deferShutdown = true;
-                        logger.Info(() => $"[{ConnectionId}] Deferring shutdown due to writes in flight");
-                        LogManager.Flush();
+                        logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
+
+                        this.upstream.Shutdown();
                     }
                 });
             });
@@ -147,46 +141,12 @@ namespace MiningCore.JsonRpc
 
         public IObservable<Timestamped<JsonRpcRequest>> Received { get; private set; }
 
-        public void Send<T>(JsonRpcResponse<T> response)
+        public void Send(object payload)
         {
-            if (shutDownPending)
-                return;
+            var json = JsonConvert.SerializeObject(payload, serializerSettings);
+            logger.Trace(() => $"[{ConnectionId}] Sending: {json}");
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-            logger.Trace(() => $"[{ConnectionId}] Sending response: {json.Trim()}");
-
-            try
-            {
-                Interlocked.Increment(ref writesInFlight);
-
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json), OnWriteCompleted);
-            }
-            catch (ObjectDisposedException)
-            {
-                // ignored
-                Interlocked.Decrement(ref writesInFlight);
-            }
-        }
-
-        public void Send<T>(JsonRpcRequest<T> request)
-        {
-            if (shutDownPending)
-                return;
-
-            var json = JsonConvert.SerializeObject(request, serializerSettings) + "\n";
-            logger.Trace(() => $"[{ConnectionId}] Sending request: {json.Trim()}");
-
-            try
-            {
-                Interlocked.Increment(ref writesInFlight);
-
-                upstream.QueueWrite(Encoding.UTF8.GetBytes(json), OnWriteCompleted);
-            }
-            catch (ObjectDisposedException)
-            {
-                // ignored
-                Interlocked.Decrement(ref writesInFlight);
-            }
+            SendInternal(Encoding.UTF8.GetBytes(json + '\n'));
         }
 
         public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
@@ -194,25 +154,23 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void DoShutdown()
+        private void SendInternal(byte[] data)
         {
-            if (upstream?.IsValid == true)
+            try
             {
-                upstream.Shutdown((tcp, ex) =>
+                var marshaller = loop.CreateAsync(handle =>
                 {
-                    tcp?.CloseHandle(handle =>
-                    {
-                        handle?.Dispose();
-                    });
-                });
-            }
-        }
+                    upstream.QueueWriteStream(data, null);
 
-        private void OnWriteCompleted(Tcp tcp, Exception ex)
-        {
-            if (Interlocked.Decrement(ref writesInFlight) == 0 && deferShutdown)
+                    handle.Dispose();
+                });
+
+                marshaller.Send();
+            }
+
+            catch (ObjectDisposedException)
             {
-                DoShutdown();
+                // ignored
             }
         }
     }

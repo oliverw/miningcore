@@ -137,7 +137,7 @@ namespace MiningCore.Stratum
 
                 // setup client
                 var client = new StratumClient<TClientContext>();
-                client.Init(con, ctx, endpointConfig, connectionId);
+                client.Init(loop, con, ctx, endpointConfig, connectionId);
 
                 // request subscription
                 var sub = client.Requests
