@@ -273,7 +273,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
-            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
+            share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;

@@ -414,6 +414,7 @@ namespace MiningCore.Blockchain.Bitcoin
         #region API-Surface
 
         public TBlockTemplate BlockTemplate { get; private set; }
+        public double Difficulty { get; private set; }
 
         public string JobId { get; private set; }
 
@@ -439,6 +440,7 @@ namespace MiningCore.Blockchain.Bitcoin
             this.networkType = networkType;
             BlockTemplate = blockTemplate;
             JobId = jobId;
+            Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
 
             extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
             this.isPoS = isPoS;
