@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.Mining;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -106,7 +107,7 @@ namespace MiningCore.VarDiff
                         newDiff = maxDiff;
 
                     // check if different
-                    if (newDiff.Value != ctx.Difficulty)
+                    if (!newDiff.Value.EqualsDigitPrecision3(ctx.Difficulty))
                         ctx.VarDiff.LastUpdate = DateTime.UtcNow;
                 }
 
