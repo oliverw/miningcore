@@ -19,6 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -56,9 +58,10 @@ namespace MiningCore.JsonRpc
         private readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly JsonSerializerSettings serializerSettings;
-        private Tcp upstream;
-        private Loop loop;
         private const int MaxRequestLength = 8192;
+        private object queueLock = new object();
+        private Queue<byte[]> sendQueue;
+        private Async sendQueueDrainer;
 
         #region Implementation of IJsonRpcConnection
 
@@ -66,15 +69,19 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(tcp, nameof(tcp));
 
-            this.loop = loop;
-            upstream = tcp;
+            // cached properties
             ConnectionId = connectionId;
+            RemoteEndPoint = tcp.GetPeerEndPoint();
+
+            // initialize send queue
+            sendQueue = new Queue<byte[]>();
+            sendQueueDrainer = loop.CreateAsync(handle => DrainSendQueue(tcp));
 
             var incomingLines = Observable.Create<string>(observer =>
             {
                 var sb = new StringBuilder();
 
-                this.upstream.OnRead((handle, buffer) =>
+                tcp.OnRead((handle, buffer) =>
                 {
                     // onAccept
                     var data = buffer.ReadString(Encoding.UTF8);
@@ -112,17 +119,22 @@ namespace MiningCore.JsonRpc
                     // onCompleted
                     observer.OnCompleted();
 
-                    if (upstream.IsValid)
-                        upstream.CloseHandle();
+                    // release handles
+                    handle.CloseHandle();
+
+                    lock (queueLock)
+                    {
+                        sendQueueDrainer.CloseHandle();
+                    }
                 });
 
                 return Disposable.Create(() =>
                 {
-                    if (upstream.IsValid)
+                    if (tcp.IsValid)
                     {
                         logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
-                        upstream.Shutdown();
+                        tcp.Shutdown();
                     }
                 });
             });
@@ -152,7 +164,7 @@ namespace MiningCore.JsonRpc
             SendInternal(Encoding.UTF8.GetBytes(json + '\n'));
         }
 
-        public IPEndPoint RemoteEndPoint => upstream?.GetPeerEndPoint();
+        public IPEndPoint RemoteEndPoint { get; private set; }
         public string ConnectionId { get; private set; }
 
         #endregion
@@ -161,17 +173,35 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var marshaller = loop.CreateAsync(handle =>
+            lock (queueLock)
             {
-                if (upstream.IsValid && !upstream.IsClosing && upstream.IsWritable)
+                if (sendQueueDrainer.IsValid)
                 {
-                    upstream.QueueWrite(data);
+                    sendQueue.Enqueue(data);
+                    sendQueueDrainer.Send();
                 }
+            }
+        }
 
-                handle.Dispose();
-            });
+        private void DrainSendQueue(Tcp tcp)
+        {
+            try
+            {
+                byte[] data;
+                lock (queueLock)
+                {
+                    while (sendQueue.TryDequeue(out data) &&
+                           tcp.IsValid && !tcp.IsClosing && tcp.IsWritable)
+                    {
+                        tcp.QueueWrite(data);
+                    }
+                }
+            }
 
-            marshaller.Send();
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+            }
         }
     }
 }
