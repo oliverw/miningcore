@@ -82,15 +82,11 @@ namespace MiningCore.Blockchain.Monero
 
                 lock (jobLock)
                 {
-                    var isNew = currentJob == null ||
-                                currentJob.BlockTemplate.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                                currentJob.BlockTemplate.Height < blockTemplate.Height;
+                    var isNew = currentJob == null || currentJob.BlockTemplate.Height < blockTemplate.Height;
 
                     if (isNew)
                     {
-                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(),
-                            poolConfig, clusterConfig);
-
+                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
                         currentJob.Init();
 
                         // update stats

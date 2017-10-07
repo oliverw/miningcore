@@ -82,7 +82,7 @@ namespace MiningCore.VarDiff
 
                         // round to next 100 if big enough
                         if(newDiff > 1000)
-                            newDiff = Math.Round(difficulty / 100d, 0) * 100;
+                            newDiff = Math.Round(newDiff.Value / 100d, 0) * 100;
                     }
 
                     // store
