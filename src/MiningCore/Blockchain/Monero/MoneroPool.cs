@@ -171,40 +171,37 @@ namespace MiningCore.Blockchain.Monero
         {
             var request = tsRequest.Value;
 
-            if (request.Id == null)
-            {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
-                return;
-            }
-
-            // check age of submission (aged submissions are usually caused by high server load)
-            var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
-
-            if (requestAge > maxShareAge)
-            {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
-                return;
-            }
-
-            // check request
-            var submitRequest = request.ParamsAs<MoneroSubmitShareRequest>();
-
-            // validate worker
-            if (client.ConnectionId != submitRequest?.WorkerId || !client.Context.IsAuthorized)
-                throw new StratumException(StratumError.MinusOne, "unauthorized");
-
-            // recognize activity
-            client.Context.LastActivity = DateTime.UtcNow;
-
             try
             {
+                if (request.Id == null)
+                    throw new StratumException(StratumError.MinusOne, "missing request id");
+
+                // check age of submission (aged submissions are usually caused by high server load)
+                var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
+
+                if (requestAge > maxShareAge)
+                {
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    return;
+                }
+
+                // check request
+                var submitRequest = request.ParamsAs<MoneroSubmitShareRequest>();
+
+                // validate worker
+                if (client.ConnectionId != submitRequest?.WorkerId || !client.Context.IsAuthorized)
+                    throw new StratumException(StratumError.MinusOne, "unauthorized");
+
+                // recognize activity
+                client.Context.LastActivity = DateTime.UtcNow;
+
                 MoneroWorkerJob job;
 
                 lock (client.Context)
                 {
                     var jobId = submitRequest?.JobId;
 
-                    if (string.IsNullOrEmpty(jobId) || 
+                    if (string.IsNullOrEmpty(jobId) ||
                         (job = client.Context.ValidJobs.FirstOrDefault(x => x.Id == jobId)) == null)
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
                 }

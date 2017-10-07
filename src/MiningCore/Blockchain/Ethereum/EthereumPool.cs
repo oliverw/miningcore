@@ -128,75 +128,66 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            if (request.Id == null)
+            try
             {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
-                return;
-            }
+                if (request.Id == null)
+                    throw new StratumException(StratumError.MinusOne, "missing request id");
 
-            // check age of submission (aged submissions are usually caused by high server load)
-            var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                // check age of submission (aged submissions are usually caused by high server load)
+                var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
-            if (requestAge > maxShareAge)
-            {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
-                return;
-            }
-
-            // validate worker
-            if (!client.Context.IsAuthorized)
-                throw new StratumException(StratumError.MinusOne, "unauthorized");
-
-            // check request
-            var submitRequest = request.ParamsAs<string[]>();
-
-            if (submitRequest.Length != 3 || 
-                submitRequest.Any(x=> string.IsNullOrEmpty(x)))
-                throw new StratumException(StratumError.MinusOne, "malformed PoW result");
-
-            // recognize activity
-            client.Context.LastActivity = DateTime.UtcNow;
-
-            if (!client.Context.IsAuthorized)
-                client.RespondError(StratumError.UnauthorizedWorker, "Unauthorized worker", request.Id);
-            else if (!client.Context.IsSubscribed)
-                client.RespondError(StratumError.NotSubscribed, "Not subscribed", request.Id);
-            else
-            {
-
-                try
+                if (requestAge > maxShareAge)
                 {
-                    var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-
-                    var share = await manager.SubmitShareAsync(client, submitRequest, client.Context.Difficulty,
-                        poolEndpoint.Difficulty);
-
-                    // success
-                    client.Respond(true, request.Id);
-                    shareSubject.OnNext(share);
-
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
-
-                    // update pool stats
-                    if (share.IsBlockCandidate)
-                        poolStats.LastPoolBlockTime = DateTime.UtcNow;
-
-                    // update client stats
-                    client.Context.Stats.ValidShares++;
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    return;
                 }
 
-                catch (StratumException ex)
-                {
-                    client.RespondError(ex.Code, ex.Message, request.Id, false);
+                // validate worker
+                if (!client.Context.IsAuthorized)
+                    throw new StratumException(StratumError.UnauthorizedWorker, "Unauthorized worker");
+                else if (!client.Context.IsSubscribed)
+                    throw new StratumException(StratumError.NotSubscribed, "Not subscribed");
 
-                    // update client stats
-                    client.Context.Stats.InvalidShares++;
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                // check request
+                var submitRequest = request.ParamsAs<string[]>();
 
-                    // banning
-                    if (poolConfig.Banning?.Enabled == true)
-                        ConsiderBan(client, client.Context, poolConfig.Banning);
-                }
+                if (submitRequest.Length != 3 ||
+                    submitRequest.Any(x => string.IsNullOrEmpty(x)))
+                    throw new StratumException(StratumError.MinusOne, "malformed PoW result");
+
+                // recognize activity
+                client.Context.LastActivity = DateTime.UtcNow;
+
+                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+
+                var share = await manager.SubmitShareAsync(client, submitRequest, client.Context.Difficulty,
+                    poolEndpoint.Difficulty);
+
+                // success
+                client.Respond(true, request.Id);
+                shareSubject.OnNext(share);
+
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
+
+                // update pool stats
+                if (share.IsBlockCandidate)
+                    poolStats.LastPoolBlockTime = DateTime.UtcNow;
+
+                // update client stats
+                client.Context.Stats.ValidShares++;
+            }
+
+            catch (StratumException ex)
+            {
+                client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+                // update client stats
+                client.Context.Stats.InvalidShares++;
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+
+                // banning
+                if (poolConfig.Banning?.Enabled == true)
+                    ConsiderBan(client, client.Context, poolConfig.Banning);
             }
         }
 
