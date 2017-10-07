@@ -21,14 +21,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using NetUV.Core.Buffers;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using NLog;
@@ -59,8 +57,7 @@ namespace MiningCore.JsonRpc
 
         private readonly JsonSerializerSettings serializerSettings;
         private const int MaxRequestLength = 8192;
-        private object queueLock = new object();
-        private Queue<byte[]> sendQueue;
+        private ConcurrentQueue<byte[]> sendQueue;
         private Async sendQueueDrainer;
 
         #region Implementation of IJsonRpcConnection
@@ -74,8 +71,9 @@ namespace MiningCore.JsonRpc
             RemoteEndPoint = tcp.GetPeerEndPoint();
 
             // initialize send queue
-            sendQueue = new Queue<byte[]>();
-            sendQueueDrainer = loop.CreateAsync(handle => DrainSendQueue(tcp));
+            sendQueue = new ConcurrentQueue<byte[]>();
+            sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
+            sendQueueDrainer.UserToken = tcp;
 
             var incomingLines = Observable.Create<string>(observer =>
             {
@@ -121,11 +119,7 @@ namespace MiningCore.JsonRpc
 
                     // release handles
                     handle.CloseHandle();
-
-                    lock (queueLock)
-                    {
-                        sendQueueDrainer.CloseHandle();
-                    }
+                    sendQueueDrainer.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
@@ -173,28 +167,29 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            lock (queueLock)
+            try
             {
-                if (sendQueueDrainer.IsValid)
-                {
-                    sendQueue.Enqueue(data);
-                    sendQueueDrainer.Send();
-                }
+                sendQueue.Enqueue(data);
+                sendQueueDrainer.Send();
+            }
+
+            catch (ObjectDisposedException)
+            {
+                // ignored
             }
         }
 
-        private void DrainSendQueue(Tcp tcp)
+        private void DrainSendQueue(Async handle)
         {
             try
             {
                 byte[] data;
-                lock (queueLock)
+                var tcp = (Tcp) handle.UserToken;
+
+                while (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable &&
+                    sendQueue.TryDequeue(out data))
                 {
-                    while (sendQueue.TryDequeue(out data) &&
-                           tcp.IsValid && !tcp.IsClosing && tcp.IsWritable)
-                    {
-                        tcp.QueueWrite(data);
-                    }
+                    tcp.QueueWrite(data);
                 }
             }
 
