@@ -186,10 +186,11 @@ Example configuration:
         // individual miners based on their hashrate in order to lower networking overhead
         "varDiff": {
           "minDiff": 0.01, // Minimum difficulty
-          "maxDiff": null, // Network difficulty will be used if it is lower than this
+          "maxDiff": null, // Network difficulty will be used if it is lower than this (null to disable)
           "targetTime": 15, // Try to get 1 share per this many seconds
           "retargetTime": 90, // Check to see if we should retarget every this many seconds
           "variancePercent": 30 // Allow time to very this % from target without retargeting
+          "maxDelta": 500  // Do not alter difficulty by more than this during a single retarget in either direction
         }
       },
       "3053": { //  Another port for your miners to connect to, this port does not use varDiff

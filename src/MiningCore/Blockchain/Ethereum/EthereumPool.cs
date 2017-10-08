@@ -301,9 +301,9 @@ namespace MiningCore.Blockchain.Ethereum
             return (ulong)result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient<EthereumWorkerContext> client, double newDiffValue)
+        protected override void OnVarDiffUpdate(StratumClient<EthereumWorkerContext> client, double newDiff)
         {
-            base.OnVarDiffUpdate(client, newDiffValue);
+            base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
             if (client.Context.HasPendingDifficulty)

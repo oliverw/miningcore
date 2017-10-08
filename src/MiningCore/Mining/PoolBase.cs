@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -33,7 +32,6 @@ using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.JsonRpc;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -123,18 +121,24 @@ namespace MiningCore.Mining
                     }
                 }
 
+                var start = DateTime.UtcNow;
+
                 // wire updates
                 lock (context.VarDiff)
                 {
                     context.VarDiff.Subscription = Shares
                         .Timestamp()
-                        .Select(x => x.Timestamp.ToUnixTimeSeconds())
+                        .Select(x => x.Timestamp.ToUnixTimeMilliseconds())
                         .Buffer(TimeSpan.FromSeconds(poolEndpoint.VarDiff.RetargetTime), VarDiffSampleCount)
                         .Subscribe(timestamps =>
                         {
                             try
                             {
-                                var newDiff = varDiffManager.Update(context, timestamps);
+                                var delta = DateTime.UtcNow - (context.VarDiff.LastUpdate ?? start);
+                                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff after {delta.TotalSeconds}s - {timestamps.Count} samples");
+
+
+                                var newDiff = varDiffManager.Update(context, timestamps, client.ConnectionId, logger);
 
                                 if (newDiff.HasValue)
                                 {
@@ -202,9 +206,9 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected virtual void OnVarDiffUpdate(StratumClient<TWorkerContext> client, double newDiffValue)
+        protected virtual void OnVarDiffUpdate(StratumClient<TWorkerContext> client, double newDiff)
         {
-            client.Context.EnqueueNewDifficulty(newDiffValue);
+            client.Context.EnqueueNewDifficulty(newDiff);
         }
 
         #endregion // VarDiff

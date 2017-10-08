@@ -120,6 +120,11 @@ namespace MiningCore.Configuration
         public double? MaxDiff { get; set; }
 
         /// <summary>
+        /// Do not alter difficulty by more than this during a single retarget in either direction
+        /// </summary>
+        public double? MaxDelta { get; set; }
+
+        /// <summary>
         /// Try to get 1 share per this many seconds
         /// </summary>
         public double TargetTime { get; set; }

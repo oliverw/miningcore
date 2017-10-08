@@ -360,9 +360,9 @@ namespace MiningCore.Blockchain.Monero
             return (ulong)result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient<MoneroWorkerContext> client, double newDiffValue)
+        protected override void OnVarDiffUpdate(StratumClient<MoneroWorkerContext> client, double newDiff)
         {
-            base.OnVarDiffUpdate(client, newDiffValue);
+            base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
             if (client.Context.HasPendingDifficulty)

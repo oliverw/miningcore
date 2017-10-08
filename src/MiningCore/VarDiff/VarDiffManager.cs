@@ -25,6 +25,7 @@ using System.Linq;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
+using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.VarDiff
@@ -38,13 +39,15 @@ namespace MiningCore.VarDiff
             var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
+            maxJump = varDiffOptions.MaxDelta ?? 10000;
         }
 
         private readonly VarDiffConfig options;
         private readonly double tMax;
         private readonly double tMin;
+        private readonly double maxJump;
 
-        public double? Update(WorkerContextBase ctx, IList<long> shares)
+        public double? Update(WorkerContextBase ctx, IList<long> shares, string connectionId, ILogger logger)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
 
@@ -53,26 +56,22 @@ namespace MiningCore.VarDiff
                 var difficulty = ctx.Difficulty;
                 var minDiff = options.MinDiff;
                 var maxDiff = options.MaxDiff ?? double.MaxValue;
-                var desiredShares = Math.Floor(options.RetargetTime / options.TargetTime);
                 double? newDiff = null;
 
                 if ((shares.Count > 0 && ctx.VarDiff.LastShareTs.HasValue) || shares.Count > 1)
                 {
-                    // make relative to each other
+                    // make timestamps relative to each other
                     var tsRelative = new List<long>();
 
                     // first value is relative to last value of previous buffer
                     if (ctx.VarDiff.LastShareTs.HasValue)
-                        tsRelative.Add(shares[0] - ctx.VarDiff.LastShareTs.Value);
+                        tsRelative.Add(Math.Max(0, shares[0] - ctx.VarDiff.LastShareTs.Value));
 
-                    for (int i = 1; i < shares.Count; i++)
-                        tsRelative.Add(shares[i] - shares[i-1]);
+                    for (var i = 1; i < shares.Count; i++)
+                        tsRelative.Add(Math.Max(0, shares[i] - shares[i-1]));
 
-                    var avg = tsRelative.Average();
-
-                    // add penalty for missing shares
-                    if (tsRelative.Count < desiredShares - 1)
-                        avg += options.TargetTime * 0.5 * (tsRelative.Count / (desiredShares - 1));
+                    // take average
+                    var avg = tsRelative.Average() / 1000d;
 
                     // re-target if outside bounds
                     if (avg < tMin || avg > tMax)
@@ -80,8 +79,13 @@ namespace MiningCore.VarDiff
                         var change = options.TargetTime / avg;
                         newDiff = difficulty * change;
 
+                        // prevent huge jumps
+                        var delta = newDiff.Value - ctx.Difficulty;
+                        if (Math.Abs(delta) > maxJump)
+                            newDiff = difficulty + (delta > 0 ? maxJump : -maxJump);
+
                         // round to next 100 if big enough
-                        if(newDiff > 1000)
+                        if (newDiff > 1000)
                             newDiff = Math.Round(newDiff.Value / 100d, 0) * 100;
                     }
 
@@ -107,10 +111,10 @@ namespace MiningCore.VarDiff
                         newDiff = maxDiff;
 
                     // check if different
-                    if (newDiff.Value.EqualsDigitPrecision3(ctx.Difficulty))
-                        newDiff = null;
-                    else
+                    if (!newDiff.Value.EqualsDigitPrecision3(ctx.Difficulty))
                         ctx.VarDiff.LastUpdate = DateTime.UtcNow;
+                    else
+                        newDiff = null;
                 }
 
                 return newDiff;
