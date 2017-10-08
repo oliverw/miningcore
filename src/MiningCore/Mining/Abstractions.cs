@@ -27,7 +27,7 @@ namespace MiningCore.Mining
 {
     public interface IMiningPool
     {
-        IObservable<IShare> Shares { get; }
+        IObservable<Tuple<object, IShare>> Shares { get; }
         PoolConfig Config { get; }
         PoolStats PoolStats { get; }
         BlockchainStats NetworkStats { get; }

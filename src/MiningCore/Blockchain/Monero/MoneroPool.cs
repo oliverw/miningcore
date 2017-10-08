@@ -223,7 +223,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-                shareSubject.OnNext(share);
+                shareSubject.OnNext(Tuple.Create((object) client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
@@ -354,9 +354,9 @@ namespace MiningCore.Blockchain.Monero
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.StratumDifficulty) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.Item2.StratumDifficulty) / interval);
             return (ulong)result;
         }
 

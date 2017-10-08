@@ -149,7 +149,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(share);
+                shareSubject.OnNext(Tuple.Create((object)client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
@@ -333,9 +333,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
-            var sum = shares.Sum(share => Math.Max(1.0, share.StratumDifficulty));
+            var sum = shares.Sum(share => Math.Max(1.0, share.Item2.StratumDifficulty));
             var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
             var result = Math.Ceiling(sum * multiplier / interval);
             return (ulong) result;

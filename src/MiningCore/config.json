@@ -127,8 +127,9 @@
                 "varDiff": {
                     "minDiff": 750,
                     "targetTime": 15,
-                    "retargetTime": 120,
-                    "variancePercent": 30
+                    "retargetTime": 60,
+                    "variancePercent": 30,
+                    "maxDelta": 500
                 }
             },
             "4256": {
@@ -190,7 +191,8 @@
     //                 "minDiff": 10,
     //                 "targetTime": 15,
     //                 "retargetTime": 90,
-    //                 "variancePercent": 30
+    //                 "variancePercent": 30,
+    //                 "maxDelta": 2
     //             }
     //         },
     //         "3043": {
@@ -245,7 +247,8 @@
                     "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
-                    "variancePercent": 30
+                    "variancePercent": 30,
+                    "maxDelta": 1
                 }
             },
             "3053": {
@@ -300,7 +303,8 @@
     //                 "maxDiff": null,
     //                 "targetTime": 15,
     //                 "retargetTime": 90,
-    //                 "variancePercent": 30
+    //                 "variancePercent": 30,
+    //                 "maxDelta": 0.01
     //             }
     //         },
     //         "3063": {
@@ -355,7 +359,8 @@
     //                 "maxDiff": null,
     //                 "targetTime": 15,
     //                 "retargetTime": 90,
-    //                 "variancePercent": 30
+    //                 "variancePercent": 30,
+    //                 "maxDelta": 0.01
     //             }
     //         },
     //         "3073": {

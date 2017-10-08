@@ -84,7 +84,7 @@ namespace MiningCore.Mining
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 16;
-        protected readonly Subject<IShare> shareSubject = new Subject<IShare>();
+        protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
         protected override string LogCat => "Pool";
@@ -121,12 +121,11 @@ namespace MiningCore.Mining
                     }
                 }
 
-                var start = DateTime.UtcNow;
-
                 // wire updates
                 lock (context.VarDiff)
                 {
                     context.VarDiff.Subscription = Shares
+                        .Where(x=> x.Item1 == client)
                         .Timestamp()
                         .Select(x => x.Timestamp.ToUnixTimeMilliseconds())
                         .Buffer(TimeSpan.FromSeconds(poolEndpoint.VarDiff.RetargetTime), VarDiffSampleCount)
@@ -134,10 +133,6 @@ namespace MiningCore.Mining
                         {
                             try
                             {
-                                var delta = DateTime.UtcNow - (context.VarDiff.LastUpdate ?? start);
-                                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff after {delta.TotalSeconds}s - {timestamps.Count} samples");
-
-
                                 var newDiff = varDiffManager.Update(context, timestamps, client.ConnectionId, logger);
 
                                 if (newDiff.HasValue)
@@ -319,13 +314,13 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             logger.Info(() => msg);
         }
 
-        protected abstract ulong HashrateFromShares(IEnumerable<IShare> shares, int interval);
+        protected abstract ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval);
 
-        protected virtual void UpdateMinerHashrates(IList<IShare> shares, int interval)
+        protected virtual void UpdateMinerHashrates(IList<Tuple<object, IShare>> shares, int interval)
         {
             try
             {
-                var sharesByMiner = shares.GroupBy(x => x.Miner);
+                var sharesByMiner = shares.GroupBy(x => x.Item2.Miner);
 
                 foreach (var minerShares in sharesByMiner)
                 {
@@ -343,7 +338,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
                     // Per worker hashrates
                     var sharesPerWorker = minerShares
-                        .GroupBy(x => x.Worker)
+                        .GroupBy(x => x.Item2.Worker)
                         .Where(x => !string.IsNullOrEmpty(x.Key));
 
                     foreach (var workerShares in sharesPerWorker)
@@ -373,7 +368,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
         #region API-Surface
 
-        public IObservable<IShare> Shares { get; }
+        public IObservable<Tuple<object, IShare>> Shares { get; }
         public PoolConfig Config => poolConfig;
         public PoolStats PoolStats => poolStats;
         public BlockchainStats NetworkStats => blockchainStats;

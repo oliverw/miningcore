@@ -296,7 +296,7 @@ namespace MiningCore.Payments
 
         public void AttachPool(IMiningPool pool)
         {
-            pool.Shares.Subscribe(share => { queue.Add(share); });
+            pool.Shares.Subscribe(x => { queue.Add(x.Item2); });
         }
 
         public void Start(ClusterConfig clusterConfig)

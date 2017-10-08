@@ -165,7 +165,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(share);
+                shareSubject.OnNext(Tuple.Create((object)client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.StratumDifficulty, 3)}");
 
@@ -295,9 +295,9 @@ namespace MiningCore.Blockchain.Ethereum
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<IShare> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.StratumDifficulty * EthereumConstants.Pow2x32) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.Item2.StratumDifficulty * EthereumConstants.Pow2x32) / interval);
             return (ulong)result;
         }
 
