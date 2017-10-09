@@ -132,8 +132,8 @@ Example configuration:
   // Api Settings
   "api": {
     "enabled": true,
-    "listenAddress": "0.0.0.0", // Binding address for API, Default: 127.0.0.1
-    "port": 80 // Binding port for API, Default: 4000
+    "listenAddress": "127.0.0.1", // Binding address for API, Default: 127.0.0.1
+    "port": 4000 // Binding port for API, Default: 4000
   },
   "pools": [{
     // DON'T change the id after a production pool has begun collecting shares!
