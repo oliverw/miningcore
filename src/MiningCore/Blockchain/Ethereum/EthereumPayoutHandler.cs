@@ -88,6 +88,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         public Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
+            // Check what the hell we actually found and traversing all the blocks with height-N and height+N
+            // to make sure we will find it. We can't rely on round height here, it's just a reference point.
             return Task.FromResult(new Block[0]);
         }
 

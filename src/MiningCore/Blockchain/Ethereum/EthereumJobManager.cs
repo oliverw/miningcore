@@ -111,6 +111,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
         {
+            // parity returns the blocknumber
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
