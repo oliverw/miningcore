@@ -106,7 +106,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
             if(totalRewards > 0)
-                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({(block.Reward/totalRewards):0.00}% of block reward)");
+                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards/block.Reward:0.00}% of block reward)");
 
             return Task.FromResult(true);
         }
@@ -178,6 +178,8 @@ namespace MiningCore.Payments.PayoutSchemes
                         rewards[address] += reward;
                 }
             }
+
+            logger.Info(() => $"Balance-calculation completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / factorX) * 100:0.#}%)");
 
             return shareCutOffDate;
         }
