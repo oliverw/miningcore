@@ -420,6 +420,9 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (results.Any(x => x.Error != null))
             {
+                if(results[4].Error != null)
+                    logger.ThrowLogPoolStartupException($"Looks like you are NOT running 'Parity' as daemon which is not supported - https://parity.io/", LogCat);
+
                 var errors = results.Where(x => x.Error != null)
                     .ToArray();
 
