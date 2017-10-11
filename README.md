@@ -33,11 +33,11 @@ Coin | Implemented | Tested | Planned
 Bitcoin | Yes | Yes |
 Bitcoin Cash | Yes | Yes |
 Litecoin | Yes | Yes |
+Ethereum | Yes | Yes |
+Ethereum Classic | Yes | Yes |
 Monero | Yes | Yes |
 DASH | Yes | Yes |
 Groestlcoin | Yes | Yes |
-Ethereum | No |  | Oct 2017
-Ethereum Classic | No |  | Oct 2017
 Zcash | No |  | Nov 2017
 Dogecoin | Yes | No |
 DigiByte | Yes | No |
