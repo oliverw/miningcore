@@ -20,6 +20,12 @@ namespace MiningCore.Blockchain.Ethereum
         public const decimal DevReward = 0.002m;
         public const string DevAddress = "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1";
 
+#if !DEBUG
+        public const int MinPayoutPeerCount = 3;
+#else
+        public const int MinPayoutPeerCount = 1;
+#endif
+
         public static readonly Regex ValidAddressPattern = new Regex("^0x[0-9a-fA-F]{40}$", RegexOptions.Compiled);
         public static readonly Regex ZeroHashPattern = new Regex("^0?x?0+$", RegexOptions.Compiled);
         public static readonly Regex NoncePattern = new Regex("^0x[0-9a-f]{16}$", RegexOptions.Compiled);
@@ -75,6 +81,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const string GetUncleByBlockNumberAndIndex = "eth_getUncleByBlockNumberAndIndex";
         public const string GetTxReceipt = "eth_getTransactionReceipt";
         public const string SendTx = "eth_sendTransaction";
+        public const string UnlockAccount = "personal_unlockAccount";
 
         public const string ParityVersion = "parity_versionInfo";
         public const string ParityChain = "parity_chain";

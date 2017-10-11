@@ -26,7 +26,10 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Ethereum.Configuration;
+using MiningCore.Blockchain.Ethereum.DaemonRequests;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
+using MiningCore.Blockchain.Monero;
+using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
@@ -261,9 +264,37 @@ namespace MiningCore.Blockchain.Ethereum
             return Task.FromResult(true);
         }
 
-        public Task PayoutAsync(Balance[] balances)
+        public async Task PayoutAsync(Balance[] balances)
         {
-            return Task.FromResult(true);
+            // ensure we have peers
+            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(EC.GetPeerCount);
+            if (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
+                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount)
+            {
+                logger.Warn(()=> $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
+                return;
+            }
+
+            var txHashes = new List<string>();
+
+            foreach (var balance in balances)
+            {
+                try
+                {
+                    var txHash = await Payout(balance);
+                    txHashes.Add(txHash);
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(() => $"[{LogCategory}] {ex.Message}");
+
+                    NotifyPayoutFailure(new []{ balance }, ex.Message, null);
+                }
+            }
+
+            if(txHashes.Any())
+                NotifyPayoutSuccess(balances, txHashes.ToArray(), null);
         }
 
         #endregion // IPayoutHandler
@@ -344,6 +375,50 @@ namespace MiningCore.Blockchain.Ethereum
             var parityChain = results[1].Response.ToObject<string>();
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
+        }
+
+        private async Task<string> Payout(Balance balance)
+        {
+            // unlock account
+            if (extraConfig.CoinbasePassword != null)
+            {
+                var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(EC.UnlockAccount, new[]
+                {
+                    poolConfig.Address,
+                    extraConfig.CoinbasePassword,
+                    null
+                });
+
+                if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
+                    throw new Exception("Unable to unlock coinbase account for sending transaction");
+            }
+
+            // send transaction
+            logger.Info(() => $"[{LogCategory}] Sending {FormatAmount(balance.Amount)} to {balance.Address}");
+
+            var request = new SendTransactionRequest
+            {
+                From = poolConfig.Address,
+                To = balance.Address,
+                Value = (ulong) Math.Floor(balance.Amount * EthereumConstants.Wei),
+            };
+
+            var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });
+
+            if (response.Error != null)
+                throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");
+
+            if (string.IsNullOrEmpty(response.Response) || EthereumConstants.ZeroHashPattern.IsMatch(response.Response))
+                throw new Exception($"{EC.SendTx} did not return a valid transaction hash");
+
+            var txHash = response.Response;
+            logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");
+
+            // update db
+            PersistPayments(new []{ balance }, txHash);
+
+            // done
+            return txHash;
         }
     }
 }

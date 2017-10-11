@@ -96,6 +96,7 @@
             "payoutSchemeConfig": {
                 "factor": 2.0
             },
+            "coinbasePassword": "",
             "keepUncles": false,
             "keepTransactionFees": false
         }

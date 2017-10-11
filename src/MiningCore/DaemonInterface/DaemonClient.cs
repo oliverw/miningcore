@@ -31,7 +31,6 @@ using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
@@ -150,6 +149,36 @@ namespace MiningCore.DaemonInterface
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
+            return result;
+        }
+
+        /// <summary>
+        /// Executes the request against all configured demons and returns the first successful response
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public Task<DaemonResponse<JToken>> ExecuteCmdSingleAsync(string method)
+        {
+            return ExecuteCmdAnyAsync<JToken>(method);
+        }
+
+        /// <summary>
+        /// Executes the request against all configured demons and returns the first successful response
+        /// </summary>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <param name="method"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(string method, object payload = null,
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
+            where TResponse : class
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+            var task = BuildRequestTask(endPoints.First(), method, payload, payloadJsonSerializerSettings);
+            await task;
+
+            var result = MapDaemonResponse<TResponse>(0, task);
             return result;
         }
 

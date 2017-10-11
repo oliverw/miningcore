@@ -151,14 +151,14 @@ namespace MiningCore.Blockchain.Monero
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             // send command
-            var transferResponse = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
+            var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
             if (transferResponse.Error?.Code == -4)
             {
                 logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                var transferSplitResponse = await walletDaemon.ExecuteCmdAnyAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+                var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
                 HandleTransferResponse(transferSplitResponse, balances);
             }
 
@@ -200,14 +200,14 @@ namespace MiningCore.Blockchain.Monero
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} with paymentId {paymentId}");
 
             // send command
-            var result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.Transfer, request);
+            var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
             if (result.Error?.Code == -4)
             {
                 logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                result = await walletDaemon.ExecuteCmdAnyAsync<TransferResponse>(MWC.TransferSplit, request);
+                result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit, request);
             }
 
             HandleTransferResponse(result, balance);
@@ -351,6 +351,15 @@ namespace MiningCore.Blockchain.Monero
         public async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
+
+            // ensure we have peers
+            var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
+            if(infoResponse.Error != null || infoResponse.Response == null ||
+                infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
+            {
+                logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
+                return;
+            }
 
             // simple balances first
             var simpleBalances = balances

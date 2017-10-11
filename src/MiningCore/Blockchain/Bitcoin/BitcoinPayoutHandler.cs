@@ -202,7 +202,7 @@ namespace MiningCore.Blockchain.Bitcoin
             };
 
             // send command
-            var result = await daemon.ExecuteCmdAnyAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
