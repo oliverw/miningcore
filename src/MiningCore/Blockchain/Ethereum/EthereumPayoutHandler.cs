@@ -187,8 +187,6 @@ namespace MiningCore.Blockchain.Ethereum
                     else
                     {
                         // don't give up yet, might be uncle
-                        DaemonResponses.Block uncle = null;
-
                         if (blockInfo.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
@@ -198,27 +196,26 @@ namespace MiningCore.Blockchain.Ethereum
 
                             var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
 
-                            // find matching uncle
-                            uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
+                            var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
                                 .Select(x => x.Response.ToObject<DaemonResponses.Block>())
                                 .FirstOrDefault(x => x.Miner == poolConfig.Address);
+
+                            if (uncle != null)
+                            {
+                                // confirmed
+                                block.Status = BlockStatus.Confirmed;
+                                block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
+                                result.Add(block);
+
+                                logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+                                continue;
+                            }
+
                         }
 
-                        if (uncle != null)
-                        {
-                            // confirmed
-                            block.Status = BlockStatus.Confirmed;
-                            block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
-                            result.Add(block);
-
-                            logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
-                        }
-
-                        else
-                        {
-                            block.Status = BlockStatus.Orphaned;
-                            result.Add(block);
-                        }
+                        // we've lost this one
+                        block.Status = BlockStatus.Orphaned;
+                        result.Add(block);
                     }
                 }
             }
