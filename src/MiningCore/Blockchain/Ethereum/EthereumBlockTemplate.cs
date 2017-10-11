@@ -28,11 +28,6 @@ namespace MiningCore.Blockchain.Ethereum
         public BigInteger Target { get; set; }
 
         /// <summary>
-        /// Target Difficulty
-        /// </summary>
-        public BigInteger TargetDifficulty { get; set; }
-
-        /// <summary>
         /// hash of the parent block.
         /// </summary>
         public string ParentHash { get; set; }

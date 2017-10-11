@@ -442,7 +442,7 @@ namespace MiningCore.Blockchain.Bitcoin
             daemon.Configure(poolConfig.Daemons);
         }
 
-        protected override async Task<bool> IsDaemonHealthy()
+        protected override async Task<bool> AreDaemonsHealthy()
         {
             var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
 
@@ -454,7 +454,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> IsDaemonConnected()
+        protected override async Task<bool> AreDaemonsConnected()
         {
             var response = await daemon.ExecuteCmdAnyAsync<Info>(BitcoinCommands.GetInfo);
 

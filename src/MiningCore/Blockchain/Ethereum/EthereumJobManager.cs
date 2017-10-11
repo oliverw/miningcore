@@ -38,7 +38,7 @@ using Newtonsoft.Json.Linq;
 using NLog;
 using Block = MiningCore.Blockchain.Ethereum.DaemonResponses.Block;
 using Contract = MiningCore.Contracts.Contract;
-using EC = MiningCore.Blockchain.Ethereum.GethCommands;
+using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
@@ -54,6 +54,7 @@ namespace MiningCore.Blockchain.Ethereum
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
+        private EthereumChainType chainType;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
         private const int MaxBlockBacklog = 3;
@@ -111,7 +112,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
         {
-            // parity returns the blocknumber
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
@@ -135,6 +135,22 @@ namespace MiningCore.Blockchain.Ethereum
             // extract results
             var block = results[0].Response.ToObject<Block>();
             var work = results[1].Response.ToObject<string[]>();
+
+            // only parity returns the 4th element (block height)
+            if (work.Length < 3)
+            {
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connecting to a Parity daemon?");
+                return null;
+            }
+
+            // make sure block matches work
+            var height = work[3].IntegralFromHex<ulong>();
+
+            if (height != block.Height)
+            {
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork result not related to pending block");
+                return null;
+            }
 
             var result = new EthereumBlockTemplate
             {
@@ -274,7 +290,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
-            share.NetworkDifficulty = job.BlockTemplate.Difficulty;
+            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficulty = stratumDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
@@ -327,7 +343,7 @@ namespace MiningCore.Blockchain.Ethereum
             daemon.Configure(daemonEndpoints);
         }
 
-        protected override async Task<bool> IsDaemonHealthy()
+        protected override async Task<bool> AreDaemonsHealthy()
         {
             var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
 
@@ -339,7 +355,7 @@ namespace MiningCore.Blockchain.Ethereum
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> IsDaemonConnected()
+        protected override async Task<bool> AreDaemonsConnected()
         {
             var response = await daemon.ExecuteCmdAnyAsync<string>(EC.GetPeerCount);
 
@@ -382,6 +398,9 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 new DaemonCmd(EC.GetNetVersion),
                 new DaemonCmd(EC.GetAccounts),
+                new DaemonCmd(EC.GetCoinbase),
+                new DaemonCmd(EC.ParityVersion),
+                new DaemonCmd(EC.ParityChain),
             };
 
             var results = await daemon.ExecuteBatchAnyAsync(commands);
@@ -396,29 +415,21 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // extract results
-            var netVersionResponse = results[0].Response.ToObject<string>();
-            var accountsResponse = results[1].Response.ToObject<string[]>();
+            var netVersion = results[0].Response.ToObject<string>();
+            var accounts = results[1].Response.ToObject<string[]>();
+            var coinbase = results[2].Response.ToObject<string>();
+            var parityVersion = results[3].Response.ToObject<string>();
+            var parityChain = results[3].Response.ToObject<string>();
 
             // ensure pool owns wallet
-            if (!accountsResponse.Contains(poolConfig.Address))
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            if (!accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
+                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
-            // chain detection
-            int netWorkTypeInt = 0;
-            if (int.TryParse(netVersionResponse, out netWorkTypeInt))
-            {
-                networkType = (EthereumNetworkType) netWorkTypeInt;
-
-                if(!Enum.IsDefined(typeof(EthereumNetworkType), networkType))
-                    networkType = EthereumNetworkType.Unknown;
-            }
-
-            else
-                networkType = EthereumNetworkType.Unknown;
+            EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
             // update stats
             BlockchainStats.RewardType = "POW";
-            BlockchainStats.NetworkType = networkType.ToString();
+            BlockchainStats.NetworkType = $"{networkType} on {parityChain} chain";
 
             await UpdateNetworkStatsAsync();
 

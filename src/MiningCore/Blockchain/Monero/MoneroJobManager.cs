@@ -293,7 +293,7 @@ namespace MiningCore.Blockchain.Monero
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
         }
 
-        protected override async Task<bool> IsDaemonHealthy()
+        protected override async Task<bool> AreDaemonsHealthy()
         {
             // test daemons
             var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
@@ -317,7 +317,7 @@ namespace MiningCore.Blockchain.Monero
             return responses2.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> IsDaemonConnected()
+        protected override async Task<bool> AreDaemonsConnected()
         {
             var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
 

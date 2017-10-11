@@ -18,10 +18,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
 using System.Numerics;
 using MiningCore.Serialization;
-using MiningCore.Util;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Ethereum.DaemonResponses
@@ -113,8 +111,13 @@ namespace MiningCore.Blockchain.Ethereum.DaemonResponses
         /// <summary>
         /// 8 Bytes - hash of the generated proof-of-work. null when its pending block.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong? Nonce { get; set; }
+        public string Nonce { get; set; }
+
+        /// <summary>
+        /// An array containing all engine specific fields
+        /// https://github.com/ethereum/EIPs/issues/95
+        /// </summary>
+        public string[] SealFields { get; set; }
 
         /// <summary>
         /// 32 Bytes - SHA3 of the uncles data in the block.

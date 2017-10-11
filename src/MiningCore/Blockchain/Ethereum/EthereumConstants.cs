@@ -13,6 +13,7 @@ namespace MiningCore.Blockchain.Ethereum
         public static double Pow2x32 = Math.Pow(2, 32);
         public static BigInteger BigPow2x32 = new BigInteger(Pow2x32);
         public const int AddressLength = 20;
+        public const decimal Wei = 1000000000000000000;
         public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
         public static readonly Regex ValidAddressPattern = new Regex("^0x[0-9a-fA-F]{40}$", RegexOptions.Compiled);
         public static readonly Regex ZeroHashPattern = new Regex("^0?x?0+$", RegexOptions.Compiled);
@@ -20,7 +21,11 @@ namespace MiningCore.Blockchain.Ethereum
         public static readonly Regex HashPattern =  new Regex("^0x[0-9a-f]{64}$", RegexOptions.Compiled);
         public static readonly Regex WorkerPattern = new Regex("^[0-9a-zA-Z-_]{1,8}$", RegexOptions.Compiled);
 
-        public const int InstanceIdSize = 3;
+        public const ulong ByzantiumHardForkHeight = 4370000;
+        public const decimal HomesteadBlockReward = 5.0m;
+        public const decimal ByzantiumBlockReward = 3.0m;
+
+        public const int MinConfimations = 16;
     }
 
     public enum EthereumNetworkType
@@ -34,12 +39,28 @@ namespace MiningCore.Blockchain.Ethereum
         Unknown = -1,
     }
 
-    public static class GethCommands
+    public enum EthereumChainType
+    {
+        Olympic,
+        Frontier,
+        Homestead,
+        Mainnet,
+        Morden,
+        Ropsten,
+        Classic,
+        Expanse,
+
+        Unknown = -1,
+    }
+
+    public static class EthCommands
     {
         public const string GetWork = "eth_getWork";
         public const string SubmitWork = "eth_submitWork";
         public const string Sign = "eth_sign";
         public const string GetNetVersion = "net_version";
+        public const string GetClientVersion = "web3_clientVersion";
+        public const string GetCoinbase = "eth_coinbase";
         public const string GetAccounts = "eth_accounts";
         public const string GetPeerCount = "net_peerCount";
         public const string GetSyncState = "eth_syncing";
@@ -48,5 +69,8 @@ namespace MiningCore.Blockchain.Ethereum
         public const string GetUncleByBlockNumberAndIndex = "eth_getUncleByBlockNumberAndIndex";
         public const string GetTxReceipt = "eth_getTransactionReceipt";
         public const string SendTx = "eth_sendTransaction";
+
+        public const string ParityVersion = "parity_version";
+        public const string ParityChain = "parity_chain";
     }
 }

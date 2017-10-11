@@ -107,7 +107,7 @@ namespace MiningCore.Blockchain.Ethereum
             share.IsBlockCandidate = resultValue.CompareTo(BlockTemplate.Target) <= 0;
 
             if (share.IsBlockCandidate)
-                share.TransactionConfirmationData = $"{resultBytes.ToHexString(true)}:{share.FullNonceHex}";
+                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{share.FullNonceHex}";
 
             return share;
         }
