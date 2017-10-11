@@ -95,7 +95,9 @@
             "payoutScheme": "PPLNS",
             "payoutSchemeConfig": {
                 "factor": 2.0
-            }
+            },
+            "keepUncles": false,
+            "keepTransactionFees": false
         }
     },
     // {

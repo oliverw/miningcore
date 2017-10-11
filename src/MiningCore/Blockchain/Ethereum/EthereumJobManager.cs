@@ -180,15 +180,28 @@ namespace MiningCore.Blockchain.Ethereum
                     .Select(x => x.Response.ToObject<SyncState>())
                     .ToArray();
 
-                var lowestHeight = syncStates.Min(x => x.CurrentBlock);
-                var totalBlocks = syncStates.Max(x => x.HighestBlock);
-                var percent = (double)lowestHeight / totalBlocks * 100;
-
                 // get peer count
                 var response = await daemon.ExecuteCmdAllAsync<string>(EC.GetPeerCount);
-                var peerCount = response.Where(x=> x.Error == null && x.Response != null).Max(x=> x.Response.IntegralFromHex<uint>());
+                var validResponses = response.Where(x => x.Error == null && x.Response != null).ToArray();
+                var peerCount = validResponses.Any() ? validResponses.Max(x => x.Response.IntegralFromHex<uint>()) : 0;
 
-                logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                if (syncStates.Any(x => x.WarpChunksAmount != 0))
+                {
+                    var warpChunkAmount = syncStates.Min(x => x.WarpChunksAmount);
+                    var warpChunkProcessed = syncStates.Max(x => x.WarpChunksProcessed);
+                    var percent = (double)warpChunkProcessed / warpChunkAmount * 100;
+
+                    logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                }
+
+                else
+                {
+                    var lowestHeight = syncStates.Min(x => x.CurrentBlock);
+                    var totalBlocks = syncStates.Max(x => x.HighestBlock);
+                    var percent = (double) lowestHeight / totalBlocks * 100;
+
+                    logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                }
             }
         }
 
@@ -368,10 +381,10 @@ namespace MiningCore.Blockchain.Ethereum
 
             while (true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<string[]>(EC.GetWork);
+                var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
 
-                var isSynched = responses.All(x => x.Error == null &&
-                    !x.Response.Any(string.IsNullOrEmpty));
+                var isSynched = responses.All(x => x.Error == null && 
+                    x.Response is bool && (bool) x.Response == false);
 
                 if (isSynched)
                 {

@@ -25,6 +25,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.Ethereum.Configuration;
+using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
@@ -35,6 +37,7 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using Newtonsoft.Json;
+using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
@@ -66,6 +69,7 @@ namespace MiningCore.Blockchain.Ethereum
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
+        private EthereumPoolPaymentProcessingConfigExtra extraConfig;
 
         protected override string LogCategory => "Ethereum Payout Handler";
 
@@ -75,6 +79,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+            extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
 
             logger = LogUtil.GetPoolScopedLogger(typeof(EthereumPayoutHandler), poolConfig);
 
@@ -110,8 +115,12 @@ namespace MiningCore.Blockchain.Ethereum
                     .Take(pageSize)
                     .ToArray();
 
+                // get latest block
+                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] {(object) "latest", true});
+                var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
+
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
-                var batch = page.Select(block => new DaemonCmd(EC.GetBlockByNumber,
+                var blockBatch = page.Select(block => new DaemonCmd(EC.GetBlockByNumber,
                     new[]
                     {
                         (object) block.BlockHeight.ToStringHexWithPrefix(),
@@ -119,49 +128,97 @@ namespace MiningCore.Blockchain.Ethereum
                     })).ToArray();
 
                 // execute batch
-                var results = await daemon.ExecuteBatchAnyAsync(batch);
+                var responses = await daemon.ExecuteBatchAnyAsync(blockBatch);
 
-                for (var j = 0; j < results.Length; j++)
+                for (var j = 0; j < responses.Length; j++)
                 {
-                    var cmdResult = results[j];
+                    var blockResponse = responses[j];
 
-                    var blockInfo = cmdResult.Response?.ToObject<DaemonResponses.Block>();
+                    var blockInfo = blockResponse.Response?.ToObject<DaemonResponses.Block>();
                     var block = page[j];
 
                     // extract confirmation data from stored block
-                    var mixHash = block.TransactionConfirmationData.Split(":").First();
-                    var nonce = block.TransactionConfirmationData.Split(":").LastOrDefault();
+                    //var mixHash = block.TransactionConfirmationData.Split(":").First();
+                    //var nonce = block.TransactionConfirmationData.Split(":").LastOrDefault();
 
                     // check error
-                    if (cmdResult.Error != null)
+                    if (blockResponse.Error != null)
                     {
-                        logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
+                        logger.Warn(() => $"[{LogCategory}] Daemon reports error '{blockResponse.Error.Message}' (Code {blockResponse.Error.Code}) for block {page[j].BlockHeight}");
+                        continue;
                     }
 
-                    // missing details are interpreted as "orphaned"
-                    else if (blockInfo == null)
+                    // missing details with no error are interpreted as "orphaned"
+                    if (blockInfo == null)
                     {
                         block.Status = BlockStatus.Orphaned;
                         result.Add(block);
+                        continue;
                     }
 
-                    else if (blockInfo.Miner != poolConfig.Address)
+                    // don't even touch immature blocks
+                    if (latestBlockHeight - block.BlockHeight < EthereumConstants.MinConfimations)
                     {
-                        block.Status = BlockStatus.Orphaned;
+                        immatureCount++;
+                        continue;
+                    }
+
+                    // mined by us?
+                    if (blockInfo.Miner == poolConfig.Address)
+                    {
+                        // additional check
+                        //var match = blockInfo.SealFields[0] == mixHash && blockInfo.Nonce == nonce;
+
+                        // confirmed
+                        block.Status = BlockStatus.Confirmed;
+                        block.Reward = GetBaseBlockReward(block.BlockHeight);   // base reward
+
+                        if (extraConfig?.KeepUncles == false)
+                            block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
+
+                        if (extraConfig?.KeepTransactionFees == false)
+                            block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
+
                         result.Add(block);
+
+                        logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                     }
 
                     else
                     {
-                        // additional check
-                        var match = blockInfo.SealFields[0] == mixHash && blockInfo.Nonce == nonce;
+                        // don't give up yet, might be uncle
+                        DaemonResponses.Block uncle = null;
 
-                        block.Status = BlockStatus.Confirmed;
-                        block.Reward = GetBaseBlockReward(block.BlockHeight);   // base reward
-                        block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
-                        block.Reward += GetTxReward(blockInfo); // tx fees
+                        if (blockInfo.Uncles.Length > 0)
+                        {
+                            // fetch all uncles in a single RPC batch request
+                            var uncleBatch = blockInfo.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
+                                    new[] { blockInfo.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
+                                .ToArray();
 
-                        result.Add(block);
+                            var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
+
+                            // find matching uncle
+                            uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
+                                .Select(x => x.Response.ToObject<DaemonResponses.Block>())
+                                .FirstOrDefault(x => x.Miner == poolConfig.Address);
+                        }
+
+                        if (uncle != null)
+                        {
+                            // confirmed
+                            block.Status = BlockStatus.Confirmed;
+                            block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
+                            result.Add(block);
+
+                            logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+                        }
+
+                        else
+                        {
+                            block.Status = BlockStatus.Orphaned;
+                            result.Add(block);
+                        }
                     }
                 }
             }
@@ -171,6 +228,39 @@ namespace MiningCore.Blockchain.Ethereum
 
         public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
+            var blockRewardRemaining = block.Reward;
+
+            // Distribute funds to configured reward recipients
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            {
+                var amount = block.Reward * (recipient.Percentage / 100.0m);
+                var address = recipient.Address;
+
+                blockRewardRemaining -= amount;
+
+                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+            }
+
+            // Tiny donation to MiningCore developer(s)
+            if (!clusterConfig.DisableDevDonation &&
+                chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
+            {
+                var amount = block.Reward * EthereumConstants.DevReward;
+                var address = EthereumConstants.DevAddress;
+
+                blockRewardRemaining -= amount;
+
+                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+            }
+
+            // Deduct static reserve for tx fees
+            blockRewardRemaining -= EthereumConstants.StaticTransactionFeeReserve;
+
+            // update block-reward
+            block.Reward = blockRewardRemaining;
+
             return Task.FromResult(true);
         }
 
@@ -202,12 +292,35 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        private decimal GetTxReward(DaemonResponses.Block blockInfo)
+        private async Task<decimal> GetTxRewardAsync(DaemonResponses.Block blockInfo)
         {
-            var result = blockInfo.Transactions.Sum(x => ((decimal) x.Gas / EthereumConstants.Wei) *
-                                                         ((decimal) x.GasPrice / EthereumConstants.Wei));
+            // fetch all tx receipts in a single RPC batch request
+            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] { tx.Hash }))
+                .ToArray();
+
+            var results = await daemon.ExecuteBatchAnyAsync(batch);
+
+            if(results.Any(x=> x.Error != null))
+                throw new Exception($"Error fetching tx receipts: {string.Join(", ", results.Where(x=> x.Error != null).Select(y => y.Error.Message))}");
+
+            // create lookup table
+            var gasUsed = results.Select(x => x.Response.ToObject<TransactionReceipt>())
+                .ToDictionary(x => x.TransactionHash, x => x.GasUsed);
+
+            // accumulate
+            var result = blockInfo.Transactions.Sum(x => (ulong) gasUsed[x.Hash] * ((decimal) x.GasPrice / EthereumConstants.Wei));
 
             return result;
+        }
+
+        private decimal GetUncleReward(ulong uheight, ulong height)
+        {
+            var reward = GetBaseBlockReward(height);
+
+            // https://ethereum.stackexchange.com/a/27195/18000
+            reward *= uheight + 8 - height;
+            reward /= 8m;
+            return reward;
         }
 
         private async Task DetectChainAsync()

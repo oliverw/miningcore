@@ -18,41 +18,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using MiningCore.Serialization;
-using Newtonsoft.Json;
-
-namespace MiningCore.Blockchain.Ethereum.DaemonResponses
+namespace MiningCore.Blockchain.Ethereum.Configuration
 {
-    public class SyncState
+    public class EthereumPoolPaymentProcessingConfigExtra
     {
         /// <summary>
-        /// The block at which the import started (will only be reset, after the sync reached his head)
+        /// True to exempt transaction fees from miner rewards
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong StartingBlock { get; set; }
+        public bool KeepTransactionFees { get; set; }
 
         /// <summary>
-        /// The current block, same as eth_blockNumber
+        /// True to exempt uncle rewards from miner rewards
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong CurrentBlock { get; set; }
-
-        /// <summary>
-        /// The estimated highest block
-        /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong HighestBlock { get; set; }
-
-        /// <summary>
-        /// Parity: Total amount of snapshot chunks
-        /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong WarpChunksAmount { get; set; }
-
-        /// <summary>
-        /// Parity: Total amount of snapshot chunks
-        /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong WarpChunksProcessed { get; set; }
+        public bool KeepUncles { get; set; }
     }
 }

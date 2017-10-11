@@ -18,41 +18,52 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Numerics;
 using MiningCore.Serialization;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Ethereum.DaemonResponses
 {
-    public class SyncState
+    public class TransactionReceipt
     {
         /// <summary>
-        /// The block at which the import started (will only be reset, after the sync reached his head)
+        /// 32 Bytes - hash of the transaction.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong StartingBlock { get; set; }
+        public string TransactionHash { get; set; }
 
         /// <summary>
-        /// The current block, same as eth_blockNumber
+        /// integer of the transactions index position in the block. null when its pending.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong CurrentBlock { get; set; }
+        [JsonProperty("transactionIndex")]
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
+        public ulong Index { get; set; }
 
         /// <summary>
-        /// The estimated highest block
+        /// 32 Bytes - hash of the block where this transaction was in. null when its pending.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong HighestBlock { get; set; }
+        public string BlockHash { get; set; }
 
         /// <summary>
-        /// Parity: Total amount of snapshot chunks
+        /// block number where this transaction was in. null when its pending.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong WarpChunksAmount { get; set; }
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
+        public ulong BlockNumber { get; set; }
 
         /// <summary>
-        /// Parity: Total amount of snapshot chunks
+        /// The total amount of gas used when this transaction was executed in the block.
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong?>))]
-        public ulong WarpChunksProcessed { get; set; }
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<BigInteger>))]
+        public BigInteger CummulativeGasUsed { get; set; }
+
+        /// <summary>
+        /// The amount of gas used by this specific transaction alone.
+        /// </summary>
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<BigInteger>))]
+        public BigInteger GasUsed { get; set; }
+
+        /// <summary>
+        /// The contract address created, if the transaction was a contract creation, otherwise null.
+        /// </summary>
+        public string ContractAddress { get; set; }
     }
-}
+}    

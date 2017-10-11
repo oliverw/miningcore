@@ -70,6 +70,7 @@ namespace MiningCore.Blockchain.Monero
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
         private MoneroNetworkType? networkType;
+        private MoneroPoolPaymentProcessingConfigExtra extraConfig;
 
         protected override string LogCategory => "Monero Payout Handler";
 
@@ -220,6 +221,7 @@ namespace MiningCore.Blockchain.Monero
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+            extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<MoneroPoolPaymentProcessingConfigExtra>();
 
             logger = LogUtil.GetPoolScopedLogger(typeof(MoneroPayoutHandler), poolConfig);
 
@@ -301,6 +303,8 @@ namespace MiningCore.Blockchain.Monero
                     block.Status = BlockStatus.Confirmed;
                     block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
                     result.Add(block);
+
+                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                 }
             }
 
@@ -357,8 +361,6 @@ namespace MiningCore.Blockchain.Monero
                 await PayoutBatch(simpleBalances);
 
             // balances with paymentIds
-            var extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<MoneroPoolPaymentProcessingConfigExtra>();
-
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)

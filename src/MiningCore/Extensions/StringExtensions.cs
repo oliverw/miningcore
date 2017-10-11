@@ -70,6 +70,22 @@ namespace MiningCore.Extensions
             return "0x" + value.ToString("x", CultureInfo.InvariantCulture);
         }
 
+        public static string ToStringHexWithPrefix(this uint value)
+        {
+            if (value == 0)
+                return "0x0";
+
+            return "0x" + value.ToString("x", CultureInfo.InvariantCulture);
+        }
+
+        public static string ToStringHexWithPrefix(this int value)
+        {
+            if (value == 0)
+                return "0x0";
+
+            return "0x" + value.ToString("x", CultureInfo.InvariantCulture);
+        }
+
         public static T IntegralFromHex<T>(this string value)
         {
             var underlyingType = Nullable.GetUnderlyingType(typeof(T));
