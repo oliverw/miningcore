@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Ethereum
         private readonly IComponentContext ctx;
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
-        private EthereumChainType chainType;
+        private ParityChainType chainType;
 
         protected override string LogCategory => "Ethereum Payout Handler";
 
@@ -183,10 +183,23 @@ namespace MiningCore.Blockchain.Ethereum
 
         private decimal GetBaseBlockReward(ulong height)
         {
-            if (height >= EthereumConstants.ByzantiumHardForkHeight)
-                return EthereumConstants.ByzantiumBlockReward;
+            switch (chainType)
+            {
+                case ParityChainType.Mainnet:
+                    if (height >= EthereumConstants.ByzantiumHardForkHeight)
+                        return EthereumConstants.ByzantiumBlockReward;
 
-            return EthereumConstants.HomesteadBlockReward;
+                    return EthereumConstants.HomesteadBlockReward;
+
+                case ParityChainType.Classic:
+                    return EthereumConstants.HomesteadBlockReward;
+
+                case ParityChainType.Ropsten:
+                    return EthereumConstants.ByzantiumBlockReward;
+
+                default:
+                    throw new Exception("Unable to determine block reward: Unsupported chain type");
+            }
         }
 
         private decimal GetTxReward(DaemonResponses.Block blockInfo)

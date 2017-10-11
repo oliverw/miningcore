@@ -24,6 +24,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const ulong ByzantiumHardForkHeight = 4370000;
         public const decimal HomesteadBlockReward = 5.0m;
         public const decimal ByzantiumBlockReward = 3.0m;
+        public const decimal TestnetBlockReward = 3.0m;
 
         public const int MinConfimations = 16;
     }
@@ -39,7 +40,7 @@ namespace MiningCore.Blockchain.Ethereum
         Unknown = -1,
     }
 
-    public enum EthereumChainType
+    public enum ParityChainType
     {
         Olympic,
         Frontier,
@@ -70,7 +71,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const string GetTxReceipt = "eth_getTransactionReceipt";
         public const string SendTx = "eth_sendTransaction";
 
-        public const string ParityVersion = "parity_version";
+        public const string ParityVersion = "parity_versionInfo";
         public const string ParityChain = "parity_chain";
     }
 }

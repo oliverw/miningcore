@@ -5,7 +5,7 @@ namespace MiningCore.Blockchain.Ethereum
     public class EthereumUtils
     {
         public static void DetectNetworkAndChain(string netVersionResponse, string parityChainResponse,
-            out EthereumNetworkType networkType, out EthereumChainType chainType)
+            out EthereumNetworkType networkType, out ParityChainType chainType)
         {
             // convert network
             int netWorkTypeInt = 0;
@@ -21,17 +21,8 @@ namespace MiningCore.Blockchain.Ethereum
                 networkType = EthereumNetworkType.Unknown;
 
             // convert chain
-            int chainTypeInt = 0;
-            if (int.TryParse(parityChainResponse, out chainTypeInt))
-            {
-                chainType = (EthereumChainType)chainTypeInt;
-
-                if (!Enum.IsDefined(typeof(EthereumChainType), chainType))
-                    chainType = EthereumChainType.Unknown;
-            }
-
-            else
-                chainType = EthereumChainType.Unknown;
+            if (!Enum.TryParse(parityChainResponse, true, out chainType))
+                chainType = ParityChainType.Unknown;
         }
     }
 }

@@ -54,7 +54,7 @@ namespace MiningCore.Blockchain.Ethereum
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
-        private EthereumChainType chainType;
+        private ParityChainType chainType;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
         private const int MaxBlockBacklog = 3;
@@ -418,8 +418,8 @@ namespace MiningCore.Blockchain.Ethereum
             var netVersion = results[0].Response.ToObject<string>();
             var accounts = results[1].Response.ToObject<string[]>();
             var coinbase = results[2].Response.ToObject<string>();
-            var parityVersion = results[3].Response.ToObject<string>();
-            var parityChain = results[3].Response.ToObject<string>();
+            var parityVersion = results[3].Response.ToObject<JObject>();
+            var parityChain = results[4].Response.ToObject<string>();
 
             // ensure pool owns wallet
             if (!accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
@@ -429,7 +429,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             // update stats
             BlockchainStats.RewardType = "POW";
-            BlockchainStats.NetworkType = $"{networkType} on {parityChain} chain";
+            BlockchainStats.NetworkType = $"{chainType}";
 
             await UpdateNetworkStatsAsync();
 
