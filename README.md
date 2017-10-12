@@ -120,8 +120,8 @@ Example configuration:
       "database": "miningcore"
     }
   },
-  // Donate a tiny fraction of the rewards to the ongoing development of Miningcore
-  "devDonation": 0.01,
+  // Donate a tiny percentage of the rewards to the ongoing development of Miningcore
+  "devDonation": 0.1,
   // Generate payouts for recorded shares and blocks
   "paymentProcessing": {
     "enabled": true,

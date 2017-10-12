@@ -35,7 +35,7 @@
             "database": "miningcore"
         }
     },
-    "disableDevDonation": false,
+    "devDonation": 0.1,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
