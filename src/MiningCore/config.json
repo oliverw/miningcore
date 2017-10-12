@@ -56,6 +56,7 @@
                 "percentage": 0
             }
         ],
+        "dagDir": "%USERPROFILE%\\.dag",
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
         "clientConnectionTimeout": 600,

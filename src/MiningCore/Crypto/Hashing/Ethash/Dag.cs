@@ -25,7 +25,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public DateTime LastUsed { get; set; }
 
-        public static unsafe string GetDefaultDirectory()
+        public static unsafe string GetDefaultDagDirectory()
         {
             var chars = new byte[512];
 
@@ -56,8 +56,10 @@ namespace MiningCore.Crypto.Hashing.Ethash
             }
         }
 
-        public async Task GenerateAsync()
+        public async Task GenerateAsync(string dagDir)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
+
             await Task.Run(() =>
             {
                 lock (genLock)
@@ -75,7 +77,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                         try
                         {
                             // Generate the actual DAG
-                            handle = LibMultihash.ethash_full_new(light, progress =>
+                            handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
                             {
                                 logger.Info(() => $"Generating DAG: {progress}%");
                                 return 0;

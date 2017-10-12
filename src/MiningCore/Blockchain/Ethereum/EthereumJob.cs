@@ -18,8 +18,6 @@ namespace MiningCore.Blockchain.Ethereum
             BlockTemplate = blockTemplate;
         }
 
-        private static readonly EthashFull ethash = new EthashFull(3);
-
         private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();
 
@@ -45,7 +43,7 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        public async Task<EthereumShare> ProcessShareAsync(StratumClient<EthereumWorkerContext> worker, string nonce)
+        public async Task<EthereumShare> ProcessShareAsync(StratumClient<EthereumWorkerContext> worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
             lock (workerNonces)

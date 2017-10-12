@@ -148,6 +148,7 @@ namespace MiningCore.Native
         /// <summary>
         /// Allocate and initialize a new ethash_full handler
         /// </summary>
+        /// <param name="dagDir">Directory where generated DAGs reside</param>
         /// <param name="light">The light handler containing the cache.</param>
         /// <param name="callback">
         /// A callback function with signature of @ref ethash_callback_t
@@ -160,7 +161,7 @@ namespace MiningCore.Native
         /// </param>
         /// <returns></returns>
         [DllImport("libmultihash", EntryPoint = "ethash_full_new_export", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr ethash_full_new(IntPtr light, ethash_callback_t callback);
+        public static extern IntPtr ethash_full_new(string dagDir, IntPtr light, ethash_callback_t callback);
 
         /// <summary>
         /// Frees a previously allocated ethash_full handler

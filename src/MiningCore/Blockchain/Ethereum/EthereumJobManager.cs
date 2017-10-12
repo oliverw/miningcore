@@ -21,14 +21,17 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
+using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.Payments;
@@ -56,10 +59,12 @@ namespace MiningCore.Blockchain.Ethereum
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
+        private EthashFull ethash;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
         private const int MaxBlockBacklog = 3;
         protected readonly Dictionary<string, EthereumJob> validJobs = new Dictionary<string, EthereumJob>();
+        private EthereumPoolConfigExtra extraPoolConfig;
 
         protected async Task<bool> UpdateJob()
         {
@@ -250,12 +255,25 @@ namespace MiningCore.Blockchain.Ethereum
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
+
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .ToArray();
 
             base.Configure(poolConfig, clusterConfig);
+
+            // ensure dag location is configured
+            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
+                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
+                Dag.GetDefaultDagDirectory();
+
+            // create it if necessary
+            Directory.CreateDirectory(dagDir);
+
+            // setup ethash
+            ethash = new EthashFull(3, dagDir);
         }
 
         public bool ValidateAddress(string address)
@@ -290,7 +308,7 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // validate & process
-            var share = await job.ProcessShareAsync(worker, nonce);
+            var share = await job.ProcessShareAsync(worker, nonce, ethash);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
@@ -454,6 +472,23 @@ namespace MiningCore.Blockchain.Ethereum
             BlockchainStats.NetworkType = $"{chainType}";
 
             await UpdateNetworkStatsAsync();
+
+            // make sure we have a current DAG
+            while (true)
+            {
+                var blockTemplate = await GetBlockTemplateAsync();
+
+                if (blockTemplate == null)
+                {
+                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    continue;
+                }
+
+                await ethash.GetDagAsync(blockTemplate.Height);
+                break;
+            }
 
             SetupJobUpdates();
         }

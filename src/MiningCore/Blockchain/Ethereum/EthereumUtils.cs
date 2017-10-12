@@ -22,7 +22,15 @@ namespace MiningCore.Blockchain.Ethereum
 
             // convert chain
             if (!Enum.TryParse(parityChainResponse, true, out chainType))
-                chainType = ParityChainType.Unknown;
+            {
+                if(parityChainResponse.ToLower() == "ethereum classic")
+                    chainType = ParityChainType.Classic;
+                else
+                    chainType = ParityChainType.Unknown;
+            }
+
+            if(chainType == ParityChainType.Foundation)
+                chainType = ParityChainType.Mainnet;
         }
     }
 }

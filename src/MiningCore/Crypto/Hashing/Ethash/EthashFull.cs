@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Contracts;
-using MiningCore.Extensions;
 using NLog;
 
 namespace MiningCore.Crypto.Hashing.Ethash
 {
     public class EthashFull : IDisposable
     {
-        public EthashFull(int numCaches)
+        public EthashFull(int numCaches, string dagDir)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
+
             this.numCaches = numCaches;
+            this.dagDir = dagDir;
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -22,6 +23,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
         private readonly object cacheLock = new object();
         private readonly Dictionary<ulong, Dag> caches = new Dictionary<ulong, Dag>();
         private Dag future;
+        private readonly string dagDir;
 
         public void Dispose()
         {
@@ -77,7 +79,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                         future = new Dag(epoch + 1);
 
                         #pragma warning disable 4014
-                        future.GenerateAsync();
+                        future.GenerateAsync(dagDir);
                         #pragma warning restore 4014
                     }
                 }
@@ -85,7 +87,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 result.LastUsed = DateTime.Now;
             }
 
-            await result.GenerateAsync();
+            await result.GenerateAsync(dagDir);
             return result;
         }
     }

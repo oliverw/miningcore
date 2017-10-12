@@ -42,6 +42,7 @@ namespace MiningCore.Configuration
         ZEC, // Zcashn
         ETH, // Ethereum
         ETC, // Ethereum Classic
+        EXP, // Expanse
         DASH, // Dash
     }
 
@@ -233,6 +234,9 @@ namespace MiningCore.Configuration
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
+
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
     }
 
     public partial class ClusterConfig

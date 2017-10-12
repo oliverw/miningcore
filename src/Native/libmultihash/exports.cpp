@@ -207,9 +207,11 @@ extern "C" MODULE_API void ethash_light_compute_export(
 	*result = ethash_light_compute(light, header_hash, nonce);
 }
 
-extern "C" MODULE_API ethash_full_t ethash_full_new_export(ethash_light_t light, ethash_callback_t callback)
+extern "C" MODULE_API ethash_full_t ethash_full_new_export(const char *dirname, ethash_light_t light, ethash_callback_t callback)
 {
-	return ethash_full_new(light, callback);
+	uint64_t full_size = ethash_get_datasize(light->block_number);
+	ethash_h256_t seedhash = ethash_get_seedhash(light->block_number);
+	return ethash_full_new_internal(dirname, seedhash, full_size, light, callback);
 }
 
 extern "C" MODULE_API void ethash_full_delete_export(ethash_full_t full)
