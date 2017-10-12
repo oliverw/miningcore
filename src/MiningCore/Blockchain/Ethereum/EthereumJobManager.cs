@@ -181,27 +181,30 @@ namespace MiningCore.Blockchain.Ethereum
                     .Select(x => x.Response.ToObject<SyncState>())
                     .ToArray();
 
-                // get peer count
-                var response = await daemon.ExecuteCmdAllAsync<string>(EC.GetPeerCount);
-                var validResponses = response.Where(x => x.Error == null && x.Response != null).ToArray();
-                var peerCount = validResponses.Any() ? validResponses.Max(x => x.Response.IntegralFromHex<uint>()) : 0;
+                if (syncStates.Any())
+                { 
+                    // get peer count
+                    var response = await daemon.ExecuteCmdAllAsync<string>(EC.GetPeerCount);
+                    var validResponses = response.Where(x => x.Error == null && x.Response != null).ToArray();
+                    var peerCount = validResponses.Any() ? validResponses.Max(x => x.Response.IntegralFromHex<uint>()) : 0;
 
-                if (syncStates.Any(x => x.WarpChunksAmount != 0))
-                {
-                    var warpChunkAmount = syncStates.Min(x => x.WarpChunksAmount);
-                    var warpChunkProcessed = syncStates.Max(x => x.WarpChunksProcessed);
-                    var percent = (double)warpChunkProcessed / warpChunkAmount * 100;
+                    if (syncStates.Any(x => x.WarpChunksAmount != 0))
+                    {
+                        var warpChunkAmount = syncStates.Min(x => x.WarpChunksAmount);
+                        var warpChunkProcessed = syncStates.Max(x => x.WarpChunksProcessed);
+                        var percent = (double)warpChunkProcessed / warpChunkAmount * 100;
 
-                    logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
-                }
+                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                    }
 
-                else
-                {
-                    var lowestHeight = syncStates.Min(x => x.CurrentBlock);
-                    var totalBlocks = syncStates.Max(x => x.HighestBlock);
-                    var percent = (double) lowestHeight / totalBlocks * 100;
+                    else if (syncStates.Any(x => x.HighestBlock != 0))
+                    {
+                        var lowestHeight = syncStates.Min(x => x.CurrentBlock);
+                        var totalBlocks = syncStates.Max(x => x.HighestBlock);
+                        var percent = (double) lowestHeight / totalBlocks * 100;
 
-                    logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                    }
                 }
             }
         }
