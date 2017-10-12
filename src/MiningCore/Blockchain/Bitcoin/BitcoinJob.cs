@@ -247,13 +247,14 @@ namespace MiningCore.Blockchain.Bitcoin
             var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
 
             // Tiny donation to MiningCore developer(s)
-            if (!clusterConfig.DisableDevDonation &&
+            if (clusterConfig.DevDonation > 0 &&
                 networkType == BitcoinNetworkType.Main &&
                 KnownAddresses.DevFeeAddresses.ContainsKey(poolConfig.Coin.Type))
                 rewardRecipients.Add(new RewardRecipient
                 {
+                    Type = RewardRecipientType.Dev,
                     Address = KnownAddresses.DevFeeAddresses[poolConfig.Coin.Type],
-                    Percentage = 0.2m
+                    Percentage = clusterConfig.DevDonation
                 });
 
             foreach (var recipient in rewardRecipients.Where(x => x.Percentage > 0))

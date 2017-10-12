@@ -120,8 +120,8 @@ Example configuration:
       "database": "miningcore"
     }
   },
-  // Do not allow 0.1% donation to MiningCore developers. Please leave this disabled to help support development of MiningCore.
-  "disableDevDonation": false,
+  // Donate a tiny fraction of the rewards to the ongoing development of Miningcore
+  "devDonation": 0.01,
   // Generate payouts for recorded shares and blocks
   "paymentProcessing": {
     "enabled": true,
