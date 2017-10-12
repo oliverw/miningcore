@@ -45,6 +45,13 @@ Namecoin | Yes | No |
 Viacoin | Yes | No |
 Peercoin | Yes | No |
 
+#### Ethereum
+
+MiningCore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+
+- Claymore Miner must be configured to speak this protocol by supplying the "-esm 3" command line option
+- Genoil's ethminer must be configured to speak this protocol by supplying the "-SP 3" command line option
+
 ### Runtime Requirements
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)

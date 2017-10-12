@@ -152,7 +152,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var submitRequest = request.ParamsAs<string[]>();
 
                 if (submitRequest.Length != 3 ||
-                    submitRequest.Any(x => string.IsNullOrEmpty(x)))
+                    submitRequest.Any(string.IsNullOrEmpty))
                     throw new StratumException(StratumError.MinusOne, "malformed PoW result");
 
                 // recognize activity
