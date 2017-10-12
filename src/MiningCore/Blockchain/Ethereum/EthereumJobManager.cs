@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -443,6 +444,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
+            ConfigureRewards();
+
             // update stats
             BlockchainStats.RewardType = "POW";
             BlockchainStats.NetworkType = $"{chainType}";
@@ -450,6 +453,33 @@ namespace MiningCore.Blockchain.Ethereum
             await UpdateNetworkStatsAsync();
 
             SetupJobUpdates();
+        }
+
+        private void ConfigureRewards()
+        {
+            // Tiny donation to Miningcore development
+            if (!clusterConfig.DisableDevDonation)
+            {
+                string address = null;
+
+                if (chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
+                    address = EthereumConstants.EthDevAddress;
+                else if (chainType == ParityChainType.Classic && networkType == EthereumNetworkType.Main)
+                    address = EthereumConstants.EtcDevAddress;
+
+                if (!string.IsNullOrEmpty(address))
+                {
+                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    {
+                        new RewardRecipient
+                        {
+                            Type = RewardRecipientType.Dev,
+                            Percentage = PayoutConstants.DevReward,
+                            Address = address,
+                        }
+                    }).ToArray();
+                }
+            }
         }
 
         protected virtual void SetupJobUpdates()

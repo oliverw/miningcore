@@ -311,8 +311,7 @@ namespace MiningCore.Blockchain.Monero
             return result.ToArray();
         }
 
-        public async Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block,
-            PoolConfig pool)
+        public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -328,24 +327,13 @@ namespace MiningCore.Blockchain.Monero
                 balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
 
-            // Tiny donation to MiningCore developer(s)
-            if (!clusterConfig.DisableDevDonation &&
-                await GetNetworkTypeAsync() == MoneroNetworkType.Main)
-            {
-                var amount = block.Reward * MoneroConstants.DevReward;
-                var address = MoneroConstants.DevAddress;
-
-                blockRewardRemaining -= amount;
-
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
-            }
-
             // Deduct static reserve for tx fees
             blockRewardRemaining -= MoneroConstants.StaticTransactionFeeReserve;
 
             // update block-reward
             block.Reward = blockRewardRemaining;
+
+            return Task.FromResult(true);
         }
 
         public async Task PayoutAsync(Balance[] balances)

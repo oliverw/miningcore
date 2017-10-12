@@ -179,7 +179,7 @@ namespace MiningCore.Blockchain.Ethereum
                         if (extraConfig?.KeepUncles == false)
                             block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
 
-                        if (extraConfig?.KeepTransactionFees == false)
+                        if (extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
                             block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
 
                         result.Add(block);
@@ -235,19 +235,6 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
-
-                blockRewardRemaining -= amount;
-
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
-            }
-
-            // Tiny donation to MiningCore developer(s)
-            if (!clusterConfig.DisableDevDonation &&
-                chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
-            {
-                var amount = block.Reward * EthereumConstants.DevReward;
-                var address = EthereumConstants.DevAddress;
 
                 blockRewardRemaining -= amount;
 

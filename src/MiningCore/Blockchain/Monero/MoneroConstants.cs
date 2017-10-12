@@ -42,6 +42,7 @@ namespace MiningCore.Blockchain.Monero
 
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+        public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
 
 #if DEBUG
         public const int PayoutMinBlockConfirmations = 2;
@@ -61,9 +62,6 @@ namespace MiningCore.Blockchain.Monero
 
         public const long Piconero = (long) 1e12;
         public const decimal StaticTransactionFeeReserve = 0.03m; // in monero
-        public const decimal DevReward = 0.002m;
-
-        public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
     }
 
     public static class MoneroCommands

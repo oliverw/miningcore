@@ -27,5 +27,6 @@ namespace MiningCore.Payments
     public static class PayoutConstants
     {
         public const char PayoutInfoSeperator = '.';
+        public const decimal DevReward = 0.02m;
     }
 }

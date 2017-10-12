@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Native;
+using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -377,6 +378,8 @@ namespace MiningCore.Blockchain.Monero
             // chain detection
             networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
 
+            ConfigureRewards();
+
             // update stats
             BlockchainStats.RewardType = "POW";
             BlockchainStats.NetworkType = networkType.ToString();
@@ -384,6 +387,31 @@ namespace MiningCore.Blockchain.Monero
             await UpdateNetworkStatsAsync();
 
             SetupJobUpdates();
+        }
+
+        private void ConfigureRewards()
+        {
+            // Tiny donation to Miningcore development
+            if (!clusterConfig.DisableDevDonation)
+            {
+                string address = null;
+
+                if (networkType == MoneroNetworkType.Main && poolConfig.Coin.Type == CoinType.XMR)
+                    address = MoneroConstants.DevAddress;
+
+                if (!string.IsNullOrEmpty(address))
+                {
+                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    {
+                        new RewardRecipient
+                        {
+                            Type = RewardRecipientType.Dev,
+                            Percentage = PayoutConstants.DevReward,
+                            Address = address,
+                        }
+                    }).ToArray();
+                }
+            }
         }
 
         protected virtual void SetupJobUpdates()
