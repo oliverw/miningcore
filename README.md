@@ -31,12 +31,13 @@ This is going to change in the future.
 Coin | Implemented | Tested | Planned
 :--- | :---: | :---: | :---:
 Bitcoin | Yes | Yes |
-Bitcoin Cash | Yes | Yes |
 Litecoin | Yes | Yes |
+Monero | Yes | Yes |
 Ethereum | Yes | Yes |
 Ethereum Classic | Yes | Yes |
-Monero | Yes | Yes |
+Expanse | Yes | Yes |
 DASH | Yes | Yes |
+Bitcoin Cash | Yes | Yes |
 Groestlcoin | Yes | Yes |
 Zcash | No |  | Nov 2017
 Dogecoin | Yes | No |
