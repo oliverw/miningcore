@@ -28,8 +28,6 @@ using AutoMapper;
 using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Blockchain.Ethereum.DaemonRequests;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
-using MiningCore.Blockchain.Monero;
-using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
@@ -141,21 +139,20 @@ namespace MiningCore.Blockchain.Ethereum
                     var block = page[j];
 
                     // extract confirmation data from stored block
-                    //var mixHash = block.TransactionConfirmationData.Split(":").First();
-                    //var nonce = block.TransactionConfirmationData.Split(":").LastOrDefault();
+                    var mixHash = block.TransactionConfirmationData.Split(":").First();
+                    var nonce = block.TransactionConfirmationData.Split(":").Last();
 
                     // check error
                     if (blockResponse.Error != null)
                     {
-                        logger.Warn(() => $"[{LogCategory}] Daemon reports error '{blockResponse.Error.Message}' (Code {blockResponse.Error.Code}) for block {page[j].BlockHeight}");
+                        logger.Warn(() => $"[{LogCategory}] Daemon reports error '{blockResponse.Error.Message}' (Code {blockResponse.Error.Code}) for block {page[j].BlockHeight}. Will retry.");
                         continue;
                     }
 
                     // missing details with no error are interpreted as "orphaned"
                     if (blockInfo == null)
                     {
-                        block.Status = BlockStatus.Orphaned;
-                        result.Add(block);
+                        logger.Warn(() => $"[{LogCategory}] Daemon returned null result for block {page[j].BlockHeight}. Will retry.");
                         continue;
                     }
 
@@ -170,7 +167,10 @@ namespace MiningCore.Blockchain.Ethereum
                     if (blockInfo.Miner == poolConfig.Address)
                     {
                         // additional check
-                        //var match = blockInfo.SealFields[0] == mixHash && blockInfo.Nonce == nonce;
+                        // NOTE: removal of first character of both sealfields caused by 
+                        // https://github.com/paritytech/parity/issues/1090
+                        var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) && 
+                                    blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
 
                         // confirmed
                         block.Status = BlockStatus.Confirmed;
