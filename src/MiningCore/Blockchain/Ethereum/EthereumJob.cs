@@ -70,8 +70,9 @@ namespace MiningCore.Blockchain.Ethereum
             // test if share meets at least workers current difficulty
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
             var ratio = shareDiff / worker.Context.Difficulty;
+            var isBlockCandidate = resultValue.CompareTo(BlockTemplate.Target) <= 0;
 
-            if (ratio < 0.99)
+            if (!isBlockCandidate && ratio < 0.99)
             {
                 // allow grace period where the previous difficulty from before a vardiff update is also acceptable
                 if (worker.Context.VarDiff != null && worker.Context.VarDiff.LastUpdate.HasValue &&
@@ -99,10 +100,8 @@ namespace MiningCore.Blockchain.Ethereum
                 FullNonceHex = "0x" + fullNonceHex,
                 HeaderHash = BlockTemplate.Header,
                 MixHash = mixDigest.ToHexString(true),
+                IsBlockCandidate = isBlockCandidate,
             };
-
-            // Matches block difficulty?
-            share.IsBlockCandidate = resultValue.CompareTo(BlockTemplate.Target) <= 0;
 
             if (share.IsBlockCandidate)
                 share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{share.FullNonceHex}";

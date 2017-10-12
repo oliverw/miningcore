@@ -56,7 +56,6 @@
                 "percentage": 0
             }
         ],
-        "dagDir": "%USERPROFILE%\\.dag",
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
         "clientConnectionTimeout": 600,
@@ -68,7 +67,7 @@
         },
         "ports": {
             "3072": {
-                "difficulty": 1,
+                "difficulty": 0.1,
                 "varDiff": {
                     "minDiff": 0.05,
                     "maxDiff": null,

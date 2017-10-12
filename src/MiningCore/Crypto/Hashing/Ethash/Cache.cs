@@ -53,15 +53,19 @@ namespace MiningCore.Crypto.Hashing.Ethash
             });
         }
 
-        public bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        public unsafe bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
             Contract.RequiresNonNull(hash, nameof(hash));
 
             mixDigest = null;
             result = null;
 
-            LibMultihash.ethash_return_value value;
-            LibMultihash.ethash_light_compute(handle, hash, nonce, out value);
+            var value = new LibMultihash.ethash_return_value();
+
+            fixed (byte* input = hash)
+            {
+                LibMultihash.ethash_light_compute(handle, input, nonce, ref value);
+            }
 
             if (value.success)
             {

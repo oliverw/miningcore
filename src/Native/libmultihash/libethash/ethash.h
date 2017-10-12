@@ -61,11 +61,13 @@ struct ethash_full;
 typedef struct ethash_full* ethash_full_t;
 typedef int(*ethash_callback_t)(unsigned);
 
+#pragma pack(push, 1)
 typedef struct ethash_return_value {
 	ethash_h256_t result;
 	ethash_h256_t mix_hash;
 	bool success;
 } ethash_return_value_t;
+#pragma pack(pop)
 
 /**
  * Allocate and initialize a new ethash_light handler
