@@ -43,7 +43,7 @@ namespace MiningCore.Api.Responses
         public IDictionary<string, object> Extra { get; set; }
     }
 
-    public class PoolInfo
+    public partial class PoolInfo
     {
         // Configuration Properties directly mapping to PoolConfig (omitting security relevant fields)
         public string Id { get; set; }

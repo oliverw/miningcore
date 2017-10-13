@@ -125,7 +125,6 @@ namespace MiningCore.JsonRpc
                     sendQueueDrainer.CloseHandle();
                     sendQueueDrainer.UserToken = null;
 
-                    sendQueue = null;
                     sb = null;
                 });
 
