@@ -81,31 +81,34 @@ namespace MiningCore.JsonRpc
 
                 tcp.OnRead((handle, buffer) =>
                 {
-                    // onAccept
-                    var data = buffer.ReadString(Encoding.UTF8);
-
-                    if (!string.IsNullOrEmpty(data))
+                    using (buffer)
                     {
-                        // flood-prevention check
-                        if (sb.Length + data.Length < MaxRequestLength)
-                        {
-                            sb.Append(data);
+                        // onAccept
+                        var data = buffer.ReadString(Encoding.UTF8);
 
-                            // scan for lines and emit
-                            int index;
-                            while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
+                        if (!string.IsNullOrEmpty(data))
+                        {
+                            // flood-prevention check
+                            if (sb.Length + data.Length < MaxRequestLength)
                             {
-                                var line = sb.ToString(0, index).Trim();
-                                sb.Remove(0, index + 1);
+                                sb.Append(data);
 
-                                if (line.Length > 0)
-                                    observer.OnNext(line);
+                                // scan for lines and emit
+                                int index;
+                                while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
+                                {
+                                    var line = sb.ToString(0, index).Trim();
+                                    sb.Remove(0, index + 1);
+
+                                    if (line.Length > 0)
+                                        observer.OnNext(line);
+                                }
                             }
-                        }
 
-                        else
-                        {
-                            observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                            else
+                            {
+                                observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                            }
                         }
                     }
                 }, (handle, ex) =>
@@ -120,6 +123,10 @@ namespace MiningCore.JsonRpc
                     // release handles
                     handle.CloseHandle();
                     sendQueueDrainer.CloseHandle();
+                    sendQueueDrainer.UserToken = null;
+
+                    sendQueue = null;
+                    sb = null;
                 });
 
                 return Disposable.Create(() =>
@@ -183,13 +190,12 @@ namespace MiningCore.JsonRpc
         {
             try
             {
-                byte[] data;
                 var tcp = (Tcp) handle.UserToken;
 
-                while (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable &&
-                    sendQueue.TryDequeue(out data))
+                if (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable && sendQueue != null)
                 {
-                    tcp.QueueWrite(data);
+                    while (sendQueue.TryDequeue(out var data))
+                        tcp.QueueWrite(data);
                 }
             }
 
