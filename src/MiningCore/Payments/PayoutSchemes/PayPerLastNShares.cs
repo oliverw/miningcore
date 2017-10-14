@@ -73,12 +73,12 @@ namespace MiningCore.Payments.PayoutSchemes
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
 
             // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
-            var factorX = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
+            var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
             // calculate rewards 
             var shares = new Dictionary<string, ulong>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculateRewards(poolConfig, factorX, block, shares, rewards);
+            var shareCutOffDate = CalculateRewards(poolConfig, window, block, shares, rewards);
 
             // update balances
             foreach (var address in rewards.Keys)
@@ -106,14 +106,14 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
             if(totalRewards > 0)
-                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards/block.Reward:0.00}% of block reward)");
+                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / block.Reward * 100:0.00}% of block reward)");
 
             return Task.FromResult(true);
         }
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal factorX, Block block,
+        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block,
             Dictionary<string, ulong> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
@@ -155,15 +155,15 @@ namespace MiningCore.Payments.PayoutSchemes
                     var score = stratumDiff / (decimal) share.NetworkDifficulty;
 
                     // if accumulated score would cross threshold, cap it to the remaining value
-                    if (accumulatedScore + score >= factorX)
+                    if (accumulatedScore + score >= window)
                     {
-                        score = factorX - accumulatedScore;
+                        score = window - accumulatedScore;
                         shareCutOffDate = share.Created;
                         done = true;
                     }
 
                     // calulate reward
-                    var reward = score * blockReward / factorX;
+                    var reward = score * blockReward / window;
                     accumulatedScore += score;
                     blockRewardRemaining -= reward;
 
@@ -179,7 +179,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 }
             }
 
-            logger.Info(() => $"Balance-calculation completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / factorX) * 100:0.#}%)");
+            logger.Info(() => $"Balance-calculation completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
 
             return shareCutOffDate;
         }
