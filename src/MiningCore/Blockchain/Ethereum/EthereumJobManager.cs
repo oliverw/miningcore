@@ -495,7 +495,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void ConfigureRewards()
         {
-            // Tiny donation to Miningcore development
+            // Donation to Miningcore development
             if (clusterConfig.DevDonation > 0)
             {
                 string address = null;

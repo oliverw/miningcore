@@ -542,6 +542,8 @@ namespace MiningCore.Blockchain.Bitcoin
             else
                 networkType = BitcoinNetworkType.Main;
 
+            ConfigureRewards();
+
             // update stats
             BlockchainStats.NetworkType = networkType.ToString();
             BlockchainStats.RewardType = isPoS ? "POS" : "POW";
@@ -559,6 +561,33 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupCrypto();
             SetupJobUpdates();
         }
+
+        private void ConfigureRewards()
+        {
+            // Donation to Miningcore development
+            if (clusterConfig.DevDonation > 0)
+            {
+                string address = null;
+
+                if (networkType == BitcoinNetworkType.Main &&
+                    KnownAddresses.DevFeeAddresses.ContainsKey(poolConfig.Coin.Type))
+                    address = KnownAddresses.DevFeeAddresses[poolConfig.Coin.Type];
+
+                if (!string.IsNullOrEmpty(address))
+                {
+                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    {
+                        new RewardRecipient
+                        {
+                            Type = RewardRecipientType.Dev,
+                            Address = address,
+                            Percentage = clusterConfig.DevDonation,
+                        }
+                    }).ToArray();
+                }
+            }
+        }
+
 
         protected async Task<bool> UpdateJob(bool forceUpdate)
         {
