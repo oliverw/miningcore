@@ -51,7 +51,7 @@ Peercoin | Yes | No |
 MiningCore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
 
 - Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
-- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 3</code> command line option
+- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
 
 ### Runtime Requirements
 
