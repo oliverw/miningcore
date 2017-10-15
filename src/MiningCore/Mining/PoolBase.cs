@@ -110,11 +110,9 @@ namespace MiningCore.Mining
             if (context.VarDiff != null)
             {
                 // get or create manager
-                VarDiffManager varDiffManager;
-
                 lock (varDiffManagers)
                 {
-                    if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
+                    if (!varDiffManagers.TryGetValue(poolEndpoint, out var varDiffManager))
                     {
                         varDiffManager = new VarDiffManager(poolEndpoint.VarDiff);
                         varDiffManagers[poolEndpoint] = varDiffManager;
@@ -133,6 +131,13 @@ namespace MiningCore.Mining
                         {
                             try
                             {
+                                VarDiffManager varDiffManager;
+
+                                lock (varDiffManagers)
+                                {
+                                    varDiffManager = varDiffManagers[poolEndpoint];
+                                }
+
                                 var newDiff = varDiffManager.Update(context, timestamps, client.ConnectionId, logger);
 
                                 if (newDiff.HasValue)

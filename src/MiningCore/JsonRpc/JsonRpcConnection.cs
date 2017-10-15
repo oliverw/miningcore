@@ -20,7 +20,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reactive;
@@ -53,7 +52,7 @@ namespace MiningCore.JsonRpc
             this.serializerSettings = serializerSettings;
         }
 
-        private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly JsonSerializerSettings serializerSettings;
         private const int MaxRequestLength = 8192;
@@ -140,13 +139,8 @@ namespace MiningCore.JsonRpc
             });
 
             Received = incomingLines
-                .Select(line => new
-                {
-                    Json = line,
-                    Request = JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings)
-                })
-                .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x.Json}"))
-                .Select(x => x.Request)
+                .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x}"))
+                .Select(line => JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings))
                 .Timestamp()
                 .Publish()
                 .RefCount();

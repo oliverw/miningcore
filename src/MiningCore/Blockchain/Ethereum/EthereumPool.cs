@@ -297,7 +297,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.Item2.StratumDifficulty * EthereumConstants.Pow2x32) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.Item2.StratumDifficulty) / interval);
             return (ulong)result;
         }
 

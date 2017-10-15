@@ -77,7 +77,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon?.Send(response);
+                rpcCon.Send(response);
             }
         }
 
@@ -94,7 +94,7 @@ namespace MiningCore.Stratum
 
             lock (rpcCon)
             {
-                rpcCon?.Send(request);
+                rpcCon.Send(request);
             }
         }
 
