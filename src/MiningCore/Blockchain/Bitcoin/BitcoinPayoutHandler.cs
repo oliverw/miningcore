@@ -172,7 +172,22 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
-            // reward-payouts are handled through coinbase-tx for bitcoin and family
+            var blockRewardRemaining = block.Reward;
+
+            // Distribute funds to configured reward recipients
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Type == RewardRecipientType.Dev && x.Percentage > 0))
+            {
+                var amount = block.Reward * (recipient.Percentage / 100.0m);
+                var address = recipient.Address;
+
+                blockRewardRemaining -= amount;
+
+                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+            }
+
+            // update block-reward
+            block.Reward = blockRewardRemaining;
             return Task.FromResult(false);
         }
 
