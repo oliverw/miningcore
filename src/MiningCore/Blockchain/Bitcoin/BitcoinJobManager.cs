@@ -588,7 +588,6 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-
         protected async Task<bool> UpdateJob(bool forceUpdate)
         {
             try
