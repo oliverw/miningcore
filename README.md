@@ -28,23 +28,23 @@ This is going to change in the future.
 
 ### Coins
 
-Coin | Implemented | Tested | Planned
-:--- | :---: | :---: | :---:
-Bitcoin | Yes | Yes |
-Litecoin | Yes | Yes |
-Monero | Yes | Yes |
-Ethereum | Yes | Yes |
-Ethereum Classic | Yes | Yes |
-Expanse | Yes | Yes |
-DASH | Yes | Yes |
-Bitcoin Cash | Yes | Yes |
-Groestlcoin | Yes | Yes |
-Zcash | No |  | Nov 2017
-Dogecoin | Yes | No |
-DigiByte | Yes | No |
-Namecoin | Yes | No |
-Viacoin | Yes | No |
-Peercoin | Yes | No |
+Coin | Implemented | Tested | Planned | Notes
+:--- | :---: | :---: | :---: | :---:
+Bitcoin | Yes | Yes | |
+Litecoin | Yes | Yes | |
+Monero | Yes | Yes | |
+Ethereum | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
+Ethereum Classic | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
+Expanse | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
+DASH | Yes | Yes | |
+Bitcoin Cash | Yes | Yes | |
+Groestlcoin | Yes | Yes | |
+Zcash | No |  | Nov 2017 |
+Dogecoin | Yes | No | |
+DigiByte | Yes | No | |
+Namecoin | Yes | No | |
+Viacoin | Yes | No | |
+Peercoin | Yes | No | |
 
 #### Ethereum
 
