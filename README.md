@@ -33,9 +33,9 @@ Coin | Implemented | Tested | Planned | Notes
 Bitcoin | Yes | Yes | |
 Litecoin | Yes | Yes | |
 Monero | Yes | Yes | |
-Ethereum | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
-Ethereum Classic | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
-Expanse | Yes | Yes | | Requires [Parity Daemon](https://github.com/paritytech/parity/releases) 
+Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) 
+Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) 
+Expanse | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) 
 DASH | Yes | Yes | |
 Bitcoin Cash | Yes | Yes | |
 Groestlcoin | Yes | Yes | |
