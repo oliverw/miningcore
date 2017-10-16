@@ -224,8 +224,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich blocks
-            string baseUrl;
-            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl);
+            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
 
             foreach (var block in blocks)
             {
@@ -258,8 +257,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich blocks
-            string baseUrl;
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl);
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
 
             foreach (var payment in payments)
             {
@@ -298,8 +296,7 @@ namespace MiningCore.Api
                     stats.LastPayment = statsResult.LastPayment.Created;
 
                     // Compute info link
-                    string baseUrl;
-                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out baseUrl))
+                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
             }

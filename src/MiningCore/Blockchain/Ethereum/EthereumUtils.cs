@@ -8,8 +8,7 @@ namespace MiningCore.Blockchain.Ethereum
             out EthereumNetworkType networkType, out ParityChainType chainType)
         {
             // convert network
-            int netWorkTypeInt = 0;
-            if (int.TryParse(netVersionResponse, out netWorkTypeInt))
+            if (int.TryParse(netVersionResponse, out var netWorkTypeInt))
             {
                 networkType = (EthereumNetworkType)netWorkTypeInt;
 

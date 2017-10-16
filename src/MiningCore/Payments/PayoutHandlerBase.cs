@@ -155,8 +155,7 @@ namespace MiningCore.Payments
                 // prepare tx link
                 var txInfo = string.Join(", ", txHashes);
 
-                string baseUrl;
-                if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out baseUrl))
+                if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out var baseUrl))
                     txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
                 notificationService.NotifyAdmin(

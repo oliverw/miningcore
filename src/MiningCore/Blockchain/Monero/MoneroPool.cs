@@ -144,8 +144,7 @@ namespace MiningCore.Blockchain.Monero
         {
             var job = new MoneroWorkerJob(NextJobId(), client.Context.Difficulty);
 
-            string blob, target;
-            manager.PrepareWorkerJob(job, out blob, out target);
+            manager.PrepareWorkerJob(job, out var blob, out var target);
 
             // should never happen
             if (string.IsNullOrEmpty(blob) || string.IsNullOrEmpty(blob))

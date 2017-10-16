@@ -10,7 +10,7 @@ namespace MiningCore.Blockchain.Ethereum
     public class EthereumExtraNonceProvider
     {
         private int counter;
-        private const int NonceMax = 0x1000000; // 3 Byte = 24 Bit
+        private const int NonceMax = 0x10000; // 2 Byte = 16 Bit
 
         public string Next()
         {
@@ -18,7 +18,7 @@ namespace MiningCore.Blockchain.Ethereum
             Interlocked.CompareExchange(ref counter, 0, NonceMax);
 
             // encode to hex
-            var result = BitConverter.GetBytes(counter).Take(3).ToReverseArray().ToHexString();
+            var result = BitConverter.GetBytes(counter).Take(2).ToReverseArray().ToHexString();
             return result;
         }
     }

@@ -305,8 +305,7 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(requestParams, nameof(requestParams));
 
-            var queryParams = requestParams as object[];
-            if (queryParams == null)
+            if (!(requestParams is object[] queryParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
             // extract params
@@ -331,8 +330,7 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
-            var submitParams = submission as object[];
-            if (submitParams == null)
+            if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
             // extract params

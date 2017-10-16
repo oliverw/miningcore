@@ -26,9 +26,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void RegisterNonce(StratumClient<EthereumWorkerContext> worker, string nonce)
         {
-            HashSet<string> nonces;
-
-            if (!workerNonces.TryGetValue(worker, out nonces))
+            if (!workerNonces.TryGetValue(worker, out var nonces))
             {
                 nonces = new HashSet<string>(new[] { nonce });
                 workerNonces[worker] = nonces;
@@ -59,9 +57,7 @@ namespace MiningCore.Blockchain.Ethereum
             var dag = await ethash.GetDagAsync(BlockTemplate.Height);
 
             // compute
-            byte[] mixDigest;
-            byte[] resultBytes;
-            if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out mixDigest, out resultBytes))
+            if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // Parse the result instead of using the byte array constructor to ensure it ends up as positive integer
@@ -75,8 +71,7 @@ namespace MiningCore.Blockchain.Ethereum
             if (!isBlockCandidate && ratio < 0.99)
             {
                 // allow grace period where the previous difficulty from before a vardiff update is also acceptable
-                if (worker.Context.VarDiff != null && worker.Context.VarDiff.LastUpdate.HasValue &&
-                    worker.Context.PreviousDifficulty.HasValue &&
+                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue && 
                     DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(15))
                 {
                     ratio = shareDiff / worker.Context.PreviousDifficulty.Value;

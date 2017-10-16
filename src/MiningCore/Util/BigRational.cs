@@ -227,11 +227,7 @@ namespace MiningCore.Util
             if (double.IsInfinity(value))
                 throw new ArgumentException("Argument is infinity", nameof(value));
 
-            bool isFinite;
-            int sign;
-            int exponent;
-            ulong significand;
-            SplitDoubleIntoParts(value, out sign, out exponent, out significand, out isFinite);
+            SplitDoubleIntoParts(value, out var sign, out var exponent, out var significand, out _);
 
             if (significand == 0)
             {

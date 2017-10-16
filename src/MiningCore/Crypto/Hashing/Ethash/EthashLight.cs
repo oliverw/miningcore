@@ -49,9 +49,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             var cache = await GetCacheAsync(block.Height);
 
             // Recompute the hash using the cache
-            byte[] mixDigest;
-            byte[] resultBytes;
-            if (!cache.Compute(block.HashNoNonce, block.Nonce, out mixDigest, out resultBytes))
+            if (!cache.Compute(block.HashNoNonce, block.Nonce, out var mixDigest, out var resultBytes))
                 return false;
 
             // avoid mixdigest malleability as it's not included in a block's "hashNononce"
