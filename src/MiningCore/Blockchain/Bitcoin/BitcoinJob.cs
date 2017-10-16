@@ -279,6 +279,25 @@ namespace MiningCore.Blockchain.Bitcoin
             return true;
         }
 
+        protected virtual byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
+        {
+            // build merkle-root
+            var merkleRoot = mt.WithFirst(coinbaseHash)
+                .ToArray();
+
+            var blockHeader = new BlockHeader
+            {
+                Version = (int)BlockTemplate.Version,
+                Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
+                HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
+                HashMerkleRoot = new uint256(merkleRoot),
+                BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
+                Nonce = nonce
+            };
+
+            return blockHeader.ToBytes();
+        }
+
         protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, uint nTime, uint nonce)
         {
             var extraNonce1 = worker.Context.ExtraNonce1;
@@ -287,23 +306,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
             var coinbaseHash = coinbaseHasher.Digest(coinbase);
 
-            // build merkle-root
-            var merkleRoot = mt.WithFirst(coinbaseHash)
-                .ToArray();
-
-            // build block-header
-            var blockHeader = new BlockHeader
-            {
-                Version = (int) BlockTemplate.Version,
-                Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
-                HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
-                HashMerkleRoot = new uint256(merkleRoot),
-                BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
-                Nonce = nonce
-            };
-
             // hash block-header
-            var headerBytes = blockHeader.ToBytes();
+            var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
             var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
             var headerValue = new BigInteger(headerHash);
 
@@ -454,7 +458,7 @@ namespace MiningCore.Blockchain.Bitcoin
             BuildCoinbase();
         }
 
-        public object GetJobParams(bool isNew)
+        public virtual object GetJobParams(bool isNew)
         {
             return new object[]
             {
