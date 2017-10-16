@@ -35,6 +35,7 @@ using MiningCore.JsonRpc;
 using MiningCore.Util;
 using NetUV.Core.Handles;
 using NetUV.Core.Native;
+using Newtonsoft.Json;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -198,11 +199,20 @@ namespace MiningCore.Stratum
 
         protected virtual void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
-            var opEx = ex as OperationException;
+            switch (ex)
+            {
+                case OperationException opEx:
+                    // log everything but ECONNRESET which just indicates the client disconnecting
+                    if (opEx.ErrorCode != ErrorCode.ECONNRESET)
+                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+                    break;
 
-            // log everything but ECONNRESET which just indicates the client disconnecting
-            if (opEx?.ErrorCode != ErrorCode.ECONNRESET)
-                logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+                case JsonReaderException jsonEx:
+                    // ban clients sending junk
+                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                    break;
+            }
 
             DisconnectClient(client);
         }
