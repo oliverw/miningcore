@@ -392,7 +392,6 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
-            share.StratumDifficulty = worker.Context.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
 

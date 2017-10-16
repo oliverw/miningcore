@@ -254,7 +254,6 @@ namespace MiningCore.Blockchain.Monero
             share.PayoutInfo = worker.Context.PaymentId;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
-            share.StratumDifficulty = worker.Context.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
             share.Created = DateTime.UtcNow;
 

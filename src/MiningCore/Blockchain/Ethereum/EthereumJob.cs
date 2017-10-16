@@ -65,19 +65,22 @@ namespace MiningCore.Blockchain.Ethereum
 
             // test if share meets at least workers current difficulty
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
-            var ratio = shareDiff / worker.Context.Difficulty;
+            var stratumDifficulty = worker.Context.Difficulty;
+            var ratio = shareDiff / stratumDifficulty;
             var isBlockCandidate = resultValue.CompareTo(BlockTemplate.Target) <= 0;
 
             if (!isBlockCandidate && ratio < 0.99)
             {
-                // allow grace period where the previous difficulty from before a vardiff update is also acceptable
-                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue && 
-                    DateTime.UtcNow - worker.Context.VarDiff.LastUpdate.Value < TimeSpan.FromSeconds(15))
+                // check if share matched the previous difficulty from before a vardiff retarget
+                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
                 {
                     ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
 
                     if (ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+
+                    // use previous difficulty
+                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
                 }
 
                 else
@@ -96,6 +99,7 @@ namespace MiningCore.Blockchain.Ethereum
                 HeaderHash = BlockTemplate.Header,
                 MixHash = mixDigest.ToHexString(true),
                 IsBlockCandidate = isBlockCandidate,
+                StratumDifficulty = stratumDifficulty * EthereumConstants.Pow2x32,
             };
 
             if (share.IsBlockCandidate)
