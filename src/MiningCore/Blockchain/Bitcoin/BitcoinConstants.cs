@@ -82,7 +82,8 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.ETH, "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1"},
             {CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2"},
             {CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp"},
-            {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"}
+            {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"},
+            //{CoinType.ZEC, ""}
         };
     }
 

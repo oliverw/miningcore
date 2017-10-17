@@ -102,9 +102,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // if there haven't been any new jobs for a while, force an update
             var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
                 .TakeUntil(newJobs) // cancel timeout if an actual new job has been detected
-                .Do(_ => logger.Debug(
-                    () => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - " +
-                          $"updating transactions & rebroadcasting work"))
+                .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
                 .Select(x => Observable.FromAsync(() => UpdateJob(true)))
                 .Concat()
                 .Repeat();

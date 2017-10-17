@@ -1,6 +1,6 @@
 ﻿{
     "logging": {
-        "level": "trace",
+        "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",
@@ -42,18 +42,18 @@
         "shareRecoveryFile": "recovered-shares.txt"
     },
     "pools": [
-        {
-        "id": "eth1",
+    {
+        "id": "zec1",
         "enabled": true,
         "coin": {
-            "type": "ETH"
+            "type": "ZEC"
         },
-        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+        "address": "tmPADTRiqd65B1LLfUv2FBbgVsHLe89AAWE",
         "rewardRecipients": [
             {
                 "type": "op",
-                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
-                "percentage": 0
+                "address": "tmPADTRiqd65B1LLfUv2FBbgVsHLe89AAWE",
+                "percentage": 1.5
             }
         ],
         "blockRefreshInterval": 1000,
@@ -66,41 +66,97 @@
             "checkThreshold": 50
         },
         "ports": {
-            "3072": {
+            "3092": {
                 "difficulty": 0.1,
                 "varDiff": {
-                    "minDiff": 0.05,
+                    "minDiff": 0.01,
                     "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
-                    "variancePercent": 30
+                    "variancePercent": 30,
+                    "maxDelta": 1
                 }
             },
-            "3073": {
-                "difficulty": 5000
+            "3093": {
+                "difficulty": 1
             }
         },
         "daemons": [
             {
                 "host": "127.0.0.1",
-                "port": 8545,
+                "port": 14001,
                 "user": "user",
-                "password": "password"
+                "password": "pass"
             }
         ],
         "paymentProcessing": {
             "enabled": true,
             "minimumPayment": 0.01,
-            "minimumPaymentToPaymentId": 5.0,
             "payoutScheme": "PPLNS",
             "payoutSchemeConfig": {
                 "factor": 2.0
-            },
-            "coinbasePassword": "",
-            "keepUncles": false,
-            "keepTransactionFees": false
+            }
         }
     },
+    //     {
+    //     "id": "eth1",
+    //     "enabled": true,
+    //     "coin": {
+    //         "type": "ETH"
+    //     },
+    //     "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+    //     "rewardRecipients": [
+    //         {
+    //             "type": "op",
+    //             "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+    //             "percentage": 0
+    //         }
+    //     ],
+    //     "blockRefreshInterval": 1000,
+    //     "jobRebroadcastTimeout": 55,
+    //     "clientConnectionTimeout": 600,
+    //     "banning": {
+    //         "enabled": true,
+    //         "time": 600,
+    //         "invalidPercent": 50,
+    //         "checkThreshold": 50
+    //     },
+    //     "ports": {
+    //         "3072": {
+    //             "difficulty": 0.1,
+    //             "varDiff": {
+    //                 "minDiff": 0.05,
+    //                 "maxDiff": null,
+    //                 "targetTime": 15,
+    //                 "retargetTime": 90,
+    //                 "variancePercent": 30
+    //             }
+    //         },
+    //         "3073": {
+    //             "difficulty": 5000
+    //         }
+    //     },
+    //     "daemons": [
+    //         {
+    //             "host": "127.0.0.1",
+    //             "port": 8545,
+    //             "user": "user",
+    //             "password": "password"
+    //         }
+    //     ],
+    //     "paymentProcessing": {
+    //         "enabled": true,
+    //         "minimumPayment": 0.01,
+    //         "minimumPaymentToPaymentId": 5.0,
+    //         "payoutScheme": "PPLNS",
+    //         "payoutSchemeConfig": {
+    //             "factor": 2.0
+    //         },
+    //         "coinbasePassword": "",
+    //         "keepUncles": false,
+    //         "keepTransactionFees": false
+    //     }
+    // },
     // {
     //     "id": "xmr1",
     //     "enabled": true,

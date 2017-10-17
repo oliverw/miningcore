@@ -33,6 +33,15 @@ namespace MiningCore.Blockchain.ZCash
             return base.CreateOutputTransaction();
         }
 
+        #region Overrides of BitcoinJob<ZCashBlockTemplate>
+
+        protected override byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
+        {
+            return base.SerializeHeader(coinbaseHash, nTime, nonce);
+        }
+
+        #endregion
+
         #endregion
     }
 }
