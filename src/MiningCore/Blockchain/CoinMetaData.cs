@@ -19,6 +19,7 @@ namespace MiningCore.Blockchain
             { CoinType.DGB,  "https://digiexplorer.info/block/{0}" },
             { CoinType.NMC,  "https://explorer.namecoin.info/b/{0}" },
             { CoinType.GRS,  "https://bchain.info/GRS/block/{0}" },
+            { CoinType.MONA,  "https://bchain.info/MONA/block/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -35,6 +36,7 @@ namespace MiningCore.Blockchain
             { CoinType.DGB,  "https://digiexplorer.info/tx/{0}" },
             { CoinType.NMC,  "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS,  "https://bchain.info/GRS/tx/{0}" },
+            { CoinType.MONA,  "https://bchain.info/MONA/tx/{0}" },
         };
     }
 }

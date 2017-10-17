@@ -245,6 +245,14 @@ namespace MiningCore.Blockchain.Bitcoin
                     ShareMultiplier = Math.Pow(2, 8);
                     break;
 
+                // Monacoin
+                case CoinType.MONA:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new Lyra2Rev2();
+                    blockHasher = new DigestReverser(headerHasher);
+                    ShareMultiplier = Math.Pow(2, 16);
+                    break;
+
                 // X11
                 case CoinType.DASH:
                     coinbaseHasher = sha256d;

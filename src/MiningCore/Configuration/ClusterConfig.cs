@@ -44,6 +44,7 @@ namespace MiningCore.Configuration
         ETC, // Ethereum Classic
         EXP, // Expanse
         DASH, // Dash
+        MONA,  // Monacoin
     }
 
     public class CoinConfig
