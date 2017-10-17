@@ -45,5 +45,6 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
         public ulong MinTime { get; set; }
         public ulong SigOpLimit { get; set; }
         public ulong SizeLimit { get; set; }
+        public string[] Mutable { get; set; }
     }
 }
