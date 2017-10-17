@@ -249,8 +249,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 case CoinType.MONA:
                     coinbaseHasher = sha256d;
                     headerHasher = new Lyra2Rev2();
-                    blockHasher = new DigestReverser(headerHasher);
-                    ShareMultiplier = Math.Pow(2, 16);
+                    blockHasher = sha256dReverse;
+                    ShareMultiplier = Math.Pow(2, 8);
                     break;
 
                 // X11
@@ -473,7 +473,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
                     BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
-                var isSynched = responses.All(x => x.Error == null || x.Error.Code != -10);
+                var isSynched = responses.All(x => x.Error == null);
 
                 if (isSynched)
                 {
