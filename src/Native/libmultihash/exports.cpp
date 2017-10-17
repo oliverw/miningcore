@@ -38,6 +38,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "dcrypt.h"
 #include "jh.h"
 #include "c11.h"
+#include "Lyra2RE.h"
+#include "Lyra2.h"
+#include "Lyra2REV2.h"
+#include "Lyra2Z.h"
 #include "equi/equi.h"
 #include "libethash/sha3.h"
 #include "libethash/internal.h"
@@ -161,6 +165,21 @@ extern "C" MODULE_API void jh_export(const char* input, char* output, uint32_t i
 extern "C" MODULE_API void c11_export(const char* input, char* output)
 {
 	c11_hash(input, output);
+}
+
+extern "C" MODULE_API void lyra2re_export(const char* input, char* output)
+{
+	lyra2re_hash(input, output);
+}
+
+extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
+{
+	lyra2rev2_hash(input, output, 8192);
+}
+
+extern "C" MODULE_API void lyra2z_export(const char* input, char* output)
+{
+	lyra2z_hash(input, output);
 }
 
 extern "C" MODULE_API bool equihash_verify_export(const char* header, const char* solution)
