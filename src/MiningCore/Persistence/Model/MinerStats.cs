@@ -24,8 +24,9 @@ namespace MiningCore.Persistence.Model
 {
     public class MinerStats
     {
-        public ulong PendingShares { get; set; }
-        public decimal PendingBalance { get; set; }
+        public ulong Shares { get; set; }
+        public decimal Balance { get; set; }
+        public decimal EstimatedEarnings { get; set; }
         public decimal TotalPaid { get; set; }
         public Payment LastPayment { get; set; }
         public MinerHashrateSample[] Hashrate { get; set; }

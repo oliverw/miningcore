@@ -38,7 +38,7 @@ namespace MiningCore.Payments
 
     public interface IPayoutScheme
     {
-        Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block);
+        Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block);
+        Task EstimateEarningsAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block lastConfirmedBlock);
     }
 }

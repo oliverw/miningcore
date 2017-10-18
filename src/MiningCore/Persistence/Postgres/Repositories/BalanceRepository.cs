@@ -38,11 +38,11 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         private readonly IMapper mapper;
 
-        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount)
+        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount)
         {
-            var query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
+            var query = "SELECT * FROM balances WHERE poolid = @poolId AND address = @address";
 
-            var balance = con.Query<Entities.Balance>(query, new {poolId, coin = coin.ToString(), address}, tx)
+            var balance = con.Query<Entities.Balance>(query, new {poolId, address}, tx)
                 .FirstOrDefault();
 
             var now = DateTime.UtcNow;
@@ -52,15 +52,14 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 balance = new Entities.Balance
                 {
                     PoolId = poolId,
-                    Coin = coin.ToString(),
                     Created = now,
                     Address = address,
                     Amount = amount,
                     Updated = now
                 };
 
-                query = "INSERT INTO balances(poolid, coin, address, amount, created, updated) " +
-                        "VALUES(@poolid, @coin, @address, @amount, @created, @updated)";
+                query = "INSERT INTO balances(poolid, address, amount, created, updated) " +
+                        "VALUES(@poolid, @address, @amount, @created, @updated)";
 
                 con.Execute(query, balance, tx);
             }
@@ -68,13 +67,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
             else
             {
                 query = "UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc' " +
-                        "WHERE poolid = @poolId AND coin = @coin AND address = @address";
+                        "WHERE poolid = @poolId AND address = @address";
 
                 con.Execute(query, new
                 {
                     poolId,
                     address,
-                    coin = coin.ToString().ToUpper(),
                     amount
                 }, tx);
             }

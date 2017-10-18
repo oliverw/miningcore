@@ -74,7 +74,7 @@ namespace MiningCore.Payments
         private Thread thread;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private async Task ProcessPoolsAsync()
+        private async Task ProcessPayoutsAsync()
         {
             foreach (var pool in clusterConfig.Pools)
             {
@@ -105,7 +105,7 @@ namespace MiningCore.Payments
 
         private async Task UpdatePoolBalancesAsync(PoolConfig pool, IPayoutHandler handler, IPayoutScheme scheme)
         {
-            // get pending blockRepo for pool
+            // get pending blocks for pool
             var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
 
             // classify
@@ -122,10 +122,10 @@ namespace MiningCore.Payments
                         if (block.Status == BlockStatus.Confirmed)
                         {
                             // blockchains that do not support block-reward payments via coinbase Tx
-                            // must generate balance records for all reward recipients instead
+                            // must instead generate balance records for all reward recipients
                             await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-                            // update share submitter balances through configured payout scheme 
+                            // update miner balances using configured payout scheme 
                             await scheme.UpdateBalancesAsync(con, tx, pool, handler, block);
 
                             // finally update block status
@@ -191,6 +191,56 @@ namespace MiningCore.Payments
             }
         }
 
+        private async Task UpdatePoolEstimatedEarningsAsync(PoolConfig pool, IPayoutHandler handler, IPayoutScheme scheme)
+        {
+            // get last confirmed block for pool
+            var lastConfirmedBlock = cf.Run(con => blockRepo.PageBlocks(con, pool.Id, new []{ BlockStatus.Confirmed }, 0, 1)).FirstOrDefault();
+
+            if (lastConfirmedBlock != null)
+            {
+                logger.Info(() => $"Processing estimated earnings for pool {pool.Id}, based on block {lastConfirmedBlock.BlockHeight}");
+
+                // adjust block date
+                lastConfirmedBlock.Created = DateTime.UtcNow;
+
+                await cf.RunTxAsync(async (con, tx) =>
+                {
+                    await scheme.EstimateEarningsAsync(con, tx, pool, handler, lastConfirmedBlock);
+                });
+            }
+
+            else
+                logger.Info(() => $"No confirmed block for {pool.Id}");
+        }
+
+        private async Task ProcessEstimatedEarningsAsync()
+        {
+            foreach (var pool in clusterConfig.Pools)
+            {
+                logger.Info(() => $"Processing estimated earnings for pool {pool.Id}");
+
+                try
+                {
+                    // resolve payout handler
+                    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinMetadataAttribute>>>>()
+                        .First(x => x.Value.Metadata.SupportedCoins.Contains(pool.Coin.Type)).Value;
+
+                    var handler = handlerImpl.Value;
+                    handler.Configure(clusterConfig, pool);
+
+                    // resolve payout scheme
+                    var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
+
+                    await UpdatePoolEstimatedEarningsAsync(pool, handler, scheme);
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
+                }
+            }
+        }
+
         #region API-Surface
 
         public void Configure(ClusterConfig clusterConfig)
@@ -211,7 +261,7 @@ namespace MiningCore.Payments
                 {
                     try
                     {
-                        await ProcessPoolsAsync();
+                        await ProcessPayoutsAsync();
                     }
 
                     catch (Exception ex)

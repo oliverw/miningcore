@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data;
 using Dapper;
+using MiningCore.Configuration;
 using MiningCore.Persistence.Model;
 
 namespace MiningCore.Persistence.Repositories
@@ -32,5 +33,6 @@ namespace MiningCore.Persistence.Repositories
         PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end);
         MinerStats GetMinerStats(IDbConnection con, string poolId, string miner);
         void RecordMinerHashrateSample(IDbConnection con, IDbTransaction tx, MinerHashrateSample sample);
+        void SetEstimatedEarnings(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount);
     }
 }

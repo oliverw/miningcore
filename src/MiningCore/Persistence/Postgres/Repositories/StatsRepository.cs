@@ -23,6 +23,7 @@ using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
+using MiningCore.Configuration;
 using MiningCore.Persistence.Common.Repositories;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -78,6 +79,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             var query = "SELECT (SELECT COUNT(*) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
                         "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                        "(SELECT amount FROM estimated_earnings WHERE poolid = @poolId AND address = @miner) AS estimated_earnings, " +
                         "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
 
             var result = con.QuerySingleOrDefault<MinerStats>(query, new {poolId, miner});
@@ -93,5 +95,46 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             return result;
         }
+
+        public void SetEstimatedEarnings(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount)
+        {
+            var query = "SELECT * FROM estimated_earnings WHERE poolid = @poolId AND address = @address";
+
+            var balance = con.Query<Entities.Balance>(query, new { poolId, address }, tx)
+                .FirstOrDefault();
+
+            var now = DateTime.UtcNow;
+
+            if (balance == null)
+            {
+                balance = new Entities.Balance
+                {
+                    PoolId = poolId,
+                    Created = now,
+                    Address = address,
+                    Amount = amount,
+                    Updated = now
+                };
+
+                query = "INSERT INTO estimated_earnings(poolid, address, amount, created, updated) " +
+                        "VALUES(@poolid, @address, @amount, @created, @updated)";
+
+                con.Execute(query, balance, tx);
+            }
+
+            else
+            {
+                query = "UPDATE estimated_earnings SET amount = @amount, updated = now() at time zone 'utc' " +
+                        "WHERE poolid = @poolId AND address = @address";
+
+                con.Execute(query, new
+                {
+                    poolId,
+                    address,
+                    amount
+                }, tx);
+            }
+        }
+
     }
 }

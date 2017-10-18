@@ -127,7 +127,7 @@ namespace MiningCore.Payments
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
 
-                            balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
+                            balanceRepo.AddAmount(con, tx, poolConfig.Id, balance.Address, -balance.Amount);
                         }
                     });
                 });
