@@ -239,7 +239,7 @@ namespace MiningCore.Blockchain.Ethereum
                 blockRewardRemaining -= amount;
 
                 logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, address, amount);
+                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
 
             // Deduct static reserve for tx fees

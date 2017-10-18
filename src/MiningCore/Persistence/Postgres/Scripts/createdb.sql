@@ -36,23 +36,13 @@ CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status)
 CREATE TABLE balances
 (
 	poolid TEXT NOT NULL,
+	coin TEXT NOT NULL,
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL,
 	updated TIMESTAMP NOT NULL,
 
-	primary key(poolid, address)
-);
-
-CREATE TABLE estimated_earnings
-(
-	poolid TEXT NOT NULL,
-	address TEXT NOT NULL,
-	amount decimal(28,12) NOT NULL DEFAULT 0,
-	created TIMESTAMP NOT NULL,
-	updated TIMESTAMP NOT NULL,
-
-	primary key(poolid, address)
+	primary key(poolid, address, coin)
 );
 
 CREATE TABLE payments

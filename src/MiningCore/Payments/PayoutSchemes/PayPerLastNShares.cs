@@ -41,24 +41,20 @@ namespace MiningCore.Payments.PayoutSchemes
         public PayPerLastNShares(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
-            IBalanceRepository balanceRepo,
-            IStatsRepository statsRepo)
+            IBalanceRepository balanceRepo)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
             this.cf = cf;
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
-            this.statsRepo = statsRepo;
         }
 
         private readonly IBalanceRepository balanceRepo;
-        private readonly IStatsRepository statsRepo;
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
@@ -90,7 +86,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 var amount = rewards[address];
 
                 logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, address, amount);
+                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
 
             // delete obsolete shares
@@ -111,36 +107,6 @@ namespace MiningCore.Payments.PayoutSchemes
 
             if(totalRewards > 0)
                 logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / block.Reward * 100:0.00}% of block reward)");
-
-            return Task.FromResult(true);
-        }
-
-        public Task EstimateEarningsAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block lastConfirmedBlock)
-        {
-            var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
-
-            // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
-            var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
-
-            // calculate rewards 
-            var shares = new Dictionary<string, ulong>();
-            var rewards = new Dictionary<string, decimal>();
-            CalculateRewards(poolConfig, window, lastConfirmedBlock, shares, rewards);
-
-            // update estimated earnings
-            foreach (var address in rewards.Keys)
-            {
-                var amount = rewards[address];
-
-                logger.Info(() => $"Estimated earnings of {payoutHandler.FormatAmount(amount)} for {address} for {shares[address]} shares");
-                statsRepo.SetEstimatedEarnings(con, tx, poolConfig.Id, address, amount);
-            }
-            // diagnostics
-            var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
-            var totalRewards = rewards.Values.ToList().Sum(x => x);
-
-            if (totalRewards > 0)
-                logger.Info(() => $"Total estimated earnings of {payoutHandler.FormatAmount(totalRewards)} for {totalShareCount} shares ");
 
             return Task.FromResult(true);
         }
