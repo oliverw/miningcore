@@ -250,7 +250,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     coinbaseHasher = sha256d;
                     headerHasher = new Lyra2Rev2();
                     blockHasher = sha256dReverse;
-                    ShareMultiplier = Math.Pow(2, 8);
+                    ShareMultiplier = Math.Pow(2, 16);
                     break;
 
                 // X11
