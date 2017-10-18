@@ -196,6 +196,38 @@ namespace MiningCore.Blockchain.Bitcoin
                     ShareMultiplier = Math.Pow(2, 16);
                     break;
 
+                // Groestl
+                case CoinType.GRS:
+                    coinbaseHasher = sha256s;
+                    headerHasher = new Groestl();
+                    blockHasher = new DigestReverser(headerHasher);
+                    ShareMultiplier = Math.Pow(2, 8);
+                    break;
+
+                // Lyra2Rev2
+                case CoinType.MONA:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new Lyra2Rev2();
+                    blockHasher = sha256dReverse;
+                    ShareMultiplier = Math.Pow(2, 8);
+                    break;
+
+                // X11
+                case CoinType.DASH:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new X11();
+                    blockHasher = new DigestReverser(headerHasher);
+                    ShareMultiplier = 1;
+                    break;
+
+                // Equihash
+                case CoinType.ZEC:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new DummyHasher();  // N/A
+                    blockHasher = sha256dReverse;
+                    ShareMultiplier = 1;
+                    break;
+
                 case CoinType.DGB:
                     switch (poolConfig.Coin.Algorithm)
                     {
@@ -235,38 +267,6 @@ namespace MiningCore.Blockchain.Bitcoin
                             ShareMultiplier = Math.Pow(2, 16);
                             break;
                     }
-                    break;
-
-                // Groestl
-                case CoinType.GRS:
-                    coinbaseHasher = sha256s;
-                    headerHasher = new Groestl();
-                    blockHasher = new DigestReverser(headerHasher);
-                    ShareMultiplier = Math.Pow(2, 8);
-                    break;
-
-                // Monacoin
-                case CoinType.MONA:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new Lyra2Rev2();
-                    blockHasher = sha256dReverse;
-                    ShareMultiplier = Math.Pow(2, 16);
-                    break;
-
-                // X11
-                case CoinType.DASH:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new X11();
-                    blockHasher = new DigestReverser(headerHasher);
-                    ShareMultiplier = 1;
-                    break;
-
-                // Equihash
-                case CoinType.ZEC:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new DummyHasher();  // N/A
-                    blockHasher = sha256dReverse;
-                    ShareMultiplier = 1;
                     break;
 
                 default:

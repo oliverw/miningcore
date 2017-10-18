@@ -68,7 +68,7 @@ int LYRA2(void *K, uint64_t kLen, const void *pwd, uint64_t pwdlen, const void *
     if (wholeMatrix == NULL) {
       return -1;
     }
-    memset(wholeMatrix, 0, i);
+	memset(wholeMatrix, 0, i);
 
     //Allocates pointers to each row of the matrix
     uint64_t **memMatrix = malloc(nRows * sizeof (uint64_t*));
@@ -167,26 +167,26 @@ int LYRA2(void *K, uint64_t kLen, const void *pwd, uint64_t pwdlen, const void *
     //============================ Wandering Phase =============================//
     row = 0; //Resets the visitation to the first row of the memory matrix
     for (tau = 1; tau <= timeCost; tau++) {
-        //Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
-        step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
-        do {
-        //Selects a pseudorandom index row*
-        //------------------------------------------------------------------------------------------
-        //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-        rowa = ((uint64_t) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-        //------------------------------------------------------------------------------------------
+    	//Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
+    	step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
+    	do {
+  	    //Selects a pseudorandom index row*
+  	    //------------------------------------------------------------------------------------------
+  	    //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    rowa = ((uint64_t) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
 
-        //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-        reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
+  	    //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
+  	    reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
 
-        //update prev: it now points to the last row ever computed
-        prev = row;
+  	    //update prev: it now points to the last row ever computed
+  	    prev = row;
 
-        //updates row: goes to the next row to be computed
-        //------------------------------------------------------------------------------------------
-        //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-        row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-        //------------------------------------------------------------------------------------------
+  	    //updates row: goes to the next row to be computed
+  	    //------------------------------------------------------------------------------------------
+  	    //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
 
       } while (row != 0);
     }
@@ -237,7 +237,7 @@ int LYRA2_old(void *K, uint64_t kLen, const void *pwd, uint64_t pwdlen, const vo
     if (wholeMatrix == NULL) {
       return -1;
     }
-    memset(wholeMatrix, 0, i);
+	memset(wholeMatrix, 0, i);
 
     //Allocates pointers to each row of the matrix
     uint64_t **memMatrix = malloc(nRows * sizeof (uint64_t*));
@@ -336,26 +336,26 @@ int LYRA2_old(void *K, uint64_t kLen, const void *pwd, uint64_t pwdlen, const vo
     //============================ Wandering Phase =============================//
     row = 0; //Resets the visitation to the first row of the memory matrix
     for (tau = 1; tau <= timeCost; tau++) {
-        //Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
-        step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
-        do {
-        //Selects a pseudorandom index row*
-        //------------------------------------------------------------------------------------------
-        //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-        rowa = ((uint64_t) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-        //------------------------------------------------------------------------------------------
+    	//Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
+    	step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
+    	do {
+  	    //Selects a pseudorandom index row*
+  	    //------------------------------------------------------------------------------------------
+  	    //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    rowa = ((uint64_t) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
 
-        //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-        reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
+  	    //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
+  	    reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
 
-        //update prev: it now points to the last row ever computed
-        prev = row;
+  	    //update prev: it now points to the last row ever computed
+  	    prev = row;
 
-        //updates row: goes to the next row to be computed
-        //------------------------------------------------------------------------------------------
-        //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-        row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-        //------------------------------------------------------------------------------------------
+  	    //updates row: goes to the next row to be computed
+  	    //------------------------------------------------------------------------------------------
+  	    //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
 
       } while (row != 0);
     }

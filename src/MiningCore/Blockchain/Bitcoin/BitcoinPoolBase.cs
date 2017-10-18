@@ -336,7 +336,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
             var sum = shares.Sum(share => Math.Max(1.0, share.Item2.StratumDifficulty));
-            var multiplier = manager.ShareMultiplier > 1 ? manager.ShareMultiplier : BitcoinConstants.Pow2x32;
+            var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(sum * multiplier / interval);
             return (ulong) result;
         }

@@ -43,7 +43,7 @@ static const uint64_t blake2b_IV[8] =
 };
 
 /*Blake2b's rotation*/
-static uint64_t rotr64( const uint64_t w, const unsigned c ){
+static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
     return ( w >> c ) | ( w << ( 64 - c ) );
 }
 

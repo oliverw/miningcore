@@ -81,7 +81,7 @@ namespace MiningCore.Tests.Crypto
             var hasher = new Lyra2Rev2();
             var result = hasher.Digest(Enumerable.Repeat((byte) 5, 80).ToArray()).ToHexString();
 
-            Assert.Equal("4766e2d407fedceda3740cfc6a8f4e18f9e6f597f98c28de96f2ec73af2fa30e", result);
+            Assert.Equal("5cb1eea767131ab0ea446121854dffbfec1bf1f55938e9f877f9bae735a1c481", result);
         }
 
         [Fact]
