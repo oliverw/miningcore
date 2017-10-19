@@ -38,7 +38,7 @@ Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech
 Expanse | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 DASH | Yes | Yes | |
 Bitcoin Cash | Yes | Yes | |
-Monacoin | No | No | | Not working yet
+Monacoin | Yes | Yes | |
 Groestlcoin | Yes | Yes | |
 Zcash | No |  | Nov 2017 | Not working yet
 Dogecoin | Yes | No | |
