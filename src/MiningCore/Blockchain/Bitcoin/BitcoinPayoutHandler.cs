@@ -170,7 +170,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -186,9 +186,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
             }
 
-            // update block-reward
-            block.Reward = blockRewardRemaining;
-            return Task.FromResult(false);
+            return Task.FromResult(blockRewardRemaining);
         }
 
         public async Task PayoutAsync(Balance[] balances)

@@ -123,10 +123,10 @@ namespace MiningCore.Payments
                         {
                             // blockchains that do not support block-reward payments via coinbase Tx
                             // must generate balance records for all reward recipients instead
-                            await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+                            var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
                             // update share submitter balances through configured payout scheme 
-                            await scheme.UpdateBalancesAsync(con, tx, pool, handler, block);
+                            await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
 
                             // finally update block status
                             blockRepo.UpdateBlock(con, tx, block);

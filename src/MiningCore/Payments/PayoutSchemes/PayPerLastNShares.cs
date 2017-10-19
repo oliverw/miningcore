@@ -68,7 +68,7 @@ namespace MiningCore.Payments.PayoutSchemes
         #region IPayoutScheme
 
         public Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block)
+            IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
 
@@ -78,7 +78,7 @@ namespace MiningCore.Payments.PayoutSchemes
             // calculate rewards 
             var shares = new Dictionary<string, ulong>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculateRewards(poolConfig, window, block, shares, rewards);
+            var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
 
             // update balances
             foreach (var address in rewards.Keys)
@@ -106,21 +106,20 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
             if(totalRewards > 0)
-                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / block.Reward * 100:0.00}% of block reward)");
+                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward)");
 
             return Task.FromResult(true);
         }
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block,
+        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
             Dictionary<string, ulong> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
             var pageSize = 10000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
-            var blockReward = block.Reward;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
 

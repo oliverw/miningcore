@@ -226,7 +226,7 @@ namespace MiningCore.Blockchain.Ethereum
             return result.ToArray();
         }
 
-        public Task UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -245,10 +245,7 @@ namespace MiningCore.Blockchain.Ethereum
             // Deduct static reserve for tx fees
             blockRewardRemaining -= EthereumConstants.StaticTransactionFeeReserve;
 
-            // update block-reward
-            block.Reward = blockRewardRemaining;
-
-            return Task.FromResult(true);
+            return Task.FromResult(blockRewardRemaining);
         }
 
         public async Task PayoutAsync(Balance[] balances)
