@@ -29,13 +29,12 @@ namespace MiningCore.Crypto.Hashing.Algorithms
     {
         public ScryptN(Tuple<long, long>[] timetable = null)
         {
-            if (timetable != null)
-                this.timetable = timetable;
-
-            this.timetable = this.timetable.OrderByDescending(x => x.Item1).ToArray();
+            this.timetable = timetable ?? defaultTimetable;
         }
 
-        private readonly Tuple<long, long>[] timetable = new []
+        private readonly Tuple<long, long>[] timetable;
+
+        private static readonly Tuple<long, long>[] defaultTimetable = new []
         {
             Tuple.Create(2048L, 1389306217L),
             Tuple.Create(4096L, 1456415081L),
@@ -46,7 +45,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             Tuple.Create(131072L, 2060394857L),
             Tuple.Create(262144L, 1722307603L),
             Tuple.Create(524288L, 1769642992L),
-        };
+        }.OrderByDescending(x => x.Item1).ToArray();
 
         public byte[] Digest(byte[] data, params object[] extra)
         {
