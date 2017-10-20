@@ -32,7 +32,7 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA)]
+        CoinType.GRS, CoinType.MONA, CoinType.VTC)]
     public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
     {
         public BitcoinPool(IComponentContext ctx,

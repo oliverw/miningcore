@@ -196,6 +196,14 @@ namespace MiningCore.Blockchain.Bitcoin
                     ShareMultiplier = Math.Pow(2, 16);
                     break;
 
+                // ScryptN
+                case CoinType.VTC:
+                    coinbaseHasher = sha256d;
+                    headerHasher = new ScryptN();
+                    blockHasher = sha256dReverse;
+                    ShareMultiplier = Math.Pow(2, 16);
+                    break;
+
                 // Groestl
                 case CoinType.GRS:
                     coinbaseHasher = sha256s;

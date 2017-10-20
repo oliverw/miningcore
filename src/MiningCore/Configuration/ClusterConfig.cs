@@ -45,6 +45,7 @@ namespace MiningCore.Configuration
         EXP, // Expanse
         DASH, // Dash
         MONA,  // Monacoin
+        VTC,  // Vertcoin
     }
 
     public class CoinConfig

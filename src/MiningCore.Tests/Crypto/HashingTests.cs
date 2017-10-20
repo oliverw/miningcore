@@ -76,6 +76,22 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void ScryptN_Hash_Should_Match()
+        {
+            var hasher = new ScryptN(new []{ Tuple.Create(2048L, 1389306217L) });
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("75d08b4c639645f3f1e15c7c412160867821441d365a7bbe3edf2c6b852ccb59", result);
+        }
+
+        [Fact]
+        public void ScryptN_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new ScryptN();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
         public void Lyra2Rev2_Hash_Should_Match()
         {
             var hasher = new Lyra2Rev2();
