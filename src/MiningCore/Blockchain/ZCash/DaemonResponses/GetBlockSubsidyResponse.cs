@@ -18,38 +18,14 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
-using System.Threading.Tasks;
-using Autofac;
-using AutoMapper;
-using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.ZCash.DaemonResponses;
-using MiningCore.Configuration;
-using MiningCore.Notifications;
-using MiningCore.Persistence;
-using MiningCore.Persistence.Repositories;
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.ZCash
+namespace MiningCore.Blockchain.ZCash.DaemonResponses
 {
-    [CoinMetadata(CoinType.ZEC)]
-    public class ZCashPool : BitcoinPoolBase<ZCashJob, ZCashBlockTemplate>
+    public class ZCashBlockSubsidy
     {
-        public ZCashPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf,
-            IStatsRepository statsRepo,
-            IMapper mapper,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
-        {
-        }
-
-        protected override BitcoinJobManager<ZCashJob, ZCashBlockTemplate> CreateJobManager()
-        {
-            return ctx.Resolve<ZCashJobManager>();
-        }
+        public double Miner { get; set; }
+        public double Founders { get; set; }
+        public double Community { get; set; }
     }
 }

@@ -124,6 +124,12 @@ namespace MiningCore
             builder.RegisterType<EthereumJobManager>()
                 .AsSelf();
 
+            //////////////////////
+            // ZCash
+
+            builder.RegisterType<ZCashJobManager>()
+                .AsSelf();
+
             base.Load(builder);
         }
     }

@@ -84,6 +84,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp"},
             {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"},
             {CoinType.MONA, "MTZMnES9xYAZSmzUHYPsFGLCY1WJ9TGGob"},
+            {CoinType.VTC, "VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf"},
             //{CoinType.ZEC, ""}
         };
     }
@@ -96,6 +97,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public const string ValidateAddress = "validateaddress";
         public const string GetDifficulty = "getdifficulty";
         public const string GetBlockTemplate = "getblocktemplate";
+        public const string GetBlockSubsidy = "getblocksubsidy";
         public const string SubmitBlock = "submitblock";
         public const string GetBlockchainInfo = "getblockchaininfo";
         public const string GetBlock = "getblock";

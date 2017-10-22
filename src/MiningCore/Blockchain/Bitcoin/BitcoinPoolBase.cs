@@ -53,11 +53,11 @@ namespace MiningCore.Blockchain.Bitcoin
         {
         }
 
-        private object currentJobParams;
-        private BitcoinJobManager<TJob, TBlockTemplate> manager;
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
+        protected object currentJobParams;
+        protected BitcoinJobManager<TJob, TBlockTemplate> manager;
+        protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(5);
 
-        private void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        protected virtual void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -91,7 +91,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
-        private async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        protected virtual async Task OnAuthorizeAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -114,7 +114,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Respond(client.Context.IsAuthorized, request.Id);
         }
 
-        private async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        protected virtual async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -226,7 +226,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private void OnNewJob(object jobParams)
+        protected virtual void OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
 
@@ -257,9 +257,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region Overrides
 
+        protected virtual BitcoinJobManager<TJob, TBlockTemplate> CreateJobManager()
+        {
+            return ctx.Resolve<BitcoinJobManager<TJob, TBlockTemplate>>();
+        }
+
         protected override async Task SetupJobManager()
         {
-            manager = ctx.Resolve<BitcoinJobManager<TJob, TBlockTemplate>>();
+            manager = CreateJobManager();
             manager.Configure(poolConfig, clusterConfig);
 
             await manager.StartAsync();

@@ -73,7 +73,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private BitcoinNetworkType networkType;
         private IDestination poolAddressDestination;
 
-        private static readonly object[] getBlockTemplateParams =
+        protected object[] getBlockTemplateParams =
         {
             new
             {
@@ -111,7 +111,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Select(GetJobParamsForStratum);
         }
 
-        private async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
+        protected virtual async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
         {
             var result = await daemon.ExecuteCmdAnyAsync<TBlockTemplate>(
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return result;
         }
 
-        private async Task ShowDaemonSyncProgressAsync()
+        protected virtual async Task ShowDaemonSyncProgressAsync()
         {
             var infos = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
 
@@ -171,7 +171,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return (accepted, block?.Transactions.FirstOrDefault());
         }
 
-        private void SetupCrypto()
+        protected virtual void SetupCrypto()
         {
             switch (poolConfig.Coin.Type)
             {
@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public IObservable<object> Jobs { get; private set; }
 
-        public async Task<bool> ValidateAddressAsync(string address)
+        public virtual async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -297,7 +297,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public object[] GetSubscriberData(StratumClient<BitcoinWorkerContext> worker)
+        public virtual object[] GetSubscriberData(StratumClient<BitcoinWorkerContext> worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -338,7 +338,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
+        public virtual async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -573,7 +573,7 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupJobUpdates();
         }
 
-        private void ConfigureRewards()
+        protected virtual void ConfigureRewards()
         {
             // Donation to Miningcore development
             if (clusterConfig.DevDonation > 0)
@@ -599,7 +599,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected async Task<bool> UpdateJob(bool forceUpdate)
+        protected virtual async Task<bool> UpdateJob(bool forceUpdate)
         {
             try
             {
@@ -652,7 +652,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return false;
         }
 
-        protected object GetJobParamsForStratum(bool isNew)
+        protected virtual object GetJobParamsForStratum(bool isNew)
         {
             lock (jobLock)
             {
