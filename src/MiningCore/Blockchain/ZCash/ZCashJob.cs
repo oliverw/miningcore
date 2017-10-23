@@ -117,10 +117,12 @@ namespace MiningCore.Blockchain.ZCash
 
             if (coinbaseTxConfig?.PayFoundersReward == true)
             {
-                if(!blockTemplate.Subsidy.Founders.HasValue)
+                var founders = blockTemplate.Subsidy.Founders ?? blockTemplate.Subsidy.Community;
+
+                if (!founders.HasValue)
                     throw new Exception("Error, founders reward missing for block template");
 
-                blockReward = (blockTemplate.Subsidy.Miner + blockTemplate.Subsidy.Founders.Value) * BitcoinConstants.SatoshisPerBitcoin;
+                blockReward = (blockTemplate.Subsidy.Miner + founders.Value) * BitcoinConstants.SatoshisPerBitcoin;
             }
 
             var rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);

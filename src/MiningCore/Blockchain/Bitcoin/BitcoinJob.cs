@@ -218,7 +218,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual Script GenerateScriptSigInitial()
         {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); // 1501244088
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             // script ops
             var ops = new List<Op>();

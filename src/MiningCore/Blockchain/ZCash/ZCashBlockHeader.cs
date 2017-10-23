@@ -21,19 +21,17 @@ namespace MiningCore.Blockchain.ZCash
             SetNull();
         }
 
-
-        private uint256[] hashes;
         private uint256 hashMerkleRoot;
         private uint256 hashPrevBlock;
+        private uint256 hashReserved;
         private uint nBits;
         private uint nNonce;
         private uint nTime;
         private int nVersion;
-
-        internal const int Size = 80;
+	    private byte[] nSolution;
 
         // header
-        private const int CURRENT_VERSION = 3;
+        private const int CURRENT_VERSION = 4;
 
         public uint256 HashPrevBlock
         {
@@ -73,17 +71,28 @@ namespace MiningCore.Blockchain.ZCash
             set => nTime = Utils.DateTimeToUnixTime(value);
         }
 
+	    public byte[] Solution
+	    {
+		    get => nSolution;
+		    set => nSolution = value;
+	    }
+
         #region IBitcoinSerializable Members
 
-        public void ReadWrite(BitcoinStream stream)
+		public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref nVersion);
+			var solutionLength = (uint) nSolution.Length;
+
+			stream.ReadWrite(ref nVersion);
             stream.ReadWrite(ref hashPrevBlock);
             stream.ReadWrite(ref hashMerkleRoot);
+            stream.ReadWrite(ref hashReserved);
             stream.ReadWrite(ref nTime);
             stream.ReadWrite(ref nBits);
             stream.ReadWrite(ref nNonce);
-        }
+	        stream.ReadWriteAsCompactVarInt(ref solutionLength);
+			stream.ReadWrite(ref nSolution);
+		}
 
         #endregion
 
@@ -92,24 +101,16 @@ namespace MiningCore.Blockchain.ZCash
             return new ZCashBlockHeader(Encoders.Hex.DecodeData(hex));
         }
 
-
         internal void SetNull()
         {
             nVersion = CURRENT_VERSION;
             hashPrevBlock = 0;
             hashMerkleRoot = 0;
+            hashReserved = 0;
             nTime = 0;
             nBits = 0;
             nNonce = 0;
-        }
-
-        /// <summary>
-        ///     If called, GetHash becomes cached, only use if you believe the instance will not be modified after calculation.
-        ///     Calling it a second type invalidate the cache.
-        /// </summary>
-        public void CacheHashes()
-        {
-            hashes = new uint256[1];
-        }
+	        nSolution = new byte[1344];
+		}
     }
 }
