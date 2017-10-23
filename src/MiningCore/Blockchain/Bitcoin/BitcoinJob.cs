@@ -391,12 +391,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region API-Surface
 
-        public TBlockTemplate BlockTemplate { get; private set; }
-        public double Difficulty { get; private set; }
+        public TBlockTemplate BlockTemplate { get; protected set; }
+        public double Difficulty { get; protected set; }
 
-        public string JobId { get; private set; }
+        public string JobId { get; protected set; }
 
-        public void Init(TBlockTemplate blockTemplate, string jobId,
+        public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
             BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,

@@ -24,8 +24,8 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
 {
     public class ZCashBlockSubsidy
     {
-        public double Miner { get; set; }
-        public double Founders { get; set; }
-        public double Community { get; set; }
+        public decimal Miner { get; set; }
+        public decimal? Founders { get; set; }
+        public decimal? Community { get; set; }
     }
 }

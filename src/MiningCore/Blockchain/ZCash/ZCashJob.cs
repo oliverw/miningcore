@@ -18,22 +18,50 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Configuration;
+using MiningCore.Contracts;
+using MiningCore.Crypto;
+using MiningCore.Extensions;
 using NBitcoin;
 
 namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJob : BitcoinJob<ZCashBlockTemplate>
     {
+        private decimal blockReward;
+        private ZCashCoinbaseTxConfig coinbaseTxConfig;
+
         #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
         protected override Transaction CreateOutputTransaction()
         {
-            return base.CreateOutputTransaction();
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+
+            var tx = new Transaction();
+
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
+            {
+                Value = rewardToPool
+            });
+
+            return tx;
         }
 
-        #region Overrides of BitcoinJob<ZCashBlockTemplate>
+        protected override void BuildCoinbase()
+        {
+            base.BuildCoinbase();
+        }
+
+        protected override void BuildMerkleBranches()
+        {
+            base.BuildMerkleBranches();
+        }
 
         protected override byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
         {
@@ -42,6 +70,63 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        #endregion
+        public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
+            PoolConfig poolConfig, ClusterConfig clusterConfig,
+            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
+            IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
+        {
+            Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+            Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
+            Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
+            Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+
+            this.poolConfig = poolConfig;
+            this.clusterConfig = clusterConfig;
+            this.poolAddressDestination = poolAddressDestination;
+            this.networkType = networkType;
+
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+
+            BlockTemplate = blockTemplate;
+            JobId = jobId;
+            Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
+
+            extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
+            this.isPoS = isPoS;
+            this.shareMultiplier = shareMultiplier;
+
+            this.coinbaseHasher = coinbaseHasher;
+            this.headerHasher = headerHasher;
+            this.blockHasher = blockHasher;
+
+            blockTargetValue = BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber);
+
+            previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
+                .HexToByteArray()
+                .ReverseByteOrder()
+                .ToHexString();
+
+            blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
+
+            if (coinbaseTxConfig?.PayFoundersReward == true)
+            {
+                if(!blockTemplate.Subsidy.Founders.HasValue)
+                    throw new Exception("Error, founders reward missing for block template");
+
+                blockReward = (blockTemplate.Subsidy.Miner + blockTemplate.Subsidy.Founders.Value) * BitcoinConstants.SatoshisPerBitcoin;
+            }
+
+            var rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);
+
+            BuildCoinbase();
+            BuildMerkleBranches();
+        }
     }
 }

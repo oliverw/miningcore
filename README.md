@@ -38,10 +38,10 @@ Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech
 Expanse | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 DASH | Yes | Yes | |
 Bitcoin Cash | Yes | Yes | |
+Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
 Groestlcoin | Yes | Yes | |
 Zcash | No |  | Nov 2017 | Not working yet
-Vertcoin | Yes | No | |
 Dogecoin | Yes | No | |
 DigiByte | Yes | No | |
 Namecoin | Yes | No | |

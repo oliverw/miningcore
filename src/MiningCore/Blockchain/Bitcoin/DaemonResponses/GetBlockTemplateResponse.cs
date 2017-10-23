@@ -38,6 +38,12 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
         /// hash encoded in little-endian hexadecimal (including witness data)
         /// </summary>
         public string Hash { get; set; }
+
+        /// <summary>
+        /// The amount of the fee in BTC
+        /// </summary>
+        public decimal Fee { get; set; }
+
     }
 
     public class CoinbaseAux
