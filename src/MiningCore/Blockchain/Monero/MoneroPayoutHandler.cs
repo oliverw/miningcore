@@ -323,8 +323,12 @@ namespace MiningCore.Blockchain.Monero
 
                 blockRewardRemaining -= amount;
 
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                // skip transfers from pool wallet to pool wallet
+                if (address != poolConfig.Address)
+                {
+                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                }
             }
 
             // Deduct static reserve for tx fees

@@ -176,15 +176,19 @@ namespace MiningCore.Blockchain.Bitcoin
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Type == RewardRecipientType.Dev && x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
 
                 blockRewardRemaining -= amount;
 
-                logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                // skip transfers from pool wallet to pool wallet
+                if (address != poolConfig.Address)
+                {
+                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                }
             }
 
             return Task.FromResult(blockRewardRemaining);

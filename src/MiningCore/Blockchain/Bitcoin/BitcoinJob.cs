@@ -238,33 +238,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 
-            // Distribute funds to configured reward recipients
-            var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
-
-            foreach (var recipient in rewardRecipients.Where(x => x.Type != RewardRecipientType.Dev && x.Percentage > 0))
-            {
-                var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
-                var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * blockReward.Satoshi));
-
-                rewardToPool -= recipientReward;
-
-                tx.AddOutput(recipientReward, recipientAddress);
-            }
-
-            // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
             {
                 Value = rewardToPool
             });
-
-            // validate it
-            //var checkResult = tx.Check();
-            //Debug.Assert(checkResult == TransactionCheckResult.Success);
 
             return tx;
         }
