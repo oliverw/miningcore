@@ -19,39 +19,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
-using System.Threading.Tasks;
-using Autofac;
-using AutoMapper;
-using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.ZCash.DaemonResponses;
-using MiningCore.Configuration;
-using MiningCore.Notifications;
-using MiningCore.Persistence;
-using MiningCore.Persistence.Repositories;
-using MiningCore.Time;
-using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.ZCash
+namespace MiningCore.Time
 {
-    [CoinMetadata(CoinType.ZEC)]
-    public class ZCashPool : BitcoinPoolBase<ZCashJob, ZCashBlockTemplate>
+    public interface IMasterClock
     {
-        public ZCashPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf,
-            IStatsRepository statsRepo,
-            IMapper mapper,
-	        IMasterClock clock,
-			NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
-        {
-        }
-
-        protected override BitcoinJobManager<ZCashJob, ZCashBlockTemplate> CreateJobManager()
-        {
-            return ctx.Resolve<ZCashJobManager>();
-        }
+		DateTime UtcNow { get; }
     }
 }

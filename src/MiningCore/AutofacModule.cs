@@ -37,6 +37,7 @@ using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Payments.PayoutSchemes;
+using MiningCore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
@@ -67,6 +68,10 @@ namespace MiningCore
             builder.RegisterType<PayoutManager>()
                 .AsSelf()
                 .SingleInstance();
+
+	        builder.RegisterType<StandardClock>()
+		        .AsImplementedInterfaces()
+		        .SingleInstance();
 
             builder.RegisterType<BitcoinExtraNonceProvider>()
                 .AsSelf();

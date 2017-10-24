@@ -19,11 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Threading.Tasks;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
@@ -32,6 +29,7 @@ using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
@@ -45,7 +43,8 @@ namespace MiningCore.Payments
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo,
+            IPaymentRepository paymentRepo, 
+			IMasterClock clock,
             NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -54,11 +53,13 @@ namespace MiningCore.Payments
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+	        Contract.RequiresNonNull(clock, nameof(clock));
+			Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
-            this.shareRepo = shareRepo;
+	        this.clock = clock;
+			this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
             this.paymentRepo = paymentRepo;
@@ -73,7 +74,8 @@ namespace MiningCore.Payments
         protected readonly IMapper mapper;
         protected readonly IPaymentRepository paymentRepo;
         protected readonly IShareRepository shareRepo;
-        protected readonly NotificationService notificationService;
+	    protected readonly IMasterClock clock;
+		protected readonly NotificationService notificationService;
         protected ClusterConfig clusterConfig;
         private Policy faultPolicy;
 
@@ -117,7 +119,7 @@ namespace MiningCore.Payments
                                     Coin = poolConfig.Coin.Type,
                                     Address = balance.Address,
                                     Amount = balance.Amount,
-                                    Created = DateTime.UtcNow,
+                                    Created = clock.UtcNow,
                                     TransactionConfirmationData = transactionConfirmation
                                 };
 

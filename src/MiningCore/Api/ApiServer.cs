@@ -38,6 +38,7 @@ using MiningCore.Mining;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -53,21 +54,24 @@ namespace MiningCore.Api
             IConnectionFactory cf,
             IBlockRepository blocksRepo,
             IPaymentRepository paymentsRepo,
-            IStatsRepository statsRepo)
+            IStatsRepository statsRepo,
+			IMasterClock clock)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(blocksRepo, nameof(blocksRepo));
             Contract.RequiresNonNull(paymentsRepo, nameof(paymentsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
+	        Contract.RequiresNonNull(clock, nameof(clock));
 
-            this.cf = cf;
+			this.cf = cf;
             this.statsRepo = statsRepo;
             this.blocksRepo = blocksRepo;
             this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
+	        this.clock = clock;
 
-            requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
+			requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
                 {new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync},
                 {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync},
@@ -82,8 +86,9 @@ namespace MiningCore.Api
         private readonly IBlockRepository blocksRepo;
         private readonly IPaymentRepository paymentsRepo;
         private readonly IMapper mapper;
+	    private readonly IMasterClock clock;
 
-        private readonly List<IMiningPool> pools = new List<IMiningPool>();
+		private readonly List<IMiningPool> pools = new List<IMiningPool>();
         private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -96,7 +101,7 @@ namespace MiningCore.Api
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
 
-        private async Task SendJson(HttpContext context, object response)
+	    private async Task SendJson(HttpContext context, object response)
         {
             context.Response.ContentType = "application/json";
 
@@ -189,7 +194,7 @@ namespace MiningCore.Api
                 return;
 
             // set range
-            var end = DateTime.UtcNow;
+            var end = clock.UtcNow;
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(

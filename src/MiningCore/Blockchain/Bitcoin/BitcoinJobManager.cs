@@ -34,6 +34,7 @@ using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using Newtonsoft.Json;
@@ -48,30 +49,34 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
+            IMasterClock clock,
             BitcoinExtraNonceProvider extraNonceProvider) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+	        Contract.RequiresNonNull(clock, nameof(clock));
+			Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-            this.extraNonceProvider = extraNonceProvider;
+	        this.clock = clock;
+			this.extraNonceProvider = extraNonceProvider;
         }
 
-        protected DaemonClient daemon;
-        private readonly BitcoinExtraNonceProvider extraNonceProvider;
-        private readonly IHashAlgorithm sha256d = new Sha256D();
-        private readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
+	    protected readonly IMasterClock clock;
+		protected DaemonClient daemon;
+	    protected readonly BitcoinExtraNonceProvider extraNonceProvider;
+	    protected readonly IHashAlgorithm sha256d = new Sha256D();
+	    protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 
-        private readonly IHashAlgorithm sha256s = new Sha256S();
+	    protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
-        private IHashAlgorithm blockHasher;
-        private IHashAlgorithm coinbaseHasher;
-        private bool hasSubmitBlockMethod;
-        private IHashAlgorithm headerHasher;
-        private bool isPoS;
-        private TimeSpan jobRebroadcastTimeout;
-        private BitcoinNetworkType networkType;
-        private IDestination poolAddressDestination;
+	    protected IHashAlgorithm blockHasher;
+	    protected IHashAlgorithm coinbaseHasher;
+	    protected bool hasSubmitBlockMethod;
+	    protected IHashAlgorithm headerHasher;
+	    protected bool isPoS;
+	    protected TimeSpan jobRebroadcastTimeout;
+	    protected BitcoinNetworkType networkType;
+	    protected IDestination poolAddressDestination;
 
         protected object[] getBlockTemplateParams =
         {
@@ -400,7 +405,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
-            share.Created = DateTime.UtcNow;
+            share.Created = clock.UtcNow;
 
             return share;
         }
@@ -627,7 +632,7 @@ namespace MiningCore.Blockchain.Bitcoin
                             validJobs.Clear();
 
                             // update stats
-                            BlockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+                            BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                         }
 
                         validJobs[currentJob.JobId] = currentJob;

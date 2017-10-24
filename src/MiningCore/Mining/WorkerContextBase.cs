@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using MiningCore.Configuration;
+using MiningCore.Time;
 using MiningCore.VarDiff;
 
 namespace MiningCore.Mining
@@ -32,9 +33,9 @@ namespace MiningCore.Mining
 
     public class WorkerContextBase
     {
-        private double? pendingDifficulty;
+		private double? pendingDifficulty;
 
-        public BanningStats Stats { get; set; }
+		public BanningStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }
         public DateTime LastActivity { get; set; }
         public bool IsAuthorized { get; set; } = false;
@@ -60,10 +61,10 @@ namespace MiningCore.Mining
         /// </summary>
         public bool HasPendingDifficulty => pendingDifficulty.HasValue;
 
-        public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig)
+        public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig, IMasterClock clock)
         {
             Difficulty = difficulty;
-            LastActivity = DateTime.UtcNow;
+            LastActivity = clock.UtcNow;
 
             if (poolConfig.Banning != null)
                 Stats = new BanningStats();

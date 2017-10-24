@@ -34,6 +34,7 @@ using MiningCore.DaemonInterface;
 using MiningCore.Native;
 using MiningCore.Payments;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using NLog;
@@ -46,12 +47,16 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
         public MoneroJobManager(
-            IComponentContext ctx) :
+            IComponentContext ctx, 
+			IMasterClock clock) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(clock, nameof(clock));
 
-            using (var rng = RandomNumberGenerator.Create())
+	        this.clock = clock;
+
+			using (var rng = RandomNumberGenerator.Create())
             {
                 instanceId = new byte[MoneroConstants.InstanceIdSize];
                 rng.GetNonZeroBytes(instanceId);
@@ -62,7 +67,8 @@ namespace MiningCore.Blockchain.Monero
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
-        private MoneroNetworkType networkType;
+	    private readonly IMasterClock clock;
+		private MoneroNetworkType networkType;
         private uint poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
@@ -91,7 +97,7 @@ namespace MiningCore.Blockchain.Monero
                         currentJob.Init();
 
                         // update stats
-                        BlockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                     }
 
                     return isNew;
@@ -255,7 +261,7 @@ namespace MiningCore.Blockchain.Monero
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.StratumDifficultyBase = stratumDifficultyBase;
-            share.Created = DateTime.UtcNow;
+            share.Created = clock.UtcNow;
 
             return share;
         }

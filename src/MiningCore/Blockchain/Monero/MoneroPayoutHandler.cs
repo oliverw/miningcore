@@ -36,6 +36,7 @@ using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
@@ -56,8 +57,9 @@ namespace MiningCore.Blockchain.Monero
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
-            NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, notificationService)
+            IMasterClock clock,
+			NotificationService notificationService) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));

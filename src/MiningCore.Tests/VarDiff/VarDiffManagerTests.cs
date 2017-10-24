@@ -3,6 +3,7 @@ using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Extensions;
 using MiningCore.Mining;
+using MiningCore.Tests.Util;
 using MiningCore.VarDiff;
 using NLog;
 using Xunit;
@@ -22,11 +23,12 @@ namespace MiningCore.Tests.VarDiff
         };
 
         private static readonly ILogger logger = LogManager.CreateNullLogger();
+	    private readonly MockMasterClock clock = new MockMasterClock();
 
         [Fact]
         public void VarDiff_Should_Honor_MaxDelta_When_Adjusting_Up()
         {
-            var vdm = new VarDiffManager(config);
+            var vdm = new VarDiffManager(config, clock);
             var ctx = new WorkerContextBase {Difficulty = 7500, VarDiff = new VarDiffContext() };
 
             var shares = new List<long> { 2, 3, 4 };
@@ -38,7 +40,7 @@ namespace MiningCore.Tests.VarDiff
         [Fact]
         public void VarDiff_Should_Honor_MaxDelta_When_Adjusting_Down()
         {
-            var vdm = new VarDiffManager(config);
+            var vdm = new VarDiffManager(config, clock);
             var ctx = new WorkerContextBase { Difficulty = 7500, VarDiff = new VarDiffContext() };
 
             var shares = new List<long> { 2000000000, 3000000000, 4000000000 };
@@ -50,7 +52,7 @@ namespace MiningCore.Tests.VarDiff
         [Fact]
         public void VarDiff_Should_Honor_MaxDiff_When_Adjusting_Up()
         {
-            var vdm = new VarDiffManager(config);
+            var vdm = new VarDiffManager(config, clock);
             var ctx = new WorkerContextBase { Difficulty = 9500, VarDiff = new VarDiffContext() };
 
             var shares = new List<long> { 2, 3, 4 };
@@ -62,7 +64,7 @@ namespace MiningCore.Tests.VarDiff
         [Fact]
         public void VarDiff_Should_Honor_MinDiff_When_Adjusting_Down()
         {
-            var vdm = new VarDiffManager(config);
+            var vdm = new VarDiffManager(config, clock);
             var ctx = new WorkerContextBase { Difficulty = 1500, VarDiff = new VarDiffContext() };
 
             var shares = new List<long> { 2000000000, 3000000000, 4000000000 };

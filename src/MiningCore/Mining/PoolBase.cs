@@ -37,6 +37,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using MiningCore.Util;
 using MiningCore.VarDiff;
 using Newtonsoft.Json;
@@ -54,20 +55,23 @@ namespace MiningCore.Mining
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            NotificationService notificationService) : base(ctx)
+			IMasterClock clock,
+			NotificationService notificationService) : base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+	        Contract.RequiresNonNull(clock, nameof(clock));
+			Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.notificationService = notificationService;
+	        this.clock = clock;
+			this.notificationService = notificationService;
 
             Shares = shareSubject
                 .Synchronize();
@@ -78,8 +82,9 @@ namespace MiningCore.Mining
         protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
-        private readonly IMapper mapper;
-        protected readonly CompositeDisposable disposables = new CompositeDisposable();
+	    protected readonly IMapper mapper;
+	    protected readonly IMasterClock clock;
+		protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
@@ -103,7 +108,7 @@ namespace MiningCore.Mining
             var context = new TWorkerContext();
 
             var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-            context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff);
+            context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff, clock);
             client.Context = context;
 
             // varDiff setup
@@ -114,7 +119,7 @@ namespace MiningCore.Mining
                 {
                     if (!varDiffManagers.TryGetValue(poolEndpoint, out var varDiffManager))
                     {
-                        varDiffManager = new VarDiffManager(poolEndpoint.VarDiff);
+                        varDiffManager = new VarDiffManager(poolEndpoint.VarDiff, clock);
                         varDiffManagers[poolEndpoint] = varDiffManager;
                     }
                 }
@@ -188,7 +193,7 @@ namespace MiningCore.Mining
                 .Take(1)
                 .Select(_ => true);
 
-            var timeout = Observable.Timer(DateTime.UtcNow.AddSeconds(10))
+            var timeout = Observable.Timer(clock.UtcNow.AddSeconds(10))
                 .Select(_ => false);
 
             isAlive.Merge(timeout)
@@ -253,7 +258,7 @@ namespace MiningCore.Mining
                 {
                     var mapped = mapper.Map<Persistence.Model.PoolStats>(poolStats);
                     mapped.PoolId = poolConfig.Id;
-                    mapped.Created = DateTime.UtcNow;
+                    mapped.Created = clock.UtcNow;
 
                     statsRepo.Insert(con, tx, mapped);
                 });
@@ -338,7 +343,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                         PoolId = poolConfig.Id,
                         Miner = miner,
                         Hashrate = hashRate,
-                        Created = DateTime.UtcNow
+                        Created = clock.UtcNow
                     };
 
                     // Per worker hashrates

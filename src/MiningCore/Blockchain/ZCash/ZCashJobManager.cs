@@ -6,12 +6,16 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
+using MiningCore.Time;
 
 namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJobManager : BitcoinJobManager<ZCashJob, ZCashBlockTemplate>
     {
-        public ZCashJobManager(IComponentContext ctx, BitcoinExtraNonceProvider extraNonceProvider) : base(ctx, extraNonceProvider)
+        public ZCashJobManager(
+			IComponentContext ctx, 
+			IMasterClock clock, 
+			BitcoinExtraNonceProvider extraNonceProvider) : base(ctx, clock, extraNonceProvider)
         {
             getBlockTemplateParams = new object[]
             {

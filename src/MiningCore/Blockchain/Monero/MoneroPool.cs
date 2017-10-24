@@ -40,6 +40,7 @@ using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Monero
@@ -52,8 +53,9 @@ namespace MiningCore.Blockchain.Monero
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
+	        IMasterClock clock,
+			NotificationService notificationService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
         }
 
@@ -176,7 +178,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = DateTime.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -192,7 +194,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "unauthorized");
 
                 // recognize activity
-                client.Context.LastActivity = DateTime.UtcNow;
+                client.Context.LastActivity = clock.UtcNow;
 
                 MoneroWorkerJob job;
 
@@ -228,7 +230,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = DateTime.UtcNow;
+                    poolStats.LastPoolBlockTime = clock.UtcNow;
 
                 // update client stats
                 client.Context.Stats.ValidShares++;
@@ -260,7 +262,7 @@ namespace MiningCore.Blockchain.Monero
                 if (client.Context.IsSubscribed)
                 {
                     // check alive
-                    var lastActivityAgo = DateTime.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
@@ -313,7 +315,7 @@ namespace MiningCore.Blockchain.Monero
 
                 case MoneroStratumMethods.KeepAlive:
                     // recognize activity
-                    client.Context.LastActivity = DateTime.UtcNow;
+                    client.Context.LastActivity = clock.UtcNow;
                     break;
 
                 default:

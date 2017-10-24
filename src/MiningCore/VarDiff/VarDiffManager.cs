@@ -25,6 +25,7 @@ using System.Linq;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
+using MiningCore.Time;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -32,17 +33,19 @@ namespace MiningCore.VarDiff
 {
     public class VarDiffManager
     {
-        public VarDiffManager(VarDiffConfig varDiffOptions)
+        public VarDiffManager(VarDiffConfig varDiffOptions, IMasterClock clock)
         {
             options = varDiffOptions;
+	        this.clock = clock;
 
-            var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
+			var variance = varDiffOptions.TargetTime * (varDiffOptions.VariancePercent / 100.0);
             tMin = varDiffOptions.TargetTime - variance;
             tMax = varDiffOptions.TargetTime + variance;
             maxJump = varDiffOptions.MaxDelta ?? 10000;
         }
 
         private readonly VarDiffConfig options;
+	    private readonly IMasterClock clock;
         private readonly double tMax;
         private readonly double tMin;
         private readonly double maxJump;
@@ -112,7 +115,7 @@ namespace MiningCore.VarDiff
 
                     // check if different
                     if (!newDiff.Value.EqualsDigitPrecision3(ctx.Difficulty))
-                        ctx.VarDiff.LastUpdate = DateTime.UtcNow;
+                        ctx.VarDiff.LastUpdate = clock.UtcNow;
                     else
                         newDiff = null;
                 }

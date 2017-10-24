@@ -25,6 +25,7 @@ using MiningCore.Configuration;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Dash
@@ -37,8 +38,9 @@ namespace MiningCore.Blockchain.Dash
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, notificationService)
+	        IMasterClock clock,
+			NotificationService notificationService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
         }
     }

@@ -36,6 +36,7 @@ using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.Payments;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -49,17 +50,22 @@ namespace MiningCore.Blockchain.Ethereum
     public class EthereumJobManager : JobManagerBase<EthereumJob>
     {
         public EthereumJobManager(
-            IComponentContext ctx) :
+            IComponentContext ctx,
+	        IMasterClock clock) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+	        Contract.RequiresNonNull(clock, nameof(clock));
+
+	        this.clock = clock;
         }
 
-        private DaemonEndpointConfig[] daemonEndpoints;
+		private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
         private EthashFull ethash;
+		private readonly IMasterClock clock;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
         private const int MaxBlockBacklog = 3;
@@ -101,7 +107,7 @@ namespace MiningCore.Blockchain.Ethereum
                             validJobs.Remove(key);
 
                         // update stats
-                        BlockchainStats.LastNetworkBlockTime = DateTime.UtcNow;
+                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                     }
 
                     return isNew;
@@ -327,7 +333,7 @@ namespace MiningCore.Blockchain.Ethereum
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.StratumDifficultyBase = stratumDifficultyBase * EthereumConstants.Pow2x32;
-            share.Created = DateTime.UtcNow;
+            share.Created = clock.UtcNow;
 
             return share;
         }
