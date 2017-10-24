@@ -35,6 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Blockchain\Monero\" />
+    <Folder Include="Blockchain\Bitcoin\" />
     <Folder Include="JsonRpc\" />
   </ItemGroup>
 

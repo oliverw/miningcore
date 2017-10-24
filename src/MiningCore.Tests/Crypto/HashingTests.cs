@@ -11,7 +11,6 @@ namespace MiningCore.Tests.Crypto
     public class HashingTests : TestBase
     {
         private static readonly byte[] testValue = Enumerable.Repeat((byte) 0x80, 32).ToArray();
-	    private readonly MockMasterClock clock = new MockMasterClock();
 
 		[Fact]
         public void Blake_Hash_Should_Match()
@@ -80,6 +79,7 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void ScryptN_Hash_Should_Match()
         {
+	        var clock = new MockMasterClock { CurrentTime = new DateTime(2017, 10, 16) };
             var hasher = new ScryptN(clock, new []{ Tuple.Create(2048L, 1389306217L) });
             var result = hasher.Digest(testValue).ToHexString();
 
@@ -89,6 +89,7 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void ScryptN_Hash_Should_Throw_On_Null_Input()
         {
+	        var clock = new MockMasterClock { CurrentTime = new DateTime(2017, 10, 16) };
             var hasher = new ScryptN(clock);
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
