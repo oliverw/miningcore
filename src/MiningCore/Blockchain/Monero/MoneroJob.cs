@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using MiningCore.Blockchain.Monero.DaemonResponses;
@@ -28,6 +29,7 @@ using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NBitcoin.BouncyCastle.Math;
+using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Monero
@@ -43,7 +45,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(instanceId, nameof(instanceId));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-            BlockTemplate = blockTemplate;
+			BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
         }
 
@@ -121,7 +123,7 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
-            Contract.Requires<ArgumentException>(extraNonce != 0, $"{nameof(extraNonce)} must not be empty");
+            Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
 
             // validate nonce
             if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))

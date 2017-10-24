@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -34,6 +35,7 @@ using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
 
@@ -221,7 +223,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual Script GenerateScriptSigInitial()
         {
             var now = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
-
+Debug.WriteLine(now);
             // script ops
             var ops = new List<Op>();
 
@@ -299,8 +301,11 @@ namespace MiningCore.Blockchain.Bitcoin
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
-            // test if share meets at least workers current difficulty
-            if (ratio < 0.99)
+	        // check if the share meets the much harder block difficulty (block candidate)
+	        var isBlockCandidate = headerValue < blockTargetValue;
+
+			// test if share meets at least workers current difficulty
+			if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
                 if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
@@ -317,9 +322,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 else
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
-
-            // valid share, check if the share also meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = headerValue < blockTargetValue;
 
             var result = new BitcoinShare
             {
@@ -415,7 +417,10 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-            this.poolConfig = poolConfig;
+Debug.WriteLine(JsonConvert.SerializeObject(blockTemplate));
+Debug.WriteLine(jobId);
+
+			this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 	        this.clock = clock;
 			this.poolAddressDestination = poolAddressDestination;
