@@ -623,7 +623,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         currentJob = new TJob();
 
                         currentJob.Init(blockTemplate, NextJobId(),
-                            poolConfig, clusterConfig, poolAddressDestination, networkType, extraNonceProvider, isPoS,
+                            poolConfig, clusterConfig, clock, poolAddressDestination, networkType, extraNonceProvider, isPoS,
                             ShareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 

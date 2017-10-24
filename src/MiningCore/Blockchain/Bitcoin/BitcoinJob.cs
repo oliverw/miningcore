@@ -30,6 +30,7 @@ using MiningCore.Configuration;
 using MiningCore.Crypto;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
+using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -43,7 +44,8 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         protected IHashAlgorithm blockHasher;
         protected ClusterConfig clusterConfig;
-        protected IHashAlgorithm coinbaseHasher;
+	    protected IMasterClock clock;
+		protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
@@ -218,7 +220,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual Script GenerateScriptSigInitial()
         {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var now = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
 
             // script ops
             var ops = new List<Op>();
@@ -397,7 +399,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public string JobId { get; protected set; }
 
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig,
+            PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
             BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
@@ -405,7 +407,8 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-            Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+	        Contract.RequiresNonNull(clock, nameof(clock));
+			Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
             Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
             Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
@@ -414,7 +417,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
-            this.poolAddressDestination = poolAddressDestination;
+	        this.clock = clock;
+			this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
             BlockTemplate = blockTemplate;
             JobId = jobId;
@@ -468,7 +472,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             // validate nonce

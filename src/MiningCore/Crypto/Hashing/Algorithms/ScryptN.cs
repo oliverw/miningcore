@@ -22,19 +22,22 @@ using System;
 using System.Linq;
 using MiningCore.Contracts;
 using MiningCore.Native;
+using MiningCore.Time;
 
 namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class ScryptN : IHashAlgorithm
     {
-        public ScryptN(Tuple<long, long>[] timetable = null)
+        public ScryptN(IMasterClock clock, Tuple<long, long>[] timetable = null)
         {
             this.timetable = timetable ?? defaultTimetable;
+	        this.clock = clock;
         }
 
         private readonly Tuple<long, long>[] timetable;
+	    private readonly IMasterClock clock;
 
-        private static readonly Tuple<long, long>[] defaultTimetable = new []
+		private static readonly Tuple<long, long>[] defaultTimetable = new []
         {
             Tuple.Create(2048L, 1389306217L),
             Tuple.Create(4096L, 1456415081L),
@@ -52,7 +55,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             Contract.RequiresNonNull(data, nameof(data));
 
             // get nFactor
-            var ts = DateTimeOffset.Now.ToUnixTimeSeconds();
+            var ts = ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds();
             var n = timetable.First(x => ts >= x.Item2).Item1;
             var nFactor = Math.Log(n) / Math.Log(2);
 

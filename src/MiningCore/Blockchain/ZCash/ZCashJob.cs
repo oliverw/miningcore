@@ -28,6 +28,7 @@ using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.Crypto;
 using MiningCore.Extensions;
+using MiningCore.Time;
 using NBitcoin;
 
 namespace MiningCore.Blockchain.ZCash
@@ -71,14 +72,15 @@ namespace MiningCore.Blockchain.ZCash
         #endregion
 
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
+			IDestination poolAddressDestination, BitcoinNetworkType networkType,
             BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+	        Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
             Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
@@ -88,6 +90,7 @@ namespace MiningCore.Blockchain.ZCash
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+	        this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
 

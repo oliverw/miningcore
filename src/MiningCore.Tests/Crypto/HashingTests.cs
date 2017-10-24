@@ -3,6 +3,7 @@ using System.Linq;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.Extensions;
+using MiningCore.Tests.Util;
 using Xunit;
 
 namespace MiningCore.Tests.Crypto
@@ -10,8 +11,9 @@ namespace MiningCore.Tests.Crypto
     public class HashingTests : TestBase
     {
         private static readonly byte[] testValue = Enumerable.Repeat((byte) 0x80, 32).ToArray();
+	    private readonly MockMasterClock clock = new MockMasterClock();
 
-        [Fact]
+		[Fact]
         public void Blake_Hash_Should_Match()
         {
             var hasher = new Blake();
@@ -78,7 +80,7 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void ScryptN_Hash_Should_Match()
         {
-            var hasher = new ScryptN(new []{ Tuple.Create(2048L, 1389306217L) });
+            var hasher = new ScryptN(clock, new []{ Tuple.Create(2048L, 1389306217L) });
             var result = hasher.Digest(testValue).ToHexString();
 
             Assert.Equal("75d08b4c639645f3f1e15c7c412160867821441d365a7bbe3edf2c6b852ccb59", result);
@@ -87,7 +89,7 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void ScryptN_Hash_Should_Throw_On_Null_Input()
         {
-            var hasher = new ScryptN();
+            var hasher = new ScryptN(clock);
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
 
