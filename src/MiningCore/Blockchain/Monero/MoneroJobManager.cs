@@ -327,7 +327,8 @@ namespace MiningCore.Blockchain.Monero
         {
             var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
 
-            return response.Error == null && response.Response.OutgoingConnectionsCount > 0;
+            return response.Error == null && response.Response != null && 
+				(response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
         }
 
         protected override async Task EnsureDaemonsSynchedAsync()
