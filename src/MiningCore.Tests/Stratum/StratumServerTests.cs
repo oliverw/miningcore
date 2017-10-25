@@ -7,65 +7,65 @@ using Xunit;
 
 namespace MiningCore.Tests.Stratum
 {
-    /*
-    public class StratumServerTests : TestBase
-    {
-        private readonly IPEndPoint listenEndPoint = new IPEndPoint(IPAddress.Loopback, 3032);
+	/*
+	public class StratumServerTests : TestBase
+	{
+		private readonly IPEndPoint listenEndPoint = new IPEndPoint(IPAddress.Loopback, 3032);
 
-        [Fact]
-        public async Task StratumServer_Should_Receive_Connect_On_Client_Connect()
-        {
-            using (var server = new TestStratumServer())
-            {
-                server.StartListeners(listenEndPoint);
+		[Fact]
+		public async Task StratumServer_Should_Receive_Connect_On_Client_Connect()
+		{
+			using (var server = new TestStratumServer())
+			{
+				server.StartListeners(listenEndPoint);
 
-                using (var tcpClient = await server.ConnectClient(listenEndPoint))
-                {
-                    await server.Connects.Take(1).ToTask();
+				using (var tcpClient = await server.ConnectClient(listenEndPoint))
+				{
+					await server.Connects.Take(1).ToTask();
 
-                    tcpClient.Close();
-                }
+					tcpClient.Close();
+				}
 
-                Assert.Equal(1, server.ConnectCount);
-            }
-        }
+				Assert.Equal(1, server.ConnectCount);
+			}
+		}
 
-        [Fact]
-        public async Task StratumServer_Should_Receive_ReceiveCompleted_On_Client_Disconnect()
-        {
-            using (var server = new TestStratumServer())
-            {
-                server.StartListeners(listenEndPoint);
+		[Fact]
+		public async Task StratumServer_Should_Receive_ReceiveCompleted_On_Client_Disconnect()
+		{
+			using (var server = new TestStratumServer())
+			{
+				server.StartListeners(listenEndPoint);
 
-                using (var tcpClient = await server.ConnectClient(listenEndPoint))
-                {
-                    tcpClient.Close();
-                }
+				using (var tcpClient = await server.ConnectClient(listenEndPoint))
+				{
+					tcpClient.Close();
+				}
 
-                await server.ReceiveCompleted.Take(1).ToTask();
-                Assert.Equal(1, server.ReceiveCompletedCount);
-            }
-        }
+				await server.ReceiveCompleted.Take(1).ToTask();
+				Assert.Equal(1, server.ReceiveCompletedCount);
+			}
+		}
 
-        [Fact]
-        public async Task Disconnecting_StratumClient_Drops_Connection()
-        {
-            using (var server = new TestStratumServer())
-            {
-                server.StartListeners(listenEndPoint);
+		[Fact]
+		public async Task Disconnecting_StratumClient_Drops_Connection()
+		{
+			using (var server = new TestStratumServer())
+			{
+				server.StartListeners(listenEndPoint);
 
-                using (var tcpClient = await server.ConnectClient(listenEndPoint))
-                {
-                    var client = await server.Connects.Take(1).ToTask();
-                    client.Disconnect();
+				using (var tcpClient = await server.ConnectClient(listenEndPoint))
+				{
+					var client = await server.Connects.Take(1).ToTask();
+					client.Disconnect();
 
-                    await server.ReceiveCompleted.Take(1).ToTask();
-                    Assert.Equal(1, server.ReceiveCompletedCount);
+					await server.ReceiveCompleted.Take(1).ToTask();
+					Assert.Equal(1, server.ReceiveCompletedCount);
 
-                    tcpClient.Close();
-                }
-            }
-        }
-    }
-    */
+					tcpClient.Close();
+				}
+			}
+		}
+	}
+	*/
 }

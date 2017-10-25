@@ -8,21 +8,21 @@ using Xunit;
 
 namespace MiningCore.Tests.Blockchain.Ethereum
 {
-    public class EthereumJobTests : TestBase
+	public class EthereumJobTests : TestBase
 	{
 		static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath(), true);
 
 		[Fact]
-	    public async Task EthereumJob_Should_Accept_Valid_Share()
-	    {
-		    var worker = new StratumClient<EthereumWorkerContext>
-		    {
-			    Context = new EthereumWorkerContext
-			    {
-				    Difficulty = 0.05,
-				    ExtraNonce1 = "0003",
-			    }
-		    };
+		public async Task EthereumJob_Should_Accept_Valid_Share()
+		{
+			var worker = new StratumClient<EthereumWorkerContext>
+			{
+				Context = new EthereumWorkerContext
+				{
+					Difficulty = 0.05,
+					ExtraNonce1 = "0003",
+				}
+			};
 
 			var bt = JsonConvert.DeserializeObject<EthereumBlockTemplate>(
 				"{\"Height\":1939983,\"Header\":\"0x2b1dc55864dc6785ae5694b2a5c8fb301fee511262385007b69c06f6940f0ee3\",\"Seed\":\"0x4220f7b47dc9e1f91e2d7c117a12e9158ce7a78185c805d21338759838f6f55d\",\"Target\":5547597442670231301113464668059123372289016956050714228028458602362,\"ParentHash\":\"0x372c7825b893281707dfc7676321fb237eef771fef724f70847c8085005f7627\",\"Difficulty\":20872475055}");
@@ -32,9 +32,9 @@ namespace MiningCore.Tests.Blockchain.Ethereum
 
 			Assert.NotNull(share);
 			Assert.True(share.IsBlockCandidate);
-		    Assert.Equal(share.TransactionConfirmationData, "0xbaa8dfa217eca2af764164cbb2e1112663ffac64940cc237d8a884500f62b3a2:0x0003000009f3003a");
-		    Assert.Equal(share.BlockHeight, 1939983);
-		    Assert.Equal(share.StratumDifficulty, 214748364.8);
+			Assert.Equal(share.TransactionConfirmationData, "0xbaa8dfa217eca2af764164cbb2e1112663ffac64940cc237d8a884500f62b3a2:0x0003000009f3003a");
+			Assert.Equal(share.BlockHeight, 1939983);
+			Assert.Equal(share.StratumDifficulty, 214748364.8);
 		}
 
 		[Fact]
