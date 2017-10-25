@@ -59,8 +59,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public Share[] PageSharesBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page,
-            int pageSize)
+        public Share[] PageSharesBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             var query = "SELECT * FROM shares WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                         "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
@@ -97,5 +96,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             return con.QuerySingle<long>(query, new { poolId, miner, start, end });
         }
-    }
+
+		public ulong GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end)
+		{
+			var query = "SELECT SUM(stratumdifficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+
+			return con.QuerySingle<ulong>(query, new { poolId, start, end });
+		}
+	}
 }

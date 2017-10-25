@@ -25,8 +25,10 @@ CREATE TABLE blocks
 	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
 	blockheight BIGINT NOT NULL,
+	networkdifficulty REAL NOT NULL,
 	status TEXT NOT NULL,
 	confirmationprogress FLOAT NOT NULL DEFAULT 0,
+	effort FLOAT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
 	reward decimal(28,12) NULL,
 	created TIMESTAMP NOT NULL

@@ -138,6 +138,9 @@ namespace MiningCore.Payments
 								break;
 
 							case BlockStatus.Pending:
+								if (!block.Effort.HasValue)
+									CalculateBlockEffort(pool, block);
+
 								blockRepo.UpdateBlock(con, tx, block);
 			                    break;
 	                    }
@@ -149,7 +152,7 @@ namespace MiningCore.Payments
                 logger.Info(() => $"No updated blocks for {pool.Id}");
         }
 
-        private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
+	    private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
         {
             var poolBalancesOverMinimum = cf.Run(con =>
                 balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
@@ -196,9 +199,32 @@ namespace MiningCore.Payments
             }
         }
 
-        #region API-Surface
+	    private void CalculateBlockEffort(PoolConfig pool, Block block)
+	    {
+			// get share date-range
+		    var from = DateTime.MinValue;
+		    var to = block.Created;
 
-        public void Configure(ClusterConfig clusterConfig)
+		    // get last block for pool
+		    var lastBlock = cf.Run(con => blockRepo.GetBlockBefore(con, pool.Id, new[]
+		    {
+			    BlockStatus.Confirmed,
+			    BlockStatus.Orphaned,
+			    BlockStatus.Pending,
+			}, block.Created));
+
+		    if (lastBlock != null)
+			    from = lastBlock.Created;
+
+		    var sharesForBlockTotalDiff = cf.Run(con => 
+				shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
+
+		    block.Effort = (double) sharesForBlockTotalDiff / block.NetworkDifficulty;
+	    }
+
+		#region API-Surface
+
+		public void Configure(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
         }

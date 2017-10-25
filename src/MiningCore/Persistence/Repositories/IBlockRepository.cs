@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Data;
 using MiningCore.Persistence.Model;
 
@@ -31,5 +32,6 @@ namespace MiningCore.Persistence.Repositories
 
         Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
         Block[] GetPendingBlocksForPool(IDbConnection con, string poolid);
+	    Block GetBlockBefore(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
     }
 }

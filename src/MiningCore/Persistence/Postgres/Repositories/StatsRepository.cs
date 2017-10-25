@@ -39,7 +39,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         private readonly IMapper mapper;
 
-        public void Insert(IDbConnection con, IDbTransaction tx, PoolStats stats)
+        public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 

@@ -260,7 +260,7 @@ namespace MiningCore.Mining
                     mapped.PoolId = poolConfig.Id;
                     mapped.Created = clock.UtcNow;
 
-                    statsRepo.Insert(con, tx, mapped);
+                    statsRepo.InsertPoolStats(con, tx, mapped);
                 });
             }
 
