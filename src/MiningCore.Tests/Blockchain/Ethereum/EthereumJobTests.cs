@@ -8,7 +8,11 @@ using Xunit;
 
 namespace MiningCore.Tests.Blockchain.Ethereum
 {
-    public class EthereumJobTests : TestBase
+	/// <summary>
+	/// These tests take ages to complete (> 10 min. on modern hardware)
+	/// due to the time it takes to generate the DAG for EthashFull
+	/// </summary>
+	public class EthereumJobTests : TestBase
     {
         static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath(), true);
 

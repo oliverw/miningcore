@@ -20,7 +20,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -35,7 +34,6 @@ using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
 
