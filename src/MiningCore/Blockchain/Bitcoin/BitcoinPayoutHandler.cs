@@ -97,8 +97,6 @@ namespace MiningCore.Blockchain.Bitcoin
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            var immatureCount = 0;
-
             for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
@@ -149,13 +147,15 @@ namespace MiningCore.Blockchain.Bitcoin
                         switch (transactionInfo.Details[0].Category)
                         {
                             case "immature":
-                                // coinbase transaction that is not spendable yet, do nothing and let it mature
-                                immatureCount++;
+	                            // update progress
+	                            block.ConfirmationProgress = Math.Min(1.0d, (double)transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
+	                            result.Add(block);
                                 break;
 
                             case "generate":
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
+	                            block.ConfirmationProgress = 1;
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");

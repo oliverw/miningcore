@@ -26,6 +26,7 @@ namespace MiningCore.Api.Responses
     {
         public ulong BlockHeight { get; set; }
         public string Status { get; set; }
+	    public double ConfirmationProgress { get; set; }
         public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }
         public string InfoLink { get; set; }

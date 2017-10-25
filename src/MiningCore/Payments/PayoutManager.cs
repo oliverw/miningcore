@@ -119,23 +119,28 @@ namespace MiningCore.Payments
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
-                        if (block.Status == BlockStatus.Confirmed)
-                        {
-                            // blockchains that do not support block-reward payments via coinbase Tx
-                            // must generate balance records for all reward recipients instead
-                            var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+	                    switch (block.Status)
+	                    {
+							case BlockStatus.Confirmed:
+								// blockchains that do not support block-reward payments via coinbase Tx
+								// must generate balance records for all reward recipients instead
+								var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-                            // update share submitter balances through configured payout scheme 
-                            await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
+								// update share submitter balances through configured payout scheme 
+								await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
 
-                            // finally update block status
-                            blockRepo.UpdateBlock(con, tx, block);
-                        }
+								// finally update block status
+								blockRepo.UpdateBlock(con, tx, block);
+				                break;
 
-                        else if (block.Status == BlockStatus.Orphaned)
-                        {
-                            blockRepo.DeleteBlock(con, tx, block);
-                        }
+							case BlockStatus.Orphaned:
+								blockRepo.DeleteBlock(con, tx, block);
+								break;
+
+							case BlockStatus.Pending:
+								blockRepo.UpdateBlock(con, tx, block);
+			                    break;
+	                    }
                     });
                 }
             }

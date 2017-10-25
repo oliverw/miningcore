@@ -58,7 +58,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             var mapped = mapper.Map<Entities.Block>(block);
 
-            var query = "UPDATE blocks SET status = @status, reward = @reward WHERE id = @id";
+            var query = "UPDATE blocks SET status = @status, reward = @reward, confirmationprogress = @confirmationprogress WHERE id = @id";
             con.Execute(query, mapped, tx);
         }
 

@@ -26,6 +26,7 @@ CREATE TABLE blocks
 	poolid TEXT NOT NULL,
 	blockheight BIGINT NOT NULL,
 	status TEXT NOT NULL,
+	confirmationprogress FLOAT NOT NULL DEFAULT 0,
 	transactionconfirmationdata TEXT NOT NULL,
 	reward decimal(28,12) NULL,
 	created TIMESTAMP NOT NULL

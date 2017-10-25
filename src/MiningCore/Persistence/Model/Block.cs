@@ -28,7 +28,8 @@ namespace MiningCore.Persistence.Model
         public string PoolId { get; set; }
         public ulong BlockHeight { get; set; }
         public BlockStatus Status { get; set; }
-        public string TransactionConfirmationData { get; set; }
+	    public double ConfirmationProgress { get; set; }
+		public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }
         public DateTime Created { get; set; }
     }

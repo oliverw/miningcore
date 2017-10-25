@@ -108,8 +108,6 @@ namespace MiningCore.Blockchain.Ethereum
             var pageCount = (int)Math.Ceiling(blocks.Length / (double)pageSize);
             var result = new List<Block>();
 
-            var immatureCount = 0;
-
             for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
@@ -151,22 +149,19 @@ namespace MiningCore.Blockchain.Ethereum
                         continue;
                     }
 
-                    // missing details with no error are interpreted as "orphaned"
+                    // missing details with no error
                     if (blockInfo == null)
                     {
                         logger.Warn(() => $"[{LogCategory}] Daemon returned null result for block {page[j].BlockHeight}. Will retry.");
                         continue;
                     }
 
-                    // don't even touch immature blocks
-                    if (latestBlockHeight - block.BlockHeight < EthereumConstants.MinConfimations)
-                    {
-                        immatureCount++;
-                        continue;
-                    }
+	                // update progress
+	                block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
+	                result.Add(block);
 
-                    // mined by us?
-                    if (blockInfo.Miner == poolConfig.Address)
+					// is it block mined by us?
+					if (blockInfo.Miner == poolConfig.Address)
                     {
                         // additional check
                         // NOTE: removal of first character of both sealfields caused by 
@@ -174,54 +169,60 @@ namespace MiningCore.Blockchain.Ethereum
                         var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) && 
                                     blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
 
-                        // confirmed
-                        block.Status = BlockStatus.Confirmed;
-                        block.Reward = GetBaseBlockReward(block.BlockHeight);   // base reward
+						// mature?
+	                    if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+	                    {
+		                    block.Status = BlockStatus.Confirmed;
+		                    block.ConfirmationProgress = 1;
+		                    block.Reward = GetBaseBlockReward(block.BlockHeight); // base reward
 
-                        if (extraConfig?.KeepUncles == false)
-                            block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
+		                    if (extraConfig?.KeepUncles == false)
+			                    block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
 
-                        if (extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
-                            block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
+		                    if (extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
+			                    block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
 
-                        result.Add(block);
+							logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+	                    }
 
-                        logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
-                    }
+						continue;
+					}
 
-                    else
+					// don't give up yet, there might be an uncle
+					if (blockInfo.Uncles.Length > 0)
                     {
-                        // don't give up yet, might be uncle
-                        if (blockInfo.Uncles.Length > 0)
+                        // fetch all uncles in a single RPC batch request
+                        var uncleBatch = blockInfo.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
+                                new[] { blockInfo.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
+                            .ToArray();
+
+                        var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
+
+                        var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
+                            .Select(x => x.Response.ToObject<DaemonResponses.Block>())
+                            .FirstOrDefault(x => x.Miner == poolConfig.Address);
+
+                        if (uncle != null)
                         {
-                            // fetch all uncles in a single RPC batch request
-                            var uncleBatch = blockInfo.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
-                                    new[] { blockInfo.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
-                                .ToArray();
+	                        // mature?
+	                        if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+	                        {
+		                        block.Status = BlockStatus.Confirmed;
+		                        block.ConfirmationProgress = 1;
+		                        block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
 
-                            var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
+		                        logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+	                        }
 
-                            var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
-                                .Select(x => x.Response.ToObject<DaemonResponses.Block>())
-                                .FirstOrDefault(x => x.Miner == poolConfig.Address);
-
-                            if (uncle != null)
-                            {
-                                // confirmed
-                                block.Status = BlockStatus.Confirmed;
-                                block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
-                                result.Add(block);
-
-                                logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
-                                continue;
-                            }
-
+	                        continue;
                         }
-
-                        // we've lost this one
-                        block.Status = BlockStatus.Orphaned;
-                        result.Add(block);
                     }
+
+	                if (block.ConfirmationProgress > 0.75)
+	                {
+		                // we've lost this one
+		                block.Status = BlockStatus.Orphaned;
+	                }
                 }
             }
 

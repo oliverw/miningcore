@@ -289,24 +289,26 @@ namespace MiningCore.Blockchain.Monero
 
                     var blockHeader = rpcResult.Response.BlockHeader;
 
-                    // orphaned?
-                    if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
+					// update progress
+	                block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / MoneroConstants.PayoutMinBlockConfirmations);
+	                result.Add(block);
+
+					// orphaned?
+					if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
                     {
                         block.Status = BlockStatus.Orphaned;
-                        result.Add(block);
                         continue;
                     }
 
-                    // confirmed?
-                    if (blockHeader.Depth < MoneroConstants.PayoutMinBlockConfirmations)
-                        continue;
+	                // matured and spendable?
+	                if (blockHeader.Depth >= MoneroConstants.PayoutMinBlockConfirmations)
+	                {
+		                block.Status = BlockStatus.Confirmed;
+		                block.ConfirmationProgress = 1;
+						block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
 
-                    // matured and spendable 
-                    block.Status = BlockStatus.Confirmed;
-                    block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
-                    result.Add(block);
-
-                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+						logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+					}
                 }
             }
 
@@ -348,8 +350,10 @@ namespace MiningCore.Blockchain.Monero
             if(infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
-                logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
+#if !DEBUG
+				logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
+#endif
             }
 
             // simple balances first
@@ -371,6 +375,6 @@ namespace MiningCore.Blockchain.Monero
                 await PayoutToPaymentId(balance);
         }
 
-        #endregion // IPayoutHandler
+#endregion // IPayoutHandler
     }
 }

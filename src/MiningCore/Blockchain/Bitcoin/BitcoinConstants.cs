@@ -68,9 +68,11 @@ namespace MiningCore.Blockchain.Bitcoin
         public static double Pow2x32 = Math.Pow(2, 32);
 
         public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
-    }
 
-    public class KnownAddresses
+		public const int CoinbaseMinConfimations = 101;
+	}
+
+	public class KnownAddresses
     {
         public static readonly Dictionary<CoinType, string> DevFeeAddresses = new Dictionary<CoinType, string>
         {

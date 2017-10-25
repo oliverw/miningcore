@@ -28,6 +28,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public string PoolId { get; set; }
         public long BlockHeight { get; set; }
         public string Status { get; set; }
+	    public double ConfirmationProgress { get; set; }
         public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }
         public DateTime Created { get; set; }
