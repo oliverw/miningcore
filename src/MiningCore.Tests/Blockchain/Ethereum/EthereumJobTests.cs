@@ -1,12 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿using System.IO;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
-using MiningCore.Blockchain.Monero;
-using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Ethash;
-using MiningCore.Extensions;
 using MiningCore.Stratum;
 using Newtonsoft.Json;
 using Xunit;
@@ -15,7 +10,7 @@ namespace MiningCore.Tests.Blockchain.Ethereum
 {
     public class EthereumJobTests : TestBase
 	{
-		readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath(), true);
+		static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath(), true);
 
 		[Fact]
 	    public async Task EthereumJob_Should_Accept_Valid_Share()
@@ -42,7 +37,6 @@ namespace MiningCore.Tests.Blockchain.Ethereum
 		    Assert.Equal(share.StratumDifficulty, 214748364.8);
 		}
 
-#if false // TODO: figure out why this test fails when running concurrently with EthereumJob_Should_Accept_Valid_Share
 		[Fact]
 		public async Task EthereumJob_Should_Not_Accept_Invalid_Share()
 		{
@@ -67,6 +61,5 @@ namespace MiningCore.Tests.Blockchain.Ethereum
 			worker.Context.ExtraNonce1 = "0001";
 			await Assert.ThrowsAsync<StratumException>(() => job.ProcessShareAsync(worker, "000009f3003a", ethash));
 		}
-#endif
 	}
 }
