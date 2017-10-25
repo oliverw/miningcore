@@ -66,9 +66,9 @@ namespace MiningCore.Blockchain.Bitcoin
 	    protected readonly BitcoinExtraNonceProvider extraNonceProvider;
 	    protected readonly IHashAlgorithm sha256d = new Sha256D();
 	    protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
-
-	    protected readonly IHashAlgorithm sha256s = new Sha256S();
-        protected readonly Dictionary<string, TJob> validJobs = new Dictionary<string, TJob>();
+	    protected const int MaxActiveJobs = 4;
+		protected readonly IHashAlgorithm sha256s = new Sha256S();
+        protected readonly List<TJob> validJobs = new List<TJob>();
 	    protected IHashAlgorithm blockHasher;
 	    protected IHashAlgorithm coinbaseHasher;
 	    protected bool hasSubmitBlockMethod;
@@ -327,7 +327,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             lock (jobLock)
             {
-                validJobs.TryGetValue(jobId, out job);
+                job = validJobs.FirstOrDefault(x=> x.JobId == jobId);
             }
 
             if (job == null)
@@ -359,12 +359,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
             lock (jobLock)
             {
-                if(!validJobs.TryGetValue(jobId, out job))
-                    throw new StratumException(StratumError.JobNotFound, "job not found");
+				job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
 
-            // extract worker/miner/payoutid
-            var split = workerValue.Split('.');
+	        if (job == null)
+		        throw new StratumException(StratumError.JobNotFound, "job not found");
+
+			// extract worker/miner/payoutid
+			var split = workerValue.Split('.');
             var minerName = split[0];
             var workerName = split.Length > 1 ? split[1] : null;
 
@@ -627,15 +629,15 @@ namespace MiningCore.Blockchain.Bitcoin
                             ShareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 
+	                    // update stats
                         if (isNew)
-                        {
-                            validJobs.Clear();
-
-                            // update stats
                             BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
-                        }
 
-                        validJobs[currentJob.JobId] = currentJob;
+	                    validJobs.Add(currentJob);
+
+						// trim active jobs
+	                    while (validJobs.Count > MaxActiveJobs)
+		                    validJobs.RemoveAt(0);
                     }
 
                     return isNew;
