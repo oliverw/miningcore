@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -16,9 +14,9 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Id = id;
             BlockTemplate = blockTemplate;
-        }
+		}
 
-        private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
+		private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();
 
         public string Id { get; }
@@ -91,7 +89,7 @@ namespace MiningCore.Blockchain.Ethereum
             var share = new EthereumShare
             {
                 BlockHeight = (long)BlockTemplate.Height,
-                IpAddress = worker.RemoteEndpoint.Address.ToString(),
+                IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
                 Miner = worker.Context.MinerName,
                 Worker = worker.Context.WorkerName,
                 UserAgent = worker.Context.UserAgent,

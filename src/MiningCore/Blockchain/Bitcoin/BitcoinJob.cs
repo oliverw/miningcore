@@ -223,7 +223,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual Script GenerateScriptSigInitial()
         {
             var now = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
-Debug.WriteLine(now);
+
             // script ops
             var ops = new List<Op>();
 
@@ -416,9 +416,6 @@ Debug.WriteLine(now);
             Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
             Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
-
-Debug.WriteLine(JsonConvert.SerializeObject(blockTemplate));
-Debug.WriteLine(jobId);
 
 			this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;

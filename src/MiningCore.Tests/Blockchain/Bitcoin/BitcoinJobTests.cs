@@ -22,18 +22,18 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
 		protected readonly IHashAlgorithm sha256d = new Sha256D();
 		protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 
-		StratumClient<BitcoinWorkerContext> worker = new StratumClient<BitcoinWorkerContext>
-		{
-			Context = new BitcoinWorkerContext
-			{
-				Difficulty = 0.5,
-				ExtraNonce1 = "01000058",
-			}
-		};
-
 		[Fact]
 	    public void BitcoinJob_Should_Accept_Valid_Share()
 	    {
+		    var worker = new StratumClient<BitcoinWorkerContext>
+		    {
+			    Context = new BitcoinWorkerContext
+			    {
+				    Difficulty = 0.5,
+				    ExtraNonce1 = "01000058",
+			    }
+		    };
+
 			var bt = JsonConvert.DeserializeObject<MiningCore.Blockchain.Bitcoin.DaemonResponses.BlockTemplate>(
 				"{\"Version\":536870912,\"PreviousBlockhash\":\"000000000909578519b5be7b37fdc53b2923817921c43108a907b72264da76bb\",\"CoinbaseValue\":5000000000,\"Target\":\"7fffff0000000000000000000000000000000000000000000000000000000000\",\"NonceRange\":\"00000000ffffffff\",\"CurTime\":1508869874,\"Bits\":\"207fffff\",\"Height\":14,\"Transactions\":[],\"CoinbaseAux\":{\"Flags\":\"0b2f454231362f414431322f\"},\"default_witness_commitment\":null}");
 
@@ -62,6 +62,15 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
 		[Fact]
 		public void BitcoinJob_Should_Not_Accept_Invalid_Share()
 		{
+			var worker = new StratumClient<BitcoinWorkerContext>
+			{
+				Context = new BitcoinWorkerContext
+				{
+					Difficulty = 0.5,
+					ExtraNonce1 = "01000058",
+				}
+			};
+
 			var bt = JsonConvert.DeserializeObject<MiningCore.Blockchain.Bitcoin.DaemonResponses.BlockTemplate>(
 				"{\"Version\":536870912,\"PreviousBlockhash\":\"000000000909578519b5be7b37fdc53b2923817921c43108a907b72264da76bb\",\"CoinbaseValue\":5000000000,\"Target\":\"7fffff0000000000000000000000000000000000000000000000000000000000\",\"NonceRange\":\"00000000ffffffff\",\"CurTime\":1508869874,\"Bits\":\"207fffff\",\"Height\":14,\"Transactions\":[],\"CoinbaseAux\":{\"Flags\":\"0b2f454231362f414431322f\"},\"default_witness_commitment\":null}");
 
