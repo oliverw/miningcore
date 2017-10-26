@@ -229,7 +229,14 @@ namespace MiningCore.Blockchain.Ethereum
             return result.ToArray();
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+	    public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+	    {
+		    block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
+
+		    return Task.FromResult(true);
+	    }
+
+		public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 

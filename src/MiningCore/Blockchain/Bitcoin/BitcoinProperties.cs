@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using MiningCore.Configuration;
+using MiningCore.Contracts;
 using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
@@ -29,32 +29,102 @@ namespace MiningCore.Blockchain.Bitcoin
 
 	public class BitcoinProperties
 	{
-		private static readonly IHashAlgorithm sha256s = new Sha256S();
-		private static readonly IHashAlgorithm sha256d = new Sha256D();
-		private static readonly IHashAlgorithm sha256dReverse = new DigestReverser(sha256d);
+		private static readonly IHashAlgorithm sha256S = new Sha256S();
+		private static readonly IHashAlgorithm sha256D = new Sha256D();
+		private static readonly IHashAlgorithm sha256DReverse = new DigestReverser(sha256D);
 		private static readonly IHashAlgorithm x11 = new X11();
 		private static readonly IHashAlgorithm groestl = new Groestl();
 		private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
 		private static readonly IHashAlgorithm scrypt_1024_1 = new Scrypt(1024, 1);
+		private static readonly IHashAlgorithm skein = new Skein();
+		private static readonly IHashAlgorithm qubit = new Qubit();
+		private static readonly IHashAlgorithm groestlMyriad = new GroestlMyriad();
 
-		public static readonly BitcoinCoinProperties Sha256Coin = 
-			new BitcoinCoinProperties(1, sha256d, sha256d, sha256dReverse);
+		private static readonly BitcoinCoinProperties sha256Coin = 
+			new BitcoinCoinProperties(1, sha256D, sha256D, sha256DReverse);
 
-		public static readonly BitcoinCoinProperties ScryptCoin = 
-			new BitcoinCoinProperties(Math.Pow(2, 16), sha256d, scrypt_1024_1, sha256dReverse, new DigestReverser(scrypt_1024_1));
+		private static readonly BitcoinCoinProperties scryptCoin = 
+			new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, scrypt_1024_1, sha256DReverse, new DigestReverser(scrypt_1024_1));
 
-		public static readonly BitcoinCoinProperties GroestlCoin =
-			new BitcoinCoinProperties(Math.Pow(2, 8), sha256s, groestl, new DigestReverser(groestl));
+		private static readonly BitcoinCoinProperties groestlCoin =
+			new BitcoinCoinProperties(Math.Pow(2, 8), sha256S, groestl, new DigestReverser(groestl));
 
-		public static readonly BitcoinCoinProperties Lyra2Rev2Coin =
-			new BitcoinCoinProperties(Math.Pow(2, 8), sha256d, lyra2Rev2, sha256dReverse);
+		private static readonly BitcoinCoinProperties lyra2Rev2Coin =
+			new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, sha256DReverse);
 
-		public static readonly BitcoinCoinProperties X11Coin =
-			new BitcoinCoinProperties(1, sha256d, x11, new DigestReverser(x11));
+		private static readonly BitcoinCoinProperties x11Coin =
+			new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11));
 
-		public static readonly Dictionary<CoinType, BitcoinCoinProperties> CoinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
+		private static readonly BitcoinCoinProperties skeinCoin =
+			new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse);
+
+		private static readonly BitcoinCoinProperties qubitCoin =
+			new BitcoinCoinProperties(1, sha256D, qubit, sha256DReverse);
+
+		private static readonly BitcoinCoinProperties groestlMyriadCoin =
+			new BitcoinCoinProperties(Math.Pow(2, 8), sha256S, groestlMyriad, sha256DReverse);
+
+		private static readonly BitcoinCoinProperties equihashCoin =
+			new BitcoinCoinProperties(1, sha256D, new DummyHasher(), sha256DReverse);
+
+		private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
 		{
-			
+			// SHA256
+			{ CoinType.BTC, sha256Coin },
+			{ CoinType.BCC, sha256Coin },
+			{ CoinType.NMC, sha256Coin },
+			{ CoinType.PPC, sha256Coin },
+
+			// Scrypt
+			{ CoinType.LTC, scryptCoin },
+			{ CoinType.DOGE, scryptCoin },
+			{ CoinType.VIA, scryptCoin },
+
+			// Groestl
+			{ CoinType.GRS, groestlCoin },
+
+			// Lyra2Rev2
+			{ CoinType.MONA, lyra2Rev2Coin },
+			{ CoinType.VTC, lyra2Rev2Coin },
+
+			// X11
+			{ CoinType.DASH, x11Coin },
+
+			// Equihash
+			{ CoinType.ZEC, equihashCoin },
 		};
-    }
+
+		public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
+		{
+			if (coin == CoinType.DGB)
+				return GetDigiByteProperties(algorithm);
+
+			coinProperties.TryGetValue(coin, out var props);
+			return props;
+		}
+
+		private static BitcoinCoinProperties GetDigiByteProperties(string algorithm)
+		{
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
+
+			switch (algorithm)
+			{
+				case "sha256d":
+					return sha256Coin;
+
+				case "skein":
+					return skeinCoin;
+
+				case "qubit":
+					return qubitCoin;
+
+				case "groestl":
+				case "groestl-myriad":
+					return groestlMyriadCoin;
+
+				default:    // scrypt
+					return scryptCoin;
+			}
+		}
+	}
 }

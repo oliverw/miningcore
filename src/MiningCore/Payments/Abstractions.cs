@@ -30,7 +30,8 @@ namespace MiningCore.Payments
         void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig);
 
         Task<Block[]> ClassifyBlocksAsync(Block[] blocks);
-        Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool);
+	    Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff);
+		Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool);
         Task PayoutAsync(Balance[] balances);
 
         string FormatAmount(decimal amount);

@@ -139,7 +139,7 @@ namespace MiningCore.Payments
 
 							case BlockStatus.Pending:
 								if (!block.Effort.HasValue)
-									CalculateBlockEffort(pool, block);
+									await CalculateBlockEffort(pool, block, handler);
 
 								blockRepo.UpdateBlock(con, tx, block);
 			                    break;
@@ -199,7 +199,7 @@ namespace MiningCore.Payments
             }
         }
 
-	    private void CalculateBlockEffort(PoolConfig pool, Block block)
+	    private async Task CalculateBlockEffort(PoolConfig pool, Block block, IPayoutHandler handler)
 	    {
 			// get share date-range
 		    var from = DateTime.MinValue;
@@ -216,10 +216,12 @@ namespace MiningCore.Payments
 		    if (lastBlock != null)
 			    from = lastBlock.Created;
 
-		    var sharesForBlockTotalDiff = cf.Run(con => 
+			// get combined diff of all shares for block
+		    var accumulatedShareDiffForBlock = cf.Run(con => 
 				shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
 
-		    block.Effort = (double) sharesForBlockTotalDiff / block.NetworkDifficulty;
+			// handler has the final say
+		    await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock);
 	    }
 
 		#region API-Surface

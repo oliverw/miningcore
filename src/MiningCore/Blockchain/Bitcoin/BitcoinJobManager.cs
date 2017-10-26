@@ -178,107 +178,15 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void SetupCrypto()
         {
-            switch (poolConfig.Coin.Type)
-            {
-                // SHA256
-                case CoinType.BTC:
-                case CoinType.BCC:
-                case CoinType.NMC:
-                case CoinType.PPC:
-                    coinbaseHasher = sha256d;
-                    headerHasher = sha256d;
-                    blockHasher = sha256dReverse;
-                    ShareMultiplier = 1;
-                    break;
+	        var coinProps = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 
-                // Scrypt
-                case CoinType.LTC:
-                case CoinType.DOGE:
-                case CoinType.VIA:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new Scrypt(1024, 1);
-                    blockHasher = !isPoS ? sha256dReverse : new DigestReverser(headerHasher);
-                    ShareMultiplier = Math.Pow(2, 16);
-                    break;
+			if(coinProps == null)
+				logger.ThrowLogPoolStartupException($"Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
 
-                // Groestl
-                case CoinType.GRS:
-                    coinbaseHasher = sha256s;
-                    headerHasher = new Groestl();
-                    blockHasher = new DigestReverser(headerHasher);
-                    ShareMultiplier = Math.Pow(2, 8);
-                    break;
-
-                // Lyra2Rev2
-                case CoinType.MONA:
-                case CoinType.VTC:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new Lyra2Rev2();
-                    blockHasher = sha256dReverse;
-                    ShareMultiplier = Math.Pow(2, 8);
-                    break;
-
-                // X11
-                case CoinType.DASH:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new X11();
-                    blockHasher = new DigestReverser(headerHasher);
-                    ShareMultiplier = 1;
-                    break;
-
-                // Equihash
-                case CoinType.ZEC:
-                    coinbaseHasher = sha256d;
-                    headerHasher = new DummyHasher();  // N/A
-                    blockHasher = sha256dReverse;
-                    ShareMultiplier = 1;
-                    break;
-
-                case CoinType.DGB:
-                    switch (poolConfig.Coin.Algorithm)
-                    {
-                        case "sha256d":
-                            coinbaseHasher = sha256d;
-                            headerHasher = sha256d;
-                            blockHasher = sha256dReverse;
-                            ShareMultiplier = 1;
-                            break;
-
-                        case "skein":
-                            coinbaseHasher = sha256d;
-                            headerHasher = new Skein();
-                            blockHasher = sha256dReverse;
-                            ShareMultiplier = 1;
-                            break;
-
-                        case "qubit":
-                            coinbaseHasher = sha256d;
-                            headerHasher = new Qubit();
-                            blockHasher = sha256dReverse;
-                            ShareMultiplier = 1;
-                            break;
-
-                        case "groestl":
-                        case "groestl-myriad":
-                            coinbaseHasher = sha256s;
-                            headerHasher = new GroestlMyriad();
-                            blockHasher = sha256dReverse;
-                            ShareMultiplier = Math.Pow(2, 8);
-                            break;
-
-                        default:    // scrypt
-                            coinbaseHasher = sha256d;
-                            headerHasher = new Scrypt(1024, 1);
-                            blockHasher = sha256dReverse;
-                            ShareMultiplier = Math.Pow(2, 16);
-                            break;
-                    }
-                    break;
-
-                default:
-                    logger.ThrowLogPoolStartupException($"Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
-                    break;
-            }
+			coinbaseHasher = coinProps.CoinbaseHasher;
+	        headerHasher = coinProps.HeaderHasher;
+	        blockHasher = !isPoS ? coinProps.BlockHasher : coinProps.PoSBlockHasher;
+	        ShareMultiplier = coinProps.ShareMultiplier;
         }
 
         #region API-Surface

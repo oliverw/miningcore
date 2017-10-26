@@ -173,7 +173,18 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+	    public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+	    {
+			// adjust diff
+		    var coinProps = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
+		    var adjusted = accumulatedBlockShareDiff / coinProps.ShareMultiplier;
+
+			block.Effort = adjusted / block.NetworkDifficulty;
+
+		    return Task.FromResult(true);
+	    }
+
+		public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
