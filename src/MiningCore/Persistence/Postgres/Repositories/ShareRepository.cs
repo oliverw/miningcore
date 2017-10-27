@@ -97,11 +97,11 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return con.QuerySingle<long>(query, new { poolId, miner, start, end });
         }
 
-		public ulong GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end)
+		public ulong? GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end)
 		{
 			var query = "SELECT SUM(stratumdifficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
-			return con.QuerySingle<ulong>(query, new { poolId, start, end });
+			return con.QuerySingle<ulong?>(query, new { poolId, start, end });
 		}
 	}
 }

@@ -221,7 +221,8 @@ namespace MiningCore.Payments
 				shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
 
 			// handler has the final say
-		    await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock);
+			if(accumulatedShareDiffForBlock.HasValue)
+				await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
 	    }
 
 		#region API-Surface

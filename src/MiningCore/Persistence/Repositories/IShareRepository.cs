@@ -34,6 +34,6 @@ namespace MiningCore.Persistence.Repositories
         void DeletePoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
 
         long CountMinerSharesBetween(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
-	    ulong GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end);
+	    ulong? GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end);
     }
 }
