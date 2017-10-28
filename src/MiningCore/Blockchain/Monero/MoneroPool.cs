@@ -62,7 +62,6 @@ namespace MiningCore.Blockchain.Monero
         private long currentJobId;
 
         private MoneroJobManager manager;
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(15);
 
         private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {

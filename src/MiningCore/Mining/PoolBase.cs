@@ -88,14 +88,15 @@ namespace MiningCore.Mining
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
-        protected const int VarDiffSampleCount = 16;
-        protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
+        protected const int VarDiffSampleCount = 32;
+	    protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(30);
+		protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
         protected override string LogCat => "Pool";
 
         protected abstract Task SetupJobManager();
-
+		
         protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
             // update stats

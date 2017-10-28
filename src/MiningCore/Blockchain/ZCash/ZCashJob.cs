@@ -19,7 +19,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
@@ -35,12 +37,30 @@ namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJob : BitcoinJob<ZCashBlockTemplate>
     {
+	    private ZCashCoinbaseTxConfig coinbaseTxConfig;
         private decimal blockReward;
-        private ZCashCoinbaseTxConfig coinbaseTxConfig;
+	    private decimal rewardFees;
 
-        #region Overrides of BitcoinJob<ZCashBlockTemplate>
+		#region Overrides of BitcoinJob<ZCashBlockTemplate>
 
-        protected override Transaction CreateOutputTransaction()
+		private object GenerateInputTransaction()
+		{
+			var tx = new Transaction();
+
+			var ops = new List<Op>();
+
+			// push block height
+			ops.Add(Op.GetPushOp(BlockTemplate.Height));
+
+			var script = new Script(ops);
+
+			var input = new TxIn(null, script);
+			tx.AddInput(input);
+
+			return tx;
+		}
+
+		protected override Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
@@ -56,10 +76,80 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override void BuildCoinbase()
         {
-            base.BuildCoinbase();
-        }
+			var extraNoncePlaceHolderLengthByte = (byte)extraNoncePlaceHolderLength;
 
-        protected override void BuildMerkleBranches()
+			// generate script parts
+			var sigScriptInitial = GenerateScriptSigInitial();
+			var sigScriptInitialBytes = sigScriptInitial.ToBytes();
+
+			var sigScriptLength = (uint)(
+				sigScriptInitial.Length +
+				1 + // for extranonce-placeholder length after sigScriptInitial
+				extraNoncePlaceHolderLength +
+				scriptSigFinalBytes.Length);
+
+	        var txIn = GenerateInputTransaction();
+
+			// output transaction
+			txOut = CreateOutputTransaction();
+
+			// build coinbase initial
+			using (var stream = new MemoryStream())
+			{
+				var bs = new BitcoinStream(stream, true);
+
+				// version
+				bs.ReadWrite(ref txVersion);
+
+				// timestamp for POS coins
+				if (isPoS)
+				{
+					var timestamp = BlockTemplate.CurTime;
+					bs.ReadWrite(ref timestamp);
+				}
+
+				// serialize (simulated) input transaction
+				bs.ReadWriteAsVarInt(ref txInputCount);
+				bs.ReadWrite(ref sha256Empty);
+				bs.ReadWrite(ref txInPrevOutIndex);
+
+				// signature script initial part
+				bs.ReadWriteAsVarInt(ref sigScriptLength);
+				bs.ReadWrite(ref sigScriptInitialBytes);
+
+				// emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
+				bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
+
+				// done
+				coinbaseInitial = stream.ToArray();
+				coinbaseInitialHex = coinbaseInitial.ToHexString();
+			}
+
+			// build coinbase final
+			using (var stream = new MemoryStream())
+			{
+				var bs = new BitcoinStream(stream, true);
+
+				// signature script final part
+				bs.ReadWrite(ref scriptSigFinalBytes);
+
+				// tx in sequence
+				bs.ReadWrite(ref txInSequence);
+
+				// serialize output transaction
+				var txOutBytes = SerializeOutputTransaction(txOut);
+				bs.ReadWrite(ref txOutBytes);
+
+				// misc
+				bs.ReadWrite(ref txLockTime);
+
+				// done
+				coinbaseFinal = stream.ToArray();
+				coinbaseFinalHex = coinbaseFinal.ToHexString();
+			}
+		}
+
+	    protected override void BuildMerkleBranches()
         {
             base.BuildMerkleBranches();
         }
@@ -128,7 +218,7 @@ namespace MiningCore.Blockchain.ZCash
                 blockReward = (blockTemplate.Subsidy.Miner + founders.Value) * BitcoinConstants.SatoshisPerBitcoin;
             }
 
-            var rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);
+            rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);
 
             BuildCoinbase();
             BuildMerkleBranches();

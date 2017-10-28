@@ -57,7 +57,6 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected object currentJobParams;
         protected BitcoinJobManager<TJob, TBlockTemplate> manager;
-        protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(15);
 
         protected virtual void OnSubscribe(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {

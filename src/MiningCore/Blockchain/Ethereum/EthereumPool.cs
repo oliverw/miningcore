@@ -55,7 +55,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         private object currentJobParams;
         private EthereumJobManager manager;
-        private static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(15);
 
         private void OnSubscribe(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {

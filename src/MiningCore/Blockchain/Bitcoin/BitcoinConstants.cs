@@ -85,7 +85,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2"},
             {CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp"},
             {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"},
-            {CoinType.MONA, "MTZMnES9xYAZSmzUHYPsFGLCY1WJ9TGGob"},
+            {CoinType.MONA, "MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S"},
             {CoinType.VTC, "VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf"},
             //{CoinType.ZEC, ""}
         };
