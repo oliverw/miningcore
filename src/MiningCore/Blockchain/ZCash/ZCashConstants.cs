@@ -31,9 +31,14 @@ namespace MiningCore.Blockchain.ZCash
         public ulong MaxFoundersRewardBlockHeight { get; set; }
         public double FoundersRewardAddressChangeInterval { get; set; }
         public string[] FoundersRewardAddresses { get; set; }
+
+	    public int PercentTreasuryReward { get; set; }
+		public ulong TreasuryRewardStartBlockHeight { get; set; }
+	    public string[] TreasuryRewardAddresses { get; set; }
+	    public double TreasuryRewardAddressChangeInterval { get; set; }
     }
 
-    public class ZCashConstants
+	public class ZCashConstants
     {
         private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
         {

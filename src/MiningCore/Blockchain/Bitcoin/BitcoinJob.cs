@@ -265,8 +265,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
         {
             // build merkle-root
-            var merkleRoot = mt.WithFirst(coinbaseHash)
-                .ToArray();
+            var merkleRoot = mt.WithFirst(coinbaseHash);
 
             var blockHeader = new BlockHeader
             {
