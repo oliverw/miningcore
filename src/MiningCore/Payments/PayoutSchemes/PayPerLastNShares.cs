@@ -149,9 +149,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     else
                         shares[address] += 1;
 
-                    // make sure that score does not go through the roof for testnets where difficulty is usually extremely low
-                    var stratumDiff = Math.Min((decimal) share.StratumDifficulty, (decimal) share.NetworkDifficulty);
-                    var score = stratumDiff / (decimal) share.NetworkDifficulty;
+                    var score = (decimal) share.Difficulty / (decimal) share.NetworkDifficulty;
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if (accumulatedScore + score >= window)

@@ -97,7 +97,7 @@ namespace MiningCore.Blockchain.Ethereum
                 HeaderHash = BlockTemplate.Header,
                 MixHash = mixDigest.ToHexString(true),
                 IsBlockCandidate = isBlockCandidate,
-                StratumDifficulty = stratumDifficulty * EthereumConstants.Pow2x32,
+                Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
             };
 
             if (share.IsBlockCandidate)

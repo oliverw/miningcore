@@ -30,8 +30,7 @@ namespace MiningCore.Blockchain
         public string PayoutInfo { get; set; }
         public string UserAgent { get; set; }
         public string IpAddress { get; set; }
-        public double StratumDifficulty { get; set; }
-        public double StratumDifficultyBase { get; set; }
+        public double Difficulty { get; set; }
         public double NetworkDifficulty { get; set; }
         public long BlockHeight { get; set; }
         public decimal BlockReward { get; set; }

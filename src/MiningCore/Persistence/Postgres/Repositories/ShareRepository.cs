@@ -41,9 +41,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             var mapped = mapper.Map<Entities.Share>(share);
 
-            var query = "INSERT INTO shares(poolid, blockheight, stratumdifficulty, " +
-                "stratumdifficultyBase, networkdifficulty, miner, worker, payoutinfo, useragent, ipaddress, created) " +
-                "VALUES(@poolid, @blockheight, @stratumdifficulty, @stratumdifficultyBase, " +
+            var query = "INSERT INTO shares(poolid, blockheight, difficulty, " +
+                "networkdifficulty, miner, worker, payoutinfo, useragent, ipaddress, created) " +
+                "VALUES(@poolid, @blockheight, @difficulty, " +
                 "@networkdifficulty, @miner, @worker, @payoutinfo, @useragent, @ipaddress, @created)";
 
             con.Execute(query, mapped, tx);
@@ -99,7 +99,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
 		public ulong? GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end)
 		{
-			var query = "SELECT SUM(stratumdifficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+			var query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
 			return con.QuerySingle<ulong?>(query, new { poolId, start, end });
 		}

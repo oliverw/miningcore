@@ -186,7 +186,7 @@ namespace MiningCore.Blockchain.Monero
                 IsBlockCandidate = isBlockCandidate,
                 BlobHex = blob.ToHexString(),
                 BlobHash = ComputeBlockHash(blobConverted).ToHexString(),
-                StratumDifficulty = stratumDifficulty,
+                Difficulty = stratumDifficulty,
             };
 
             return result;

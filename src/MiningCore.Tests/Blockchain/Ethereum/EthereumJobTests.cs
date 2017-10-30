@@ -38,7 +38,7 @@ namespace MiningCore.Tests.Blockchain.Ethereum
             Assert.True(share.IsBlockCandidate);
             Assert.Equal(share.TransactionConfirmationData, "0xbaa8dfa217eca2af764164cbb2e1112663ffac64940cc237d8a884500f62b3a2:0x0003000009f3003a");
             Assert.Equal(share.BlockHeight, 1939983);
-            Assert.Equal(share.StratumDifficulty, 214748364.8);
+            Assert.Equal(share.Difficulty, 214748364.8);
         }
 
         [Fact]

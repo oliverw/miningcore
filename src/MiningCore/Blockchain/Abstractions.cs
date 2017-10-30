@@ -69,12 +69,7 @@ namespace MiningCore.Blockchain
         /// Stratum difficulty assigned to the miner at the time the share was submitted/accepted (used for payout
         /// calculations)
         /// </summary>
-        double StratumDifficulty { get; set; }
-
-        /// <summary>
-        /// Base difficulty configured for stratum port the submitting worker was connected to
-        /// </summary>
-        double StratumDifficultyBase { get; set; }
+        double Difficulty { get; set; }
 
         /// <summary>
         /// Block this share refers to

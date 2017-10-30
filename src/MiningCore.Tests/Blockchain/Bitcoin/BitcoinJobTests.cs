@@ -56,7 +56,7 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
             Assert.Equal(share.BlockHex, "00000020bb76da6422b707a90831c421798123293bc5fd377bbeb51985570909000000008677145722cbe6f1ebec19fecc724cab5487f3292a69f6908bd512f645bb0635f286ef59ffff7f206aae848d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff295e0c0b2f454231362f414431322f04f286ef590801000058010000000c2f4d696e696e67436f72652f000000000100f2052a010000001976a9142ebb5cccf9a6bb927661d2953655c43c04accc3788ac00000000");
             Assert.Equal(share.BlockHeight, 14);
             Assert.Equal(share.BlockReward, 50);
-            Assert.Equal(share.StratumDifficulty, 0.5);
+            Assert.Equal(share.Difficulty, 0.5);
         }
 
         [Fact]

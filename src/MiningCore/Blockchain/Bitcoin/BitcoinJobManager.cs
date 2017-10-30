@@ -314,7 +314,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
-            share.StratumDifficultyBase = stratumDifficultyBase;
+			share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.UtcNow;
 
             return share;
