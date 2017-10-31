@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -30,26 +29,32 @@ using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
+using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
+using MiningCore.Stratum;
 using MiningCore.Time;
+using MiningCore.Util;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 
 namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJob : BitcoinJob<ZCashBlockTemplate>
     {
-	    private ZCashCoinbaseTxConfig coinbaseTxConfig;
-        private decimal blockReward;
-	    private decimal rewardFees;
+	    protected ZCashCoinbaseTxConfig coinbaseTxConfig;
+	    protected decimal blockReward;
+	    protected decimal rewardFees;
 
-	    private uint coinbaseIndex = 4294967295u;
-		private uint coinbaseSequence = 4294967295u;
-		private readonly IHashAlgorithm sha256D = new Sha256D();
-	    private byte[] coinbaseInitialHash;
-	    private byte[] merkleRoot;
-	    private byte[] merkleRootReversed;
+	    protected uint coinbaseIndex = 4294967295u;
+	    protected uint coinbaseSequence = 4294967295u;
+	    protected readonly IHashAlgorithm sha256D = new Sha256D();
+	    protected byte[] coinbaseInitialHash;
+	    protected byte[] merkleRoot;
+	    protected byte[] merkleRootReversed;
+	    protected string merkleRootReversedHex;
+		protected static EquihashVerifier equihash = new EquihashVerifier(4);
 
-	    #region Overrides of BitcoinJob<ZCashBlockTemplate>
+		#region Overrides of BitcoinJob<ZCashBlockTemplate>
 
 		protected override Transaction CreateOutputTransaction()
         {
@@ -139,14 +144,22 @@ namespace MiningCore.Blockchain.ZCash
 			}
 		}
 
-		protected override byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
-        {
-            return base.SerializeHeader(coinbaseHash, nTime, nonce);
-        }
+	    public override object GetJobParams(bool isNew)
+	    {
+		    return new object[]
+		    {
+			    JobId,
+			    BlockTemplate.Version.ToStringHex8(),
+				previousBlockHashReversedHex,
+			    merkleRootReversedHex,
+				sha256Empty,	// hashReserved
+			    BlockTemplate.CurTime.ToStringHex8(),
+			    BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
+			    isNew
+		    };
+	    }
 
-        #endregion
-
-        public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
+		public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
 			IDestination poolAddressDestination, BitcoinNetworkType networkType,
             BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
@@ -210,6 +223,137 @@ namespace MiningCore.Blockchain.ZCash
 
 	        merkleRoot = mt.WithFirst(coinbaseInitialHash);
 	        merkleRootReversed = merkleRoot.ToReverseArray();
+	        merkleRootReversedHex = merkleRootReversed.ToHexString();
+        }
+
+		#endregion
+
+		public BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker,
+			string extraNonce2, string nTime, string nonce, string solution)
+		{
+			Contract.RequiresNonNull(worker, nameof(worker));
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
+
+			// validate nTime
+			if (nTime.Length != 8)
+				throw new StratumException(StratumError.Other, "incorrect size of ntime");
+
+			var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
+			if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
+				throw new StratumException(StratumError.Other, "ntime out of range");
+
+			// validate nonce
+			if (nonce.Length != 64)
+				throw new StratumException(StratumError.Other, "incorrect size of nonce");
+
+			// validate solution
+			if (solution.Length != 2694)
+				throw new StratumException(StratumError.Other, "incorrect size of solution");
+
+			var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
+
+			// dupe check
+			if (!RegisterSubmit(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce))
+				throw new StratumException(StratumError.DuplicateShare, "duplicate share");
+
+			return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt, solution);
 		}
+
+		protected virtual byte[] SerializeHeader(uint nTime, uint nonce)
+	    {
+		    var blockHeader = new ZCashBlockHeader
+		    {
+			    Version = (int)BlockTemplate.Version,
+			    Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
+			    HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
+			    HashMerkleRoot = new uint256(merkleRoot),
+			    HashReserved = new uint256(),
+			    NTime = nTime,
+			    Nonce = nonce
+		    };
+
+		    return blockHeader.ToBytes();
+	    }
+
+		protected byte[] SerializeBlock(byte[] header, byte[] coinbase, byte[] solution)
+	    {
+		    var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
+		    var rawTransactionBuffer = BuildRawTransactionBuffer();
+
+		    using (var stream = new MemoryStream())
+		    {
+			    var bs = new BitcoinStream(stream, true);
+
+			    bs.ReadWrite(ref header);
+			    bs.ReadWrite(ref solution);
+				bs.ReadWriteAsVarInt(ref transactionCount);
+			    bs.ReadWrite(ref coinbase);
+			    bs.ReadWrite(ref rawTransactionBuffer);
+
+			    return stream.ToArray();
+		    }
+	    }
+
+		protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, 
+			uint nTime, uint nonce, string solution)
+		{
+			var solutionBytes = solution.HexToByteArray();
+
+			// hash block-header
+			var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
+			var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
+			var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
+			var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+
+			// verify solution
+			if(!equihash.Verify(headerBytes, solutionBytes.Skip(3).ToArray()))	// skip preamble (3 bytes)
+				throw new StratumException(StratumError.Other, "invalid solution");
+
+			// calc share-diff
+			var shareDiff = (double)new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;
+			var stratumDifficulty = worker.Context.Difficulty;
+			var ratio = shareDiff / stratumDifficulty;
+
+			// check if the share meets the much harder block difficulty (block candidate)
+			var isBlockCandidate = headerValue < blockTargetValue;
+
+			// test if share meets at least workers current difficulty
+			if (!isBlockCandidate && ratio < 0.99)
+			{
+				// check if share matched the previous difficulty from before a vardiff retarget
+				if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+				{
+					ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+
+					if (ratio < 0.99)
+						throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+
+					// use previous difficulty
+					stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+				}
+
+				else
+					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+			}
+
+			var result = new BitcoinShare
+			{
+				BlockHeight = BlockTemplate.Height,
+				IsBlockCandidate = isBlockCandidate
+			};
+
+			var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
+			result.BlockHex = blockBytes.ToHexString();
+			result.BlockHash = headerHash.ToReverseArray().ToHexString();
+			result.BlockHeight = BlockTemplate.Height;
+			result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+			result.Difficulty = stratumDifficulty;
+
+			return result;
+		}
+
 	}
 }

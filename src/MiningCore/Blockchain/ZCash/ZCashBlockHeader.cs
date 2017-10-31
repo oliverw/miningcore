@@ -28,7 +28,6 @@ namespace MiningCore.Blockchain.ZCash
         private uint nNonce;
         private uint nTime;
         private int nVersion;
-	    private byte[] nSolution;
 
         // header
         private const int CURRENT_VERSION = 4;
@@ -63,7 +62,19 @@ namespace MiningCore.Blockchain.ZCash
             set => hashMerkleRoot = value;
         }
 
-        public bool IsNull => nBits == 0;
+	    public uint256 HashReserved
+		{
+		    get => hashReserved;
+		    set => hashReserved = value;
+	    }
+
+		public bool IsNull => nBits == 0;
+
+	    public uint NTime
+	    {
+		    get => nTime;
+		    set => nTime = value;
+	    }
 
         public DateTimeOffset BlockTime
         {
@@ -71,18 +82,10 @@ namespace MiningCore.Blockchain.ZCash
             set => nTime = Utils.DateTimeToUnixTime(value);
         }
 
-	    public byte[] Solution
-	    {
-		    get => nSolution;
-		    set => nSolution = value;
-	    }
-
         #region IBitcoinSerializable Members
 
 		public void ReadWrite(BitcoinStream stream)
         {
-			var solutionLength = (uint) nSolution.Length;
-
 			stream.ReadWrite(ref nVersion);
             stream.ReadWrite(ref hashPrevBlock);
             stream.ReadWrite(ref hashMerkleRoot);
@@ -90,8 +93,6 @@ namespace MiningCore.Blockchain.ZCash
             stream.ReadWrite(ref nTime);
             stream.ReadWrite(ref nBits);
             stream.ReadWrite(ref nNonce);
-	        stream.ReadWriteAsCompactVarInt(ref solutionLength);
-			stream.ReadWrite(ref nSolution);
 		}
 
         #endregion
@@ -110,7 +111,6 @@ namespace MiningCore.Blockchain.ZCash
             nTime = 0;
             nBits = 0;
             nNonce = 0;
-	        nSolution = new byte[1344];
 		}
     }
 }

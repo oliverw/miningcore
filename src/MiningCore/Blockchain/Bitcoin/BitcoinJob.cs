@@ -252,7 +252,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return tx;
         }
 
-        private bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
+        protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
             var key = extraNonce1 + extraNonce2 + nTime + nonce;
             if (submissions.Contains(key))

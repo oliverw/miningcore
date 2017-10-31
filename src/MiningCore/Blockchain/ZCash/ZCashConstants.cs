@@ -19,6 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Collections.Generic;
+using System.Globalization;
+using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 
@@ -40,7 +42,9 @@ namespace MiningCore.Blockchain.ZCash
 
 	public class ZCashConstants
     {
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+	    public static readonly BigInteger Diff1 = BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
+
+		private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
         {
             { BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
                 {
