@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -44,8 +44,8 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         protected IHashAlgorithm blockHasher;
         protected ClusterConfig clusterConfig;
-	    protected IMasterClock clock;
-		protected IHashAlgorithm coinbaseHasher;
+        protected IMasterClock clock;
+        protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
@@ -298,11 +298,11 @@ namespace MiningCore.Blockchain.Bitcoin
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
-	        // check if the share meets the much harder block difficulty (block candidate)
-	        var isBlockCandidate = headerValue < blockTargetValue;
+            // check if the share meets the much harder block difficulty (block candidate)
+            var isBlockCandidate = headerValue < blockTargetValue;
 
-			// test if share meets at least workers current difficulty
-			if (!isBlockCandidate && ratio < 0.99)
+            // test if share meets at least workers current difficulty
+            if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
                 if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
@@ -406,17 +406,17 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-	        Contract.RequiresNonNull(clock, nameof(clock));
-			Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
             Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
             Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
             Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-			this.poolConfig = poolConfig;
+            this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
-	        this.clock = clock;
-			this.poolAddressDestination = poolAddressDestination;
+            this.clock = clock;
+            this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
             BlockTemplate = blockTemplate;
             JobId = jobId;
@@ -457,7 +457,7 @@ namespace MiningCore.Blockchain.Bitcoin
             };
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker, 
+        public virtual BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

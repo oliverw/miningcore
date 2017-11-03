@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -51,14 +51,14 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinPayoutHandler(
             IComponentContext ctx,
-            IConnectionFactory cf, 
+            IConnectionFactory cf,
             IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-			NotificationService notificationService) :
+            NotificationService notificationService) :
             base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -148,15 +148,15 @@ namespace MiningCore.Blockchain.Bitcoin
                         switch (transactionInfo.Details[0].Category)
                         {
                             case "immature":
-	                            // update progress
-	                            block.ConfirmationProgress = Math.Min(1.0d, (double)transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
-	                            result.Add(block);
+                                // update progress
+                                block.ConfirmationProgress = Math.Min(1.0d, (double)transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
+                                result.Add(block);
                                 break;
 
                             case "generate":
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
-	                            block.ConfirmationProgress = 1;
+                                block.ConfirmationProgress = 1;
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
@@ -174,14 +174,14 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-	    public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
-	    {
-		    block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
+        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        {
+            block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-			return Task.FromResult(true);
-	    }
+            return Task.FromResult(true);
+        }
 
-		public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -222,7 +222,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var args = new object[]
             {
-                string.Empty,           // default account 
+                string.Empty,           // default account
                 amounts,                // addresses and associated amounts
                 1,                      // only spend funds covered by this many confirmations
                 "MiningCore Payout",    // comment

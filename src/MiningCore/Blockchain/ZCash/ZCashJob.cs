@@ -1,25 +1,24 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -42,141 +41,141 @@ namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJob : BitcoinJob<ZCashBlockTemplate>
     {
-	    protected ZCashCoinbaseTxConfig coinbaseTxConfig;
-	    protected decimal blockReward;
-	    protected decimal rewardFees;
+        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
+        protected decimal blockReward;
+        protected decimal rewardFees;
 
-	    protected uint coinbaseIndex = 4294967295u;
-	    protected uint coinbaseSequence = 4294967295u;
-	    protected readonly IHashAlgorithm sha256D = new Sha256D();
-	    protected byte[] coinbaseInitialHash;
-	    protected byte[] merkleRoot;
-	    protected byte[] merkleRootReversed;
-	    protected string merkleRootReversedHex;
-		protected static EquihashVerifier equihash = new EquihashVerifier(4);
+        protected uint coinbaseIndex = 4294967295u;
+        protected uint coinbaseSequence = 4294967295u;
+        protected readonly IHashAlgorithm sha256D = new Sha256D();
+        protected byte[] coinbaseInitialHash;
+        protected byte[] merkleRoot;
+        protected byte[] merkleRootReversed;
+        protected string merkleRootReversedHex;
+        protected static EquihashVerifier equihash = new EquihashVerifier(4);
 
-		#region Overrides of BitcoinJob<ZCashBlockTemplate>
+        #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
-		protected override Transaction CreateOutputTransaction()
+        protected override Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 
-	        if (coinbaseTxConfig.PayFoundersReward &&
-	            (coinbaseTxConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
-	             coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0))
-	        {
-		        // founders or treasury reward?
-		        if (coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0 && 
-					BlockTemplate.Height >= coinbaseTxConfig.TreasuryRewardStartBlockHeight)
-		        {
-					// pool reward (t-addr)
-					var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-			        tx.AddOutput(amount, poolAddressDestination);
+            if (coinbaseTxConfig.PayFoundersReward &&
+                (coinbaseTxConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
+                 coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0))
+            {
+                // founders or treasury reward?
+                if (coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0 &&
+                    BlockTemplate.Height >= coinbaseTxConfig.TreasuryRewardStartBlockHeight)
+                {
+                    // pool reward (t-addr)
+                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(amount, poolAddressDestination);
 
-					// treasury reward (t-addr)
-			        var destination = GetTreasuryRewardScript();
-					amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
-			        tx.AddOutput(amount, destination);
-				}
+                    // treasury reward (t-addr)
+                    var destination = GetTreasuryRewardScript();
+                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
+                    tx.AddOutput(amount, destination);
+                }
 
-		        else
-		        {
-			        // pool reward (t-addr)
-			        var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-			        tx.AddOutput(amount, poolAddressDestination);
+                else
+                {
+                    // pool reward (t-addr)
+                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(amount, poolAddressDestination);
 
-			        // founders reward (t-addr)
-			        var destination = GetFoundersRewardScript();
-					amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
-			        tx.AddOutput(amount, destination);
-		        }
-			}
+                    // founders reward (t-addr)
+                    var destination = GetFoundersRewardScript();
+                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
+                    tx.AddOutput(amount, destination);
+                }
+            }
 
-	        else
-	        {
-				// no founders reward
-				// pool reward (t-addr)
-		        var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-		        tx.AddOutput(amount, poolAddressDestination);
-	        }
+            else
+            {
+                // no founders reward
+                // pool reward (t-addr)
+                var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
+                tx.AddOutput(amount, poolAddressDestination);
+            }
 
-			return tx;
+            return tx;
         }
 
-	    protected override void BuildMerkleBranches()
-	    {
-		    var transactionHashes = BlockTemplate.Transactions
-			    .Select(tx => tx.Hash
-				    .HexToByteArray()
-				    .Reverse()
-				    .ToArray())
-			    .ToArray();
-
-		    mt = new MerkleTree(transactionHashes);
-	    }
-
-		protected override void BuildCoinbase()
+        protected override void BuildMerkleBranches()
         {
-	        var script = TxIn.CreateCoinbase((int)BlockTemplate.Height).ScriptSig;
+            var transactionHashes = BlockTemplate.Transactions
+                .Select(tx => tx.Hash
+                    .HexToByteArray()
+                    .Reverse()
+                    .ToArray())
+                .ToArray();
 
-			// output transaction
-			txOut = CreateOutputTransaction();
+            mt = new MerkleTree(transactionHashes);
+        }
 
-			using (var stream = new MemoryStream())
-			{
-				var bs = new BitcoinStream(stream, true);
+        protected override void BuildCoinbase()
+        {
+            var script = TxIn.CreateCoinbase((int)BlockTemplate.Height).ScriptSig;
 
-				// version
-				bs.ReadWrite(ref txVersion);
+            // output transaction
+            txOut = CreateOutputTransaction();
 
-				// serialize (simulated) input transaction
-				bs.ReadWriteAsVarInt(ref txInputCount);
-				bs.ReadWrite(ref sha256Empty);
-				bs.ReadWrite(ref coinbaseIndex);
-				bs.ReadWrite(ref script);
-				bs.ReadWrite(ref coinbaseSequence);
+            using (var stream = new MemoryStream())
+            {
+                var bs = new BitcoinStream(stream, true);
 
-				// serialize output transaction
-				var txOutBytes = SerializeOutputTransaction(txOut);
-				bs.ReadWrite(ref txOutBytes);
+                // version
+                bs.ReadWrite(ref txVersion);
 
-				// misc
-				bs.ReadWrite(ref txLockTime);
+                // serialize (simulated) input transaction
+                bs.ReadWriteAsVarInt(ref txInputCount);
+                bs.ReadWrite(ref sha256Empty);
+                bs.ReadWrite(ref coinbaseIndex);
+                bs.ReadWrite(ref script);
+                bs.ReadWrite(ref coinbaseSequence);
 
-				// done
-				coinbaseInitial = stream.ToArray();
-				coinbaseInitialHex = coinbaseInitial.ToHexString();
-				coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
-			}
-		}
+                // serialize output transaction
+                var txOutBytes = SerializeOutputTransaction(txOut);
+                bs.ReadWrite(ref txOutBytes);
 
-	    public override object GetJobParams(bool isNew)
-	    {
-		    return new object[]
-		    {
-			    JobId,
-			    BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
-				previousBlockHashReversedHex,
-			    merkleRootReversedHex,
-				sha256Empty.ToHexString(),	// hashReserved
-			    BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-			    BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
-			    isNew
-		    };
-	    }
+                // misc
+                bs.ReadWrite(ref txLockTime);
 
-		public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
+                // done
+                coinbaseInitial = stream.ToArray();
+                coinbaseInitialHex = coinbaseInitial.ToHexString();
+                coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
+            }
+        }
+
+        public override object GetJobParams(bool isNew)
+        {
+            return new object[]
+            {
+                JobId,
+                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
+                previousBlockHashReversedHex,
+                merkleRootReversedHex,
+                sha256Empty.ToHexString(),	// hashReserved
+                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
+                BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
+                isNew
+            };
+        }
+
+        public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-			IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, BitcoinNetworkType networkType,
             bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-	        Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
             Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
             Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
@@ -185,7 +184,7 @@ namespace MiningCore.Blockchain.ZCash
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
-	        this.clock = clock;
+            this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
 
@@ -226,223 +225,194 @@ namespace MiningCore.Blockchain.ZCash
             BuildCoinbase();
             BuildMerkleBranches();
 
-	        merkleRoot = mt.WithFirst(coinbaseInitialHash.ToReverseArray());
-	        merkleRootReversed = merkleRoot.ToReverseArray();
-	        merkleRootReversedHex = merkleRootReversed.ToHexString();
+            merkleRoot = mt.WithFirst(coinbaseInitialHash.ToReverseArray());
+            merkleRootReversed = merkleRoot.ToReverseArray();
+            merkleRootReversedHex = merkleRootReversed.ToHexString();
         }
 
-		#endregion
+        #endregion
 
-		public override BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, string nTime, string solution)
-		{
-			Contract.RequiresNonNull(worker, nameof(worker));
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
+        public override BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, string nTime, string solution)
+        {
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
 
-			// validate nTime
-			if (nTime.Length != 8)
-				throw new StratumException(StratumError.Other, "incorrect size of ntime");
+            // validate nTime
+            if (nTime.Length != 8)
+                throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
-			var nTimeInt = uint.Parse(nTime.HexToByteArray().ToReverseArray().ToHexString(), NumberStyles.HexNumber);
-			if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
-				throw new StratumException(StratumError.Other, "ntime out of range");
+            var nTimeInt = uint.Parse(nTime.HexToByteArray().ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
+                throw new StratumException(StratumError.Other, "ntime out of range");
 
-			var nonce = worker.Context.ExtraNonce1 + extraNonce2;
+            var nonce = worker.Context.ExtraNonce1 + extraNonce2;
 
-			// validate nonce
-			if (nonce.Length != 64)
-				throw new StratumException(StratumError.Other, "incorrect size of extraNonce2");
+            // validate nonce
+            if (nonce.Length != 64)
+                throw new StratumException(StratumError.Other, "incorrect size of extraNonce2");
 
-			// validate solution
-			if (solution.Length != 2694)
-				throw new StratumException(StratumError.Other, "incorrect size of solution");
+            // validate solution
+            if (solution.Length != 2694)
+                throw new StratumException(StratumError.Other, "incorrect size of solution");
 
-			// dupe check
-			if (!RegisterSubmit(nonce, solution))
-				throw new StratumException(StratumError.DuplicateShare, "duplicate share");
+            // dupe check
+            if (!RegisterSubmit(nonce, solution))
+                throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
-			return ProcessShareInternal(worker, nonce, nTimeInt, solution);
-		}
+            return ProcessShareInternal(worker, nonce, nTimeInt, solution);
+        }
 
-		protected virtual byte[] SerializeHeader(uint nTime, string nonce)
-	    {
-		    var blockHeader = new ZCashBlockHeader
-		    {
-			    Version = (int)BlockTemplate.Version,
-			    Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
-			    HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
-			    HashMerkleRoot = new uint256(merkleRoot),
-			    HashReserved = new uint256(),
-			    NTime = nTime,
-			    Nonce = nonce
-		    };
+        protected virtual byte[] SerializeHeader(uint nTime, string nonce)
+        {
+            var blockHeader = new ZCashBlockHeader
+            {
+                Version = (int)BlockTemplate.Version,
+                Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
+                HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
+                HashMerkleRoot = new uint256(merkleRoot),
+                HashReserved = new uint256(),
+                NTime = nTime,
+                Nonce = nonce
+            };
 
-		    return blockHeader.ToBytes();
-	    }
+            return blockHeader.ToBytes();
+        }
 
-		protected byte[] SerializeBlock(byte[] header, byte[] coinbase, byte[] solution)
-	    {
-		    var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
-		    var rawTransactionBuffer = BuildRawTransactionBuffer();
+        protected byte[] SerializeBlock(byte[] header, byte[] coinbase, byte[] solution)
+        {
+            var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
+            var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-		    using (var stream = new MemoryStream())
-		    {
-			    var bs = new BitcoinStream(stream, true);
+            using (var stream = new MemoryStream())
+            {
+                var bs = new BitcoinStream(stream, true);
 
-			    bs.ReadWrite(ref header);
-			    bs.ReadWrite(ref solution);
-				bs.ReadWriteAsVarInt(ref transactionCount);
-			    bs.ReadWrite(ref coinbase);
-			    bs.ReadWrite(ref rawTransactionBuffer);
+                bs.ReadWrite(ref header);
+                bs.ReadWrite(ref solution);
+                bs.ReadWriteAsVarInt(ref transactionCount);
+                bs.ReadWrite(ref coinbase);
+                bs.ReadWrite(ref rawTransactionBuffer);
 
-			    return stream.ToArray();
-		    }
-	    }
+                return stream.ToArray();
+            }
+        }
 
-		protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string nonce, 
-			uint nTime, string solution)
-		{
-			var solutionBytes = solution.HexToByteArray();
+        protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string nonce,
+            uint nTime, string solution)
+        {
+            var solutionBytes = solution.HexToByteArray();
 
-			// serialize block-header
-			var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
+            // serialize block-header
+            var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
 
-			// verify solution
-			if(!equihash.Verify(headerBytes, solutionBytes.Skip(3).ToArray()))	// skip preamble (3 bytes)
-				throw new StratumException(StratumError.Other, "invalid solution");
+            // verify solution
+            if(!equihash.Verify(headerBytes, solutionBytes.Skip(3).ToArray()))	// skip preamble (3 bytes)
+                throw new StratumException(StratumError.Other, "invalid solution");
 
-			// hash block-header
-			var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
-			var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
-			var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            // hash block-header
+            var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
+            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
+            var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
 
-			// calc share-diff
-			var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
-			var stratumDifficulty = worker.Context.Difficulty;
-			var ratio = shareDiff / stratumDifficulty;
+            // calc share-diff
+            var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
+            var stratumDifficulty = worker.Context.Difficulty;
+            var ratio = shareDiff / stratumDifficulty;
 
-			// check if the share meets the much harder block difficulty (block candidate)
-			var isBlockCandidate = headerValue < blockTargetValue;
+            // check if the share meets the much harder block difficulty (block candidate)
+            var isBlockCandidate = headerValue < blockTargetValue;
 
-			// test if share meets at least workers current difficulty
-			if (!isBlockCandidate && ratio < 0.99)
-			{
-				// check if share matched the previous difficulty from before a vardiff retarget
-				if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
-				{
-					ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+            // test if share meets at least workers current difficulty
+            if (!isBlockCandidate && ratio < 0.99)
+            {
+                // check if share matched the previous difficulty from before a vardiff retarget
+                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                {
+                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
 
-					if (ratio < 0.99)
-						throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                    if (ratio < 0.99)
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
-					// use previous difficulty
-					stratumDifficulty = worker.Context.PreviousDifficulty.Value;
-				}
+                    // use previous difficulty
+                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                }
 
-				else
-					throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
-			}
+                else
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            }
 
-			var result = new BitcoinShare
-			{
-				BlockHeight = BlockTemplate.Height,
-				IsBlockCandidate = isBlockCandidate
-			};
+            var result = new BitcoinShare
+            {
+                BlockHeight = BlockTemplate.Height,
+                IsBlockCandidate = isBlockCandidate
+            };
 
-			var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
-			result.BlockHex = blockBytes.ToHexString();
-			result.BlockHash = headerHash.ToHexString();
-			result.BlockHeight = BlockTemplate.Height;
-			result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-			result.Difficulty = stratumDifficulty;
+            var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
+            result.BlockHex = blockBytes.ToHexString();
+            result.BlockHash = headerHash.ToHexString();
+            result.BlockHeight = BlockTemplate.Height;
+            result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+            result.Difficulty = stratumDifficulty;
 
-			return result;
-		}
+            return result;
+        }
 
-	    protected bool RegisterSubmit(string nonce, string solution)
-	    {
-		    var key = nonce + solution;
-		    if (submissions.Contains(key))
-			    return false;
+        protected bool RegisterSubmit(string nonce, string solution)
+        {
+            var key = nonce + solution;
+            if (submissions.Contains(key))
+                return false;
 
-		    submissions.Add(key);
-		    return true;
-	    }
+            submissions.Add(key);
+            return true;
+        }
 
-	    public string GetFoundersRewardAddress()
-	    {
-		    var maxHeight = coinbaseTxConfig.LastFoundersRewardBlockHeight;
+        public string GetFoundersRewardAddress()
+        {
+            var maxHeight = coinbaseTxConfig.LastFoundersRewardBlockHeight;
 
-			var addressChangeInterval = (maxHeight + (ulong) coinbaseTxConfig.FoundersRewardAddresses.Length) / (ulong) coinbaseTxConfig.FoundersRewardAddresses.Length;
-		    var index = BlockTemplate.Height / addressChangeInterval;
+            var addressChangeInterval = (maxHeight + (ulong) coinbaseTxConfig.FoundersRewardAddresses.Length) / (ulong) coinbaseTxConfig.FoundersRewardAddresses.Length;
+            var index = BlockTemplate.Height / addressChangeInterval;
 
-		    var address = coinbaseTxConfig.FoundersRewardAddresses[index];
-		    return address;
-	    }
+            var address = coinbaseTxConfig.FoundersRewardAddresses[index];
+            return address;
+        }
 
-		protected IDestination GetFoundersRewardScript()
-		{
-			var address = GetFoundersRewardAddress();
-			var destination = FoundersAddressToDestination(address);
-			return destination;
-		}
+        protected IDestination GetFoundersRewardScript()
+        {
+            var address = GetFoundersRewardAddress();
+            var destination = FoundersAddressToDestination(address);
+            return destination;
+        }
 
-		protected string GetTreasuryRewardAddress()
-	    {
-		    var index = (int)Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
-		        coinbaseTxConfig.TreasuryRewardAddressChangeInterval % coinbaseTxConfig.TreasuryRewardAddresses.Length);
+        protected string GetTreasuryRewardAddress()
+        {
+            var index = (int)Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
+                coinbaseTxConfig.TreasuryRewardAddressChangeInterval % coinbaseTxConfig.TreasuryRewardAddresses.Length);
 
-			var address = coinbaseTxConfig.FoundersRewardAddresses[index];
-		    return address;
-	    }
+            var address = coinbaseTxConfig.FoundersRewardAddresses[index];
+            return address;
+        }
 
-	    protected IDestination GetTreasuryRewardScript()
-	    {
-		    var address = GetTreasuryRewardAddress();
-		    var destination = BitcoinUtils.AddressToDestination(address);
-		    return destination;
-	    }
+        protected IDestination GetTreasuryRewardScript()
+        {
+            var address = GetTreasuryRewardAddress();
+            var destination = BitcoinUtils.AddressToDestination(address);
+            return destination;
+        }
 
-		public static IDestination FoundersAddressToDestination(string address)
-	    {
-		    var decoded = Encoders.Base58.DecodeData(address);
+        public static IDestination FoundersAddressToDestination(string address)
+        {
+            var decoded = Encoders.Base58.DecodeData(address);
 
-		    // skip first two bytes which are the version/application bytes
-		    var hash = decoded.Skip(2).Take(20).ToArray();
+            // skip first two bytes which are the version/application bytes
+            var hash = decoded.Skip(2).Take(20).ToArray();
 
-		    // convert to IDestination
-		    var keyId = new ScriptId(hash);
-		    return keyId;
-	    }
-
-		ulong GetBlockSubsidy()
-		{
-			var nHeight = BlockTemplate.Height;
-			var nSubsidy = (ulong) (12.5m * BitcoinConstants.SatoshisPerBitcoin);
-
-		    // Mining slow start
-		    // The subsidy is ramped up linearly, skipping the middle payout of
-		    // MAX_SUBSIDY/2 to keep the monetary curve consistent with no slow start.
-		    if (nHeight < coinbaseTxConfig.FoundersRewardSubsidySlowStartInterval / 2) {
-			    nSubsidy /= coinbaseTxConfig.FoundersRewardSubsidySlowStartInterval;
-			    nSubsidy *= nHeight;
-			    return nSubsidy;
-		    } else if (nHeight< coinbaseTxConfig.FoundersRewardSubsidySlowStartInterval) {
-			    nSubsidy /= coinbaseTxConfig.FoundersRewardSubsidySlowStartInterval;
-			    nSubsidy *= (nHeight+1);
-			    return nSubsidy;
-		    }
-
-		    Debug.Assert(nHeight > coinbaseTxConfig.FoundersRewardSubsidySlowStartShift);
-		    var halvings = (int) ((nHeight - coinbaseTxConfig.FoundersRewardSubsidySlowStartShift) / coinbaseTxConfig.FoundersRewardSubsidyHalvingInterval);
-		    // Force block reward to zero when right shift is undefined.
-		    if (halvings >= 64)
-			    return 0;
-
-		    // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-		    nSubsidy = nSubsidy >> halvings;
-		    return nSubsidy;
-	    }
+            // convert to IDestination
+            var keyId = new ScriptId(hash);
+            return keyId;
+        }
     }
 }

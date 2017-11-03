@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -48,8 +48,8 @@ namespace MiningCore.Blockchain.Bitcoin
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
-            IMapper mapper, 
-			IMasterClock clock,
+            IMapper mapper,
+            IMasterClock clock,
             NotificationService notificationService) :
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 else if (!client.Context.IsSubscribed)
                     throw new StratumException(StratumError.NotSubscribed, "Not subscribed");
 
-                // submit 
+                // submit
                 var requestParams = request.ParamsAs<string[]>();
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
@@ -261,7 +261,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual BitcoinJobManager<TJob, TBlockTemplate> CreateJobManager()
         {
             return ctx.Resolve<BitcoinJobManager<TJob, TBlockTemplate>>(
-	            new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
+                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
 
         protected override async Task SetupJobManager()
@@ -302,7 +302,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 case BitcoinStratumMethods.GetTransactions:
                     OnGetTransactions(client, tsRequest);
                     break;
-                    
+
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
@@ -350,10 +350,10 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override void OnVarDiffUpdate(StratumClient<BitcoinWorkerContext> client, double newDiff)
         {
-			client.Context.EnqueueNewDifficulty(newDiff);
+            client.Context.EnqueueNewDifficulty(newDiff);
 
-			// apply immediately and notify client
-			if (client.Context.HasPendingDifficulty)
+            // apply immediately and notify client
+            if (client.Context.HasPendingDifficulty)
             {
                 client.Context.ApplyPendingDifficulty();
 

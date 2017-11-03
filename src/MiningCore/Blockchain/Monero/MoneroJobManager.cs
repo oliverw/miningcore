@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -47,16 +47,16 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroJobManager : JobManagerBase<MoneroJob>
     {
         public MoneroJobManager(
-            IComponentContext ctx, 
-			IMasterClock clock) :
+            IComponentContext ctx,
+            IMasterClock clock) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-	        Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(clock, nameof(clock));
 
-	        this.clock = clock;
+            this.clock = clock;
 
-			using (var rng = RandomNumberGenerator.Create())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 instanceId = new byte[MoneroConstants.InstanceIdSize];
                 rng.GetNonZeroBytes(instanceId);
@@ -67,8 +67,8 @@ namespace MiningCore.Blockchain.Monero
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
-	    private readonly IMasterClock clock;
-		private MoneroNetworkType networkType;
+        private readonly IMasterClock clock;
+        private MoneroNetworkType networkType;
         private uint poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
@@ -326,8 +326,8 @@ namespace MiningCore.Blockchain.Monero
         {
             var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
 
-            return response.Error == null && response.Response != null && 
-				(response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
+            return response.Error == null && response.Response != null &&
+                (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
         }
 
         protected override async Task EnsureDaemonsSynchedAsync()

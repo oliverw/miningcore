@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -53,29 +53,29 @@ namespace MiningCore.Blockchain.Bitcoin
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-	        Contract.RequiresNonNull(clock, nameof(clock));
-			Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-	        this.clock = clock;
-			this.extraNonceProvider = extraNonceProvider;
+            this.clock = clock;
+            this.extraNonceProvider = extraNonceProvider;
         }
 
-	    protected readonly IMasterClock clock;
-		protected DaemonClient daemon;
-	    protected readonly IExtraNonceProvider extraNonceProvider;
-	    protected readonly IHashAlgorithm sha256d = new Sha256D();
-	    protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
-	    protected const int MaxActiveJobs = 4;
-		protected readonly IHashAlgorithm sha256s = new Sha256S();
+        protected readonly IMasterClock clock;
+        protected DaemonClient daemon;
+        protected readonly IExtraNonceProvider extraNonceProvider;
+        protected readonly IHashAlgorithm sha256d = new Sha256D();
+        protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
+        protected const int MaxActiveJobs = 4;
+        protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
-	    protected IHashAlgorithm blockHasher;
-	    protected IHashAlgorithm coinbaseHasher;
-	    protected bool hasSubmitBlockMethod;
-	    protected IHashAlgorithm headerHasher;
-	    protected bool isPoS;
-	    protected TimeSpan jobRebroadcastTimeout;
-	    protected BitcoinNetworkType networkType;
-	    protected IDestination poolAddressDestination;
+        protected IHashAlgorithm blockHasher;
+        protected IHashAlgorithm coinbaseHasher;
+        protected bool hasSubmitBlockMethod;
+        protected IHashAlgorithm headerHasher;
+        protected bool isPoS;
+        protected TimeSpan jobRebroadcastTimeout;
+        protected BitcoinNetworkType networkType;
+        protected IDestination poolAddressDestination;
 
         protected object[] getBlockTemplateParams =
         {
@@ -177,15 +177,15 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void SetupCrypto()
         {
-	        var coinProps = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
+            var coinProps = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 
-			if(coinProps == null)
-				logger.ThrowLogPoolStartupException($"Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
+            if(coinProps == null)
+                logger.ThrowLogPoolStartupException($"Coin Type '{poolConfig.Coin.Type}' not supported by this Job Manager", LogCat);
 
-			coinbaseHasher = coinProps.CoinbaseHasher;
-	        headerHasher = coinProps.HeaderHasher;
-	        blockHasher = !isPoS ? coinProps.BlockHasher : coinProps.PoSBlockHasher;
-	        ShareMultiplier = coinProps.ShareMultiplier;
+            coinbaseHasher = coinProps.CoinbaseHasher;
+            headerHasher = coinProps.HeaderHasher;
+            blockHasher = !isPoS ? coinProps.BlockHasher : coinProps.PoSBlockHasher;
+            ShareMultiplier = coinProps.ShareMultiplier;
         }
 
         #region API-Surface
@@ -213,7 +213,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var responseData = new object[]
             {
                 worker.Context.ExtraNonce1,
-	            BitcoinExtraNonceProvider.Size
+                BitcoinExtraNonceProvider.Size
             };
 
             return responseData;
@@ -266,14 +266,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
             lock (jobLock)
             {
-				job = validJobs.FirstOrDefault(x => x.JobId == jobId);
+                job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
 
-	        if (job == null)
-		        throw new StratumException(StratumError.JobNotFound, "job not found");
+            if (job == null)
+                throw new StratumException(StratumError.JobNotFound, "job not found");
 
-			// extract worker/miner/payoutid
-			var split = workerValue.Split('.');
+            // extract worker/miner/payoutid
+            var split = workerValue.Split('.');
             var minerName = split[0];
             var workerName = split.Length > 1 ? split[1] : null;
 
@@ -294,7 +294,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
 
-                    // persist the coinbase transaction-hash to allow the payment processor 
+                    // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
                     share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;
                 }
@@ -313,7 +313,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Worker = workerName;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
-			share.Difficulty = share.Difficulty / ShareMultiplier;
+            share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.UtcNow;
 
             return share;
@@ -480,10 +480,10 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupJobUpdates();
         }
 
-	    protected virtual IDestination AddressToDestination(string address)
-	    {
-		    return BitcoinUtils.AddressToDestination(address);
-	    }
+        protected virtual IDestination AddressToDestination(string address)
+        {
+            return BitcoinUtils.AddressToDestination(address);
+        }
 
         protected virtual void ConfigureRewards()
         {
@@ -541,15 +541,15 @@ namespace MiningCore.Blockchain.Bitcoin
                             ShareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 
-	                    // update stats
+                        // update stats
                         if (isNew)
                             BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
 
-	                    validJobs.Add(currentJob);
+                        validJobs.Add(currentJob);
 
-						// trim active jobs
-	                    while (validJobs.Count > MaxActiveJobs)
-		                    validJobs.RemoveAt(0);
+                        // trim active jobs
+                        while (validJobs.Count > MaxActiveJobs)
+                            validJobs.RemoveAt(0);
                     }
 
                     return isNew;

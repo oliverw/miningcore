@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -51,14 +51,14 @@ namespace MiningCore.Blockchain.Ethereum
     {
         public EthereumPayoutHandler(
             IComponentContext ctx,
-            IConnectionFactory cf, 
+            IConnectionFactory cf,
             IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-			NotificationService notificationService) :
+            NotificationService notificationService) :
             base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -156,40 +156,40 @@ namespace MiningCore.Blockchain.Ethereum
                         continue;
                     }
 
-	                // update progress
-	                block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
-	                result.Add(block);
+                    // update progress
+                    block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
+                    result.Add(block);
 
-					// is it block mined by us?
-					if (blockInfo.Miner == poolConfig.Address)
+                    // is it block mined by us?
+                    if (blockInfo.Miner == poolConfig.Address)
                     {
                         // additional check
-                        // NOTE: removal of first character of both sealfields caused by 
+                        // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
-                        var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) && 
+                        var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) &&
                                     blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
 
-						// mature?
-	                    if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
-	                    {
-		                    block.Status = BlockStatus.Confirmed;
-		                    block.ConfirmationProgress = 1;
-		                    block.Reward = GetBaseBlockReward(block.BlockHeight); // base reward
+                        // mature?
+                        if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+                        {
+                            block.Status = BlockStatus.Confirmed;
+                            block.ConfirmationProgress = 1;
+                            block.Reward = GetBaseBlockReward(block.BlockHeight); // base reward
 
-		                    if (extraConfig?.KeepUncles == false)
-			                    block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
+                            if (extraConfig?.KeepUncles == false)
+                                block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
 
-		                    if (extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
-			                    block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
+                            if (extraConfig?.KeepTransactionFees == false && blockInfo.Transactions?.Length > 0)
+                                block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
 
-							logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
-	                    }
+                            logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+                        }
 
-						continue;
-					}
+                        continue;
+                    }
 
-					// don't give up yet, there might be an uncle
-					if (blockInfo.Uncles.Length > 0)
+                    // don't give up yet, there might be an uncle
+                    if (blockInfo.Uncles.Length > 0)
                     {
                         // fetch all uncles in a single RPC batch request
                         var uncleBatch = blockInfo.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
@@ -204,39 +204,39 @@ namespace MiningCore.Blockchain.Ethereum
 
                         if (uncle != null)
                         {
-	                        // mature?
-	                        if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
-	                        {
-		                        block.Status = BlockStatus.Confirmed;
-		                        block.ConfirmationProgress = 1;
-		                        block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
+                            // mature?
+                            if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+                            {
+                                block.Status = BlockStatus.Confirmed;
+                                block.ConfirmationProgress = 1;
+                                block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
 
-		                        logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
-	                        }
+                                logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+                            }
 
-	                        continue;
+                            continue;
                         }
                     }
 
-	                if (block.ConfirmationProgress > 0.75)
-	                {
-		                // we've lost this one
-		                block.Status = BlockStatus.Orphaned;
-	                }
+                    if (block.ConfirmationProgress > 0.75)
+                    {
+                        // we've lost this one
+                        block.Status = BlockStatus.Orphaned;
+                    }
                 }
             }
 
             return result.ToArray();
         }
 
-	    public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
-	    {
-		    block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
+        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        {
+            block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
 
-		    return Task.FromResult(true);
-	    }
+            return Task.FromResult(true);
+        }
 
-		public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 

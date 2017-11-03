@@ -14,9 +14,9 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Id = id;
             BlockTemplate = blockTemplate;
-		}
+        }
 
-		private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
+        private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces =
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();
 
         public string Id { get; }
