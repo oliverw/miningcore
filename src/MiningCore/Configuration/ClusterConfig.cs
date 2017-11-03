@@ -32,23 +32,22 @@ namespace MiningCore.Configuration
         LTC, // Litecoin
         DOGE, // Dogecoin,
         XMR, // Monero
-
         GRS, // GroestlCoin
         DGB, // Digibyte
         NMC, // Namecoin
         VIA, // Viacoin
         PPC, // Peercoin
-
-        ZEC, // Zcashn
+        ZEC, // ZCash
         ETH, // Ethereum
         ETC, // Ethereum Classic
         EXP, // Expanse
         DASH, // Dash
         MONA,  // Monacoin
         VTC,  // Vertcoin
+	    BTG, // Bitcoin Gold
     }
 
-    public class CoinConfig
+	public class CoinConfig
     {
         public CoinType Type { get; set; }
 

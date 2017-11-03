@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.ZCash;
 using MiningCore.Configuration;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -27,12 +28,12 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.ZCash
+namespace MiningCore.Blockchain.BitcoinGold
 {
-    [CoinMetadata(CoinType.ZEC)]
-    public class ZCashPool : ZCashPoolBase<ZCashJob>
+    [CoinMetadata(CoinType.BTG)]
+    public class BitcoinGoldPool : ZCashPoolBase<BitcoinGoldJob>
     {
-        public ZCashPool(IComponentContext ctx,
+        public BitcoinGoldPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,

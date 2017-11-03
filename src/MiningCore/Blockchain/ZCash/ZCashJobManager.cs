@@ -14,8 +14,9 @@ using NBitcoin.DataEncoders;
 
 namespace MiningCore.Blockchain.ZCash
 {
-    public class ZCashJobManager : BitcoinJobManager<ZCashJob, ZCashBlockTemplate>
-    {
+    public class ZCashJobManager<TJob> : BitcoinJobManager<TJob, ZCashBlockTemplate>
+	    where TJob : ZCashJob, new()
+	{
         public ZCashJobManager(
             IComponentContext ctx,
             IMasterClock clock,
