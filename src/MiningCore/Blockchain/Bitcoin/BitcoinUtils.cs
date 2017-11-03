@@ -39,16 +39,9 @@ namespace MiningCore.Blockchain.Bitcoin
         public static IDestination AddressToDestination(string address)
         {
             var decoded = Encoders.Base58.DecodeData(address);
-            //if (decoded.Length != 25)
-            //    throw new FormatException($"{address} is invalid");
-
-            // skip first byte which is the version/application byte
-            // see: https://en.bitcoin.it/wiki/Base58Check_encoding
             var pubKeyHash = decoded.Skip(1).Take(20).ToArray();
-
-            // convert to IDestination
-            var keyId = new KeyId(pubKeyHash);
-            return keyId;
+            var result = new KeyId(pubKeyHash);
+            return result;
         }
     }
 }

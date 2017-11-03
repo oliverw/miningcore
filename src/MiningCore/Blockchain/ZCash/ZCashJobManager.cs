@@ -77,12 +77,9 @@ namespace MiningCore.Blockchain.ZCash
         protected override IDestination AddressToDestination(string address)
         {
             var decoded = Encoders.Base58.DecodeData(address);
-
-            // skip first two bytes which are the version/application bytes
             var hash = decoded.Skip(2).Take(20).ToArray();
-
-            var keyId = new KeyId(hash);
-            return keyId;
+            var result = new KeyId(hash);
+            return result;
         }
 
         public override async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,

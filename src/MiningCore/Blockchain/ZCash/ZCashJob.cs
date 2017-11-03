@@ -75,7 +75,7 @@ namespace MiningCore.Blockchain.ZCash
                     tx.AddOutput(amount, poolAddressDestination);
 
                     // treasury reward (t-addr)
-                    var destination = GetTreasuryRewardScript();
+                    var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
                     amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
@@ -87,7 +87,7 @@ namespace MiningCore.Blockchain.ZCash
                     tx.AddOutput(amount, poolAddressDestination);
 
                     // founders reward (t-addr)
-                    var destination = GetFoundersRewardScript();
+                    var destination = FoundersAddressToScriptDestination(GetFoundersRewardAddress());
                     amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
@@ -380,13 +380,6 @@ namespace MiningCore.Blockchain.ZCash
             return address;
         }
 
-        protected IDestination GetFoundersRewardScript()
-        {
-            var address = GetFoundersRewardAddress();
-            var destination = FoundersAddressToDestination(address);
-            return destination;
-        }
-
         protected string GetTreasuryRewardAddress()
         {
             var index = (int)Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
@@ -396,23 +389,12 @@ namespace MiningCore.Blockchain.ZCash
             return address;
         }
 
-        protected IDestination GetTreasuryRewardScript()
-        {
-            var address = GetTreasuryRewardAddress();
-            var destination = BitcoinUtils.AddressToDestination(address);
-            return destination;
-        }
-
-        public static IDestination FoundersAddressToDestination(string address)
+        public static IDestination FoundersAddressToScriptDestination(string address)
         {
             var decoded = Encoders.Base58.DecodeData(address);
-
-            // skip first two bytes which are the version/application bytes
             var hash = decoded.Skip(2).Take(20).ToArray();
-
-            // convert to IDestination
-            var keyId = new ScriptId(hash);
-            return keyId;
+            var result = new ScriptId(hash);
+            return result;
         }
     }
 }
