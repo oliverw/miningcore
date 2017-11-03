@@ -136,6 +136,7 @@ namespace MiningCore.Blockchain.ZCash
         /// z_getoperationresult to obtain the result of sending funds, which if successful, will be a txid.
         /// </summary>
         public const string ZSendMany = "z_sendmany";
+
         public const string ZGetOperationStatus = "z_getoperationstatus";
         public const string ZGetOperationResult = "z_getoperationresult";
     }

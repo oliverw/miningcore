@@ -68,14 +68,14 @@ namespace MiningCore.Blockchain.Bitcoin
             this.ctx = ctx;
         }
 
-        private readonly IComponentContext ctx;
-        private DaemonClient daemon;
+	    protected readonly IComponentContext ctx;
+        protected DaemonClient daemon;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
         #region IPayoutHandler
 
-        public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -89,7 +89,7 @@ namespace MiningCore.Blockchain.Bitcoin
             daemon.Configure(poolConfig.Daemons);
         }
 
-        public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+        public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -174,14 +174,14 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
         {
             block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public virtual Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -204,7 +204,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return Task.FromResult(blockRewardRemaining);
         }
 
-        public async Task PayoutAsync(Balance[] balances)
+        public virtual async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 

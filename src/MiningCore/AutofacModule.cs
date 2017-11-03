@@ -25,6 +25,7 @@ using MiningCore.Api;
 using MiningCore.Banning;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.BitcoinGold;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
@@ -129,10 +130,13 @@ namespace MiningCore
             //////////////////////
             // ZCash
 
-            builder.RegisterType<ZCashJobManager>()
+            builder.RegisterType<ZCashJobManager<ZCashJob>>()
                 .AsSelf();
 
-            base.Load(builder);
+	        builder.RegisterType<ZCashJobManager<BitcoinGoldJob>>()
+		        .AsSelf();
+
+			base.Load(builder);
         }
     }
 }
