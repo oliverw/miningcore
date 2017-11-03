@@ -66,7 +66,7 @@ namespace MiningCore.Blockchain.ZCash
             var amounts = balances
                 .Where(x => x.Amount > 0)
                 .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
-				.ToList();
+                .ToList();
 
             if (amounts.Count == 0)
                 return;
@@ -88,43 +88,43 @@ namespace MiningCore.Blockchain.ZCash
                 var operationId = result.Response;
 
                 // check result
-	            if (string.IsNullOrEmpty(operationId))
-		            logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' did not return a operation id!");
-	            else
-	            {
-		            logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
+                if (string.IsNullOrEmpty(operationId))
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' did not return a operation id!");
+                else
+                {
+                    logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
 
-		            while (true)
-		            {
-			            var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-							ZCashCommands.ZGetOperationResult, new object[] { operationId });
+                    while (true)
+                    {
+                        var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                            ZCashCommands.ZGetOperationResult, new object[] { operationId });
 
-			            if (operationResultResponse.Error == null && operationResultResponse.Response.Length > 0)
-			            {
-				            var operationResult = operationResultResponse.Response[0];
+                        if (operationResultResponse.Error == null && operationResultResponse.Response.Length > 0)
+                        {
+                            var operationResult = operationResultResponse.Response[0];
 
-							switch (operationResult.Status.ToLower())
-				            {
-								case "success":
-									// extract transaction id
-									var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-									logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                            switch (operationResult.Status.ToLower())
+                            {
+                                case "success":
+                                    // extract transaction id
+                                    var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
+                                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
-									PersistPayments(balances, txId);
-									NotifyPayoutSuccess(balances, new[] { txId }, null);
-									break;
+                                    PersistPayments(balances, txId);
+                                    NotifyPayoutSuccess(balances, new[] { txId }, null);
+                                    break;
 
-								case "cancelled":
-								case "failed":
-									NotifyPayoutFailure(balances, $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
-									break;
-							}
-						}
+                                case "cancelled":
+                                case "failed":
+                                    NotifyPayoutFailure(balances, $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
+                                    break;
+                            }
+                        }
 
-			            logger.Info(() => $"[{LogCategory}] Waiting for ZCash Payout operation to complete: {operationId}");
-						await Task.Delay(10);
-		            }
-	            }
+                        logger.Info(() => $"[{LogCategory}] Waiting for ZCash Payout operation to complete: {operationId}");
+                        await Task.Delay(10);
+                    }
+                }
             }
 
             else

@@ -38,10 +38,10 @@ using BigInteger = NBitcoin.BouncyCastle.Math.BigInteger;
 
 namespace MiningCore.Blockchain.ZCash
 {
-	public class ZCashPoolBase<TJob> : BitcoinPoolBase<TJob, ZCashBlockTemplate>
-		where TJob : ZCashJob, new()
-	{
-		public ZCashPoolBase(IComponentContext ctx,
+    public class ZCashPoolBase<TJob> : BitcoinPoolBase<TJob, ZCashBlockTemplate>
+        where TJob : ZCashJob, new()
+    {
+        public ZCashPoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
