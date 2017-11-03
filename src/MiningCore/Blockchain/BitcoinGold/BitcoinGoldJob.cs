@@ -30,57 +30,57 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-	    #region Overrides of ZCashJob
+        #region Overrides of ZCashJob
 
-	    protected override Transaction CreateOutputTransaction()
-	    {
-			rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+        protected override Transaction CreateOutputTransaction()
+        {
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
-			var tx = new Transaction();
+            var tx = new Transaction();
 
-			// pool reward (t-addr)
-			var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-			tx.AddOutput(amount, poolAddressDestination);
+            // pool reward (t-addr)
+            var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
+            tx.AddOutput(amount, poolAddressDestination);
 
-			return tx;
-		}
+            return tx;
+        }
 
-	    public override object GetJobParams(bool isNew)
-	    {
-		    return new object[]
-		    {
-			    JobId,
-			    BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
-			    previousBlockHashReversedHex,
-			    merkleRootReversedHex,
-			    BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(),	// height + hashReserved
-			    BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-			    BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
-			    isNew
-		    };
-	    }
+        public override object GetJobParams(bool isNew)
+        {
+            return new object[]
+            {
+                JobId,
+                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
+                previousBlockHashReversedHex,
+                merkleRootReversedHex,
+                BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(),	// height + hashReserved
+                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
+                BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
+                isNew
+            };
+        }
 
-	    protected override byte[] SerializeHeader(uint nTime, string nonce)
-	    {
-			// BTG requires the blockheight to be encoded in the first 4 bytes of the hashReserved field
-		    var heightAndReserved = BitConverter.GetBytes(BlockTemplate.Height)
-				.Concat(Enumerable.Repeat((byte) 0, 28))
-				.ToArray();
+        protected override byte[] SerializeHeader(uint nTime, string nonce)
+        {
+            // BTG requires the blockheight to be encoded in the first 4 bytes of the hashReserved field
+            var heightAndReserved = BitConverter.GetBytes(BlockTemplate.Height)
+                .Concat(Enumerable.Repeat((byte) 0, 28))
+                .ToArray();
 
-			var blockHeader = new ZCashBlockHeader
-		    {
-			    Version = (int)BlockTemplate.Version,
-			    Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
-			    HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
-			    HashMerkleRoot = new uint256(merkleRoot),
-			    HashReserved = new uint256(heightAndReserved),
-			    NTime = nTime,
-			    Nonce = nonce
-		    };
+            var blockHeader = new ZCashBlockHeader
+            {
+                Version = (int)BlockTemplate.Version,
+                Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
+                HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
+                HashMerkleRoot = new uint256(merkleRoot),
+                HashReserved = new uint256(heightAndReserved),
+                NTime = nTime,
+                Nonce = nonce
+            };
 
-		    return blockHeader.ToBytes();
-	    }
+            return blockHeader.ToBytes();
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }
