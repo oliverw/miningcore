@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -31,14 +31,14 @@ using System.Text;
 namespace MiningCore.Util
 {
     /* Most mono versions doesn't include a proper BigInteger implementation, so we just include one that's complete from the latest mono repository
-     * and basically have to include BigRational.cs code so it can use our included implementation of BigInteger.cs for mono 
+     * and basically have to include BigRational.cs code so it can use our included implementation of BigInteger.cs for mono
      * https://bcl.codeplex.com/SourceControl/latest#Libraries/BigRational/BigRationalLibrary/BigRational.cs
      */
     //   Copyright (c) Microsoft Corporation.  All rights reserved.
     /*============================================================
     ** Class: BigRational
     **
-    ** Purpose: 
+    ** Purpose:
     ** --------
     ** This class is used to represent an arbitrary precision
     ** BigRational number
@@ -138,7 +138,7 @@ namespace MiningCore.Util
         #region Public Instance Methods
 
         // GetWholePart() and GetFractionPart()
-        // 
+        //
         // BigRational == Whole, Fraction
         //  0/2        ==     0,  0/2
         //  1/2        ==     0,  1/2
@@ -415,7 +415,7 @@ namespace MiningCore.Util
         // The LCD is the least common multiple of the two denominators.  For instance, the LCD of
         // {1/2, 1/4} is 4 because the least common multiple of 2 and 4 is 4.  Likewise, the LCD
         // of {1/2, 1/3} is 6.
-        //       
+        //
         // To find the LCD:
         //
         // 1) Find the Greatest Common Divisor (GCD) of the denominators
@@ -578,7 +578,7 @@ namespace MiningCore.Util
         public static explicit operator float(BigRational value)
         {
             // The Single value type represents a single-precision 32-bit number with
-            // values ranging from negative 3.402823e38 to positive 3.402823e38      
+            // values ranging from negative 3.402823e38 to positive 3.402823e38
             // values that do not fit into this range are returned as Infinity
             return (float) (double) value;
         }
