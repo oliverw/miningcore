@@ -18,35 +18,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using System.Net;
-
-namespace MiningCore.Extensions
+namespace MiningCore.Blockchain.ZCash
 {
-    public static class NumberExtensions
+    public class ZCashStratumMethods
     {
-        public static uint ToBigEndian(this uint value)
-        {
-            if (BitConverter.IsLittleEndian)
-                return (uint) IPAddress.NetworkToHostOrder((int) value);
+        /// <summary>
+        /// Used to signal the miner to stop submitting shares under the new target
+        /// </summary>
+        public const string SetTarget = "mining.set_target";
 
-            return value;
-        }
-
-        public static uint ToLittleEndian(this uint value)
-        {
-            if (!BitConverter.IsLittleEndian)
-                return (uint) IPAddress.HostToNetworkOrder((int) value);
-
-            return value;
-        }
-
-		public static uint ReverseByteOrder(this uint value)
-		{
-			var bytes = BitConverter.GetBytes(value);
-			Array.Reverse(bytes);
-			value = BitConverter.ToUInt32(bytes, 0);
-			return value;
-		}
-	}
+		/// <summary>
+		/// The target suggested by the miner for the next received job and all subsequent jobs (until the next time this message is sent)
+		/// </summary>
+		public const string SuggestTarget = "mining.suggest_target";
+    }
 }

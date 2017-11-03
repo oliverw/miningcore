@@ -1,4 +1,5 @@
 ﻿using System;
+using MiningCore.Extensions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 
@@ -25,7 +26,7 @@ namespace MiningCore.Blockchain.ZCash
         private uint256 hashPrevBlock;
         private uint256 hashReserved;
         private uint nBits;
-        private uint nNonce;
+        private string nNonce;
         private uint nTime;
         private int nVersion;
 
@@ -50,7 +51,7 @@ namespace MiningCore.Blockchain.ZCash
             set => nVersion = value;
         }
 
-        public uint Nonce
+        public string Nonce
         {
             get => nNonce;
             set => nNonce = value;
@@ -85,14 +86,16 @@ namespace MiningCore.Blockchain.ZCash
         #region IBitcoinSerializable Members
 
 		public void ReadWrite(BitcoinStream stream)
-        {
+		{
+			var nonceBytes = nNonce.HexToByteArray();
+
 			stream.ReadWrite(ref nVersion);
             stream.ReadWrite(ref hashPrevBlock);
             stream.ReadWrite(ref hashMerkleRoot);
             stream.ReadWrite(ref hashReserved);
             stream.ReadWrite(ref nTime);
             stream.ReadWrite(ref nBits);
-            stream.ReadWrite(ref nNonce);
+            stream.ReadWrite(ref nonceBytes);
 		}
 
         #endregion
@@ -110,7 +113,7 @@ namespace MiningCore.Blockchain.ZCash
             hashReserved = 0;
             nTime = 0;
             nBits = 0;
-            nNonce = 0;
+            nNonce = string.Empty;
 		}
     }
 }

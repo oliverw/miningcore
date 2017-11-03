@@ -36,6 +36,7 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
+using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Bitcoin

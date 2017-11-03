@@ -125,7 +125,7 @@ bool verifyEH(const char *hdr, const char *soln) {
   // No VLAs with VC ;-(
 #ifdef _MSC_VER
   uint8_t *vHash = (uint8_t*)alloca(sizeof(uint8_t) * hashLength);
-  memset(vHash, 0, sizeof(vHash));
+  memset(vHash, 0, sizeof(uint8_t) * hashLength);
 
   uint8_t *tmpHash = (uint8_t*)alloca(sizeof(uint8_t) * hashOutput);
   memset(tmpHash, 0, sizeof(uint8_t) * hashOutput);

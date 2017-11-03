@@ -32,7 +32,6 @@ using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
-using MiningCore.Extensions;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -50,7 +49,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public BitcoinJobManager(
             IComponentContext ctx,
             IMasterClock clock,
-            BitcoinExtraNonceProvider extraNonceProvider) :
+            IExtraNonceProvider extraNonceProvider) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -63,7 +62,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
 	    protected readonly IMasterClock clock;
 		protected DaemonClient daemon;
-	    protected readonly BitcoinExtraNonceProvider extraNonceProvider;
+	    protected readonly IExtraNonceProvider extraNonceProvider;
 	    protected readonly IHashAlgorithm sha256d = new Sha256D();
 	    protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
 	    protected const int MaxActiveJobs = 4;
@@ -149,7 +148,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
+        protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
         {
             // execute command batch
             var results = await daemon.ExecuteBatchAnyAsync(
@@ -170,7 +169,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // was it accepted?
             var acceptResult = results[1];
-            var block = acceptResult.Response?.ToObject<Blocks>();
+            var block = acceptResult.Response?.ToObject<DaemonResponses.Block>();
             var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
 
             return (accepted, block?.Transactions.FirstOrDefault());
@@ -208,13 +207,13 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
 
             // assign unique ExtraNonce1 to worker (miner)
-            worker.Context.ExtraNonce1 = extraNonceProvider.Next().ToBigEndian().ToStringHex8();
+            worker.Context.ExtraNonce1 = extraNonceProvider.Next();
 
             // setup response data
             var responseData = new object[]
             {
                 worker.Context.ExtraNonce1,
-                extraNonceProvider.Size
+	            BitcoinExtraNonceProvider.Size
             };
 
             return responseData;
@@ -451,7 +450,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (isPoS)
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
             else
-                poolAddressDestination = BitcoinUtils.AddressToScript(validateAddressResponse.Address);
+                poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
 
             // chain detection
             if (blockchainInfoResponse.Chain.ToLower() == "test")
@@ -480,6 +479,11 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupCrypto();
             SetupJobUpdates();
         }
+
+	    protected virtual IDestination AddressToDestination(string address)
+	    {
+		    return BitcoinUtils.AddressToDestination(address);
+	    }
 
         protected virtual void ConfigureRewards()
         {
@@ -533,7 +537,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         currentJob = new TJob();
 
                         currentJob.Init(blockTemplate, NextJobId(),
-                            poolConfig, clusterConfig, clock, poolAddressDestination, networkType, extraNonceProvider, isPoS,
+                            poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
                             ShareMultiplier,
                             coinbaseHasher, headerHasher, blockHasher);
 

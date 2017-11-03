@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        private void OnGetTransactions(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        protected void OnGetTransactions(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
@@ -260,7 +260,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual BitcoinJobManager<TJob, TBlockTemplate> CreateJobManager()
         {
-            return ctx.Resolve<BitcoinJobManager<TJob, TBlockTemplate>>();
+            return ctx.Resolve<BitcoinJobManager<TJob, TBlockTemplate>>(
+	            new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
 
         protected override async Task SetupJobManager()
@@ -349,10 +350,10 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override void OnVarDiffUpdate(StratumClient<BitcoinWorkerContext> client, double newDiff)
         {
-            base.OnVarDiffUpdate(client, newDiff);
+			client.Context.EnqueueNewDifficulty(newDiff);
 
-            // apply immediately and notify client
-            if (client.Context.HasPendingDifficulty)
+			// apply immediately and notify client
+			if (client.Context.HasPendingDifficulty)
             {
                 client.Context.ApplyPendingDifficulty();
 

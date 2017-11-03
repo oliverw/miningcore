@@ -36,7 +36,7 @@ namespace MiningCore.Blockchain.Bitcoin
         /// (these addresses begin with the digit '1')
         /// The resulting hash in both of these cases is always exactly 20 bytes.
         /// </summary>
-        public static IDestination AddressToScript(string address)
+        public static IDestination AddressToDestination(string address)
         {
             var decoded = Encoders.Base58.DecodeData(address);
             //if (decoded.Length != 25)

@@ -7,8 +7,8 @@ using MiningCore.Extensions;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    public class EthereumExtraNonceProvider
-    {
+    public class EthereumExtraNonceProvider : IExtraNonceProvider
+	{
         private int counter;
         private const int NonceMax = 0x10000; // 2 Byte = 16 Bit
 

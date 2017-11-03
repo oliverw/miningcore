@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using MiningCore.Crypto.Hashing.Algorithms;
+using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.Extensions;
 using MiningCore.Tests.Util;
@@ -237,7 +238,6 @@ namespace MiningCore.Tests.Crypto
             Assert.Throws<InvalidOperationException>(() => hasher.Digest(null));
         }
 
-        /* These appear to mess up CI due to the memory requirements
         [Fact]
         public void EquihashVerifier_Should_Verify_Success()
         {
@@ -263,7 +263,6 @@ namespace MiningCore.Tests.Crypto
             Assert.Throws<ArgumentException>(() => hasher.Verify(new byte[3], null));
             Assert.Throws<ArgumentException>(() => hasher.Verify(new byte[140], new byte[3]));
         }
-        */
 
         [Fact]
         public void Sha3_256_Hash_Should_Match()

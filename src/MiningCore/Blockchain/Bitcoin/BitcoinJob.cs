@@ -400,7 +400,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            BitcoinExtraNonceProvider extraNonceProvider, bool isPoS, double shareMultiplier,
+            bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -408,7 +408,6 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 	        Contract.RequiresNonNull(clock, nameof(clock));
 			Contract.RequiresNonNull(poolAddressDestination, nameof(poolAddressDestination));
-            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
             Contract.RequiresNonNull(coinbaseHasher, nameof(coinbaseHasher));
             Contract.RequiresNonNull(headerHasher, nameof(headerHasher));
             Contract.RequiresNonNull(blockHasher, nameof(blockHasher));
@@ -423,7 +422,7 @@ namespace MiningCore.Blockchain.Bitcoin
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
 
-            extraNoncePlaceHolderLength = extraNonceProvider.PlaceHolder.Length;
+            extraNoncePlaceHolderLength = BitcoinExtraNonceProvider.PlaceHolder.Length;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 

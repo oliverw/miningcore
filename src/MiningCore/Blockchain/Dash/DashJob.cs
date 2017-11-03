@@ -42,7 +42,7 @@ namespace MiningCore.Blockchain.Dash
 
             foreach (var recipient in rewardRecipients.Where(x => x.Type != RewardRecipientType.Dev && x.Percentage > 0))
             {
-                var recipientAddress = BitcoinUtils.AddressToScript(recipient.Address);
+                var recipientAddress = BitcoinUtils.AddressToDestination(recipient.Address);
                 var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * blockReward.Satoshi));
 
                 rewardToPool -= recipientReward;
@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Dash
             {
                 if (!string.IsNullOrEmpty(BlockTemplate.Masternode.Payee))
                 {
-                    var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Masternode.Payee);
+                    var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Masternode.Payee);
                     var payeeReward = BlockTemplate.Masternode.Amount;
 
                     reward -= payeeReward;
@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Dash
                 {
                     foreach (var superBlock in BlockTemplate.SuperBlocks)
                     {
-                        var payeeAddress = BitcoinUtils.AddressToScript(superBlock.Payee);
+                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
                         var payeeReward = superBlock.Amount;
 
                         reward -= payeeReward;
@@ -91,7 +91,7 @@ namespace MiningCore.Blockchain.Dash
 
             if (!string.IsNullOrEmpty(BlockTemplate.Payee))
             {
-                var payeeAddress = BitcoinUtils.AddressToScript(BlockTemplate.Payee);
+                var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Payee);
                 var payeeReward = BlockTemplate.PayeeAmount ?? (reward / 5);
 
                 reward -= payeeReward;

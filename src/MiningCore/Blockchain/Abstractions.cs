@@ -33,7 +33,12 @@ namespace MiningCore.Blockchain
         public string RewardType { get; set; }
     }
 
-    public interface IShare
+	public interface IExtraNonceProvider
+	{
+		string Next();
+	}
+	
+	public interface IShare
     {
         /// <summary>
         /// The pool originating this share from

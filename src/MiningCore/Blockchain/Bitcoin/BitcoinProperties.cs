@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Bitcoin
 			new BitcoinCoinProperties(Math.Pow(2, 8), sha256S, groestlMyriad, sha256DReverse);
 
 		private static readonly BitcoinCoinProperties equihashCoin =
-			new BitcoinCoinProperties(1, sha256D, new DummyHasher(), sha256DReverse);
+			new BitcoinCoinProperties(1, new DummyHasher(), sha256D, sha256DReverse);
 
 		private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
 		{

@@ -17,7 +17,7 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
     {
         readonly PoolConfig poolConfig = new PoolConfig();
         readonly ClusterConfig clusterConfig = new ClusterConfig();
-        private readonly IDestination poolAddressDestination = BitcoinUtils.AddressToScript("mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh");
+        private readonly IDestination poolAddressDestination = BitcoinUtils.AddressToDestination("mjn3q42yxr9yLA3gyseHCZCHEptZC31PEh");
 
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
@@ -43,7 +43,7 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
             job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, BitcoinNetworkType.RegTest,
-                new BitcoinExtraNonceProvider(), false, 1, sha256d, sha256d, sha256dReverse);
+                false, 1, sha256d, sha256d, sha256dReverse);
 
             // set clock to submission time
             clock.CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869907).UtcDateTime;
@@ -80,7 +80,7 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
             job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, BitcoinNetworkType.RegTest,
-                new BitcoinExtraNonceProvider(), false, 1, sha256d, sha256d, sha256dReverse);
+                false, 1, sha256d, sha256d, sha256dReverse);
 
             // set clock to submission time
             clock.CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869907).UtcDateTime;

@@ -25,8 +25,8 @@ using MiningCore.Extensions;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinExtraNonceProvider
-    {
+    public class BitcoinExtraNonceProvider : IExtraNonceProvider
+	{
         public BitcoinExtraNonceProvider()
         {
             uint instanceId;
@@ -43,13 +43,17 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private uint counter;
 
-        public byte[] PlaceHolder { get; } = "f000000ff111111f".HexToByteArray();
+        public static byte[] PlaceHolder { get; } = "f000000ff111111f".HexToByteArray();
 
-        public int Size => PlaceHolder.Length - Marshal.SizeOf(counter);
+        public static int Size => PlaceHolder.Length - Marshal.SizeOf(typeof(uint));
 
-        public uint Next()
+		#region IExtraNonceProvider
+
+		public string Next()
         {
-            return ++counter;
+            return (++counter).ToBigEndian().ToStringHex8();
         }
-    }
+
+		#endregion // IExtraNonceProvider
+	}
 }

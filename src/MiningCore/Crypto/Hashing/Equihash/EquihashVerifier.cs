@@ -31,7 +31,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
         {
             // need to limit concurrency here due to the enormous memory 
             // requirements of the equihash algorithm (up 1GB per thread)
-            sem = new Semaphore(0, maxConcurrency);
+            sem = new Semaphore(maxConcurrency, maxConcurrency);
         }
 
         private readonly Semaphore sem;

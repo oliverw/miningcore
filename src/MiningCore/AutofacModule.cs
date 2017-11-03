@@ -73,9 +73,6 @@ namespace MiningCore
 		        .AsImplementedInterfaces()
 		        .SingleInstance();
 
-            builder.RegisterType<BitcoinExtraNonceProvider>()
-                .AsSelf();
-
             builder.RegisterType<IntegratedBanManager>()
                 .Keyed<IBanManager>(BanManagerKind.Integrated)
                 .SingleInstance();
