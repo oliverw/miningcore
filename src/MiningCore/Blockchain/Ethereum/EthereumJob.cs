@@ -14,9 +14,9 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Id = id;
             BlockTemplate = blockTemplate;
-        }
+		}
 
-        private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces =
+		private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();
 
         public string Id { get; }
@@ -58,8 +58,8 @@ namespace MiningCore.Blockchain.Ethereum
             if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
-			// test if share meets at least workers current difficulty
-			var resultValue = new BigInteger(resultBytes.ToReverseArray());
+            // test if share meets at least workers current difficulty
+            var resultValue = BigInteger.Parse("00" + resultBytes.ToHexString(), NumberStyles.HexNumber);
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;

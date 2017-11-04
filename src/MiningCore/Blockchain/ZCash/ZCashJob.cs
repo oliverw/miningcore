@@ -314,10 +314,10 @@ namespace MiningCore.Blockchain.ZCash
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
             var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
-	        var headerValue = new BigInteger(headerHash);
+            var headerValue = BigInteger.Parse("00" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
 
-			// calc share-diff
-			var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
+            // calc share-diff
+            var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 

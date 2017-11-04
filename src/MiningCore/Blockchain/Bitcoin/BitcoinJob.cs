@@ -294,7 +294,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
             var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
-            var headerValue = new BigInteger(headerHash);
+            var headerValue = BigInteger.Parse("00" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;

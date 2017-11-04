@@ -35,16 +35,14 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
-using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
-using IBlockRepository = MiningCore.Persistence.Repositories.IBlockRepository;
 
 namespace MiningCore.Blockchain.ZCash
 {
     [CoinMetadata(CoinType.ZEC)]
     public class ZCashPayoutHandler : BitcoinPayoutHandler
     {
-	    public ZCashPayoutHandler(
+        public ZCashPayoutHandler(
             IComponentContext ctx,
             IConnectionFactory cf,
             IMapper mapper,
@@ -58,30 +56,30 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
-	    private ZCashPoolConfigExtra extraConfig;
+        private ZCashPoolConfigExtra extraConfig;
         protected override string LogCategory => "ZCash Payout Handler";
-		protected const decimal TransferFee = 0.0001m;
+        protected const decimal TransferFee = 0.0001m;
 
-		#region IPayoutHandler
+        #region IPayoutHandler
 
-		public override void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
-	    {
-		    base.Configure(clusterConfig, poolConfig);
+        public override void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        {
+            base.Configure(clusterConfig, poolConfig);
 
-		    extraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
-		}
+            extraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+        }
 
-	    public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
-	    {
-		    var result = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        {
+            var result = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-			// Transfer entire block reward to z-addr
-		    await TransferTransparentPoolBalance();
+            // Transfer entire block reward to z-addr
+            await TransferTransparentPoolBalance();
 
-			return result;
-	    }
+            return result;
+        }
 
-	    public override async Task PayoutAsync(Balance[] balances)
+        public override async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
@@ -101,8 +99,8 @@ namespace MiningCore.Blockchain.ZCash
                 extraConfig.ZAddress,   // default account
                 amounts,                // addresses and associated amounts
                 10,                     // only spend funds covered by this many confirmations
-	            TransferFee
-			};
+                TransferFee
+            };
 
             // send command
             var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
@@ -124,7 +122,7 @@ namespace MiningCore.Blockchain.ZCash
                             ZCashCommands.ZGetOperationResult);
 
                         if (operationResultResponse.Error == null && 
-							operationResultResponse.Response?.Any(x=> x.OperationId == operationId) == true)
+                            operationResultResponse.Response?.Any(x=> x.OperationId == operationId) == true)
                         {
                             var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
@@ -160,89 +158,89 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-		#endregion // IPayoutHandler
+        #endregion // IPayoutHandler
 
-		/// <summary>
-		/// ZCash coins are mined into a t-addr (transparent address), but can only be 
-		/// spent to a z -addr (shielded address), and must be swept out of the t-addr 
-		/// in one transaction with no change.
-		/// </summary>
-		private async Task TransferTransparentPoolBalance()
-	    {
-			// get t-addr balance
-			var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(BitcoinCommands.GetBalance);
+        /// <summary>
+        /// ZCash coins are mined into a t-addr (transparent address), but can only be 
+        /// spent to a z -addr (shielded address), and must be swept out of the t-addr 
+        /// in one transaction with no change.
+        /// </summary>
+        private async Task TransferTransparentPoolBalance()
+        {
+            // get t-addr balance
+            var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(BitcoinCommands.GetBalance);
 
-		    if (balanceResult.Error != null)
-		    {
-			    logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.GetBalance}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
-			    return;
-		    }
+            if (balanceResult.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.GetBalance}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                return;
+            }
 
-		    var balance = (decimal) (double) balanceResult.Response;
+            var balance = (decimal) (double) balanceResult.Response;
 
-			if (balance > 0)
-		    {
-			    logger.Info(() => $"[{LogCategory}] Transferring {FormatAmount(balance)} to pool's z-addr");
+            if (balance > 0)
+            {
+                logger.Info(() => $"[{LogCategory}] Transferring {FormatAmount(balance)} to pool's z-addr");
 
-				// transfer to z-addr
-				var recipient = new ZSendManyRecipient
-			    {
-				    Address = extraConfig.ZAddress,
-				    Amount = balance - TransferFee
-				};
+                // transfer to z-addr
+                var recipient = new ZSendManyRecipient
+                {
+                    Address = extraConfig.ZAddress,
+                    Amount = balance - TransferFee
+                };
 
-			    var args = new object[]
-			    {
-				    poolConfig.Address, // default account
-				    new object[]		// addresses and associated amounts
-				    {
-					    recipient
-				    },
-				    10,					// only spend funds covered by this many confirmations
-				    TransferFee
-				};
+                var args = new object[]
+                {
+                    poolConfig.Address, // default account
+                    new object[]		// addresses and associated amounts
+                    {
+                        recipient
+                    },
+                    10,					// only spend funds covered by this many confirmations
+                    TransferFee
+                };
 
-			    // send command
-			    var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+                // send command
+                var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
 
-				if (sendResult.Error != null)
-				{
-					logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
-					return;
-				}
+                if (sendResult.Error != null)
+                {
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                    return;
+                }
 
-				var operationId = sendResult.Response;
+                var operationId = sendResult.Response;
 
-			    logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer operation id: {operationId}");
+                logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer operation id: {operationId}");
 
-				while (true)
-			    {
-				    var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-					    ZCashCommands.ZGetOperationResult);
+                while (true)
+                {
+                    var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                        ZCashCommands.ZGetOperationResult);
 
-				    if (operationResultResponse.Error == null &&
-				        operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
-				    {
-					    var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
+                    if (operationResultResponse.Error == null &&
+                        operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
+                    {
+                        var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-					    switch (operationResult.Status.ToLower())
-					    {
-						    case "success":
-							    // extract transaction id
-							    var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-							    logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer transaction id: {txId}");
-							    break;
+                        switch (operationResult.Status.ToLower())
+                        {
+                            case "success":
+                                // extract transaction id
+                                var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
+                                logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer transaction id: {txId}");
+                                break;
 
-						    case "cancelled":
-						    case "failed":
-							    break;
-					    }
-				    }
+                            case "cancelled":
+                            case "failed":
+                                break;
+                        }
+                    }
 
-				    logger.Info(() => $"[{LogCategory}] Waiting for ZCash Balance transfer to complete: {operationId}");
-				    await Task.Delay(10);
-			    }
-		    }
-		}
-	}
+                    logger.Info(() => $"[{LogCategory}] Waiting for ZCash Balance transfer to complete: {operationId}");
+                    await Task.Delay(10);
+                }
+            }
+        }
+    }
 }
