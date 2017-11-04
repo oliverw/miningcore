@@ -254,12 +254,15 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
-            var key = extraNonce1 + extraNonce2 + nTime + nonce;
-            if (submissions.Contains(key))
-                return false;
+	        lock (submissions)
+	        {
+		        var key = extraNonce1 + extraNonce2 + nTime + nonce;
+		        if (submissions.Contains(key))
+			        return false;
 
-            submissions.Add(key);
-            return true;
+		        submissions.Add(key);
+		        return true;
+	        }
         }
 
         protected virtual byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
@@ -291,7 +294,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
             var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
-            var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerValue = new BigInteger(headerHash);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;

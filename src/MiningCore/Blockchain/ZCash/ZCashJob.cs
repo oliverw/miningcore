@@ -314,10 +314,10 @@ namespace MiningCore.Blockchain.ZCash
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
             var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
-            var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+	        var headerValue = new BigInteger(headerHash);
 
-            // calc share-diff
-            var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
+			// calc share-diff
+			var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -361,12 +361,15 @@ namespace MiningCore.Blockchain.ZCash
 
         protected bool RegisterSubmit(string nonce, string solution)
         {
-            var key = nonce + solution;
-            if (submissions.Contains(key))
-                return false;
+	        lock (submissions)
+	        {
+		        var key = nonce + solution;
+		        if (submissions.Contains(key))
+			        return false;
 
-            submissions.Add(key);
-            return true;
+		        submissions.Add(key);
+		        return true;
+	        }
         }
 
         public string GetFoundersRewardAddress()

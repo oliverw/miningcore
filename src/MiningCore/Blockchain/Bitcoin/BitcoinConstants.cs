@@ -95,6 +95,7 @@ namespace MiningCore.Blockchain.Bitcoin
     public static class BitcoinCommands
     {
         public const string GetInfo = "getinfo";
+	    public const string GetBalance = "getbalance";
         public const string GetMiningInfo = "getmininginfo";
         public const string GetPeerInfo = "getpeerinfo";
         public const string ValidateAddress = "validateaddress";

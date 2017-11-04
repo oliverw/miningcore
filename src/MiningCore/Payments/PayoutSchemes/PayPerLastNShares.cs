@@ -85,8 +85,11 @@ namespace MiningCore.Payments.PayoutSchemes
             {
                 var amount = rewards[address];
 
-                logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+	            if (amount > 0)
+	            {
+		            logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
+		            balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+	            }
             }
 
             // delete obsolete shares
@@ -168,11 +171,14 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-                    // accumulate miner reward
-                    if (!rewards.ContainsKey(address))
-                        rewards[address] = reward;
-                    else
-                        rewards[address] += reward;
+	                if (reward > 0)
+	                {
+		                // accumulate miner reward
+		                if (!rewards.ContainsKey(address))
+			                rewards[address] = reward;
+		                else
+			                rewards[address] += reward;
+	                }
                 }
             }
 

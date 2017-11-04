@@ -241,7 +241,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 client.Context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 if (poolConfig.Banning?.Enabled == true)

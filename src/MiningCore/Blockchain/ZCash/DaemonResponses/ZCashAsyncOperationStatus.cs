@@ -9,7 +9,7 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
 {
     public class ZCashAsyncOperationStatus
     {
-        [JsonProperty("operationid")]
+        [JsonProperty("id")]
         public string OperationId { get; set; }
 
         public string Status { get; set; }
