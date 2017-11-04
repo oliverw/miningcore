@@ -15,8 +15,8 @@ using NBitcoin.DataEncoders;
 namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJobManager<TJob> : BitcoinJobManager<TJob, ZCashBlockTemplate>
-	    where TJob : ZCashJob, new()
-	{
+        where TJob : ZCashJob, new()
+    {
         public ZCashJobManager(
             IComponentContext ctx,
             IMasterClock clock,
@@ -41,7 +41,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // handle z-addr
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
-                ZCashCommands.ZValidateAddress, new[] {address});
+                ZCashCommands.ZValidateAddress, new[] { address });
 
             return result.Response != null && result.Response.IsValid;
         }
@@ -107,7 +107,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ZCashJob job;
 
-            lock (jobLock)
+            lock(jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }

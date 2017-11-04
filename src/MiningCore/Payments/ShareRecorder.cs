@@ -98,7 +98,7 @@ namespace MiningCore.Payments
 
         private void PersistSharesFaulTolerant(IList<IShare> shares)
         {
-            var context = new Dictionary<string, object> {{PolicyContextKeyShares, shares}};
+            var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
             faultPolicy.Execute(() => { PersistShares(shares); }, context);
         }
@@ -107,7 +107,7 @@ namespace MiningCore.Payments
         {
             cf.RunTx((con, tx) =>
             {
-                foreach (var share in shares)
+                foreach(var share in shares)
                 {
                     var shareEntity = mapper.Map<Share>(share);
                     shareRepo.Insert(con, tx, shareEntity);
@@ -143,14 +143,14 @@ namespace MiningCore.Payments
 
             try
             {
-                using (var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
+                using(var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
                 {
-                    using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                    using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                     {
                         if (stream.Length == 0)
                             WriteRecoveryFileheader(writer);
 
-                        foreach (var share in shares)
+                        foreach(var share in shares)
                         {
                             var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
                             writer.WriteLine(json);
@@ -161,7 +161,7 @@ namespace MiningCore.Payments
                 NotifyAdminOnPolicyFallback();
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 if (!hasLoggedPolicyFallbackFailure)
                 {
@@ -188,14 +188,14 @@ namespace MiningCore.Payments
                 var failCount = 0;
                 const int bufferSize = 20;
 
-                using (var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
+                using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
                 {
-                    using (var reader = new StreamReader(stream, new UTF8Encoding(false)))
+                    using(var reader = new StreamReader(stream, new UTF8Encoding(false)))
                     {
                         var shares = new List<IShare>();
                         var lastProgressUpdate = DateTime.UtcNow;
 
-                        while (!reader.EndOfStream)
+                        while(!reader.EndOfStream)
                         {
                             var line = reader.ReadLine().Trim();
 
@@ -214,7 +214,7 @@ namespace MiningCore.Payments
                                 shares.Add(share);
                             }
 
-                            catch (JsonException ex)
+                            catch(JsonException ex)
                             {
                                 logger.Error(ex, () => $"Unable to parse share record: {line}");
                                 failCount++;
@@ -232,7 +232,7 @@ namespace MiningCore.Payments
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(ex, () => $"Unable to import shares");
                                 failCount++;
@@ -258,7 +258,7 @@ namespace MiningCore.Payments
                             }
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Error(ex, () => $"Unable to import shares");
                             failCount++;
@@ -272,7 +272,7 @@ namespace MiningCore.Payments
                     logger.Warn(() => $"Successfully {successCount} shares with {failCount} failures");
             }
 
-            catch (FileNotFoundException)
+            catch(FileNotFoundException)
             {
                 logger.Error(() => $"Recovery file {recoveryFilename} was not found");
             }
@@ -331,7 +331,7 @@ namespace MiningCore.Payments
                         PersistSharesFaulTolerant(shares);
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }

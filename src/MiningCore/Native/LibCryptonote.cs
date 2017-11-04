@@ -44,14 +44,14 @@ namespace MiningCore.Native
             Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
                 // provide reasonable large output buffer
                 var outputBuffer = new byte[0x100];
                 var outputBufferLength = outputBuffer.Length;
 
                 var success = false;
-                fixed (byte* output = outputBuffer)
+                fixed(byte* output = outputBuffer)
                 {
                     success = convert_blob(input, data.Length, output, ref outputBufferLength);
                 }
@@ -65,7 +65,7 @@ namespace MiningCore.Native
                     // retry with correctly sized buffer
                     outputBuffer = new byte[outputBufferLength];
 
-                    fixed (byte* output = outputBuffer)
+                    fixed(byte* output = outputBuffer)
                     {
                         success = convert_blob(input, data.Length, output, ref outputBufferLength);
                     }
@@ -88,7 +88,7 @@ namespace MiningCore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
                 return decode_address(input, data.Length);
             }
@@ -100,9 +100,9 @@ namespace MiningCore.Native
 
             var result = new byte[32];
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
-                fixed (byte* output = result)
+                fixed(byte* output = result)
                 {
                     cn_slow_hash(input, output, (uint) data.Length);
                 }
@@ -117,9 +117,9 @@ namespace MiningCore.Native
 
             var result = new byte[32];
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
-                fixed (byte* output = result)
+                fixed(byte* output = result)
                 {
                     cn_fast_hash(input, output, (uint) data.Length);
                 }

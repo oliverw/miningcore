@@ -65,24 +65,24 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize)
         {
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
-                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.Block>(query, new
-            {
-                poolId,
-                status = status.Select(x=> x.ToString().ToLower()).ToArray(),
-                offset = page * pageSize,
-                pageSize
-            })
-            .Select(mapper.Map<Block>)
-            .ToArray();
+                {
+                    poolId,
+                    status = status.Select(x => x.ToString().ToLower()).ToArray(),
+                    offset = page * pageSize,
+                    pageSize
+                })
+                .Select(mapper.Map<Block>)
+                .ToArray();
         }
 
         public Block[] GetPendingBlocksForPool(IDbConnection con, string poolid)
         {
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
-            return con.Query<Entities.Block>(query, new {status = BlockStatus.Pending.ToString().ToLower(), poolid})
+            return con.Query<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid })
                 .Select(mapper.Map<Block>)
                 .ToArray();
         }
@@ -90,16 +90,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public Block GetBlockBefore(IDbConnection con, string poolId, BlockStatus[] status, DateTime before)
         {
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
-                        "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
+                "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
 
             return con.Query<Entities.Block>(query, new
-            {
-                poolId,
-                before,
-                status = status.Select(x => x.ToString().ToLower()).ToArray()
-            })
-            .Select(mapper.Map<Block>)
-            .FirstOrDefault();
+                {
+                    poolId,
+                    before,
+                    status = status.Select(x => x.ToString().ToLower()).ToArray()
+                })
+                .Select(mapper.Map<Block>)
+                .FirstOrDefault();
         }
     }
 }

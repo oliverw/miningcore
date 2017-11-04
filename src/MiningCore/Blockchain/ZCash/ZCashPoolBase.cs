@@ -71,11 +71,11 @@ namespace MiningCore.Blockchain.ZCash
             var requestParams = request.ParamsAs<string[]>();
 
             var data = new object[]
-            {
-                client.ConnectionId,
-            }
-            .Concat(manager.GetSubscriberData(client))
-            .ToArray();
+                {
+                    client.ConnectionId,
+                }
+                .Concat(manager.GetSubscriberData(client))
+                .ToArray();
 
             client.Respond(data, request.Id);
 
@@ -101,7 +101,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -179,7 +179,7 @@ namespace MiningCore.Blockchain.ZCash
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
             var quotient = ZCashConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
+            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
             {

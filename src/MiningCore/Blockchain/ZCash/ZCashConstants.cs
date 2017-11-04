@@ -49,14 +49,15 @@ namespace MiningCore.Blockchain.ZCash
 
         private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
         {
-            { BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+            {
+                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
                 {
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
                     FoundersRewardSubsidyHalvingInterval = 840000,
                     FoundersRewardSubsidySlowStartInterval = 20000,
 
-                    FoundersRewardAddresses = new []
+                    FoundersRewardAddresses = new[]
                     {
                         "t3Vz22vK5z2LcKEdg16Yv4FFneEL1zg9ojd", "t3cL9AucCajm3HXDhb5jBnJK2vapVoXsop3", "t3fqvkzrrNaMcamkQMwAyHRjfDdM2xQvDTR",
                         "t3TgZ9ZT2CTSK44AnUPi6qeNaHa2eC7pUyF", "t3SpkcPQPfuRYHsP5vz3Pv86PgKo5m9KVmx", "t3Xt4oQMRPagwbpQqkgAViQgtST4VoSWR6S",
@@ -77,14 +78,15 @@ namespace MiningCore.Blockchain.ZCash
                     }
                 }
             },
-            { BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+            {
+                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
                 {
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
                     FoundersRewardSubsidyHalvingInterval = 840000,
                     FoundersRewardSubsidySlowStartInterval = 20000,
 
-                    FoundersRewardAddresses = new []
+                    FoundersRewardAddresses = new[]
                     {
                         "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi", "t2N9PH9Wk9xjqYg9iin1Ua3aekJqfAtE543", "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2", "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy",
                         "t2BkYdVCHzvTJJUTx4yZB8qeegD8QsPx8bo", "t2J8q1xH1EuigJ52MfExyyjYtN3VgvshKDf", "t2Crq9mydTm37kZokC68HzT6yez3t2FBnFj", "t2EaMPUiQ1kthqcP5UEkF42CAFKJqXCkXC9",
@@ -101,14 +103,15 @@ namespace MiningCore.Blockchain.ZCash
                     }
                 }
             },
-            { BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+            {
+                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
                 {
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
                     FoundersRewardSubsidyHalvingInterval = 150,
                     FoundersRewardSubsidySlowStartInterval = 0,
 
-                FoundersRewardAddresses = new []
+                    FoundersRewardAddresses = new[]
                     {
                         "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg"
                     }
@@ -119,7 +122,7 @@ namespace MiningCore.Blockchain.ZCash
         public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
             new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
             {
-                {CoinType.ZEC, ZCashCoinbaseTxConfig},
+                { CoinType.ZEC, ZCashCoinbaseTxConfig },
             };
     }
 

@@ -23,11 +23,11 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.ZCash.Configuration
 {
     public class ZCashPoolConfigExtra
-	{
-		/// <summary>
-		/// z-addr holding pool funds - required for payment processing
-		/// </summary>
-		[JsonProperty("z-address")]
+    {
+        /// <summary>
+        /// z-addr holding pool funds - required for payment processing
+        /// </summary>
+        [JsonProperty("z-address")]
         public string ZAddress { get; set; }
     }
 }

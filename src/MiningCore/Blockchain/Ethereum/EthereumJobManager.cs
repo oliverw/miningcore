@@ -82,12 +82,12 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header.Length == 0)
                     return false;
 
-                lock (jobLock)
+                lock(jobLock)
                 {
                     var isNew = currentJob == null ||
-                                currentJob.BlockTemplate.ParentHash != blockTemplate.ParentHash ||
-                                currentJob.BlockTemplate.Height < blockTemplate.Height ||
-                                currentJob.BlockTemplate.Seed != blockTemplate.Seed;
+                        currentJob.BlockTemplate.ParentHash != blockTemplate.ParentHash ||
+                        currentJob.BlockTemplate.Height < blockTemplate.Height ||
+                        currentJob.BlockTemplate.Seed != blockTemplate.Seed;
 
                     if (isNew)
                     {
@@ -101,9 +101,9 @@ namespace MiningCore.Blockchain.Ethereum
 
                         // remove old ones
                         var obsoleteKeys = validJobs.Keys
-                            .Where(key=> validJobs[key].BlockTemplate.Height < currentJob.BlockTemplate.Height - MaxBlockBacklog).ToArray();
+                            .Where(key => validJobs[key].BlockTemplate.Height < currentJob.BlockTemplate.Height - MaxBlockBacklog).ToArray();
 
-                        foreach (var key in obsoleteKeys)
+                        foreach(var key in obsoleteKeys)
                             validJobs.Remove(key);
 
                         // update stats
@@ -114,7 +114,7 @@ namespace MiningCore.Blockchain.Ethereum
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
@@ -203,7 +203,7 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         var warpChunkAmount = syncStates.Min(x => x.WarpChunksAmount);
                         var warpChunkProcessed = syncStates.Max(x => x.WarpChunksProcessed);
-                        var percent = (double)warpChunkProcessed / warpChunkAmount * 100;
+                        var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
 
                         logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
                     }
@@ -243,7 +243,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private object[] GetJobParamsForStratum(bool isNew)
         {
-            lock (jobLock)
+            lock(jobLock)
             {
                 return new object[]
                 {
@@ -271,9 +271,7 @@ namespace MiningCore.Blockchain.Ethereum
             base.Configure(poolConfig, clusterConfig);
 
             // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                Dag.GetDefaultDagDirectory();
+            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : Dag.GetDefaultDagDirectory();
 
             // create it if necessary
             Directory.CreateDirectory(dagDir);
@@ -307,9 +305,9 @@ namespace MiningCore.Blockchain.Ethereum
             EthereumJob job;
 
             // stale?
-            lock (jobLock)
+            lock(jobLock)
             {
-                if(!validJobs.TryGetValue(jobId, out job))
+                if (!validJobs.TryGetValue(jobId, out job))
                     throw new StratumException(StratumError.MinusOne, "stale share");
             }
 
@@ -360,9 +358,9 @@ namespace MiningCore.Blockchain.Ethereum
             var block = results[0].Response.ToObject<Block>();
             var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
 
-            BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
+            BlockchainStats.BlockHeight = block.Height.HasValue ? (long) block.Height.Value : -1;
             BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
-            BlockchainStats.NetworkHashRate = 0;    // TODO
+            BlockchainStats.NetworkHashRate = 0; // TODO
             BlockchainStats.ConnectedPeers = peerCount;
         }
 
@@ -387,7 +385,7 @@ namespace MiningCore.Blockchain.Ethereum
             var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
@@ -405,7 +403,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var syncPendingNotificationShown = false;
 
-            while (true)
+            while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
 
@@ -446,7 +444,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (results.Any(x => x.Error != null))
             {
-                if(results[4].Error != null)
+                if (results[4].Error != null)
                     logger.ThrowLogPoolStartupException($"Looks like you are NOT running 'Parity' as daemon which is not supported - https://parity.io/", LogCat);
 
                 var errors = results.Where(x => x.Error != null)
@@ -478,7 +476,7 @@ namespace MiningCore.Blockchain.Ethereum
             await UpdateNetworkStatsAsync();
 
             // make sure we have a current DAG
-            while (true)
+            while(true)
             {
                 var blockTemplate = await GetBlockTemplateAsync();
 

@@ -81,15 +81,15 @@ namespace MiningCore.Payments.PayoutSchemes
             var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
 
             // update balances
-            foreach (var address in rewards.Keys)
+            foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
-	            if (amount > 0)
-	            {
-		            logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
-		            balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
-	            }
+                if (amount > 0)
+                {
+                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                }
             }
 
             // delete obsolete shares
@@ -108,7 +108,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
-            if(totalRewards > 0)
+            if (totalRewards > 0)
                 logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward)");
 
             return Task.FromResult(true);
@@ -126,7 +126,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
 
-            while (!done)
+            while(!done)
             {
                 // fetch next page
                 var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize));
@@ -137,7 +137,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 // iterate over shares
                 var start = Math.Max(0, blockPage.Length - 1);
 
-                for (var i = start; !done && i >= 0; i--)
+                for(var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
 
@@ -171,14 +171,14 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-	                if (reward > 0)
-	                {
-		                // accumulate miner reward
-		                if (!rewards.ContainsKey(address))
-			                rewards[address] = reward;
-		                else
-			                rewards[address] += reward;
-	                }
+                    if (reward > 0)
+                    {
+                        // accumulate miner reward
+                        if (!rewards.ContainsKey(address))
+                            rewards[address] = reward;
+                        else
+                            rewards[address] += reward;
+                    }
                 }
             }
 

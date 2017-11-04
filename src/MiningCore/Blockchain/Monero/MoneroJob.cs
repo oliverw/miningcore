@@ -77,10 +77,10 @@ namespace MiningCore.Blockchain.Monero
 
         private string EncodeTarget(double difficulty)
         {
-            var diff = BigInteger.ValueOf((long)difficulty);
+            var diff = BigInteger.ValueOf((long) difficulty);
             var quotient = MoneroConstants.Diff1.Divide(diff);
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
+            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
                 Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
@@ -95,7 +95,7 @@ namespace MiningCore.Blockchain.Monero
         private byte[] ComputeBlockHash(byte[] blobConverted)
         {
             // blockhash is computed from the converted blob data prefixed with its length
-            var bytes = new[] {(byte) blobConverted.Length}
+            var bytes = new[] { (byte) blobConverted.Length }
                 .Concat(blobConverted)
                 .ToArray();
 

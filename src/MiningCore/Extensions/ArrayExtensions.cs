@@ -53,11 +53,11 @@ namespace MiningCore.Extensions
         /// </summary>
         public static byte[] ReverseByteOrder(this byte[] bytes)
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                using (var writer = new BinaryWriter(stream))
+                using(var writer = new BinaryWriter(stream))
                 {
-                    for (var i = 0; i < 8; i++)
+                    for(var i = 0; i < 8; i++)
                     {
                         var value = BitConverter.ToUInt32(bytes, i * 4).ToBigEndian();
                         writer.Write(value);

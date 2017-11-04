@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(Tuple.Create((object)client, share));
+                shareSubject.OnNext(Tuple.Create((object) client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -178,7 +178,7 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Context.Stats.ValidShares++;
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
@@ -241,7 +241,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case EthereumStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Ethereum
                         return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                         return 0ul;
@@ -299,7 +299,7 @@ namespace MiningCore.Blockchain.Ethereum
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
             var result = Math.Ceiling(shares.Sum(share => share.Item2.Difficulty) / interval);
-            return (ulong)result;
+            return (ulong) result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient<EthereumWorkerContext> client, double newDiff)

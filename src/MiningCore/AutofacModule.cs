@@ -89,10 +89,10 @@ namespace MiningCore
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
-                                .Any(i =>
-                                    i.IsAssignableFrom(typeof(IMiningPool)) ||
-                                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
-                                    i.IsAssignableFrom(typeof(IPayoutScheme))))
+                    .Any(i =>
+                        i.IsAssignableFrom(typeof(IMiningPool)) ||
+                        i.IsAssignableFrom(typeof(IPayoutHandler)) ||
+                        i.IsAssignableFrom(typeof(IPayoutScheme))))
                 .WithMetadataFrom<CoinMetadataAttribute>()
                 .AsImplementedInterfaces();
 

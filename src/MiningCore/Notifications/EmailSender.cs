@@ -50,7 +50,7 @@ namespace MiningCore.Notifications
             message.Subject = subject;
             message.Body = new TextPart("html") { Text = body };
 
-            using (var client = new SmtpClient())
+            using(var client = new SmtpClient())
             {
                 await client.ConnectAsync(config.Host, config.Port, SecureSocketOptions.StartTls);
                 await client.AuthenticateAsync(config.User, config.Password);

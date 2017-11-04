@@ -41,7 +41,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.Payment>(payment);
 
             var query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
-                        "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
+                "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
             con.Execute(query, mapped, tx);
         }
@@ -49,7 +49,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public Payment[] PagePayments(IDbConnection con, string poolId, int page, int pageSize)
         {
             var query = "SELECT * FROM payments WHERE poolid = @poolid " +
-                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.Payment>(query, new { poolId, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<Payment>)

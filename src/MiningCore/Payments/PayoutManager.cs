@@ -76,7 +76,7 @@ namespace MiningCore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach (var pool in clusterConfig.Pools)
+            foreach(var pool in clusterConfig.Pools)
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
@@ -96,7 +96,7 @@ namespace MiningCore.Payments
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
@@ -113,13 +113,13 @@ namespace MiningCore.Payments
 
             if (updatedBlocks.Any())
             {
-                foreach (var block in updatedBlocks.OrderBy(x => x.Created))
+                foreach(var block in updatedBlocks.OrderBy(x => x.Created))
                 {
                     logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
-                        switch (block.Status)
+                        switch(block.Status)
                         {
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
@@ -164,7 +164,7 @@ namespace MiningCore.Payments
                     await handler.PayoutAsync(poolBalancesOverMinimum);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     await NotifyPayoutFailureAsync(poolBalancesOverMinimum, pool, ex);
                     throw;
@@ -192,7 +192,7 @@ namespace MiningCore.Payments
                     await emailSender.NotifyAsync(adminEmail, "Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {pool.Coin.Type} from pool {pool.Id}: {ex.Message}");
                 }
 
-                catch (Exception ex2)
+                catch(Exception ex2)
                 {
                     logger.Error(ex2);
                 }
@@ -221,7 +221,7 @@ namespace MiningCore.Payments
                 shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
 
             // handler has the final say
-            if(accumulatedShareDiffForBlock.HasValue)
+            if (accumulatedShareDiffForBlock.HasValue)
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
@@ -241,14 +241,14 @@ namespace MiningCore.Payments
                 var interval = TimeSpan.FromSeconds(
                     clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
-                while (true)
+                while(true)
                 {
                     try
                     {
                         await ProcessPoolsAsync();
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }

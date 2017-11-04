@@ -81,9 +81,9 @@ namespace MiningCore
 #if DEBUG
                 PreloadNativeLibs();
 #endif
-				//TouchNativeLibs();
+                //TouchNativeLibs();
 
-				string configFile;
+                string configFile;
                 if (!HandleCommandLineOptions(args, out configFile))
                     return;
 
@@ -112,25 +112,25 @@ namespace MiningCore
                 }
             }
 
-            catch (PoolStartupAbortException ex)
+            catch(PoolStartupAbortException ex)
             {
-                if(!string.IsNullOrEmpty(ex.Message))
+                if (!string.IsNullOrEmpty(ex.Message))
                     Console.WriteLine(ex.Message);
 
                 Console.WriteLine("\nCluster cannot start. Good Bye!");
             }
 
-            catch (JsonException)
+            catch(JsonException)
             {
                 // ignored
             }
 
-            catch (IOException)
+            catch(IOException)
             {
                 // ignored
             }
 
-            catch (AggregateException ex)
+            catch(AggregateException ex)
             {
                 if (!(ex.InnerExceptions.First() is PoolStartupAbortException))
                     Console.WriteLine(ex);
@@ -138,12 +138,12 @@ namespace MiningCore
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
 
-            catch (OperationCanceledException)
+            catch(OperationCanceledException)
             {
                 // Ctrl+C
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Console.WriteLine(ex);
 
@@ -158,7 +158,7 @@ namespace MiningCore
                 clusterConfig.Validate();
             }
 
-            catch (ValidationException ex)
+            catch(ValidationException ex)
             {
                 Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
@@ -254,28 +254,28 @@ namespace MiningCore
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
 
-                using (var reader = new StreamReader(file, Encoding.UTF8))
+                using(var reader = new StreamReader(file, Encoding.UTF8))
                 {
-                    using (var jsonReader = new JsonTextReader(reader))
+                    using(var jsonReader = new JsonTextReader(reader))
                     {
                         return serializer.Deserialize<ClusterConfig>(jsonReader);
                     }
                 }
             }
 
-            catch (JsonSerializationException ex)
+            catch(JsonSerializationException ex)
             {
                 HumanizeJsonParseException(ex);
                 throw;
             }
 
-            catch (JsonException ex)
+            catch(JsonException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
 
-            catch (IOException ex)
+            catch(IOException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 throw;
@@ -409,7 +409,7 @@ namespace MiningCore
 
                 if (config.PerPoolLogFile)
                 {
-                    foreach (var poolConfig in clusterConfig.Pools)
+                    foreach(var poolConfig in clusterConfig.Pools)
                     {
                         var target = new FileTarget(poolConfig.Id)
                         {
@@ -586,7 +586,7 @@ namespace MiningCore
             var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
             var appRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            foreach (var nativeLib in NativeLibs)
+            foreach(var nativeLib in NativeLibs)
             {
                 var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
                 var result = LoadLibraryEx(path, IntPtr.Zero, 0);

@@ -81,14 +81,14 @@ namespace MiningCore.Crypto
 
             var steps = new List<byte[]>();
 
-            var L = new List<byte[]> {null};
+            var L = new List<byte[]> { null };
             L.AddRange(hashList);
 
             var startL = 2;
             var Ll = L.Count;
 
             if (Ll > 1)
-                while (true)
+                while(true)
                 {
                     if (Ll == 1)
                         break;
@@ -101,10 +101,10 @@ namespace MiningCore.Crypto
                     var Ld = new List<byte[]>();
 
                     //foreach (int i in Range.From(startL).To(Ll).WithStepSize(2))
-                    for (var i = startL; i < Ll; i += 2)
+                    for(var i = startL; i < Ll; i += 2)
                         Ld.Add(MerkleJoin(L[i], L[i + 1]));
 
-                    L = new List<byte[]> {null};
+                    L = new List<byte[]> { null };
                     L.AddRange(Ld);
                     Ll = L.Count;
                 }
@@ -130,7 +130,7 @@ namespace MiningCore.Crypto
         {
             Contract.RequiresNonNull(first, nameof(first));
 
-            foreach (var step in Steps)
+            foreach(var step in Steps)
                 first = DoubleDigest(first.Concat(step)).ToArray();
 
             return first;
@@ -138,7 +138,7 @@ namespace MiningCore.Crypto
 
         private static byte[] DoubleDigest(byte[] input)
         {
-            using (var hash = SHA256.Create())
+            using(var hash = SHA256.Create())
             {
                 var first = hash.ComputeHash(input, 0, input.Length);
                 return hash.ComputeHash(first);

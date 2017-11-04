@@ -80,7 +80,7 @@ namespace MiningCore.JsonRpc
 
                 tcp.OnRead((handle, buffer) =>
                 {
-                    using (buffer)
+                    using(buffer)
                     {
                         // onAccept
                         var data = buffer.ReadString(Encoding.UTF8);
@@ -94,7 +94,7 @@ namespace MiningCore.JsonRpc
 
                                 // scan for lines and emit
                                 int index;
-                                while (sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
+                                while(sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
                                 {
                                     var line = sb.ToString(0, index).Trim();
                                     sb.Remove(0, index + 1);
@@ -173,7 +173,7 @@ namespace MiningCore.JsonRpc
                 sendQueueDrainer.Send();
             }
 
-            catch (ObjectDisposedException)
+            catch(ObjectDisposedException)
             {
                 // ignored
             }
@@ -187,12 +187,12 @@ namespace MiningCore.JsonRpc
 
                 if (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable && sendQueue != null)
                 {
-                    while (sendQueue.TryDequeue(out var data))
+                    while(sendQueue.TryDequeue(out var data))
                         tcp.QueueWrite(data);
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
             }

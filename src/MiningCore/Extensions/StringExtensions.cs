@@ -37,7 +37,7 @@ namespace MiningCore.Extensions
 
             var arr = new byte[str.Length >> 1];
 
-            for (var i = 0; i < str.Length >> 1; ++i)
+            for(var i = 0; i < str.Length >> 1; ++i)
                 arr[i] = (byte) ((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
 
             return arr;

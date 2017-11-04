@@ -44,7 +44,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, created) " +
-                        "VALUES(@poolid, @connectedminers, @poolhashrate, @created)";
+                "VALUES(@poolid, @connectedminers, @poolhashrate, @created)";
 
             con.Execute(query, mapped, tx);
         }
@@ -52,7 +52,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             var query = "SELECT * FROM poolstats WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.PoolStats>(query, new { poolId, start, end, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<PoolStats>)
@@ -62,12 +62,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             var query = "SELECT date_trunc('hour', created) AS created, " +
-                        "   AVG(poolhashrate) AS poolhashrate, " +
-                        "   CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
-                        "FROM poolstats " +
-                        "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                        "GROUP BY date_trunc('hour', created) " +
-                        "ORDER BY created;";
+                "   AVG(poolhashrate) AS poolhashrate, " +
+                "   CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
+                "FROM poolstats " +
+                "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
+                "GROUP BY date_trunc('hour', created) " +
+                "ORDER BY created;";
 
             return con.Query<Entities.PoolStats>(query, new { poolId, start, end })
                 .Select(mapper.Map<PoolStats>)
@@ -77,17 +77,17 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public MinerStats GetMinerStats(IDbConnection con, string poolId, string miner)
         {
             var query = "SELECT (SELECT COUNT(*) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
-                        "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
-                        "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
+                "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
 
-            var result = con.QuerySingleOrDefault<MinerStats>(query, new {poolId, miner});
+            var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner });
 
             if (result != null)
             {
                 query = "SELECT * FROM payments WHERE poolid = @poolId AND address = @miner" +
-                        " ORDER BY created DESC LIMIT 1";
+                    " ORDER BY created DESC LIMIT 1";
 
-                result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new {poolId, miner});
+                result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new { poolId, miner });
                 result.Hashrate = GetMinerHashrateSamples(poolId, miner);
             }
 

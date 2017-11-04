@@ -75,7 +75,7 @@ namespace MiningCore.Stratum
         {
             Contract.RequiresNonNull(response, nameof(response));
 
-            lock (rpcCon)
+            lock(rpcCon)
             {
                 rpcCon.Send(response);
             }
@@ -92,7 +92,7 @@ namespace MiningCore.Stratum
         {
             Contract.RequiresNonNull(request, nameof(request));
 
-            lock (rpcCon)
+            lock(rpcCon)
             {
                 rpcCon.Send(request);
             }

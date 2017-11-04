@@ -66,7 +66,7 @@ namespace MiningCore.Stratum
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             // start ports
-            foreach (var endpoint in stratumPorts)
+            foreach(var endpoint in stratumPorts)
             {
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
@@ -86,7 +86,7 @@ namespace MiningCore.Stratum
                                 logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
                         });
 
-                    lock (ports)
+                    lock(ports)
                     {
                         ports[endpoint.Port] = listener;
                     }
@@ -102,17 +102,17 @@ namespace MiningCore.Stratum
 
         public void StopListeners()
         {
-            lock (ports)
+            lock(ports)
             {
                 var portValues = ports.Values.ToArray();
 
-                for (int i = 0; i < portValues.Length; i++)
+                for(int i = 0; i < portValues.Length; i++)
                 {
                     var listener = portValues[i];
 
                     listener.Shutdown((tcp, ex) =>
                     {
-                        if(tcp?.IsValid == true)
+                        if (tcp?.IsValid == true)
                             tcp.Dispose();
                     });
                 }
@@ -143,7 +143,7 @@ namespace MiningCore.Stratum
                 // request subscription
                 var sub = client.Requests
                     .Do(x => logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request {x.Value.Method} [{x.Value.Id}]"))
-                    .Select(tsRequest => Observable.FromAsync(()=> Task.Run(()=>  // get off of LibUV event-loop-thread immediately
+                    .Select(tsRequest => Observable.FromAsync(() => Task.Run(() => // get off of LibUV event-loop-thread immediately
                     {
                         var request = tsRequest.Value;
                         logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request {request.Method} [{request.Id}]");
@@ -161,7 +161,7 @@ namespace MiningCore.Stratum
                             OnRequestAsync(client, tsRequest).Wait();
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Error(ex, () => $"Error handling request: {request.Method}");
                         }
@@ -177,13 +177,10 @@ namespace MiningCore.Stratum
                     handle.Dispose();
                 });
 
-                client.Subscription = Disposable.Create(() =>
-                {
-                    disposer.Send();
-                });
+                client.Subscription = Disposable.Create(() => { disposer.Send(); });
 
                 // register client
-                lock (clients)
+                lock(clients)
                 {
                     clients[connectionId] = client;
                 }
@@ -191,7 +188,7 @@ namespace MiningCore.Stratum
                 OnConnect(client);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => nameof(OnClientConnected));
             }
@@ -199,7 +196,7 @@ namespace MiningCore.Stratum
 
         protected virtual void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
         {
-            switch (ex)
+            switch(ex)
             {
                 case OperationException opEx:
                     // log everything but ECONNRESET which just indicates the client disconnecting
@@ -235,7 +232,7 @@ namespace MiningCore.Stratum
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 // unregister client
-                lock (clients)
+                lock(clients)
                 {
                     clients.Remove(subscriptionId);
                 }
@@ -248,19 +245,19 @@ namespace MiningCore.Stratum
         {
             StratumClient<TClientContext>[] tmp;
 
-            lock (clients)
+            lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }
 
-            foreach (var client in tmp)
+            foreach(var client in tmp)
             {
                 try
                 {
                     action(client);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(ex);
                 }

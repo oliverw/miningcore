@@ -52,9 +52,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize)
         {
             var query = "SELECT * FROM shares WHERE poolid = @poolId AND created < @before " +
-                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Share>(query, new {poolId, before, offset = page * pageSize, pageSize})
+            return con.Query<Entities.Share>(query, new { poolId, before, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
@@ -62,9 +62,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public Share[] PageSharesBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             var query = "SELECT * FROM shares WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Share>(query, new {poolId, start, end, offset = page * pageSize, pageSize})
+            return con.Query<Entities.Share>(query, new { poolId, start, end, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
@@ -73,14 +73,14 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             var query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
-            return con.QuerySingle<long>(query, new {poolId, before}, tx);
+            return con.QuerySingle<long>(query, new { poolId, before }, tx);
         }
 
         public void DeletePoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             var query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
 
-            con.Execute(query, new {poolId, before}, tx);
+            con.Execute(query, new { poolId, before }, tx);
         }
 
         public long CountMinerSharesBetween(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)

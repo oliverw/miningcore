@@ -108,7 +108,7 @@ namespace MiningCore.Payments
                 {
                     cf.RunTx((con, tx) =>
                     {
-                        foreach (var balance in balances)
+                        foreach(var balance in balances)
                         {
                             if (!string.IsNullOrEmpty(transactionConfirmation))
                             {
@@ -135,10 +135,10 @@ namespace MiningCore.Payments
                 });
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
-                                       $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
+                    $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
             }
         }
@@ -158,7 +158,7 @@ namespace MiningCore.Payments
                 var txInfo = string.Join(", ", txHashes);
 
                 if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out var baseUrl))
-                    txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
+                    txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
                 notificationService.NotifyAdmin(
                     "Payout Success Notification",

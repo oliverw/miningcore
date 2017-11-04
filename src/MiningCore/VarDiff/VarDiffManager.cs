@@ -54,7 +54,7 @@ namespace MiningCore.VarDiff
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
 
-            lock (ctx)
+            lock(ctx)
             {
                 var difficulty = ctx.Difficulty;
                 var minDiff = options.MinDiff;
@@ -70,8 +70,8 @@ namespace MiningCore.VarDiff
                     if (ctx.VarDiff.LastShareTs.HasValue)
                         tsRelative.Add(Math.Max(0, shares[0] - ctx.VarDiff.LastShareTs.Value));
 
-                    for (var i = 1; i < shares.Count; i++)
-                        tsRelative.Add(Math.Max(0, shares[i] - shares[i-1]));
+                    for(var i = 1; i < shares.Count; i++)
+                        tsRelative.Add(Math.Max(0, shares[i] - shares[i - 1]));
 
                     // take average
                     var avg = tsRelative.Average() / 1000d;

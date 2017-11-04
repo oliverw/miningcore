@@ -28,7 +28,7 @@ namespace MiningCore.Configuration
     {
         // ReSharper disable InconsistentNaming
         BTC = 1, // Bitcoin
-        BCC,  // Bitcoin Cash
+        BCC, // Bitcoin Cash
         LTC, // Litecoin
         DOGE, // Dogecoin,
         XMR, // Monero
@@ -42,12 +42,12 @@ namespace MiningCore.Configuration
         ETC, // Ethereum Classic
         EXP, // Expanse
         DASH, // Dash
-        MONA,  // Monacoin
-        VTC,  // Vertcoin
-	    BTG, // Bitcoin Gold
+        MONA, // Monacoin
+        VTC, // Vertcoin
+        BTG, // Bitcoin Gold
     }
 
-	public class CoinConfig
+    public class CoinConfig
     {
         public CoinType Type { get; set; }
 

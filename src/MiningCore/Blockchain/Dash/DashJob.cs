@@ -40,7 +40,7 @@ namespace MiningCore.Blockchain.Dash
             // Distribute funds to configured reward recipients
             var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
 
-            foreach (var recipient in rewardRecipients.Where(x => x.Type != RewardRecipientType.Dev && x.Percentage > 0))
+            foreach(var recipient in rewardRecipients.Where(x => x.Type != RewardRecipientType.Dev && x.Percentage > 0))
             {
                 var recipientAddress = BitcoinUtils.AddressToDestination(recipient.Address);
                 var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * blockReward.Satoshi));
@@ -76,7 +76,7 @@ namespace MiningCore.Blockchain.Dash
 
                 else if (BlockTemplate.SuperBlocks.Length > 0)
                 {
-                    foreach (var superBlock in BlockTemplate.SuperBlocks)
+                    foreach(var superBlock in BlockTemplate.SuperBlocks)
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
                         var payeeReward = superBlock.Amount;

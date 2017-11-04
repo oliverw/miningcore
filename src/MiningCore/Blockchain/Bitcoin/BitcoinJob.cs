@@ -40,7 +40,7 @@ using Transaction = NBitcoin.Transaction;
 namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinJob<TBlockTemplate>
-        where TBlockTemplate: BlockTemplate
+        where TBlockTemplate : BlockTemplate
     {
         protected IHashAlgorithm blockHasher;
         protected ClusterConfig clusterConfig;
@@ -115,7 +115,7 @@ namespace MiningCore.Blockchain.Bitcoin
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -147,7 +147,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             // build coinbase final
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -178,7 +178,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (withDefaultWitnessCommitment)
                 outputCount++;
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -202,7 +202,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 }
 
                 // serialize other recipients
-                foreach (var output in tx.Outputs)
+                foreach(var output in tx.Outputs)
                 {
                     amount = output.Value.Satoshi;
                     var outScript = output.ScriptPubKey;
@@ -254,15 +254,15 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
-	        lock (submissions)
-	        {
-		        var key = extraNonce1 + extraNonce2 + nTime + nonce;
-		        if (submissions.Contains(key))
-			        return false;
+            lock(submissions)
+            {
+                var key = extraNonce1 + extraNonce2 + nTime + nonce;
+                if (submissions.Contains(key))
+                    return false;
 
-		        submissions.Add(key);
-		        return true;
-	        }
+                submissions.Add(key);
+                return true;
+            }
         }
 
         protected virtual byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
@@ -272,7 +272,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var blockHeader = new BlockHeader
             {
-                Version = (int)BlockTemplate.Version,
+                Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -344,7 +344,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var extraNonce1Bytes = extraNonce1.HexToByteArray();
             var extraNonce2Bytes = extraNonce2.HexToByteArray();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 stream.Write(coinbaseInitial);
                 stream.Write(extraNonce1Bytes);
@@ -360,7 +360,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -381,9 +381,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] BuildRawTransactionBuffer()
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                foreach (var tx in BlockTemplate.Transactions)
+                foreach(var tx in BlockTemplate.Transactions)
                 {
                     var txRaw = tx.Data.HexToByteArray();
                     stream.Write(txRaw);

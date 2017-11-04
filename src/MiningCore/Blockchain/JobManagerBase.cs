@@ -54,7 +54,7 @@ namespace MiningCore.Blockchain
 
         protected virtual async Task StartDaemonAsync()
         {
-            while (!await AreDaemonsHealthy())
+            while(!await AreDaemonsHealthy())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
 
@@ -63,7 +63,7 @@ namespace MiningCore.Blockchain
 
             logger.Info(() => $"[{LogCat}] All daemons online");
 
-            while (!await AreDaemonsConnected())
+            while(!await AreDaemonsConnected())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
 
@@ -75,7 +75,7 @@ namespace MiningCore.Blockchain
         {
             var value = Interlocked.Increment(ref jobId);
 
-            if(format != null)
+            if (format != null)
                 return value.ToString(format);
 
             return value.ToString(CultureInfo.InvariantCulture);

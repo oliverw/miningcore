@@ -56,7 +56,7 @@ namespace MiningCore.Blockchain.Monero
 
             this.clock = clock;
 
-            using (var rng = RandomNumberGenerator.Create())
+            using(var rng = RandomNumberGenerator.Create())
             {
                 instanceId = new byte[MoneroConstants.InstanceIdSize];
                 rng.GetNonZeroBytes(instanceId);
@@ -87,7 +87,7 @@ namespace MiningCore.Blockchain.Monero
 
                 var blockTemplate = response.Response;
 
-                lock (jobLock)
+                lock(jobLock)
                 {
                     var isNew = currentJob == null || currentJob.BlockTemplate.Height < blockTemplate.Height;
 
@@ -104,7 +104,7 @@ namespace MiningCore.Blockchain.Monero
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.Monero
 
         private async Task<bool> SubmitBlockAsync(MoneroShare share)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] {share.BlobHex});
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { share.BlobHex });
 
             if (response.Error != null || response?.Response?.Status != "OK")
             {
@@ -182,7 +182,7 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
                 .ToArray();
 
-            if(walletDaemonEndpoints.Length == 0)
+            if (walletDaemonEndpoints.Length == 0)
                 logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
 
             ConfigureDaemons();
@@ -209,7 +209,7 @@ namespace MiningCore.Blockchain.Monero
             blob = null;
             target = null;
 
-            lock (jobLock)
+            lock(jobLock)
             {
                 currentJob?.PrepareWorkerJob(workerJob, out blob, out target);
             }
@@ -220,7 +220,7 @@ namespace MiningCore.Blockchain.Monero
         {
             MoneroJob job;
 
-            lock (jobLock)
+            lock(jobLock)
             {
                 if (workerJob.Height != currentJob.BlockTemplate.Height)
                     throw new StratumException(StratumError.MinusOne, "block expired");
@@ -274,9 +274,9 @@ namespace MiningCore.Blockchain.Monero
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-            BlockchainStats.BlockHeight = (int)info.Height;
+            BlockchainStats.BlockHeight = (int) info.Height;
             BlockchainStats.NetworkDifficulty = info.Difficulty;
-            BlockchainStats.NetworkHashRate = (double)info.Difficulty / info.Target;
+            BlockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
             BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
@@ -304,7 +304,7 @@ namespace MiningCore.Blockchain.Monero
             var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
@@ -315,7 +315,7 @@ namespace MiningCore.Blockchain.Monero
             var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
 
             if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
 
@@ -334,7 +334,7 @@ namespace MiningCore.Blockchain.Monero
         {
             var syncPendingNotificationShown = false;
 
-            while (true)
+            while(true)
             {
                 var request = new GetBlockTemplateRequest
                 {

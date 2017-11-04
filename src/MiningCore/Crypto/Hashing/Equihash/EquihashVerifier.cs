@@ -53,9 +53,9 @@ namespace MiningCore.Crypto.Hashing.Equihash
             {
                 sem.WaitOne();
 
-                fixed (byte* _header = header)
+                fixed(byte* _header = header)
                 {
-                    fixed (byte* _solution = solution)
+                    fixed(byte* _solution = solution)
                     {
                         return LibMultihash.equihash_verify(_header, _solution);
                     }

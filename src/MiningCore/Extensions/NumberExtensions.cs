@@ -41,12 +41,12 @@ namespace MiningCore.Extensions
             return value;
         }
 
-		public static uint ReverseByteOrder(this uint value)
-		{
-			var bytes = BitConverter.GetBytes(value);
-			Array.Reverse(bytes);
-			value = BitConverter.ToUInt32(bytes, 0);
-			return value;
-		}
-	}
+        public static uint ReverseByteOrder(this uint value)
+        {
+            var bytes = BitConverter.GetBytes(value);
+            Array.Reverse(bytes);
+            value = BitConverter.ToUInt32(bytes, 0);
+            return value;
+        }
+    }
 }

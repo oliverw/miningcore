@@ -45,7 +45,7 @@ namespace MiningCore
     {
         public NotificationSenderMetadataAttribute(IDictionary<string, object> values)
         {
-            if(values.ContainsKey(nameof(NotificationType)))
+            if (values.ContainsKey(nameof(NotificationType)))
                 NotificationType = (NotificationType) values[nameof(NotificationType)];
         }
 

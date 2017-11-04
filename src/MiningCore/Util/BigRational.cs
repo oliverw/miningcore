@@ -82,11 +82,9 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DoubleUlong
         {
-            [FieldOffset(0)]
-            public double dbl;
+            [FieldOffset(0)] public double dbl;
 
-            [FieldOffset(0)]
-            public ulong uu;
+            [FieldOffset(0)] public ulong uu;
         }
 
         private const int DoubleMaxScale = 308;
@@ -97,11 +95,9 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DecimalUInt32
         {
-            [FieldOffset(0)]
-            public decimal dec;
+            [FieldOffset(0)] public decimal dec;
 
-            [FieldOffset(0)]
-            public int flags;
+            [FieldOffset(0)] public int flags;
         }
 
         private const int DecimalScaleMask = 0x00FF0000;
@@ -356,7 +352,6 @@ namespace MiningCore.Util
             return x - y;
         }
 
-
         public static BigRational Multiply(BigRational x, BigRational y)
         {
             return x * y;
@@ -386,7 +381,6 @@ namespace MiningCore.Util
             return new BigRational(ad, bc);
         }
 
-
         public static BigRational Pow(BigRational baseValue, BigInteger exponent)
         {
             if (exponent.Sign == 0)
@@ -401,7 +395,7 @@ namespace MiningCore.Util
             }
 
             var result = baseValue;
-            while (exponent > BigInteger.One)
+            while(exponent > BigInteger.One)
             {
                 result = result * baseValue;
                 exponent--;
@@ -602,7 +596,7 @@ namespace MiningCore.Util
             var isDouble = false;
             var scale = DoubleMaxScale;
 
-            while (scale > 0)
+            while(scale > 0)
             {
                 if (!isDouble)
                     if (SafeCastToDouble(denormalized))
@@ -635,7 +629,7 @@ namespace MiningCore.Util
             var denormalized = value.m_numerator * s_bnDecimalPrecision / value.Denominator;
             if (denormalized.IsZero)
                 return decimal.Zero; // underflow - fraction is too small to fit in a decimal
-            for (var scale = DecimalMaxScale; scale >= 0; scale--)
+            for(var scale = DecimalMaxScale; scale >= 0; scale--)
                 if (!SafeCastToDecimal(denormalized))
                 {
                     denormalized = denormalized / 10;
@@ -745,7 +739,7 @@ namespace MiningCore.Util
                 }
                 Simplify();
             }
-            catch (ArgumentException e)
+            catch(ArgumentException e)
             {
                 throw new SerializationException("invalid serialization data", e);
             }

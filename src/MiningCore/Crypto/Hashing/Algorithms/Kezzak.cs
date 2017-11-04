@@ -40,9 +40,9 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 
             var result = new byte[32];
 
-            fixed (byte* input = dataEx)
+            fixed(byte* input = dataEx)
             {
-                fixed (byte* output = result)
+                fixed(byte* output = result)
                 {
                     LibMultihash.kezzak(input, output, (uint) data.Length);
                 }

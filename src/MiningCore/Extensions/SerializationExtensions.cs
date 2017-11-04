@@ -35,7 +35,7 @@ namespace MiningCore.Extensions
                     return JToken.FromObject(extra).ToObject<T>();
                 }
 
-                catch (Exception)
+                catch(Exception)
                 {
                     // ignored
                 }

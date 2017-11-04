@@ -116,17 +116,17 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
 
-                    while (true)
+                    while(true)
                     {
                         var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
                             ZCashCommands.ZGetOperationResult);
 
-                        if (operationResultResponse.Error == null && 
-                            operationResultResponse.Response?.Any(x=> x.OperationId == operationId) == true)
+                        if (operationResultResponse.Error == null &&
+                            operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                         {
                             var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                            switch (operationResult.Status.ToLower())
+                            switch(operationResult.Status.ToLower())
                             {
                                 case "success":
                                     // extract transaction id
@@ -192,11 +192,11 @@ namespace MiningCore.Blockchain.ZCash
                 var args = new object[]
                 {
                     poolConfig.Address, // default account
-                    new object[]		// addresses and associated amounts
+                    new object[]        // addresses and associated amounts
                     {
                         recipient
                     },
-                    10,					// only spend funds covered by this many confirmations
+                    10,                 // only spend funds covered by this many confirmations
                     TransferFee
                 };
 
@@ -213,7 +213,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer operation id: {operationId}");
 
-                while (true)
+                while(true)
                 {
                     var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
                         ZCashCommands.ZGetOperationResult);
@@ -223,7 +223,7 @@ namespace MiningCore.Blockchain.ZCash
                     {
                         var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                        switch (operationResult.Status.ToLower())
+                        switch(operationResult.Status.ToLower())
                         {
                             case "success":
                                 // extract transaction id

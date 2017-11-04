@@ -14,9 +14,9 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Id = id;
             BlockTemplate = blockTemplate;
-		}
+        }
 
-		private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces = 
+        private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces =
             new Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>>();
 
         public string Id { get; }
@@ -42,7 +42,7 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task<EthereumShare> ProcessShareAsync(StratumClient<EthereumWorkerContext> worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
-            lock (workerNonces)
+            lock(workerNonces)
             {
                 RegisterNonce(worker, nonce);
             }
@@ -86,7 +86,7 @@ namespace MiningCore.Blockchain.Ethereum
             // create share
             var share = new EthereumShare
             {
-                BlockHeight = (long)BlockTemplate.Height,
+                BlockHeight = (long) BlockTemplate.Height,
                 IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
                 Miner = worker.Context.MinerName,
                 Worker = worker.Context.WorkerName,
