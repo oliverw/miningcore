@@ -238,7 +238,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // check result
                 if (string.IsNullOrEmpty(txId))
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' did not return a transaction id!");
+                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
@@ -249,9 +249,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
             else
             {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
+                NotifyPayoutFailure(balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
             }
         }
 

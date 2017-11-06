@@ -126,6 +126,15 @@ namespace MiningCore.Blockchain.ZCash
             };
     }
 
+    public enum ZOperationStatus
+    {
+        Queued,
+        Executing,
+        Success,
+        Cancelled,
+        Failed
+    }
+
     public static class ZCashCommands
     {
         public const string ZGetBalance = "z_getbalance";

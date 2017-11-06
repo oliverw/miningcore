@@ -69,8 +69,8 @@ namespace MiningCore.Blockchain.ZCash
                 if (coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0 &&
                     BlockTemplate.Height >= coinbaseTxConfig.TreasuryRewardStartBlockHeight)
                 {
-					// pool reward (t-addr)
-	                rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    // pool reward (t-addr)
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
                     tx.AddOutput(rewardToPool, poolAddressDestination);
 
                     // treasury reward (t-addr)
@@ -94,24 +94,13 @@ namespace MiningCore.Blockchain.ZCash
 
             else
             {
-				// no founders reward
-				// pool reward (t-addr)
-	            rewardToPool = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
+                // no founders reward
+                // pool reward (t-addr)
+                rewardToPool = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
                 tx.AddOutput(rewardToPool, poolAddressDestination);
             }
 
             return tx;
-        }
-
-        protected override void BuildMerkleBranches()
-        {
-            var transactionHashes = BlockTemplate.Transactions
-                .Select(tx => tx.Hash
-                    .HexToByteArray()
-                    .ReverseArray())
-                .ToArray();
-
-            mt = new MerkleTree(transactionHashes);
         }
 
         protected override void BuildCoinbase()
@@ -222,12 +211,12 @@ namespace MiningCore.Blockchain.ZCash
 
             BuildCoinbase();
 
-			// build tx hashes
-	        var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
-	        txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
+            // build tx hashes
+            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
 
-	        // build merkle root
-			merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
+            // build merkle root
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
             merkleRootReversed = merkleRoot.ReverseArray();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
         }

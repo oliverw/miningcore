@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -71,97 +72,112 @@ namespace MiningCore.Blockchain.ZCash
 
         public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
-            var result = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+            await ShieldCoinbaseAsync();
 
-            // Transfer entire block reward to z-addr
-            await TransferTransparentPoolBalance();
-
-            return result;
+            return await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
         }
 
         public override async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
-            // build args
-            var amounts = balances
-                .Where(x => x.Amount > 0)
-                .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
-                .ToList();
+            // send in batches with no more than 50 recipients to avoid running into tx size limits
+            var pageSize = 50;
+            var pageCount = (int)Math.Ceiling(balances.Length / (double)pageSize);
 
-            if (amounts.Count == 0)
-                return;
-
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
-            var args = new object[]
+            for (var i = 0; i < pageCount; i++)
             {
-                poolExtraConfig.ZAddress,   // default account
-                amounts,                // addresses and associated amounts
-                10,                     // only spend funds covered by this many confirmations
-                TransferFee
-            };
+                // get a page full of balances
+                var page = balances
+                    .Skip(i * pageSize)
+                    .Take(pageSize)
+                    .ToArray();
 
-            // send command
-            var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+                // build args
+                var amounts = page
+                    .Where(x => x.Amount > 0)
+                    .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
+                    .ToList();
 
-            if (result.Error == null)
-            {
-                var operationId = result.Response;
+                if (amounts.Count == 0)
+                    return;
 
-                // check result
-                if (string.IsNullOrEmpty(operationId))
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' did not return a operation id!");
-                else
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
+
+                var args = new object[]
                 {
-                    logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
+                    poolExtraConfig.ZAddress,   // default account
+                    amounts,                    // addresses and associated amounts
+                    10,                         // only spend funds covered by this many confirmations
+                    TransferFee
+                };
 
-                    var continueWaiting = true;
+                // send command
+                var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
 
-                    while(continueWaiting)
+                if (result.Error == null)
+                {
+                    var operationId = result.Response;
+
+                    // check result
+                    if (string.IsNullOrEmpty(operationId))
+                        logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} did not return a operation id!");
+                    else
                     {
-                        var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                            ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId }});
+                        logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
 
-                        if (operationResultResponse.Error == null &&
-                            operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
+                        var continueWaiting = true;
+
+                        while(continueWaiting)
                         {
-                            var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
+                            var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                                ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId }});
 
-                            switch(operationResult.Status.ToLower())
+                            if (operationResultResponse.Error == null &&
+                                operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                             {
-                                case "success":
-                                    // extract transaction id
-                                    var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                                var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                                    PersistPayments(balances, txId);
-                                    NotifyPayoutSuccess(balances, new[] { txId }, null);
+                                if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                                {
+                                    logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
+                                    break;
+                                }
 
-                                    continueWaiting = false;
-                                    continue;
+                                switch (status)
+                                {
+                                    case ZOperationStatus.Success:
+                                        var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
+                                        logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
-                                case "cancelled":
-                                case "failed":
-                                    logger.Error(() => $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
-                                    NotifyPayoutFailure(balances, $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
+                                        PersistPayments(page, txId);
+                                        NotifyPayoutSuccess(page, new[] {txId}, null);
 
-                                    continueWaiting = false;
-                                    continue;
+                                        continueWaiting = false;
+                                        continue;
+
+                                    case ZOperationStatus.Cancelled:
+                                    case ZOperationStatus.Failed:
+                                        logger.Error(() => $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
+                                        NotifyPayoutFailure(page, $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
+
+                                        continueWaiting = false;
+                                        continue;
+                                }
                             }
-                        }
 
-                        logger.Info(() => $"[{LogCategory}] Waiting for ZCash Payout to complete: {operationId}");
-                        await Task.Delay(TimeSpan.FromSeconds(10));
+                            logger.Info(() => $"[{LogCategory}] Waiting for z-cash operation completion: {operationId}");
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                        }
                     }
                 }
-            }
 
-            else
-            {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
+                else
+                {
+                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
+                    NotifyPayoutFailure(page, $"{ZCashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                }
             }
         }
 
@@ -169,91 +185,66 @@ namespace MiningCore.Blockchain.ZCash
 
         /// <summary>
         /// ZCash coins are mined into a t-addr (transparent address), but can only be
-        /// spent to a z -addr (shielded address), and must be swept out of the t-addr
+        /// spent to a z-addr (shielded address), and must be swept out of the t-addr
         /// in one transaction with no change.
         /// </summary>
-        private async Task TransferTransparentPoolBalance()
+        private async Task ShieldCoinbaseAsync()
         {
-            // get t-addr balance
-            var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(BitcoinCommands.GetBalance);
-
-            if (balanceResult.Error != null)
+            var args = new object[]
             {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.GetBalance}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                poolConfig.Address,         // source: pool's t-addr receiving coinbase rewards
+                poolExtraConfig.ZAddress,   // dest:   pool's z-addr
+            };
+
+            var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZShieldCoinbase, args);
+
+            if (result.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
                 return;
             }
 
-            var balance = (decimal) (double) balanceResult.Response;
+            var operationId = result.Response;
 
-            if (balance > 0)
+            logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} operation id: {operationId}");
+
+            var continueWaiting = true;
+
+            while (continueWaiting)
             {
-                logger.Info(() => $"[{LogCategory}] Transferring {FormatAmount(balance)} to pool's z-addr");
+                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
-                // transfer to z-addr
-                var recipient = new ZSendManyRecipient
+                if (operationResultResponse.Error == null &&
+                    operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                 {
-                    Address = poolExtraConfig.ZAddress,
-                    Amount = balance - TransferFee
-                };
+                    var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                var args = new object[]
-                {
-                    poolConfig.Address, // default account
-                    new object[]        // addresses and associated amounts
+                    if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
                     {
-                        recipient
-                    },
-                    10,                 // only spend funds covered by this many confirmations
-                    TransferFee
-                };
-
-                // send command
-                var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
-
-                if (sendResult.Error != null)
-                {
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{ZCashCommands.ZSendMany}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
-                    return;
-                }
-
-                var operationId = sendResult.Response;
-
-                logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer operation id: {operationId}");
-
-                var continueWaiting = true;
-
-                while (continueWaiting)
-                {
-                    var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                        ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
-
-                    if (operationResultResponse.Error == null &&
-                        operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
-                    {
-                        var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
-
-                        switch(operationResult.Status.ToLower())
-                        {
-                            case "success":
-                                // extract transaction id
-                                var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer transaction id: {txId}");
-
-                                continueWaiting = false;
-                                continue;
-
-                            case "cancelled":
-                            case "failed":
-                                logger.Error(() => $"ZCash transparent balance transfer failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
-
-                                continueWaiting = false;
-                                continue;
-                        }
+                        logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
+                        break;
                     }
 
-                    logger.Info(() => $"[{LogCategory}] Waiting for ZCash Balance transfer to complete: {operationId}");
-                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    switch (status)
+                    {
+                        case ZOperationStatus.Success:
+                            logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} successful");
+
+                            continueWaiting = false;
+                            continue;
+
+                        case ZOperationStatus.Cancelled:
+                        case ZOperationStatus.Failed:
+                            logger.Error(() => $"{ZCashCommands.ZShieldCoinbase} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
+
+                            continueWaiting = false;
+                            continue;
+                    }
                 }
+
+                logger.Info(() => $"[{LogCategory}] Waiting for operation completion: {operationId}");
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }
     }
