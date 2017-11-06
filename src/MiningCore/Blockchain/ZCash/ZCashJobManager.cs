@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.ZCash
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
-Debug.WriteLine("*** tx = {0}", job.BlockTemplate.Transactions.Length);
+
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
                     share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;
