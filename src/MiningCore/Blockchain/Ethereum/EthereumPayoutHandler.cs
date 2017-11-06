@@ -285,7 +285,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 catch(Exception ex)
                 {
-                    logger.Error(() => $"[{LogCategory}] {ex.Message}");
+                    logger.Error(ex);
 
                     NotifyPayoutFailure(new[] { balance }, ex.Message, null);
                 }
