@@ -32,6 +32,7 @@ Coin | Implemented | Tested | Planned | Notes
 :--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | Yes | |
 Litecoin | Yes | Yes | |
+Zcash | Yes | Yes | |
 Monero | Yes | Yes | |
 Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
@@ -41,7 +42,6 @@ Bitcoin Cash | Yes | Yes | |
 Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
 Groestlcoin | Yes | Yes | |
-Zcash | No |  | Nov 2017 | Not working yet
 Dogecoin | Yes | No | |
 DigiByte | Yes | No | |
 Namecoin | Yes | No | |
@@ -54,6 +54,12 @@ MiningCore implements the [Ethereum stratum mining protocol](https://github.com/
 
 - Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
 - Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
+
+#### ZCash
+
+- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
+- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
+- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 
 ### Runtime Requirements
 
