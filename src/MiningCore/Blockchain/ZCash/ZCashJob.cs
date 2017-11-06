@@ -69,13 +69,13 @@ namespace MiningCore.Blockchain.ZCash
                 if (coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0 &&
                     BlockTemplate.Height >= coinbaseTxConfig.TreasuryRewardStartBlockHeight)
                 {
-                    // pool reward (t-addr)
-                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, poolAddressDestination);
+					// pool reward (t-addr)
+	                rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(rewardToPool, poolAddressDestination);
 
                     // treasury reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
-                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
 
