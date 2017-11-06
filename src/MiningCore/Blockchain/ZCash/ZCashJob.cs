@@ -59,8 +59,6 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
-
             var tx = new Transaction();
 
             if (coinbaseTxConfig.PayFoundersReward &&
@@ -84,22 +82,22 @@ namespace MiningCore.Blockchain.ZCash
                 else
                 {
                     // pool reward (t-addr)
-                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, poolAddressDestination);
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(rewardToPool, poolAddressDestination);
 
                     // founders reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetFoundersRewardAddress());
-                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
             }
 
             else
             {
-                // no founders reward
-                // pool reward (t-addr)
-                var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-                tx.AddOutput(amount, poolAddressDestination);
+				// no founders reward
+				// pool reward (t-addr)
+	            rewardToPool = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
+                tx.AddOutput(rewardToPool, poolAddressDestination);
             }
 
             return tx;
