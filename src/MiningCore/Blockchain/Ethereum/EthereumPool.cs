@@ -27,7 +27,9 @@ using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
@@ -35,6 +37,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using MiningCore.Time;
+using MiningCore.Util;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Ethereum
@@ -322,6 +325,16 @@ namespace MiningCore.Blockchain.Ethereum
             await manager.UpdateNetworkStatsAsync();
 
             blockchainStats = manager.BlockchainStats;
+        }
+
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            base.Configure(poolConfig, clusterConfig);
+
+            // validate mandatory extra config
+            var extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
+            if (string.IsNullOrEmpty(extraConfig?.CoinbasePassword))
+                logger.ThrowLogPoolStartupException("\"paymentProcessing.coinbasePassword\" pool-configuration property missing or empty (required for unlocking wallet during payment processing)");
         }
 
         #endregion // Overrides
