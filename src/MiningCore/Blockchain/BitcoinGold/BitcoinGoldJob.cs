@@ -55,7 +55,7 @@ namespace MiningCore.Blockchain.BitcoinGold
                 merkleRootReversedHex,
                 BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(), // height + hashReserved
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
+                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
                 isNew
             };
         }

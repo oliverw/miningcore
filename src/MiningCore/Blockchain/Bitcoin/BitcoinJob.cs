@@ -86,8 +86,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var transactionHashes = BlockTemplate.Transactions
                 .Select(tx => (tx.TxId ?? tx.Hash)
                     .HexToByteArray()
-                    .Reverse()
-                    .ToArray())
+                    .ReverseArray())
                 .ToArray();
 
             mt = new MerkleTree(transactionHashes);
@@ -294,7 +293,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
             var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
-            var headerValue = BigInteger.Parse("00" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerValue = BigInteger.Parse("00" + headerHash.ReverseArray().ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;

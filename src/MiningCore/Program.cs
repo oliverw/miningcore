@@ -39,7 +39,9 @@ using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Configuration;
+using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
+using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
@@ -48,6 +50,7 @@ using MiningCore.Payments;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -83,8 +86,7 @@ namespace MiningCore
 #endif
                 //TouchNativeLibs();
 
-                string configFile;
-                if (!HandleCommandLineOptions(args, out configFile))
+                if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
                 Logo();
@@ -102,14 +104,11 @@ namespace MiningCore
                 if (!shareRecoveryOption.HasValue())
                 {
                     Console.CancelKeyPress += OnCancelKeyPress;
-
                     Start().Wait(cts.Token);
                 }
 
                 else
-                {
                     RecoverShares(shareRecoveryOption.Value());
-                }
             }
 
             catch(PoolStartupAbortException ex)
@@ -240,6 +239,7 @@ namespace MiningCore
             ConfigureNotifications(builder);
             container = builder.Build();
             ConfigureLogging();
+            ConfigureMisc();
             ValidateRuntimeEnvironment();
         }
 
@@ -435,6 +435,13 @@ namespace MiningCore
                 return name;
 
             return Path.Combine(config.LogBaseDirectory, name);
+        }
+
+        private static void ConfigureMisc()
+        {
+            // Configure Equihash
+            if (clusterConfig.EquihashMaxThreads.HasValue)
+                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)

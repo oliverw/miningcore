@@ -58,7 +58,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             // The actual check.
             var target = BigInteger.Divide(EthereumConstants.BigMaxValue, block.Difficulty);
-            var resultValue = new BigInteger(resultBytes.ToReverseArray());
+            var resultValue = new BigInteger(resultBytes.ReverseArray());
             var result = resultValue.CompareTo(target) <= 0;
             return result;
         }

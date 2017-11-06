@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Monero
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // check difficulty
-            var headerValue = System.Numerics.BigInteger.Parse("00" + hashBytes.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerValue = System.Numerics.BigInteger.Parse("00" + hashBytes.ReverseArray().ToHexString(), NumberStyles.HexNumber);
             var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;

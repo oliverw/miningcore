@@ -1,12 +1,16 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.ZCash.Configuration;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using NBitcoin;
@@ -30,6 +34,20 @@ namespace MiningCore.Blockchain.ZCash
                 }
             };
         }
+
+        private ZCashPoolConfigExtra poolExtraConfig;
+
+        #region Overrides of JobManagerBase<TJob>
+
+        /// <inheritdoc />
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+
+            base.Configure(poolConfig, clusterConfig);
+        }
+
+        #endregion
 
         public override async Task<bool> ValidateAddressAsync(string address)
         {
@@ -136,7 +154,7 @@ namespace MiningCore.Blockchain.ZCash
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
-
+Debug.WriteLine("*** tx = {0}", job.BlockTemplate.Transactions.Length);
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
                     share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;

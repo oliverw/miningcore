@@ -56,7 +56,7 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
-        private ZCashPoolConfigExtra extraConfig;
+        private ZCashPoolConfigExtra poolExtraConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
 
@@ -66,7 +66,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             base.Configure(clusterConfig, poolConfig);
 
-            extraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+            poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
         }
 
         public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
@@ -96,7 +96,7 @@ namespace MiningCore.Blockchain.ZCash
 
             var args = new object[]
             {
-                extraConfig.ZAddress,   // default account
+                poolExtraConfig.ZAddress,   // default account
                 amounts,                // addresses and associated amounts
                 10,                     // only spend funds covered by this many confirmations
                 TransferFee
@@ -116,10 +116,12 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
 
-                    while(true)
+                    var continueWaiting = true;
+
+                    while(continueWaiting)
                     {
                         var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                            ZCashCommands.ZGetOperationResult);
+                            ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId }});
 
                         if (operationResultResponse.Error == null &&
                             operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -135,17 +137,22 @@ namespace MiningCore.Blockchain.ZCash
 
                                     PersistPayments(balances, txId);
                                     NotifyPayoutSuccess(balances, new[] { txId }, null);
-                                    break;
+
+                                    continueWaiting = false;
+                                    continue;
 
                                 case "cancelled":
                                 case "failed":
+                                    logger.Error(() => $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
                                     NotifyPayoutFailure(balances, $"ZCash Payout operation failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
-                                    break;
+
+                                    continueWaiting = false;
+                                    continue;
                             }
                         }
 
                         logger.Info(() => $"[{LogCategory}] Waiting for ZCash Payout to complete: {operationId}");
-                        await Task.Delay(10);
+                        await Task.Delay(TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -161,8 +168,8 @@ namespace MiningCore.Blockchain.ZCash
         #endregion // IPayoutHandler
 
         /// <summary>
-        /// ZCash coins are mined into a t-addr (transparent address), but can only be 
-        /// spent to a z -addr (shielded address), and must be swept out of the t-addr 
+        /// ZCash coins are mined into a t-addr (transparent address), but can only be
+        /// spent to a z -addr (shielded address), and must be swept out of the t-addr
         /// in one transaction with no change.
         /// </summary>
         private async Task TransferTransparentPoolBalance()
@@ -185,7 +192,7 @@ namespace MiningCore.Blockchain.ZCash
                 // transfer to z-addr
                 var recipient = new ZSendManyRecipient
                 {
-                    Address = extraConfig.ZAddress,
+                    Address = poolExtraConfig.ZAddress,
                     Amount = balance - TransferFee
                 };
 
@@ -213,10 +220,12 @@ namespace MiningCore.Blockchain.ZCash
 
                 logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer operation id: {operationId}");
 
-                while(true)
+                var continueWaiting = true;
+
+                while (continueWaiting)
                 {
                     var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                        ZCashCommands.ZGetOperationResult);
+                        ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                     if (operationResultResponse.Error == null &&
                         operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -229,16 +238,21 @@ namespace MiningCore.Blockchain.ZCash
                                 // extract transaction id
                                 var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
                                 logger.Info(() => $"[{LogCategory}] ZCash Balance Transfer transaction id: {txId}");
-                                break;
+
+                                continueWaiting = false;
+                                continue;
 
                             case "cancelled":
                             case "failed":
-                                break;
+                                logger.Error(() => $"ZCash transparent balance transfer failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
+
+                                continueWaiting = false;
+                                continue;
                         }
                     }
 
                     logger.Info(() => $"[{LogCategory}] Waiting for ZCash Balance transfer to complete: {operationId}");
-                    await Task.Delay(10);
+                    await Task.Delay(TimeSpan.FromSeconds(10));
                 }
             }
         }

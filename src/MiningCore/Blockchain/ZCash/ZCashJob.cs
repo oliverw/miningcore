@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -52,7 +53,7 @@ namespace MiningCore.Blockchain.ZCash
         protected byte[] merkleRoot;
         protected byte[] merkleRootReversed;
         protected string merkleRootReversedHex;
-        protected static EquihashVerifier equihash = new EquihashVerifier(4);
+        protected EquihashSolver equihash = EquihashSolver.Instance.Value;
 
         #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
@@ -109,8 +110,7 @@ namespace MiningCore.Blockchain.ZCash
             var transactionHashes = BlockTemplate.Transactions
                 .Select(tx => tx.Hash
                     .HexToByteArray()
-                    .Reverse()
-                    .ToArray())
+                    .ReverseArray())
                 .ToArray();
 
             mt = new MerkleTree(transactionHashes);
@@ -161,7 +161,7 @@ namespace MiningCore.Blockchain.ZCash
                 merkleRootReversedHex,
                 sha256Empty.ToHexString(), // hashReserved
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
+                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
                 isNew
             };
         }
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.ZCash
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ToReverseArray()
+                .ReverseArray()
                 .ToHexString();
 
             blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
@@ -223,10 +223,14 @@ namespace MiningCore.Blockchain.ZCash
             rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);
 
             BuildCoinbase();
-            BuildMerkleBranches();
 
-            merkleRoot = mt.WithFirst(coinbaseInitialHash.ToReverseArray());
-            merkleRootReversed = merkleRoot.ToReverseArray();
+			// build tx hashes
+	        var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+	        txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
+
+	        // build merkle root
+			merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
+            merkleRootReversed = merkleRoot.ReverseArray();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
         }
 
@@ -243,7 +247,7 @@ namespace MiningCore.Blockchain.ZCash
             if (nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
-            var nTimeInt = uint.Parse(nTime.HexToByteArray().ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
             if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
@@ -314,7 +318,7 @@ namespace MiningCore.Blockchain.ZCash
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
             var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
-            var headerValue = BigInteger.Parse("00" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerValue = BigInteger.Parse("00" + headerHash.ReverseArray().ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
