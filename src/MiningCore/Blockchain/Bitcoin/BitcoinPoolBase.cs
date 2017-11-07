@@ -316,7 +316,7 @@ namespace MiningCore.Blockchain.Bitcoin
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 2;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
