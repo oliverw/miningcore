@@ -180,7 +180,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
+            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber));
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
