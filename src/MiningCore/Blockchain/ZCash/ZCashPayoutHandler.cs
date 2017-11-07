@@ -148,7 +148,7 @@ namespace MiningCore.Blockchain.ZCash
                                 {
                                     case ZOperationStatus.Success:
                                         var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                        logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                                        logger.Info(() => $"[{LogCategory}] Payout completed with transaction id: {txId}");
 
                                         PersistPayments(page, txId);
                                         NotifyPayoutSuccess(page, new[] {txId}, null);
@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.ZCash
                                 }
                             }
 
-                            logger.Info(() => $"[{LogCategory}] Waiting for z-cash operation completion: {operationId}");
+                            logger.Info(() => $"[{LogCategory}] Waiting for completion: {operationId}");
                             await Task.Delay(TimeSpan.FromSeconds(10));
                         }
                     }
@@ -190,6 +190,8 @@ namespace MiningCore.Blockchain.ZCash
         /// </summary>
         private async Task ShieldCoinbaseAsync()
         {
+            logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds");
+
             // Emulate z_shieldcoinbase until its stable
 #if true
             // get t-addr balance
@@ -197,7 +199,7 @@ namespace MiningCore.Blockchain.ZCash
 
             if (balanceResult.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.GetBalance}' returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.GetBalance} returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
                 return;
             }
 
@@ -260,7 +262,7 @@ namespace MiningCore.Blockchain.ZCash
                         {
                             case ZOperationStatus.Success:
                                 var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                logger.Info(() => $"[{LogCategory}] Balance transfer transaction id: {txId}");
+                                logger.Info(() => $"[{LogCategory}] Transfer completed with transaction id: {txId}");
 
                                 continueWaiting = false;
                                 continue;
@@ -274,7 +276,7 @@ namespace MiningCore.Blockchain.ZCash
                         }
                     }
 
-                    logger.Info(() => $"[{LogCategory}] Waiting for operation completion: {operationId}");
+                    logger.Info(() => $"[{LogCategory}] Waiting for transfer completion: {operationId}");
                     await Task.Delay(TimeSpan.FromSeconds(10));
                 }
             }

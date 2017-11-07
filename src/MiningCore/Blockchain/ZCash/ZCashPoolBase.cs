@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -158,6 +159,14 @@ namespace MiningCore.Blockchain.ZCash
                     client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
             });
+        }
+
+        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
+        {
+            var sum = shares.Sum(share => Math.Max(0.00000001, share.Item2.Difficulty * manager.ShareMultiplier));
+            var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
+            var result = Math.Ceiling(((sum * multiplier / interval) / 1000000) * 2);
+            return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient<BitcoinWorkerContext> client, double newDiff)
