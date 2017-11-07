@@ -261,7 +261,7 @@ namespace MiningCore.Blockchain.Monero
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.UtcNow;
-GC.Collect(2, GCCollectionMode.Forced, true);
+
             return share;
         }
 
