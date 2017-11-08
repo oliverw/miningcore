@@ -34,6 +34,7 @@ using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Time;
@@ -51,13 +52,16 @@ namespace MiningCore.Blockchain.Ethereum
     {
         public EthereumJobManager(
             IComponentContext ctx,
+            NotificationService notificationService,
             IMasterClock clock) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
 
             this.clock = clock;
+            this.notificationService = notificationService;
         }
 
         private DaemonEndpointConfig[] daemonEndpoints;
@@ -65,6 +69,7 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
         private EthashFull ethash;
+        private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
@@ -235,6 +240,8 @@ namespace MiningCore.Blockchain.Ethereum
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
+                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {error}");
+
                 return false;
             }
 

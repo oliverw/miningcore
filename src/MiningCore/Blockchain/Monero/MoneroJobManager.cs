@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Time;
@@ -48,12 +49,15 @@ namespace MiningCore.Blockchain.Monero
     {
         public MoneroJobManager(
             IComponentContext ctx,
+            NotificationService notificationService,
             IMasterClock clock) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
 
+            this.notificationService = notificationService;
             this.clock = clock;
 
             using(var rng = RandomNumberGenerator.Create())
@@ -67,6 +71,7 @@ namespace MiningCore.Blockchain.Monero
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
+        private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private MoneroNetworkType networkType;
         private uint poolAddressBase58Prefix;
@@ -149,6 +154,8 @@ namespace MiningCore.Blockchain.Monero
                 var error = response.Error?.Message ?? response.Response?.Status;
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
+                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {error}");
+
                 return false;
             }
 

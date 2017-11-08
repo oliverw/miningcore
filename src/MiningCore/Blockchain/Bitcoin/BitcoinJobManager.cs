@@ -32,6 +32,7 @@ using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
+using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -48,18 +49,22 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
+            NotificationService notificationService,
             IMasterClock clock,
             IExtraNonceProvider extraNonceProvider) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
+            this.notificationService = notificationService;
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
         }
 
+        protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
         protected readonly IExtraNonceProvider extraNonceProvider;
@@ -164,6 +169,8 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
+                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {submitError}");
+
                 return (false, null);
             }
 
