@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MiningCore.Contracts;
 
 namespace MiningCore.Extensions
 {
@@ -80,6 +81,19 @@ namespace MiningCore.Extensions
         {
             Array.Reverse(arr);
             return arr;
+        }
+
+        public static int IndexOf(this byte[] arr, byte val, int start, int count)
+        {
+            Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count < arr.Length - 1);
+
+            for (var i = start; i < arr.Length; i++)
+            {
+                if (arr[i] == val)
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

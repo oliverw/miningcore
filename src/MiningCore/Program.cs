@@ -39,7 +39,6 @@ using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Configuration;
-using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
@@ -50,7 +49,6 @@ using MiningCore.Payments;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
-using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -58,6 +56,7 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace MiningCore
 {

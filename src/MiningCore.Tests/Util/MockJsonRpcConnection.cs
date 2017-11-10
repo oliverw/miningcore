@@ -40,7 +40,7 @@ namespace MiningCore.Tests.Util
         public IPEndPoint RemoteEndpoint { get; }
         public string ConnectionId { get; }
 
-        public void Send(object payload)
+        public void Send<T>(T payload)
         {
             throw new NotImplementedException();
         }

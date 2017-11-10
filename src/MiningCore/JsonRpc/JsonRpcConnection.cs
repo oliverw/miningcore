@@ -19,17 +19,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using Microsoft.AspNetCore.Server.Kestrel.Internal.System.Buffers;
+using Microsoft.IO;
 using MiningCore.Buffers;
+using MiningCore.Extensions;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -42,7 +46,7 @@ namespace MiningCore.JsonRpc
     {
         IObservable<Timestamped<JsonRpcRequest>> Received { get; }
         string ConnectionId { get; }
-        void Send(object payload);
+        void Send<T>(T payload);
     }
 
     public class JsonRpcConnection : IJsonRpcConnection
@@ -57,9 +61,17 @@ namespace MiningCore.JsonRpc
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly JsonSerializerSettings serializerSettings;
+
+        private readonly JsonSerializer serializer = new JsonSerializer
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
+
+        private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
+
         private const int MaxRequestLength = 8192;
         private readonly Encoding encoding = Encoding.ASCII;
-        private ConcurrentQueue<ArraySegment<byte>> sendQueue;
+        private ConcurrentQueue<RecyclableMemoryStream> sendQueue;
         private Async sendQueueDrainer;
 
         #region Implementation of IJsonRpcConnection
@@ -73,44 +85,70 @@ namespace MiningCore.JsonRpc
             RemoteEndPoint = tcp.GetPeerEndPoint();
 
             // initialize send queue
-            sendQueue = new ConcurrentQueue<ArraySegment<byte>>();
+            sendQueue = new ConcurrentQueue<RecyclableMemoryStream>();
             sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
             sendQueueDrainer.UserToken = tcp;
 
-            var incomingLines = Observable.Create<string>(observer =>
+            var incomingLines = Observable.Create<RecyclableMemoryStream>(observer =>
             {
-                var sb = new StringBuilder();
+                var stm = (RecyclableMemoryStream)streamManager.GetStream();
 
                 tcp.OnRead((handle, buffer) =>
                 {
-                    using(buffer)
+                    // onAccept
+                    using (buffer)
                     {
-                        // onAccept
-                        var data = buffer.ReadString(Encoding.UTF8);
+                        var count = buffer.Count;
+                        var buf = PooledBuffers.Bytes.Rent(count);
 
-                        if (!string.IsNullOrEmpty(data))
+                        // clear left-over contents
+                        Array.Clear(buf, 0, count);
+
+                        try
                         {
-                            // flood-prevention check
-                            if (sb.Length + data.Length < MaxRequestLength)
-                            {
-                                sb.Append(data);
+                            // read buffer
+                            buffer.ReadBytes(buf, count);
 
-                                // scan for lines and emit
-                                int index;
-                                while(sb.Length > 0 && (index = sb.ToString().IndexOf('\n')) != -1)
+                            while (true)
+                            {
+                                // check if we got a newline
+                                var index = buf.IndexOf(0xa, 0, count);
+
+                                if (index == -1)
                                 {
-                                    var line = sb.ToString(0, index).Trim();
-                                    sb.Remove(0, index + 1);
+                                    stm.Write(buf, 0, count);
 
-                                    if (line.Length > 0)
-                                        observer.OnNext(line);
+                                    if(stm.Length > MaxRequestLength)
+                                        observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                                    break;
                                 }
-                            }
 
-                            else
-                            {
-                                observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                                // split at newline boundaries
+                                stm.Write(buf, 0, index++);
+
+                                if (stm.Length > MaxRequestLength)
+                                    observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+
+                                // done with this stream
+                                observer.OnNext(stm);
+                                stm = (RecyclableMemoryStream) streamManager.GetStream();
+
+                                // done with this packet?
+                                if (index >= count - 1)
+                                    break;
+
+                                // shift buffer contents
+                                var cb = count - index;
+                                Array.Copy(buf, index, buf, 0, cb);
+                                Array.Clear(buf, cb, count - cb);
+
+                                count = cb;
                             }
+                        }
+
+                        finally
+                        {
+                            PooledBuffers.Bytes.Return(buf, true);
                         }
                     }
                 }, (handle, ex) =>
@@ -127,7 +165,11 @@ namespace MiningCore.JsonRpc
                     sendQueueDrainer.CloseHandle();
                     sendQueueDrainer.UserToken = null;
 
-                    sb = null;
+                    // empty sendqueue
+                    while (sendQueue.TryDequeue(out var data))
+                        data.Dispose();
+
+                    stm.Dispose();
                 });
 
                 return Disposable.Create(() =>
@@ -143,7 +185,18 @@ namespace MiningCore.JsonRpc
 
             Received = incomingLines
                 .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x}"))
-                .Select(line => JsonConvert.DeserializeObject<JsonRpcRequest>(line, serializerSettings))
+                .Select(line =>
+                {
+                    line.Seek(0, SeekOrigin.Begin);
+
+                    using (var reader = new StreamReader(line, encoding))
+                    {
+                        using (var jreader = new JsonTextReader(reader))
+                        {
+                            return serializer.Deserialize<JsonRpcRequest>(jreader);
+                        }
+                    }
+                })
                 .Timestamp()
                 .Publish()
                 .RefCount();
@@ -151,20 +204,21 @@ namespace MiningCore.JsonRpc
 
         public IObservable<Timestamped<JsonRpcRequest>> Received { get; private set; }
 
-        public void Send(object payload)
+        public void Send<T>(T payload)
         {
             Contract.RequiresNonNull(payload, nameof(payload));
 
-            var json = JsonConvert.SerializeObject(payload, serializerSettings);
-            logger.Trace(() => $"[{ConnectionId}] Sending: {json}");
+            var stm = (RecyclableMemoryStream) streamManager.GetStream();
 
-            // convert to bytes
-            var byteSize = encoding.GetByteCount(json) + 1;
-            var buf = PooledBuffers.Byte.Rent(byteSize);
-            encoding.GetBytes(json, 0, json.Length, buf, 0);
-            buf[byteSize - 1] = 0xa;
+            using (var writer = new StreamWriter(stm, encoding, 0x400, true))
+                serializer.Serialize(writer, payload);
 
-            SendInternal(new ArraySegment<byte>(buf, 0, byteSize));
+            logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stm.GetBuffer(), 0, (int)stm.Length)}");
+
+            // append newline
+            stm.WriteByte(0xa);
+
+            SendInternal(stm);
         }
 
         public IPEndPoint RemoteEndPoint { get; private set; }
@@ -172,7 +226,7 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void SendInternal(ArraySegment<byte> data)
+        private void SendInternal(RecyclableMemoryStream data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
@@ -204,12 +258,13 @@ namespace MiningCore.JsonRpc
                     {
                         try
                         {
-                            tcp.QueueWrite(data.Array, 0, data.Count);
+                            var buf = data.GetBuffer();
+                            tcp.QueueWrite(buf, 0, (int) data.Length);
                         }
 
                         finally
                         {
-                            PooledBuffers.Byte.Return(data.Array);
+                            data.Dispose();
                         }
                     }
                 }
