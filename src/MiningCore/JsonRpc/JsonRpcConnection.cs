@@ -26,6 +26,8 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.System.Buffers;
+using MiningCore.Buffers;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using NLog;
@@ -56,7 +58,8 @@ namespace MiningCore.JsonRpc
 
         private readonly JsonSerializerSettings serializerSettings;
         private const int MaxRequestLength = 8192;
-        private ConcurrentQueue<byte[]> sendQueue;
+        private readonly Encoding encoding = Encoding.ASCII;
+        private ConcurrentQueue<ArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
 
         #region Implementation of IJsonRpcConnection
@@ -70,7 +73,7 @@ namespace MiningCore.JsonRpc
             RemoteEndPoint = tcp.GetPeerEndPoint();
 
             // initialize send queue
-            sendQueue = new ConcurrentQueue<byte[]>();
+            sendQueue = new ConcurrentQueue<ArraySegment<byte>>();
             sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
             sendQueueDrainer.UserToken = tcp;
 
@@ -155,7 +158,13 @@ namespace MiningCore.JsonRpc
             var json = JsonConvert.SerializeObject(payload, serializerSettings);
             logger.Trace(() => $"[{ConnectionId}] Sending: {json}");
 
-            SendInternal(Encoding.UTF8.GetBytes(json + '\n'));
+            // convert to bytes
+            var byteSize = encoding.GetByteCount(json) + 1;
+            var buf = PooledBuffers.Byte.Rent(byteSize);
+            encoding.GetBytes(json, 0, json.Length, buf, 0);
+            buf[byteSize - 1] = 0xa;
+
+            SendInternal(new ArraySegment<byte>(buf, 0, byteSize));
         }
 
         public IPEndPoint RemoteEndPoint { get; private set; }
@@ -163,7 +172,7 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void SendInternal(byte[] data)
+        private void SendInternal(ArraySegment<byte> data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
@@ -192,7 +201,17 @@ namespace MiningCore.JsonRpc
                         logger.Warn(()=> $"[{ConnectionId}] Send queue backlog now at {queueSize}");
 
                     while(sendQueue.TryDequeue(out var data))
-                        tcp.QueueWrite(data);
+                    {
+                        try
+                        {
+                            tcp.QueueWrite(data.Array, 0, data.Count);
+                        }
+
+                        finally
+                        {
+                            PooledBuffers.Byte.Return(data.Array);
+                        }
+                    }
                 }
             }
 
