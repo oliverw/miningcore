@@ -111,7 +111,10 @@ namespace MiningCore.JsonRpc
                                 stm.Write(buf, 0, found ? index++ : count);
 
                                 if (stm.Length > MaxRequestLength)
+                                {
                                     observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+                                    break;
+                                }
 
                                 if (!found)
                                     break;
@@ -135,7 +138,7 @@ namespace MiningCore.JsonRpc
 
                         finally
                         {
-                            PooledBuffers.Bytes.Return(buf, true);
+                            PooledBuffers.Bytes.Return(buf);
                         }
                     }
                 }, (handle, ex) =>
