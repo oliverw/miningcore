@@ -113,21 +113,16 @@ namespace MiningCore.JsonRpc
                             {
                                 // check if we got a newline
                                 var index = buf.IndexOf(0xa, 0, count);
-
-                                if (index == -1)
-                                {
-                                    stm.Write(buf, 0, count);
-
-                                    if(stm.Length > MaxRequestLength)
-                                        observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
-                                    break;
-                                }
+                                var found = index != -1;
 
                                 // split at newline boundaries
-                                stm.Write(buf, 0, index++);
+                                stm.Write(buf, 0, found ? index++ : count);
 
                                 if (stm.Length > MaxRequestLength)
                                     observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
+
+                                if (!found)
+                                    break;
 
                                 // done with this stream
                                 observer.OnNext(stm);
@@ -254,17 +249,17 @@ namespace MiningCore.JsonRpc
                     if (queueSize >= 256)
                         logger.Warn(()=> $"[{ConnectionId}] Send queue backlog now at {queueSize}");
 
-                    while(sendQueue.TryDequeue(out var data))
+                    while(sendQueue.TryDequeue(out var stream))
                     {
                         try
                         {
-                            var buf = data.GetBuffer();
-                            tcp.QueueWrite(buf, 0, (int) data.Length);
+                            var buf = stream.GetBuffer();
+                            tcp.QueueWrite(buf, 0, (int) stream.Length);
                         }
 
                         finally
                         {
-                            data.Dispose();
+                            stream.Dispose();
                         }
                     }
                 }
