@@ -6,6 +6,7 @@ namespace MiningCore.Buffers
     public static class PooledBuffers
     {
         public static ArrayPool<byte> Bytes = ArrayPool<byte>.Shared;
+        public static ArrayPool<char> Chars = ArrayPool<char>.Shared;
 
         private static readonly RecyclableMemoryStreamManager recyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
 

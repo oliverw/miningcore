@@ -37,6 +37,7 @@ namespace MiningCore.Tests.Blockchain.ZCash
             {
                 Target = "0000407f43000000000000000000000000000000000000000000000000000000",
                 PreviousBlockhash = "000003be5873fc64b1b784318e3226a1ab2a1805bebba5a0d670be54ff7772e8",
+                Bits = "003355",
                 Transactions = new BitcoinBlockTransaction[0],
                 Subsidy = new ZCashBlockSubsidy
                 {
