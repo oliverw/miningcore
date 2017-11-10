@@ -51,18 +51,9 @@ namespace MiningCore.JsonRpc
 
     public class JsonRpcConnection : IJsonRpcConnection
     {
-        public JsonRpcConnection(JsonSerializerSettings serializerSettings)
-        {
-            Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
-
-            this.serializerSettings = serializerSettings;
-        }
-
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private readonly JsonSerializerSettings serializerSettings;
-
-        private readonly JsonSerializer serializer = new JsonSerializer
+        private static readonly JsonSerializer serializer = new JsonSerializer
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
@@ -70,9 +61,10 @@ namespace MiningCore.JsonRpc
         private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
 
         private const int MaxRequestLength = 8192;
-        private readonly Encoding encoding = Encoding.ASCII;
+        private static readonly Encoding encoding = Encoding.ASCII;
         private ConcurrentQueue<RecyclableMemoryStream> sendQueue;
         private Async sendQueueDrainer;
+        private bool isAlive = true;
 
         #region Implementation of IJsonRpcConnection
 
@@ -153,6 +145,7 @@ namespace MiningCore.JsonRpc
                 }, handle =>
                 {
                     // onCompleted
+                    isAlive = false;
                     observer.OnCompleted();
 
                     // release handles
@@ -203,17 +196,21 @@ namespace MiningCore.JsonRpc
         {
             Contract.RequiresNonNull(payload, nameof(payload));
 
-            var stm = (RecyclableMemoryStream) streamManager.GetStream();
+            if (isAlive)
+            {
+                var stream = (RecyclableMemoryStream) streamManager.GetStream();
 
-            using (var writer = new StreamWriter(stm, encoding, 0x400, true))
-                serializer.Serialize(writer, payload);
+                // serialize payload
+                using (var writer = new StreamWriter(stream, encoding, 0x400, true))
+                    serializer.Serialize(writer, payload);
 
-            logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stm.GetBuffer(), 0, (int)stm.Length)}");
+                logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stream.GetBuffer(), 0, (int) stream.Length)}");
 
-            // append newline
-            stm.WriteByte(0xa);
+                // append newline
+                stream.WriteByte(0xa);
 
-            SendInternal(stm);
+                SendInternal(stream);
+            }
         }
 
         public IPEndPoint RemoteEndPoint { get; private set; }
@@ -221,19 +218,19 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void SendInternal(RecyclableMemoryStream data)
+        private void SendInternal(RecyclableMemoryStream stream)
         {
-            Contract.RequiresNonNull(data, nameof(data));
+            Contract.RequiresNonNull(stream, nameof(stream));
 
             try
             {
-                sendQueue.Enqueue(data);
+                sendQueue.Enqueue(stream);
                 sendQueueDrainer.Send();
             }
 
             catch(ObjectDisposedException)
             {
-                // ignored
+                stream.Dispose();
             }
         }
 
@@ -259,6 +256,7 @@ namespace MiningCore.JsonRpc
 
                         finally
                         {
+                            // return pooled stream
                             stream.Dispose();
                         }
                     }
