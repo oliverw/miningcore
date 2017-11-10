@@ -101,7 +101,7 @@ namespace MiningCore.JsonRpc
                             // read buffer
                             buffer.ReadBytes(buf, count);
 
-                            while (true)
+                            while (count > 0)
                             {
                                 // check if we got a newline
                                 var index = buf.IndexOf(0xa, 0, count);

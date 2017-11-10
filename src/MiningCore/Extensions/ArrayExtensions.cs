@@ -33,6 +33,18 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
+        public static string ToHexString(this byte[] byteArray, int? length, bool withPrefix = false)
+        {
+            var result = length.HasValue ?
+                byteArray.Take(length.Value).Aggregate("", (current, b) => current + b.ToString("x2")) :
+                byteArray.Aggregate("", (current, b) => current + b.ToString("x2"));
+
+            if (withPrefix)
+                result = "0x" + result;
+
+            return result;
+        }
+
         public static string ToHexString(this byte[] byteArray, bool withPrefix = false)
         {
             var result = byteArray.Aggregate("", (current, b) => current + b.ToString("x2"));
@@ -85,7 +97,7 @@ namespace MiningCore.Extensions
 
         public static int IndexOf(this byte[] arr, byte val, int start, int count)
         {
-            Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count < arr.Length - 1);
+            Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count <= arr.Length);
 
             for (var i = start; i < arr.Length; i++)
             {

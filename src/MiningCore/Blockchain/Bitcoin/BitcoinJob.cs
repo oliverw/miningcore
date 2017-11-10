@@ -66,6 +66,7 @@ namespace MiningCore.Blockchain.Bitcoin
         ///////////////////////////////////////////
         // GetJobParams related properties
 
+        protected object[] jobParams;
         protected string previousBlockHashReversedHex;
         protected Money rewardToPool;
         protected Transaction txOut;
@@ -441,11 +442,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             BuildMerkleBranches();
             BuildCoinbase();
-        }
 
-        public virtual object GetJobParams(bool isNew)
-        {
-            return new object[]
+            jobParams = new object[]
             {
                 JobId,
                 previousBlockHashReversedHex,
@@ -455,8 +453,14 @@ namespace MiningCore.Blockchain.Bitcoin
                 BlockTemplate.Version.ToStringHex8(),
                 BlockTemplate.Bits,
                 BlockTemplate.CurTime.ToStringHex8(),
-                isNew
+                false
             };
+        }
+
+        public virtual object GetJobParams(bool isNew)
+        {
+            jobParams[jobParams.Length - 1] = isNew;
+            return jobParams;
         }
 
         public virtual BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker,

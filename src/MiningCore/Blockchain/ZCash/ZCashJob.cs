@@ -138,21 +138,6 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        public override object GetJobParams(bool isNew)
-        {
-            return new object[]
-            {
-                JobId,
-                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
-                previousBlockHashReversedHex,
-                merkleRootReversedHex,
-                sha256Empty.ToHexString(), // hashReserved
-                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
-                isNew
-            };
-        }
-
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
@@ -219,6 +204,18 @@ namespace MiningCore.Blockchain.ZCash
             merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
             merkleRootReversed = merkleRoot.ReverseArray();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
+
+            jobParams = new object[]
+            {
+                JobId,
+                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
+                previousBlockHashReversedHex,
+                merkleRootReversedHex,
+                sha256Empty.ToHexString(), // hashReserved
+                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
+                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
+                false
+            };
         }
 
         #endregion
