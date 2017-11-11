@@ -108,7 +108,7 @@ namespace MiningCore.Api
         {
             context.Response.ContentType = "application/json";
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings);
+            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
             await context.Response.WriteAsync(json, Encoding.UTF8);
         }
 
