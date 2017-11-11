@@ -102,21 +102,20 @@ namespace MiningCore.Extensions
         /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
         /// block of 4 bytes must be reversed before reversing the entire buffer
         /// </summary>
-        public static void ReverseByteOrder(this byte[] bytes)
+        public static byte[] ReverseByteOrder(this byte[] bytes)
         {
-            using(var stream = PooledBuffers.GetRecyclableMemoryStream())
+            using (var stream = new MemoryStream())
             {
-                using(var writer = new BinaryWriter(stream))
+                using (var writer = new BinaryWriter(stream))
                 {
-                    for(var i = 0; i < 8; i++)
+                    for (var i = 0; i < 8; i++)
                     {
                         var value = BitConverter.ToUInt32(bytes, i * 4).ToBigEndian();
                         writer.Write(value);
                     }
 
                     writer.Flush();
-
-                    Array.Copy(stream.GetBuffer(), bytes, stream.Length);
+                    return stream.ToArray().ReverseArray();
                 }
             }
         }
