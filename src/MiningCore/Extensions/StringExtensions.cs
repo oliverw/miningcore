@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Globalization;
 using MiningCore.Buffers;
 
@@ -26,6 +27,7 @@ namespace MiningCore.Extensions
 {
     public static class StringExtensions
     {
+
         /// <summary>
         /// Converts a str string to byte array.
         /// </summary>
@@ -42,20 +44,6 @@ namespace MiningCore.Extensions
                 arr[i] = (byte) ((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
 
             return arr;
-        }
-
-        public static void HexToByteArrayPooled(this string str, out byte[] result, out int size)
-        {
-            if (str.StartsWith("0x"))
-                str = str.Substring(2);
-
-            size = str.Length >> 1;
-            var arr = PooledBuffers.Bytes.Rent(size);
-
-            for (var i = 0; i < str.Length >> 1; ++i)
-                arr[i] = (byte)((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
-
-            result = arr;
         }
 
         private static int GetHexVal(char hex)

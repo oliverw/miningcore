@@ -19,8 +19,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -53,7 +56,9 @@ namespace MiningCore.JsonRpc
 
         private const int MaxRequestLength = 8192;
         private static readonly Encoding encoding = Encoding.ASCII;
-        private ConcurrentQueue<RecyclableMemoryStream> sendQueue;
+        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
+
+        private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
         private bool isAlive = true;
 
@@ -68,13 +73,13 @@ namespace MiningCore.JsonRpc
             RemoteEndPoint = tcp.GetPeerEndPoint();
 
             // initialize send queue
-            sendQueue = new ConcurrentQueue<RecyclableMemoryStream>();
+            sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
             sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
             sendQueueDrainer.UserToken = tcp;
 
-            var incomingLines = Observable.Create<RecyclableMemoryStream>(observer =>
+            var incomingLines = Observable.Create<PooledArraySegment<byte>>(observer =>
             {
-                var stm = (RecyclableMemoryStream)streamManager.GetStream();
+                var bufferQueue = new Queue<PooledArraySegment<byte>>();
 
                 tcp.OnRead((handle, buffer) =>
                 {
@@ -82,54 +87,95 @@ namespace MiningCore.JsonRpc
                     using (buffer)
                     {
                         var count = buffer.Count;
-                        var buf = PooledBuffers.Bytes.Rent(count);
+                        if (count == 0)
+                            return;
 
-                        // clear left-over contents
-                        Array.Clear(buf, 0, count);
+                        var buf = byteArrayPool.Rent(count);
+                        var prevIndex = 0;
+                        var keepLease = false;
 
                         try
                         {
+                            // clear left-over contents
+                            if(buf.Length > count)
+                                Array.Clear(buf, count, buf.Length - count);
+
                             // read buffer
                             buffer.ReadBytes(buf, count);
 
                             while (count > 0)
                             {
                                 // check if we got a newline
-                                var index = buf.IndexOf(0xa, 0, count);
+                                var index = buf.IndexOf(0xa, prevIndex, count);
                                 var found = index != -1;
 
-                                // split at newline boundaries
-                                stm.Write(buf, 0, found ? index++ : count);
-
-                                if (stm.Length > MaxRequestLength)
+                                if (found)
                                 {
-                                    observer.OnError(new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}"));
-                                    break;
+                                    // fastpath
+                                    if (index + 1 == count && bufferQueue.Count == 0)
+                                    {
+                                        observer.OnNext(new PooledArraySegment<byte>(buf, 0, index));
+                                        keepLease = true;
+                                        break;
+                                    }
+
+                                    // build buffer
+                                    var queuedLength = bufferQueue.Sum(x => x.Size);
+                                    var lineLength = queuedLength + index;
+                                    var line = byteArrayPool.Rent(lineLength);
+                                    var offset = 0;
+
+                                    while(bufferQueue.TryDequeue(out var segment))
+                                    {
+                                        using(segment)
+                                        {
+                                            Array.Copy(segment.Array, 0, line, offset, segment.Size);
+                                            offset += segment.Size;
+                                        }
+                                    }
+
+                                    // append latest buffer
+                                    Array.Copy(buf, 0, line, offset, index);
+
+                                    // emit
+                                    observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));
+
+                                    prevIndex = index + 1;
+                                    count -= prevIndex;
+                                    continue;
                                 }
 
-                                if (!found)
-                                    break;
+                                // store
+                                if (prevIndex != 0)
+                                {
+                                    var fragmentLength = count - prevIndex;
 
-                                // done with this stream
-                                observer.OnNext(stm);
-                                stm = (RecyclableMemoryStream) streamManager.GetStream();
+                                    if (fragmentLength > 0)
+                                    {
+                                        var fragment = byteArrayPool.Rent(fragmentLength);
+                                        Array.Copy(buf, prevIndex, fragment, 0, fragmentLength);
+                                        bufferQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, fragmentLength));
+                                    }
+                                }
 
-                                // done with this packet?
-                                if (index >= count - 1)
-                                    break;
+                                else
+                                {
+                                    bufferQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, count));
+                                    keepLease = true;
+                                }
 
-                                // shift buffer contents
-                                var cb = count - index;
-                                Array.Copy(buf, index, buf, 0, cb);
-                                Array.Clear(buf, cb, count - cb);
+                                // prevent flooding
+                                if (bufferQueue.Sum(x => x.Size) > MaxRequestLength)
+                                    throw new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}");
 
-                                count = cb;
+                                break;
                             }
                         }
 
                         finally
                         {
-                            PooledBuffers.Bytes.Return(buf);
+                            if(!keepLease)
+                                byteArrayPool.Return(buf);
                         }
                     }
                 }, (handle, ex) =>
@@ -148,10 +194,12 @@ namespace MiningCore.JsonRpc
                     sendQueueDrainer.UserToken = null;
 
                     // empty sendqueue
-                    while (sendQueue.TryDequeue(out var data))
-                        data.Dispose();
+                    while (sendQueue.TryDequeue(out var fragment))
+                        fragment.Dispose();
 
-                    stm.Dispose();
+                    // empty bufferqueue
+                    while (bufferQueue.TryDequeue(out var fragment))
+                        fragment.Dispose();
                 });
 
                 return Disposable.Create(() =>
@@ -167,13 +215,11 @@ namespace MiningCore.JsonRpc
 
             Received = incomingLines
                 .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x}"))
-                .Select(line =>
+                .Select(segment =>
                 {
-                    using(line)
+                    using(segment)
                     {
-                        line.Seek(0, SeekOrigin.Begin);
-
-                        using(var reader = new StreamReader(line, encoding))
+                        using(var reader = new StreamReader(new MemoryStream(segment.Array, 0, segment.Size), encoding))
                         {
                             using(var jreader = new JsonTextReader(reader))
                             {
@@ -195,18 +241,25 @@ namespace MiningCore.JsonRpc
 
             if (isAlive)
             {
-                var stream = (RecyclableMemoryStream) streamManager.GetStream();
+                using(var stream = (RecyclableMemoryStream) streamManager.GetStream())
+                {
+                    using(var writer = new StreamWriter(stream, encoding, 0x400, true))
+                    {
+                        serializer.Serialize(writer, payload);
+                    }
 
-                // serialize payload
-                using (var writer = new StreamWriter(stream, encoding, 0x400, true))
-                    serializer.Serialize(writer, payload);
+                    // append newline
+                    stream.WriteByte(0xa);
 
-                logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stream.GetBuffer(), 0, (int) stream.Length)}");
+                    // log it
+                    logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stream.GetBuffer(), 0, (int)stream.Length)}");
 
-                // append newline
-                stream.WriteByte(0xa);
+                    // copy buffer and queue up
+                    var buf = byteArrayPool.Rent((int) stream.Length);
+                    Array.Copy(stream.GetBuffer(), buf, stream.Length);
 
-                SendInternal(stream);
+                    SendInternal(new PooledArraySegment<byte>(buf, 0, (int) stream.Length));
+                }
             }
         }
 
@@ -215,19 +268,19 @@ namespace MiningCore.JsonRpc
 
         #endregion
 
-        private void SendInternal(RecyclableMemoryStream stream)
+        private void SendInternal(PooledArraySegment<byte> buffer)
         {
-            Contract.RequiresNonNull(stream, nameof(stream));
+            Contract.RequiresNonNull(buffer, nameof(buffer));
 
             try
             {
-                sendQueue.Enqueue(stream);
+                sendQueue.Enqueue(buffer);
                 sendQueueDrainer.Send();
             }
 
             catch(ObjectDisposedException)
             {
-                stream.Dispose();
+                buffer.Dispose();
             }
         }
 
@@ -243,18 +296,11 @@ namespace MiningCore.JsonRpc
                     if (queueSize >= 256)
                         logger.Warn(()=> $"[{ConnectionId}] Send queue backlog now at {queueSize}");
 
-                    while(sendQueue.TryDequeue(out var stream))
+                    while(sendQueue.TryDequeue(out var segment))
                     {
-                        try
+                        using(segment)
                         {
-                            var buf = stream.GetBuffer();
-                            tcp.QueueWrite(buf, 0, (int) stream.Length);
-                        }
-
-                        finally
-                        {
-                            // return pooled stream
-                            stream.Dispose();
+                            tcp.QueueWrite(segment.Array, 0, segment.Size);
                         }
                     }
                 }

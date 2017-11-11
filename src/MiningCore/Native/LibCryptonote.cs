@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
 using MiningCore.Buffers;
@@ -48,7 +49,7 @@ namespace MiningCore.Native
             fixed(byte* input = data)
             {
                 // provide reasonable large output buffer
-                var outputBuffer = PooledBuffers.Bytes.Rent(0x100);
+                var outputBuffer = ArrayPool<byte>.Shared.Rent(0x100);
 
                 try
                 {
@@ -67,8 +68,8 @@ namespace MiningCore.Native
                             return null; // nope, other error
 
                         // retry with correctly sized buffer
-                        PooledBuffers.Bytes.Return(outputBuffer);
-                        outputBuffer = PooledBuffers.Bytes.Rent(outputBufferLength);
+                        ArrayPool<byte>.Shared.Return(outputBuffer);
+                        outputBuffer = ArrayPool<byte>.Shared.Rent(outputBufferLength);
 
                         fixed (byte* output = outputBuffer)
                         {
@@ -88,7 +89,7 @@ namespace MiningCore.Native
 
                 finally
                 {
-                    PooledBuffers.Bytes.Return(outputBuffer);
+                    ArrayPool<byte>.Shared.Return(outputBuffer);
                 }
             }
         }

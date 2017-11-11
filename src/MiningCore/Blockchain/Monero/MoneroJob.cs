@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -50,6 +51,8 @@ namespace MiningCore.Blockchain.Monero
             PrepareBlobTemplate(instanceId);
         }
 
+        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
+
         private byte[] blobTemplate;
         private uint extraNonce;
 
@@ -65,7 +68,7 @@ namespace MiningCore.Blockchain.Monero
         private string EncodeBlob(uint workerExtraNonce)
         {
             // clone template
-            var blob = PooledBuffers.Bytes.Rent(blobTemplate.Length);
+            var blob = byteArrayPool.Rent(blobTemplate.Length);
 
             try
             {
@@ -81,7 +84,7 @@ namespace MiningCore.Blockchain.Monero
 
             finally
             {
-                PooledBuffers.Bytes.Return(blob);
+                byteArrayPool.Return(blob);
             }
         }
 
@@ -140,7 +143,7 @@ namespace MiningCore.Blockchain.Monero
                 throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
             // clone template
-            var blob = PooledBuffers.Bytes.Rent(blobTemplate.Length);
+            var blob = byteArrayPool.Rent(blobTemplate.Length);
 
             try
             {
@@ -206,7 +209,7 @@ namespace MiningCore.Blockchain.Monero
 
             finally
             {
-                PooledBuffers.Bytes.Return(blob);
+                byteArrayPool.Return(blob);
             }
         }
 

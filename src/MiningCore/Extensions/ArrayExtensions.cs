@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -70,7 +71,7 @@ namespace MiningCore.Extensions
             if (withPrefix)
                 bufferSize += 2;
 
-            var buffer = PooledBuffers.Chars.Rent(bufferSize);
+            var buffer = ArrayPool<char>.Shared.Rent(bufferSize);
 
             try
             {
@@ -94,7 +95,7 @@ namespace MiningCore.Extensions
 
             finally
             {
-                PooledBuffers.Chars.Return(buffer);
+                ArrayPool<char>.Shared.Return(buffer);
             }
         }
 
