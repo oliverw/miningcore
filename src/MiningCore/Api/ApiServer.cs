@@ -78,6 +78,9 @@ namespace MiningCore.Api
                 { new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
                 { new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
                 { new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
+
+                // dev api
+                { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
             };
         }
 
@@ -307,6 +310,13 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, stats);
+        }
+
+        private async Task HandleForceGcAsync(HttpContext context, Match m)
+        {
+            GC.Collect(2, GCCollectionMode.Forced);
+
+            await SendJson(context, true);
         }
 
         #region API-Surface
