@@ -54,6 +54,11 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
+        public static string ToHexString(this byte[] value, bool withPrefix = false)
+        {
+            return ToHexString(value, null, withPrefix);
+        }
+
         public static string ToHexString(this byte[] value, int? len, bool withPrefix = false)
         {
             if (value == null || value.Length == 0)
@@ -93,52 +98,13 @@ namespace MiningCore.Extensions
             }
         }
 
-        public static string ToHexString(this byte[] value, bool withPrefix = false)
-        {
-            if (value == null || value.Length == 0)
-                return string.Empty;
-
-            var length = value.Length;
-            var bufferSize = length * 2;
-
-            if (withPrefix)
-                bufferSize += 2;
-
-            var buffer = PooledBuffers.Chars.Rent(bufferSize);
-
-            try
-            {
-                var offset = 0;
-
-                if (withPrefix)
-                {
-                    buffer[offset++] = '0';
-                    buffer[offset++] = 'x';
-                }
-
-                for (var i = 0; i < length; i++)
-                {
-                    var hex = HexStringTable[value[i]];
-                    buffer[offset + i * 2 + 0] = hex[0];
-                    buffer[offset + i * 2 + 1] = hex[1];
-                }
-
-                return new string(buffer, 0, bufferSize);
-            }
-
-            finally
-            {
-                PooledBuffers.Chars.Return(buffer);
-            }
-        }
-
         /// <summary>
         /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
         /// block of 4 bytes must be reversed before reversing the entire buffer
         /// </summary>
-        public static byte[] ReverseByteOrder(this byte[] bytes)
+        public static void ReverseByteOrder(this byte[] bytes)
         {
-            using(var stream = new MemoryStream())
+            using(var stream = PooledBuffers.GetRecyclableMemoryStream())
             {
                 using(var writer = new BinaryWriter(stream))
                 {
@@ -149,7 +115,8 @@ namespace MiningCore.Extensions
                     }
 
                     writer.Flush();
-                    return stream.ToArray().ReverseArray();
+
+                    Array.Copy(stream.GetBuffer(), bytes, stream.Length);
                 }
             }
         }

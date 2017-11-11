@@ -435,10 +435,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
             blockTargetValue = BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber);
 
-            previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
-                .HexToByteArray()
-                .ReverseByteOrder()
-                .ToHexString();
+            var tmp = BlockTemplate.PreviousBlockhash
+                .HexToByteArray();
+
+            tmp.ReverseByteOrder();
+            previousBlockHashReversedHex = tmp.ToHexString();
 
             BuildMerkleBranches();
             BuildCoinbase();
