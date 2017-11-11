@@ -19,10 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -42,14 +40,7 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.JsonRpc
 {
-    public interface IJsonRpcConnection
-    {
-        IObservable<Timestamped<JsonRpcRequest>> Received { get; }
-        string ConnectionId { get; }
-        void Send<T>(T payload);
-    }
-
-    public class JsonRpcConnection : IJsonRpcConnection
+    public class JsonRpcConnection
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -178,13 +169,16 @@ namespace MiningCore.JsonRpc
                 .Do(x => logger.Trace(() => $"[{ConnectionId}] Received JsonRpc-Request: {x}"))
                 .Select(line =>
                 {
-                    line.Seek(0, SeekOrigin.Begin);
-
-                    using (var reader = new StreamReader(line, encoding))
+                    using(line)
                     {
-                        using (var jreader = new JsonTextReader(reader))
+                        line.Seek(0, SeekOrigin.Begin);
+
+                        using(var reader = new StreamReader(line, encoding))
                         {
-                            return serializer.Deserialize<JsonRpcRequest>(jreader);
+                            using(var jreader = new JsonTextReader(reader))
+                            {
+                                return serializer.Deserialize<JsonRpcRequest>(jreader);
+                            }
                         }
                     }
                 })
