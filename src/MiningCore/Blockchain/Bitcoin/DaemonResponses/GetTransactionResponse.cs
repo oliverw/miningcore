@@ -34,7 +34,7 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
     public class Transaction
     {
         public decimal Amount { get; set; }
-        public int Confirmations { get; set; }
+        public uint Confirmations { get; set; }
         public bool Generated { get; set; }
         public string BlockHash { get; set; }
         public long BlockIndex { get; set; }

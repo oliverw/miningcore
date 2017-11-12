@@ -16,7 +16,7 @@ namespace MiningCore.Serialization
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value == null)
+            if(value == null)
                 writer.WriteValue("null");
             else
                 writer.WriteValue($"0x{value:x}");

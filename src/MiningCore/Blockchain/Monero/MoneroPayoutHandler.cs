@@ -86,7 +86,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
-                NotifyPayoutSuccess(balances, new[] { txHash }, txFee);
+                NotifyPayoutSuccess(balances, new [] { txHash }, txFee);
             }
 
             else
@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Monero
                     .Select(x => new TransferDestination
                     {
                         Address = x.Address,
-                        Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
+                        Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.Piconero)
                     }).ToArray(),
 
                 GetTxKey = true
@@ -171,8 +171,8 @@ namespace MiningCore.Blockchain.Monero
         private async Task PayoutToPaymentId(Balance balance)
         {
             // extract paymentId
-            var address = (string) null;
-            var paymentId = (string) null;
+            var address = (string)null;
+            var paymentId = (string)null;
 
             var index = balance.Address.IndexOf(PayoutConstants.PayoutInfoSeperator);
             if (index != -1)
@@ -187,12 +187,12 @@ namespace MiningCore.Blockchain.Monero
             // build request
             var request = new TransferRequest
             {
-                Destinations = new[]
+                Destinations = new []
                 {
                     new TransferDestination
                     {
                         Address = address,
-                        Amount = (ulong) Math.Floor(balance.Amount * MoneroConstants.Piconero)
+                        Amount = (ulong)Math.Floor(balance.Amount * MoneroConstants.Piconero)
                     }
                 },
                 PaymentId = paymentId,
@@ -255,7 +255,7 @@ namespace MiningCore.Blockchain.Monero
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            for(var i = 0; i < pageCount; i++)
+            for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -264,7 +264,7 @@ namespace MiningCore.Blockchain.Monero
                     .ToArray();
 
                 // NOTE: monerod does not support batch-requests
-                for(var j = 0; j < page.Length; j++)
+                for (var j = 0; j < page.Length; j++)
                 {
                     var block = page[j];
 
@@ -327,7 +327,7 @@ namespace MiningCore.Blockchain.Monero
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x=> x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -354,7 +354,7 @@ namespace MiningCore.Blockchain.Monero
 
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
-            if (infoResponse.Error != null || infoResponse.Response == null ||
+            if(infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
 #if !DEBUG
@@ -368,20 +368,20 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x => !x.Address.Contains(PayoutConstants.PayoutInfoSeperator))
                 .ToArray();
 
-            if (simpleBalances.Length > 0)
+            if(simpleBalances.Length > 0)
                 await PayoutBatch(simpleBalances);
 
             // balances with paymentIds
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
-                .Where(x => x.Amount >= minimumPaymentToPaymentId)
+                .Where(x=> x.Amount >= minimumPaymentToPaymentId)
                 .ToArray();
 
-            foreach(var balance in paymentIdBalances)
+            foreach (var balance in paymentIdBalances)
                 await PayoutToPaymentId(balance);
         }
 
-        #endregion // IPayoutHandler
+#endregion // IPayoutHandler
     }
 }

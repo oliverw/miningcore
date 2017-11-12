@@ -18,14 +18,14 @@ namespace MiningCore.Crypto.Hashing.Ethash
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
+        private int numCaches;  // Maximum number of caches to keep before eviction (only init, don't modify)
         private readonly object cacheLock = new object();
         private readonly Dictionary<ulong, Cache> caches = new Dictionary<ulong, Cache>();
         private Cache future;
 
         public void Dispose()
         {
-            foreach(var value in caches.Values)
+            foreach (var value in caches.Values)
                 value.Dispose();
         }
 
@@ -58,7 +58,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             // The actual check.
             var target = BigInteger.Divide(EthereumConstants.BigMaxValue, block.Difficulty);
-            var resultValue = new BigInteger(resultBytes.ReverseArray());
+            var resultValue = new BigInteger(resultBytes.ToReverseArray());
             var result = resultValue.CompareTo(target) <= 0;
             return result;
         }
@@ -68,7 +68,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             var epoch = block / EthereumConstants.EpochLength;
             Cache result;
 
-            lock(cacheLock)
+            lock (cacheLock)
             {
                 if (numCaches == 0)
                     numCaches = 3;
@@ -76,7 +76,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 if (!caches.TryGetValue(epoch, out result))
                 {
                     // No cached DAG, evict the oldest if the cache limit was reached
-                    while(caches.Count >= numCaches)
+                    while (caches.Count >= numCaches)
                     {
                         var toEvict = caches.Values.OrderBy(x => x.LastUsed).First();
                         var key = caches.First(pair => pair.Value == toEvict).Key;
@@ -110,9 +110,9 @@ namespace MiningCore.Crypto.Hashing.Ethash
                         logger.Debug(() => $"Pre-generating DAG for epoch {epoch + 1}");
                         future = new Cache(epoch + 1);
 
-#pragma warning disable 4014
+                        #pragma warning disable 4014
                         future.GenerateAsync();
-#pragma warning restore 4014
+                        #pragma warning restore 4014
                     }
                 }
 

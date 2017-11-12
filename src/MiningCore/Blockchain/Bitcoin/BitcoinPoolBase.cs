@@ -74,8 +74,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     new object[]
                     {
-                        new object[] { BitcoinStratumMethods.SetDifficulty, client.ConnectionId },
-                        new object[] { BitcoinStratumMethods.MiningNotify, client.ConnectionId }
+                        new object[] {BitcoinStratumMethods.SetDifficulty, client.ConnectionId},
+                        new object[] {BitcoinStratumMethods.MiningNotify, client.ConnectionId}
                     }
                 }
                 .Concat(manager.GetSubscriberData(client))
@@ -88,7 +88,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
 
             // send intial update
-            client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+            client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
             client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
@@ -150,7 +150,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(Tuple.Create((object) client, share));
+                shareSubject.OnNext(Tuple.Create((object)client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * manager.ShareMultiplier, 3)}");
 
@@ -162,7 +162,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Context.Stats.ValidShares++;
             }
 
-            catch(StratumException ex)
+            catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
@@ -199,7 +199,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 }
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
             }
@@ -216,12 +216,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Respond(transactions, request.Id);
             }
 
-            catch(StratumException ex)
+            catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
             }
@@ -248,7 +248,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (client.Context.ApplyPendingDifficulty())
-                        client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+                        client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
 
                     // send job
                     client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
@@ -281,7 +281,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -316,7 +316,7 @@ namespace MiningCore.Blockchain.Bitcoin
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 2;
 
             disposables.Add(Shares
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
@@ -331,7 +331,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                         return 0ul;
@@ -357,7 +357,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 client.Context.ApplyPendingDifficulty();
 
-                client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+                client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }

@@ -44,8 +44,8 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.DASH, CoinType.MONA, CoinType.VTC,
-        CoinType.BTG)]
+        CoinType.GRS, CoinType.DASH, CoinType.ZEC, CoinType.MONA,
+        CoinType.VTC, CoinType.BTG)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -68,14 +68,14 @@ namespace MiningCore.Blockchain.Bitcoin
             this.ctx = ctx;
         }
 
-        protected readonly IComponentContext ctx;
-        protected DaemonClient daemon;
+        private readonly IComponentContext ctx;
+        private DaemonClient daemon;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
         #region IPayoutHandler
 
-        public virtual void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -89,7 +89,7 @@ namespace MiningCore.Blockchain.Bitcoin
             daemon.Configure(poolConfig.Daemons);
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+        public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -98,7 +98,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            for(var i = 0; i < pageCount; i++)
+            for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -108,12 +108,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
                 var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
-                    new[] { block.TransactionConfirmationData })).ToArray();
+                    new[] {block.TransactionConfirmationData})).ToArray();
 
                 // execute batch
                 var results = await daemon.ExecuteBatchAnyAsync(batch);
 
-                for(var j = 0; j < results.Length; j++)
+                for (var j = 0; j < results.Length; j++)
                 {
                     var cmdResult = results[j];
 
@@ -145,11 +145,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     else
                     {
-                        switch(transactionInfo.Details[0].Category)
+                        switch (transactionInfo.Details[0].Category)
                         {
                             case "immature":
                                 // update progress
-                                block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
+                                block.ConfirmationProgress = Math.Min(1.0d, (double)transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
                                 result.Add(block);
                                 break;
 
@@ -157,7 +157,7 @@ namespace MiningCore.Blockchain.Bitcoin
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
                                 block.ConfirmationProgress = 1;
-								result.Add(block);
+                                result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                                 break;
@@ -174,19 +174,19 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public virtual Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -204,7 +204,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return Task.FromResult(blockRewardRemaining);
         }
 
-        public virtual async Task PayoutAsync(Balance[] balances)
+        public async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
@@ -238,20 +238,20 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // check result
                 if (string.IsNullOrEmpty(txId))
-                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' did not return a transaction id!");
                 else
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(balances, new[] { txId }, null);
+                NotifyPayoutSuccess(balances, new []{ txId }, null);
             }
 
             else
             {
-                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                NotifyPayoutFailure(balances, $"Daemon command '{BitcoinCommands.SendMany}' returned error: {result.Error.Message} code {result.Error.Code}", null);
             }
         }
 

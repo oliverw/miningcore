@@ -17,9 +17,9 @@ namespace MiningCore.Util
             {
                 hashrate = hashrate / 1024;
                 i++;
-            } while(hashrate > 1024 && i < HashRateUnits.Length - 1);
+            } while (hashrate > 1024 && i < HashRateUnits.Length - 1);
 
-            return (int) Math.Abs(hashrate) + HashRateUnits[i];
+            return (int)Math.Abs(hashrate) + HashRateUnits[i];
         }
 
         public static string FormatDifficulty(double difficulty)
@@ -30,8 +30,8 @@ namespace MiningCore.Util
             {
                 difficulty = difficulty / 1024;
                 i++;
-            } while(difficulty > 1024);
-            return (int) Math.Abs(difficulty) + DifficultyUnits[i];
+            } while (difficulty > 1024);
+            return (int)Math.Abs(difficulty) + DifficultyUnits[i];
         }
     }
 }

@@ -73,14 +73,11 @@ namespace MiningCore.Api
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                { new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
-
-                // dev api
-                { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
+                {new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync},
+                {new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync},
             };
         }
 
@@ -108,7 +105,7 @@ namespace MiningCore.Api
         {
             context.Response.ContentType = "application/json";
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
+            var json = JsonConvert.SerializeObject(response, serializerSettings);
             await context.Response.WriteAsync(json, Encoding.UTF8);
         }
 
@@ -118,7 +115,7 @@ namespace MiningCore.Api
 
             try
             {
-                foreach(var path in requestMap.Keys)
+                foreach (var path in requestMap.Keys)
                 {
                     var m = path.Match(request.Path);
 
@@ -133,7 +130,7 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex);
                 throw;
@@ -146,7 +143,7 @@ namespace MiningCore.Api
 
             if (!string.IsNullOrEmpty(poolId))
             {
-                lock(pools)
+                lock (pools)
                 {
                     var pool = pools.FirstOrDefault(x => x.Config.Id == poolId);
 
@@ -163,7 +160,7 @@ namespace MiningCore.Api
         {
             GetPoolsResponse response;
 
-            lock(pools)
+            lock (pools)
             {
                 response = new GetPoolsResponse
                 {
@@ -178,7 +175,7 @@ namespace MiningCore.Api
                             .Where(x => x.Type == RewardRecipientType.Op)
                             .Sum(x => x.Percentage);
 
-                        poolInfo.DonationsPercent = (float) pool.Config.RewardRecipients
+                        poolInfo.DonationsPercent = (float)pool.Config.RewardRecipients
                             .Where(x => x.Type == RewardRecipientType.Dev)
                             .Sum(x => x.Percentage);
 
@@ -234,7 +231,7 @@ namespace MiningCore.Api
             // enrich blocks
             CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
 
-            foreach(var block in blocks)
+            foreach (var block in blocks)
             {
                 // compute infoLink
                 if (!string.IsNullOrEmpty(baseUrl))
@@ -267,7 +264,7 @@ namespace MiningCore.Api
             // enrich blocks
             CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
 
-            foreach(var payment in payments)
+            foreach (var payment in payments)
             {
                 // compute infoLink
                 if (!string.IsNullOrEmpty(baseUrl))
@@ -312,13 +309,6 @@ namespace MiningCore.Api
             await SendJson(context, stats);
         }
 
-        private async Task HandleForceGcAsync(HttpContext context, Match m)
-        {
-            GC.Collect(2, GCCollectionMode.Forced);
-
-            await SendJson(context, true);
-        }
-
         #region API-Surface
 
         public void Start(ClusterConfig clusterConfig)
@@ -345,7 +335,7 @@ namespace MiningCore.Api
 
         public void AttachPool(IMiningPool pool)
         {
-            lock(pools)
+            lock (pools)
             {
                 pools.Add(pool);
             }

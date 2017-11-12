@@ -105,10 +105,10 @@ namespace MiningCore.Blockchain.Ethereum
             await DetectChainAsync();
 
             var pageSize = 100;
-            var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
+            var pageCount = (int)Math.Ceiling(blocks.Length / (double)pageSize);
             var result = new List<Block>();
 
-            for(var i = 0; i < pageCount; i++)
+            for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -117,7 +117,7 @@ namespace MiningCore.Blockchain.Ethereum
                     .ToArray();
 
                 // get latest block
-                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] { (object) "latest", true });
+                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] {(object) "latest", true});
                 var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
 
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
@@ -131,7 +131,7 @@ namespace MiningCore.Blockchain.Ethereum
                 // execute batch
                 var responses = await daemon.ExecuteBatchAnyAsync(blockBatch);
 
-                for(var j = 0; j < responses.Length; j++)
+                for (var j = 0; j < responses.Length; j++)
                 {
                     var blockResponse = responses[j];
 
@@ -167,7 +167,7 @@ namespace MiningCore.Blockchain.Ethereum
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
                         var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) &&
-                            blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
+                                    blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
 
                         // mature?
                         if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
@@ -231,7 +231,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = (double)accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
@@ -241,7 +241,7 @@ namespace MiningCore.Blockchain.Ethereum
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -269,13 +269,13 @@ namespace MiningCore.Blockchain.Ethereum
             if (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
                 infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount)
             {
-                logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
+                logger.Warn(()=> $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
             }
 
             var txHashes = new List<string>();
 
-            foreach(var balance in balances)
+            foreach (var balance in balances)
             {
                 try
                 {
@@ -283,15 +283,15 @@ namespace MiningCore.Blockchain.Ethereum
                     txHashes.Add(txHash);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    logger.Error(ex);
+                    logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                    NotifyPayoutFailure(new[] { balance }, ex.Message, null);
+                    NotifyPayoutFailure(new []{ balance }, ex.Message, null);
                 }
             }
 
-            if (txHashes.Any())
+            if(txHashes.Any())
                 NotifyPayoutSuccess(balances, txHashes.ToArray(), null);
         }
 
@@ -299,7 +299,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private decimal GetBaseBlockReward(ulong height)
         {
-            switch(chainType)
+            switch (chainType)
             {
                 case ParityChainType.Mainnet:
                     if (height >= EthereumConstants.ByzantiumHardForkHeight)
@@ -329,8 +329,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             var results = await daemon.ExecuteBatchAnyAsync(batch);
 
-            if (results.Any(x => x.Error != null))
-                throw new Exception($"Error fetching tx receipts: {string.Join(", ", results.Where(x => x.Error != null).Select(y => y.Error.Message))}");
+            if(results.Any(x=> x.Error != null))
+                throw new Exception($"Error fetching tx receipts: {string.Join(", ", results.Where(x=> x.Error != null).Select(y => y.Error.Message))}");
 
             // create lookup table
             var gasUsed = results.Select(x => x.Response.ToObject<TransactionReceipt>())
@@ -390,7 +390,7 @@ namespace MiningCore.Blockchain.Ethereum
                     null
                 });
 
-                if (unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
+                if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
                     throw new Exception("Unable to unlock coinbase account for sending transaction");
             }
 
@@ -416,7 +416,7 @@ namespace MiningCore.Blockchain.Ethereum
             logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");
 
             // update db
-            PersistPayments(new[] { balance }, txHash);
+            PersistPayments(new []{ balance }, txHash);
 
             // done
             return txHash;

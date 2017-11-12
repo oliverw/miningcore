@@ -19,15 +19,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
@@ -36,16 +33,15 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using MiningCore.Time;
-using MiningCore.Util;
 using Newtonsoft.Json;
 using BigInteger = NBitcoin.BouncyCastle.Math.BigInteger;
 
 namespace MiningCore.Blockchain.ZCash
 {
-    public class ZCashPoolBase<TJob> : BitcoinPoolBase<TJob, ZCashBlockTemplate>
-        where TJob : ZCashJob, new()
-    {
-        public ZCashPoolBase(IComponentContext ctx,
+	public class ZCashPoolBase<TJob> : BitcoinPoolBase<TJob, ZCashBlockTemplate>
+		where TJob : ZCashJob, new()
+	{
+		public ZCashPoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
@@ -75,11 +71,11 @@ namespace MiningCore.Blockchain.ZCash
             var requestParams = request.ParamsAs<string[]>();
 
             var data = new object[]
-                {
-                    client.ConnectionId,
-                }
-                .Concat(manager.GetSubscriberData(client))
-                .ToArray();
+            {
+                client.ConnectionId,
+            }
+            .Concat(manager.GetSubscriberData(client))
+            .ToArray();
 
             client.Respond(data, request.Id);
 
@@ -100,52 +96,12 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        private void OnSuggestTarget(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
-        {
-            var request = tsRequest.Value;
-
-            if (request.Id == null)
-            {
-                client.RespondError(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
-
-            var requestParams = request.ParamsAs<string[]>();
-            var target = requestParams.FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(target))
-            {
-                if (System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
-                {
-                    var newDiff = (double) new BigRational(ZCashConstants.Diff1b, targetBig);
-                    var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-
-                    if (newDiff >= poolEndpoint.Difficulty)
-                    {
-                        client.Context.EnqueueNewDifficulty(newDiff);
-                        client.Context.ApplyPendingDifficulty();
-
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(client.Context.Difficulty) });
-                    }
-
-                    else
-                        client.RespondError(StratumError.Other, "suggested difficulty too low", request.Id);
-                }
-
-                else
-                    client.RespondError(StratumError.Other, "invalid target", request.Id);
-            }
-
-            else
-                client.RespondError(StratumError.Other, "invalid target", request.Id);
-        }
-
         protected override async Task OnRequestAsync(StratumClient<BitcoinWorkerContext> client,
             Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -160,7 +116,7 @@ namespace MiningCore.Blockchain.ZCash
                     break;
 
                 case ZCashStratumMethods.SuggestTarget:
-                    OnSuggestTarget(client, tsRequest);
+                    //OnSuggestTarget(client, tsRequest);
                     break;
 
                 case BitcoinStratumMethods.GetTransactions:
@@ -204,14 +160,6 @@ namespace MiningCore.Blockchain.ZCash
             });
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
-        {
-            var sum = shares.Sum(share => Math.Max(0.00000001, share.Item2.Difficulty * manager.ShareMultiplier));
-            var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
-            var result = Math.Ceiling(((sum * multiplier / interval) / 1000000) * 2);
-            return (ulong)result;
-        }
-
         protected override void OnVarDiffUpdate(StratumClient<BitcoinWorkerContext> client, double newDiff)
         {
             client.Context.EnqueueNewDifficulty(newDiff);
@@ -231,7 +179,7 @@ namespace MiningCore.Blockchain.ZCash
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
             var quotient = ZCashConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
             {
