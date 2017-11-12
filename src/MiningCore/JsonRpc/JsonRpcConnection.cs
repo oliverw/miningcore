@@ -55,8 +55,8 @@ namespace MiningCore.JsonRpc
         private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
 
         private const int MaxRequestLength = 8192;
-        private static readonly Encoding encoding = Encoding.ASCII;
-        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
+        private static readonly Encoding Encoding = Encoding.ASCII;
+        private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
 
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
@@ -79,7 +79,7 @@ namespace MiningCore.JsonRpc
 
             var incomingLines = Observable.Create<PooledArraySegment<byte>>(observer =>
             {
-                var bufferQueue = new Queue<PooledArraySegment<byte>>();
+                var recvQueue = new Queue<PooledArraySegment<byte>>();
 
                 tcp.OnRead((handle, buffer) =>
                 {
@@ -90,7 +90,7 @@ namespace MiningCore.JsonRpc
                         if (count == 0)
                             return;
 
-                        var buf = byteArrayPool.Rent(count);
+                        var buf = ByteArrayPool.Rent(count);
                         var prevIndex = 0;
                         var keepLease = false;
 
@@ -112,7 +112,7 @@ namespace MiningCore.JsonRpc
                                 if (found)
                                 {
                                     // fastpath
-                                    if (index + 1 == count && bufferQueue.Count == 0)
+                                    if (index + 1 == count && recvQueue.Count == 0)
                                     {
                                         observer.OnNext(new PooledArraySegment<byte>(buf, 0, index));
                                         keepLease = true;
@@ -120,12 +120,12 @@ namespace MiningCore.JsonRpc
                                     }
 
                                     // build buffer
-                                    var queuedLength = bufferQueue.Sum(x => x.Size);
+                                    var queuedLength = recvQueue.Sum(x => x.Size);
                                     var lineLength = queuedLength + index;
-                                    var line = byteArrayPool.Rent(lineLength);
+                                    var line = ByteArrayPool.Rent(lineLength);
                                     var offset = 0;
 
-                                    while(bufferQueue.TryDequeue(out var segment))
+                                    while(recvQueue.TryDequeue(out var segment))
                                     {
                                         using(segment)
                                         {
@@ -152,20 +152,20 @@ namespace MiningCore.JsonRpc
 
                                     if (fragmentLength > 0)
                                     {
-                                        var fragment = byteArrayPool.Rent(fragmentLength);
+                                        var fragment = ByteArrayPool.Rent(fragmentLength);
                                         Array.Copy(buf, prevIndex, fragment, 0, fragmentLength);
-                                        bufferQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, fragmentLength));
+                                        recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, fragmentLength));
                                     }
                                 }
 
                                 else
                                 {
-                                    bufferQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, count));
+                                    recvQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, count));
                                     keepLease = true;
                                 }
 
                                 // prevent flooding
-                                if (bufferQueue.Sum(x => x.Size) > MaxRequestLength)
+                                if (recvQueue.Sum(x => x.Size) > MaxRequestLength)
                                     throw new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}");
 
                                 break;
@@ -175,7 +175,7 @@ namespace MiningCore.JsonRpc
                         finally
                         {
                             if(!keepLease)
-                                byteArrayPool.Return(buf);
+                                ByteArrayPool.Return(buf);
                         }
                     }
                 }, (handle, ex) =>
@@ -189,16 +189,15 @@ namespace MiningCore.JsonRpc
                     observer.OnCompleted();
 
                     // release handles
-                    handle.CloseHandle();
-                    sendQueueDrainer.CloseHandle();
+                    handle.Dispose();
                     sendQueueDrainer.UserToken = null;
+                    sendQueueDrainer.Dispose();
 
-                    // empty sendqueue
+                    // empty queues
                     while (sendQueue.TryDequeue(out var fragment))
                         fragment.Dispose();
 
-                    // empty bufferqueue
-                    while (bufferQueue.TryDequeue(out var fragment))
+                    while (recvQueue.TryDequeue(out var fragment))
                         fragment.Dispose();
                 });
 
@@ -219,11 +218,14 @@ namespace MiningCore.JsonRpc
                 {
                     using(segment)
                     {
-                        using(var reader = new StreamReader(new MemoryStream(segment.Array, 0, segment.Size), encoding))
+                        using(var stream = new MemoryStream(segment.Array, 0, segment.Size))
                         {
-                            using(var jreader = new JsonTextReader(reader))
+                            using(var reader = new StreamReader(stream, Encoding))
                             {
-                                return serializer.Deserialize<JsonRpcRequest>(jreader);
+                                using(var jreader = new JsonTextReader(reader))
+                                {
+                                    return serializer.Deserialize<JsonRpcRequest>(jreader);
+                                }
                             }
                         }
                     }
@@ -243,7 +245,7 @@ namespace MiningCore.JsonRpc
             {
                 using(var stream = (RecyclableMemoryStream) streamManager.GetStream())
                 {
-                    using(var writer = new StreamWriter(stream, encoding, 0x400, true))
+                    using(var writer = new StreamWriter(stream, Encoding, 0x400, true))
                     {
                         serializer.Serialize(writer, payload);
                     }
@@ -252,10 +254,10 @@ namespace MiningCore.JsonRpc
                     stream.WriteByte(0xa);
 
                     // log it
-                    logger.Trace(() => $"[{ConnectionId}] Sending: {encoding.GetString(stream.GetBuffer(), 0, (int)stream.Length)}");
+                    logger.Trace(() => $"[{ConnectionId}] Sending: {Encoding.GetString(stream.GetBuffer(), 0, (int)stream.Length)}");
 
                     // copy buffer and queue up
-                    var buf = byteArrayPool.Rent((int) stream.Length);
+                    var buf = ByteArrayPool.Rent((int) stream.Length);
                     Array.Copy(stream.GetBuffer(), buf, stream.Length);
 
                     SendInternal(new PooledArraySegment<byte>(buf, 0, (int) stream.Length));
