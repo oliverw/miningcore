@@ -32,6 +32,7 @@ namespace MiningCore.Configuration
         LTC, // Litecoin
         DOGE, // Dogecoin,
         XMR, // Monero
+		GLT, // Globaltoken
         GRS, // GroestlCoin
         DGB, // Digibyte
         NMC, // Namecoin
