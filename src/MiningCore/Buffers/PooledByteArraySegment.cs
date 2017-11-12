@@ -25,7 +25,6 @@ namespace MiningCore.Buffers
 
         #region IDisposable
 
-        /// <inheritdoc />
         public void Dispose()
         {
             if (Array != null)

@@ -121,11 +121,16 @@ namespace MiningCore.Blockchain.Ethereum
             client.Context.IsAuthorized = manager.ValidateAddress(minerName);
             client.Context.MinerName = minerName;
             client.Context.WorkerName = workerName;
+
+            // respond
             client.Respond(client.Context.IsAuthorized, request.Id);
 
-            // send intial update
-            client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
-            client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
+            if(client.Context.IsAuthorized)
+            {
+                // send intial update
+                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+                client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
+            }
         }
 
         private async Task OnSubmitAsync(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)

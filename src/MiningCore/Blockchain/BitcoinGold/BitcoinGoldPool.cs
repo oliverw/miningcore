@@ -20,7 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash;
+using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -42,6 +44,12 @@ namespace MiningCore.Blockchain.BitcoinGold
             NotificationService notificationService) :
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
+        }
+
+        protected override BitcoinJobManager<BitcoinGoldJob, ZCashBlockTemplate> CreateJobManager()
+        {
+            return ctx.Resolve<BitcoinGoldJobManager>(
+                new TypedParameter(typeof(IExtraNonceProvider), new ZCashExtraNonceProvider()));
         }
     }
 }

@@ -133,7 +133,10 @@ namespace MiningCore
             builder.RegisterType<ZCashJobManager<ZCashJob>>()
                 .AsSelf();
 
-            builder.RegisterType<ZCashJobManager<BitcoinGoldJob>>()
+            //////////////////////
+            // Bitcoin Gold
+
+            builder.RegisterType<BitcoinGoldJobManager>()
                 .AsSelf();
 
             base.Load(builder);
