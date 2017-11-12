@@ -1,20 +1,20 @@
-﻿/*
+﻿/* 
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+associated documentation files (the "Software"), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial
+The above copyright notice and this permission notice shall be included in all copies or substantial 
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -46,21 +46,21 @@ namespace MiningCore.Payments
             IBlockRepository blockRepo,
             IShareRepository shareRepo,
             IBalanceRepository balanceRepo,
-            NotificationService notificationService)
+            IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(notificationSenders, nameof(notificationSenders));
 
             this.ctx = ctx;
             this.cf = cf;
             this.blockRepo = blockRepo;
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
-            this.notificationService = notificationService;
+            this.notificationSenders = notificationSenders;
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -68,7 +68,7 @@ namespace MiningCore.Payments
         private readonly IConnectionFactory cf;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly NotificationService notificationService;
+        private readonly IEnumerable<Meta<INotificationSender, NotificationSenderMetadataAttribute>> notificationSenders;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private ClusterConfig clusterConfig;
         private Thread thread;
@@ -76,7 +76,7 @@ namespace MiningCore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in clusterConfig.Pools)
+            foreach (var pool in clusterConfig.Pools)
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
@@ -96,7 +96,7 @@ namespace MiningCore.Payments
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
@@ -113,37 +113,37 @@ namespace MiningCore.Payments
 
             if (updatedBlocks.Any())
             {
-                foreach(var block in updatedBlocks.OrderBy(x => x.Created))
+                foreach (var block in updatedBlocks.OrderBy(x => x.Created))
                 {
                     logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
-                        switch(block.Status)
-                        {
-                            case BlockStatus.Confirmed:
-                                // blockchains that do not support block-reward payments via coinbase Tx
-                                // must generate balance records for all reward recipients instead
-                                var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+	                    switch (block.Status)
+	                    {
+							case BlockStatus.Confirmed:
+								// blockchains that do not support block-reward payments via coinbase Tx
+								// must generate balance records for all reward recipients instead
+								var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-                                // update share submitter balances through configured payout scheme
-                                await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
+								// update share submitter balances through configured payout scheme 
+								await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
 
-                                // finally update block status
-                                blockRepo.UpdateBlock(con, tx, block);
-                                break;
+								// finally update block status
+								blockRepo.UpdateBlock(con, tx, block);
+				                break;
 
-                            case BlockStatus.Orphaned:
-                                blockRepo.DeleteBlock(con, tx, block);
-                                break;
+							case BlockStatus.Orphaned:
+								blockRepo.DeleteBlock(con, tx, block);
+								break;
 
-                            case BlockStatus.Pending:
-                                if (!block.Effort.HasValue)
-                                    await CalculateBlockEffort(pool, block, handler);
+							case BlockStatus.Pending:
+								if (!block.Effort.HasValue)
+									await CalculateBlockEffort(pool, block, handler);
 
-                                blockRepo.UpdateBlock(con, tx, block);
-                                break;
-                        }
+								blockRepo.UpdateBlock(con, tx, block);
+			                    break;
+	                    }
                     });
                 }
             }
@@ -152,7 +152,7 @@ namespace MiningCore.Payments
                 logger.Info(() => $"No updated blocks for {pool.Id}");
         }
 
-        private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
+	    private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
         {
             var poolBalancesOverMinimum = cf.Run(con =>
                 balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
@@ -164,7 +164,7 @@ namespace MiningCore.Payments
                     await handler.PayoutAsync(poolBalancesOverMinimum);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     await NotifyPayoutFailureAsync(poolBalancesOverMinimum, pool, ex);
                     throw;
@@ -175,43 +175,59 @@ namespace MiningCore.Payments
                 logger.Info(() => $"No balances over configured minimum payout for pool {pool.Id}");
         }
 
-        private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
+        private async Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
         {
+            // admin notifications
             if (clusterConfig.Notifications?.Admin?.Enabled == true)
-                notificationService.NotifyAdmin("Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {pool.Coin.Type} from pool {pool.Id}: {ex.Message}");
-
-            return Task.FromResult(true);
-        }
-
-        private async Task CalculateBlockEffort(PoolConfig pool, Block block, IPayoutHandler handler)
-        {
-            // get share date-range
-            var from = DateTime.MinValue;
-            var to = block.Created;
-
-            // get last block for pool
-            var lastBlock = cf.Run(con => blockRepo.GetBlockBefore(con, pool.Id, new[]
             {
-                BlockStatus.Confirmed,
-                BlockStatus.Orphaned,
-                BlockStatus.Pending,
-            }, block.Created));
+                try
+                {
+                    var adminEmail = clusterConfig.Notifications.Admin.EmailAddress;
 
-            if (lastBlock != null)
-                from = lastBlock.Created;
+                    var emailSender = notificationSenders
+                        .Where(x => x.Metadata.NotificationType == NotificationType.Email)
+                        .Select(x => x.Value)
+                        .First();
 
-            // get combined diff of all shares for block
-            var accumulatedShareDiffForBlock = cf.Run(con =>
-                shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
+                    await emailSender.NotifyAsync(adminEmail, "Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {pool.Coin.Type} from pool {pool.Id}: {ex.Message}");
+                }
 
-            // handler has the final say
-            if (accumulatedShareDiffForBlock.HasValue)
-                await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
+                catch (Exception ex2)
+                {
+                    logger.Error(ex2);
+                }
+            }
         }
 
-        #region API-Surface
+	    private async Task CalculateBlockEffort(PoolConfig pool, Block block, IPayoutHandler handler)
+	    {
+			// get share date-range
+		    var from = DateTime.MinValue;
+		    var to = block.Created;
 
-        public void Configure(ClusterConfig clusterConfig)
+		    // get last block for pool
+		    var lastBlock = cf.Run(con => blockRepo.GetBlockBefore(con, pool.Id, new[]
+		    {
+			    BlockStatus.Confirmed,
+			    BlockStatus.Orphaned,
+			    BlockStatus.Pending,
+			}, block.Created));
+
+		    if (lastBlock != null)
+			    from = lastBlock.Created;
+
+			// get combined diff of all shares for block
+		    var accumulatedShareDiffForBlock = cf.Run(con => 
+				shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
+
+			// handler has the final say
+			if(accumulatedShareDiffForBlock.HasValue)
+				await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
+	    }
+
+		#region API-Surface
+
+		public void Configure(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
         }
@@ -225,14 +241,14 @@ namespace MiningCore.Payments
                 var interval = TimeSpan.FromSeconds(
                     clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
-                while(true)
+                while (true)
                 {
                     try
                     {
                         await ProcessPoolsAsync();
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                     }

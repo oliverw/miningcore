@@ -59,15 +59,12 @@ namespace MiningCore.Notifications
 
         public void NotifyAdmin(string subject, string msg)
         {
-            if (clusterConfig.Notifications?.Admin?.Enabled == true)
+            queue.Add(new QueuedNotification
             {
-                queue.Add(new QueuedNotification
-                {
-                    Category = NotificationCategory.Admin,
-                    Subject = subject,
-                    Msg = msg
-                });
-            }
+                Category = NotificationCategory.Admin,
+                Subject = subject,
+                Msg = msg
+            });
         }
 
         public void NotifyMiner(string subject, string msg, string recipient)
@@ -85,7 +82,7 @@ namespace MiningCore.Notifications
 
         private async Task SendNotificationAsync(QueuedNotification notification)
         {
-            foreach(var sender in notificationSenders)
+            foreach (var sender in notificationSenders)
             {
                 try
                 {
@@ -96,7 +93,7 @@ namespace MiningCore.Notifications
                         recipient = notification.Recipient;
                     else
                     {
-                        switch(sender.Metadata.NotificationType)
+                        switch (sender.Metadata.NotificationType)
                         {
                             case NotificationType.Email:
                                 recipient = adminEmail;
@@ -110,7 +107,7 @@ namespace MiningCore.Notifications
 
                     if (string.IsNullOrEmpty(recipient))
                     {
-                        logger.Warn(() => $"No recipient for {notification.Category.ToString().ToLower()}");
+                        logger.Warn(()=> $"No recipient for {notification.Category.ToString().ToLower()}");
                         continue;
                     }
 
@@ -118,7 +115,7 @@ namespace MiningCore.Notifications
                     await sender.Value.NotifyAsync(recipient, notification.Subject, notification.Msg);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex, $"Error sending notification using {sender.GetType().Name}");
                 }

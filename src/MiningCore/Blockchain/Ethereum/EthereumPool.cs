@@ -27,9 +27,7 @@ using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
-using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Configuration;
-using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
@@ -37,7 +35,6 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
 using MiningCore.Time;
-using MiningCore.Util;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Ethereum
@@ -121,16 +118,11 @@ namespace MiningCore.Blockchain.Ethereum
             client.Context.IsAuthorized = manager.ValidateAddress(minerName);
             client.Context.MinerName = minerName;
             client.Context.WorkerName = workerName;
-
-            // respond
             client.Respond(client.Context.IsAuthorized, request.Id);
 
-            if(client.Context.IsAuthorized)
-            {
-                // send intial update
-                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
-                client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
-            }
+            // send intial update
+            client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
+            client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
         }
 
         private async Task OnSubmitAsync(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
@@ -174,7 +166,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(Tuple.Create((object) client, share));
+                shareSubject.OnNext(Tuple.Create((object)client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -186,7 +178,7 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Context.Stats.ValidShares++;
             }
 
-            catch(StratumException ex)
+            catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
@@ -249,7 +241,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case EthereumStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -295,7 +287,7 @@ namespace MiningCore.Blockchain.Ethereum
                         return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                         return 0ul;
@@ -307,7 +299,7 @@ namespace MiningCore.Blockchain.Ethereum
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
             var result = Math.Ceiling(shares.Sum(share => share.Item2.Difficulty) / interval);
-            return (ulong) result;
+            return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient<EthereumWorkerContext> client, double newDiff)
@@ -330,16 +322,6 @@ namespace MiningCore.Blockchain.Ethereum
             await manager.UpdateNetworkStatsAsync();
 
             blockchainStats = manager.BlockchainStats;
-        }
-
-        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
-        {
-            base.Configure(poolConfig, clusterConfig);
-
-            // validate mandatory extra config
-            var extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
-            if (extraConfig?.CoinbasePassword == null)
-                logger.ThrowLogPoolStartupException("\"paymentProcessing.coinbasePassword\" pool-configuration property missing or empty (required for unlocking wallet during payment processing)");
         }
 
         #endregion // Overrides

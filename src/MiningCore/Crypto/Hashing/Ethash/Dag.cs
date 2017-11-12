@@ -29,12 +29,12 @@ namespace MiningCore.Crypto.Hashing.Ethash
         {
             var chars = new byte[512];
 
-            fixed(byte* data = chars)
+            fixed (byte* data = chars)
             {
                 if (LibMultihash.ethash_get_default_dirname(data, chars.Length))
                 {
                     int length;
-                    for(length = 0; length < chars.Length; length++)
+                    for (length = 0; length < chars.Length; length++)
                     {
                         if (data[length] == 0)
                             break;
@@ -62,7 +62,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             await Task.Run(() =>
             {
-                lock(genLock)
+                lock (genLock)
                 {
                     if (!isGenerated)
                     {
@@ -83,7 +83,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                                 return 0;
                             });
 
-                            if (handle == IntPtr.Zero)
+                            if(handle == IntPtr.Zero)
                                 throw new OutOfMemoryException("ethash_full_new IO or memory error");
 
                             logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
@@ -92,7 +92,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
                         finally
                         {
-                            if (light != IntPtr.Zero)
+                            if(light != IntPtr.Zero)
                                 LibMultihash.ethash_light_delete(light);
                         }
                     }
@@ -109,7 +109,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             var value = new LibMultihash.ethash_return_value();
 
-            fixed(byte* input = hash)
+            fixed (byte* input = hash)
             {
                 LibMultihash.ethash_full_compute(handle, input, nonce, ref value);
             }

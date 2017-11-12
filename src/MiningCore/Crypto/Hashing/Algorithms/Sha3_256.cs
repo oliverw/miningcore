@@ -35,11 +35,11 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 
             var result = new byte[32];
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
-                    LibMultihash.sha3_256(input, output, (uint) data.Length);
+                    LibMultihash.sha3_256(input, output, (uint)data.Length);
                 }
             }
 

@@ -60,7 +60,6 @@ namespace MiningCore.Api.Responses
 
         // Stats
         public PoolStats PoolStats { get; set; }
-
         public BlockchainStats NetworkStats { get; set; }
     }
 

@@ -42,7 +42,7 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task<EthereumShare> ProcessShareAsync(StratumClient<EthereumWorkerContext> worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
-            lock(workerNonces)
+            lock (workerNonces)
             {
                 RegisterNonce(worker, nonce);
             }
@@ -58,8 +58,10 @@ namespace MiningCore.Blockchain.Ethereum
             if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
+            // Parse the result instead of using the byte array constructor to ensure it ends up as positive integer
+            var resultValue = BigInteger.Parse("0" + resultBytes.ToHexString(), NumberStyles.HexNumber);
+
             // test if share meets at least workers current difficulty
-            var resultValue = BigInteger.Parse("00" + resultBytes.ToHexString(), NumberStyles.HexNumber);
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
@@ -86,7 +88,7 @@ namespace MiningCore.Blockchain.Ethereum
             // create share
             var share = new EthereumShare
             {
-                BlockHeight = (long) BlockTemplate.Height,
+                BlockHeight = (long)BlockTemplate.Height,
                 IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
                 Miner = worker.Context.MinerName,
                 Worker = worker.Context.WorkerName,

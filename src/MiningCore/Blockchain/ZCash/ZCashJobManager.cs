@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
-using MiningCore.Blockchain.ZCash.Configuration;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
-using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
-using MiningCore.Extensions;
-using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using NBitcoin;
@@ -20,13 +15,12 @@ using NBitcoin.DataEncoders;
 namespace MiningCore.Blockchain.ZCash
 {
     public class ZCashJobManager<TJob> : BitcoinJobManager<TJob, ZCashBlockTemplate>
-        where TJob : ZCashJob, new()
-    {
+	    where TJob : ZCashJob, new()
+	{
         public ZCashJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
-            IExtraNonceProvider extraNonceProvider) : base(ctx, notificationService, clock, extraNonceProvider)
+            IExtraNonceProvider extraNonceProvider) : base(ctx, clock, extraNonceProvider)
         {
             getBlockTemplateParams = new object[]
             {
@@ -36,20 +30,6 @@ namespace MiningCore.Blockchain.ZCash
                 }
             };
         }
-
-        private ZCashPoolConfigExtra poolExtraConfig;
-
-        #region Overrides of JobManagerBase<TJob>
-
-        /// <inheritdoc />
-        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
-        {
-            poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
-
-            base.Configure(poolConfig, clusterConfig);
-        }
-
-        #endregion
 
         public override async Task<bool> ValidateAddressAsync(string address)
         {
@@ -61,7 +41,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // handle z-addr
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
-                ZCashCommands.ZValidateAddress, new[] { address });
+                ZCashCommands.ZValidateAddress, new[] {address});
 
             return result.Response != null && result.Response.IsValid;
         }
@@ -127,7 +107,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ZCashJob job;
 
-            lock(jobLock)
+            lock (jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }

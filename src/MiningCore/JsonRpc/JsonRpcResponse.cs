@@ -60,7 +60,7 @@ namespace MiningCore.JsonRpc
             Error = ex;
             Id = id;
 
-            if (result != null)
+            if(result != null)
                 Result = JToken.FromObject(result);
         }
 

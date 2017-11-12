@@ -111,7 +111,7 @@ namespace MiningCore.DaemonInterface
                 await Task.WhenAll(tasks);
             }
 
-            catch(Exception)
+            catch (Exception)
             {
                 // ignored
             }
@@ -139,7 +139,7 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null,
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null, 
             JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
@@ -197,7 +197,7 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload,
+        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload, 
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             var rpcRequestId = GetRequestId();
@@ -228,7 +228,7 @@ namespace MiningCore.DaemonInterface
             var response = await httpClient.SendAsync(request);
 
             // check success
-            if (!response.IsSuccessStatusCode)
+            if(!response.IsSuccessStatusCode)
                 throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
 
             // read response
@@ -283,7 +283,7 @@ namespace MiningCore.DaemonInterface
         {
             string rpcRequestId;
 
-            lock(random)
+            lock (random)
             {
                 rpcRequestId = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + random.Next(10)).ToString();
             }
