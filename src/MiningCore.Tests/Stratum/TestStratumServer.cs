@@ -12,6 +12,7 @@ using Autofac;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Stratum;
+using MiningCore.Tests.Util;
 using NLog;
 
 namespace MiningCore.Tests.Stratum
@@ -19,7 +20,7 @@ namespace MiningCore.Tests.Stratum
     public class TestStratumServer : StratumServer<WorkerContextBase>,
         IDisposable
     {
-        public TestStratumServer() : base(ModuleInitializer.Container.Resolve<IComponentContext>())
+        public TestStratumServer() : base(ModuleInitializer.Container.Resolve<IComponentContext>(), new MockMasterClock())
         {
             Connects = connectSubject.AsObservable();
             Disconnects = disconnectSubject.AsObservable();
