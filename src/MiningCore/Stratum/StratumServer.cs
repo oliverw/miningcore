@@ -21,17 +21,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
+using MiningCore.Buffers;
 using MiningCore.JsonRpc;
+using MiningCore.Time;
 using MiningCore.Util;
 using NetUV.Core.Handles;
 using NetUV.Core.Native;
@@ -43,17 +47,20 @@ namespace MiningCore.Stratum
 {
     public abstract class StratumServer<TClientContext>
     {
-        protected StratumServer(IComponentContext ctx)
+        protected StratumServer(IComponentContext ctx, IMasterClock clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(clock, nameof(clock));
 
             this.ctx = ctx;
+            this.clock = clock;
         }
 
         protected readonly Dictionary<string, StratumClient<TClientContext>> clients =
             new Dictionary<string, StratumClient<TClientContext>>();
 
         protected readonly IComponentContext ctx;
+        protected readonly IMasterClock clock;
         protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
@@ -141,30 +148,27 @@ namespace MiningCore.Stratum
                 client.Init(loop, con, ctx, endpointConfig, connectionId);
 
                 // request subscription
-                var sub = client.Requests
-                    .Do(x => logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request {x.Value.Method} [{x.Value.Id}]"))
-                    .Select(tsRequest => Observable.FromAsync(() => Task.Run(() => // get off of LibUV event-loop-thread immediately
+                var sub = client.Received
+                    .Select(data => Observable.FromAsync(() => Task.Run(() => // get off of LibUV event-loop-thread immediately
                     {
-                        var request = tsRequest.Value;
+                        // boot pre-connected clients
+                        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                        {
+                            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                            DisconnectClient(client);
+                            data.Dispose();
+                            return Unit.Default;
+                        }
+
+                        // parse request
+                        var request = ParseRequest(data);
+
                         logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request {request.Method} [{request.Id}]");
 
-                        try
-                        {
-                            // boot pre-connected clients
-                            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
-                            {
-                                logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
-                                DisconnectClient(client);
-                                return;
-                            }
+                        // dispatch request
+                        OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
 
-                            OnRequestAsync(client, tsRequest).Wait();
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Error(ex, () => $"Error handling request: {request.Method}");
-                        }
+                        return Unit.Default;
                     })))
                     .Concat()
                     .Subscribe(_ => { }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
@@ -191,6 +195,23 @@ namespace MiningCore.Stratum
             catch(Exception ex)
             {
                 logger.Error(ex, () => nameof(OnClientConnected));
+            }
+        }
+
+        private JsonRpcRequest ParseRequest(PooledArraySegment<byte> data)
+        {
+            using (data)
+            {
+                using (var stream = new MemoryStream(data.Array, 0, data.Size))
+                {
+                    using (var reader = new StreamReader(stream, StratumClient<TClientContext>.Encoding))
+                    {
+                        using (var jreader = new JsonTextReader(reader))
+                        {
+                            return StratumClient<TClientContext>.Serializer.Deserialize<JsonRpcRequest>(jreader);
+                        }
+                    }
+                }
             }
         }
 

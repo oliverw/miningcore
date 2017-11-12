@@ -114,8 +114,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             // extract worker/miner
             var split = workerValue?.Split('.');
-            var minerName = split?.FirstOrDefault();
-            var workerName = split?.LastOrDefault();
+            var minerName = split?.FirstOrDefault()?.Trim();
+            var workerName = split?.LastOrDefault()?.Trim();
 
             // assumes that workerName is an address
             client.Context.IsAuthorized = manager.ValidateAddress(minerName);

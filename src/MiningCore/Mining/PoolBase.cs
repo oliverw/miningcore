@@ -56,21 +56,19 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            NotificationService notificationService) : base(ctx)
+            NotificationService notificationService) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
-            Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.clock = clock;
             this.notificationService = notificationService;
 
             Shares = shareSubject
@@ -83,7 +81,6 @@ namespace MiningCore.Mining
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
-        protected readonly IMasterClock clock;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
@@ -192,7 +189,7 @@ namespace MiningCore.Mining
 
         private void EnsureNoZombieClient(StratumClient<TWorkerContext> client)
         {
-            var isAlive = client.Requests
+            var isAlive = client.Received
                 .Take(1)
                 .Select(_ => true);
 

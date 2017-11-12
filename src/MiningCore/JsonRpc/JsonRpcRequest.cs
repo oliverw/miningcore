@@ -33,14 +33,6 @@ namespace MiningCore.JsonRpc
         public JsonRpcRequest(string method, object parameters, object id) : base(method, parameters, id)
         {
         }
-
-        public TParam ParamsAs<TParam>() where TParam : class
-        {
-            if (Params is JToken token)
-                return token.ToObject<TParam>();
-
-            return (TParam)Params;
-        }
     }
 
     [JsonObject(MemberSerialization.OptIn)]
@@ -64,9 +56,17 @@ namespace MiningCore.JsonRpc
         public string Method { get; set; }
 
         [JsonProperty("params")]
-        public T Params { get; set; }
+        public object Params { get; set; }
 
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public object Id { get; set; }
+
+        public TParam ParamsAs<TParam>() where TParam : class
+        {
+            if (Params is JToken)
+                return ((JToken)Params)?.ToObject<TParam>();
+
+            return (TParam)Params;
+        }
     }
 }

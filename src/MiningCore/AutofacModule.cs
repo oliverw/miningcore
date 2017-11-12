@@ -63,9 +63,6 @@ namespace MiningCore
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
-            builder.RegisterType<JsonRpcConnection>()
-                .AsSelf();
-
             builder.RegisterType<PayoutManager>()
                 .AsSelf()
                 .SingleInstance();
