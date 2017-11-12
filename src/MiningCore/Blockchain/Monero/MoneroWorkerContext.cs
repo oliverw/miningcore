@@ -35,7 +35,7 @@ namespace MiningCore.Blockchain.Monero
         {
             ValidJobs.Add(job);
 
-            while (ValidJobs.Count > 4)
+            while(ValidJobs.Count > 4)
                 ValidJobs.RemoveAt(0);
         }
     }

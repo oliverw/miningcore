@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -55,23 +55,23 @@ namespace MiningCore.Mining
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-			IMasterClock clock,
-			NotificationService notificationService) : base(ctx)
+            IMasterClock clock,
+            NotificationService notificationService) : base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
-	        Contract.RequiresNonNull(clock, nameof(clock));
-			Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-	        this.clock = clock;
-			this.notificationService = notificationService;
+            this.clock = clock;
+            this.notificationService = notificationService;
 
             Shares = shareSubject
                 .Synchronize();
@@ -82,25 +82,27 @@ namespace MiningCore.Mining
         protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
-	    protected readonly IMapper mapper;
-	    protected readonly IMasterClock clock;
-		protected readonly CompositeDisposable disposables = new CompositeDisposable();
+        protected readonly IMapper mapper;
+        protected readonly IMasterClock clock;
+        protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 32;
-	    protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(30);
-		protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
+        protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
+        protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
+
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
+
         protected override string LogCat => "Pool";
 
         protected abstract Task SetupJobManager();
-		
+
         protected override void OnConnect(StratumClient<TWorkerContext> client)
         {
             // update stats
-            lock (clients)
+            lock(clients)
             {
                 poolStats.ConnectedMiners = clients.Count;
             }
@@ -116,7 +118,7 @@ namespace MiningCore.Mining
             if (context.VarDiff != null)
             {
                 // get or create manager
-                lock (varDiffManagers)
+                lock(varDiffManagers)
                 {
                     if (!varDiffManagers.TryGetValue(poolEndpoint, out var varDiffManager))
                     {
@@ -126,10 +128,10 @@ namespace MiningCore.Mining
                 }
 
                 // wire updates
-                lock (context.VarDiff)
+                lock(context.VarDiff)
                 {
                     context.VarDiff.Subscription = Shares
-                        .Where(x=> x.Item1 == client)
+                        .Where(x => x.Item1 == client)
                         .Timestamp()
                         .Select(x => x.Timestamp.ToUnixTimeMilliseconds())
                         .Buffer(TimeSpan.FromSeconds(poolEndpoint.VarDiff.RetargetTime), VarDiffSampleCount)
@@ -139,7 +141,7 @@ namespace MiningCore.Mining
                             {
                                 VarDiffManager varDiffManager;
 
-                                lock (varDiffManagers)
+                                lock(varDiffManagers)
                                 {
                                     varDiffManager = varDiffManagers[poolEndpoint];
                                 }
@@ -154,7 +156,7 @@ namespace MiningCore.Mining
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(ex);
                             }
@@ -170,7 +172,7 @@ namespace MiningCore.Mining
         {
             if (client.Context.VarDiff != null)
             {
-                lock (client.Context.VarDiff)
+                lock(client.Context.VarDiff)
                 {
                     client.Context.VarDiff.Dispose();
                 }
@@ -182,7 +184,7 @@ namespace MiningCore.Mining
         protected override void OnDisconnect(string subscriptionId)
         {
             // update stats
-            lock (clients)
+            lock(clients)
             {
                 poolStats.ConnectedMiners = clients.Count;
             }
@@ -238,7 +240,7 @@ namespace MiningCore.Mining
                     {
                         await UpdateBlockChainStatsAsync();
                     }
-                    catch (Exception)
+                    catch(Exception)
                     {
                         // ignored
                     }
@@ -265,7 +267,7 @@ namespace MiningCore.Mining
                 });
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to persist pool stats");
             }
@@ -333,7 +335,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             {
                 var sharesByMiner = shares.GroupBy(x => x.Item2.Miner);
 
-                foreach (var minerShares in sharesByMiner)
+                foreach(var minerShares in sharesByMiner)
                 {
                     // Total hashrate
                     var miner = minerShares.Key;
@@ -352,26 +354,23 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                         .GroupBy(x => x.Item2.Worker)
                         .Where(x => !string.IsNullOrEmpty(x.Key));
 
-                    foreach (var workerShares in sharesPerWorker)
+                    foreach(var workerShares in sharesPerWorker)
                     {
                         var worker = workerShares.Key;
                         hashRate = HashrateFromShares(workerShares, interval);
 
-                        if(sample.WorkerHashrates == null)
+                        if (sample.WorkerHashrates == null)
                             sample.WorkerHashrates = new Dictionary<string, ulong>();
 
                         sample.WorkerHashrates[worker] = hashRate;
                     }
 
                     // Persist
-                    cf.RunTx((con, tx) =>
-                    {
-                        statsRepo.RecordMinerHashrateSample(con, tx, sample);
-                    });
+                    cf.RunTx((con, tx) => { statsRepo.RecordMinerHashrateSample(con, tx, sample); });
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
             }
@@ -417,13 +416,13 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                 OutputPoolInfo();
             }
 
-            catch (PoolStartupAbortException)
+            catch(PoolStartupAbortException)
             {
                 // just forward these
                 throw;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
                 throw;

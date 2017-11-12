@@ -43,14 +43,12 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
         /// The amount of the fee in BTC
         /// </summary>
         public decimal Fee { get; set; }
-
     }
 
     public class CoinbaseAux
     {
         public string Flags { get; set; }
     }
-
 
     public class BlockTemplate
     {

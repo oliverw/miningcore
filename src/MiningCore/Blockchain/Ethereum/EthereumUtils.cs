@@ -10,7 +10,7 @@ namespace MiningCore.Blockchain.Ethereum
             // convert network
             if (int.TryParse(netVersionResponse, out var netWorkTypeInt))
             {
-                networkType = (EthereumNetworkType)netWorkTypeInt;
+                networkType = (EthereumNetworkType) netWorkTypeInt;
 
                 if (!Enum.IsDefined(typeof(EthereumNetworkType), networkType))
                     networkType = EthereumNetworkType.Unknown;
@@ -22,13 +22,13 @@ namespace MiningCore.Blockchain.Ethereum
             // convert chain
             if (!Enum.TryParse(parityChainResponse, true, out chainType))
             {
-                if(parityChainResponse.ToLower() == "ethereum classic")
+                if (parityChainResponse.ToLower() == "ethereum classic")
                     chainType = ParityChainType.Classic;
                 else
                     chainType = ParityChainType.Unknown;
             }
 
-            if(chainType == ParityChainType.Foundation)
+            if (chainType == ParityChainType.Foundation)
                 chainType = ParityChainType.Mainnet;
         }
     }

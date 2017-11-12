@@ -10,7 +10,7 @@ namespace MiningCore.Blockchain.Bitcoin
 {
     public class BitcoinCoinProperties
     {
-        public BitcoinCoinProperties(double shareMultiplier,  IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher,
+        public BitcoinCoinProperties(double shareMultiplier, IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher,
             IHashAlgorithm blockHasher, IHashAlgorithm posblockHasher = null)
         {
             ShareMultiplier = shareMultiplier;
@@ -92,8 +92,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // Equihash
             { CoinType.ZEC, equihashCoin },
-	        { CoinType.BTG, equihashCoin },
-		};
+            { CoinType.BTG, equihashCoin },
+        };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
         {
@@ -108,7 +108,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch (algorithm)
+            switch(algorithm)
             {
                 case "sha256d":
                     return sha256Coin;
@@ -123,7 +123,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 case "groestl-myriad":
                     return groestlMyriadCoin;
 
-                default:    // scrypt
+                default: // scrypt
                     return scryptCoin;
             }
         }

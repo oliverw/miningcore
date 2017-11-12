@@ -20,11 +20,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.ZCash.Configuration;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using MiningCore.Util;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.ZCash
@@ -41,6 +44,18 @@ namespace MiningCore.Blockchain.ZCash
             NotificationService notificationService) :
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
+        }
+
+        private ZCashPoolConfigExtra extraConfig;
+
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            base.Configure(poolConfig, clusterConfig);
+
+            extraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+
+            if (string.IsNullOrEmpty(extraConfig?.ZAddress))
+                logger.ThrowLogPoolStartupException($"Pool z-address is not configured", LogCat);
         }
     }
 }

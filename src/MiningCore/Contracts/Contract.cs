@@ -36,7 +36,7 @@ namespace MiningCore.Contracts
             if (!predicate)
             {
                 var constructor = constructors.GetOrAdd(typeof(TException), CreateConstructor);
-                throw constructor(new object[] {message});
+                throw constructor(new object[] { message });
             }
         }
 
@@ -56,7 +56,7 @@ namespace MiningCore.Contracts
         private static ConstructorDelegate CreateConstructor(Type type)
         {
             // Get the constructor info for these parameters
-            var parameters = new[] {typeof(string)};
+            var parameters = new[] { typeof(string) };
             var constructorInfo = type.GetTypeInfo().DeclaredConstructors.First(
                 x => x.GetParameters().Length == 1 && x.GetParameters().First().ParameterType == typeof(string));
             var paramExpr = Expression.Parameter(typeof(object[]));

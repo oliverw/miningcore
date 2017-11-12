@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -52,43 +53,41 @@ namespace MiningCore.Blockchain.ZCash
         protected byte[] merkleRoot;
         protected byte[] merkleRootReversed;
         protected string merkleRootReversedHex;
-        protected static EquihashVerifier equihash = new EquihashVerifier(4);
+        protected EquihashSolver equihash = EquihashSolver.Instance.Value;
 
         #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
-
             var tx = new Transaction();
 
             if (coinbaseTxConfig.PayFoundersReward &&
                 (coinbaseTxConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
-                 coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0))
+                    coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0))
             {
                 // founders or treasury reward?
                 if (coinbaseTxConfig.TreasuryRewardStartBlockHeight > 0 &&
                     BlockTemplate.Height >= coinbaseTxConfig.TreasuryRewardStartBlockHeight)
                 {
                     // pool reward (t-addr)
-                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, poolAddressDestination);
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(rewardToPool, poolAddressDestination);
 
                     // treasury reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
-                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
 
                 else
                 {
                     // pool reward (t-addr)
-                    var amount = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, poolAddressDestination);
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (coinbaseTxConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    tx.AddOutput(rewardToPool, poolAddressDestination);
 
                     // founders reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetFoundersRewardAddress());
-                    amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (coinbaseTxConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
                     tx.AddOutput(amount, destination);
                 }
             }
@@ -97,33 +96,21 @@ namespace MiningCore.Blockchain.ZCash
             {
                 // no founders reward
                 // pool reward (t-addr)
-                var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-                tx.AddOutput(amount, poolAddressDestination);
+                rewardToPool = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
+                tx.AddOutput(rewardToPool, poolAddressDestination);
             }
 
             return tx;
         }
 
-        protected override void BuildMerkleBranches()
-        {
-            var transactionHashes = BlockTemplate.Transactions
-                .Select(tx => tx.Hash
-                    .HexToByteArray()
-                    .Reverse()
-                    .ToArray())
-                .ToArray();
-
-            mt = new MerkleTree(transactionHashes);
-        }
-
         protected override void BuildCoinbase()
         {
-            var script = TxIn.CreateCoinbase((int)BlockTemplate.Height).ScriptSig;
+            var script = TxIn.CreateCoinbase((int) BlockTemplate.Height).ScriptSig;
 
             // output transaction
             txOut = CreateOutputTransaction();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -149,21 +136,6 @@ namespace MiningCore.Blockchain.ZCash
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
                 coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
             }
-        }
-
-        public override object GetJobParams(bool isNew)
-        {
-            return new object[]
-            {
-                JobId,
-                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
-                previousBlockHashReversedHex,
-                merkleRootReversedHex,
-                sha256Empty.ToHexString(),	// hashReserved
-                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ToReverseArray().ToHexString(),
-                isNew
-            };
         }
 
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
@@ -193,7 +165,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
+            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber));
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
@@ -205,7 +177,7 @@ namespace MiningCore.Blockchain.ZCash
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ToReverseArray()
+                .ReverseArray()
                 .ToHexString();
 
             blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
@@ -223,11 +195,27 @@ namespace MiningCore.Blockchain.ZCash
             rewardFees = blockTemplate.Transactions.Sum(x => x.Fee);
 
             BuildCoinbase();
-            BuildMerkleBranches();
 
-            merkleRoot = mt.WithFirst(coinbaseInitialHash.ToReverseArray());
-            merkleRootReversed = merkleRoot.ToReverseArray();
+            // build tx hashes
+            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
+
+            // build merkle root
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
+            merkleRootReversed = merkleRoot.ReverseArray();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
+
+            jobParams = new object[]
+            {
+                JobId,
+                BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
+                previousBlockHashReversedHex,
+                merkleRootReversedHex,
+                sha256Empty.ToHexString(), // hashReserved
+                BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
+                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
+                false
+            };
         }
 
         #endregion
@@ -243,8 +231,8 @@ namespace MiningCore.Blockchain.ZCash
             if (nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
-            var nTimeInt = uint.Parse(nTime.HexToByteArray().ToReverseArray().ToHexString(), NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
+            var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = worker.Context.ExtraNonce1 + extraNonce2;
@@ -268,7 +256,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             var blockHeader = new ZCashBlockHeader
             {
-                Version = (int)BlockTemplate.Version,
+                Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -285,7 +273,7 @@ namespace MiningCore.Blockchain.ZCash
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -308,16 +296,16 @@ namespace MiningCore.Blockchain.ZCash
             var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
 
             // verify solution
-            if(!equihash.Verify(headerBytes, solutionBytes.Skip(3).ToArray()))	// skip preamble (3 bytes)
+            if (!equihash.Verify(headerBytes, solutionBytes.Skip(3).ToArray())) // skip preamble (3 bytes)
                 throw new StratumException(StratumError.Other, "invalid solution");
 
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
-            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong)nTime);
-            var headerValue = BigInteger.Parse("0" + headerHash.ToReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
+            var headerValue = BigInteger.Parse("00" + headerHash.ReverseArray().ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
-            var shareDiff = (double)new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
+            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -361,12 +349,15 @@ namespace MiningCore.Blockchain.ZCash
 
         protected bool RegisterSubmit(string nonce, string solution)
         {
-            var key = nonce + solution;
-            if (submissions.Contains(key))
-                return false;
+            lock(submissions)
+            {
+                var key = nonce + solution;
+                if (submissions.Contains(key))
+                    return false;
 
-            submissions.Add(key);
-            return true;
+                submissions.Add(key);
+                return true;
+            }
         }
 
         public string GetFoundersRewardAddress()
@@ -382,7 +373,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected string GetTreasuryRewardAddress()
         {
-            var index = (int)Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
+            var index = (int) Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
                 coinbaseTxConfig.TreasuryRewardAddressChangeInterval % coinbaseTxConfig.TreasuryRewardAddresses.Length);
 
             var address = coinbaseTxConfig.FoundersRewardAddresses[index];

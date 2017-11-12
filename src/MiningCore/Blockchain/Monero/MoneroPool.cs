@@ -159,7 +159,7 @@ namespace MiningCore.Blockchain.Monero
             };
 
             // update context
-            lock (client.Context)
+            lock(client.Context)
             {
                 client.Context.AddJob(job);
             }
@@ -197,7 +197,7 @@ namespace MiningCore.Blockchain.Monero
 
                 MoneroWorkerJob job;
 
-                lock (client.Context)
+                lock(client.Context)
                 {
                     var jobId = submitRequest?.JobId;
 
@@ -209,7 +209,7 @@ namespace MiningCore.Blockchain.Monero
                 // dupe check
                 var nonceLower = submitRequest.Nonce.ToLower();
 
-                lock (job)
+                lock(job)
                 {
                     if (job.Submissions.Contains(nonceLower))
                         throw new StratumException(StratumError.MinusOne, "duplicate share");
@@ -235,13 +235,13 @@ namespace MiningCore.Blockchain.Monero
                 client.Context.Stats.ValidShares++;
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
                 // update client stats
                 client.Context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 if (poolConfig.Banning?.Enabled == true)
@@ -298,7 +298,7 @@ namespace MiningCore.Blockchain.Monero
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case MoneroStratumMethods.Login:
                     OnLogin(client, tsRequest);
@@ -345,7 +345,7 @@ namespace MiningCore.Blockchain.Monero
                         return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                         return 0ul;
@@ -357,7 +357,7 @@ namespace MiningCore.Blockchain.Monero
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
         {
             var result = Math.Ceiling(shares.Sum(share => share.Item2.Difficulty) / interval);
-            return (ulong)result;
+            return (ulong) result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient<MoneroWorkerContext> client, double newDiff)

@@ -33,9 +33,9 @@ namespace MiningCore.Mining
 
     public class WorkerContextBase
     {
-		private double? pendingDifficulty;
+        private double? pendingDifficulty;
 
-		public BanningStats Stats { get; set; }
+        public BanningStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }
         public DateTime LastActivity { get; set; }
         public bool IsAuthorized { get; set; } = false;

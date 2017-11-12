@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -75,18 +75,21 @@ namespace MiningCore.Payments.PayoutSchemes
             // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
             var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
-            // calculate rewards 
+            // calculate rewards
             var shares = new Dictionary<string, ulong>();
             var rewards = new Dictionary<string, decimal>();
             var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
 
             // update balances
-            foreach (var address in rewards.Keys)
+            foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
-                logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
-                balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                if (amount > 0)
+                {
+                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                }
             }
 
             // delete obsolete shares
@@ -105,7 +108,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
-            if(totalRewards > 0)
+            if (totalRewards > 0)
                 logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward)");
 
             return Task.FromResult(true);
@@ -123,7 +126,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
 
-            while (!done)
+            while(!done)
             {
                 // fetch next page
                 var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize));
@@ -134,7 +137,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 // iterate over shares
                 var start = Math.Max(0, blockPage.Length - 1);
 
-                for (var i = start; !done && i >= 0; i--)
+                for(var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
 
@@ -168,11 +171,14 @@ namespace MiningCore.Payments.PayoutSchemes
                     if (blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-                    // accumulate miner reward
-                    if (!rewards.ContainsKey(address))
-                        rewards[address] = reward;
-                    else
-                        rewards[address] += reward;
+                    if (reward > 0)
+                    {
+                        // accumulate miner reward
+                        if (!rewards.ContainsKey(address))
+                            rewards[address] = reward;
+                        else
+                            rewards[address] += reward;
+                    }
                 }
             }
 

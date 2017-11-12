@@ -1,20 +1,20 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
@@ -43,8 +43,8 @@ namespace MiningCore.Payments
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
-            IPaymentRepository paymentRepo, 
-			IMasterClock clock,
+            IPaymentRepository paymentRepo,
+            IMasterClock clock,
             NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -53,13 +53,13 @@ namespace MiningCore.Payments
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
-	        Contract.RequiresNonNull(clock, nameof(clock));
-			Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
-	        this.clock = clock;
-			this.shareRepo = shareRepo;
+            this.clock = clock;
+            this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
             this.paymentRepo = paymentRepo;
@@ -74,8 +74,8 @@ namespace MiningCore.Payments
         protected readonly IMapper mapper;
         protected readonly IPaymentRepository paymentRepo;
         protected readonly IShareRepository shareRepo;
-	    protected readonly IMasterClock clock;
-		protected readonly NotificationService notificationService;
+        protected readonly IMasterClock clock;
+        protected readonly NotificationService notificationService;
         protected ClusterConfig clusterConfig;
         private Policy faultPolicy;
 
@@ -108,7 +108,7 @@ namespace MiningCore.Payments
                 {
                     cf.RunTx((con, tx) =>
                     {
-                        foreach (var balance in balances)
+                        foreach(var balance in balances)
                         {
                             if (!string.IsNullOrEmpty(transactionConfirmation))
                             {
@@ -135,10 +135,10 @@ namespace MiningCore.Payments
                 });
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
-                                       $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
+                    $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
             }
         }
@@ -158,10 +158,10 @@ namespace MiningCore.Payments
                 var txInfo = string.Join(", ", txHashes);
 
                 if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out var baseUrl))
-                    txInfo = string.Join(", ", txHashes.Select(txHash=> $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
+                    txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
                 notificationService.NotifyAdmin(
-                    "Payout Success Notification", 
+                    "Payout Success Notification",
                     $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
             }
         }
@@ -172,7 +172,7 @@ namespace MiningCore.Payments
             if (clusterConfig.Notifications?.Admin?.Enabled == true)
             {
                 notificationService.NotifyAdmin(
-                    "Payout Failure Notification", 
+                    "Payout Failure Notification",
                     $"Failed to pay out {balances.Sum(x => x.Amount)} {poolConfig.Coin.Type} from pool {poolConfig.Id}: {error ?? ex?.Message}");
             }
         }

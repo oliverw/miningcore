@@ -98,7 +98,7 @@ namespace MiningCore.Configuration
 
             RuleFor(j => j.VarDiff)
                 .SetValidator(new VarDiffConfigValidator())
-                .When(x=> x.VarDiff != null);
+                .When(x => x.VarDiff != null);
         }
     }
 
@@ -122,8 +122,8 @@ namespace MiningCore.Configuration
         public VarDiffConfigValidator()
         {
             RuleFor(j => j.MaxDiff)
-                .GreaterThanOrEqualTo(x=> x.MinDiff)
-                .When(x=> x.MaxDiff.HasValue)
+                .GreaterThanOrEqualTo(x => x.MinDiff)
+                .When(x => x.MaxDiff.HasValue)
                 .WithMessage("VarDiff: max value must be greater or equal min value");
 
             RuleFor(j => j.VariancePercent)
@@ -172,8 +172,8 @@ namespace MiningCore.Configuration
                 .WithMessage("Pool: Invalid stratum port number {port}");
 
             RuleFor(j => j.Ports.Values)
-                .SetCollectionValidator(x=> new PoolEndpointValidator())
-                .When(x=> x.Ports != null);
+                .SetCollectionValidator(x => new PoolEndpointValidator())
+                .When(x => x.Ports != null);
 
             RuleFor(j => j.Address)
                 .NotNull()
@@ -230,7 +230,7 @@ namespace MiningCore.Configuration
                         .GroupBy(x => x)
                         .ToArray();
 
-                    foreach (var port in ports)
+                    foreach(var port in ports)
                     {
                         if (port.Count() > 1)
                         {
