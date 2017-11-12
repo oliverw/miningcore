@@ -245,7 +245,7 @@ namespace MiningCore.Stratum
                                     }
 
                                     // append latest buffer
-                                    Array.Copy(buf, 0, line, offset, index);
+                                    Array.Copy(buf, prevIndex, line, offset, index - prevIndex);
 
                                     // emit
                                     observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));

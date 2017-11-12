@@ -160,6 +160,8 @@ namespace MiningCore.Stratum
                             return Unit.Default;
                         }
 
+                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumClient<TClientContext>.Encoding.GetString(data.Array, 0, data.Size)}");
+
                         // parse request
                         var request = ParseRequest(data);
 
