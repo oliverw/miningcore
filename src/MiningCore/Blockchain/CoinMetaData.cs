@@ -18,6 +18,7 @@ namespace MiningCore.Blockchain
             { CoinType.ZEC, "https://explorer.zcha.in/blocks/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/block/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/b/{0}" },
+			{ CoinType.GLT, "https://bchain.info/GLT/block/{0}" },
             { CoinType.GRS, "https://bchain.info/GRS/block/{0}" },
             { CoinType.MONA, "https://bchain.info/MONA/block/{0}" },
         };
@@ -35,6 +36,7 @@ namespace MiningCore.Blockchain
             { CoinType.ZEC, "https://explorer.zcha.in/transactions/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/tx/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
+			{ CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
             { CoinType.GRS, "https://bchain.info/GRS/tx/{0}" },
             { CoinType.MONA, "https://bchain.info/MONA/tx/{0}" },
         };
