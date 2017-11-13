@@ -109,9 +109,14 @@ namespace MiningCore.Blockchain.Bitcoin
             // extract worker/miner
             var split = workerValue?.Split('.');
             var minerName = split?.FirstOrDefault();
+            var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
             client.Context.IsAuthorized = await manager.ValidateAddressAsync(minerName);
+            client.Context.MinerName = minerName;
+            client.Context.WorkerName = workerName;
+
+            // respond
             client.Respond(client.Context.IsAuthorized, request.Id);
 
             // log association

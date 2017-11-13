@@ -20,18 +20,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using MiningCore.Blockchain.Monero.DaemonResponses;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NBitcoin.BouncyCastle.Math;
-using Newtonsoft.Json;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Monero
