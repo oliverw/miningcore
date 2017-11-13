@@ -115,6 +115,9 @@ namespace MiningCore.Blockchain.Monero
             };
 
             client.Respond(loginResponse, request.Id);
+
+            // log association
+            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {loginRequest.Login} = {client.RemoteEndpoint.Address}");
         }
 
         private void OnGetJob(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)

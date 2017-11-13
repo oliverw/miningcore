@@ -113,6 +113,9 @@ namespace MiningCore.Blockchain.Bitcoin
             // assumes that workerName is an address
             client.Context.IsAuthorized = await manager.ValidateAddressAsync(minerName);
             client.Respond(client.Context.IsAuthorized, request.Id);
+
+            // log association
+            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
         }
 
         protected virtual async Task OnSubmitAsync(StratumClient<BitcoinWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)

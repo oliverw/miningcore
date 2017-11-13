@@ -131,6 +131,9 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
                 client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
+
+            // log association
+            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
         }
 
         private async Task OnSubmitAsync(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
