@@ -35,7 +35,6 @@
             "database": "miningcore"
         }
     },
-    "devDonation": 0.1,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
@@ -49,9 +48,8 @@
         },
         "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
         "rewardRecipients": [{
-            "type": "op",
             "address": "LUWYwkz6DQLVeqJqHRtGjNhWUxBvBmE3SX",
-            "percentage": 0
+            "percentage": 1
         }],
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,

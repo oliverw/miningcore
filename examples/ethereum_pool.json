@@ -41,15 +41,16 @@
         "shareRecoveryFile": "recovered-shares.txt"
     },
     "pools": [{
-        "id": "dash1",
+        "id": "eth1",
         "enabled": true,
         "coin": {
-            "type": "DASH"
+            "type": "ETH"
         },
-        "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
+        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
         "rewardRecipients": [{
-            "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
-            "percentage": 0
+                "type": "op",
+                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+                "percentage": 0
         }],
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
@@ -61,31 +62,39 @@
             "checkThreshold": 50
         },
         "ports": {
-            "3062": {
-                "listenAddress": "0.0.0.0",
-                "difficulty": 1024,
-                "name": "ASIC Mining",
+            "3072": {
+                "difficulty": 0.1,
                 "varDiff": {
-                    "minDiff": 512,
+                    "minDiff": 0.05,
+                    "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
                     "variancePercent": 30
                 }
+            },
+            "3073": {
+                "difficulty": 5000
             }
         },
-        "daemons": [{
-            "host": "127.0.0.1",
-            "port": 9998,
-            "user": "user",
-            "password": "password"
-        }],
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 8545,
+                "user": "user",
+                "password": "password"
+            }
+        ],
         "paymentProcessing": {
             "enabled": true,
-            "minimumPayment": 0.5,
+            "minimumPayment": 0.01,
+            "minimumPaymentToPaymentId": 5.0,
             "payoutScheme": "PPLNS",
             "payoutSchemeConfig": {
                 "factor": 2.0
-            }
+            },
+            "coinbasePassword": "<your wallet password if you are running parity with wallet locked>",
+            "keepUncles": false,
+            "keepTransactionFees": false
         }
     }]
 }

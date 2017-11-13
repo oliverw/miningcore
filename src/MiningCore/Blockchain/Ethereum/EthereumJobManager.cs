@@ -90,9 +90,7 @@ namespace MiningCore.Blockchain.Ethereum
                 lock(jobLock)
                 {
                     var isNew = currentJob == null ||
-                        currentJob.BlockTemplate.ParentHash != blockTemplate.ParentHash ||
-                        currentJob.BlockTemplate.Height < blockTemplate.Height ||
-                        currentJob.BlockTemplate.Seed != blockTemplate.Seed;
+                        currentJob.BlockTemplate.Header != blockTemplate.Header;
 
                     if (isNew)
                     {
@@ -165,7 +163,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (height != block.Height)
             {
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork result not related to pending block");
+                logger.Debug(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork result not related to pending block");
                 return null;
             }
 
@@ -504,8 +502,10 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void ConfigureRewards()
         {
-            // Donation to Miningcore development
-            if (clusterConfig.DevDonation > 0)
+            // Donation to MiningCore development
+            var devDonation = clusterConfig.DevDonation ?? 0.15m;
+
+            if (devDonation > 0)
             {
                 string address = null;
 
@@ -520,9 +520,8 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         new RewardRecipient
                         {
-                            Type = RewardRecipientType.Dev,
                             Address = address,
-                            Percentage = clusterConfig.DevDonation,
+                            Percentage = devDonation,
                         }
                     }).ToArray();
                 }

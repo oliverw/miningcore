@@ -35,7 +35,6 @@
             "database": "miningcore"
         }
     },
-    "devDonation": 0.1,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
@@ -51,9 +50,8 @@
       "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
       "rewardRecipients": [
         {
-          "type": "op",
           "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
-          "percentage": 0
+          "percentage": 1.0
         }
       ],
       "blockRefreshInterval": 1000,

@@ -403,8 +403,10 @@ namespace MiningCore.Blockchain.Monero
 
         private void ConfigureRewards()
         {
-            // Donation to Miningcore development
-            if (clusterConfig.DevDonation > 0)
+            // Donation to MiningCore development
+            var devDonation = clusterConfig.DevDonation ?? 0.15m;
+
+            if (devDonation > 0)
             {
                 string address = null;
 
@@ -417,9 +419,8 @@ namespace MiningCore.Blockchain.Monero
                     {
                         new RewardRecipient
                         {
-                            Type = RewardRecipientType.Dev,
                             Address = address,
-                            Percentage = clusterConfig.DevDonation,
+                            Percentage = devDonation,
                         }
                     }).ToArray();
                 }

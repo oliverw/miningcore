@@ -35,7 +35,6 @@
             "database": "miningcore"
         }
     },
-    "devDonation": 0.1,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
@@ -50,9 +49,8 @@
       "address": "43g9avHw8WYHnq749LU1Nw1BZ8FCwS2B7GLoW4vif7cPjJB7e9f6WgU8ptDFM7kyNS9kz1zy334dAYFKgP2KJU8vMoZ3hYD",
       "rewardRecipients": [
         {
-          "type": "op",
           "address": "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH",
-          "percentage": 0
+          "percentage": 1
         }
       ],
       "blockRefreshInterval": 1000,

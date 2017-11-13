@@ -35,20 +35,7 @@ namespace MiningCore.Blockchain.Dash
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
-            blockReward = CreateDashOutputs(tx, blockReward);
-
-            // Distribute funds to configured reward recipients
-            var rewardRecipients = new List<RewardRecipient>(poolConfig.RewardRecipients);
-
-            foreach(var recipient in rewardRecipients.Where(x => x.Type != RewardRecipientType.Dev && x.Percentage > 0))
-            {
-                var recipientAddress = BitcoinUtils.AddressToDestination(recipient.Address);
-                var recipientReward = new Money((long) Math.Floor(recipient.Percentage / 100.0m * blockReward.Satoshi));
-
-                rewardToPool -= recipientReward;
-
-                tx.AddOutput(recipientReward, recipientAddress);
-            }
+            rewardToPool = CreateDashOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)

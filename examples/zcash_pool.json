@@ -35,22 +35,26 @@
             "database": "miningcore"
         }
     },
+    "equihashMaxThreads": 4,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
         "shareRecoveryFile": "recovered-shares.txt"
     },
     "pools": [{
-        "id": "dash1",
+        "id": "zec1",
         "enabled": true,
         "coin": {
-            "type": "DASH"
+            "type": "ZEC"
         },
-        "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
-        "rewardRecipients": [{
-            "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
-            "percentage": 0
-        }],
+        "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
+                "percentage": 1.5
+            }
+        ],
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
         "clientConnectionTimeout": 600,
@@ -61,27 +65,32 @@
             "checkThreshold": 50
         },
         "ports": {
-            "3062": {
-                "listenAddress": "0.0.0.0",
-                "difficulty": 1024,
-                "name": "ASIC Mining",
+            "3092": {
+                "difficulty": 0.1,
                 "varDiff": {
-                    "minDiff": 512,
+                    "minDiff": 0.01,
+                    "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
-                    "variancePercent": 30
+                    "variancePercent": 30,
+                    "maxDelta": 1
                 }
+            },
+            "3093": {
+                "difficulty": 1
             }
         },
-        "daemons": [{
-            "host": "127.0.0.1",
-            "port": 9998,
-            "user": "user",
-            "password": "password"
-        }],
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 8232,
+                "user": "user",
+                "password": "pass"
+            }
+        ],
         "paymentProcessing": {
             "enabled": true,
-            "minimumPayment": 0.5,
+            "minimumPayment": 0.01,
             "payoutScheme": "PPLNS",
             "payoutSchemeConfig": {
                 "factor": 2.0

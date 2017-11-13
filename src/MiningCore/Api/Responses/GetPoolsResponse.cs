@@ -56,7 +56,6 @@ namespace MiningCore.Api.Responses
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
         public float PoolFeePercent { get; set; }
-        public float DonationsPercent { get; set; }
 
         // Stats
         public PoolStats PoolStats { get; set; }

@@ -57,12 +57,6 @@ namespace MiningCore.Configuration
         public string Algorithm { get; set; }
     }
 
-    public enum RewardRecipientType
-    {
-        Op, // Pool operators
-        Dev
-    }
-
     public enum PayoutScheme
     {
         // ReSharper disable once InconsistentNaming
@@ -187,7 +181,6 @@ namespace MiningCore.Configuration
 
     public class RewardRecipient
     {
-        public RewardRecipientType Type { get; set; }
         public string Address { get; set; }
         public decimal Percentage { get; set; }
     }
@@ -248,7 +241,7 @@ namespace MiningCore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
-        public decimal DevDonation { get; set; }
+        public decimal? DevDonation { get; set; }
 
         /// <summary>
         /// Maximum parallelism of Equihash solver
