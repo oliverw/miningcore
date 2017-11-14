@@ -227,10 +227,6 @@ namespace MiningCore.DaemonInterface
             var httpClient = httpClients[endPoint];
             var response = await httpClient.SendAsync(request);
 
-            // check success
-            if (!response.IsSuccessStatusCode)
-                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
-
             // read response
             json = await response.Content.ReadAsStringAsync();
 

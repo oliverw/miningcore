@@ -218,15 +218,10 @@ namespace MiningCore.Blockchain.Bitcoin
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-            var subtractFeesFrom = amounts.Keys.ToArray();
-
             var args = new object[]
             {
                 string.Empty,           // default account
-                amounts,                // addresses and associated amounts
-                1,                      // only spend funds covered by this many confirmations
-                "MiningCore Payout",    // comment
-                subtractFeesFrom        // distribute transaction fee equally over all recipients
+                amounts                // addresses and associated amounts
             };
 
             // send command
