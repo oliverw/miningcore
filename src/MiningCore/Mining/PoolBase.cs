@@ -287,7 +287,7 @@ namespace MiningCore.Mining
 
                 else
                 {
-                    logger.Warn(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
                     banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
