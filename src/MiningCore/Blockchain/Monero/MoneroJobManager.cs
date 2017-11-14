@@ -33,7 +33,6 @@ using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Native;
 using MiningCore.Notifications;
-using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -436,7 +435,7 @@ namespace MiningCore.Blockchain.Monero
                 .Do(isNew =>
                 {
                     if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block detected");
+                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
                 })
                 .Where(isNew => isNew)
                 .Select(_ => Unit.Default)

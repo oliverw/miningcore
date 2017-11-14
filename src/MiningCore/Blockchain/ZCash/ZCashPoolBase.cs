@@ -27,7 +27,6 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;

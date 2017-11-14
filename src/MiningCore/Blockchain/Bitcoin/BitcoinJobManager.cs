@@ -102,7 +102,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Do(isNew =>
                 {
                     if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block detected");
+                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
                 })
                 .Where(isNew => isNew)
                 .Publish()

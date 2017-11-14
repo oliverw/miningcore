@@ -84,7 +84,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var blockTemplate = await GetBlockTemplateAsync();
 
                 // may happen if daemon is currently not connected to peers
-                if (blockTemplate == null || blockTemplate.Header.Length == 0)
+                if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
                 lock(jobLock)
@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Ethereum
             // only parity returns the 4th element (block height)
             if (work.Length < 3)
             {
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connecting to a Parity daemon?");
+                logger.Error(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
                 return null;
             }
 
@@ -163,7 +163,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (height != block.Height)
             {
-                logger.Debug(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork result not related to pending block");
+                logger.Debug(() => $"[{LogCat}] Discarding block template update as getWork result is not related to pending block");
                 return null;
             }
 
@@ -537,7 +537,7 @@ namespace MiningCore.Blockchain.Ethereum
                 .Do(isNew =>
                 {
                     if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block detected");
+                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
                 })
                 .Where(isNew => isNew)
                 .Select(_ => GetJobParamsForStratum(true))

@@ -115,7 +115,7 @@ namespace MiningCore.Blockchain.Ethereum
             // extract worker/miner
             var split = workerValue?.Split('.');
             var minerName = split?.FirstOrDefault()?.Trim();
-            var workerName = split?.LastOrDefault()?.Trim();
+            var workerName = split?.Skip(1).LastOrDefault()?.Trim();
 
             // assumes that workerName is an address
             client.Context.IsAuthorized = manager.ValidateAddress(minerName);
@@ -131,6 +131,9 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
                 client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
+
+            // log association
+            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
         }
 
         private async Task OnSubmitAsync(StratumClient<EthereumWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
