@@ -35,7 +35,6 @@ using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.Notifications;
-using MiningCore.Payments;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;

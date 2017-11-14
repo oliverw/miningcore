@@ -179,7 +179,7 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Respond(true, request.Id);
                 shareSubject.OnNext(Tuple.Create((object) client, share));
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
