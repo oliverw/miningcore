@@ -232,7 +232,7 @@ namespace MiningCore.Stratum
                                         break;
                                     }
 
-                                    // build buffer
+                                    // assemble line buffer
                                     var queuedLength = recvQueue.Sum(x => x.Size);
                                     var segmentLength = index - prevIndex;
                                     var lineLength = queuedLength + segmentLength;
@@ -248,11 +248,9 @@ namespace MiningCore.Stratum
                                         }
                                     }
 
+                                    // append remaining characters
                                     if (segmentLength > 0)
-                                    {
-                                        // append remaining segment
                                         Array.Copy(buf, prevIndex, line, offset, segmentLength);
-                                    }
 
                                     // emit
                                     observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));
@@ -265,13 +263,13 @@ namespace MiningCore.Stratum
                                 // store
                                 if (prevIndex != 0)
                                 {
-                                    var fragmentLength = count - prevIndex;
+                                    var segmentLength = count - prevIndex;
 
-                                    if (fragmentLength > 0)
+                                    if (segmentLength > 0)
                                     {
-                                        var fragment = ByteArrayPool.Rent(fragmentLength);
-                                        Array.Copy(buf, prevIndex, fragment, 0, fragmentLength);
-                                        recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, fragmentLength));
+                                        var fragment = ByteArrayPool.Rent(segmentLength);
+                                        Array.Copy(buf, prevIndex, fragment, 0, segmentLength);
+                                        recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, segmentLength));
                                     }
                                 }
 
