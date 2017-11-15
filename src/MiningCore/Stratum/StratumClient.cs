@@ -213,6 +213,9 @@ namespace MiningCore.Stratum
                             // read buffer
                             buffer.ReadBytes(buf, count);
 
+                            // diagnostics
+                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, count)}");
+
                             while (count > 0)
                             {
                                 // check if we got a newline
