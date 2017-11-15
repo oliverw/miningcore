@@ -234,7 +234,8 @@ namespace MiningCore.Stratum
 
                                     // build buffer
                                     var queuedLength = recvQueue.Sum(x => x.Size);
-                                    var lineLength = queuedLength + index;
+                                    var segmentLength = index - prevIndex;
+                                    var lineLength = queuedLength + segmentLength;
                                     var line = ByteArrayPool.Rent(lineLength);
                                     var offset = 0;
 
@@ -247,8 +248,11 @@ namespace MiningCore.Stratum
                                         }
                                     }
 
-                                    // append latest buffer
-                                    Array.Copy(buf, prevIndex, line, offset, index - prevIndex);
+                                    if (segmentLength > 0)
+                                    {
+                                        // append remaining segment
+                                        Array.Copy(buf, prevIndex, line, offset, segmentLength);
+                                    }
 
                                     // emit
                                     observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));
