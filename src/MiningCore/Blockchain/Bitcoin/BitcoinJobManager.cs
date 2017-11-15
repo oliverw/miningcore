@@ -130,7 +130,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
             if (infos.Length > 0)
             {
@@ -329,8 +329,9 @@ namespace MiningCore.Blockchain.Bitcoin
         public async Task UpdateNetworkStatsAsync()
         {
             var results = await daemon.ExecuteBatchAnyAsync(
-                new DaemonCmd(BitcoinCommands.GetInfo),
-                new DaemonCmd(BitcoinCommands.GetMiningInfo)
+                new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
+                new DaemonCmd(BitcoinCommands.GetMiningInfo),
+                new DaemonCmd(BitcoinCommands.GetNetworkInfo)
             );
 
             if (results.Any(x => x.Error != null))
@@ -341,13 +342,14 @@ namespace MiningCore.Blockchain.Bitcoin
                     logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
             }
 
-            var infoResponse = results[0].Response.ToObject<Info>();
+            var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
             var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
+            var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
 
             BlockchainStats.BlockHeight = infoResponse.Blocks;
             BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
             BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = infoResponse.Connections;
+            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
@@ -369,7 +371,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override async Task<bool> AreDaemonsHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetBlockchainInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -381,7 +383,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override async Task<bool> AreDaemonsConnected()
         {
-            var response = await daemon.ExecuteCmdAnyAsync<Info>(BitcoinCommands.GetInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(BitcoinCommands.GetNetworkInfo);
 
             return response.Error == null && response.Response.Connections > 0;
         }
