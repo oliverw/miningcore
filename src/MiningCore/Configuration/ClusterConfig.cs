@@ -45,6 +45,7 @@ namespace MiningCore.Configuration
         MONA, // Monacoin
         VTC, // Vertcoin
         BTG, // Bitcoin Gold
+		GLT, // Globaltoken
     }
 
     public class CoinConfig
