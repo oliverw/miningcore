@@ -28,7 +28,6 @@ This is going to change in the future.
 
 ### Coins
 
-
 Coin | Implemented | Tested | Planned | Notes
 :--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | Yes | |
@@ -62,6 +61,7 @@ MiningCore implements the [Ethereum stratum mining protocol](https://github.com/
 - Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
 - First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
+- Miners may use both t-addresses and z-addresses when connecting to the pool
 
 ### Runtime Requirements
 
@@ -142,3 +142,23 @@ dotnet MiningCore.dll -c config.json
 - Install Visual Studio 2017 (Community Edition is sufficient)
 - Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
 - Open MiningCore.sln in VS 2017
+
+## Developer Donation
+
+This software comes with a built-in dontation of 0.15% per block-reward to support the ongoing development of this project. If you do not want to support the project, you can remove or alter the donation by adding <code>devDonation = 0.0</code> to the configuration file. You can also send donations directly to the following accounts:
+
+* BTC: 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm
+* LTC: LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC
+* DOGE: DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q
+* NMC: NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o
+* DGB: DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn
+* ETH: 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1
+* ETC: 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0
+* PPC: PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2
+* DASH: XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp
+* VIA: Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q
+* MONA: MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S
+* VTC: VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf
+* ZEC: t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7
+* BTG: GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6
+* XMR: 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH
