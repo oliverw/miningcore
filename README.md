@@ -42,7 +42,7 @@ Bitcoin Gold | Yes | Yes | |
 Bitcoin Cash | Yes | Yes | |
 Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
-Globaltoken | Yes | Yes | | Requires [GLT_wallet](https://globaltoken.org/#downloads)
+Globaltoken | Yes | Yes | | [GLT Daemon](https://globaltoken.org/#downloads)
 Groestlcoin | Yes | Yes | |
 Dogecoin | Yes | No | |
 DigiByte | Yes | No | |
