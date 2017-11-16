@@ -275,7 +275,9 @@ namespace MiningCore.Blockchain.Ethereum
             base.Configure(poolConfig, clusterConfig);
 
             // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : Dag.GetDefaultDagDirectory();
+            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? 
+                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : 
+                Dag.GetDefaultDagDirectory();
 
             // create it if necessary
             Directory.CreateDirectory(dagDir);

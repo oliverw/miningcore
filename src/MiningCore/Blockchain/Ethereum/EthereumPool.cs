@@ -125,12 +125,7 @@ namespace MiningCore.Blockchain.Ethereum
             // respond
             client.Respond(client.Context.IsAuthorized, request.Id);
 
-            if(client.Context.IsAuthorized)
-            {
-                // send intial update
-                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { client.Context.Difficulty });
-                client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
-            }
+            EnsureInitialWorkSent(client);
 
             // log association
             logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
@@ -179,6 +174,8 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Respond(true, request.Id);
                 shareSubject.OnNext(Tuple.Create((object) client, share));
 
+                EnsureInitialWorkSent(client);
+
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
 
                 // update pool stats
@@ -200,6 +197,21 @@ namespace MiningCore.Blockchain.Ethereum
                 // banning
                 if (poolConfig.Banning?.Enabled == true)
                     ConsiderBan(client, client.Context, poolConfig.Banning);
+            }
+        }
+
+        private void EnsureInitialWorkSent(StratumClient<EthereumWorkerContext> client)
+        {
+            lock (client.Context)
+            {
+                if (client.Context.IsAuthorized && client.Context.IsAuthorized && !client.Context.IsInitialWorkSent)
+                {
+                    client.Context.IsInitialWorkSent = true;
+
+                    // send intial update
+                    client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {client.Context.Difficulty});
+                    client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
+                }
             }
         }
 
