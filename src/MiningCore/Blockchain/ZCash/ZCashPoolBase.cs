@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -180,7 +181,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ForEachClient(client =>
             {
-                if (client.Context.IsSubscribed)
+                if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
                     var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
@@ -230,16 +231,27 @@ namespace MiningCore.Blockchain.ZCash
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
             var quotient = ZCashConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var padded = ArrayPool<byte>.Shared.Rent(ZCashConstants.TargetPaddingLength);
 
-            if (padded.Length - bytes.Length > 0)
+            try
             {
-                Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
-                bytes = padded;
+                Array.Clear(padded, 0, ZCashConstants.TargetPaddingLength);
+                var padLength = ZCashConstants.TargetPaddingLength - bytes.Length;
+
+                if (padLength > 0)
+                {
+                    Array.Copy(bytes, 0, padded, padLength, bytes.Length);
+                    bytes = padded;
+                }
+
+                var result = bytes.ToHexString(ZCashConstants.TargetPaddingLength);
+                return result;
             }
 
-            var result = bytes.ToHexString();
-            return result;
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(padded);
+            }
         }
     }
 }

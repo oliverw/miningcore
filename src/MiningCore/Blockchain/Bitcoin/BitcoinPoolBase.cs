@@ -241,7 +241,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             ForEachClient(client =>
             {
-                if (client.Context.IsSubscribed)
+                if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
                     var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;

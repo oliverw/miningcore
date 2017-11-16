@@ -46,6 +46,7 @@ namespace MiningCore.Blockchain.ZCash
     {
         public static readonly BigInteger Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
+        public const int TargetPaddingLength = 32;
 
         private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
         {
