@@ -4,9 +4,9 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-## miningcore
+## Miningcore
 
-miningcore is the multi-currency stratum-engine powering [poolmining.org](https://poolmining.org)
+Miningcore is the multi-currency stratum-engine powering [poolmining.org](https://poolmining.org).
 
 Even though the pool engine can be used to run a production-pool, doing so currently requires to
 develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
@@ -51,7 +51,7 @@ Peercoin | Yes | No | |
 
 #### Ethereum
 
-miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
 
 - Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
 - Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
