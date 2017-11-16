@@ -309,8 +309,8 @@ namespace MiningCore.Mining
         {
             var msg = $@"
 
-Mining Pool:            {poolConfig.Id} 
-Coin Type:              {poolConfig.Coin.Type} 
+Mining Pool:            {poolConfig.Id}
+Coin Type:              {poolConfig.Coin.Type}
 Network Connected:      {blockchainStats.NetworkType}
 Detected Reward Type:   {blockchainStats.RewardType}
 Current Block Height:   {blockchainStats.BlockHeight}
