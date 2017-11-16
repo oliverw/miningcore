@@ -209,7 +209,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             ForEachClient(client =>
             {
-                if (client.Context.IsSubscribed)
+                if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
                     var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
@@ -267,7 +267,7 @@ namespace MiningCore.Blockchain.Ethereum
                     break;
 
                 case EthereumStratumMethods.ExtraNonceSubscribe:
-                    client.Respond(true, request.Id);
+                    client.RespondError(StratumError.Other, "not supported", request.Id, false);
                     break;
 
                 default:
