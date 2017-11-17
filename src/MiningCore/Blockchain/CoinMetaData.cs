@@ -38,7 +38,7 @@ namespace MiningCore.Blockchain
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/tx/{0}" },
             { CoinType.MONA, "https://bchain.info/MONA/tx/{0}" },
-	    { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
+            { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
         };
     }
 }
