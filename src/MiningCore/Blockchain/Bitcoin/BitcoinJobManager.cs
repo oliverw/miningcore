@@ -371,7 +371,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override async Task<bool> AreDaemonsHealthy()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Info>(BitcoinCommands.GetBlockchainInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
