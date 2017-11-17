@@ -154,7 +154,7 @@ namespace MiningCore.Stratum
                         // boot pre-connected clients
                         if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
                         {
-                            logger.Trace(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                            logger.Info(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
                             DisconnectClient(client);
                             data.Dispose();
                             return Unit.Default;
@@ -229,7 +229,7 @@ namespace MiningCore.Stratum
 
                 case JsonReaderException jsonEx:
                     // ban clients sending junk
-                    //logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                    //logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
                     //banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     break;
             }
