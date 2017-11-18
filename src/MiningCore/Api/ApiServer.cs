@@ -175,9 +175,9 @@ namespace MiningCore.Api
                         poolInfo.NetworkStats = pool.NetworkStats;
 
                         // pool wallet link
-                        CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
-                        if (!string.IsNullOrEmpty(baseUrl))
-                            poolInfo.AddressInfoLink = string.Format(baseUrl, poolInfo.Address);
+                        CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
+                        if (!string.IsNullOrEmpty(addressInfobaseUrl))
+                            poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
 
                         // pool fees
                         poolInfo.PoolFeePercent = (float) pool.Config.RewardRecipients
@@ -233,13 +233,13 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich blocks
-            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
+            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var blockInfobaseUrl);
 
             foreach(var block in blocks)
             {
                 // compute infoLink
-                if (!string.IsNullOrEmpty(baseUrl))
-                    block.InfoLink = string.Format(baseUrl, block.BlockHeight);
+                if (!string.IsNullOrEmpty(blockInfobaseUrl))
+                    block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
             }
 
             await SendJson(context, blocks);
@@ -265,14 +265,19 @@ namespace MiningCore.Api
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
-            // enrich blocks
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
+            // enrich payments
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
 
-            foreach(var payment in payments)
+            foreach (var payment in payments)
             {
-                // compute infoLink
-                if (!string.IsNullOrEmpty(baseUrl))
-                    payment.InfoLink = string.Format(baseUrl, payment.TransactionConfirmationData);
+                // compute transaction infoLink
+                if (!string.IsNullOrEmpty(txInfobaseUrl))
+                    payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
+
+                // pool wallet link
+                if (!string.IsNullOrEmpty(addressInfobaseUrl))
+                    payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
             await SendJson(context, payments);
