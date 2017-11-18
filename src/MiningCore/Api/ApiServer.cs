@@ -174,6 +174,12 @@ namespace MiningCore.Api
                         poolInfo.PoolStats = pool.PoolStats;
                         poolInfo.NetworkStats = pool.NetworkStats;
 
+                        // pool wallet link
+                        CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl);
+                        if (!string.IsNullOrEmpty(baseUrl))
+                            poolInfo.AddressInfoLink = string.Format(baseUrl, poolInfo.Address);
+
+                        // pool fees
                         poolInfo.PoolFeePercent = (float) pool.Config.RewardRecipients
                             .Sum(x => x.Percentage);
 
