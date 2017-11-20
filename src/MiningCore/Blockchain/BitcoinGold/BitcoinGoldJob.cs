@@ -59,7 +59,7 @@ namespace MiningCore.Blockchain.BitcoinGold
         {
             // BTG requires the blockheight to be encoded in the first 4 bytes of the hashReserved field
             var heightAndReserved = BitConverter.GetBytes(BlockTemplate.Height)
-                .Concat(Enumerable.Repeat((byte) 0, 28))
+                .Concat(Enumerable.Repeat((byte)0, 28))
                 .ToArray();
 
             var blockHeader = new ZCashBlockHeader
@@ -68,7 +68,7 @@ namespace MiningCore.Blockchain.BitcoinGold
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
-                HashReserved = new uint256(heightAndReserved),
+                HashReserved = heightAndReserved,
                 NTime = nTime,
                 Nonce = nonce
             };
@@ -132,7 +132,7 @@ namespace MiningCore.Blockchain.BitcoinGold
                 BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
                 previousBlockHashReversedHex,
                 merkleRootReversedHex,
-                BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(), // height + hashReserved
+                BitConverter.GetBytes(BlockTemplate.Height).ToHexString() + sha256Empty.Take(28).ToHexString(), // height + hashReserved
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
                 BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
                 false

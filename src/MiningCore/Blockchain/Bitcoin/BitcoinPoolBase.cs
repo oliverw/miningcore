@@ -311,6 +311,10 @@ namespace MiningCore.Blockchain.Bitcoin
                     OnGetTransactions(client, tsRequest);
                     break;
 
+                case BitcoinStratumMethods.ExtraNonceSubscribe:
+                    // ignored
+                    break;
+
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
