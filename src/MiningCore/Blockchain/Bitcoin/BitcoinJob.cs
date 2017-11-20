@@ -433,7 +433,7 @@ namespace MiningCore.Blockchain.Bitcoin
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
 
-            extraNoncePlaceHolderLength = BitcoinExtraNonceProvider.PlaceHolder.Length;
+            extraNoncePlaceHolderLength = BitcoinExtraNonceProvider.PlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
