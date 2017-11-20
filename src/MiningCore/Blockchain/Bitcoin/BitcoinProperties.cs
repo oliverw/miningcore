@@ -86,6 +86,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // Lyra2Rev2
             { CoinType.MONA, lyra2Rev2Coin },
+            { CoinType.STRAKS, lyra2Rev2Coin },
             { CoinType.VTC, lyra2Rev2Coin },
 
             // X11

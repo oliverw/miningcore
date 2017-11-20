@@ -33,13 +33,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="config.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Autofac" Version="4.6.2" />
-    <PackageReference Include="AutoMapper" Version="6.2.0" />
+    <PackageReference Include="AutoMapper" Version="6.2.1" />
     <PackageReference Include="Dapper" Version="1.50.2" />
     <PackageReference Include="FluentValidation" Version="7.2.1" />
     <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
     <PackageReference Include="MailKit" Version="1.20.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
