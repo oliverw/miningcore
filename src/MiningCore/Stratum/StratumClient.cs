@@ -313,6 +313,8 @@ namespace MiningCore.Stratum
 
                     while (recvQueue.TryDequeue(out var fragment))
                         fragment.Dispose();
+
+                    handle.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
@@ -320,12 +322,9 @@ namespace MiningCore.Stratum
                     if (tcp.IsValid)
                     {
                         logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
-                        isAlive = false;
 
-                        tcp.Shutdown((handle, ex) =>
-                        {
-                            handle.Dispose();
-                        });
+                        isAlive = false;
+                        tcp.Shutdown();
                     }
                 });
             });
