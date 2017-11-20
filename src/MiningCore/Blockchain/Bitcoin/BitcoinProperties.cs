@@ -74,7 +74,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.BCC, sha256Coin },
             { CoinType.NMC, sha256Coin },
             { CoinType.PPC, sha256Coin },
-	    { CoinType.GLT, sha256Coin },
+	        { CoinType.GLT, sha256Coin },
 
             // Scrypt
             { CoinType.LTC, scryptCoin },
@@ -94,6 +94,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // Equihash
             { CoinType.ZEC, equihashCoin },
             { CoinType.BTG, equihashCoin },
+            { CoinType.ZEN, equihashCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)

@@ -18,34 +18,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using Autofac;
-using AutoMapper;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
-using MiningCore.Configuration;
-using MiningCore.Notifications;
-using MiningCore.Persistence;
-using MiningCore.Persistence.Repositories;
-using MiningCore.Time;
-using Newtonsoft.Json;
-
-namespace MiningCore.Blockchain.Bitcoin
+namespace MiningCore.Blockchain.Zencash
 {
-    [CoinMetadata(
-        CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
-        CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
-        CoinType.ZEN)]
-    public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
+    public class ZencashStratumMethods
     {
-        public BitcoinPool(IComponentContext ctx,
-            JsonSerializerSettings serializerSettings,
-            IConnectionFactory cf,
-            IStatsRepository statsRepo,
-            IMapper mapper,
-            IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
-        {
-        }
+        /// <summary>
+        /// Used to signal the miner to stop submitting shares under the new target
+        /// </summary>
+        public const string SetTarget = "mining.set_target";
+
+        /// <summary>
+        /// The target suggested by the miner for the next received job and all subsequent jobs (until the next time this message is sent)
+        /// </summary>
+        public const string SuggestTarget = "mining.suggest_target";
     }
 }

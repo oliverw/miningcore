@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Ethereum;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Blockchain.Zencash;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
@@ -134,6 +135,12 @@ namespace MiningCore
             // Bitcoin Gold
 
             builder.RegisterType<BitcoinGoldJobManager>()
+                .AsSelf();
+
+            //////////////////////
+            // Zencash
+
+            builder.RegisterType<ZencashJobManager>()
                 .AsSelf();
 
             base.Load(builder);

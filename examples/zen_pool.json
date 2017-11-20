@@ -1,0 +1,101 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "integrated"
+    },
+    "notifications": {
+        "enabled": true,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "equihashMaxThreads": 4,
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "zen-recovered-shares.txt"
+    },
+    "pools": [{
+        "id": "zen1",
+        "enabled": true,
+        "coin": {
+            "type": "ZEN"
+        },
+        "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
+        "z-address": "zca7tCyUqn6axyZTWfiFTufI28sJNOnC2p3PHV4txH1XdDGsAjw1AKM8qiHznMTSw5GXUbWqS7P7Qc1sDw93CQePCLuPXXr",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
+                "percentage": 1.5
+            }
+        ],
+        "blockRefreshInterval": 1000,
+        "jobRebroadcastTimeout": 55,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3072": {
+                "difficulty": 0.1,
+                "varDiff": {
+                    "minDiff": 0.04,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30,
+                    "maxDelta": 1
+                }
+            },
+            "3073": {
+                "difficulty": 1
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 8232,
+                "user": "user",
+                "password": "pass"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.01,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+    }]
+}

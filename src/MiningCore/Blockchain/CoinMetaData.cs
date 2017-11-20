@@ -22,6 +22,7 @@ namespace MiningCore.Blockchain
             { CoinType.MONA, "https://bchain.info/MONA/block/{0}" },
     	    { CoinType.GLT, "https://bchain.info/GLT/block/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/block/{0}" },
+            { CoinType.ZEN, "https://explorer.zensystem.io/block/{0}"},
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -41,6 +42,7 @@ namespace MiningCore.Blockchain
             { CoinType.MONA, "https://bchain.info/MONA/tx/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/tx/{0}" },
+            { CoinType.LTC, "https://explorer.zensystem.io/tx/{0}"},
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -59,6 +61,7 @@ namespace MiningCore.Blockchain
             { CoinType.MONA, "https://bchain.info/MONA/addr/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/addr/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/addr/{0}" },
+            { CoinType.ZEN, "https://explorer.zensystem.io/address/{0}"},
         };
     }
 }

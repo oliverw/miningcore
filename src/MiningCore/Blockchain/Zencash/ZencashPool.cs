@@ -20,24 +20,24 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Autofac;
 using AutoMapper;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.ZCash;
+using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using MiningCore.Util;
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.Bitcoin
+namespace MiningCore.Blockchain.Zencash
 {
-    [CoinMetadata(
-        CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
-        CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
-        CoinType.ZEN)]
-    public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
+    [CoinMetadata(CoinType.ZEN)]
+    public class ZencashPool : ZCashPoolBase<ZencashJob>
     {
-        public BitcoinPool(IComponentContext ctx,
+        public ZencashPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
@@ -47,5 +47,12 @@ namespace MiningCore.Blockchain.Bitcoin
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
         {
         }
+
+         protected override BitcoinJobManager<ZencashJob, ZCashBlockTemplate> CreateJobManager()
+        {
+            return ctx.Resolve<ZencashJobManager>(
+                new TypedParameter(typeof(IExtraNonceProvider), new ZCashExtraNonceProvider()));
+        }
+
     }
 }
