@@ -58,5 +58,10 @@ namespace MiningCore.Blockchain.Bitcoin
         /// check if pool isn't doing something nasty
         /// </summary>
         public const string GetTransactions = "mining.get_transactions";
+
+        /// <summary>
+        /// Used to subscribe to work from a server, required before all other communication.
+        /// </summary>
+        public const string ExtraNonceSubscribe = "mining.extranonce.subscribe";
     }
 }

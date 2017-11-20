@@ -24,7 +24,7 @@ namespace MiningCore.Blockchain.ZCash
 
         private uint256 hashMerkleRoot;
         private uint256 hashPrevBlock;
-        private uint256 hashReserved;
+        private byte[] hashReserved = new byte[32];
         private uint nBits;
         private string nNonce;
         private uint nTime;
@@ -63,7 +63,7 @@ namespace MiningCore.Blockchain.ZCash
             set => hashMerkleRoot = value;
         }
 
-        public uint256 HashReserved
+        public byte[] HashReserved
         {
             get => hashReserved;
             set => hashReserved = value;
@@ -110,7 +110,7 @@ namespace MiningCore.Blockchain.ZCash
             nVersion = CURRENT_VERSION;
             hashPrevBlock = 0;
             hashMerkleRoot = 0;
-            hashReserved = 0;
+            hashReserved = new byte[32];
             nTime = 0;
             nBits = 0;
             nNonce = string.Empty;

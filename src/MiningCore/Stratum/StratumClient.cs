@@ -197,7 +197,7 @@ namespace MiningCore.Stratum
                     using (buffer)
                     {
                         var count = buffer.Count;
-                        if (count == 0)
+                        if (count == 0 || !isAlive)
                             return;
 
                         var buf = ByteArrayPool.Rent(count);
@@ -304,7 +304,6 @@ namespace MiningCore.Stratum
                     observer.OnCompleted();
 
                     // release handles
-                    handle.Dispose();
                     sendQueueDrainer.UserToken = null;
                     sendQueueDrainer.Dispose();
 
@@ -314,6 +313,8 @@ namespace MiningCore.Stratum
 
                     while (recvQueue.TryDequeue(out var fragment))
                         fragment.Dispose();
+
+                    handle.CloseHandle();
                 });
 
                 return Disposable.Create(() =>
@@ -322,6 +323,7 @@ namespace MiningCore.Stratum
                     {
                         logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
 
+                        isAlive = false;
                         tcp.Shutdown();
                     }
                 });

@@ -260,7 +260,6 @@ namespace MiningCore.Blockchain.ZCash
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
-                HashReserved = new uint256(),
                 NTime = nTime,
                 Nonce = nonce
             };

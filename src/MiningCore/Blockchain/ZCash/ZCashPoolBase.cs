@@ -163,8 +163,8 @@ namespace MiningCore.Blockchain.ZCash
                     OnSuggestTarget(client, tsRequest);
                     break;
 
-                case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                case BitcoinStratumMethods.ExtraNonceSubscribe:
+                    // ignored
                     break;
 
                 default:
