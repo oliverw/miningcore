@@ -106,6 +106,7 @@ namespace MiningCore.Api
 
         private async Task SendJson(HttpContext context, object response)
         {
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
             context.Response.ContentType = "application/json";
 
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
