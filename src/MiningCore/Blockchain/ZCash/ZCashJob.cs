@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -333,15 +334,17 @@ namespace MiningCore.Blockchain.ZCash
             var result = new BitcoinShare
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate
+                IsBlockCandidate = isBlockCandidate,
+                Difficulty = stratumDifficulty
             };
 
-            var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
-            result.BlockHex = blockBytes.ToHexString();
-            result.BlockHash = headerHash.ToHexString();
-            result.BlockHeight = BlockTemplate.Height;
-            result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-            result.Difficulty = stratumDifficulty;
+            if (isBlockCandidate)
+            {
+                var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
+                result.BlockHex = blockBytes.ToHexString();
+                result.BlockHash = headerHash.ToHexString();
+                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+            }
 
             return result;
         }

@@ -16,6 +16,14 @@ namespace MiningCore.Blockchain.BitcoinGold
             IMasterClock clock,
             IExtraNonceProvider extraNonceProvider) : base(ctx, notificationService, clock, extraNonceProvider)
         {
+            getBlockTemplateParams = new object[]
+            {
+                new
+                {
+                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
+                    rules = new[] { "segwit" }
+                }
+            };
         }
 
         #region Overrides of ZCashJobManager<BitcoinGoldJob>

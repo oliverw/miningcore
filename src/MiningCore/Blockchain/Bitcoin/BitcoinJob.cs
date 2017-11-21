@@ -189,18 +189,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 byte[] raw;
                 uint rawLength;
 
-                // serialize witness
-                if (withDefaultWitnessCommitment)
-                {
-                    amount = 0;
-                    raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
-                    rawLength = (uint) raw.Length;
-
-                    bs.ReadWrite(ref amount);
-                    bs.ReadWriteAsVarInt(ref rawLength);
-                    bs.ReadWrite(ref raw);
-                }
-
                 // serialize other recipients
                 foreach(var output in tx.Outputs)
                 {
@@ -208,6 +196,18 @@ namespace MiningCore.Blockchain.Bitcoin
                     var outScript = output.ScriptPubKey;
                     raw = outScript.ToBytes(true);
                     rawLength = (uint) raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
+                    bs.ReadWrite(ref raw);
+                }
+
+                // serialize witness
+                if (withDefaultWitnessCommitment)
+                {
+                    amount = 0;
+                    raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
+                    rawLength = (uint)raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
