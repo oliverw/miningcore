@@ -189,7 +189,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 byte[] raw;
                 uint rawLength;
 
-                // serialize other recipients
+                // serialize outputs
                 foreach(var output in tx.Outputs)
                 {
                     amount = output.Value.Satoshi;
@@ -202,7 +202,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     bs.ReadWrite(ref raw);
                 }
 
-                // serialize witness
+                // serialize witness (segwit)
                 if (withDefaultWitnessCommitment)
                 {
                     amount = 0;
