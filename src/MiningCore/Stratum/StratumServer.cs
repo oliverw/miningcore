@@ -167,8 +167,16 @@ namespace MiningCore.Stratum
 
                         logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request {request.Method} [{request.Id}]");
 
-                        // dispatch request
-                        OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
+                        try
+                        {
+                            // dispatch request
+                            OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
+                        }
 
                         return Unit.Default;
                     })))

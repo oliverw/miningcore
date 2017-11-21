@@ -179,6 +179,12 @@ namespace MiningCore.Blockchain.Bitcoin
             var block = acceptResult.Response?.ToObject<DaemonResponses.Block>();
             var accepted = acceptResult.Error == null && block?.Hash == share.BlockHash;
 
+            if (!accepted)
+            {
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed because block was not found after submission");
+                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed because block was not found after submission");
+            }
+
             return (accepted, block?.Transactions.FirstOrDefault());
         }
 

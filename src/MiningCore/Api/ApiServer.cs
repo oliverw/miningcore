@@ -30,6 +30,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
@@ -110,6 +111,11 @@ namespace MiningCore.Api
             context.Response.ContentType = "application/json";
 
             var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
+
+            // add CORS headers
+            context.Response.Headers.Add("Access-Control-Allow-Origin", new StringValues("*"));
+            context.Response.Headers.Add("Access-Control-Allow-Methods", new StringValues("GET, POST, DELETE, PUT, OPTIONS, HEAD"));
+
             await context.Response.WriteAsync(json, Encoding.UTF8);
         }
 
