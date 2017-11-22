@@ -48,7 +48,7 @@ namespace MiningCore.Stratum
         private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
 
         private const int MaxRequestLength = 8192;
-        public static readonly Encoding Encoding = Encoding.UTF8;
+        public static readonly Encoding Encoding = Encoding.ASCII;
         private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
 
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
