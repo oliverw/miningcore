@@ -40,6 +40,11 @@
     "interval": 600,
     "shareRecoveryFile": "recovered-shares.txt"
   },
+  "api": {
+    "enabled": true,
+    "listenAddress": "*",
+    "port": 4000
+  },
   "pools": [
     {
       "id": "straks1",
@@ -74,8 +79,20 @@
             "retargetTime": 90,
             "variancePercent": 30
           }
+        },
+        "4501": {
+          "listenAddress": "0.0.0.0",
+          "difficulty": 10,
+          "name": "1Difficulty",
+          "varDiff": {
+            "minDiff": 5,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
         }
       },
+
       "daemons": [
         {
           "host": "127.0.0.1",
