@@ -196,36 +196,36 @@ namespace MiningCore.Stratum
                     // onAccept
                     using (buffer)
                     {
-                        var count = buffer.Count;
-                        if (count == 0 || !isAlive)
+                        var remaining = buffer.Count;
+                        if (remaining == 0 || !isAlive)
                             return;
 
-                        var buf = ByteArrayPool.Rent(count);
+                        var buf = ByteArrayPool.Rent(remaining);
                         var prevIndex = 0;
                         var keepLease = false;
 
                         try
                         {
                             // clear left-over contents
-                            if (buf.Length > count)
-                                Array.Clear(buf, count, buf.Length - count);
+                            if (buf.Length > remaining)
+                                Array.Clear(buf, remaining, buf.Length - remaining);
 
                             // read buffer
-                            buffer.ReadBytes(buf, count);
+                            buffer.ReadBytes(buf, remaining);
 
                             // diagnostics
-                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, count)}");
+                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, remaining)}");
 
-                            while (count > 0)
+                            while (remaining > 0)
                             {
                                 // check if we got a newline
-                                var index = buf.IndexOf(0xa, prevIndex, count);
+                                var index = buf.IndexOf(0xa, prevIndex, remaining);
                                 var found = index != -1;
 
                                 if (found)
                                 {
                                     // fastpath
-                                    if (index + 1 == count && recvQueue.Count == 0)
+                                    if (index + 1 == buffer.Count && recvQueue.Count == 0)
                                     {
                                         observer.OnNext(new PooledArraySegment<byte>(buf, 0, index));
                                         keepLease = true;
@@ -256,14 +256,14 @@ namespace MiningCore.Stratum
                                     observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));
 
                                     prevIndex = index + 1;
-                                    count -= prevIndex;
+                                    remaining -= segmentLength + 1;
                                     continue;
                                 }
 
                                 // store
                                 if (prevIndex != 0)
                                 {
-                                    var segmentLength = count - prevIndex;
+                                    var segmentLength = buffer.Count - prevIndex;
 
                                     if (segmentLength > 0)
                                     {
@@ -275,7 +275,7 @@ namespace MiningCore.Stratum
 
                                 else
                                 {
-                                    recvQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, count));
+                                    recvQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, remaining));
                                     keepLease = true;
                                 }
 
