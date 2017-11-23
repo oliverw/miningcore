@@ -88,34 +88,36 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
-                lock(jobLock)
+                var job = currentJob;
+                var isNew = currentJob == null || job.BlockTemplate.Header != blockTemplate.Header;
+
+                if (isNew)
                 {
-                    var isNew = currentJob == null ||
-                        currentJob.BlockTemplate.Header != blockTemplate.Header;
+                    var jobId = NextJobId("x8");
 
-                    if (isNew)
+                    // update template
+                    job = new EthereumJob(jobId, blockTemplate);
+
+                    lock (jobLock)
                     {
-                        var jobId = NextJobId("x8");
-
-                        // update template
-                        currentJob = new EthereumJob(jobId, blockTemplate);
-
                         // add jobs
-                        validJobs[jobId] = currentJob;
+                        validJobs[jobId] = job;
 
                         // remove old ones
                         var obsoleteKeys = validJobs.Keys
-                            .Where(key => validJobs[key].BlockTemplate.Height < currentJob.BlockTemplate.Height - MaxBlockBacklog).ToArray();
+                            .Where(key => validJobs[key].BlockTemplate.Height < job.BlockTemplate.Height - MaxBlockBacklog).ToArray();
 
-                        foreach(var key in obsoleteKeys)
+                        foreach (var key in obsoleteKeys)
                             validJobs.Remove(key);
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                     }
 
-                    return isNew;
+                    currentJob = job;
+
+                    // update stats
+                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                 }
+
+                return isNew;
             }
 
             catch(Exception ex)
@@ -251,16 +253,20 @@ namespace MiningCore.Blockchain.Ethereum
 
         private object[] GetJobParamsForStratum(bool isNew)
         {
-            lock(jobLock)
+            var job = currentJob;
+
+            if(job != null)
             {
                 return new object[]
                 {
-                    currentJob.Id,
-                    currentJob.BlockTemplate.Seed,
-                    currentJob.BlockTemplate.Header,
+                    job.Id,
+                    job.BlockTemplate.Seed,
+                    job.BlockTemplate.Header,
                     isNew
                 };
             }
+
+            return new object[0];
         }
 
         #region API-Surface

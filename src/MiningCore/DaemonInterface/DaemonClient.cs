@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -54,7 +55,6 @@ namespace MiningCore.DaemonInterface
             };
         }
 
-        private readonly Random random = new Random();
         private readonly JsonSerializerSettings serializerSettings;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -288,13 +288,7 @@ namespace MiningCore.DaemonInterface
 
         protected string GetRequestId()
         {
-            string rpcRequestId;
-
-            lock(random)
-            {
-                rpcRequestId = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + random.Next(10)).ToString();
-            }
-
+            var rpcRequestId = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + StaticRandom.Next(10)).ToString();
             return rpcRequestId;
         }
 

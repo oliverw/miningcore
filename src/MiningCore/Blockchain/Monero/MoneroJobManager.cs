@@ -93,22 +93,21 @@ namespace MiningCore.Blockchain.Monero
                 }
 
                 var blockTemplate = response.Response;
+                var job = currentJob;
 
-                lock(jobLock)
+                var isNew = job == null || job.BlockTemplate.Height < blockTemplate.Height;
+
+                if (isNew)
                 {
-                    var isNew = currentJob == null || currentJob.BlockTemplate.Height < blockTemplate.Height;
+                    job = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
+                    job.Init();
+                    currentJob = job;
 
-                    if (isNew)
-                    {
-                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
-                        currentJob.Init();
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
-                    }
-
-                    return isNew;
+                    // update stats
+                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                 }
+
+                return isNew;
             }
 
             catch(Exception ex)
@@ -220,10 +219,8 @@ namespace MiningCore.Blockchain.Monero
             blob = null;
             target = null;
 
-            lock(jobLock)
-            {
-                currentJob?.PrepareWorkerJob(workerJob, out blob, out target);
-            }
+            var job = currentJob;
+            job?.PrepareWorkerJob(workerJob, out blob, out target);
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,
@@ -234,15 +231,9 @@ namespace MiningCore.Blockchain.Monero
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
 
-            MoneroJob job;
-
-            lock(jobLock)
-            {
-                if (workerJob.Height != currentJob.BlockTemplate.Height)
-                    throw new StratumException(StratumError.MinusOne, "block expired");
-
-                job = currentJob;
-            }
+            var job = currentJob;
+            if (workerJob.Height != job?.BlockTemplate.Height)
+                throw new StratumException(StratumError.MinusOne, "block expired");
 
             // validate & process
             var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);

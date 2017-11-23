@@ -551,34 +551,37 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var blockTemplate = response.Response;
 
-                lock(jobLock)
+                var job = currentJob;
+                var isNew = job == null ||
+                            job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                            job.BlockTemplate?.Height < blockTemplate.Height;
+
+                if (isNew || forceUpdate)
                 {
-                    var isNew = currentJob == null ||
-                        currentJob.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                        currentJob.BlockTemplate?.Height < blockTemplate.Height;
+                    job = new TJob();
 
-                    if (isNew || forceUpdate)
+                    job.Init(blockTemplate, NextJobId(),
+                        poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
+                        ShareMultiplier,
+                        coinbaseHasher, headerHasher, blockHasher);
+
+                    // update stats
+                    if (isNew)
+                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+
+                    lock (jobLock)
                     {
-                        currentJob = new TJob();
-
-                        currentJob.Init(blockTemplate, NextJobId(),
-                            poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
-                            ShareMultiplier,
-                            coinbaseHasher, headerHasher, blockHasher);
-
-                        // update stats
-                        if (isNew)
-                            BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
-
-                        validJobs.Add(currentJob);
+                        validJobs.Add(job);
 
                         // trim active jobs
-                        while(validJobs.Count > MaxActiveJobs)
+                        while (validJobs.Count > MaxActiveJobs)
                             validJobs.RemoveAt(0);
                     }
 
-                    return isNew;
+                    currentJob = job;
                 }
+
+                return isNew;
             }
 
             catch(Exception ex)
@@ -591,10 +594,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual object GetJobParamsForStratum(bool isNew)
         {
-            lock(jobLock)
-            {
-                return currentJob?.GetJobParams(isNew);
-            }
+            var job = currentJob;
+            return job?.GetJobParams(isNew);
         }
 
         #endregion // Overrides
