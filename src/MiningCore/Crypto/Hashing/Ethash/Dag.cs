@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Contracts;
+using MiningCore.Extensions;
 using MiningCore.Native;
 using NLog;
 
@@ -103,6 +104,8 @@ namespace MiningCore.Crypto.Hashing.Ethash
         public unsafe bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
             Contract.RequiresNonNull(hash, nameof(hash));
+
+            logger.LogInvoke();
 
             mixDigest = null;
             result = null;

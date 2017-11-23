@@ -78,6 +78,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected async Task<bool> UpdateJob()
         {
+            logger.LogInvoke(LogCat);
+
             try
             {
                 var blockTemplate = await GetBlockTemplateAsync();
@@ -86,34 +88,36 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
-                lock(jobLock)
+                var job = currentJob;
+                var isNew = currentJob == null || job.BlockTemplate.Header != blockTemplate.Header;
+
+                if (isNew)
                 {
-                    var isNew = currentJob == null ||
-                        currentJob.BlockTemplate.Header != blockTemplate.Header;
+                    var jobId = NextJobId("x8");
 
-                    if (isNew)
+                    // update template
+                    job = new EthereumJob(jobId, blockTemplate);
+
+                    lock (jobLock)
                     {
-                        var jobId = NextJobId("x8");
-
-                        // update template
-                        currentJob = new EthereumJob(jobId, blockTemplate);
-
                         // add jobs
-                        validJobs[jobId] = currentJob;
+                        validJobs[jobId] = job;
 
                         // remove old ones
                         var obsoleteKeys = validJobs.Keys
-                            .Where(key => validJobs[key].BlockTemplate.Height < currentJob.BlockTemplate.Height - MaxBlockBacklog).ToArray();
+                            .Where(key => validJobs[key].BlockTemplate.Height < job.BlockTemplate.Height - MaxBlockBacklog).ToArray();
 
-                        foreach(var key in obsoleteKeys)
+                        foreach (var key in obsoleteKeys)
                             validJobs.Remove(key);
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                     }
 
-                    return isNew;
+                    currentJob = job;
+
+                    // update stats
+                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                 }
+
+                return isNew;
             }
 
             catch(Exception ex)
@@ -126,6 +130,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
@@ -247,16 +253,20 @@ namespace MiningCore.Blockchain.Ethereum
 
         private object[] GetJobParamsForStratum(bool isNew)
         {
-            lock(jobLock)
+            var job = currentJob;
+
+            if(job != null)
             {
                 return new object[]
                 {
-                    currentJob.Id,
-                    currentJob.BlockTemplate.Seed,
-                    currentJob.BlockTemplate.Header,
+                    job.Id,
+                    job.BlockTemplate.Seed,
+                    job.BlockTemplate.Header,
                     isNew
                 };
             }
+
+            return new object[0];
         }
 
         #region API-Surface
@@ -305,6 +315,11 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(request, nameof(request));
+
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+
             // var miner = request[0];
             var jobId = request[1];
             var nonce = request[2];
@@ -343,6 +358,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         public async Task UpdateNetworkStatsAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),

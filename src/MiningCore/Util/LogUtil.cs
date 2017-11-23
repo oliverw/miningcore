@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Runtime.CompilerServices;
 using MiningCore.Configuration;
 using MiningCore.Mining;
 using NLog;

@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
@@ -78,6 +79,8 @@ namespace MiningCore.Blockchain.Monero
 
         protected async Task<bool> UpdateJob()
         {
+            logger.LogInvoke(LogCat);
+
             try
             {
                 var response = await GetBlockTemplateAsync();
@@ -90,22 +93,21 @@ namespace MiningCore.Blockchain.Monero
                 }
 
                 var blockTemplate = response.Response;
+                var job = currentJob;
 
-                lock(jobLock)
+                var isNew = job == null || job.BlockTemplate.Height < blockTemplate.Height;
+
+                if (isNew)
                 {
-                    var isNew = currentJob == null || currentJob.BlockTemplate.Height < blockTemplate.Height;
+                    job = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
+                    job.Init();
+                    currentJob = job;
 
-                    if (isNew)
-                    {
-                        currentJob = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
-                        currentJob.Init();
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
-                    }
-
-                    return isNew;
+                    // update stats
+                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                 }
+
+                return isNew;
             }
 
             catch(Exception ex)
@@ -118,6 +120,8 @@ namespace MiningCore.Blockchain.Monero
 
         private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var request = new GetBlockTemplateRequest
             {
                 WalletAddress = poolConfig.Address,
@@ -215,24 +219,21 @@ namespace MiningCore.Blockchain.Monero
             blob = null;
             target = null;
 
-            lock(jobLock)
-            {
-                currentJob?.PrepareWorkerJob(workerJob, out blob, out target);
-            }
+            var job = currentJob;
+            job?.PrepareWorkerJob(workerJob, out blob, out target);
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
-            MoneroJob job;
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(request, nameof(request));
 
-            lock(jobLock)
-            {
-                if (workerJob.Height != currentJob.BlockTemplate.Height)
-                    throw new StratumException(StratumError.MinusOne, "block expired");
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
 
-                job = currentJob;
-            }
+            var job = currentJob;
+            if (workerJob.Height != job?.BlockTemplate.Height)
+                throw new StratumException(StratumError.MinusOne, "block expired");
 
             // validate & process
             var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
@@ -273,6 +274,8 @@ namespace MiningCore.Blockchain.Monero
 
         public async Task UpdateNetworkStatsAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
             if (infoResponse.Error != null)

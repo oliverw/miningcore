@@ -23,9 +23,12 @@ using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
+using MiningCore.Extensions;
 using MiningCore.Persistence.Common.Repositories;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Util;
+using NLog;
 
 namespace MiningCore.Persistence.Postgres.Repositories
 {
@@ -38,9 +41,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
         }
 
         private readonly IMapper mapper;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
+            logger.LogInvoke();
+
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, created) " +
@@ -51,6 +57,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
+            logger.LogInvoke();
+
             var query = "SELECT * FROM poolstats WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
@@ -61,6 +69,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
+            logger.LogInvoke(new []{ poolId });
+
             var query = "SELECT date_trunc('hour', created) AS created, " +
                 "   AVG(poolhashrate) AS poolhashrate, " +
                 "   CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
@@ -76,6 +86,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public MinerStats GetMinerStats(IDbConnection con, string poolId, string miner)
         {
+            logger.LogInvoke(new[] { poolId, miner });
+
             var query = "SELECT (SELECT COUNT(*) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
                 "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
                 "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
