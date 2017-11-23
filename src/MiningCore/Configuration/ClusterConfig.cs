@@ -46,6 +46,7 @@ namespace MiningCore.Configuration
         VTC, // Vertcoin
         BTG, // Bitcoin Gold
         GLT, // Globaltoken
+        ZEN, // Zencash
     }
 
     public class CoinConfig

@@ -2,6 +2,7 @@
 *.user
 *.sln.docstates
 .vs/
+.vscode/
 
 [Dd]ebug/
 [Rr]elease/
