@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
@@ -78,6 +79,8 @@ namespace MiningCore.Blockchain.Monero
 
         protected async Task<bool> UpdateJob()
         {
+            logger.LogInvoke(LogCat);
+
             try
             {
                 var response = await GetBlockTemplateAsync();
@@ -118,6 +121,8 @@ namespace MiningCore.Blockchain.Monero
 
         private async Task<DaemonResponse<GetBlockTemplateResponse>> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var request = new GetBlockTemplateRequest
             {
                 WalletAddress = poolConfig.Address,
@@ -224,6 +229,11 @@ namespace MiningCore.Blockchain.Monero
         public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(request, nameof(request));
+
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+
             MoneroJob job;
 
             lock(jobLock)
@@ -273,6 +283,8 @@ namespace MiningCore.Blockchain.Monero
 
         public async Task UpdateNetworkStatsAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
             if (infoResponse.Error != null)

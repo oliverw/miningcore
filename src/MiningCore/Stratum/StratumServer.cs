@@ -135,13 +135,13 @@ namespace MiningCore.Stratum
                 // get rid of banned clients as early as possible
                 if (banManager?.IsBanned(remoteEndPoint.Address) == true)
                 {
-                    logger.Trace(() => $"[{LogCat}] Disconnecting banned ip {remoteEndPoint.Address}");
+                    logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndPoint.Address}");
                     con.Dispose();
                     return;
                 }
 
                 var connectionId = CorrelationIdGenerator.GetNextId();
-                logger.Trace(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
+                logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
 
                 // setup client
                 var client = new StratumClient<TClientContext>();
@@ -165,7 +165,7 @@ namespace MiningCore.Stratum
                         // parse request
                         var request = ParseRequest(data);
 
-                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request {request.Method} [{request.Id}]");
+                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
                         try
                         {

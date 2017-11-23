@@ -28,9 +28,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
@@ -54,6 +56,7 @@ namespace MiningCore.DaemonInterface
 
         private readonly Random random = new Random();
         private readonly JsonSerializerSettings serializerSettings;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         protected DaemonEndpointConfig[] endPoints;
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
@@ -104,6 +107,8 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
+            logger.LogInvoke(new[] { method });
+
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
             try
@@ -145,6 +150,8 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
+            logger.LogInvoke(new[] { method });
+
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
@@ -175,6 +182,8 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
+            logger.LogInvoke(new[] { method });
+
             var task = BuildRequestTask(endPoints.First(), method, payload, payloadJsonSerializerSettings);
             await task;
 
@@ -189,6 +198,8 @@ namespace MiningCore.DaemonInterface
         public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params DaemonCmd[] batch)
         {
             Contract.RequiresNonNull(batch, nameof(batch));
+
+            logger.LogInvoke(batch.Select(x => x.Method).ToArray());
 
             var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(endPoint, batch)).ToArray();
 

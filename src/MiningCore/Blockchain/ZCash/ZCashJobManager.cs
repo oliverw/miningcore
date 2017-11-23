@@ -68,6 +68,8 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override async Task<DaemonResponse<ZCashBlockTemplate>> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(BitcoinCommands.GetBlockSubsidy);
 
             var result = await daemon.ExecuteCmdAnyAsync<ZCashBlockTemplate>(
@@ -108,6 +110,8 @@ namespace MiningCore.Blockchain.ZCash
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
+
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");

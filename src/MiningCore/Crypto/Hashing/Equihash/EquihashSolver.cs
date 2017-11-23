@@ -21,7 +21,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Threading;
 using MiningCore.Contracts;
+using MiningCore.Extensions;
 using MiningCore.Native;
+using NLog;
 
 namespace MiningCore.Crypto.Hashing.Equihash
 {
@@ -33,6 +35,8 @@ namespace MiningCore.Crypto.Hashing.Equihash
             // requirements of the equihash algorithm (up 1GB per thread)
             sem = new Semaphore(maxConcurrency, maxConcurrency);
         }
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public static Lazy<EquihashSolver> Instance { get; } = new Lazy<EquihashSolver>(() =>
             new EquihashSolver(maxThreads));
@@ -65,6 +69,8 @@ namespace MiningCore.Crypto.Hashing.Equihash
             Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
             Contract.RequiresNonNull(solution, nameof(solution));
             Contract.Requires<ArgumentException>(solution.Length == 1344, $"{nameof(solution)} must be exactly 1344 bytes");
+
+            logger.LogInvoke();
 
             try
             {

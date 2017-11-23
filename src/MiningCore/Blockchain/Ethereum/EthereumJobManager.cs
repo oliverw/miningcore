@@ -78,6 +78,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected async Task<bool> UpdateJob()
         {
+            logger.LogInvoke(LogCat);
+
             try
             {
                 var blockTemplate = await GetBlockTemplateAsync();
@@ -126,6 +128,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
@@ -305,6 +309,11 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(request, nameof(request));
+
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+
             // var miner = request[0];
             var jobId = request[1];
             var nonce = request[2];
@@ -343,6 +352,8 @@ namespace MiningCore.Blockchain.Ethereum
 
         public async Task UpdateNetworkStatsAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var commands = new[]
             {
                 new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),

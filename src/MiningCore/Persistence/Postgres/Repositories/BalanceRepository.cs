@@ -24,8 +24,11 @@ using System.Linq;
 using AutoMapper;
 using Dapper;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Util;
+using NLog;
 
 namespace MiningCore.Persistence.Postgres.Repositories
 {
@@ -37,9 +40,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
         }
 
         private readonly IMapper mapper;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount)
         {
+            logger.LogInvoke();
+
             var query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
             var balance = con.Query<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx)
@@ -82,6 +88,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum)
         {
+            logger.LogInvoke();
+
             var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
 
             return con.Query<Entities.Balance>(query, new { poolId, minimum })
