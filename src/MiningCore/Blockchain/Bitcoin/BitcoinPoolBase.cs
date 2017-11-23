@@ -112,7 +112,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
-            client.Context.IsAuthorized = await manager.ValidateAddressAsync(minerName);
+            client.Context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName);
             client.Context.MinerName = minerName;
             client.Context.WorkerName = workerName;
 

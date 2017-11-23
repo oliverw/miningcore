@@ -32,6 +32,7 @@ using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
@@ -122,6 +123,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var result = await daemon.ExecuteCmdAnyAsync<TBlockTemplate>(
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
@@ -262,6 +265,8 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
@@ -334,6 +339,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public async Task UpdateNetworkStatsAsync()
         {
+            logger.LogInvoke(LogCat);
+
             var results = await daemon.ExecuteBatchAnyAsync(
                 new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
                 new DaemonCmd(BitcoinCommands.GetMiningInfo),
@@ -529,6 +536,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual async Task<bool> UpdateJob(bool forceUpdate)
         {
+            logger.LogInvoke(LogCat);
+
             try
             {
                 var response = await GetBlockTemplateAsync();

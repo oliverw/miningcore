@@ -85,7 +85,9 @@ namespace MiningCore.Notifications
 
         private async Task SendNotificationAsync(QueuedNotification notification)
         {
-            foreach(var sender in notificationSenders)
+            logger.Debug(() => $"SendNotificationAsync");
+
+            foreach (var sender in notificationSenders)
             {
                 try
                 {

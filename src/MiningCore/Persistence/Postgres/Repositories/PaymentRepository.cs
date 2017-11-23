@@ -22,8 +22,11 @@ using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
+using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Util;
+using NLog;
 
 namespace MiningCore.Persistence.Postgres.Repositories
 {
@@ -35,9 +38,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
         }
 
         private readonly IMapper mapper;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public void Insert(IDbConnection con, IDbTransaction tx, Payment payment)
         {
+            logger.LogInvoke();
+
             var mapped = mapper.Map<Entities.Payment>(payment);
 
             var query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
@@ -48,6 +54,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public Payment[] PagePayments(IDbConnection con, string poolId, int page, int pageSize)
         {
+            logger.LogInvoke(new[] { poolId });
+
             var query = "SELECT * FROM payments WHERE poolid = @poolid " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 

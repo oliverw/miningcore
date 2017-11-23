@@ -53,8 +53,9 @@ namespace MiningCore.VarDiff
         public double? Update(WorkerContextBase ctx, IList<long> shares, string connectionId, ILogger logger)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            logger.Debug(() => $"Update");
 
-            lock(ctx)
+            lock (ctx)
             {
                 var difficulty = ctx.Difficulty;
                 var minDiff = options.MinDiff;

@@ -30,6 +30,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
 using MiningCore.Api.Extensions;
 using MiningCore.Api.Responses;
@@ -126,7 +127,9 @@ namespace MiningCore.Api
 
             try
             {
-                foreach(var path in requestMap.Keys)
+                logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
+
+                foreach (var path in requestMap.Keys)
                 {
                     var m = path.Match(request.Path);
 
