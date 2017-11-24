@@ -24,6 +24,7 @@ namespace MiningCore.Blockchain
     	    { CoinType.GLT, "https://bchain.info/GLT/block/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/block/{0}" },
             //{ CoinType.BTG, "https://btgexp.com/block/{0}" },
+            { CoinType.ELLA, "https://explorer.ellaism.org/block/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -45,6 +46,7 @@ namespace MiningCore.Blockchain
             { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/tx/{0}" },
             { CoinType.BTG, "https://btgexp.com/tx/{0}" },
+            { CoinType.ELLA, "https://explorer.ellaism.org/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -65,6 +67,7 @@ namespace MiningCore.Blockchain
             { CoinType.GLT, "https://bchain.info/GLT/addr/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/addr/{0}" },
             { CoinType.BTG, "https://btgexp.com/address/{0}" },
+            { CoinType.ELLA, "https://explorer.ellaism.org/addr/{0}" },
         };
     }
 }

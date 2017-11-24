@@ -45,7 +45,8 @@ namespace MiningCore.Configuration
         MONA, // Monacoin
         VTC, // Vertcoin
         BTG, // Bitcoin Gold
-        GLT, // Globaltoken,
+        GLT, // Globaltoken
+        ELLA, //Ellaism
         STAK //Straks
 
     }

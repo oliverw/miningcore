@@ -37,6 +37,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const decimal ByzantiumBlockReward = 3.0m;
         public const decimal TestnetBlockReward = 3.0m;
         public const decimal ExpanseBlockReward = 8.0m;
+        public const decimal EllaismBlockReward = 5.0m;
 
         public const int MinConfimations = 16;
     }
@@ -63,6 +64,7 @@ namespace MiningCore.Blockchain.Ethereum
         Ropsten,
         Classic,
         Expanse,
+        Ellaism,
 
         Unknown = -1,
     }
