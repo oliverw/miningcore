@@ -30,6 +30,8 @@ using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Blockchain.Monero;
+using MiningCore.Blockchain.Straks;
+using MiningCore.Blockchain.Straks.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -107,6 +109,9 @@ namespace MiningCore
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<DashJob, DashBlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<StraksJob, StraksBlockTemplate>>()
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()

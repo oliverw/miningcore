@@ -46,7 +46,7 @@ namespace MiningCore.Configuration
         VTC, // Vertcoin
         BTG, // Bitcoin Gold
         GLT, // Globaltoken,
-        STRAKS
+        STAK //Straks
 
     }
 
