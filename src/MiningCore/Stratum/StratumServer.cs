@@ -237,7 +237,7 @@ namespace MiningCore.Stratum
 
                 case JsonReaderException jsonEx:
                     // ban clients sending junk
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {ex.Message}, path: {jsonEx.Path}");
+                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
                     //logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
                     //banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     break;
