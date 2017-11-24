@@ -25,6 +25,7 @@ using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Straks.DaemonResponses;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Blockchain.Straks
 {
@@ -49,11 +50,11 @@ namespace MiningCore.Blockchain.Straks
 
         private Money CreateStraksOutputs(Transaction tx, Money reward)
         {
-
-            if (BlockTemplate.Height >= 10080)
+            var treasuryRewardAddress = GetTreasuryRewardAddress();
+            if (reward > 0 && treasuryRewardAddress != null)
             {
-                var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
-                var treasuryReward = new Money(Math.Round(reward.Satoshi * (5 / 100m)), NBitcoin.MoneyUnit.Satoshi);
+                var destination = FoundersAddressToScriptDestination(treasuryRewardAddress);
+                var treasuryReward = new Money(BlockTemplate.CoinbaseTx.TreasuryReward, MoneyUnit.Satoshi);
                 tx.AddOutput(treasuryReward, destination);
                 reward -= treasuryReward;
             }
@@ -88,18 +89,16 @@ namespace MiningCore.Blockchain.Straks
 
         public string GetTreasuryRewardAddress()
         {
-            switch (BlockTemplate.Height % 4)
+            if (poolConfig.Extra != null && poolConfig.Extra.ContainsKey("treasuryAddresses"))
             {
-                case 0:
-                    return "3K3bPrW5h7DYEMp2RcXawTCXajcm4ZU9Zh";
-                case 1:
-                    return "33Ssxmn3ehVMgyxgegXhpLGSBpubPjLZQ6";
-                case 2:
-                    return "3HFPNAjesiBY5sSVUmuBFnMEGut69R49ca";
-                case 3:
-                default:
-                    return "37jLjjfUXQU4bdqVzvpUXyzAqPQSmxyByi";
+                var addresses = poolConfig.Extra["treasuryAddresses"] as JArray;
+                if (addresses.Count > 0)
+                {
+                    var index = Convert.ToInt32(BlockTemplate.Height % addresses.Count);
+                    return addresses[index].ToObject<string>();
+                }
             }
+            return null;
         }
 
         public static IDestination FoundersAddressToScriptDestination(string address)
