@@ -45,7 +45,7 @@ using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP)]
+    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
     public class EthereumPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -313,6 +313,9 @@ namespace MiningCore.Blockchain.Ethereum
                 case ParityChainType.Expanse:
                     return EthereumConstants.ExpanseBlockReward;
 
+                case ParityChainType.Ellaism:
+                    return EthereumConstants.EllaismBlockReward;
+                    
                 case ParityChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
 
