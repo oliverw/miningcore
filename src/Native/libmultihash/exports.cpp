@@ -68,6 +68,11 @@ extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t 
 	x11_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x13_export(const char* input, char* output, uint32_t input_len)
+{
+	x13_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void x15_export(const char* input, char* output, uint32_t input_len)
 {
 	x15_hash(input, output, input_len);
