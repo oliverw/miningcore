@@ -43,6 +43,7 @@ Bitcoin Cash | Yes | Yes | |
 Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
 Globaltoken | Yes | Yes | | [GLT Daemon](https://globaltoken.org/#downloads)
+Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Groestlcoin | Yes | Yes | |
 Dogecoin | Yes | No | |
 DigiByte | Yes | No | |
