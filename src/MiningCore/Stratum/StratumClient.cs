@@ -199,23 +199,23 @@ namespace MiningCore.Stratum
                         if (buffer.Count == 0 || !isAlive)
                             return;
 
-                        var size = buffer.Count;
-                        var remaining = size;
-                        var buf = ByteArrayPool.Rent(size);
+                        var bufferSize = buffer.Count;
+                        var remaining = bufferSize;
+                        var buf = ByteArrayPool.Rent(bufferSize);
                         var prevIndex = 0;
                         var keepLease = false;
 
                         try
                         {
                             // clear left-over contents
-                            if (buf.Length > size)
-                                Array.Clear(buf, size, buf.Length - size);
+                            if (buf.Length > bufferSize)
+                                Array.Clear(buf, bufferSize, buf.Length - bufferSize);
 
                             // read buffer
-                            buffer.ReadBytes(buf, size);
+                            buffer.ReadBytes(buf, bufferSize);
 
                             // diagnostics
-                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, size)}");
+                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
 
                             while (remaining > 0)
                             {
@@ -226,9 +226,9 @@ namespace MiningCore.Stratum
                                 if (found)
                                 {
                                     // fastpath
-                                    if (index + 1 == size && recvQueue.Count == 0)
+                                    if (index + 1 == bufferSize && recvQueue.Count == 0)
                                     {
-                                        observer.OnNext(new PooledArraySegment<byte>(buf, 0, index));
+                                        observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, index));
                                         keepLease = true;
                                         break;
                                     }
@@ -265,7 +265,7 @@ namespace MiningCore.Stratum
                                 // store
                                 if (prevIndex != 0)
                                 {
-                                    var segmentLength = size - prevIndex;
+                                    var segmentLength = bufferSize - prevIndex;
 
                                     if (segmentLength > 0)
                                     {

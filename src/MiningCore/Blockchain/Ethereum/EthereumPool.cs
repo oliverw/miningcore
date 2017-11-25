@@ -279,7 +279,7 @@ namespace MiningCore.Blockchain.Ethereum
                     break;
 
                 case EthereumStratumMethods.ExtraNonceSubscribe:
-                    client.RespondError(StratumError.Other, "not supported", request.Id, false);
+                    //client.RespondError(StratumError.Other, "not supported", request.Id, false);
                     break;
 
                 default:

@@ -212,7 +212,7 @@ namespace MiningCore.Stratum
         {
             using (data)
             {
-                using (var stream = new MemoryStream(data.Array, 0, data.Size))
+                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
                 {
                     using (var reader = new StreamReader(stream, StratumClient<TClientContext>.Encoding))
                     {
