@@ -138,7 +138,7 @@ namespace MiningCore.Extensions
         {
             Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count <= arr.Length);
 
-            for (var i = start; i < arr.Length; i++)
+            for (var i = start; i < count; i++)
             {
                 if (arr[i] == val)
                     return i;
