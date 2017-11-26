@@ -148,10 +148,20 @@ namespace MiningCore.Configuration
 
     public class ClusterBanningConfig
     {
-        public BanManagerKind Manager { get; set; }
+        public BanManagerKind? Manager { get; set; }
+
+        /// <summary>
+        /// Ban clients sending non-json or invalid json
+        /// </summary>
+        public bool? BanOnJunkReceive { get; set; }
+
+        /// <summary>
+        /// Ban miners for crossing invalid share threshold
+        /// </summary>
+        public bool? BanOnInvalidShares { get; set; }
     }
 
-    public partial class PoolBanningConfig
+    public partial class PoolShareBasedBanningConfig
     {
         public bool Enabled { get; set; }
         public int CheckThreshold { get; set; } // Check stats when this many shares have been submitted
@@ -226,7 +236,7 @@ namespace MiningCore.Configuration
         public Dictionary<int, PoolEndpoint> Ports { get; set; }
         public DaemonEndpointConfig[] Daemons { get; set; }
         public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
-        public PoolBanningConfig Banning { get; set; }
+        public PoolShareBasedBanningConfig ShareBasedBanning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
         public int ClientConnectionTimeout { get; set; }

@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
 using MiningCore.Buffers;
+using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -62,6 +63,7 @@ namespace MiningCore.Stratum
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
         protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
+        protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
         protected ILogger logger;
@@ -73,7 +75,7 @@ namespace MiningCore.Stratum
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             // start ports
-            foreach(var endpoint in stratumPorts)
+            foreach (var endpoint in stratumPorts)
             {
                 // host it and its message loop in a dedicated background thread
                 var task = new Task(() =>
@@ -212,7 +214,7 @@ namespace MiningCore.Stratum
         {
             using (data)
             {
-                using (var stream = new MemoryStream(data.Array, 0, data.Size))
+                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
                 {
                     using (var reader = new StreamReader(stream, StratumClient<TClientContext>.Encoding))
                     {
@@ -238,8 +240,12 @@ namespace MiningCore.Stratum
                 case JsonReaderException jsonEx:
                     // ban clients sending junk
                     logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
-                    //logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
-                    //banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+
+                    if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                    {
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                        banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                    }
                     break;
 
                 default:

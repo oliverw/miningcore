@@ -259,7 +259,7 @@ namespace MiningCore.Configuration
     {
     }
 
-    public partial class PoolBanningConfig
+    public partial class PoolShareBasedBanningConfig
     {
     }
 

@@ -9,6 +9,8 @@
     },
     "banning": {
         "manager": "integrated"
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
     },
     "notifications": {
         "enabled": true,
@@ -54,7 +56,7 @@
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
         "clientConnectionTimeout": 600,
-        "banning": {
+        "shareBasedBanning": {
             "enabled": true,
             "time": 600,
             "invalidPercent": 50,

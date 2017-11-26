@@ -83,7 +83,6 @@ namespace MiningCore.Mining
         protected readonly IMapper mapper;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
-        protected ClusterConfig clusterConfig;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 32;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
@@ -220,7 +219,7 @@ namespace MiningCore.Mining
 
         protected void SetupBanning(ClusterConfig clusterConfig)
         {
-            if (poolConfig.Banning?.Enabled == true)
+            if (poolConfig.ShareBasedBanning?.Enabled == true)
             {
                 var managerType = clusterConfig.Banning?.Manager ?? BanManagerKind.Integrated;
                 banManager = ctx.ResolveKeyed<IBanManager>(managerType);
@@ -270,7 +269,7 @@ namespace MiningCore.Mining
             }
         }
 
-        protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolBanningConfig config)
+        protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolShareBasedBanningConfig config)
         {
             var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 

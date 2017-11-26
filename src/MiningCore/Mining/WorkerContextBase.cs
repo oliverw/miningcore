@@ -66,7 +66,7 @@ namespace MiningCore.Mining
             Difficulty = difficulty;
             LastActivity = clock.UtcNow;
 
-            if (poolConfig.Banning != null)
+            if (poolConfig.ShareBasedBanning != null)
                 Stats = new BanningStats();
 
             if (varDiffConfig != null)
