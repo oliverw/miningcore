@@ -146,7 +146,8 @@ namespace MiningCore.Configuration
 
     public class ClusterBanningConfig
     {
-        public BanManagerKind Manager { get; set; }
+        public BanManagerKind? Manager { get; set; }
+        public bool Enabled { get; set; }
     }
 
     public partial class PoolBanningConfig
