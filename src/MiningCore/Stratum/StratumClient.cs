@@ -199,6 +199,10 @@ namespace MiningCore.Stratum
                         if (buffer.Count == 0 || !isAlive)
                             return;
 
+                        // prevent flooding
+                        if (buffer.Count > MaxRequestLength)
+                            throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxRequestLength}");
+
                         var bufferSize = buffer.Count;
                         var remaining = bufferSize;
                         var buf = ByteArrayPool.Rent(bufferSize);
@@ -283,7 +287,7 @@ namespace MiningCore.Stratum
 
                                 // prevent flooding
                                 if (recvQueue.Sum(x => x.Size) > MaxRequestLength)
-                                    throw new InvalidDataException($"[{ConnectionId}] Incoming message exceeds maximum length of {MaxRequestLength}");
+                                    throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxRequestLength}");
 
                                 break;
                             }
