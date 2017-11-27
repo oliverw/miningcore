@@ -562,7 +562,7 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         using(line)
                         {
-                            logger.Info(()=> Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
+                            logger.Debug(()=> Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
                         }
                     })
                     .Select(_=> Unit.Default);
@@ -573,7 +573,7 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         using (line)
                         {
-                            logger.Info(() => Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
+                            logger.Debug(() => Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
                         }
                     })
                     .Select(_ => Unit.Default);
