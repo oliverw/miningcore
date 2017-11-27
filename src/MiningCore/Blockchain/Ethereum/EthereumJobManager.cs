@@ -597,7 +597,15 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            if (extraPoolConfig?.EnableDaemonWebsocketStreaming == true)
+            var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
+
+            if (enableStreaming && !poolConfig.Daemons.Any(x => x.PortWs.HasValue))
+            {
+                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(DaemonEndpointConfig.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                enableStreaming = false;
+            }
+
+            if (enableStreaming)
             {
                 var pendingBlockObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
                         new[] { (object)EC.GetBlockByNumber, new[] { "pending", (object)true } })
