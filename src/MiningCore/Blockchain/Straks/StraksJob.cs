@@ -53,7 +53,7 @@ namespace MiningCore.Blockchain.Straks
             var treasuryRewardAddress = GetTreasuryRewardAddress();
             if (reward > 0 && treasuryRewardAddress != null)
             {
-                var destination = BitcoinUtils.AddressToDestination(treasuryRewardAddress);
+                var destination = TreasuryAddressToScriptDestination(treasuryRewardAddress);
                 var treasuryReward = new Money(BlockTemplate.CoinbaseTx.TreasuryReward, MoneyUnit.Satoshi);
                 tx.AddOutput(treasuryReward, destination);
                 reward -= treasuryReward;
@@ -100,6 +100,14 @@ namespace MiningCore.Blockchain.Straks
             }
             return null;
         }
+        public static IDestination TreasuryAddressToScriptDestination(string address)
+        {
+            var decoded = Encoders.Base58.DecodeData(address);
+            var hash = decoded.Skip(1).Take(20).ToArray();
+            var result = new ScriptId(hash);
+            return result;
+        }
+
 
     }
 }
