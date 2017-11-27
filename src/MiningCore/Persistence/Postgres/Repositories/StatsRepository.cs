@@ -55,6 +55,19 @@ namespace MiningCore.Persistence.Postgres.Repositories
             con.Execute(query, mapped, tx);
         }
 
+        public PoolStats GetLastPoolStats(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke();
+
+            var query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
+
+            var entity = con.QuerySingleOrDefault<Entities.PoolStats>(query, new { poolId });
+            if (entity == null)
+                return null;
+
+            return mapper.Map<PoolStats>(entity);
+        }
+
         public PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             logger.LogInvoke();
