@@ -32,10 +32,12 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
+using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.JsonRpc;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
@@ -54,7 +56,8 @@ namespace MiningCore.Blockchain.Ethereum
         public EthereumJobManager(
             IComponentContext ctx,
             NotificationService notificationService,
-            IMasterClock clock) :
+            IMasterClock clock,
+            JsonSerializerSettings serializerSettings) :
             base(ctx)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -63,6 +66,11 @@ namespace MiningCore.Blockchain.Ethereum
 
             this.clock = clock;
             this.notificationService = notificationService;
+
+            serializer = new JsonSerializer
+            {
+                ContractResolver = serializerSettings.ContractResolver
+            };
         }
 
         private DaemonEndpointConfig[] daemonEndpoints;
@@ -77,15 +85,31 @@ namespace MiningCore.Blockchain.Ethereum
         private const int MaxBlockBacklog = 3;
         protected readonly Dictionary<string, EthereumJob> validJobs = new Dictionary<string, EthereumJob>();
         private EthereumPoolConfigExtra extraPoolConfig;
+        private JsonSerializer serializer;
 
-        protected async Task<bool> UpdateJob()
+        protected async Task<bool> UpdateJobAsync()
         {
             logger.LogInvoke(LogCat);
 
             try
             {
-                var blockTemplate = await GetBlockTemplateAsync();
+                UpdateJob(await GetBlockTemplateAsync());
+            }
 
+            catch(Exception ex)
+            {
+                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJobAsync)}");
+            }
+
+            return false;
+        }
+
+        protected bool UpdateJob(EthereumBlockTemplate blockTemplate)
+        {
+            logger.LogInvoke(LogCat);
+
+            try
+            {
                 // may happen if daemon is currently not connected to peers
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
@@ -122,7 +146,7 @@ namespace MiningCore.Blockchain.Ethereum
                 return isNew;
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
@@ -157,7 +181,13 @@ namespace MiningCore.Blockchain.Ethereum
             // extract results
             var block = results[0].Response.ToObject<Block>();
             var work = results[1].Response.ToObject<string[]>();
+            var result = AssembleBlockTemplate(block, work);
 
+            return result;
+        }
+
+        private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
+        {
             // only parity returns the 4th element (block height)
             if (work.Length < 3)
             {
@@ -269,6 +299,23 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             return new object[0];
+        }
+
+        private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        {
+            using (data)
+            {
+                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                {
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    {
+                        using (var jreader = new JsonTextReader(reader))
+                        {
+                            return serializer.Deserialize<JsonRpcRequest>(jreader);
+                        }
+                    }
+                }
+            }
         }
 
         #region API-Surface
@@ -550,49 +597,83 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            IObservable<Unit> updateTrigger = null;
-
             if (extraPoolConfig?.EnableDaemonWebsocketStreaming == false)
-                updateTrigger = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval)).Select(_=> Unit.Default);
-            else
             {
-                var pendingBlockTrigger = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object) true } })
-                    .Do(line =>
+                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(UpdateJobAsync))
+                    .Concat()
+                    .Do(isNew =>
                     {
-                        using(line)
-                        {
-                            logger.Debug(()=> Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
-                        }
+                        if (isNew)
+                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
                     })
-                    .Select(_=> Unit.Default);
-
-                var getWorkTrigger = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object)EC.GetWork })
-                    .Do(line =>
-                    {
-                        using (line)
-                        {
-                            logger.Debug(() => Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
-                        }
-                    })
-                    .Select(_ => Unit.Default);
-
-                updateTrigger = Observable.Merge(pendingBlockTrigger, getWorkTrigger);
+                    .Where(isNew => isNew)
+                    .Select(_ => GetJobParamsForStratum(true))
+                    .Publish()
+                    .RefCount();
             }
 
-            Jobs = updateTrigger
-                .Select(_ => Observable.FromAsync(UpdateJob))
-                .Concat()
-                .Do(isNew =>
-                {
-                    if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                })
-                .Where(isNew => isNew)
-                .Select(_ => GetJobParamsForStratum(true))
-                .Publish()
-                .RefCount();
+            else
+            {
+                var pendingBlockObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                        new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object) true } })
+                    .Do(data =>
+                    {
+                        logger.Debug(()=> Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
+                    })
+                    .Select(data =>
+                    {
+                        try
+                        {
+                            var psp = DeserializeRequest(data).ParamsAs<PubSubParams<Block>>();
+                            return psp.Result;
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
+                        }
+
+                        return null;
+                    });
+
+                var getWorkObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                        new[] { (object) EC.GetWork })
+                    .Do(data =>
+                    {
+                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
+                    })
+                    .Select(data =>
+                    {
+                        try
+                        {
+                            var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
+                            return psp.Result;
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
+                        }
+
+                        return null;
+                    });
+
+                Jobs = Observable.CombineLatest(
+                        pendingBlockObs.Where(x=> x != null),
+                        getWorkObs.Where(x => x != null),
+                        AssembleBlockTemplate)
+                    .Select(UpdateJob)
+                    .Do(isNew =>
+                    {
+                        if (isNew)
+                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
+                    })
+                    .Where(isNew => isNew)
+                    .Select(_ => GetJobParamsForStratum(true))
+                    .Publish()
+                    .RefCount();
+            }
         }
 
         #endregion // Overrides
