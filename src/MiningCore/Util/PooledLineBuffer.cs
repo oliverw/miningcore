@@ -33,7 +33,7 @@ namespace MiningCore.Util
 
         #endregion
 
-        public void Receive<T>(T buffer, int bufferSize, Action<T, byte[], int> readBuffer, Action<PooledArraySegment<byte>> handler)
+        public void Receive<T>(T buffer, int bufferSize, Action<T, byte[], int> readBuffer, Action<PooledArraySegment<byte>> handler, bool forceNewLine = false)
         {
             if (bufferSize == 0)
                 return;
@@ -65,10 +65,10 @@ namespace MiningCore.Util
                     var index = buf.IndexOf(0xa, prevIndex, buf.Length - prevIndex);
                     var found = index != -1;
 
-                    if (found)
+                    if (found || forceNewLine)
                     {
                         // fastpath
-                        if (index + 1 == bufferSize && recvQueue.Count == 0)
+                        if (!forceNewLine && index + 1 == bufferSize && recvQueue.Count == 0)
                         {
                             handler(new PooledArraySegment<byte>(buf, prevIndex, index));
                             keepLease = true;
@@ -77,7 +77,7 @@ namespace MiningCore.Util
 
                         // assemble line buffer
                         var queuedLength = recvQueue.Sum(x => x.Size);
-                        var segmentLength = index - prevIndex;
+                        var segmentLength = !forceNewLine ? index - prevIndex : bufferSize - prevIndex;
                         var lineLength = queuedLength + segmentLength;
                         var line = ByteArrayPool.Rent(lineLength);
                         var offset = 0;
@@ -98,6 +98,9 @@ namespace MiningCore.Util
                         // emit
                         if (lineLength > 0)
                             handler(new PooledArraySegment<byte>(line, 0, lineLength));
+
+                        if (forceNewLine)
+                            break;
 
                         prevIndex = index + 1;
                         remaining -= segmentLength + 1;

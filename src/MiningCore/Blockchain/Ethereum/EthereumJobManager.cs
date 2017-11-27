@@ -25,7 +25,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using System.Reactive;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Ethereum.Configuration;
@@ -285,8 +287,8 @@ namespace MiningCore.Blockchain.Ethereum
             base.Configure(poolConfig, clusterConfig);
 
             // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? 
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : 
+            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
+                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
                 Dag.GetDefaultDagDirectory();
 
             // create it if necessary
@@ -548,8 +550,38 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            // periodically update block-template from daemon
-            Jobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+            IObservable<Unit> updateTrigger = null;
+
+            if (extraPoolConfig?.EnableDaemonWebsocketStreaming == false)
+                updateTrigger = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval)).Select(_=> Unit.Default);
+            else
+            {
+                var pendingBlockTrigger = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                        new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object) true } })
+                    .Do(line =>
+                    {
+                        using(line)
+                        {
+                            logger.Info(()=> Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
+                        }
+                    })
+                    .Select(_=> Unit.Default);
+
+                var getWorkTrigger = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                        new[] { (object)EC.GetWork })
+                    .Do(line =>
+                    {
+                        using (line)
+                        {
+                            logger.Info(() => Encoding.UTF8.GetString(line.Array, line.Offset, line.Size));
+                        }
+                    })
+                    .Select(_ => Unit.Default);
+
+                updateTrigger = Observable.Merge(pendingBlockTrigger, getWorkTrigger);
+            }
+
+            Jobs = updateTrigger
                 .Select(_ => Observable.FromAsync(UpdateJob))
                 .Concat()
                 .Do(isNew =>
