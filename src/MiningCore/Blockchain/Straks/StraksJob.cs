@@ -23,6 +23,7 @@ using System.Linq;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Straks.DaemonResponses;
+using MiningCore.Stratum;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
@@ -85,6 +86,13 @@ namespace MiningCore.Blockchain.Straks
             }
 
             return reward;
+        }
+
+        protected override BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, uint nTime, uint nonce)
+        {
+            var mainResult =  base.ProcessShareInternal(worker, extraNonce2, nTime, nonce);
+
+            return mainResult;
         }
 
         public string GetTreasuryRewardAddress()
