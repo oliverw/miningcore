@@ -61,7 +61,7 @@
         "blockRefreshInterval": 1000,
         "jobRebroadcastTimeout": 55,
         "clientConnectionTimeout": 600,
-        "shareBasedBanning": {
+        "banning": {
             "enabled": true,
             "time": 600,
             "invalidPercent": 50,

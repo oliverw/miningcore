@@ -219,7 +219,7 @@ namespace MiningCore.Mining
 
         protected void SetupBanning(ClusterConfig clusterConfig)
         {
-            if (poolConfig.ShareBasedBanning?.Enabled == true)
+            if (poolConfig.Banning?.Enabled == true)
             {
                 var managerType = clusterConfig.Banning?.Manager ?? BanManagerKind.Integrated;
                 banManager = ctx.ResolveKeyed<IBanManager>(managerType);
