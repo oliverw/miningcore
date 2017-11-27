@@ -222,9 +222,8 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public IObservable<JsonRpcResponse<TResponse>> WebsocketJsonRpcSubscribe<TResponse>(string method, object payload = null,
+        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
-            where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
@@ -232,7 +231,7 @@ namespace MiningCore.DaemonInterface
 
             return Observable.Merge(endPoints
                     .Where(endPoint=> endPoint.PortWs.HasValue)
-                    .Select(endPoint => WebsocketJsonRpcSubscribeEndpoint<TResponse>(endPoint, method, payload, payloadJsonSerializerSettings)))
+                    .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, method, payload, payloadJsonSerializerSettings)))
                 .Publish()
                 .RefCount();
         }
@@ -347,8 +346,8 @@ namespace MiningCore.DaemonInterface
             {
                 Debug.Assert(x.IsCompletedSuccessfully);
 
-                if (x.Result?.Result is JToken)
-                    resp.Response = ((JToken) x.Result?.Result)?.ToObject<TResponse>(serializer);
+                if (x.Result?.Result is JToken token)
+                    resp.Response = token?.ToObject<TResponse>(serializer);
                 else
                     resp.Response = (TResponse) x.Result?.Result;
 
@@ -377,10 +376,10 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<JsonRpcResponse<TResponse>> WebsocketJsonRpcSubscribeEndpoint<TResponse>(DaemonEndpointConfig endPoint, string method, object payload = null,
+        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
-            return Observable.Defer(()=> Observable.Create<JsonRpcResponse<TResponse>>(obs =>
+            return Observable.Defer(()=> Observable.Create<PooledArraySegment<byte>>(obs =>
             {
                 var cts = new CancellationTokenSource();
 
@@ -388,11 +387,11 @@ namespace MiningCore.DaemonInterface
                 {
                     using(cts)
                     {
-                        try
+                        while(!cts.IsCancellationRequested)
                         {
-                            while(!cts.IsCancellationRequested)
+                            try
                             {
-                                using(var plb = new PooledLineBuffer())
+                                using (var plb = new PooledLineBuffer())
                                 {
                                     using(var client = new ClientWebSocket())
                                     {
@@ -406,7 +405,7 @@ namespace MiningCore.DaemonInterface
                                         var json = JsonConvert.SerializeObject(request, payloadJsonSerializerSettings).ToCharArray();
                                         var byteLength = Encoding.UTF8.GetBytes(json, 0, json.Length, buf, 0);
                                         var segment = new ArraySegment<byte>(buf, 0, byteLength);
-                                        await client.SendAsync(segment, WebSocketMessageType.Text, false, cts.Token);
+                                        await client.SendAsync(segment, WebSocketMessageType.Text, true, cts.Token);
 
                                         // stream response
                                         while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
@@ -417,22 +416,23 @@ namespace MiningCore.DaemonInterface
                                             if (response.MessageType == WebSocketMessageType.Binary)
                                                 throw new InvalidDataException("expected text, received binary data");
 
-                                            plb.Receive(segment, segment.Count,
-                                                (buffer, arr, count) => buffer.CopyTo(arr, count),
+                                            plb.Receive(segment, response.Count,
+                                                (buffer, arr, count) => Array.Copy(buffer.Array, buffer.Offset, arr, 0, count),
                                                 data =>
                                                 {
-                                                    var rpcResponse = ParsePooledResponse<TResponse>(data);
-                                                    obs.OnNext(rpcResponse);
-                                                });
+                                                    obs.OnNext(data);
+                                                }, response.EndOfMessage);
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        catch(Exception ex)
-                        {
-                            obs.OnError(ex);
+                            catch (Exception ex)
+                            {
+                                logger.Error(()=> $"{ex.GetType().Name} '{ex.Message}' while streaming websocket responses. Reconnecting in 5s");
+                            }
+
+                            await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
                 }, TaskCreationOptions.LongRunning);
@@ -444,23 +444,6 @@ namespace MiningCore.DaemonInterface
                     cts.Cancel();
                 });
             }));
-        }
-
-        private JsonRpcResponse<TResponse> ParsePooledResponse<TResponse>(PooledArraySegment<byte> data)
-        {
-            using (data)
-            {
-                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
-                {
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
-                    {
-                        using (var jreader = new JsonTextReader(reader))
-                        {
-                            return serializer.Deserialize<JsonRpcResponse<TResponse>>(jreader);
-                        }
-                    }
-                }
-            }
         }
     }
 }

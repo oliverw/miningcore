@@ -165,7 +165,7 @@ namespace MiningCore.Stratum
                         logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumClient<TClientContext>.Encoding.GetString(data.Array, 0, data.Size)}");
 
                         // parse request
-                        var request = ParseRequest(data);
+                        var request = DeserializeRequest(data);
 
                         logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
@@ -210,7 +210,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private JsonRpcRequest ParseRequest(PooledArraySegment<byte> data)
+        private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
         {
             using (data)
             {
