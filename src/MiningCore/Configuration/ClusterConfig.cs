@@ -92,6 +92,11 @@ namespace MiningCore.Configuration
     public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     {
         public string Category { get; set; }
+
+        /// <summary>
+        /// Optional port for streaming WebSocket data
+        /// </summary>
+        public int? PortWs { get; set; }
     }
 
     public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
@@ -236,7 +241,7 @@ namespace MiningCore.Configuration
         public Dictionary<int, PoolEndpoint> Ports { get; set; }
         public DaemonEndpointConfig[] Daemons { get; set; }
         public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
-        public PoolShareBasedBanningConfig ShareBasedBanning { get; set; }
+        public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
         public int ClientConnectionTimeout { get; set; }

@@ -179,8 +179,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
-                if (poolConfig.ShareBasedBanning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, client.Context, poolConfig.ShareBasedBanning);
+                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
+                    ConsiderBan(client, client.Context, poolConfig.Banning);
             }
         }
 

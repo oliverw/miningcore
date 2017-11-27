@@ -1,35 +1,42 @@
-﻿/* 
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial 
+The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Stratum;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -208,6 +215,30 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
+        /// <summary>
+        /// Executes the request against all configured demons and returns the first successful response
+        /// </summary>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <param name="method"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        public IObservable<JsonRpcResponse<TResponse>> WebsocketJsonRpcSubscribe<TResponse>(string method, object payload = null,
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
+            where TResponse : class
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+            logger.LogInvoke(new[] { method });
+
+            return Observable.Merge(endPoints
+                    .Where(endPoint=> endPoint.PortWs.HasValue)
+                    .Select(endPoint => WebsocketJsonRpcSubscribeEndpoint<TResponse>(endPoint, method, payload, payloadJsonSerializerSettings)))
+                .Publish()
+                .RefCount();
+        }
+
+        #endregion // API-Surface
+
         private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
@@ -346,6 +377,90 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        #endregion // API-Surface
+        private IObservable<JsonRpcResponse<TResponse>> WebsocketJsonRpcSubscribeEndpoint<TResponse>(DaemonEndpointConfig endPoint, string method, object payload = null,
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
+        {
+            return Observable.Defer(()=> Observable.Create<JsonRpcResponse<TResponse>>(obs =>
+            {
+                var cts = new CancellationTokenSource();
+
+                var task = new Task(async () =>
+                {
+                    using(cts)
+                    {
+                        try
+                        {
+                            while(!cts.IsCancellationRequested)
+                            {
+                                using(var plb = new PooledLineBuffer())
+                                {
+                                    using(var client = new ClientWebSocket())
+                                    {
+                                        // connect
+                                        var uri = new Uri($"ws://{endPoint.Host}:{endPoint.PortWs.Value}");
+                                        await client.ConnectAsync(uri, cts.Token);
+
+                                        // subscribe
+                                        var buf = new byte[0x400];
+                                        var request = new JsonRpcRequest(method, payload, GetRequestId());
+                                        var json = JsonConvert.SerializeObject(request, payloadJsonSerializerSettings).ToCharArray();
+                                        var byteLength = Encoding.UTF8.GetBytes(json, 0, json.Length, buf, 0);
+                                        var segment = new ArraySegment<byte>(buf, 0, byteLength);
+                                        await client.SendAsync(segment, WebSocketMessageType.Text, false, cts.Token);
+
+                                        // stream response
+                                        while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                        {
+                                            segment = new ArraySegment<byte>(buf);
+                                            var response = await client.ReceiveAsync(buf, cts.Token);
+
+                                            if (response.MessageType == WebSocketMessageType.Binary)
+                                                throw new InvalidDataException("expected text, received binary data");
+
+                                            plb.Receive(segment, segment.Count,
+                                                (buffer, arr, count) => buffer.CopyTo(arr, count),
+                                                data =>
+                                                {
+                                                    var rpcResponse = ParsePooledResponse<TResponse>(data);
+                                                    obs.OnNext(rpcResponse);
+                                                });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        catch(Exception ex)
+                        {
+                            obs.OnError(ex);
+                        }
+                    }
+                }, TaskCreationOptions.LongRunning);
+
+                task.Start();
+
+                return Disposable.Create(() =>
+                {
+                    cts.Cancel();
+                });
+            }));
+        }
+
+        private JsonRpcResponse<TResponse> ParsePooledResponse<TResponse>(PooledArraySegment<byte> data)
+        {
+            using (data)
+            {
+                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                {
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    {
+                        using (var jreader = new JsonTextReader(reader))
+                        {
+                            return serializer.Deserialize<JsonRpcResponse<TResponse>>(jreader);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
