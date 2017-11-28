@@ -259,6 +259,8 @@ namespace MiningCore.Blockchain.Monero
 
         private void OnNewJob()
         {
+            logger.Info(() => $"[{LogCat}] Broadcasting job");
+
             ForEachClient(client =>
             {
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)

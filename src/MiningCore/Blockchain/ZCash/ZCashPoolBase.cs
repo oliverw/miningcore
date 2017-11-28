@@ -179,6 +179,8 @@ namespace MiningCore.Blockchain.ZCash
         {
             currentJobParams = jobParams;
 
+            logger.Info(() => $"[{LogCat}] Broadcasting job");
+
             ForEachClient(client =>
             {
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
