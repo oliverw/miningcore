@@ -240,7 +240,7 @@ namespace MiningCore.Stratum
                                     // fastpath
                                     if (index + 1 == bufferSize && recvQueue.Count == 0)
                                     {
-                                        observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, index));
+                                        observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, index - prevIndex));
                                         keepLease = true;
                                         break;
                                     }
