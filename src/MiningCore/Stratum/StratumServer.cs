@@ -151,39 +151,53 @@ namespace MiningCore.Stratum
 
                 // request subscription
                 var sub = client.Received
-                    .Select(data => Observable.FromAsync(() => Task.Run(() => // get off of LibUV event-loop-thread immediately
+                    .Subscribe(data =>
                     {
-                        // boot pre-connected clients
-                        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                        Task.Run(() => // get off of LibUV event-loop-thread immediately
                         {
-                            logger.Info(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
-                            DisconnectClient(client);
-                            data.Dispose();
-                            return Unit.Default;
-                        }
+                            JsonRpcRequest request = null;
 
-                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumClient<TClientContext>.Encoding.GetString(data.Array, 0, data.Size)}");
+                            try
+                            {
+                                // boot pre-connected clients
+                                if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                                {
+                                    logger.Info(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
+                                    DisconnectClient(client);
+                                    data.Dispose();
+                                    return;
+                                }
 
-                        // parse request
-                        var request = DeserializeRequest(data);
+                                // de-serialize
+                                logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumClient<TClientContext>.Encoding.GetString(data.Array, 0, data.Size)}");
+                                request = DeserializeRequest(data);
 
-                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+                                // dispatch
+                                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+                                OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
+                            }
 
-                        try
-                        {
-                            // dispatch request
-                            OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
-                        }
+                            catch(JsonReaderException jsonEx)
+                            {
+                                // junk received (no valid json)
+                                logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
-                        }
+                                if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                                {
+                                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                                    banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                                }
+                            }
 
-                        return Unit.Default;
-                    })))
-                    .Concat()
-                    .Subscribe(_ => { }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+                            catch (Exception ex)
+                            {
+                                if(request != null)
+                                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
+                                else
+                                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request]");
+                            }
+                        });
+                    }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
                 // ensure subscription is disposed on loop thread
                 var disposer = loop.CreateAsync((handle) =>
@@ -235,17 +249,6 @@ namespace MiningCore.Stratum
                     // log everything but ECONNRESET which just indicates the client disconnecting
                     if (opEx.ErrorCode != ErrorCode.ECONNRESET)
                         logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
-                    break;
-
-                case JsonReaderException jsonEx:
-                    // ban clients sending junk
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
-
-                    if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
-                    {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
-                        banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
-                    }
                     break;
 
                 default:
