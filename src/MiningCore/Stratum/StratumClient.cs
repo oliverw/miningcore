@@ -29,7 +29,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using Autofac;
-using Microsoft.IO;
 using MiningCore.Buffers;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
@@ -44,8 +43,6 @@ namespace MiningCore.Stratum
     public class StratumClient<TContext>
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
 
         private const int MaxInboundRequestLength = 8192;
         private const int MaxOutboundRequestLength = 0x4000;
