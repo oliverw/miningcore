@@ -19,9 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
 using System.Globalization;
-using MiningCore.Buffers;
 
 namespace MiningCore.Extensions
 {
@@ -100,6 +98,14 @@ namespace MiningCore.Extensions
                 throw new FormatException();
 
             return (T) Convert.ChangeType(val, underlyingType ?? typeof(T));
+        }
+
+        public static string ToLowerCamelCase(this string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return str;
+
+            return char.ToLowerInvariant(str[0]) + str.Substring(1);
         }
     }
 }

@@ -25,7 +25,7 @@ using MiningCore.VarDiff;
 
 namespace MiningCore.Mining
 {
-    public class BanningStats
+    public class ShareStats
     {
         public int ValidShares { get; set; }
         public int InvalidShares { get; set; }
@@ -35,7 +35,7 @@ namespace MiningCore.Mining
     {
         private double? pendingDifficulty;
 
-        public BanningStats Stats { get; set; }
+        public ShareStats Stats { get; set; }
         public VarDiffContext VarDiff { get; set; }
         public DateTime LastActivity { get; set; }
         public bool IsAuthorized { get; set; } = false;
@@ -65,9 +65,7 @@ namespace MiningCore.Mining
         {
             Difficulty = difficulty;
             LastActivity = clock.UtcNow;
-
-            if (poolConfig.Banning != null)
-                Stats = new BanningStats();
+            Stats = new ShareStats();
 
             if (varDiffConfig != null)
                 VarDiff = new VarDiffContext();

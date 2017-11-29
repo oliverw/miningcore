@@ -54,7 +54,6 @@
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.0.0" />
-    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.2.2" />
     <PackageReference Include="NBitcoin" Version="4.0.0.47" />
     <PackageReference Include="NetUV.Core" Version="0.1.125" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />

@@ -228,6 +228,8 @@ namespace MiningCore.Mining
 
         protected virtual void SetupStats()
         {
+            LoadStats();
+
             // Periodically persist pool- and blockchain-stats to persistent storage
             disposables.Add(Observable.Interval(TimeSpan.FromSeconds(60))
                 .Select(_ => Observable.FromAsync(async () =>
@@ -246,6 +248,23 @@ namespace MiningCore.Mining
         }
 
         protected abstract Task UpdateBlockChainStatsAsync();
+
+        private void LoadStats()
+        {
+            try
+            {
+                logger.Debug(() => $"[{LogCat}] Loading pool stats");
+
+                var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
+                poolStats.ConnectedMiners = stats.ConnectedMiners;
+                poolStats.PoolHashRate = (ulong) stats.PoolHashRate;
+            }
+
+            catch (Exception ex)
+            {
+                logger.Warn(ex, () => $"[{LogCat}] Unable to load pool stats");
+            }
+        }
 
         private void PersistStats()
         {

@@ -85,7 +85,7 @@ namespace MiningCore.Blockchain.Ethereum
         private const int MaxBlockBacklog = 3;
         protected readonly Dictionary<string, EthereumJob> validJobs = new Dictionary<string, EthereumJob>();
         private EthereumPoolConfigExtra extraPoolConfig;
-        private JsonSerializer serializer;
+        private readonly JsonSerializer serializer;
 
         protected async Task<bool> UpdateJobAsync()
         {
@@ -93,7 +93,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             try
             {
-                UpdateJob(await GetBlockTemplateAsync());
+                return UpdateJob(await GetBlockTemplateAsync());
             }
 
             catch(Exception ex)
@@ -597,29 +597,21 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            if (extraPoolConfig?.EnableDaemonWebsocketStreaming == false)
+            var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
+
+            if (enableStreaming && !poolConfig.Daemons.Any(x => x.PortWs.HasValue))
             {
-                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .Select(_ => Observable.FromAsync(UpdateJobAsync))
-                    .Concat()
-                    .Do(isNew =>
-                    {
-                        if (isNew)
-                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                    })
-                    .Where(isNew => isNew)
-                    .Select(_ => GetJobParamsForStratum(true))
-                    .Publish()
-                    .RefCount();
+                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(DaemonEndpointConfig.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                enableStreaming = false;
             }
 
-            else
+            if (enableStreaming)
             {
                 var pendingBlockObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object) true } })
+                        new[] { (object)EC.GetBlockByNumber, new[] { "pending", (object)true } })
                     .Do(data =>
                     {
-                        logger.Debug(()=> Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
+                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
                     })
                     .Select(data =>
                     {
@@ -638,7 +630,7 @@ namespace MiningCore.Blockchain.Ethereum
                     });
 
                 var getWorkObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object) EC.GetWork })
+                        new[] { (object)EC.GetWork })
                     .Do(data =>
                     {
                         logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
@@ -660,10 +652,26 @@ namespace MiningCore.Blockchain.Ethereum
                     });
 
                 Jobs = Observable.CombineLatest(
-                        pendingBlockObs.Where(x=> x != null),
+                        pendingBlockObs.Where(x => x != null),
                         getWorkObs.Where(x => x != null),
                         AssembleBlockTemplate)
                     .Select(UpdateJob)
+                    .Do(isNew =>
+                    {
+                        if (isNew)
+                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
+                    })
+                    .Where(isNew => isNew)
+                    .Select(_ => GetJobParamsForStratum(true))
+                    .Publish()
+                    .RefCount();
+            }
+
+            else
+            {
+                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(UpdateJobAsync))
+                    .Concat()
                     .Do(isNew =>
                     {
                         if (isNew)

@@ -239,6 +239,8 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             currentJobParams = jobParams;
 
+            logger.Info(() => $"[{LogCat}] Broadcasting job");
+
             ForEachClient(client =>
             {
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
