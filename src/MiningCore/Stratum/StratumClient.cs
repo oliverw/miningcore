@@ -227,12 +227,12 @@ namespace MiningCore.Stratum
                             buffer.ReadBytes(buf, bufferSize);
 
                             // diagnostics
-                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
+                            logger.Info(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
 
                             while (remaining > 0)
                             {
                                 // check if we got a newline
-                                var index = buf.IndexOf(0xa, prevIndex, buf.Length - prevIndex);
+                                var index = buf.IndexOf(0xa, prevIndex, bufferSize - prevIndex);
                                 var found = index != -1;
 
                                 if (found)
@@ -240,8 +240,14 @@ namespace MiningCore.Stratum
                                     // fastpath
                                     if (index + 1 == bufferSize && recvQueue.Count == 0)
                                     {
-                                        observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, index - prevIndex));
-                                        keepLease = true;
+                                        var length = index - prevIndex;
+
+                                        if (length > 0)
+                                        {
+                                            observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, length));
+                                            keepLease = true;
+                                        }
+
                                         break;
                                     }
 

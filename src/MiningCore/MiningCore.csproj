@@ -45,11 +45,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.0.0" />
     <PackageReference Include="NBitcoin" Version="4.0.0.47" />
+    <PackageReference Include="NetMQ" Version="4.0.0.1" />
     <PackageReference Include="NetUV.Core" Version="0.1.125" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
     <PackageReference Include="Npgsql" Version="3.2.5" />
-    <PackageReference Include="Polly" Version="5.6.0" />
+    <PackageReference Include="Polly" Version="5.6.1" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
   </ItemGroup>
