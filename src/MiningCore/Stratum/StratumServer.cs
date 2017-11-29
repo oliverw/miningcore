@@ -172,9 +172,12 @@ namespace MiningCore.Stratum
                                 logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumClient<TClientContext>.Encoding.GetString(data.Array, 0, data.Size)}");
                                 request = DeserializeRequest(data);
 
-                                // dispatch
-                                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
-                                OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
+                                if (request != null)
+                                {
+                                    // dispatch
+                                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+                                    OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
+                                }
                             }
 
                             catch(JsonReaderException jsonEx)
