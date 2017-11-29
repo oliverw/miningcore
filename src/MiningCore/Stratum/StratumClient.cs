@@ -227,7 +227,7 @@ namespace MiningCore.Stratum
                             buffer.ReadBytes(buf, bufferSize);
 
                             // diagnostics
-                            logger.Info(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
+                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
 
                             while (remaining > 0)
                             {
