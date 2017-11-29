@@ -608,21 +608,19 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (enableStreaming)
             {
-                var wsDaemons = poolConfig.Daemons.Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
+                // collect ports
+                var wsDaemons = poolConfig.Daemons
+                    .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
                     .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>().PortWs.Value);
 
-                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe,
-                        new[] { (object)EC.GetBlockByNumber, new[] { "pending", (object)true } })
-                    .Do(data =>
-                    {
-                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
-                    })
+                // stream pending blocks
+                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object)true } })
                     .Select(data =>
                     {
                         try
                         {
                             var psp = DeserializeRequest(data).ParamsAs<PubSubParams<Block>>();
-                            return psp.Result;
+                            return psp?.Result;
                         }
 
                         catch (Exception ex)
@@ -633,18 +631,14 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe,
-                        new[] { (object)EC.GetWork })
-                    .Do(data =>
-                    {
-                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
-                    })
+                // stream work updates
+                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
                     {
                         try
                         {
                             var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
-                            return psp.Result;
+                            return psp?.Result;
                         }
 
                         catch (Exception ex)
