@@ -315,7 +315,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 case ParityChainType.Ellaism:
                     return EthereumConstants.EllaismBlockReward;
-                    
+
                 case ParityChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
 

@@ -119,7 +119,11 @@ namespace MiningCore.Payments
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
-                        switch(block.Status)
+                        // fill block effort if empty
+                        if (!block.Effort.HasValue)
+                            await CalculateBlockEffort(pool, block, handler);
+
+                        switch (block.Status)
                         {
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
@@ -138,9 +142,6 @@ namespace MiningCore.Payments
                                 break;
 
                             case BlockStatus.Pending:
-                                if (!block.Effort.HasValue)
-                                    await CalculateBlockEffort(pool, block, handler);
-
                                 blockRepo.UpdateBlock(con, tx, block);
                                 break;
                         }
