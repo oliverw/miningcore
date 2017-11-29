@@ -215,23 +215,15 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        /// <summary>
-        /// Executes the request against all configured demons and returns the first successful response
-        /// </summary>
-        /// <typeparam name="TResponse"></typeparam>
-        /// <param name="method"></param>
-        /// <param name="payload"></param>
-        /// <returns></returns>
-        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(string method, object payload = null,
+        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig, int> portMap, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
             logger.LogInvoke(new[] { method });
 
-            return Observable.Merge(endPoints
-                    .Where(endPoint=> endPoint.PortWs.HasValue)
-                    .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, method, payload, payloadJsonSerializerSettings)))
+            return Observable.Merge(portMap.Keys
+                    .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
                 .Publish()
                 .RefCount();
         }
@@ -376,7 +368,7 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint, string method, object payload = null,
+        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint, int port, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             return Observable.Defer(()=> Observable.Create<PooledArraySegment<byte>>(obs =>
@@ -396,7 +388,7 @@ namespace MiningCore.DaemonInterface
                                     using(var client = new ClientWebSocket())
                                     {
                                         // connect
-                                        var uri = new Uri($"ws://{endPoint.Host}:{endPoint.PortWs.Value}");
+                                        var uri = new Uri($"ws://{endPoint.Host}:{port}");
                                         await client.ConnectAsync(uri, cts.Token);
 
                                         // subscribe

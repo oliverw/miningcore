@@ -599,15 +599,19 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
-            if (enableStreaming && !poolConfig.Daemons.Any(x => x.PortWs.HasValue))
+            if (enableStreaming && !poolConfig.Daemons.Any(x =>
+                x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
             {
-                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(DaemonEndpointConfig.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
                 enableStreaming = false;
             }
 
             if (enableStreaming)
             {
-                var pendingBlockObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                var wsDaemons = poolConfig.Daemons.Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
+                    .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>().PortWs.Value);
+
+                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe,
                         new[] { (object)EC.GetBlockByNumber, new[] { "pending", (object)true } })
                     .Do(data =>
                     {
@@ -629,7 +633,7 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                var getWorkObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
+                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe,
                         new[] { (object)EC.GetWork })
                     .Do(data =>
                     {

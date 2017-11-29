@@ -91,10 +91,8 @@ namespace MiningCore.Configuration
     {
         public string Category { get; set; }
 
-        /// <summary>
-        /// Optional port for streaming WebSocket data
-        /// </summary>
-        public int? PortWs { get; set; }
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
     }
 
     public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
