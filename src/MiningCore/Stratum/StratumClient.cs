@@ -195,7 +195,7 @@ namespace MiningCore.Stratum
             sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
             sendQueueDrainer.UserToken = tcp;
 
-            var incomingData = Observable.Create<PooledArraySegment<byte>>(observer =>
+            Received = Observable.Create<PooledArraySegment<byte>>(observer =>
             {
                 var recvQueue = new Queue<PooledArraySegment<byte>>();
 
@@ -341,11 +341,9 @@ namespace MiningCore.Stratum
                         tcp.Shutdown();
                     }
                 });
-            });
-
-            Received = incomingData
-                .Publish()
-                .RefCount();
+            })
+            .Publish()
+            .RefCount();
         }
 
         private void SendInternal(PooledArraySegment<byte> buffer)
