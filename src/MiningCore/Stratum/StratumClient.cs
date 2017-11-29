@@ -47,10 +47,10 @@ namespace MiningCore.Stratum
 
         private static readonly RecyclableMemoryStreamManager streamManager = new RecyclableMemoryStreamManager(0x200, 16 * 0x200, 0x20000);
 
-        private const int MaxRequestLength = 8192;
-        public static readonly Encoding Encoding = new UTF8Encoding(false);
-        private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
+        private const int MaxInboundRequestLength = 8192;
+        private const int MaxOutboundRequestLength = 0x4000;
 
+        public static readonly Encoding Encoding = new UTF8Encoding(false);
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
         private bool isAlive = true;
@@ -126,24 +126,35 @@ namespace MiningCore.Stratum
 
             if (isAlive)
             {
-                using (var stream = (RecyclableMemoryStream)streamManager.GetStream())
+                var buf = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
+
+                try
                 {
-                    using (var writer = new StreamWriter(stream, Encoding, 0x400, true))
+                    using (var stream = new MemoryStream(buf, true))
                     {
-                        Serializer.Serialize(writer, payload);
+                        stream.SetLength(0);
+                        int size;
+
+                        using (var writer = new StreamWriter(stream))
+                        {
+                            Serializer.Serialize(writer, payload);
+                            writer.Flush();
+
+                            // append newline
+                            stream.WriteByte(0xa);
+                            size = (int)stream.Position;
+                        }
+
+                        logger.Trace(() => $"[{ConnectionId}] Sending: {Encoding.GetString(buf, 0, size)}");
+
+                        SendInternal(new PooledArraySegment<byte>(buf, 0, size));
                     }
+                }
 
-                    // append newline
-                    stream.WriteByte(0xa);
-
-                    // log it
-                    logger.Trace(() => $"[{ConnectionId}] Sending: {Encoding.GetString(stream.GetBuffer(), 0, (int)stream.Length)}");
-
-                    // copy buffer and queue up
-                    var buf = ByteArrayPool.Rent((int)stream.Length);
-                    Array.Copy(stream.GetBuffer(), buf, stream.Length);
-
-                    SendInternal(new PooledArraySegment<byte>(buf, 0, (int)stream.Length));
+                catch (Exception)
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                    throw;
                 }
             }
         }
@@ -200,12 +211,12 @@ namespace MiningCore.Stratum
                             return;
 
                         // prevent flooding
-                        if (buffer.Count > MaxRequestLength)
-                            throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxRequestLength}");
+                        if (buffer.Count > MaxInboundRequestLength)
+                            throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxInboundRequestLength}");
 
                         var bufferSize = buffer.Count;
                         var remaining = bufferSize;
-                        var buf = ByteArrayPool.Rent(bufferSize);
+                        var buf = ArrayPool<byte>.Shared.Rent(bufferSize);
                         var prevIndex = 0;
                         var keepLease = false;
 
@@ -241,7 +252,7 @@ namespace MiningCore.Stratum
                                     var queuedLength = recvQueue.Sum(x => x.Size);
                                     var segmentLength = index - prevIndex;
                                     var lineLength = queuedLength + segmentLength;
-                                    var line = ByteArrayPool.Rent(lineLength);
+                                    var line = ArrayPool<byte>.Shared.Rent(lineLength);
                                     var offset = 0;
 
                                     while (recvQueue.TryDequeue(out var segment))
@@ -273,7 +284,7 @@ namespace MiningCore.Stratum
 
                                     if (segmentLength > 0)
                                     {
-                                        var fragment = ByteArrayPool.Rent(segmentLength);
+                                        var fragment = ArrayPool<byte>.Shared.Rent(segmentLength);
                                         Array.Copy(buf, prevIndex, fragment, 0, segmentLength);
                                         recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, segmentLength));
                                     }
@@ -286,8 +297,8 @@ namespace MiningCore.Stratum
                                 }
 
                                 // prevent flooding
-                                if (recvQueue.Sum(x => x.Size) > MaxRequestLength)
-                                    throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxRequestLength}");
+                                if (recvQueue.Sum(x => x.Size) > MaxInboundRequestLength)
+                                    throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxInboundRequestLength}");
 
                                 break;
                             }
@@ -296,7 +307,7 @@ namespace MiningCore.Stratum
                         finally
                         {
                             if (!keepLease)
-                                ByteArrayPool.Return(buf);
+                                ArrayPool<byte>.Shared.Return(buf);
                         }
                     }
                 }, (handle, ex) =>
@@ -342,8 +353,6 @@ namespace MiningCore.Stratum
 
         private void SendInternal(PooledArraySegment<byte> buffer)
         {
-            Contract.RequiresNonNull(buffer, nameof(buffer));
-
             try
             {
                 sendQueue.Enqueue(buffer);
