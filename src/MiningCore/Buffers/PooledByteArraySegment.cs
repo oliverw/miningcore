@@ -27,9 +27,11 @@ namespace MiningCore.Buffers
 
         public void Dispose()
         {
-            if (Array != null)
+            var array = Array;
+
+            if (array != null)
             {
-                ArrayPool<T>.Shared.Return(Array);
+                ArrayPool<T>.Shared.Return(array);
                 Array = null;
             }
         }

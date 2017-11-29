@@ -149,11 +149,12 @@ namespace MiningCore.Stratum
                 var client = new StratumClient<TClientContext>();
                 client.Init(loop, con, ctx, endpointConfig, connectionId);
 
-                // request subscription
-                var sub = client.Received
-                    .Subscribe(data =>
+                var sub = client.Received.Subscribe(data =>
+                {
+                    // get off of LibUV event-loop-thread immediately
+                    Task.Run(() =>
                     {
-                        Task.Run(() => // get off of LibUV event-loop-thread immediately
+                        using(data)
                         {
                             JsonRpcRequest request = null;
 
@@ -164,7 +165,6 @@ namespace MiningCore.Stratum
                                 {
                                     logger.Info(() => $"[{LogCat}] [{connectionId}] Disconnecting banned client @ {remoteEndPoint.Address}");
                                     DisconnectClient(client);
-                                    data.Dispose();
                                     return;
                                 }
 
@@ -189,15 +189,16 @@ namespace MiningCore.Stratum
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
-                                if(request != null)
+                                if (request != null)
                                     logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
                                 else
                                     logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request]");
                             }
-                        });
-                    }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
+                        }
+                    });
+                }, ex => OnReceiveError(client, ex), () => OnReceiveComplete(client));
 
                 // ensure subscription is disposed on loop thread
                 var disposer = loop.CreateAsync((handle) =>
@@ -226,16 +227,13 @@ namespace MiningCore.Stratum
 
         private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
         {
-            using (data)
+            using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
             {
-                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                using (var reader = new StreamReader(stream, StratumClient<TClientContext>.Encoding))
                 {
-                    using (var reader = new StreamReader(stream, StratumClient<TClientContext>.Encoding))
+                    using (var jreader = new JsonTextReader(reader))
                     {
-                        using (var jreader = new JsonTextReader(reader))
-                        {
-                            return StratumClient<TClientContext>.Serializer.Deserialize<JsonRpcRequest>(jreader);
-                        }
+                        return StratumClient<TClientContext>.Serializer.Deserialize<JsonRpcRequest>(jreader);
                     }
                 }
             }
