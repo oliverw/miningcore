@@ -357,6 +357,17 @@ namespace MiningCore.Blockchain.Monero
                     }
                 })
                 .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
+
+            // shares/sec
+            disposables.Add(Shares
+                .Buffer(TimeSpan.FromSeconds(1))
+                .Do(shares =>
+                {
+                    poolStats.ValidSharesPerSecond = shares.Count;
+
+                    logger.Debug(() => $"[{LogCat}] Share/sec = {poolStats.ValidSharesPerSecond}");
+                })
+                .Subscribe());
         }
 
         protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
