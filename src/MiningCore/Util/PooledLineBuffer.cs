@@ -12,15 +12,16 @@ namespace MiningCore.Util
 {
     public class PooledLineBuffer : IDisposable
     {
-        public PooledLineBuffer(int? maxLength = null)
+        public PooledLineBuffer(ILogger logger, int? maxLength = null)
         {
             this.maxLength = maxLength;
+            this.logger = logger ?? LogManager.GetCurrentClassLogger();
         }
 
-        readonly Queue<PooledArraySegment<byte>> recvQueue = new Queue<PooledArraySegment<byte>>();
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        public static readonly Encoding Encoding = Encoding.UTF8;
+        private readonly Queue<PooledArraySegment<byte>> recvQueue = new Queue<PooledArraySegment<byte>>();
+        private readonly ILogger logger;
         private int? maxLength;
+        private static readonly Encoding Encoding = Encoding.UTF8;
         private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
 
         #region IDisposable
@@ -33,14 +34,21 @@ namespace MiningCore.Util
 
         #endregion
 
-        public void Receive<T>(T buffer, int bufferSize, Action<T, byte[], int> readBuffer, Action<PooledArraySegment<byte>> handler, bool forceNewLine = false)
+        public void Receive<T>(T buffer, int bufferSize,
+            Action<T, byte[], int> readBuffer,
+            Action<PooledArraySegment<byte>> onNext,
+            Action<Exception> onError,
+            bool forceNewLine = false)
         {
             if (bufferSize == 0)
                 return;
 
             // prevent flooding
             if (maxLength.HasValue && bufferSize > maxLength)
-                throw new InvalidDataException($"Incoming data exceeds maximum of {maxLength.Value}");
+            {
+                onError(new InvalidDataException($"Incoming data exceeds maximum of {maxLength.Value}"));
+                return;
+            }
 
             var remaining = bufferSize;
             var buf = ArrayPool<byte>.Shared.Rent(bufferSize);
@@ -74,7 +82,7 @@ namespace MiningCore.Util
 
                             if (length > 0)
                             {
-                                handler(new PooledArraySegment<byte>(buf, prevIndex, length));
+                                onNext(new PooledArraySegment<byte>(buf, prevIndex, length));
                                 keepLease = true;
                             }
 
@@ -103,7 +111,7 @@ namespace MiningCore.Util
 
                         // emit
                         if (lineLength > 0)
-                            handler(new PooledArraySegment<byte>(line, 0, lineLength));
+                            onNext(new PooledArraySegment<byte>(line, 0, lineLength));
 
                         if (forceNewLine)
                             break;
@@ -134,7 +142,7 @@ namespace MiningCore.Util
 
                     // prevent flooding
                     if (maxLength.HasValue && recvQueue.Sum(x => x.Size) > maxLength.Value)
-                        throw new InvalidDataException($"Incoming request size exceeds maximum of {maxLength.Value}");
+                        onError(new InvalidDataException($"Incoming request size exceeds maximum of {maxLength.Value}"));
 
                     break;
                 }

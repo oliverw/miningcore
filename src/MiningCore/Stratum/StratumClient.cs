@@ -32,6 +32,7 @@ using Autofac;
 using MiningCore.Buffers;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Util;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -197,7 +198,7 @@ namespace MiningCore.Stratum
 
             Received = Observable.Create<PooledArraySegment<byte>>(observer =>
             {
-                var recvQueue = new Queue<PooledArraySegment<byte>>();
+                var plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
 
                 tcp.OnRead((handle, buffer) =>
                 {
@@ -207,111 +208,10 @@ namespace MiningCore.Stratum
                         if (buffer.Count == 0 || !isAlive)
                             return;
 
-                        // prevent flooding
-                        if (buffer.Count > MaxInboundRequestLength)
-                            throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxInboundRequestLength}");
-
-                        var bufferSize = buffer.Count;
-                        var remaining = bufferSize;
-                        var buf = ArrayPool<byte>.Shared.Rent(bufferSize);
-                        var prevIndex = 0;
-                        var keepLease = false;
-
-                        try
-                        {
-                            // clear left-over contents
-                            if (buf.Length > bufferSize)
-                                Array.Clear(buf, bufferSize, buf.Length - bufferSize);
-
-                            // read buffer
-                            buffer.ReadBytes(buf, bufferSize);
-
-                            // diagnostics
-                            logger.Trace(() => $"[{ConnectionId}] recv: {Encoding.GetString(buf, 0, bufferSize)}");
-
-                            while (remaining > 0)
-                            {
-                                // check if we got a newline
-                                var index = buf.IndexOf(0xa, prevIndex, bufferSize - prevIndex);
-                                var found = index != -1;
-
-                                if (found)
-                                {
-                                    // fastpath
-                                    if (index + 1 == bufferSize && recvQueue.Count == 0)
-                                    {
-                                        var length = index - prevIndex;
-
-                                        if (length > 0)
-                                        {
-                                            observer.OnNext(new PooledArraySegment<byte>(buf, prevIndex, length));
-                                            keepLease = true;
-                                        }
-
-                                        break;
-                                    }
-
-                                    // assemble line buffer
-                                    var queuedLength = recvQueue.Sum(x => x.Size);
-                                    var segmentLength = index - prevIndex;
-                                    var lineLength = queuedLength + segmentLength;
-                                    var line = ArrayPool<byte>.Shared.Rent(lineLength);
-                                    var offset = 0;
-
-                                    while (recvQueue.TryDequeue(out var segment))
-                                    {
-                                        using (segment)
-                                        {
-                                            Array.Copy(segment.Array, 0, line, offset, segment.Size);
-                                            offset += segment.Size;
-                                        }
-                                    }
-
-                                    // append remaining characters
-                                    if (segmentLength > 0)
-                                        Array.Copy(buf, prevIndex, line, offset, segmentLength);
-
-                                    // emit
-                                    if (lineLength > 0)
-                                        observer.OnNext(new PooledArraySegment<byte>(line, 0, lineLength));
-
-                                    prevIndex = index + 1;
-                                    remaining -= segmentLength + 1;
-                                    continue;
-                                }
-
-                                // store
-                                if (prevIndex != 0)
-                                {
-                                    var segmentLength = bufferSize - prevIndex;
-
-                                    if (segmentLength > 0)
-                                    {
-                                        var fragment = ArrayPool<byte>.Shared.Rent(segmentLength);
-                                        Array.Copy(buf, prevIndex, fragment, 0, segmentLength);
-                                        recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, segmentLength));
-                                    }
-                                }
-
-                                else
-                                {
-                                    recvQueue.Enqueue(new PooledArraySegment<byte>(buf, 0, remaining));
-                                    keepLease = true;
-                                }
-
-                                // prevent flooding
-                                if (recvQueue.Sum(x => x.Size) > MaxInboundRequestLength)
-                                    throw new InvalidDataException($"[{ConnectionId}] Incoming request size exceeds maximum of {MaxInboundRequestLength}");
-
-                                break;
-                            }
-                        }
-
-                        finally
-                        {
-                            if (!keepLease)
-                                ArrayPool<byte>.Shared.Return(buf);
-                        }
+                        plb.Receive(buffer, buffer.Count,
+                            (buf, arr, count) => buf.ReadBytes(arr, count),
+                            observer.OnNext,
+                            observer.OnError);
                     }
                 }, (handle, ex) =>
                 {
@@ -331,8 +231,7 @@ namespace MiningCore.Stratum
                     while (sendQueue.TryDequeue(out var fragment))
                         fragment.Dispose();
 
-                    while (recvQueue.TryDequeue(out var fragment))
-                        fragment.Dispose();
+                    plb.Dispose();
 
                     handle.CloseHandle();
                 });

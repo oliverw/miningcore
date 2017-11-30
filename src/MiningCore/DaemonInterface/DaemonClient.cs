@@ -383,7 +383,7 @@ namespace MiningCore.DaemonInterface
                         {
                             try
                             {
-                                using (var plb = new PooledLineBuffer())
+                                using (var plb = new PooledLineBuffer(logger))
                                 {
                                     using(var client = new ClientWebSocket())
                                     {
@@ -415,7 +415,7 @@ namespace MiningCore.DaemonInterface
 
                                             plb.Receive(segment, response.Count,
                                                 (buffer, arr, count) => Array.Copy(buffer.Array, buffer.Offset, arr, 0, count),
-                                                obs.OnNext, response.EndOfMessage);
+                                                obs.OnNext, (ex)=> { }, response.EndOfMessage);
                                         }
                                     }
                                 }
