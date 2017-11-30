@@ -310,7 +310,7 @@ namespace MiningCore.Blockchain.ZCash
             var ratio = shareDiff / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = headerValue < blockTargetValue;
+            var isBlockCandidate = headerValue <= blockTargetValue;
 
             // test if share meets at least workers current difficulty
             if (!isBlockCandidate && ratio < 0.99)
