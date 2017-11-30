@@ -199,8 +199,6 @@ namespace MiningCore.Stratum
                             {
                                 if (request != null)
                                     logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
-                                else
-                                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request]");
                             }
                         }
                     });

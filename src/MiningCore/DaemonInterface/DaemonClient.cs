@@ -389,6 +389,8 @@ namespace MiningCore.DaemonInterface
                                     {
                                         // connect
                                         var uri = new Uri($"ws://{endPoint.Host}:{port}");
+
+                                        logger.Debug(() => $"Establishing websocket connection to {uri}");
                                         await client.ConnectAsync(uri, cts.Token);
 
                                         // subscribe
@@ -397,6 +399,8 @@ namespace MiningCore.DaemonInterface
                                         var json = JsonConvert.SerializeObject(request, payloadJsonSerializerSettings).ToCharArray();
                                         var byteLength = Encoding.UTF8.GetBytes(json, 0, json.Length, buf, 0);
                                         var segment = new ArraySegment<byte>(buf, 0, byteLength);
+
+                                        logger.Debug(() => $"Sending websocket subscription request to {uri}");
                                         await client.SendAsync(segment, WebSocketMessageType.Text, true, cts.Token);
 
                                         // stream response
@@ -410,10 +414,7 @@ namespace MiningCore.DaemonInterface
 
                                             plb.Receive(segment, response.Count,
                                                 (buffer, arr, count) => Array.Copy(buffer.Array, buffer.Offset, arr, 0, count),
-                                                data =>
-                                                {
-                                                    obs.OnNext(data);
-                                                }, response.EndOfMessage);
+                                                obs.OnNext, response.EndOfMessage);
                                         }
                                     }
                                 }
