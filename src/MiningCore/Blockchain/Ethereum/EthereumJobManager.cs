@@ -613,6 +613,8 @@ namespace MiningCore.Blockchain.Ethereum
                     .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
                     .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>().PortWs.Value);
 
+                logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
+
                 // stream pending blocks
                 var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object)true } })
                     .Select(data =>

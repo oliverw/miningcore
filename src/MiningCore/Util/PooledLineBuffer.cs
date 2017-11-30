@@ -43,7 +43,7 @@ namespace MiningCore.Util
                 throw new InvalidDataException($"Incoming data exceeds maximum of {maxLength.Value}");
 
             var remaining = bufferSize;
-            var buf = ByteArrayPool.Rent(bufferSize);
+            var buf = ArrayPool<byte>.Shared.Rent(bufferSize);
             var prevIndex = 0;
             var keepLease = false;
 
@@ -70,8 +70,14 @@ namespace MiningCore.Util
                         // fastpath
                         if (!forceNewLine && index + 1 == bufferSize && recvQueue.Count == 0)
                         {
-                            handler(new PooledArraySegment<byte>(buf, prevIndex, index));
-                            keepLease = true;
+                            var length = index - prevIndex;
+
+                            if (length > 0)
+                            {
+                                handler(new PooledArraySegment<byte>(buf, prevIndex, length));
+                                keepLease = true;
+                            }
+
                             break;
                         }
 
@@ -79,7 +85,7 @@ namespace MiningCore.Util
                         var queuedLength = recvQueue.Sum(x => x.Size);
                         var segmentLength = !forceNewLine ? index - prevIndex : bufferSize - prevIndex;
                         var lineLength = queuedLength + segmentLength;
-                        var line = ByteArrayPool.Rent(lineLength);
+                        var line = ArrayPool<byte>.Shared.Rent(lineLength);
                         var offset = 0;
 
                         while (recvQueue.TryDequeue(out var segment))
@@ -114,7 +120,7 @@ namespace MiningCore.Util
 
                         if (segmentLength > 0)
                         {
-                            var fragment = ByteArrayPool.Rent(segmentLength);
+                            var fragment = ArrayPool<byte>.Shared.Rent(segmentLength);
                             Array.Copy(buf, prevIndex, fragment, 0, segmentLength);
                             recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, segmentLength));
                         }
