@@ -404,9 +404,10 @@ namespace MiningCore.DaemonInterface
                                         await client.SendAsync(segment, WebSocketMessageType.Text, true, cts.Token);
 
                                         // stream response
-                                        while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                        segment = new ArraySegment<byte>(buf);
+
+                                        while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                         {
-                                            segment = new ArraySegment<byte>(buf);
                                             var response = await client.ReceiveAsync(buf, cts.Token);
 
                                             if (response.MessageType == WebSocketMessageType.Binary)
