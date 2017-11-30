@@ -301,8 +301,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
-            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
-            var headerValue = BigInteger.Parse("00" + headerHash.ReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime).ReverseArray();
+            var headerValue = BigInteger.Parse("0" + headerHash.ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;
@@ -377,8 +377,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 bs.ReadWrite(ref coinbase);
                 bs.ReadWrite(ref rawTransactionBuffer);
 
-                // TODO: handle DASH coin masternode_payments
-
                 // POS coins require a zero byte appended to block which the daemon replaces with the signature
                 if (isPoS)
                     bs.ReadWrite((byte) 0);
@@ -441,7 +439,7 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber);
+            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()

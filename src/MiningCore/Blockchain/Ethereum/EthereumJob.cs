@@ -59,7 +59,7 @@ namespace MiningCore.Blockchain.Ethereum
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // test if share meets at least workers current difficulty
-            var resultValue = BigInteger.Parse("00" + resultBytes.ToHexString(), NumberStyles.HexNumber);
+            var resultValue = BigInteger.Parse("0" + resultBytes.ToHexString(), NumberStyles.HexNumber);
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;

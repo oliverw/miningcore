@@ -174,7 +174,7 @@ namespace MiningCore.Blockchain.ZCash
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber);
+            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
@@ -301,8 +301,8 @@ namespace MiningCore.Blockchain.ZCash
 
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
-            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
-            var headerValue = BigInteger.Parse("00" + headerHash.ReverseArray().ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime).ReverseArray();
+            var headerValue = BigInteger.Parse("0" + headerHash.ToHexString(), NumberStyles.HexNumber);
 
             // calc share-diff
             var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
