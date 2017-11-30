@@ -178,6 +178,9 @@ namespace MiningCore.Stratum
                                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
                                     OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow)).Wait();
                                 }
+
+                                else
+                                    logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Unable to deserialize request");
                             }
 
                             catch(JsonReaderException jsonEx)
