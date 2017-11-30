@@ -258,10 +258,11 @@ namespace MiningCore.DaemonInterface
 
             // send request
             var httpClient = httpClients[endPoint];
-            var response = await httpClient.SendAsync(request);
-
-            // read response
-            json = await response.Content.ReadAsStringAsync();
+            using(var response = await httpClient.SendAsync(request))
+            {
+                // read response
+                json = await response.Content.ReadAsStringAsync();
+            }
 
             // deserialize response
             var result = JsonConvert.DeserializeObject<JsonRpcResponse>(json, serializerSettings);
@@ -294,14 +295,16 @@ namespace MiningCore.DaemonInterface
 
             // send request
             var httpClient = httpClients[endPoint];
-            var response = await httpClient.SendAsync(request);
 
-            // check success
-            if (!response.IsSuccessStatusCode)
-                throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+            using (var response = await httpClient.SendAsync(request))
+            {
+                // check success
+                if (!response.IsSuccessStatusCode)
+                    throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
 
-            // read response
-            json = await response.Content.ReadAsStringAsync();
+                // read response
+                json = await response.Content.ReadAsStringAsync();
+            }
 
             // deserialize response
             var result = JsonConvert.DeserializeObject<JsonRpcResponse<JToken>[]>(json, serializerSettings);
