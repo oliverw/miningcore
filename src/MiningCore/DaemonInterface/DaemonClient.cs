@@ -435,7 +435,7 @@ namespace MiningCore.DaemonInterface
                                                     throw new InvalidDataException("expected text, received binary data");
 
                                                 plb.Receive(segment, response.Count,
-                                                    (buffer, arr, count) => Array.Copy(buffer.Array, buffer.Offset, arr, 0, count),
+                                                    (src, dst, count) => Array.Copy(src.Array, src.Offset, dst, 0, count),
                                                     obs.OnNext, (ex) => { }, response.EndOfMessage);
                                             }
                                         }

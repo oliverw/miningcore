@@ -209,7 +209,7 @@ namespace MiningCore.Stratum
                             return;
 
                         plb.Receive(buffer, buffer.Count,
-                            (buf, arr, count) => buf.ReadBytes(arr, count),
+                            (src, dst, count) => src.ReadBytes(dst, count),
                             observer.OnNext,
                             observer.OnError);
                     }
