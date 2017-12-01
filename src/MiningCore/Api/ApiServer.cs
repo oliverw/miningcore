@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reactive;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -81,8 +80,9 @@ namespace MiningCore.Api
                 { new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
                 { new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
 
-                // dev api
+                // admin api
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
+                { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
             };
         }
 
@@ -332,6 +332,17 @@ namespace MiningCore.Api
             GC.Collect(2, GCCollectionMode.Forced);
 
             await SendJson(context, true);
+        }
+
+        private async Task HandleGcStatsAsync(HttpContext context, Match m)
+        {
+            // update other stats
+            Program.gcStats.GcGen0 = GC.CollectionCount(0);
+            Program.gcStats.GcGen1 = GC.CollectionCount(1);
+            Program.gcStats.GcGen2 = GC.CollectionCount(2);
+            Program.gcStats.MemAllocated = FormatUtil.FormatCapacity(GC.GetTotalMemory(false));
+
+            await SendJson(context, Program.gcStats);
         }
 
         #region API-Surface

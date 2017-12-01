@@ -205,6 +205,9 @@ namespace MiningCore.Tests.Util
                     recvCount++;
                 }, (ex) => errCount++);
 
+            Assert.Equal(recvCount, 0);
+            Assert.Equal(errCount, 0);
+
             buf = GetBuffer("def");
 
             plb.Receive(buf, buf.Length,

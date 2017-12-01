@@ -8,6 +8,7 @@ namespace MiningCore.Util
     {
         public static readonly string[] HashRateUnits = { " KH/s", " MH/s", " GH/s", " TH/s", " PH/s" };
         public static readonly string[] DifficultyUnits = { " K", " M", " G", " T", " P" };
+        public static readonly string[] CapacityUnits = { " KB", " MB", " GB", " TB", " PB" };
 
         public static string FormatHashRate(double hashrate)
         {
@@ -32,6 +33,19 @@ namespace MiningCore.Util
                 i++;
             } while(difficulty > 1024);
             return (int) Math.Abs(difficulty) + DifficultyUnits[i];
+        }
+
+        public static string FormatCapacity(double hashrate)
+        {
+            var i = -1;
+
+            do
+            {
+                hashrate = hashrate / 1024;
+                i++;
+            } while (hashrate > 1024 && i < CapacityUnits.Length - 1);
+
+            return (int)Math.Abs(hashrate) + CapacityUnits[i];
         }
     }
 }

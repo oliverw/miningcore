@@ -38,6 +38,7 @@ using AutoMapper;
 using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
+using MiningCore.Api.Responses;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -72,6 +73,8 @@ namespace MiningCore
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
 
+        public static AdminGcStats gcStats = new AdminGcStats();
+
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
@@ -84,7 +87,6 @@ namespace MiningCore
                 PreloadNativeLibs();
 #endif
                 //TouchNativeLibs();
-
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
@@ -240,6 +242,7 @@ namespace MiningCore
             ConfigureLogging();
             ConfigureMisc();
             ValidateRuntimeEnvironment();
+            MonitorGc();
         }
 
         private static ClusterConfig ReadConfig(string file)
@@ -310,6 +313,41 @@ namespace MiningCore
             // root check
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
                 logger.Warn(() => "Running as root is discouraged!");
+        }
+
+        private static void MonitorGc()
+        {
+            var thread = new Thread(() =>
+            {
+                var sw = new Stopwatch();
+
+                while (true)
+                {
+                    var s = GC.WaitForFullGCApproach();
+                    if (s == GCNotificationStatus.Succeeded)
+                    {
+                        logger.Info(()=> "FullGC soon");
+                        sw.Start();
+                    }
+
+                    s = GC.WaitForFullGCComplete();
+
+                    if (s == GCNotificationStatus.Succeeded)
+                    {
+                        logger.Info(() => "FullGC completed");
+
+                        sw.Stop();
+
+                        if (sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
+                            gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
+
+                        sw.Reset();
+                    }
+                }
+            });
+
+            GC.RegisterForFullGCNotification(1, 1);
+            thread.Start();
         }
 
         private static void Logo()
