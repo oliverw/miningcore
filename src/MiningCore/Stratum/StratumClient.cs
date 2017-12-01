@@ -133,7 +133,7 @@ namespace MiningCore.Stratum
                         stream.SetLength(0);
                         int size;
 
-                        using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                        using (var writer = new StreamWriter(stream, Encoding))
                         {
                             Serializer.Serialize(writer, payload);
                             writer.Flush();
