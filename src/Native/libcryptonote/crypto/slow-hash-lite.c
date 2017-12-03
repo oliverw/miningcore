@@ -159,18 +159,7 @@ THREADV int hp_allocated_lite = 0;
 #if defined(_MSC_VER)
 #define cpuid(info,x)    __cpuidex(info,x,0)
 #else
-void cpuid(int CPUInfo[4], int InfoType)
-{
-    ASM __volatile__
-    (
-    "cpuid":
-        "=a" (CPUInfo[0]),
-        "=b" (CPUInfo[1]),
-        "=c" (CPUInfo[2]),
-        "=d" (CPUInfo[3]) :
-            "a" (InfoType), "c" (0)
-        );
-}
+extern void cpuid(int CPUInfo[4], int InfoType);
 #endif
 
 /**
