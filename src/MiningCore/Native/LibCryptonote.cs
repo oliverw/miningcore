@@ -22,6 +22,7 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
+using MiningCore.Buffers;
 using MiningCore.Contracts;
 
 namespace MiningCore.Native
@@ -108,15 +109,15 @@ namespace MiningCore.Native
             }
         }
 
-        public static byte[] CryptonightHashSlow(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashSlow(byte[] data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var result = new byte[32];
+            var result = new PooledArraySegment<byte>(32);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed(byte* output = result.Array)
                 {
                     cn_slow_hash(input, output, (uint) data.Length);
                 }
@@ -125,15 +126,15 @@ namespace MiningCore.Native
             return result;
         }
 
-        public static byte[] CryptonightHashSlowLite(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashSlowLite(byte[] data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var result = new byte[32];
+            var result = new PooledArraySegment<byte>(32);
 
             fixed (byte* input = data)
             {
-                fixed (byte* output = result)
+                fixed (byte* output = result.Array)
                 {
                     cn_slow_hash_lite(input, output, (uint)data.Length);
                 }
@@ -142,15 +143,15 @@ namespace MiningCore.Native
             return result;
         }
 
-        public static byte[] CryptonightHashFast(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashFast(byte[] data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var result = new byte[32];
+            var result = new PooledArraySegment<byte>(32);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed(byte* output = result.Array)
                 {
                     cn_fast_hash(input, output, (uint) data.Length);
                 }

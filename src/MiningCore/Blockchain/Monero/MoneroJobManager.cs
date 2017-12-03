@@ -202,7 +202,7 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            if (address.Length != MoneroConstants.AddressLength)
+            if (address.Length != MoneroConstants.AddressLength[poolConfig.Coin.Type])
                 return false;
 
             var addressPrefix = LibCryptonote.DecodeAddress(address);

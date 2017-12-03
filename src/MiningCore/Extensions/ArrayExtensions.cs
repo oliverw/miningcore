@@ -55,12 +55,17 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
-        public static string ToHexString(this byte[] value, bool withPrefix = false)
+        public static string ToHexString(this PooledArraySegment<byte> value, bool withPrefix = false)
         {
-            return ToHexString(value, null, withPrefix);
+            return ToHexString(value.Array, value.Offset, value.Size, withPrefix);
         }
 
-        public static string ToHexString(this byte[] value, int? len, bool withPrefix = false)
+        public static string ToHexString(this byte[] value, bool withPrefix = false)
+        {
+            return ToHexString(value, null, null, withPrefix);
+        }
+
+        public static string ToHexString(this byte[] value, int? off, int? len, bool withPrefix = false)
         {
             if (value == null || value.Length == 0)
                 return string.Empty;
@@ -83,7 +88,9 @@ namespace MiningCore.Extensions
                     buffer[offset++] = 'x';
                 }
 
-                for (var i = 0; i < length; i++)
+                var start = off ?? 0;
+
+                for (var i = start; i < length; i++)
                 {
                     var hex = HexStringTable[value[i]];
                     buffer[offset + i * 2 + 0] = hex[0];
@@ -131,6 +138,12 @@ namespace MiningCore.Extensions
         public static T[] ReverseArray<T>(this T[] arr)
         {
             Array.Reverse(arr);
+            return arr;
+        }
+
+        public static PooledArraySegment<T> ReverseArray<T>(this PooledArraySegment<T> arr)
+        {
+            Array.Reverse(arr.Array, arr.Offset, arr.Size);
             return arr;
         }
 

@@ -246,7 +246,7 @@ namespace MiningCore.Blockchain.ZCash
                     bytes = padded;
                 }
 
-                var result = bytes.ToHexString(ZCashConstants.TargetPaddingLength);
+                var result = bytes.ToHexString(0, ZCashConstants.TargetPaddingLength);
                 return result;
             }
 

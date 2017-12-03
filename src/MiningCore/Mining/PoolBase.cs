@@ -256,8 +256,12 @@ namespace MiningCore.Mining
                 logger.Debug(() => $"[{LogCat}] Loading pool stats");
 
                 var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
-                poolStats.ConnectedMiners = stats.ConnectedMiners;
-                poolStats.PoolHashRate = (ulong) stats.PoolHashRate;
+
+                if (stats != null)
+                {
+                    poolStats.ConnectedMiners = stats.ConnectedMiners;
+                    poolStats.PoolHashRate = (ulong) stats.PoolHashRate;
+                }
             }
 
             catch (Exception ex)
