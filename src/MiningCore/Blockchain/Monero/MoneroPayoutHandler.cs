@@ -45,7 +45,7 @@ using MWC = MiningCore.Blockchain.Monero.MoneroWalletCommands;
 
 namespace MiningCore.Blockchain.Monero
 {
-    [CoinMetadata(CoinType.XMR)]
+    [CoinMetadata(CoinType.XMR, CoinType.AEON)]
     public class MoneroPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {

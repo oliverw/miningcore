@@ -44,11 +44,23 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(instanceId, nameof(instanceId));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
+            switch(poolConfig.Coin.Type)
+            {
+                case CoinType.AEON:
+                    hashSlow = LibCryptonote.CryptonightHashSlowLite;
+                    break;
+
+                default:
+                    hashSlow = LibCryptonote.CryptonightHashSlow;
+                    break;
+            }
+
             BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
         }
 
         private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
+        private Func<byte[], byte[]> hashSlow;
 
         private byte[] blobTemplate;
         private uint extraNonce;
@@ -160,7 +172,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "malformed blob");
 
                 // hash it
-                var hashBytes = LibCryptonote.CryptonightHashSlow(blobConverted);
+                var hashBytes = hashSlow(blobConverted);
                 var hash = hashBytes.ToHexString();
 
                 if (hash != workerHash)

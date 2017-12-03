@@ -46,7 +46,8 @@ namespace MiningCore.Configuration
         VTC, // Vertcoin
         BTG, // Bitcoin Gold
         GLT, // Globaltoken
-        ELLA, //Ellaism
+        ELLA, // Ellaism
+        AEON, // AEON
     }
 
     public class CoinConfig

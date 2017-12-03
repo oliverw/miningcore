@@ -22,7 +22,6 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
-using MiningCore.Buffers;
 using MiningCore.Contracts;
 
 namespace MiningCore.Native
@@ -37,6 +36,9 @@ namespace MiningCore.Native
 
         [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength);
+
+        [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_lite_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cn_slow_hash_lite(byte* input, byte* output, uint inputLength);
 
         [DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
@@ -117,6 +119,23 @@ namespace MiningCore.Native
                 fixed(byte* output = result)
                 {
                     cn_slow_hash(input, output, (uint) data.Length);
+                }
+            }
+
+            return result;
+        }
+
+        public static byte[] CryptonightHashSlowLite(byte[] data)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+
+            var result = new byte[32];
+
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    cn_slow_hash_lite(input, output, (uint)data.Length);
                 }
             }
 
