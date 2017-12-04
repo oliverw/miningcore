@@ -25,6 +25,7 @@ namespace MiningCore.Blockchain
             //{ CoinType.BTG, "https://btgexp.com/block/{0}" },
             { CoinType.ELLA, "https://explorer.ellaism.org/block/{0}" },
             { CoinType.EXP, "http://www.gander.tech/blocks/{0}" },
+            { CoinType.AEON, "https://chainradar.com/aeon/block/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -47,6 +48,7 @@ namespace MiningCore.Blockchain
             { CoinType.BTG, "https://btgexp.com/tx/{0}" },
             { CoinType.ELLA, "https://explorer.ellaism.org/tx/{0}" },
             { CoinType.EXP, "http://www.gander.tech/tx/{0}" },
+            { CoinType.AEON, "https://chainradar.com/aeon/transaction/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
