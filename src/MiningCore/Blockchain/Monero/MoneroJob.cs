@@ -29,6 +29,7 @@ using MiningCore.Extensions;
 using MiningCore.Native;
 using MiningCore.Stratum;
 using MiningCore.Util;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -57,14 +58,15 @@ namespace MiningCore.Blockchain.Monero
             }
 
             BlockTemplate = blockTemplate;
+            ComputeBlockTarget();
             PrepareBlobTemplate(instanceId);
         }
 
-        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
         private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
 
         private byte[] blobTemplate;
         private uint extraNonce;
+        private uint256 blockTarget;
 
         private void PrepareBlobTemplate(byte[] instanceId)
         {
@@ -91,16 +93,35 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
+        private void ComputeBlockTarget()
+        {
+            if (BlockTemplate.Difficulty != 1)
+            {
+                var diff = BigInteger.ValueOf((long) (BlockTemplate.Difficulty * 255d));
+                var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+                var bytes = quotient.ToByteArray();
+                var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+
+                if (padded.Length - bytes.Length > 0)
+                    Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+
+                blockTarget = new uint256(padded);
+            }
+
+            else
+                blockTarget = MoneroConstants.Diff1c;
+        }
+
         private string EncodeTarget(double difficulty)
         {
-            var diff = BigInteger.ValueOf((long) difficulty);
-            var quotient = MoneroConstants.Diff1.Divide(diff);
+            var diff = BigInteger.ValueOf((long) (difficulty * 255d));
+            var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
             var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
                 Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
-
+            
             var result = new ArraySegment<byte>(padded, 0, 4)
                 .Reverse()
                 .ToHexString();
@@ -173,11 +194,11 @@ namespace MiningCore.Blockchain.Monero
 
                     // check difficulty
                     var hashBytes = hashSeg.ToArray();
-                    var headerValue = new System.Numerics.BigInteger(hashBytes);
-                    var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
+                    var headerValue = new uint256(hashBytes);
+                    var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, new System.Numerics.BigInteger(hashBytes));
                     var stratumDifficulty = worker.Context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
-                    var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
+                    var isBlockCandidate = headerValue <= blockTarget;
 
                     // test if share meets at least workers current difficulty
                     if (!isBlockCandidate && ratio < 0.99)

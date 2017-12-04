@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 
 namespace MiningCore.Blockchain.Monero
@@ -50,6 +52,7 @@ namespace MiningCore.Blockchain.Monero
 
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+        public static readonly uint256 Diff1c = new uint256("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".HexToByteArray());
         public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
 
 #if DEBUG
