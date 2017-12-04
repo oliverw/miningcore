@@ -95,21 +95,11 @@ namespace MiningCore.Blockchain.Monero
 
         private void ComputeBlockTarget()
         {
-            if (BlockTemplate.Difficulty != 1)
-            {
-                var diff = BigInteger.ValueOf((long) (BlockTemplate.Difficulty * 255d));
-                var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
-                var bytes = quotient.ToByteArray();
-                var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var diff = BigInteger.ValueOf((long) (BlockTemplate.Difficulty * 255d));
+            var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+            var bytes = quotient.ToByteArray();
 
-                if (padded.Length - bytes.Length > 0)
-                    Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
-
-                blockTarget = new uint256(padded);
-            }
-
-            else
-                blockTarget = MoneroConstants.Diff1c;
+            blockTarget = new uint256(bytes.Take(32).ToArray());
         }
 
         private string EncodeTarget(double difficulty)
