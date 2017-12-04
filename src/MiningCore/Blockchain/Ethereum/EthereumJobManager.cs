@@ -42,6 +42,7 @@ using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -208,7 +209,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = BigInteger.Parse("0" + work[2].Substring(2), NumberStyles.HexNumber),
+                Target = new uint256(work[2].Substring(2).HexToByteArray().ReverseArray()),
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
                 Height = block.Height.Value,
                 ParentHash = block.ParentHash,

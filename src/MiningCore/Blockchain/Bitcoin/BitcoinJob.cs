@@ -55,7 +55,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
         protected HashSet<string> submissions = new HashSet<string>();
-        protected BigInteger blockTargetValue;
+        protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
         protected byte[] coinbaseInitial;
@@ -301,11 +301,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
-            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime).ReverseArray();
-            var headerValue = BigInteger.Parse("0" + headerHash.ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
+            var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;
+            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, new BigInteger(headerHash)) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -439,7 +439,7 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
+            blockTargetValue = new uint256(BlockTemplate.Target);
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()

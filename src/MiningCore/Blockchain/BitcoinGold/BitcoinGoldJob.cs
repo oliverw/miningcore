@@ -108,7 +108,7 @@ namespace MiningCore.Blockchain.BitcoinGold
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
+            blockTargetValue = new uint256(BlockTemplate.Target);
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()

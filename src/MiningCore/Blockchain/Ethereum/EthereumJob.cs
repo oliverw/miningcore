@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
+using NBitcoin;
 
 namespace MiningCore.Blockchain.Ethereum
 {
@@ -59,11 +60,11 @@ namespace MiningCore.Blockchain.Ethereum
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // test if share meets at least workers current difficulty
-            var resultValue = BigInteger.Parse("0" + resultBytes.ToHexString(), NumberStyles.HexNumber);
-            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValue) / EthereumConstants.Pow2x32;
+            var resultValue = new uint256(resultBytes);
+            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(resultBytes.ToReverseArray())) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
-            var isBlockCandidate = resultValue.CompareTo(BlockTemplate.Target) <= 0;
+            var isBlockCandidate = resultValue <= BlockTemplate.Target;
 
             if (!isBlockCandidate && ratio < 0.99)
             {

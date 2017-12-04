@@ -164,15 +164,16 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "malformed blob");
 
                 // hash it
-                using(var hashBytes = hashSlow(blobConverted))
+                using(var hashSeg = hashSlow(blobConverted))
                 {
-                    var hash = hashBytes.ToHexString();
+                    var hash = hashSeg.ToHexString();
 
                     if (hash != workerHash)
                         throw new StratumException(StratumError.MinusOne, "bad hash");
 
                     // check difficulty
-                    var headerValue = System.Numerics.BigInteger.Parse("0" + hashBytes.ReverseArray().ToHexString(), NumberStyles.HexNumber);
+                    var hashBytes = hashSeg.ToArray();
+                    var headerValue = new System.Numerics.BigInteger(hashBytes);
                     var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
                     var stratumDifficulty = worker.Context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
