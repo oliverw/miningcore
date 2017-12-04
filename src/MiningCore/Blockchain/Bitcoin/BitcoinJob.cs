@@ -258,9 +258,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Append(miner)
                 .Append(worker)
                 .Append(extraNonce1)
-                .Append(extraNonce2)
+                .Append(extraNonce2.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .Append(nTime)
-                .Append(nonce)
+                .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
             lock (submissions)
