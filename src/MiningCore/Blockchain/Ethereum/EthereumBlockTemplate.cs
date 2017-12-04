@@ -26,7 +26,7 @@ namespace MiningCore.Blockchain.Ethereum
         /// <summary>
         /// the boundary condition ("target"), 2^256 / difficulty. (32 Bytes)
         /// </summary>
-        public uint256 Target { get; set; }
+        public string Target { get; set; }
 
         /// <summary>
         /// hash of the parent block.

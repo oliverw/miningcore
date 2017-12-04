@@ -209,7 +209,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = new uint256(work[2].Substring(2).HexToByteArray().ReverseArray()),
+                Target = work[2],
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
                 Height = block.Height.Value,
                 ParentHash = block.ParentHash,

@@ -15,6 +15,12 @@ namespace MiningCore.Blockchain.Ethereum
         {
             Id = id;
             BlockTemplate = blockTemplate;
+
+            var target = blockTemplate.Target;
+            if (target.StartsWith("0x"))
+                target = target.Substring(2);
+
+            blockTarget = new uint256(target.HexToByteArray().ReverseArray());
         }
 
         private readonly Dictionary<StratumClient<EthereumWorkerContext>, HashSet<string>> workerNonces =
@@ -22,6 +28,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         public string Id { get; }
         public EthereumBlockTemplate BlockTemplate { get; }
+        private readonly uint256 blockTarget;
 
         private void RegisterNonce(StratumClient<EthereumWorkerContext> worker, string nonce)
         {
@@ -64,7 +71,7 @@ namespace MiningCore.Blockchain.Ethereum
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(resultBytes.ToReverseArray())) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
-            var isBlockCandidate = resultValue <= BlockTemplate.Target;
+            var isBlockCandidate = resultValue <= blockTarget;
 
             if (!isBlockCandidate && ratio < 0.99)
             {
