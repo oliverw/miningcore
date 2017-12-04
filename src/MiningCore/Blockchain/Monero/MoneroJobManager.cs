@@ -285,7 +285,7 @@ namespace MiningCore.Blockchain.Monero
 
             BlockchainStats.BlockHeight = (int) info.Height;
             BlockchainStats.NetworkDifficulty = info.Difficulty;
-            BlockchainStats.NetworkHashRate = (double) info.Difficulty / info.Target;
+            BlockchainStats.NetworkHashRate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
             BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
