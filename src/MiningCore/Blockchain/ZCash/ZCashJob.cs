@@ -174,7 +174,13 @@ namespace MiningCore.Blockchain.ZCash
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = new uint256(BlockTemplate.Target);
+            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+                blockTargetValue = new uint256(BlockTemplate.Target);
+            else
+            {
+                var tmp = new Target(BlockTemplate.Bits.HexToByteArray());
+                blockTargetValue = tmp.ToUInt256();
+            }
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()

@@ -189,25 +189,25 @@ namespace MiningCore.Blockchain.Bitcoin
                 byte[] raw;
                 uint rawLength;
 
-                // serialize outputs
-                foreach(var output in tx.Outputs)
-                {
-                    amount = output.Value.Satoshi;
-                    var outScript = output.ScriptPubKey;
-                    raw = outScript.ToBytes(true);
-                    rawLength = (uint) raw.Length;
-
-                    bs.ReadWrite(ref amount);
-                    bs.ReadWriteAsVarInt(ref rawLength);
-                    bs.ReadWrite(ref raw);
-                }
-
                 // serialize witness (segwit)
                 if (withDefaultWitnessCommitment)
                 {
                     amount = 0;
                     raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
                     rawLength = (uint)raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
+                    bs.ReadWrite(ref raw);
+                }
+
+                // serialize outputs
+                foreach (var output in tx.Outputs)
+                {
+                    amount = output.Value.Satoshi;
+                    var outScript = output.ScriptPubKey;
+                    raw = outScript.ToBytes(true);
+                    rawLength = (uint) raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
@@ -305,7 +305,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, new BigInteger(headerHash)) * shareMultiplier;
+            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerHash.ToBigInteger()) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -439,7 +439,13 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = new uint256(BlockTemplate.Target);
+            if(!string.IsNullOrEmpty(BlockTemplate.Target))
+                blockTargetValue = new uint256(BlockTemplate.Target);
+            else
+            {
+                var tmp = new Target(BlockTemplate.Bits.HexToByteArray());
+                blockTargetValue = tmp.ToUInt256();
+            }
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
