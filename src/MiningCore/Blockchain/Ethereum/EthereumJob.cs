@@ -70,7 +70,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             // test if share meets at least workers current difficulty
             var resultValue = new uint256(resultBytes);
-            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(resultBytes)) / EthereumConstants.Pow2x32;
+            var resultValueBig = resultBytes.ToBigInteger();
+            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
             var isBlockCandidate = resultValue <= blockTarget;

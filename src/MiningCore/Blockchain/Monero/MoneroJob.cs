@@ -22,6 +22,7 @@ using System;
 using System.Buffers;
 using System.Globalization;
 using System.Linq;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.System;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
@@ -166,19 +167,17 @@ namespace MiningCore.Blockchain.Monero
                 using (var hashSeg = hashSlow(blobConverted))
                 {
                     var hash = hashSeg.ToHexString();
-
                     if (hash != workerHash)
                         throw new StratumException(StratumError.MinusOne, "bad hash");
 
                     // check difficulty
-                    var hashBytesReversed = hashSeg.ToArray().ReverseArray();
-                    var headerValue = System.Numerics.BigInteger.Parse("0" + hashBytesReversed.ToHexString(), NumberStyles.HexNumber);
-                    var shareDiff = (double)new BigRational(MoneroConstants.Diff1b, headerValue);
+                    var headerValue = hashSeg.ToBigInteger();
+                    var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
                     var stratumDifficulty = worker.Context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
                     var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
 
-                    Console.WriteLine("{0:F2} - {1:F2}", shareDiff, BlockTemplate.Difficulty);
+Console.WriteLine("{0:F2} - {1:F2}", shareDiff, BlockTemplate.Difficulty);
 
                     // test if share meets at least workers current difficulty
                     if (!isBlockCandidate && ratio < 0.99)

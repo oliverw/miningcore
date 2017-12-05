@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber));
+            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
@@ -306,7 +306,7 @@ namespace MiningCore.Blockchain.ZCash
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, new BigInteger(headerHashReversed)) * shareMultiplier;
+            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHashReversed.ToBigInteger()) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 

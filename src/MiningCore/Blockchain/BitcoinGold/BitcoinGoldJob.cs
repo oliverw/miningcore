@@ -100,7 +100,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber));
+            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
