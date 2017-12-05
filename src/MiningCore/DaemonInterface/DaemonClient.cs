@@ -393,7 +393,7 @@ namespace MiningCore.DaemonInterface
             {
                 var cts = new CancellationTokenSource();
 
-                var task = new Task(async () =>
+                var thread = new Thread(async (_) =>
                 {
                     using(cts)
                     {
@@ -456,9 +456,9 @@ namespace MiningCore.DaemonInterface
                             await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
-                }, TaskCreationOptions.LongRunning);
+                });
 
-                task.Start();
+                thread.Start();
 
                 return Disposable.Create(() =>
                 {

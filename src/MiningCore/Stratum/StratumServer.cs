@@ -78,7 +78,7 @@ namespace MiningCore.Stratum
             foreach (var endpoint in stratumPorts)
             {
                 // host it and its message loop in a dedicated background thread
-                var task = new Task(() =>
+                var thread = new Thread(_ =>
                 {
                     var loop = new Loop();
 
@@ -101,9 +101,10 @@ namespace MiningCore.Stratum
                     }
 
                     loop.RunDefault();
-                }, TaskCreationOptions.LongRunning);
+                });
 
-                task.Start();
+                thread.Name = $"UvLoop Thread Port {endpoint.Port}";
+                thread.Start();
 
                 logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
             }
