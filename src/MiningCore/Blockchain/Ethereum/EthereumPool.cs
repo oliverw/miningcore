@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
@@ -297,9 +298,10 @@ namespace MiningCore.Blockchain.Ethereum
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 5;
 
             disposables.Add(Shares
+                .ObserveOn(ThreadPoolScheduler.Instance)
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
                 .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>
