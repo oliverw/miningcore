@@ -252,15 +252,13 @@ namespace MiningCore.Blockchain.Bitcoin
             return tx;
         }
 
-        protected bool RegisterSubmit(string miner, string worker, string extraNonce1, string extraNonce2, string nTime, string nonce)
+        protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
             var key = new StringBuilder()
-                .Append(miner)
-                .Append(worker)
                 .Append(extraNonce1)
-                .Append(extraNonce2.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(extraNonce2.ToLower())  // lowercase as we don't want to accept case-sensitive values as valid.
                 .Append(nTime)
-                .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(nonce.ToLower())        // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
             lock (submissions)
@@ -498,7 +496,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
 
             // dupe check
-            if (!RegisterSubmit(worker.Context.MinerName, worker.Context.WorkerName, worker.Context.ExtraNonce1, extraNonce2, nTime, nonce))
+            if (!RegisterSubmit(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
             return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt);

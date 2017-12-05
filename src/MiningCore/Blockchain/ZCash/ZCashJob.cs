@@ -360,7 +360,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             lock(submissions)
             {
-                var key = nonce + solution;
+                var key = nonce.ToLower() + solution.ToLower();
                 if (submissions.Contains(key))
                     return false;
 

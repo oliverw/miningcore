@@ -32,18 +32,20 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void RegisterNonce(StratumClient<EthereumWorkerContext> worker, string nonce)
         {
+            var nonceLower = nonce.ToLower();
+
             if (!workerNonces.TryGetValue(worker, out var nonces))
             {
-                nonces = new HashSet<string>(new[] { nonce });
+                nonces = new HashSet<string>(new[] { nonceLower });
                 workerNonces[worker] = nonces;
             }
 
             else
             {
-                if (nonces.Contains(nonce))
+                if (nonces.Contains(nonceLower))
                     throw new StratumException(StratumError.MinusOne, "duplicate share");
 
-                nonces.Add(nonce);
+                nonces.Add(nonceLower);
             }
         }
 
