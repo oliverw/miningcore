@@ -85,7 +85,6 @@ namespace MiningCore.Stratum
                     var listener = loop
                         .CreateTcp()
                         .SimultaneousAccepts(true)
-                        .KeepAlive(true, 1)
                         .NoDelay(true)
                         .Listen(endpoint, (con, ex) =>
                         {
@@ -147,6 +146,8 @@ namespace MiningCore.Stratum
                 logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
 
                 // setup client
+                con.KeepAlive(true, 1);
+
                 var client = new StratumClient<TClientContext>();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
