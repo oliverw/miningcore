@@ -28,23 +28,23 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinExtraNonceProvider()
         {
-            int instanceId;
+            uint instanceId;
 
             using(var rng = RandomNumberGenerator.Create())
             {
                 var bytes = new byte[4];
                 rng.GetNonZeroBytes(bytes);
-                instanceId = BitConverter.ToInt32(bytes, 0);
+                instanceId = BitConverter.ToUInt32(bytes, 0);
             }
 
-            var mask = (1 << (ExtranonceBytes * 8)) - 1;
+            var mask = (1L << (ExtranonceBytes * 8)) - 1;
             counter = Math.Abs(instanceId & mask);
         }
 
-        private int counter;
-        public const int ExtranonceBytes = 3; // 3 Byte = 24 Bit
+        private long counter;
+        public const int ExtranonceBytes = 4; // 4 Byte = 32 Bit
         public const int PlaceHolderLength = 8;
-        private const int NonceMax = 1 << (ExtranonceBytes * 8);
+        private const long NonceMax = 1L << (ExtranonceBytes * 8);
         private readonly string stringFormat = "x" + ExtranonceBytes * 2;
         public const int Size = PlaceHolderLength - ExtranonceBytes;
 

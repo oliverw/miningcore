@@ -220,7 +220,14 @@ namespace MiningCore.Blockchain.Monero
             target = null;
 
             var job = currentJob;
-            job?.PrepareWorkerJob(workerJob, out blob, out target);
+
+            if (job != null)
+            {
+                lock(job)
+                {
+                    job.PrepareWorkerJob(workerJob, out blob, out target);
+                }
+            }
         }
 
         public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,

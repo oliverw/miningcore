@@ -310,6 +310,8 @@ namespace MiningCore.Blockchain.Bitcoin
             // check if the share meets the much harder block difficulty (block candidate)
             var isBlockCandidate = headerValue <= blockTargetValue;
 
+Console.WriteLine("{0:F2}", shareDiff);
+
             // test if share meets at least workers current difficulty
             if (!isBlockCandidate && ratio < 0.99)
             {
