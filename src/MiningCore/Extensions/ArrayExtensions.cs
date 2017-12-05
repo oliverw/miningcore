@@ -141,12 +141,6 @@ namespace MiningCore.Extensions
             return arr;
         }
 
-        public static PooledArraySegment<T> ReverseArray<T>(this PooledArraySegment<T> arr)
-        {
-            Array.Reverse(arr.Array, arr.Offset, arr.Size);
-            return arr;
-        }
-
         public static int IndexOf(this byte[] arr, byte val, int start, int count)
         {
             Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count <= arr.Length);
