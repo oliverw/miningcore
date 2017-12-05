@@ -312,7 +312,7 @@ namespace MiningCore.Blockchain.ZCash
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHashReversed.ToBigInteger()) * shareMultiplier;
+            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHash.ToBigInteger()) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
