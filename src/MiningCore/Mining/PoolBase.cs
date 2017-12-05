@@ -188,18 +188,11 @@ namespace MiningCore.Mining
 
         private void EnsureNoZombieClient(StratumClient<TWorkerContext> client)
         {
-            var isAlive = client.Received
+            Observable.Timer(clock.Now.AddSeconds(10))
                 .Take(1)
-                .Select(_ => true);
-
-            var timeout = Observable.Timer(clock.UtcNow.AddSeconds(10))
-                .Select(_ => false);
-
-            isAlive.Merge(timeout)
-                .Take(1)
-                .Subscribe(alive =>
+                .Subscribe(_ =>
                 {
-                    if (!alive)
+                    if (!client.LastReceive.HasValue)
                     {
                         logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
@@ -280,7 +273,7 @@ namespace MiningCore.Mining
                 {
                     var mapped = mapper.Map<Persistence.Model.PoolStats>(poolStats);
                     mapped.PoolId = poolConfig.Id;
-                    mapped.Created = clock.UtcNow;
+                    mapped.Created = clock.Now;
 
                     statsRepo.InsertPoolStats(con, tx, mapped);
                 });
@@ -365,7 +358,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                         PoolId = poolConfig.Id,
                         Miner = miner,
                         Hashrate = hashRate,
-                        Created = clock.UtcNow
+                        Created = clock.Now
                     };
 
                     // Per worker hashrates

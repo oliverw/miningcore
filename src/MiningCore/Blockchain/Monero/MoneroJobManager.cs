@@ -104,7 +104,7 @@ namespace MiningCore.Blockchain.Monero
                     currentJob = job;
 
                     // update stats
-                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+                    BlockchainStats.LastNetworkBlockTime = clock.Now;
                 }
 
                 return isNew;
@@ -267,7 +267,7 @@ namespace MiningCore.Blockchain.Monero
             share.PayoutInfo = worker.Context.PaymentId;
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }

@@ -133,7 +133,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 }
 
                 // check worker state
-                client.Context.LastActivity = clock.UtcNow;
+                client.Context.LastActivity = clock.Now;
 
                 // validate worker
                 if (!client.Context.IsAuthorized)
@@ -164,7 +164,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.UtcNow;
+                    poolStats.LastPoolBlockTime = clock.Now;
 
                 // update client stats
                 client.Context.Stats.ValidShares++;
@@ -246,7 +246,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.Now - client.Context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)

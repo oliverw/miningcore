@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Ethereum
                     currentJob = job;
 
                     // update stats
-                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+                    BlockchainStats.LastNetworkBlockTime = clock.Now;
                 }
 
                 return isNew;
@@ -401,7 +401,7 @@ namespace MiningCore.Blockchain.Ethereum
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }

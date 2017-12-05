@@ -180,7 +180,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -196,7 +196,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "unauthorized");
 
                 // recognize activity
-                client.Context.LastActivity = clock.UtcNow;
+                client.Context.LastActivity = clock.Now;
 
                 MoneroWorkerJob job;
 
@@ -232,7 +232,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.UtcNow;
+                    poolStats.LastPoolBlockTime = clock.Now;
 
                 // update client stats
                 client.Context.Stats.ValidShares++;
@@ -266,7 +266,7 @@ namespace MiningCore.Blockchain.Monero
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.Now - client.Context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
@@ -319,7 +319,7 @@ namespace MiningCore.Blockchain.Monero
 
                 case MoneroStratumMethods.KeepAlive:
                     // recognize activity
-                    client.Context.LastActivity = clock.UtcNow;
+                    client.Context.LastActivity = clock.Now;
                     break;
 
                 default:

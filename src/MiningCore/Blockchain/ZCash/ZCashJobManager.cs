@@ -181,7 +181,7 @@ namespace MiningCore.Blockchain.ZCash
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }

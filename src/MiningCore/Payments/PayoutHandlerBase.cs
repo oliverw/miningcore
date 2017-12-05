@@ -119,7 +119,7 @@ namespace MiningCore.Payments
                                     Coin = poolConfig.Coin.Type,
                                     Address = balance.Address,
                                     Amount = balance.Amount,
-                                    Created = clock.UtcNow,
+                                    Created = clock.Now,
                                     TransactionConfirmationData = transactionConfirmation
                                 };
 

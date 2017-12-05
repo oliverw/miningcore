@@ -207,7 +207,7 @@ namespace MiningCore.Api
                 return;
 
             // set range
-            var end = clock.UtcNow;
+            var end = clock.Now;
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(

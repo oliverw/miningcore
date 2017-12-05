@@ -186,7 +186,7 @@ namespace MiningCore.Blockchain.ZCash
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.Now - client.Context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)

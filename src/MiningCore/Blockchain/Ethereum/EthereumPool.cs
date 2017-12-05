@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Ethereum
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -163,7 +163,7 @@ namespace MiningCore.Blockchain.Ethereum
                     throw new StratumException(StratumError.MinusOne, "malformed PoW result");
 
                 // recognize activity
-                client.Context.LastActivity = clock.UtcNow;
+                client.Context.LastActivity = clock.Now;
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
@@ -180,7 +180,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.UtcNow;
+                    poolStats.LastPoolBlockTime = clock.Now;
 
                 // update client stats
                 client.Context.Stats.ValidShares++;
@@ -226,7 +226,7 @@ namespace MiningCore.Blockchain.Ethereum
                 if (client.Context.IsSubscribed && client.Context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.Now - client.Context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)

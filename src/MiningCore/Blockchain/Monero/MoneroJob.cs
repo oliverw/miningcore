@@ -60,7 +60,6 @@ namespace MiningCore.Blockchain.Monero
             PrepareBlobTemplate(instanceId);
         }
 
-        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
         private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
 
         private byte[] blobTemplate;

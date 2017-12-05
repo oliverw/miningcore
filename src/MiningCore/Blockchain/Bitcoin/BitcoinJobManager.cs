@@ -332,7 +332,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.UserAgent = worker.Context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }
@@ -567,7 +567,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     // update stats
                     if (isNew)
-                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
 
                     lock (jobLock)
                     {

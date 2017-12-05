@@ -233,7 +233,7 @@ namespace MiningCore.Blockchain.ZCash
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = worker.Context.ExtraNonce1 + extraNonce2;
