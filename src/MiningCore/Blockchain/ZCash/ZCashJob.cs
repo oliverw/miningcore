@@ -302,10 +302,11 @@ namespace MiningCore.Blockchain.ZCash
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
             var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
+            var headerHashReversed = headerHash.ToReverseArray();
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, new BigInteger(headerHash)) * shareMultiplier;
+            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, new BigInteger(headerHashReversed)) * shareMultiplier;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -342,7 +343,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
                 result.BlockHex = blockBytes.ToHexString();
-                result.BlockHash = headerHash.ToHexString();
+                result.BlockHash = headerHashReversed.ToHexString();
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
             }
 

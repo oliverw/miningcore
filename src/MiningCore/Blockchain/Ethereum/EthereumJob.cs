@@ -66,9 +66,11 @@ namespace MiningCore.Blockchain.Ethereum
             if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
+            resultBytes.ReverseArray();
+
             // test if share meets at least workers current difficulty
             var resultValue = new uint256(resultBytes);
-            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(resultBytes.ToReverseArray())) / EthereumConstants.Pow2x32;
+            var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, new BigInteger(resultBytes)) / EthereumConstants.Pow2x32;
             var stratumDifficulty = worker.Context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
             var isBlockCandidate = resultValue <= blockTarget;
