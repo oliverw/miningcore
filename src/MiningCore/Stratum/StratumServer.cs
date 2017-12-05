@@ -84,7 +84,6 @@ namespace MiningCore.Stratum
 
                     var listener = loop
                         .CreateTcp()
-                        .SimultaneousAccepts(true)
                         .NoDelay(true)
                         .Listen(endpoint, (con, ex) =>
                         {
