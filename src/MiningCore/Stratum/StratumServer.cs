@@ -143,13 +143,14 @@ namespace MiningCore.Stratum
                 var connectionId = CorrelationIdGenerator.GetNextId();
                 logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
 
-                // setup client
+                // setup client connection
                 con.KeepAlive(true, 1);
 
+                // setup client
                 var client = new StratumClient<TClientContext>();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
-                    (data)=> OnReceive(client, data), 
+                    data => OnReceive(client, data), 
                     () => OnReceiveComplete(client),
                     ex => OnReceiveError(client, ex));
 
