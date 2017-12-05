@@ -63,9 +63,9 @@ namespace MiningCore.Blockchain.ZCash
 
         #region IPayoutHandler
 
-        public override void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public override async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
-            base.Configure(clusterConfig, poolConfig);
+            await base.ConfigureAsync(clusterConfig, poolConfig);
 
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
         }

@@ -46,6 +46,7 @@ namespace MiningCore.Blockchain.Monero
 
         public const string DaemonRpcLocation = "json_rpc";
         public const string DaemonRpcDigestAuthRealm = "monero_rpc";
+        public const int MoneroRpcMethodNotFound = -32601;
         public const char MainNetAddressPrefix = '4';
         public const char TestNetAddressPrefix = '9';
         public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);

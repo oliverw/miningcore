@@ -27,7 +27,7 @@ namespace MiningCore.Payments
 {
     public interface IPayoutHandler
     {
-        void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig);
+        Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig);
 
         Task<Block[]> ClassifyBlocksAsync(Block[] blocks);
         Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff);
