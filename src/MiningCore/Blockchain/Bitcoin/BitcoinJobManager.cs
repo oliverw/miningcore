@@ -69,6 +69,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
         protected readonly IExtraNonceProvider extraNonceProvider;
+        protected const int ExtranonceBytes = 4;
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
         protected const int MaxActiveJobs = 4;
@@ -229,7 +230,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var responseData = new object[]
             {
                 worker.Context.ExtraNonce1,
-                BitcoinExtraNonceProvider.Size
+                BitcoinConstants.ExtranoncePlaceHolderLength - ExtranonceBytes,
             };
 
             return responseData;

@@ -352,6 +352,11 @@ namespace MiningCore.DaemonInterface
                 resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
+            else if (x.IsCanceled)
+            {
+                resp.Error = new JsonRpcException(-500, "Cancelled", null);
+            }
+
             else
             {
                 Debug.Assert(x.IsCompletedSuccessfully);
