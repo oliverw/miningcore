@@ -177,7 +177,7 @@ namespace MiningCore.Blockchain.Monero
                     var ratio = shareDiff / stratumDifficulty;
                     var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
 
-Console.WriteLine("{0:F2} - {1:F2}", shareDiff, BlockTemplate.Difficulty);
+//Console.WriteLine("{0:F2} - {1:F2}", shareDiff, BlockTemplate.Difficulty);
 
                     // test if share meets at least workers current difficulty
                     if (!isBlockCandidate && ratio < 0.99)
