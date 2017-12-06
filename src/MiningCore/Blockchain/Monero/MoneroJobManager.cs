@@ -230,11 +230,12 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<MoneroWorkerContext> worker,
+        public async Task<IShare> SubmitShareAsync(StratumClient worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
+            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
 
@@ -269,10 +270,10 @@ namespace MiningCore.Blockchain.Monero
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = worker.Context.MinerName;
-            share.Worker = worker.Context.WorkerName;
-            share.PayoutInfo = worker.Context.PaymentId;
-            share.UserAgent = worker.Context.UserAgent;
+            share.Miner = context.MinerName;
+            share.Worker = context.WorkerName;
+            share.PayoutInfo = context.PaymentId;
+            share.UserAgent = context.UserAgent;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
 

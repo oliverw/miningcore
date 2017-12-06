@@ -227,12 +227,14 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        public override BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, string nTime, string solution)
+        public override BitcoinShare ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
+
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
 
             // validate nTime
             if (nTime.Length != 8)
@@ -242,7 +244,7 @@ namespace MiningCore.Blockchain.ZCash
             if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
-            var nonce = worker.Context.ExtraNonce1 + extraNonce2;
+            var nonce = context.ExtraNonce1 + extraNonce2;
 
             // validate nonce
             if (nonce.Length != 64)
@@ -293,9 +295,10 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string nonce,
+        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
             var solutionBytes = solution.HexToByteArray();
 
             // serialize block-header
@@ -313,7 +316,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // calc share-diff
             var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHash.ToBigInteger()) * shareMultiplier;
-            var stratumDifficulty = worker.Context.Difficulty;
+            var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
@@ -323,15 +326,15 @@ namespace MiningCore.Blockchain.ZCash
             if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
-                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                    ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if (ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
-                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                    stratumDifficulty = context.PreviousDifficulty.Value;
                 }
 
                 else

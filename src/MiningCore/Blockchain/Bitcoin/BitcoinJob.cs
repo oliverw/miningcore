@@ -289,9 +289,10 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
-            var extraNonce1 = worker.Context.ExtraNonce1;
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var extraNonce1 = context.ExtraNonce1;
 
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
@@ -304,7 +305,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // calc share-diff
             var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerHash.ToBigInteger()) * shareMultiplier;
-            var stratumDifficulty = worker.Context.Difficulty;
+            var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
@@ -314,15 +315,15 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
-                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                    ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if (ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
-                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                    stratumDifficulty = context.PreviousDifficulty.Value;
                 }
 
                 else
@@ -473,13 +474,15 @@ namespace MiningCore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker,
+        public virtual BitcoinShare ProcessShare(StratumClient worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
 
             // validate nTime
             if (nTime.Length != 8)
@@ -496,7 +499,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
 
             // dupe check
-            if (!RegisterSubmit(worker.Context.ExtraNonce1, extraNonce2, nTime, nonce))
+            if (!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
             return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt);

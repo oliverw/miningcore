@@ -19,16 +19,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
-using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -46,7 +41,7 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Stratum
 {
-    public abstract class StratumServer<TClientContext>
+    public abstract class StratumServer
     {
         protected StratumServer(IComponentContext ctx, IMasterClock clock)
         {
@@ -57,8 +52,7 @@ namespace MiningCore.Stratum
             this.clock = clock;
         }
 
-        protected readonly Dictionary<string, StratumClient<TClientContext>> clients =
-            new Dictionary<string, StratumClient<TClientContext>>();
+        protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
@@ -147,7 +141,7 @@ namespace MiningCore.Stratum
                 con.KeepAlive(true, 1);
 
                 // setup client
-                var client = new StratumClient<TClientContext>();
+                var client = new StratumClient();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
                     data => OnReceive(client, data), 
@@ -169,7 +163,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected virtual void OnReceive(StratumClient<TClientContext> client, PooledArraySegment<byte> data)
+        protected virtual void OnReceive(StratumClient client, PooledArraySegment<byte> data)
         {
             // get off of LibUV event-loop-thread immediately
             Task.Run(async () =>
@@ -224,9 +218,9 @@ namespace MiningCore.Stratum
             });
         }
 
-        protected virtual void OnReceiveError(StratumClient<TClientContext> client, Exception ex)
+        protected virtual void OnReceiveError(StratumClient client, Exception ex)
         {
-            switch(ex)
+            switch (ex)
             {
                 case OperationException opEx:
                     // log everything but ECONNRESET which just indicates the client disconnecting
@@ -242,14 +236,14 @@ namespace MiningCore.Stratum
             DisconnectClient(client);
         }
 
-        protected virtual void OnReceiveComplete(StratumClient<TClientContext> client)
+        protected virtual void OnReceiveComplete(StratumClient client)
         {
             logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
 
-        protected virtual void DisconnectClient(StratumClient<TClientContext> client)
+        protected virtual void DisconnectClient(StratumClient client)
         {
             Contract.RequiresNonNull(client, nameof(client));
 
@@ -269,9 +263,9 @@ namespace MiningCore.Stratum
             OnDisconnect(subscriptionId);
         }
 
-        protected void ForEachClient(Action<StratumClient<TClientContext>> action)
+        protected void ForEachClient(Action<StratumClient> action)
         {
-            StratumClient<TClientContext>[] tmp;
+            StratumClient[] tmp;
 
             lock(clients)
             {
@@ -292,10 +286,10 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected abstract void OnConnect(StratumClient<TClientContext> client);
+        protected abstract void OnConnect(StratumClient client);
         protected abstract void OnDisconnect(string subscriptionId);
 
-        protected abstract Task OnRequestAsync(StratumClient<TClientContext> client,
+        protected abstract Task OnRequestAsync(StratumClient client,
             Timestamped<JsonRpcRequest> request);
     }
 }

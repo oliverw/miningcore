@@ -27,6 +27,7 @@ using System.Reactive.Disposables;
 using Autofac;
 using MiningCore.Buffers;
 using MiningCore.JsonRpc;
+using MiningCore.Mining;
 using MiningCore.Time;
 using MiningCore.Util;
 using NetUV.Core.Handles;
@@ -37,7 +38,7 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Stratum
 {
-    public class StratumClient<TContext>
+    public class StratumClient
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -49,6 +50,7 @@ namespace MiningCore.Stratum
         private readonly PooledLineBuffer plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
         private IDisposable subscription;
         private bool isAlive = true;
+        private WorkerContextBase context;
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -96,11 +98,20 @@ namespace MiningCore.Stratum
             Receive(tcp, clock, onNext, onCompleted, onError);
         }
 
-        public TContext Context { get; set; }
         public string ConnectionId { get; private set; }
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
+
+        public void SetContext<T>(T value) where T : WorkerContextBase
+        {
+            context = value;
+        }
+
+        public T GetContextAs<T>() where T: WorkerContextBase
+        {
+            return (T) context;
+        }
 
         public void Respond<T>(T payload, object id)
         {

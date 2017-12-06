@@ -219,24 +219,26 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.Response != null && result.Response.IsValid;
         }
 
-        public virtual object[] GetSubscriberData(StratumClient<BitcoinWorkerContext> worker)
+        public virtual object[] GetSubscriberData(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+
             // assign unique ExtraNonce1 to worker (miner)
-            worker.Context.ExtraNonce1 = extraNonceProvider.Next();
+            context.ExtraNonce1 = extraNonceProvider.Next();
 
             // setup response data
             var responseData = new object[]
             {
-                worker.Context.ExtraNonce1,
+                context.ExtraNonce1,
                 BitcoinConstants.ExtranoncePlaceHolderLength - ExtranonceBytes,
             };
 
             return responseData;
         }
 
-        public string[] GetTransactions(StratumClient<BitcoinWorkerContext> worker, object requestParams)
+        public string[] GetTransactions(StratumClient worker, object requestParams)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(requestParams, nameof(requestParams));
@@ -260,7 +262,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
         }
 
-        public virtual async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
+        public virtual async Task<IShare> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -270,6 +272,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
+
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();
@@ -330,7 +334,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = minerName;
             share.Worker = workerName;
-            share.UserAgent = worker.Context.UserAgent;
+            share.UserAgent = context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.Now;

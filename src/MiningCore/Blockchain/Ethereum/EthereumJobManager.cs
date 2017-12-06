@@ -357,12 +357,13 @@ namespace MiningCore.Blockchain.Ethereum
             return true;
         }
 
-        public void PrepareWorker(StratumClient<EthereumWorkerContext> client)
+        public void PrepareWorker(StratumClient client)
         {
-            client.Context.ExtraNonce1 = extraNonceProvider.Next();
+            var context = client.GetContextAs<EthereumWorkerContext>();
+            context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
+        public async Task<IShare> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

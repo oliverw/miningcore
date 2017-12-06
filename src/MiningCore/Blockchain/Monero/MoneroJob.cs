@@ -135,11 +135,13 @@ namespace MiningCore.Blockchain.Monero
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient<MoneroWorkerContext> worker)
+        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
             Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
+
+            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             // validate nonce
             if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))
@@ -173,7 +175,7 @@ namespace MiningCore.Blockchain.Monero
                     // check difficulty
                     var headerValue = hashSeg.ToBigInteger();
                     var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
-                    var stratumDifficulty = worker.Context.Difficulty;
+                    var stratumDifficulty = context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
                     var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
 
@@ -183,15 +185,15 @@ namespace MiningCore.Blockchain.Monero
                     if (!isBlockCandidate && ratio < 0.99)
                     {
                         // check if share matched the previous difficulty from before a vardiff retarget
-                        if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                        if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                         {
-                            ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                            ratio = shareDiff / context.PreviousDifficulty.Value;
 
                             if (ratio < 0.99)
                                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                             // use previous difficulty
-                            stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                            stratumDifficulty = context.PreviousDifficulty.Value;
                         }
 
                         else
