@@ -439,8 +439,11 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-            // periodically update block-template from daemon
-            Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+	        if (poolConfig.ExternalStratum)
+		        return;
+
+			// periodically update block-template from daemon
+			Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
                 .Select(_ => Observable.FromAsync(UpdateJob))
                 .Concat()
                 .Do(isNew =>

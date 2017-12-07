@@ -95,6 +95,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void SetupJobUpdates()
         {
+	        if (poolConfig.ExternalStratum)
+		        return;
+
             jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
             // periodically update block-template from daemon

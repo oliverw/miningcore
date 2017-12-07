@@ -20,11 +20,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -40,7 +43,10 @@ using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using MiningCore.VarDiff;
+using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -108,7 +114,7 @@ namespace MiningCore.Mining
             var context = CreateClientContext();
 
             var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-            context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff, clock);
+            context.Init(poolConfig, poolEndpoint.Difficulty, !poolConfig.ExternalStratum ? poolEndpoint.VarDiff : null, clock);
             client.SetContext(context);
 
             // varDiff setup
@@ -204,9 +210,89 @@ namespace MiningCore.Mining
                 });
         }
 
-        #region VarDiff
+	    private void StartExternalStratumPublisherListener()
+	    {
+		    var thread = new Thread(() =>
+			{
+				var serializer = new JsonSerializer
+				{
+					ContractResolver = new CamelCasePropertyNamesContractResolver()
+				};
 
-        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
+				while(true)
+				{
+					try
+					{
+						using (var subSocket = new SubscriberSocket())
+						{
+							//subSocket.Options.ReceiveHighWatermark = 1000;
+							subSocket.Connect(poolConfig.ExternalStratumZmqSocket);
+							subSocket.Subscribe(poolConfig.ExternalStratumZmqTopic);
+
+							logger.Info($"Monitoring external stratum {poolConfig.ExternalStratumZmqSocket}/{poolConfig.ExternalStratumZmqTopic}");
+
+							while (true)
+							{
+								var msg = subSocket.ReceiveMultipartMessage(2);
+								var topic = msg.First().ConvertToString(Encoding.UTF8);
+								var data = msg.Last().ConvertToString(Encoding.UTF8);
+
+								// validate
+								if (topic != poolConfig.ExternalStratumZmqTopic)
+								{
+									logger.Warn(()=> $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
+									continue;
+								}
+
+								if(string.IsNullOrEmpty(data))
+								{
+									logger.Warn(() => $"Received empty data on ZeroMQ subscriber socket");
+									continue;
+								}
+
+								// deserialize
+								TShare share;
+
+								using (var reader = new StringReader(data))
+								{
+									using (var jreader = new JsonTextReader(reader))
+									{
+										share = serializer.Deserialize<TShare>(jreader);
+									}
+								}
+
+								if (share == null)
+								{
+									logger.Error(() => "Unable to deserialize share received from ZeroMQ subscriber socket");
+									continue;
+								}
+
+								// fill in the blacks
+								share.PoolId = poolConfig.Id;
+								share.Created = clock.Now;
+
+								// re-publish
+								shareSubject.OnNext(new ClientShare(null, share));
+
+								logger.Info(() => $"[{LogCat}] External share accepted: D={Math.Round(share.Difficulty, 3)}");
+							}
+						}
+					}
+
+					catch (Exception ex)
+					{
+						logger.Error(ex);
+					}
+				}
+			});
+
+		    thread.Name = $"{poolConfig.Id} external stratum listener";
+			thread.Start();
+	    }
+
+		#region VarDiff
+
+		protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
             var context = client.GetContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
@@ -417,15 +503,29 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
             try
             {
-                SetupBanning(clusterConfig);
-                await SetupJobManager();
+	            SetupBanning(clusterConfig);
+	            await SetupJobManager();
 
-                var ipEndpoints = poolConfig.Ports.Keys
-                    .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-                    .ToArray();
+	            if (!poolConfig.ExternalStratum)
+	            {
+		            var ipEndpoints = poolConfig.Ports.Keys
+			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+			            .ToArray();
 
-                StartListeners(ipEndpoints);
-                SetupStats();
+		            StartListeners(ipEndpoints);
+	            }
+
+	            else
+	            {
+		            if (string.IsNullOrEmpty(poolConfig.ExternalStratumZmqSocket))
+						logger.ThrowLogPoolStartupException($"[{LogCat}] Requested external stratum but no publisher socket specified", LogCat);
+					else if (string.IsNullOrEmpty(poolConfig.ExternalStratumZmqTopic))
+			            logger.ThrowLogPoolStartupException($"[{LogCat}] Requested external stratum but no publisher topic specified", LogCat);
+
+					StartExternalStratumPublisherListener();
+	            }
+
+	            SetupStats();
                 await UpdateBlockChainStatsAsync();
 
                 logger.Info(() => $"[{LogCat}] Online");
@@ -445,6 +545,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             }
         }
 
-        #endregion // API-Surface
+	    #endregion // API-Surface
     }
 }

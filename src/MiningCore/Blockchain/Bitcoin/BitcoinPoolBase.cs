@@ -287,10 +287,14 @@ namespace MiningCore.Blockchain.Bitcoin
             manager.Configure(poolConfig, clusterConfig);
 
             await manager.StartAsync();
-            disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
-            // we need work before opening the gates
-            await manager.Jobs.Take(1).ToTask();
+	        if (!poolConfig.ExternalStratum)
+	        {
+		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
+
+		        // we need work before opening the gates
+		        await manager.Jobs.Take(1).ToTask();
+	        }
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -342,7 +346,7 @@ namespace MiningCore.Blockchain.Bitcoin
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .ObserveOn(ThreadPoolScheduler.Instance)

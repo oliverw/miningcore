@@ -238,16 +238,10 @@ namespace MiningCore.Payments
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
+	                await Task.Delay(interval);
                 }
             });
 
-            thread.IsBackground = true;
-            thread.Priority = ThreadPriority.AboveNormal;
             thread.Name = "Payment Processing";
             thread.Start();
         }

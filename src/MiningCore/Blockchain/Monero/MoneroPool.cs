@@ -299,10 +299,13 @@ namespace MiningCore.Blockchain.Monero
 
             await manager.StartAsync();
 
-            disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
+	        if (!poolConfig.ExternalStratum)
+	        {
+		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
-            // we need work before opening the gates
-            await manager.Blocks.Take(1).ToTask();
+		        // we need work before opening the gates
+		        await manager.Blocks.Take(1).ToTask();
+	        }
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -348,7 +351,7 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .ObserveOn(ThreadPoolScheduler.Instance)
