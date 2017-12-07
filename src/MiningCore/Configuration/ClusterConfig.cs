@@ -107,7 +107,10 @@ namespace MiningCore.Configuration
         public string Name { get; set; }
         public double Difficulty { get; set; }
         public VarDiffConfig VarDiff { get; set; }
-    }
+
+		public bool IsExternal { get; set; }
+	    public string ExternalZmqSharePublishSocket { get; set; }
+	}
 
     public partial class VarDiffConfig
     {

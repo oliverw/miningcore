@@ -107,7 +107,7 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        public override async Task<IShare> SubmitShareAsync(StratumClient worker, object submission,
+        public override async Task<BitcoinShare> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -212,9 +213,9 @@ namespace MiningCore.Blockchain.ZCash
             });
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
-            var sum = shares.Sum(share => Math.Max(0.00000001, share.Item2.Difficulty * manager.ShareMultiplier));
+            var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty * manager.ShareMultiplier));
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(((sum * multiplier / interval) / 1000000) * 2);
             return (ulong)result;

@@ -46,8 +46,9 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Mining
 {
-    public abstract class PoolBase : StratumServer,
+    public abstract class PoolBase<TShare> : StratumServer,
         IMiningPool
+		where TShare: IShare
     {
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -85,7 +86,7 @@ namespace MiningCore.Mining
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 32;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
-        protected readonly Subject<Tuple<object, IShare>> shareSubject = new Subject<Tuple<object, IShare>>();
+        protected readonly Subject<ClientShare> shareSubject = new Subject<ClientShare>();
 
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
@@ -127,7 +128,7 @@ namespace MiningCore.Mining
                 lock(context.VarDiff)
                 {
                     context.VarDiff.Subscription = Shares
-                        .Where(x => x.Item1 == client)
+                        .Where(x => x.Client == client)
                         .Timestamp()
                         .Select(x => x.Timestamp.ToUnixTimeMilliseconds())
                         .Buffer(TimeSpan.FromSeconds(poolEndpoint.VarDiff.RetargetTime), VarDiffSampleCount)
@@ -342,13 +343,13 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             logger.Info(() => msg);
         }
 
-        protected abstract ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval);
+        protected abstract ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval);
 
-        protected virtual void UpdateMinerHashrates(IList<Tuple<object, IShare>> shares, int interval)
+        protected virtual void UpdateMinerHashrates(IList<ClientShare> shares, int interval)
         {
             try
             {
-                var sharesByMiner = shares.GroupBy(x => x.Item2.Miner);
+                var sharesByMiner = shares.GroupBy(x => x.Share.Miner);
 
                 foreach(var minerShares in sharesByMiner)
                 {
@@ -366,7 +367,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
                     // Per worker hashrates
                     var sharesPerWorker = minerShares
-                        .GroupBy(x => x.Item2.Worker)
+                        .GroupBy(x => x.Share.Worker)
                         .Where(x => !string.IsNullOrEmpty(x.Key));
 
                     foreach(var workerShares in sharesPerWorker)
@@ -393,7 +394,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
         #region API-Surface
 
-        public IObservable<Tuple<object, IShare>> Shares { get; }
+        public IObservable<ClientShare> Shares { get; }
         public PoolConfig Config => poolConfig;
         public PoolStats PoolStats => poolStats;
         public BlockchainStats NetworkStats => blockchainStats;
@@ -403,7 +404,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), poolConfig);
+            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase<TShare>), poolConfig);
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
         }

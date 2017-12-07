@@ -230,7 +230,7 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient worker,
+        public async Task<MoneroShare> SubmitShareAsync(StratumClient worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

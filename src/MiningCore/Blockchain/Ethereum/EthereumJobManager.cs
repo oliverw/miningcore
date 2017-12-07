@@ -363,7 +363,7 @@ namespace MiningCore.Blockchain.Ethereum
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient worker,
+        public async Task<EthereumShare> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
