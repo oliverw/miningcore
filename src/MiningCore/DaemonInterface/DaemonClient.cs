@@ -352,6 +352,11 @@ namespace MiningCore.DaemonInterface
                 resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
+            else if (x.IsCanceled)
+            {
+                resp.Error = new JsonRpcException(-500, "Cancelled", null);
+            }
+
             else
             {
                 Debug.Assert(x.IsCompletedSuccessfully);
@@ -393,7 +398,7 @@ namespace MiningCore.DaemonInterface
             {
                 var cts = new CancellationTokenSource();
 
-                var task = new Task(async () =>
+                var thread = new Thread(async (_) =>
                 {
                     using(cts)
                     {
@@ -456,9 +461,9 @@ namespace MiningCore.DaemonInterface
                             await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
-                }, TaskCreationOptions.LongRunning);
+                });
 
-                task.Start();
+                thread.Start();
 
                 return Disposable.Create(() =>
                 {

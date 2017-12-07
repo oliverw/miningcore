@@ -23,6 +23,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using MiningCore.Buffers;
 using MiningCore.Contracts;
 
@@ -58,6 +59,22 @@ namespace MiningCore.Extensions
         public static string ToHexString(this PooledArraySegment<byte> value, bool withPrefix = false)
         {
             return ToHexString(value.Array, value.Offset, value.Size, withPrefix);
+        }
+
+        public static BigInteger ToBigInteger(this PooledArraySegment<byte> value)
+        {
+            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
+            var buf = new byte[value.Size + 1];
+            Array.Copy(value.Array, value.Offset, buf, 0, value.Size);
+            return new BigInteger(buf);
+        }
+
+        public static BigInteger ToBigInteger(this byte[] value)
+        {
+            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
+            var buf = new byte[value.Length + 1];
+            Array.Copy(value, 0, buf, 0, value.Length);
+            return new BigInteger(buf);
         }
 
         public static string ToHexString(this byte[] value, bool withPrefix = false)
@@ -138,12 +155,6 @@ namespace MiningCore.Extensions
         public static T[] ReverseArray<T>(this T[] arr)
         {
             Array.Reverse(arr);
-            return arr;
-        }
-
-        public static PooledArraySegment<T> ReverseArray<T>(this PooledArraySegment<T> arr)
-        {
-            Array.Reverse(arr.Array, arr.Offset, arr.Size);
             return arr;
         }
 

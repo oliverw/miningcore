@@ -73,6 +73,7 @@ namespace MiningCore.Blockchain.Monero
         private DaemonClient walletDaemon;
         private MoneroNetworkType? networkType;
         private MoneroPoolPaymentProcessingConfigExtra extraConfig;
+        private bool walletSupportsTransferSplit;
 
         protected override string LogCategory => "Monero Payout Handler";
 
@@ -155,17 +156,51 @@ namespace MiningCore.Blockchain.Monero
             // send command
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
-            // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (transferResponse.Error?.Code == -4)
+            if (walletSupportsTransferSplit)
             {
-                logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+                if (transferResponse.Error?.Code == -4)
+                {
+                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
-                HandleTransferResponse(transferSplitResponse, balances);
+                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+                    HandleTransferResponse(transferSplitResponse, balances);
+                }
+
+                else
+                    HandleTransferResponse(transferResponse, balances);
             }
 
             else
-                HandleTransferResponse(transferResponse, balances);
+            {
+                // retry paged
+                var validBalances = balances.Where(x => x.Amount > 0).ToArray();
+                var pageSize = 10;
+                var pageCount = (int) Math.Ceiling((double) validBalances.Length / pageSize);
+
+                for (var i = 0; i < pageCount; i++)
+                {
+                    var page = validBalances
+                        .Skip(i * pageSize)
+                        .Take(pageSize)
+                        .ToArray();
+
+                    // update request
+                    request.Destinations = page
+                        .Where(x => x.Amount > 0)
+                        .Select(x => new TransferDestination
+                        {
+                            Address = x.Address,
+                            Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
+                        }).ToArray();
+
+                    transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
+                    HandleTransferResponse(transferResponse, page);
+
+                    if (transferResponse.Error != null)
+                        break;
+                }
+            }
         }
 
         private async Task PayoutToPaymentId(Balance balance)
@@ -204,12 +239,15 @@ namespace MiningCore.Blockchain.Monero
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
-            // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (result.Error?.Code == -4)
+            if (walletSupportsTransferSplit)
             {
-                logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+                if (result.Error?.Code == -4)
+                {
+                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit, request);
+                    result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit, request);
+                }
             }
 
             HandleTransferResponse(result, balance);
@@ -217,7 +255,7 @@ namespace MiningCore.Blockchain.Monero
 
         #region IPayoutHandler
 
-        public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -244,6 +282,10 @@ namespace MiningCore.Blockchain.Monero
 
             walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+
+            // detect transfer_split support
+            var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
+            walletSupportsTransferSplit = response.Error.Code != MoneroConstants.MoneroRpcMethodNotFound;
         }
 
         public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)

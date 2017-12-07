@@ -7,19 +7,10 @@ using MiningCore.Extensions;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    public class EthereumExtraNonceProvider : IExtraNonceProvider
+    public class EthereumExtraNonceProvider : ExtraNonceProviderBase
     {
-        private int counter;
-        private const int NonceMax = 0x10000; // 2 Byte = 16 Bit
-
-        public string Next()
+        public EthereumExtraNonceProvider() : base(2)
         {
-            Interlocked.Increment(ref counter);
-            Interlocked.CompareExchange(ref counter, 0, NonceMax);
-
-            // encode to hex
-            var result = BitConverter.GetBytes(counter).Take(2).ToReverseArray().ToHexString();
-            return result;
         }
     }
 }

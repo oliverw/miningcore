@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Ethereum
                     currentJob = job;
 
                     // update stats
-                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+                    BlockchainStats.LastNetworkBlockTime = clock.Now;
                 }
 
                 return isNew;
@@ -357,12 +357,13 @@ namespace MiningCore.Blockchain.Ethereum
             return true;
         }
 
-        public void PrepareWorker(StratumClient<EthereumWorkerContext> client)
+        public void PrepareWorker(StratumClient client)
         {
-            client.Context.ExtraNonce1 = extraNonceProvider.Next();
+            var context = client.GetContextAs<EthereumWorkerContext>();
+            context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
+        public async Task<IShare> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -401,7 +402,7 @@ namespace MiningCore.Blockchain.Ethereum
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }

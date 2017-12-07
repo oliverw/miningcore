@@ -21,17 +21,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Text;
 using Autofac;
 using MiningCore.Buffers;
-using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Mining;
+using MiningCore.Time;
 using MiningCore.Util;
 using NetUV.Core.Handles;
 using Newtonsoft.Json;
@@ -41,46 +38,80 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Stratum
 {
-    public class StratumClient<TContext>
+    public class StratumClient
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private const int MaxInboundRequestLength = 8192;
         private const int MaxOutboundRequestLength = 0x4000;
 
-        public static readonly Encoding Encoding = new UTF8Encoding(false);
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
+        private readonly PooledLineBuffer plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
+        private IDisposable subscription;
         private bool isAlive = true;
+        private WorkerContextBase context;
 
-        #region API-Surface
-
-        public void Init(Loop loop, Tcp tcp, IComponentContext ctx, IPEndPoint endpointConfig, string connectionId)
-        {
-            Contract.RequiresNonNull(tcp, nameof(tcp));
-            Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(endpointConfig, nameof(endpointConfig));
-
-            PoolEndpoint = endpointConfig;
-
-            // cached properties
-            ConnectionId = connectionId;
-            RemoteEndpoint = tcp.GetPeerEndPoint();
-
-            SetupConnection(loop, tcp);
-        }
-
-        public static readonly JsonSerializer Serializer = new JsonSerializer
+        private static readonly JsonSerializer serializer = new JsonSerializer
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        public TContext Context { get; set; }
+        #region API-Surface
+
+        public void Init(Loop loop, Tcp tcp, IComponentContext ctx, IMasterClock clock,
+            IPEndPoint endpointConfig, string connectionId,
+            Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
+        {
+            PoolEndpoint = endpointConfig;
+            ConnectionId = connectionId;
+            RemoteEndpoint = tcp.GetPeerEndPoint();
+
+            // initialize send queue
+            sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
+            sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
+            sendQueueDrainer.UserToken = tcp;
+
+            // cleanup preparation
+            var sub = Disposable.Create(() =>
+            {
+                if (tcp.IsValid)
+                {
+                    logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
+
+                    isAlive = false;
+                    tcp.Shutdown();
+                }
+            });
+
+            // ensure subscription is disposed on loop thread
+            var disposer = loop.CreateAsync((handle) =>
+            {
+                sub.Dispose();
+
+                handle.Dispose();
+            });
+
+            subscription = Disposable.Create(() => { disposer.Send(); });
+
+            // go
+            Receive(tcp, clock, onNext, onCompleted, onError);
+        }
+
         public string ConnectionId { get; private set; }
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
-        public IDisposable Subscription { get; set; }
-        public IObservable<PooledArraySegment<byte>> Received { get; private set; }
+        public DateTime? LastReceive { get; set; }
+
+        public void SetContext<T>(T value) where T : WorkerContextBase
+        {
+            context = value;
+        }
+
+        public T GetContextAs<T>() where T: WorkerContextBase
+        {
+            return (T) context;
+        }
 
         public void Respond<T>(T payload, object id)
         {
@@ -133,9 +164,9 @@ namespace MiningCore.Stratum
                         stream.SetLength(0);
                         int size;
 
-                        using (var writer = new StreamWriter(stream, Encoding))
+                        using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
                         {
-                            Serializer.Serialize(writer, payload);
+                            serializer.Serialize(writer, payload);
                             writer.Flush();
 
                             // append newline
@@ -143,7 +174,7 @@ namespace MiningCore.Stratum
                             size = (int)stream.Position;
                         }
 
-                        logger.Trace(() => $"[{ConnectionId}] Sending: {Encoding.GetString(buf, 0, size)}");
+                        logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf, 0, size)}");
 
                         SendInternal(new PooledArraySegment<byte>(buf, 0, size));
                     }
@@ -159,8 +190,8 @@ namespace MiningCore.Stratum
 
         public void Disconnect()
         {
-            Subscription?.Dispose();
-            Subscription = null;
+            subscription?.Dispose();
+            subscription = null;
         }
 
         public void RespondError(object id, int code, string message)
@@ -185,70 +216,62 @@ namespace MiningCore.Stratum
             RespondError(id, 24, "Unauthorized worker");
         }
 
+        public JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        {
+            using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+            {
+                using (var reader = new StreamReader(stream, StratumConstants.Encoding))
+                {
+                    using (var jreader = new JsonTextReader(reader))
+                    {
+                        return serializer.Deserialize<JsonRpcRequest>(jreader);
+                    }
+                }
+            }
+        }
+
         #endregion // API-Surface
 
-        private void SetupConnection(Loop loop, Tcp tcp)
+        private void Receive(Tcp tcp, IMasterClock clock, 
+            Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
-            Contract.RequiresNonNull(tcp, nameof(tcp));
-
-            // initialize send queue
-            sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
-            sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
-            sendQueueDrainer.UserToken = tcp;
-
-            Received = Observable.Create<PooledArraySegment<byte>>(observer =>
+            tcp.OnRead((handle, buffer) =>
             {
-                var plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
-
-                tcp.OnRead((handle, buffer) =>
+                // onAccept
+                using (buffer)
                 {
-                    // onAccept
-                    using (buffer)
-                    {
-                        if (buffer.Count == 0 || !isAlive)
-                            return;
+                    if (buffer.Count == 0 || !isAlive)
+                        return;
 
-                        plb.Receive(buffer, buffer.Count,
-                            (src, dst, count) => src.ReadBytes(dst, count),
-                            observer.OnNext,
-                            observer.OnError);
-                    }
-                }, (handle, ex) =>
-                {
-                    // onError
-                    observer.OnError(ex);
-                }, handle =>
-                {
-                    // onCompleted
-                    isAlive = false;
-                    observer.OnCompleted();
+                    LastReceive = clock.Now;
 
-                    // release handles
-                    sendQueueDrainer.UserToken = null;
-                    sendQueueDrainer.Dispose();
+                    plb.Receive(buffer, buffer.Count,
+                        (src, dst, count) => src.ReadBytes(dst, count),
+                        onNext,
+                        onError);
+                }
+            }, (handle, ex) =>
+            {
+                // onError
+                onError(ex);
+            }, handle =>
+            {
+                // onCompleted
+                isAlive = false;
+                onCompleted();
 
-                    // empty queues
-                    while (sendQueue.TryDequeue(out var fragment))
-                        fragment.Dispose();
+                // release handles
+                sendQueueDrainer.UserToken = null;
+                sendQueueDrainer.Dispose();
 
-                    plb.Dispose();
+                // empty queues
+                while (sendQueue.TryDequeue(out var fragment))
+                    fragment.Dispose();
 
-                    handle.CloseHandle();
-                });
+                plb.Dispose();
 
-                return Disposable.Create(() =>
-                {
-                    if (tcp.IsValid)
-                    {
-                        logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
-
-                        isAlive = false;
-                        tcp.Shutdown();
-                    }
-                });
-            })
-            .Publish()
-            .RefCount();
+                handle.CloseHandle();
+            });
         }
 
         private void SendInternal(PooledArraySegment<byte> buffer)

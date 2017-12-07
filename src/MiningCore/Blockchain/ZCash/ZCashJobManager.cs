@@ -81,17 +81,19 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        public override object[] GetSubscriberData(StratumClient<BitcoinWorkerContext> worker)
+        public override object[] GetSubscriberData(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+
             // assign unique ExtraNonce1 to worker (miner)
-            worker.Context.ExtraNonce1 = extraNonceProvider.Next();
+            context.ExtraNonce1 = extraNonceProvider.Next();
 
             // setup response data
             var responseData = new object[]
             {
-                worker.Context.ExtraNonce1
+                context.ExtraNonce1
             };
 
             return responseData;
@@ -105,7 +107,7 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        public override async Task<IShare> SubmitShareAsync(StratumClient<BitcoinWorkerContext> worker, object submission,
+        public override async Task<IShare> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -115,6 +117,8 @@ namespace MiningCore.Blockchain.ZCash
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
+
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();
@@ -178,10 +182,10 @@ namespace MiningCore.Blockchain.ZCash
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = minerName;
             share.Worker = workerName;
-            share.UserAgent = worker.Context.UserAgent;
+            share.UserAgent = context.UserAgent;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }

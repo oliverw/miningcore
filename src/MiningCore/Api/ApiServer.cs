@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -33,12 +34,14 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
+using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -97,7 +100,7 @@ namespace MiningCore.Api
         private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
+        private static readonly JsonSerializer serializer = new JsonSerializer
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver(),
             Formatting = Formatting.Indented,
@@ -110,13 +113,21 @@ namespace MiningCore.Api
         {
             context.Response.ContentType = "application/json";
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-
             // add CORS headers
             context.Response.Headers.Add("Access-Control-Allow-Origin", new StringValues("*"));
             context.Response.Headers.Add("Access-Control-Allow-Methods", new StringValues("GET, POST, DELETE, PUT, OPTIONS, HEAD"));
 
-            await context.Response.WriteAsync(json, Encoding.UTF8);
+            using (var stream = context.Response.Body)
+            {
+                using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                {
+                    serializer.Serialize(writer, response);
+
+                    // append newline
+                    await writer.WriteLineAsync();
+                    await writer.FlushAsync();
+                }
+            }
         }
 
         private async Task HandleRequest(HttpContext context)
@@ -207,7 +218,7 @@ namespace MiningCore.Api
                 return;
 
             // set range
-            var end = clock.UtcNow;
+            var end = clock.Now;
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(

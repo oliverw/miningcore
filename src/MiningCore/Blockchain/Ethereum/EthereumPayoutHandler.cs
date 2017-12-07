@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region IPayoutHandler
 
-        public void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
@@ -95,6 +95,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints);
+
+            return Task.FromResult(true);
         }
 
         public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
