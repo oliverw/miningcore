@@ -22,6 +22,7 @@ using System;
 using System.Buffers;
 using System.Globalization;
 using System.Linq;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.System;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
@@ -45,7 +46,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(instanceId, nameof(instanceId));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-            switch(poolConfig.Coin.Type)
+            switch (poolConfig.Coin.Type)
             {
                 case CoinType.AEON:
                     hashSlow = LibCryptonote.CryptonightHashSlowLite;
@@ -60,7 +61,6 @@ namespace MiningCore.Blockchain.Monero
             PrepareBlobTemplate(instanceId);
         }
 
-        private static readonly ArrayPool<byte> byteArrayPool = ArrayPool<byte>.Shared;
         private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
 
         private byte[] blobTemplate;
@@ -71,14 +71,14 @@ namespace MiningCore.Blockchain.Monero
             blobTemplate = BlockTemplate.Blob.HexToByteArray();
 
             // inject instanceId at the end of the reserved area of the blob
-            var destOffset = (int) BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
+            var destOffset = (int)BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
             Buffer.BlockCopy(instanceId, 0, blobTemplate, destOffset, 3);
         }
 
         private string EncodeBlob(uint workerExtraNonce)
         {
             // clone template
-            using(var blob = new PooledArraySegment<byte>(blobTemplate.Length))
+            using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
             {
                 Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
 
@@ -93,10 +93,10 @@ namespace MiningCore.Blockchain.Monero
 
         private string EncodeTarget(double difficulty)
         {
-            var diff = BigInteger.ValueOf((long) difficulty);
+            var diff = BigInteger.ValueOf((long)difficulty);
             var quotient = MoneroConstants.Diff1.Divide(diff);
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
                 Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
@@ -111,7 +111,7 @@ namespace MiningCore.Blockchain.Monero
         private PooledArraySegment<byte> ComputeBlockHash(byte[] blobConverted)
         {
             // blockhash is computed from the converted blob data prefixed with its length
-            var bytes = new[] { (byte) blobConverted.Length }
+            var bytes = new[] { (byte)blobConverted.Length }
                 .Concat(blobConverted)
                 .ToArray();
 
@@ -135,11 +135,13 @@ namespace MiningCore.Blockchain.Monero
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient<MoneroWorkerContext> worker)
+        public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
             Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
+
+            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             // validate nonce
             if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))
@@ -164,40 +166,41 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "malformed blob");
 
                 // hash it
-                using(var hashBytes = hashSlow(blobConverted))
+                using (var hashSeg = hashSlow(blobConverted))
                 {
-                    var hash = hashBytes.ToHexString();
-
+                    var hash = hashSeg.ToHexString();
                     if (hash != workerHash)
                         throw new StratumException(StratumError.MinusOne, "bad hash");
 
                     // check difficulty
-                    var headerValue = System.Numerics.BigInteger.Parse("0" + hashBytes.ReverseArray().ToHexString(), NumberStyles.HexNumber);
+                    var headerValue = hashSeg.ToBigInteger();
                     var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
-                    var stratumDifficulty = worker.Context.Difficulty;
+                    var stratumDifficulty = context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
                     var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
+
+//Console.WriteLine("{0:F2} - {1:F2}", shareDiff, BlockTemplate.Difficulty);
 
                     // test if share meets at least workers current difficulty
                     if (!isBlockCandidate && ratio < 0.99)
                     {
                         // check if share matched the previous difficulty from before a vardiff retarget
-                        if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                        if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                         {
-                            ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                            ratio = shareDiff / context.PreviousDifficulty.Value;
 
                             if (ratio < 0.99)
                                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                             // use previous difficulty
-                            stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                            stratumDifficulty = context.PreviousDifficulty.Value;
                         }
 
                         else
                             throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
                     }
 
-                    using(var blockHash = ComputeBlockHash(blobConverted))
+                    using (var blockHash = ComputeBlockHash(blobConverted))
                     {
                         var result = new MoneroShare
                         {

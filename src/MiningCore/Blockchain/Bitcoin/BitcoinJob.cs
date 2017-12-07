@@ -55,7 +55,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
         protected HashSet<string> submissions = new HashSet<string>();
-        protected BigInteger blockTargetValue;
+        protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
         protected byte[] coinbaseInitial;
@@ -189,19 +189,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 byte[] raw;
                 uint rawLength;
 
-                // serialize outputs
-                foreach(var output in tx.Outputs)
-                {
-                    amount = output.Value.Satoshi;
-                    var outScript = output.ScriptPubKey;
-                    raw = outScript.ToBytes(true);
-                    rawLength = (uint) raw.Length;
-
-                    bs.ReadWrite(ref amount);
-                    bs.ReadWriteAsVarInt(ref rawLength);
-                    bs.ReadWrite(ref raw);
-                }
-
                 // serialize witness (segwit)
                 if (withDefaultWitnessCommitment)
                 {
@@ -214,13 +201,26 @@ namespace MiningCore.Blockchain.Bitcoin
                     bs.ReadWrite(ref raw);
                 }
 
+                // serialize outputs
+                foreach (var output in tx.Outputs)
+                {
+                    amount = output.Value.Satoshi;
+                    var outScript = output.ScriptPubKey;
+                    raw = outScript.ToBytes(true);
+                    rawLength = (uint) raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
+                    bs.ReadWrite(ref raw);
+                }
+
                 return stream.ToArray();
             }
         }
 
         protected virtual Script GenerateScriptSigInitial()
         {
-            var now = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
+            var now = ((DateTimeOffset) clock.Now).ToUnixTimeSeconds();
 
             // script ops
             var ops = new List<Op>();
@@ -252,15 +252,13 @@ namespace MiningCore.Blockchain.Bitcoin
             return tx;
         }
 
-        protected bool RegisterSubmit(string miner, string worker, string extraNonce1, string extraNonce2, string nTime, string nonce)
+        protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
             var key = new StringBuilder()
-                .Append(miner)
-                .Append(worker)
                 .Append(extraNonce1)
-                .Append(extraNonce2.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(extraNonce2.ToLower())  // lowercase as we don't want to accept case-sensitive values as valid.
                 .Append(nTime)
-                .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(nonce.ToLower())        // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
             lock (submissions)
@@ -291,9 +289,10 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
-            var extraNonce1 = worker.Context.ExtraNonce1;
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var extraNonce1 = context.ExtraNonce1;
 
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
@@ -301,12 +300,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
-            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime).ReverseArray();
-            var headerValue = BigInteger.Parse("0" + headerHash.ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
+            var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerValue) * shareMultiplier;
-            var stratumDifficulty = worker.Context.Difficulty;
+            var shareDiff = (double) new BigRational(BitcoinConstants.Diff1, headerHash.ToBigInteger()) * shareMultiplier;
+            var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
@@ -316,15 +315,15 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
-                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                    ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if (ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
-                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                    stratumDifficulty = context.PreviousDifficulty.Value;
                 }
 
                 else
@@ -431,7 +430,7 @@ namespace MiningCore.Blockchain.Bitcoin
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
 
-            extraNoncePlaceHolderLength = BitcoinExtraNonceProvider.PlaceHolderLength;
+            extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
@@ -439,7 +438,13 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
+            if(!string.IsNullOrEmpty(BlockTemplate.Target))
+                blockTargetValue = new uint256(BlockTemplate.Target);
+            else
+            {
+                var tmp = new Target(BlockTemplate.Bits.HexToByteArray());
+                blockTargetValue = tmp.ToUInt256();
+            }
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
@@ -469,7 +474,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker,
+        public virtual BitcoinShare ProcessShare(StratumClient worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -477,12 +482,14 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+
             // validate nTime
             if (nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             // validate nonce
@@ -492,7 +499,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
 
             // dupe check
-            if (!RegisterSubmit(worker.Context.MinerName, worker.Context.WorkerName, worker.Context.ExtraNonce1, extraNonce2, nTime, nonce))
+            if (!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
             return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt);

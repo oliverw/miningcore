@@ -87,7 +87,7 @@ namespace MiningCore.Payments
                         .First(x => x.Value.Metadata.SupportedCoins.Contains(pool.Coin.Type)).Value;
 
                     var handler = handlerImpl.Value;
-                    handler.Configure(clusterConfig, pool);
+                    await handler.ConfigureAsync(clusterConfig, pool);
 
                     // resolve payout scheme
                     var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);

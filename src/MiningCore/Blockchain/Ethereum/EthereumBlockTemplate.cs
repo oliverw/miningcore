@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using NBitcoin;
 
 namespace MiningCore.Blockchain.Ethereum
 {
@@ -25,7 +26,7 @@ namespace MiningCore.Blockchain.Ethereum
         /// <summary>
         /// the boundary condition ("target"), 2^256 / difficulty. (32 Bytes)
         /// </summary>
-        public BigInteger Target { get; set; }
+        public string Target { get; set; }
 
         /// <summary>
         /// hash of the parent block.

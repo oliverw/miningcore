@@ -24,6 +24,6 @@ namespace MiningCore.Time
 {
     public interface IMasterClock
     {
-        DateTime UtcNow { get; }
+        DateTime Now { get; }
     }
 }

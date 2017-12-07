@@ -23,6 +23,13 @@ namespace MiningCore.Buffers
         public int Size { get; }
         public int Offset { get; }
 
+        public T[] ToArray()
+        {
+            var result = new T[Size];
+            System.Array.Copy(Array, Offset, result, 0, Size);
+            return result;
+        }
+
         #region IDisposable
 
         public void Dispose()

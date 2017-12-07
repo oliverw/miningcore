@@ -100,7 +100,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber));
+            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
@@ -108,7 +108,13 @@ namespace MiningCore.Blockchain.BitcoinGold
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
+            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+                blockTargetValue = new uint256(BlockTemplate.Target);
+            else
+            {
+                var tmp = new Target(BlockTemplate.Bits.HexToByteArray());
+                blockTargetValue = tmp.ToUInt256();
+            }
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()

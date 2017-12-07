@@ -27,7 +27,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public long Id { get; set; }
         public string PoolId { get; set; }
         public long BlockHeight { get; set; }
-        public long NetworkDifficulty { get; set; }
+        public double NetworkDifficulty { get; set; }
         public string Status { get; set; }
         public double ConfirmationProgress { get; set; }
         public double? Effort { get; set; }

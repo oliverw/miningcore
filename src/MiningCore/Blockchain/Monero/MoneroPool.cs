@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
@@ -46,7 +47,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Monero
 {
     [CoinMetadata(CoinType.XMR, CoinType.AEON)]
-    public class MoneroPool : PoolBase<MoneroWorkerContext>
+    public class MoneroPool : PoolBase
     {
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -63,9 +64,10 @@ namespace MiningCore.Blockchain.Monero
 
         private MoneroJobManager manager;
 
-        private void OnLogin(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        private void OnLogin(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+            var context = client.GetContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
@@ -83,25 +85,25 @@ namespace MiningCore.Blockchain.Monero
 
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
-            client.Context.MinerName = split[0];
-            client.Context.WorkerName = split.Length > 1 ? split[1] : null;
-            client.Context.UserAgent = loginRequest.UserAgent;
+            context.MinerName = split[0];
+            context.WorkerName = split.Length > 1 ? split[1] : null;
+            context.UserAgent = loginRequest.UserAgent;
 
             // extract paymentid
-            var index = client.Context.MinerName.IndexOf('#');
+            var index = context.MinerName.IndexOf('#');
             if (index != -1)
             {
-                client.Context.PaymentId = client.Context.MinerName.Substring(index + 1);
-                client.Context.MinerName = client.Context.MinerName.Substring(0, index);
+                context.PaymentId = context.MinerName.Substring(index + 1);
+                context.MinerName = context.MinerName.Substring(0, index);
             }
 
             // validate login
-            var result = manager.ValidateAddress(client.Context.MinerName);
+            var result = manager.ValidateAddress(context.MinerName);
 
-            client.Context.IsSubscribed = result;
-            client.Context.IsAuthorized = result;
+            context.IsSubscribed = result;
+            context.IsAuthorized = result;
 
-            if (!client.Context.IsAuthorized)
+            if (!context.IsAuthorized)
             {
                 client.RespondError(StratumError.MinusOne, "invalid login", request.Id);
                 return;
@@ -120,9 +122,10 @@ namespace MiningCore.Blockchain.Monero
             logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {loginRequest.Login} = {client.RemoteEndpoint.Address}");
         }
 
-        private void OnGetJob(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        private void OnGetJob(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+            var context = client.GetContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
@@ -133,7 +136,7 @@ namespace MiningCore.Blockchain.Monero
             var getJobRequest = request.ParamsAs<MoneroGetJobRequest>();
 
             // validate worker
-            if (client.ConnectionId != getJobRequest?.WorkerId || !client.Context.IsAuthorized)
+            if (client.ConnectionId != getJobRequest?.WorkerId || !context.IsAuthorized)
             {
                 client.RespondError(StratumError.MinusOne, "unauthorized", request.Id);
                 return;
@@ -144,9 +147,10 @@ namespace MiningCore.Blockchain.Monero
             client.Respond(job, request.Id);
         }
 
-        private MoneroJobParams CreateWorkerJob(StratumClient<MoneroWorkerContext> client)
+        private MoneroJobParams CreateWorkerJob(StratumClient client)
         {
-            var job = new MoneroWorkerJob(NextJobId(), client.Context.Difficulty);
+            var context = client.GetContextAs<MoneroWorkerContext>();
+            var job = new MoneroWorkerJob(NextJobId(), context.Difficulty);
 
             manager.PrepareWorkerJob(job, out var blob, out var target);
 
@@ -162,17 +166,18 @@ namespace MiningCore.Blockchain.Monero
             };
 
             // update context
-            lock(client.Context)
+            lock(context)
             {
-                client.Context.AddJob(job);
+                context.AddJob(job);
             }
 
             return result;
         }
 
-        private async Task OnSubmitAsync(StratumClient<MoneroWorkerContext> client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+            var context = client.GetContextAs<MoneroWorkerContext>();
 
             try
             {
@@ -180,7 +185,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -192,20 +197,20 @@ namespace MiningCore.Blockchain.Monero
                 var submitRequest = request.ParamsAs<MoneroSubmitShareRequest>();
 
                 // validate worker
-                if (client.ConnectionId != submitRequest?.WorkerId || !client.Context.IsAuthorized)
+                if (client.ConnectionId != submitRequest?.WorkerId || !context.IsAuthorized)
                     throw new StratumException(StratumError.MinusOne, "unauthorized");
 
                 // recognize activity
-                client.Context.LastActivity = clock.UtcNow;
+                context.LastActivity = clock.Now;
 
                 MoneroWorkerJob job;
 
-                lock(client.Context)
+                lock(context)
                 {
                     var jobId = submitRequest?.JobId;
 
                     if (string.IsNullOrEmpty(jobId) ||
-                        (job = client.Context.ValidJobs.FirstOrDefault(x => x.Id == jobId)) == null)
+                        (job = context.ValidJobs.FirstOrDefault(x => x.Id == jobId)) == null)
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
                 }
 
@@ -232,10 +237,10 @@ namespace MiningCore.Blockchain.Monero
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.UtcNow;
+                    poolStats.LastPoolBlockTime = clock.Now;
 
                 // update client stats
-                client.Context.Stats.ValidShares++;
+                context.Stats.ValidShares++;
             }
 
             catch(StratumException ex)
@@ -243,12 +248,12 @@ namespace MiningCore.Blockchain.Monero
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
                 // update client stats
-                client.Context.Stats.InvalidShares++;
+                context.Stats.InvalidShares++;
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, client.Context, poolConfig.Banning);
+                    ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -263,10 +268,12 @@ namespace MiningCore.Blockchain.Monero
 
             ForEachClient(client =>
             {
-                if (client.Context.IsSubscribed && client.Context.IsAuthorized)
+                var context = client.GetContextAs<MoneroWorkerContext>();
+
+                if (context.IsSubscribed && context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.UtcNow - client.Context.LastActivity;
+                    var lastActivityAgo = clock.Now - context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
@@ -298,12 +305,18 @@ namespace MiningCore.Blockchain.Monero
             await manager.Blocks.Take(1).ToTask();
         }
 
-        protected override async Task OnRequestAsync(StratumClient<MoneroWorkerContext> client,
+        protected override WorkerContextBase CreateClientContext()
+        {
+            return new MoneroWorkerContext();
+        }
+
+        protected override async Task OnRequestAsync(StratumClient client,
             Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+            var context = client.GetContextAs<MoneroWorkerContext>();
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case MoneroStratumMethods.Login:
                     OnLogin(client, tsRequest);
@@ -319,7 +332,7 @@ namespace MiningCore.Blockchain.Monero
 
                 case MoneroStratumMethods.KeepAlive:
                     // recognize activity
-                    client.Context.LastActivity = clock.UtcNow;
+                    context.LastActivity = clock.Now;
                     break;
 
                 default:
@@ -335,9 +348,10 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
+            var poolHashRateSampleIntervalSeconds = 60 * 5;
 
             disposables.Add(Shares
+                .ObserveOn(ThreadPoolScheduler.Instance)
                 .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
                 .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
                 .Select(shares =>
@@ -376,14 +390,16 @@ namespace MiningCore.Blockchain.Monero
             return (ulong) result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient<MoneroWorkerContext> client, double newDiff)
+        protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
             base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
-            if (client.Context.HasPendingDifficulty)
+            var context = client.GetContextAs<MoneroWorkerContext>();
+
+            if (context.HasPendingDifficulty)
             {
-                client.Context.ApplyPendingDifficulty();
+                context.ApplyPendingDifficulty();
 
                 // re-send job
                 var job = CreateWorkerJob(client);

@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber));
+            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
@@ -174,7 +174,13 @@ namespace MiningCore.Blockchain.ZCash
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            blockTargetValue = BigInteger.Parse("0" + BlockTemplate.Target, NumberStyles.HexNumber);
+            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+                blockTargetValue = new uint256(BlockTemplate.Target);
+            else
+            {
+                var tmp = new Target(BlockTemplate.Bits.HexToByteArray());
+                blockTargetValue = tmp.ToUInt256();
+            }
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
@@ -221,22 +227,24 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        public override BitcoinShare ProcessShare(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, string nTime, string solution)
+        public override BitcoinShare ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
 
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
+
             // validate nTime
             if (nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
-            var nonce = worker.Context.ExtraNonce1 + extraNonce2;
+            var nonce = context.ExtraNonce1 + extraNonce2;
 
             // validate nonce
             if (nonce.Length != 64)
@@ -287,9 +295,10 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string nonce,
+        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
+            var context = worker.GetContextAs<BitcoinWorkerContext>();
             var solutionBytes = solution.HexToByteArray();
 
             // serialize block-header
@@ -301,12 +310,13 @@ namespace MiningCore.Blockchain.ZCash
 
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
-            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime).ReverseArray();
-            var headerValue = BigInteger.Parse("0" + headerHash.ToHexString(), NumberStyles.HexNumber);
+            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
+            var headerHashReversed = headerHash.ToReverseArray();
+            var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerValue) * shareMultiplier;
-            var stratumDifficulty = worker.Context.Difficulty;
+            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHash.ToBigInteger()) * shareMultiplier;
+            var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
@@ -316,15 +326,15 @@ namespace MiningCore.Blockchain.ZCash
             if (!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (worker.Context.VarDiff?.LastUpdate != null && worker.Context.PreviousDifficulty.HasValue)
+                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
-                    ratio = shareDiff / worker.Context.PreviousDifficulty.Value;
+                    ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if (ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
-                    stratumDifficulty = worker.Context.PreviousDifficulty.Value;
+                    stratumDifficulty = context.PreviousDifficulty.Value;
                 }
 
                 else
@@ -342,7 +352,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
                 result.BlockHex = blockBytes.ToHexString();
-                result.BlockHash = headerHash.ToHexString();
+                result.BlockHash = headerHashReversed.ToHexString();
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
             }
 
@@ -353,7 +363,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             lock(submissions)
             {
-                var key = nonce + solution;
+                var key = nonce.ToLower() + solution.ToLower();
                 if (submissions.Contains(key))
                     return false;
 

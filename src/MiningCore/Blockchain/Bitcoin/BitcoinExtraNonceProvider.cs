@@ -24,42 +24,10 @@ using System.Threading;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinExtraNonceProvider : IExtraNonceProvider
+    public class BitcoinExtraNonceProvider : ExtraNonceProviderBase
     {
-        public BitcoinExtraNonceProvider()
+        public BitcoinExtraNonceProvider() : base(4)
         {
-            int instanceId;
-
-            using(var rng = RandomNumberGenerator.Create())
-            {
-                var bytes = new byte[4];
-                rng.GetNonZeroBytes(bytes);
-                instanceId = BitConverter.ToInt32(bytes, 0);
-            }
-
-            var mask = (1 << (ExtranonceBytes * 8)) - 1;
-            counter = Math.Abs(instanceId & mask);
         }
-
-        private int counter;
-        public const int ExtranonceBytes = 3; // 3 Byte = 24 Bit
-        public const int PlaceHolderLength = 8;
-        private const int NonceMax = 1 << (ExtranonceBytes * 8);
-        private readonly string stringFormat = "x" + ExtranonceBytes * 2;
-        public const int Size = PlaceHolderLength - ExtranonceBytes;
-
-        #region IExtraNonceProvider
-
-        public string Next()
-        {
-            Interlocked.Increment(ref counter);
-            Interlocked.CompareExchange(ref counter, 0, NonceMax);
-
-            // encode to hex
-            var result = counter.ToString(stringFormat);
-            return result;
-        }
-
-        #endregion // IExtraNonceProvider
     }
 }

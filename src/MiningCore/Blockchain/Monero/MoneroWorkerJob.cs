@@ -36,15 +36,5 @@ namespace MiningCore.Blockchain.Monero
         public double Difficulty { get; set; }
 
         public HashSet<string> Submissions { get; } = new HashSet<string>();
-
-        public bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
-        {
-            var key = extraNonce1 + extraNonce2 + nTime + nonce;
-            if (Submissions.Contains(key))
-                return false;
-
-            Submissions.Add(key);
-            return true;
-        }
     }
 }

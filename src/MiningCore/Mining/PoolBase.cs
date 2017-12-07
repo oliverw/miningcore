@@ -46,9 +46,8 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Mining
 {
-    public abstract class PoolBase<TWorkerContext> : StratumServer<TWorkerContext>,
+    public abstract class PoolBase : StratumServer,
         IMiningPool
-        where TWorkerContext : WorkerContextBase, new()
     {
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -94,8 +93,9 @@ namespace MiningCore.Mining
         protected override string LogCat => "Pool";
 
         protected abstract Task SetupJobManager();
+        protected abstract WorkerContextBase CreateClientContext();
 
-        protected override void OnConnect(StratumClient<TWorkerContext> client)
+        protected override void OnConnect(StratumClient client)
         {
             // update stats
             lock(clients)
@@ -104,11 +104,11 @@ namespace MiningCore.Mining
             }
 
             // client setup
-            var context = new TWorkerContext();
+            var context = CreateClientContext();
 
             var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolEndpoint.VarDiff, clock);
-            client.Context = context;
+            client.SetContext(context);
 
             // varDiff setup
             if (context.VarDiff != null)
@@ -164,13 +164,15 @@ namespace MiningCore.Mining
             EnsureNoZombieClient(client);
         }
 
-        protected override void DisconnectClient(StratumClient<TWorkerContext> client)
+        protected override void DisconnectClient(StratumClient client)
         {
-            if (client.Context.VarDiff != null)
+            var context = client.GetContextAs<WorkerContextBase>();
+
+            if (context.VarDiff != null)
             {
-                lock(client.Context.VarDiff)
+                lock(context.VarDiff)
                 {
-                    client.Context.VarDiff.Dispose();
+                    context.VarDiff.Dispose();
                 }
             }
 
@@ -186,20 +188,13 @@ namespace MiningCore.Mining
             }
         }
 
-        private void EnsureNoZombieClient(StratumClient<TWorkerContext> client)
+        private void EnsureNoZombieClient(StratumClient client)
         {
-            var isAlive = client.Received
+            Observable.Timer(clock.Now.AddSeconds(10))
                 .Take(1)
-                .Select(_ => true);
-
-            var timeout = Observable.Timer(clock.UtcNow.AddSeconds(10))
-                .Select(_ => false);
-
-            isAlive.Merge(timeout)
-                .Take(1)
-                .Subscribe(alive =>
+                .Subscribe(_ =>
                 {
-                    if (!alive)
+                    if (!client.LastReceive.HasValue)
                     {
                         logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
@@ -210,9 +205,10 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected virtual void OnVarDiffUpdate(StratumClient<TWorkerContext> client, double newDiff)
+        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            client.Context.EnqueueNewDifficulty(newDiff);
+            var context = client.GetContextAs<WorkerContextBase>();
+            context.EnqueueNewDifficulty(newDiff);
         }
 
         #endregion // VarDiff
@@ -280,7 +276,7 @@ namespace MiningCore.Mining
                 {
                     var mapped = mapper.Map<Persistence.Model.PoolStats>(poolStats);
                     mapped.PoolId = poolConfig.Id;
-                    mapped.Created = clock.UtcNow;
+                    mapped.Created = clock.Now;
 
                     statsRepo.InsertPoolStats(con, tx, mapped);
                 });
@@ -292,7 +288,7 @@ namespace MiningCore.Mining
             }
         }
 
-        protected void ConsiderBan(StratumClient<TWorkerContext> client, WorkerContextBase context, PoolShareBasedBanningConfig config)
+        protected void ConsiderBan(StratumClient client, WorkerContextBase context, PoolShareBasedBanningConfig config)
         {
             var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 
@@ -365,7 +361,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
                         PoolId = poolConfig.Id,
                         Miner = miner,
                         Hashrate = hashRate,
-                        Created = clock.UtcNow
+                        Created = clock.Now
                     };
 
                     // Per worker hashrates
@@ -407,7 +403,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase<TWorkerContext>), poolConfig);
+            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), poolConfig);
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
         }

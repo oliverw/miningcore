@@ -6,6 +6,6 @@ namespace MiningCore.Time
 {
     public class StandardClock : IMasterClock
     {
-        public DateTime UtcNow => DateTime.UtcNow;
+        public DateTime Now => DateTime.UtcNow;
     }
 }
