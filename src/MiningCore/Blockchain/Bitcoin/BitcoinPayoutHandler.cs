@@ -165,7 +165,9 @@ namespace MiningCore.Blockchain.Bitcoin
                                 break;
 
                             default:
-                                block.Status = BlockStatus.Orphaned;
+	                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
+
+								block.Status = BlockStatus.Orphaned;
                                 result.Add(block);
                                 break;
                         }

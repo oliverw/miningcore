@@ -138,7 +138,9 @@ namespace MiningCore.Payments
                                 break;
 
                             case BlockStatus.Orphaned:
-                                blockRepo.DeleteBlock(con, tx, block);
+	                            logger.Info(() => $"Deleting orphaned block {block.BlockHeight} on pool {pool.Id}");
+
+								blockRepo.DeleteBlock(con, tx, block);
                                 break;
 
                             case BlockStatus.Pending:
