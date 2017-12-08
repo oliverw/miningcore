@@ -76,7 +76,7 @@ namespace MiningCore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in clusterConfig.Pools)
+            foreach(var pool in clusterConfig.Pools.Where(x=> x.Enabled && x.PaymentProcessing.Enabled))
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
