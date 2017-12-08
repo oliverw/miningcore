@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
@@ -387,6 +388,11 @@ namespace MiningCore.Blockchain.Bitcoin
             var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty * manager.ShareMultiplier));
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(sum * multiplier / interval);
+
+			// OW: tmp hotfix
+	        if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
+		        result *= 2;
+
             return (ulong) result;
         }
 
