@@ -245,15 +245,20 @@ namespace MiningCore.Payments
                         logger.Error(ex);
                     }
 
-	                await Task.Delay(interval);
-                }
-            });
+			        var waitResult = stopEvent.WaitOne(interval);
 
-            thread.Name = "Payment Processing";
-            thread.Start();
+			        // check if stop was signalled
+			        if (waitResult)
+				        break;
+		        }
+	        });
+
+	        thread.Priority = ThreadPriority.Highest;
+	        thread.Name = "Payment Processing";
+	        thread.Start();
         }
 
-        public void Stop()
+		public void Stop()
         {
             logger.Info(() => "Stopping ..");
 

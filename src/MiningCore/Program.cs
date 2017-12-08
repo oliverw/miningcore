@@ -506,7 +506,7 @@ namespace MiningCore
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
             // build connection string
-            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
+            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=60;";
 
             // register connection factory
             builder.RegisterInstance(new ConnectionFactory(connectionString))
