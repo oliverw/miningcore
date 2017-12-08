@@ -96,7 +96,12 @@ namespace MiningCore.Payments
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
 
-                catch(Exception ex)
+                catch (InvalidOperationException ex)
+                {
+	                logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
+                }
+
+				catch (Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
