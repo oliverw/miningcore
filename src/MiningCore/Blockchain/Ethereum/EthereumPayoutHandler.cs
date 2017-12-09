@@ -220,7 +220,9 @@ namespace MiningCore.Blockchain.Ethereum
                                 logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
                             }
 
-                            logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {block.BlockHeight}. Will try again.");
+                            else
+                                logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {block.BlockHeight}. Will try again.");
+
                             continue;
                         }
 
