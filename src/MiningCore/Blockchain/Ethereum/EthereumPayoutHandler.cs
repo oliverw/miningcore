@@ -198,7 +198,11 @@ namespace MiningCore.Blockchain.Ethereum
                                 new[] { blockInfo.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
                             .ToArray();
 
+                        logger.Info(() => $"[{LogCategory}] Fetching {blockInfo.Uncles.Length} uncles for block {block.BlockHeight}");
+
                         var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
+
+                        logger.Info(() => $"[{LogCategory}] Fetched {uncleResponses.Count(x => x.Error == null && x.Response != null)} uncles for block {block.BlockHeight}");
 
                         var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
                             .Select(x => x.Response.ToObject<DaemonResponses.Block>())
@@ -216,8 +220,12 @@ namespace MiningCore.Blockchain.Ethereum
                                 logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
                             }
 
+                            logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {block.BlockHeight}. Will try again.");
                             continue;
                         }
+
+                        else
+                            logger.Info(() => $"[{LogCategory}] No matching uncle for block {block.BlockHeight}");
                     }
 
                     if (block.ConfirmationProgress > 0.75)
