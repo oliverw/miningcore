@@ -95,13 +95,15 @@ namespace MiningCore.Payments.PayoutSchemes
             // delete obsolete shares
             if (shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountPoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                //var cutOffCount = shareRepo.CountPoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
-                if (cutOffCount > 0)
-                {
-                    logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
-                    shareRepo.DeletePoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
-                }
+                //if (cutOffCount > 0)
+                //{
+                //    logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
+                //    shareRepo.DeletePoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                //}
+
+                logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
             }
 
             // diagnostics
