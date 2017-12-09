@@ -27,6 +27,7 @@ namespace MiningCore.Api.Responses
         public ulong BlockHeight { get; set; }
         public double NetworkDifficulty { get; set; }
         public string Status { get; set; }
+        public string Type { get; set; }
         public double ConfirmationProgress { get; set; }
         public double? Effort { get; set; }
         public string TransactionConfirmationData { get; set; }

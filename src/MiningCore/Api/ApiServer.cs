@@ -253,13 +253,18 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich blocks
-            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var blockInfobaseUrl);
+            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var blockInfobaseDict);
 
             foreach(var block in blocks)
             {
                 // compute infoLink
-                if (!string.IsNullOrEmpty(blockInfobaseUrl))
-                    block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                if (blockInfobaseDict != null)
+                {
+                    blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : string.Empty, out var blockInfobaseUrl);
+
+                    if (!string.IsNullOrEmpty(blockInfobaseUrl))
+                        block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                }
             }
 
             await SendJson(context, blocks);
