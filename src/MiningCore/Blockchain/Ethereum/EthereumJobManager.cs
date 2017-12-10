@@ -42,6 +42,7 @@ using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -140,7 +141,7 @@ namespace MiningCore.Blockchain.Ethereum
                     currentJob = job;
 
                     // update stats
-                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
+                    BlockchainStats.LastNetworkBlockTime = clock.Now;
                 }
 
                 return isNew;
@@ -208,7 +209,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = BigInteger.Parse("0" + work[2].Substring(2), NumberStyles.HexNumber),
+                Target = work[2],
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
                 Height = block.Height.Value,
                 ParentHash = block.ParentHash,
@@ -356,12 +357,13 @@ namespace MiningCore.Blockchain.Ethereum
             return true;
         }
 
-        public void PrepareWorker(StratumClient<EthereumWorkerContext> client)
+        public void PrepareWorker(StratumClient client)
         {
-            client.Context.ExtraNonce1 = extraNonceProvider.Next();
+            var context = client.GetContextAs<EthereumWorkerContext>();
+            context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient<EthereumWorkerContext> worker,
+        public async Task<IShare> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -400,7 +402,7 @@ namespace MiningCore.Blockchain.Ethereum
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.Created = clock.UtcNow;
+            share.Created = clock.Now;
 
             return share;
         }
@@ -599,26 +601,30 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
-            if (enableStreaming && !poolConfig.Daemons.Any(x => x.PortWs.HasValue))
+            if (enableStreaming && !poolConfig.Daemons.Any(x =>
+                x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
             {
-                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(DaemonEndpointConfig.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
                 enableStreaming = false;
             }
 
             if (enableStreaming)
             {
-                var pendingBlockObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object)EC.GetBlockByNumber, new[] { "pending", (object)true } })
-                    .Do(data =>
-                    {
-                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
-                    })
+                // collect ports
+                var wsDaemons = poolConfig.Daemons
+                    .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
+                    .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>().PortWs.Value);
+
+                logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
+
+                // stream pending blocks
+                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object)true } })
                     .Select(data =>
                     {
                         try
                         {
                             var psp = DeserializeRequest(data).ParamsAs<PubSubParams<Block>>();
-                            return psp.Result;
+                            return psp?.Result;
                         }
 
                         catch (Exception ex)
@@ -629,18 +635,14 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                var getWorkObs = daemon.WebsocketSubscribe(EC.ParitySubscribe,
-                        new[] { (object)EC.GetWork })
-                    .Do(data =>
-                    {
-                        logger.Debug(() => Encoding.UTF8.GetString(data.Array, data.Offset, data.Size));
-                    })
+                // stream work updates
+                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
                     {
                         try
                         {
                             var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
-                            return psp.Result;
+                            return psp?.Result;
                         }
 
                         catch (Exception ex)

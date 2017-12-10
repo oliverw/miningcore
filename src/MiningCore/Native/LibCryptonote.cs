@@ -38,6 +38,9 @@ namespace MiningCore.Native
         [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength);
 
+        [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_lite_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cn_slow_hash_lite(byte* input, byte* output, uint inputLength);
+
         [DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
 
@@ -106,15 +109,15 @@ namespace MiningCore.Native
             }
         }
 
-        public static byte[] CryptonightHashSlow(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashSlow(byte[] data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var result = new byte[32];
+            var result = new PooledArraySegment<byte>(32);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed(byte* output = result.Array)
                 {
                     cn_slow_hash(input, output, (uint) data.Length);
                 }
@@ -123,15 +126,32 @@ namespace MiningCore.Native
             return result;
         }
 
-        public static byte[] CryptonightHashFast(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashSlowLite(byte[] data)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            var result = new byte[32];
+            var result = new PooledArraySegment<byte>(32);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result.Array)
+                {
+                    cn_slow_hash_lite(input, output, (uint)data.Length);
+                }
+            }
+
+            return result;
+        }
+
+        public static PooledArraySegment<byte> CryptonightHashFast(byte[] data)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+
+            var result = new PooledArraySegment<byte>(32);
+
+            fixed (byte* input = data)
+            {
+                fixed(byte* output = result.Array)
                 {
                     cn_fast_hash(input, output, (uint) data.Length);
                 }

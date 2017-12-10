@@ -116,7 +116,7 @@ namespace MiningCore.VarDiff
 
                     // check if different
                     if (!newDiff.Value.EqualsDigitPrecision3(ctx.Difficulty))
-                        ctx.VarDiff.LastUpdate = clock.UtcNow;
+                        ctx.VarDiff.LastUpdate = clock.Now;
                     else
                         newDiff = null;
                 }

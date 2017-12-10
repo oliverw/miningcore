@@ -20,19 +20,33 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 
-namespace MiningCore.Persistence.Model
+namespace MiningCore.Api.Responses
 {
-    public class Block
+    public class AdminGcStats
     {
-        public long Id { get; set; }
-        public string PoolId { get; set; }
-        public ulong BlockHeight { get; set; }
-        public double NetworkDifficulty { get; set; }
-        public BlockStatus Status { get; set; }
-        public double ConfirmationProgress { get; set; }
-        public double? Effort { get; set; }
-        public string TransactionConfirmationData { get; set; }
-        public decimal Reward { get; set; }
-        public DateTime Created { get; set; }
+        /// <summary>
+        /// Number of Generation 0 collections
+        /// </summary>
+        public int GcGen0 { get; set; }
+
+        /// <summary>
+        /// Number of Generation 1 collections
+        /// </summary>
+        public int GcGen1 { get; set; }
+
+        /// <summary>
+        /// Number of Generation 2 collections
+        /// </summary>
+        public int GcGen2 { get; set; }
+
+        /// <summary>
+        /// Assumed amount of allocated memory
+        /// </summary>
+        public string MemAllocated { get; set; }
+
+        /// <summary>
+        /// Maximum time in seconds spent in full GC
+        /// </summary>
+        public double MaxFullGcDuration { get; set; } = 0;
     }
 }

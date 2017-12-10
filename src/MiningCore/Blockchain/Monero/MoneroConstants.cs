@@ -18,8 +18,12 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using MiningCore.Configuration;
+using MiningCore.Extensions;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 
 namespace MiningCore.Blockchain.Monero
@@ -33,15 +37,22 @@ namespace MiningCore.Blockchain.Monero
     public class MoneroConstants
     {
         public const string WalletDaemonCategory = "wallet";
-        public const int AddressLength = 95;
+
+        public static readonly Dictionary<CoinType, int> AddressLength = new Dictionary<CoinType, int>
+        {
+            { CoinType.XMR, 95 },
+            { CoinType.AEON, 97 },
+        };
+
         public const string DaemonRpcLocation = "json_rpc";
         public const string DaemonRpcDigestAuthRealm = "monero_rpc";
+        public const int MoneroRpcMethodNotFound = -32601;
         public const char MainNetAddressPrefix = '4';
         public const char TestNetAddressPrefix = '9';
         public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
 
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
-        public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
+        public static readonly System.Numerics.BigInteger Diff1b = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".HexToByteArray().ToBigInteger();
         public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
 
 #if DEBUG

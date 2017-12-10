@@ -55,7 +55,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             Contract.RequiresNonNull(data, nameof(data));
 
             // get nFactor
-            var ts = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
+            var ts = ((DateTimeOffset) clock.Now).ToUnixTimeSeconds();
             var n = timetable.First(x => ts >= x.Item2).Item1;
             var nFactor = Math.Log(n) / Math.Log(2);
 

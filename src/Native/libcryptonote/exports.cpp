@@ -106,3 +106,8 @@ extern "C" MODULE_API void cn_fast_hash_export(const char* input, unsigned char 
 {
 	cn_fast_hash((const void *)input, (const size_t) inputSize, (char *) output);
 }
+
+extern "C" MODULE_API void cn_slow_hash_lite_export(const char* input, unsigned char *output, uint32_t inputSize)
+{
+    cn_slow_hash_lite((const void *)input, (const size_t)inputSize, (char *)output);
+}

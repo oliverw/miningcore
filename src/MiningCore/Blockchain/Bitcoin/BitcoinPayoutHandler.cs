@@ -75,7 +75,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         #region IPayoutHandler
 
-        public virtual void Configure(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -87,6 +87,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(poolConfig.Daemons);
+
+            return Task.FromResult(true);
         }
 
         public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)

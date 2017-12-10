@@ -63,12 +63,10 @@ namespace MiningCore.Blockchain.Bitcoin
 
     public class BitcoinConstants
     {
+        public const int ExtranoncePlaceHolderLength = 8;
         public const decimal SatoshisPerBitcoin = 100000000;
-
         public static double Pow2x32 = Math.Pow(2, 32);
-
         public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
-
         public const int CoinbaseMinConfimations = 102;
     }
 

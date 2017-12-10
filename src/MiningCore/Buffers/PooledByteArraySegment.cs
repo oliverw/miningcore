@@ -3,7 +3,7 @@ using System.Buffers;
 
 namespace MiningCore.Buffers
 {
-    public class PooledArraySegment<T> : IDisposable
+    public struct PooledArraySegment<T> : IDisposable
     {
         public PooledArraySegment(T[] array, int offset, int size)
         {
@@ -12,7 +12,7 @@ namespace MiningCore.Buffers
             Offset = offset;
         }
 
-        public PooledArraySegment(int offset, int size)
+        public PooledArraySegment(int size, int offset = 0)
         {
             Array = ArrayPool<T>.Shared.Rent(size);
             Size = size;
@@ -22,6 +22,13 @@ namespace MiningCore.Buffers
         public T[] Array { get; private set; }
         public int Size { get; }
         public int Offset { get; }
+
+        public T[] ToArray()
+        {
+            var result = new T[Size];
+            System.Array.Copy(Array, Offset, result, 0, Size);
+            return result;
+        }
 
         #region IDisposable
 

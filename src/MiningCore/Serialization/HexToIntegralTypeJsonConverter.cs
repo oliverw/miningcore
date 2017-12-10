@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
 using System.Numerics;
+using MiningCore.Extensions;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace MiningCore.Serialization
@@ -34,6 +36,9 @@ namespace MiningCore.Serialization
 
             if (typeof(T) == typeof(BigInteger))
                 return BigInteger.Parse("0" + str, NumberStyles.HexNumber);
+
+            if (typeof(T) == typeof(uint256))
+                return new uint256(str.HexToByteArray().ReverseArray());
 
             var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             return Convert.ChangeType(val, underlyingType ?? typeof(T));

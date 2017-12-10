@@ -12,15 +12,16 @@ namespace MiningCore.Util
 {
     public class PooledLineBuffer : IDisposable
     {
-        public PooledLineBuffer(int? maxLength = null)
+        public PooledLineBuffer(ILogger logger, int? maxLength = null)
         {
             this.maxLength = maxLength;
+            this.logger = logger ?? LogManager.GetCurrentClassLogger();
         }
 
-        readonly Queue<PooledArraySegment<byte>> recvQueue = new Queue<PooledArraySegment<byte>>();
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        public static readonly Encoding Encoding = Encoding.UTF8;
+        private readonly Queue<PooledArraySegment<byte>> recvQueue = new Queue<PooledArraySegment<byte>>();
+        private readonly ILogger logger;
         private int? maxLength;
+        private static readonly Encoding Encoding = Encoding.UTF8;
         private static readonly ArrayPool<byte> ByteArrayPool = ArrayPool<byte>.Shared;
 
         #region IDisposable
@@ -33,17 +34,24 @@ namespace MiningCore.Util
 
         #endregion
 
-        public void Receive<T>(T buffer, int bufferSize, Action<T, byte[], int> readBuffer, Action<PooledArraySegment<byte>> handler, bool forceNewLine = false)
+        public void Receive<T>(T buffer, int bufferSize,
+            Action<T, byte[], int> readBuffer,
+            Action<PooledArraySegment<byte>> onNext,
+            Action<Exception> onError,
+            bool forceNewLine = false)
         {
             if (bufferSize == 0)
                 return;
 
             // prevent flooding
             if (maxLength.HasValue && bufferSize > maxLength)
-                throw new InvalidDataException($"Incoming data exceeds maximum of {maxLength.Value}");
+            {
+                onError(new InvalidDataException($"Incoming data exceeds maximum of {maxLength.Value}"));
+                return;
+            }
 
             var remaining = bufferSize;
-            var buf = ByteArrayPool.Rent(bufferSize);
+            var buf = ArrayPool<byte>.Shared.Rent(bufferSize);
             var prevIndex = 0;
             var keepLease = false;
 
@@ -70,8 +78,14 @@ namespace MiningCore.Util
                         // fastpath
                         if (!forceNewLine && index + 1 == bufferSize && recvQueue.Count == 0)
                         {
-                            handler(new PooledArraySegment<byte>(buf, prevIndex, index));
-                            keepLease = true;
+                            var length = index - prevIndex;
+
+                            if (length > 0)
+                            {
+                                onNext(new PooledArraySegment<byte>(buf, prevIndex, length));
+                                keepLease = true;
+                            }
+
                             break;
                         }
 
@@ -79,7 +93,7 @@ namespace MiningCore.Util
                         var queuedLength = recvQueue.Sum(x => x.Size);
                         var segmentLength = !forceNewLine ? index - prevIndex : bufferSize - prevIndex;
                         var lineLength = queuedLength + segmentLength;
-                        var line = ByteArrayPool.Rent(lineLength);
+                        var line = ArrayPool<byte>.Shared.Rent(lineLength);
                         var offset = 0;
 
                         while (recvQueue.TryDequeue(out var segment))
@@ -97,7 +111,7 @@ namespace MiningCore.Util
 
                         // emit
                         if (lineLength > 0)
-                            handler(new PooledArraySegment<byte>(line, 0, lineLength));
+                            onNext(new PooledArraySegment<byte>(line, 0, lineLength));
 
                         if (forceNewLine)
                             break;
@@ -114,7 +128,7 @@ namespace MiningCore.Util
 
                         if (segmentLength > 0)
                         {
-                            var fragment = ByteArrayPool.Rent(segmentLength);
+                            var fragment = ArrayPool<byte>.Shared.Rent(segmentLength);
                             Array.Copy(buf, prevIndex, fragment, 0, segmentLength);
                             recvQueue.Enqueue(new PooledArraySegment<byte>(fragment, 0, segmentLength));
                         }
@@ -128,7 +142,7 @@ namespace MiningCore.Util
 
                     // prevent flooding
                     if (maxLength.HasValue && recvQueue.Sum(x => x.Size) > maxLength.Value)
-                        throw new InvalidDataException($"Incoming request size exceeds maximum of {maxLength.Value}");
+                        onError(new InvalidDataException($"Incoming request size exceeds maximum of {maxLength.Value}"));
 
                     break;
                 }

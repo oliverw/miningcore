@@ -20,9 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reactive;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -35,12 +35,14 @@ using Microsoft.Extensions.Primitives;
 using MiningCore.Api.Extensions;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
+using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -83,8 +85,9 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
 
-                // dev api
+                // admin api
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
+                { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
             };
         }
 
@@ -99,7 +102,7 @@ namespace MiningCore.Api
         private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
+        private static readonly JsonSerializer serializer = new JsonSerializer
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver(),
             Formatting = Formatting.Indented,
@@ -112,13 +115,21 @@ namespace MiningCore.Api
         {
             context.Response.ContentType = "application/json";
 
-            var json = JsonConvert.SerializeObject(response, serializerSettings) + "\n";
-
             // add CORS headers
             context.Response.Headers.Add("Access-Control-Allow-Origin", new StringValues("*"));
             context.Response.Headers.Add("Access-Control-Allow-Methods", new StringValues("GET, POST, DELETE, PUT, OPTIONS, HEAD"));
 
-            await context.Response.WriteAsync(json, Encoding.UTF8);
+            using (var stream = context.Response.Body)
+            {
+                using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                {
+                    serializer.Serialize(writer, response);
+
+                    // append newline
+                    await writer.WriteLineAsync();
+                    await writer.FlushAsync();
+                }
+            }
         }
 
         private async Task HandleRequest(HttpContext context)
@@ -206,7 +217,7 @@ namespace MiningCore.Api
                 return;
 
             // set range
-            var end = clock.UtcNow;
+            var end = clock.Now;
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(
@@ -331,6 +342,17 @@ namespace MiningCore.Api
             GC.Collect(2, GCCollectionMode.Forced);
 
             await SendJson(context, true);
+        }
+
+        private async Task HandleGcStatsAsync(HttpContext context, Match m)
+        {
+            // update other stats
+            Program.gcStats.GcGen0 = GC.CollectionCount(0);
+            Program.gcStats.GcGen1 = GC.CollectionCount(1);
+            Program.gcStats.GcGen2 = GC.CollectionCount(2);
+            Program.gcStats.MemAllocated = FormatUtil.FormatCapacity(GC.GetTotalMemory(false));
+
+            await SendJson(context, Program.gcStats);
         }
 
         #region API-Surface

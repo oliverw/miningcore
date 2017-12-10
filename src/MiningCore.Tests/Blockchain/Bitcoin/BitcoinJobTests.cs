@@ -25,14 +25,13 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
         [Fact]
         public void BitcoinJob_Should_Accept_Valid_Share()
         {
-            var worker = new StratumClient<BitcoinWorkerContext>
-            {
-                Context = new BitcoinWorkerContext
-                {
-                    Difficulty = 0.5,
-                    ExtraNonce1 = "01000058",
-                }
-            };
+	        var worker = new StratumClient();
+
+	        worker.SetContext(new BitcoinWorkerContext
+	        {
+		        Difficulty = 0.5,
+		        ExtraNonce1 = "01000058",
+	        });
 
             var bt = JsonConvert.DeserializeObject<MiningCore.Blockchain.Bitcoin.DaemonResponses.BlockTemplate>(
                 "{\"Version\":536870912,\"PreviousBlockhash\":\"000000000909578519b5be7b37fdc53b2923817921c43108a907b72264da76bb\",\"CoinbaseValue\":5000000000,\"Target\":\"7fffff0000000000000000000000000000000000000000000000000000000000\",\"NonceRange\":\"00000000ffffffff\",\"CurTime\":1508869874,\"Bits\":\"207fffff\",\"Height\":14,\"Transactions\":[],\"CoinbaseAux\":{\"Flags\":\"0b2f454231362f414431322f\"},\"default_witness_commitment\":null}");
@@ -62,14 +61,13 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
         [Fact]
         public void BitcoinJob_Should_Not_Accept_Invalid_Share()
         {
-            var worker = new StratumClient<BitcoinWorkerContext>
-            {
-                Context = new BitcoinWorkerContext
-                {
-                    Difficulty = 0.5,
-                    ExtraNonce1 = "01000058",
-                }
-            };
+	        var worker = new StratumClient();
+
+	        worker.SetContext(new BitcoinWorkerContext
+			{
+				Difficulty = 0.5,
+				ExtraNonce1 = "01000058",
+	        });
 
             var bt = JsonConvert.DeserializeObject<MiningCore.Blockchain.Bitcoin.DaemonResponses.BlockTemplate>(
                 "{\"Version\":536870912,\"PreviousBlockhash\":\"000000000909578519b5be7b37fdc53b2923817921c43108a907b72264da76bb\",\"CoinbaseValue\":5000000000,\"Target\":\"7fffff0000000000000000000000000000000000000000000000000000000000\",\"NonceRange\":\"00000000ffffffff\",\"CurTime\":1508869874,\"Bits\":\"207fffff\",\"Height\":14,\"Transactions\":[],\"CoinbaseAux\":{\"Flags\":\"0b2f454231362f414431322f\"},\"default_witness_commitment\":null}");
@@ -87,6 +85,10 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
 
             // invalid extra-nonce 2
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "02000000", "59ef86f2", "8d84ae6a"));
+
+            // make sure we don't accept case-sensitive duplicate shares as basically 0xdeadbeaf = 0xDEADBEAF.
+            var share = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
+            Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "59ef86f2", "8D84AE6A"));
 
             // invalid time
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "69ef86f2", "8d84ae6a"));

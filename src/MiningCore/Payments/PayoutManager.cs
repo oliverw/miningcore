@@ -87,7 +87,7 @@ namespace MiningCore.Payments
                         .First(x => x.Value.Metadata.SupportedCoins.Contains(pool.Coin.Type)).Value;
 
                     var handler = handlerImpl.Value;
-                    handler.Configure(clusterConfig, pool);
+                    await handler.ConfigureAsync(clusterConfig, pool);
 
                     // resolve payout scheme
                     var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
@@ -119,7 +119,11 @@ namespace MiningCore.Payments
 
                     await cf.RunTxAsync(async (con, tx) =>
                     {
-                        switch(block.Status)
+                        // fill block effort if empty
+                        if (!block.Effort.HasValue)
+                            await CalculateBlockEffort(pool, block, handler);
+
+                        switch (block.Status)
                         {
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
@@ -138,9 +142,6 @@ namespace MiningCore.Payments
                                 break;
 
                             case BlockStatus.Pending:
-                                if (!block.Effort.HasValue)
-                                    await CalculateBlockEffort(pool, block, handler);
-
                                 blockRepo.UpdateBlock(con, tx, block);
                                 break;
                         }

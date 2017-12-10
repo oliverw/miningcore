@@ -23,6 +23,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using MiningCore.Buffers;
 using MiningCore.Contracts;
 
@@ -55,12 +56,33 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
-        public static string ToHexString(this byte[] value, bool withPrefix = false)
+        public static string ToHexString(this PooledArraySegment<byte> value, bool withPrefix = false)
         {
-            return ToHexString(value, null, withPrefix);
+            return ToHexString(value.Array, value.Offset, value.Size, withPrefix);
         }
 
-        public static string ToHexString(this byte[] value, int? len, bool withPrefix = false)
+        public static BigInteger ToBigInteger(this PooledArraySegment<byte> value)
+        {
+            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
+            var buf = new byte[value.Size + 1];
+            Array.Copy(value.Array, value.Offset, buf, 0, value.Size);
+            return new BigInteger(buf);
+        }
+
+        public static BigInteger ToBigInteger(this byte[] value)
+        {
+            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
+            var buf = new byte[value.Length + 1];
+            Array.Copy(value, 0, buf, 0, value.Length);
+            return new BigInteger(buf);
+        }
+
+        public static string ToHexString(this byte[] value, bool withPrefix = false)
+        {
+            return ToHexString(value, null, null, withPrefix);
+        }
+
+        public static string ToHexString(this byte[] value, int? off, int? len, bool withPrefix = false)
         {
             if (value == null || value.Length == 0)
                 return string.Empty;
@@ -83,7 +105,9 @@ namespace MiningCore.Extensions
                     buffer[offset++] = 'x';
                 }
 
-                for (var i = 0; i < length; i++)
+                var start = off ?? 0;
+
+                for (var i = start; i < length; i++)
                 {
                     var hex = HexStringTable[value[i]];
                     buffer[offset + i * 2 + 0] = hex[0];
@@ -138,7 +162,7 @@ namespace MiningCore.Extensions
         {
             Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count <= arr.Length);
 
-            for (var i = start; i < count; i++)
+            for (var i = start; i < start + count; i++)
             {
                 if (arr[i] == val)
                     return i;
