@@ -88,13 +88,6 @@ namespace MiningCore.Blockchain.Straks
             return reward;
         }
 
-        protected override BitcoinShare ProcessShareInternal(StratumClient<BitcoinWorkerContext> worker, string extraNonce2, uint nTime, uint nonce)
-        {
-            var mainResult =  base.ProcessShareInternal(worker, extraNonce2, nTime, nonce);
-
-            return mainResult;
-        }
-
         public string GetTreasuryRewardAddress()
         {
             if (poolConfig.Extra != null && poolConfig.Extra.ContainsKey("treasuryAddresses"))

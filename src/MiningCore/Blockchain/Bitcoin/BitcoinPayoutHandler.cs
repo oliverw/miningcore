@@ -151,7 +151,10 @@ namespace MiningCore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / BitcoinConstants.CoinbaseMinConfimations);
+                                var minConfirmations = poolConfig.Extra.ContainsKey("minimumConfirmations")
+                                    ? int.Parse(poolConfig.Extra["minimumConfirmations"].ToString())
+                                    : BitcoinConstants.CoinbaseMinConfimations;
+                                block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
                                 break;
 
@@ -219,10 +222,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
+            var addressName = poolConfig.Extra.ContainsKey("addressName") 
+                ? poolConfig.Extra["addressName"] //name of account where balance is held
+                : string.Empty; // default account
             var args = new object[]
             {
-                string.Empty,           // default account
+                addressName,          
                 amounts                // addresses and associated amounts
             };
 
