@@ -389,6 +389,10 @@ namespace MiningCore.Blockchain.Bitcoin
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(sum * multiplier / interval);
 
+            // OW: tmp hotfix
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
+                result *= 2;
+
             return (ulong) result;
         }
 
