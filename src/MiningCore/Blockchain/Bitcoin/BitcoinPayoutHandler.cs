@@ -70,6 +70,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected readonly IComponentContext ctx;
         protected DaemonClient daemon;
+        private BitcoinCoinProperties coinProperties;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
@@ -81,6 +82,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+
+            coinProperties = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
@@ -180,7 +183,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = (double) accumulatedBlockShareDiff / coinProperties.ShareMultiplier / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
