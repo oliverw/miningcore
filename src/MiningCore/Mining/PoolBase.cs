@@ -328,6 +328,20 @@ namespace MiningCore.Mining
                 }))
                 .Concat()
                 .Subscribe(_ => PersistStats()));
+
+            // For external stratums, miner counts are derived from submitted shares
+            if (poolConfig.ExternalStratum)
+            {
+                disposables.Add(Shares
+                    .Buffer(TimeSpan.FromMinutes(1))
+                    .Do(shares =>
+                    {
+                        var sharesByMiner = shares.GroupBy(x => x.Share.Miner).ToArray();
+                        poolStats.ConnectedMiners = sharesByMiner.Length;
+                    })
+                    .Subscribe());
+
+            }
         }
 
         protected abstract Task UpdateBlockChainStatsAsync();
@@ -435,9 +449,9 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
         {
             try
             {
-                var sharesByMiner = shares.GroupBy(x => x.Share.Miner);
+                var sharesByMiner = shares.GroupBy(x => x.Share.Miner).ToArray();
 
-                foreach(var minerShares in sharesByMiner)
+                foreach (var minerShares in sharesByMiner)
                 {
                     // Total hashrate
                     var miner = minerShares.Key;
