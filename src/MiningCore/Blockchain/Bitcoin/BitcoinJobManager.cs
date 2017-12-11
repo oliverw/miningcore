@@ -338,8 +338,6 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
-            share.NetworkDifficulty = job.Difficulty * ShareMultiplier;
-            share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.Now;
 
             return share;
