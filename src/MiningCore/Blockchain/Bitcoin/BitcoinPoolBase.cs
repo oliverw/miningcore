@@ -386,8 +386,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
             var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty));
-            var multiplier = 1;
-            var result = Math.Ceiling(sum * multiplier / interval);
+            var result = Math.Ceiling(((sum * BitcoinConstants.Pow2x32) / manager.ShareMultiplier) / interval);
 
 			// OW: tmp hotfix
 	        if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
