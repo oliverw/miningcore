@@ -21,9 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Linq;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Straks.DaemonResponses;
-using MiningCore.Stratum;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
@@ -52,6 +50,7 @@ namespace MiningCore.Blockchain.Straks
         private Money CreateStraksOutputs(Transaction tx, Money reward)
         {
             var treasuryRewardAddress = GetTreasuryRewardAddress();
+
             if (reward > 0 && treasuryRewardAddress != null)
             {
                 var destination = TreasuryAddressToScriptDestination(treasuryRewardAddress);
@@ -59,25 +58,22 @@ namespace MiningCore.Blockchain.Straks
                 tx.AddOutput(treasuryReward, destination);
                 reward -= treasuryReward;
             }
-           
-            if (BlockTemplate.Masternode != null )
+
+            if (!string.IsNullOrEmpty(BlockTemplate.Masternode?.Payee))
             {
-                if (!string.IsNullOrEmpty(BlockTemplate.Masternode.Payee))
-                {
-                    var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Masternode.Payee);
-                    var payeeReward = BlockTemplate.Masternode.Amount;
+                var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Masternode.Payee);
+                var payeeReward = BlockTemplate.Masternode.Amount;
 
-                    reward -= payeeReward;
-                    rewardToPool -= payeeReward;
+                reward -= payeeReward;
+                rewardToPool -= payeeReward;
 
-                    tx.AddOutput(payeeReward, payeeAddress);
-                }
+                tx.AddOutput(payeeReward, payeeAddress);
             }
 
             if (!string.IsNullOrEmpty(BlockTemplate.Payee))
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Payee);
-                var payeeReward = BlockTemplate.PayeeAmount ?? (reward / 5);
+                var payeeReward = BlockTemplate.PayeeAmount ?? reward / 5;
 
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
@@ -101,6 +97,7 @@ namespace MiningCore.Blockchain.Straks
             }
             return null;
         }
+
         public static IDestination TreasuryAddressToScriptDestination(string address)
         {
             var decoded = Encoders.Base58.DecodeData(address);
@@ -108,7 +105,5 @@ namespace MiningCore.Blockchain.Straks
             var result = new ScriptId(hash);
             return result;
         }
-
-
     }
 }
