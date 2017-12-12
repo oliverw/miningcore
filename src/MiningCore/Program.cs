@@ -506,7 +506,7 @@ namespace MiningCore
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
             // build connection string
-            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};";
+            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=90;";
 
             // register connection factory
             builder.RegisterInstance(new ConnectionFactory(connectionString))
@@ -545,8 +545,21 @@ namespace MiningCore
                 apiServer.Start(clusterConfig);
             }
 
-            // start pools
-            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
+	        // start payment processor
+	        if (clusterConfig.PaymentProcessing?.Enabled == true &&
+		        clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+	        {
+		        payoutManager = container.Resolve<PayoutManager>();
+		        payoutManager.Configure(clusterConfig);
+
+		        payoutManager.Start();
+	        }
+
+	        else
+		        logger.Info("Payment processing is not enabled");
+
+			// start pools
+			await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
             {
                 // resolve pool implementation
                 var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
@@ -564,19 +577,6 @@ namespace MiningCore
                 // post-start attachments
                 apiServer.AttachPool(pool);
             }));
-
-            // start payment processor
-            if (clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-            {
-                payoutManager = container.Resolve<PayoutManager>();
-                payoutManager.Configure(clusterConfig);
-
-                payoutManager.Start();
-            }
-
-            else
-                logger.Info("Payment processing is not enabled");
 
             // keep running
             await Observable.Never<Unit>().ToTask();

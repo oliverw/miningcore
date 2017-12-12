@@ -44,7 +44,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Ethereum
 {
     [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
-    public class EthereumPool : PoolBase
+    public class EthereumPool : PoolBase<EthereumShare>
     {
         public EthereumPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -176,9 +176,9 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(Tuple.Create((object) client, share));
+				shareSubject.OnNext(new ClientShare(client, share));
 
-                EnsureInitialWorkSent(client);
+				EnsureInitialWorkSent(client);
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
 
@@ -263,10 +263,13 @@ namespace MiningCore.Blockchain.Ethereum
 
             await manager.StartAsync();
 
-            disposables.Add(manager.Jobs.Subscribe(OnNewJob));
+	        if (!poolConfig.ExternalStratum)
+	        {
+		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
-            // we need work before opening the gates
-            await manager.Jobs.Take(1).ToTask();
+		        // we need work before opening the gates
+		        await manager.Jobs.Take(1).ToTask();
+	        }
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -310,7 +313,7 @@ namespace MiningCore.Blockchain.Ethereum
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .ObserveOn(ThreadPoolScheduler.Instance)
@@ -346,9 +349,9 @@ namespace MiningCore.Blockchain.Ethereum
                 .Subscribe());
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.Item2.Difficulty) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.Share.Difficulty) / interval);
             return (ulong) result;
         }
 

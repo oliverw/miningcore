@@ -76,7 +76,7 @@ namespace MiningCore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in clusterConfig.Pools)
+            foreach(var pool in clusterConfig.Pools.Where(x=> x.Enabled && x.PaymentProcessing.Enabled))
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
@@ -96,7 +96,12 @@ namespace MiningCore.Payments
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
 
-                catch(Exception ex)
+                catch (InvalidOperationException ex)
+                {
+	                logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
+                }
+
+				catch (Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
@@ -138,7 +143,9 @@ namespace MiningCore.Payments
                                 break;
 
                             case BlockStatus.Orphaned:
-                                blockRepo.DeleteBlock(con, tx, block);
+	                            logger.Info(() => $"Deleting orphaned block {block.BlockHeight} on pool {pool.Id}");
+
+								blockRepo.DeleteBlock(con, tx, block);
                                 break;
 
                             case BlockStatus.Pending:
@@ -238,21 +245,20 @@ namespace MiningCore.Payments
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
+			        var waitResult = stopEvent.WaitOne(interval);
 
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
-                }
-            });
+			        // check if stop was signalled
+			        if (waitResult)
+				        break;
+		        }
+	        });
 
-            thread.IsBackground = true;
-            thread.Priority = ThreadPriority.AboveNormal;
-            thread.Name = "Payment Processing";
-            thread.Start();
+	        thread.Priority = ThreadPriority.Highest;
+	        thread.Name = "Payment Processing";
+	        thread.Start();
         }
 
-        public void Stop()
+		public void Stop()
         {
             logger.Info(() => "Stopping ..");
 

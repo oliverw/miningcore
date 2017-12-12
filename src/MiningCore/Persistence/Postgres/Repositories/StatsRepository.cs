@@ -101,7 +101,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId, miner });
 
-            var query = "SELECT (SELECT COUNT(*) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
+            var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
                 "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
                 "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
 
