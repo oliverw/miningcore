@@ -115,4 +115,5 @@ src/multihash-native/**/*.o
 
 recovered-shares.json
 
-src/MiningCore/config.json
+
+src/MiningCore/config\.json

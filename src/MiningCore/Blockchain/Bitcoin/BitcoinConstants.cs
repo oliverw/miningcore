@@ -72,22 +72,22 @@ namespace MiningCore.Blockchain.Bitcoin
 
     public class KnownAddresses
     {
-        public static readonly Dictionary<CoinType, string> DevFeeAddresses = new Dictionary<CoinType, string>
+        public static readonly Dictionary<CoinType, string> DevFeeAddresses = new Dictionary<CoinType, string>()
         {
-            { CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm" },
-            { CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC" },
-            { CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q" },
-            { CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o" },
-            { CoinType.DGB, "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn" },
-            { CoinType.ETH, "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1" },
-            { CoinType.ETC, "0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0" },
-            { CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2" },
-            { CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp" },
-            { CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q" },
-            { CoinType.MONA, "MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S" },
-            { CoinType.VTC, "VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf" },
-            { CoinType.ZEC, "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7" },
-            { CoinType.BTG, "GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6" }
+            {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
+            {CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
+            {CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q"},
+            {CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o"},
+            {CoinType.DGB, "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn"},
+            {CoinType.ETH, "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1"},
+            {CoinType.ETC, "0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0"},
+            {CoinType.PPC, "PE8RH6HAvi8sqYg47D58TeKTjyeQFFHWR2"},
+            {CoinType.DASH, "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp"},
+            {CoinType.VIA, "Vc5rJr2QdA2yo1jBoqYUAH7T59uBh2Vw5q"},
+            {CoinType.MONA, "MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S"},
+            {CoinType.VTC, "VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf"},
+            {CoinType.ZEC, "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7"},
+            {CoinType.BTG, "GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6"}
         };
     }
 

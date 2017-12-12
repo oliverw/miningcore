@@ -33,6 +33,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="config.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="config.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Autofac" Version="4.6.2" />
     <PackageReference Include="AutoMapper" Version="6.2.1" />
     <PackageReference Include="Dapper" Version="1.50.4" />

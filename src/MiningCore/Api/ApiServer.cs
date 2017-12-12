@@ -32,6 +32,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
+using MiningCore.Api.Extensions;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Buffers;
@@ -78,10 +79,11 @@ namespace MiningCore.Api
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
                 { new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
-                { new Regex("^/api/pool/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), HandleGetPoolAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
 
                 // admin api
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
@@ -169,7 +171,7 @@ namespace MiningCore.Api
                 lock(pools)
                 {
                     var pool = pools.FirstOrDefault(x => x.Config.Id == poolId);
-
+ 
                     if (pool != null)
                         return pool;
                 }
@@ -187,27 +189,24 @@ namespace MiningCore.Api
             {
                 response = new GetPoolsResponse
                 {
-                    Pools = pools.Select(pool =>
-                    {
-                        var poolInfo = mapper.Map<PoolInfo>(pool.Config);
-
-                        poolInfo.PoolStats = pool.PoolStats;
-                        poolInfo.NetworkStats = pool.NetworkStats;
-
-                        // pool wallet link
-                        CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
-                        if (!string.IsNullOrEmpty(addressInfobaseUrl))
-                            poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
-
-                        // pool fees
-                        poolInfo.PoolFeePercent = (float) pool.Config.RewardRecipients
-                            .Sum(x => x.Percentage);
-
-                        return poolInfo;
-                    }).ToArray()
+                    Pools = pools.Select(pool => pool.ToPoolInfo(mapper)).ToArray()
                 };
             }
 
+            await SendJson(context, response);
+        }
+        private async Task HandleGetPoolAsync(HttpContext context, Match m)
+        {
+            GetPoolResponse response;
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            response = new GetPoolResponse()
+            {
+                Pool = pool.ToPoolInfo(mapper)
+            };
+            
             await SendJson(context, response);
         }
 
@@ -394,5 +393,6 @@ namespace MiningCore.Api
         }
 
         #endregion // API-Surface
+        
     }
 }

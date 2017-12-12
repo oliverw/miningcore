@@ -36,6 +36,7 @@ namespace MiningCore.Blockchain
             { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, "https://explorer.ellaism.org/block/{0}" }}},
             { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
             { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
+            { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -53,6 +54,7 @@ namespace MiningCore.Blockchain
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/tx/{0}" },
             { CoinType.MONA, "https://bchain.info/MONA/tx/{0}" },
+            { CoinType.STAK, "https://straks.info/transaction/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/tx/{0}" },
             { CoinType.BTG, "https://btgexp.com/tx/{0}" },
@@ -75,6 +77,7 @@ namespace MiningCore.Blockchain
             { CoinType.NMC, "https://explorer.namecoin.info/a/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/address/{0}" },
             { CoinType.MONA, "https://bchain.info/MONA/addr/{0}" },
+            { CoinType.STAK, "https://straks.info/address/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/addr/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/addr/{0}" },
             { CoinType.BTG, "https://btgexp.com/address/{0}" },

@@ -51,6 +51,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private static readonly BitcoinCoinProperties lyra2Rev2Coin =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, sha256DReverse);
+        private static readonly BitcoinCoinProperties stakCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(lyra2Rev2));
 
         private static readonly BitcoinCoinProperties x11Coin =
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11));
@@ -86,6 +88,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // Lyra2Rev2
             { CoinType.MONA, lyra2Rev2Coin },
+            { CoinType.STAK, stakCoin },
             { CoinType.VTC, lyra2Rev2Coin },
 
             // X11
