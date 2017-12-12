@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                var minConfirmations = poolConfig.Extra.ContainsKey("minimumConfirmations")
+                                var minConfirmations = poolConfig.Extra?.ContainsKey("minimumConfirmations") == true
                                     ? int.Parse(poolConfig.Extra["minimumConfirmations"].ToString())
                                     : BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
