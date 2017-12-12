@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -151,7 +150,7 @@ namespace MiningCore.Blockchain.ZCash
                                         logger.Info(() => $"[{LogCategory}] Payout completed with transaction id: {txId}");
 
                                         PersistPayments(page, txId);
-                                        NotifyPayoutSuccess(page, new[] {txId}, null);
+                                        NotifyPayoutSuccess(poolConfig.Id, page, new[] {txId}, null);
 
                                         continueWaiting = false;
                                         continue;
@@ -159,7 +158,7 @@ namespace MiningCore.Blockchain.ZCash
                                     case ZOperationStatus.Cancelled:
                                     case ZOperationStatus.Failed:
                                         logger.Error(() => $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
-                                        NotifyPayoutFailure(page, $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
+                                        NotifyPayoutFailure(poolConfig.Id, page, $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
 
                                         continueWaiting = false;
                                         continue;
@@ -176,7 +175,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                    NotifyPayoutFailure(page, $"{ZCashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                    NotifyPayoutFailure(poolConfig.Id, page, $"{ZCashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
                 }
             }
         }

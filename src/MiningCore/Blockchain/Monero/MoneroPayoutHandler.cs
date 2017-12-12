@@ -87,14 +87,14 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
-                NotifyPayoutSuccess(balances, new[] { txHash }, txFee);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
             }
         }
 
@@ -108,14 +108,14 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
                 PersistPayments(balances, txHashes.First());
-                NotifyPayoutSuccess(balances, txHashes, txFees.Sum());
+                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
             }
         }
 

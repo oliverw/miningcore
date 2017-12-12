@@ -185,8 +185,7 @@ namespace MiningCore.Payments
 
         private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
         {
-            if (clusterConfig.Notifications?.Admin?.Enabled == true)
-                notificationService.NotifyAdmin("Payout Failure Notification", $"Failed to pay out {balances.Sum(x => x.Amount)} {pool.Coin.Type} from pool {pool.Id}: {ex.Message}");
+            notificationService.NotifyPaymentFailure(pool.Id, balances.Sum(x => x.Amount), ex.Message);
 
             return Task.FromResult(true);
         }

@@ -252,14 +252,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
             }
 
             else
             {
                 logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                NotifyPayoutFailure(balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
             }
         }
 

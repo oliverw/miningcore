@@ -237,7 +237,6 @@ namespace MiningCore
             builder.Register((ctx, parms) => amConf.CreateMapper());
 
             ConfigurePersistence(builder);
-            ConfigureNotifications(builder);
             container = builder.Build();
             ConfigureLogging();
             ConfigureMisc();
@@ -518,18 +517,6 @@ namespace MiningCore
                     t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
-        }
-
-        private static void ConfigureNotifications(ContainerBuilder builder)
-        {
-            if (clusterConfig.Notifications != null && clusterConfig.Notifications.Enabled)
-            {
-                if (clusterConfig.Notifications?.Email != null)
-                {
-                    builder.RegisterInstance(new EmailSender(clusterConfig.Notifications.Email))
-                        .AsImplementedInterfaces();
-                }
-            }
         }
 
         private static async Task Start()

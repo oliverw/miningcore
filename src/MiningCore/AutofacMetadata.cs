@@ -40,20 +40,4 @@ namespace MiningCore
 
         public CoinType[] SupportedCoins { get; }
     }
-
-    public class NotificationSenderMetadataAttribute : Attribute
-    {
-        public NotificationSenderMetadataAttribute(IDictionary<string, object> values)
-        {
-            if (values.ContainsKey(nameof(NotificationType)))
-                NotificationType = (NotificationType) values[nameof(NotificationType)];
-        }
-
-        public NotificationSenderMetadataAttribute(NotificationType notificationType)
-        {
-            NotificationType = notificationType;
-        }
-
-        public NotificationType NotificationType { get; }
-    }
 }

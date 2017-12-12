@@ -148,7 +148,7 @@ namespace MiningCore.Payments
             return $"{amount:0.#####} {poolConfig.Coin.Type}";
         }
 
-        protected virtual void NotifyPayoutSuccess(Balance[] balances, string[] txHashes, decimal? txFee)
+        protected virtual void NotifyPayoutSuccess(string poolId, Balance[] balances, string[] txHashes, decimal? txFee)
         {
             // admin notifications
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
@@ -160,21 +160,13 @@ namespace MiningCore.Payments
                 if (CoinMetaData.PaymentInfoLinks.TryGetValue(poolConfig.Coin.Type, out var baseUrl))
                     txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
-                notificationService.NotifyAdmin(
-                    "Payout Success Notification",
-                    $"Paid out {FormatAmount(balances.Sum(x => x.Amount))} from pool {poolConfig.Id} to {balances.Length} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value) : "N/A")}.");
+                notificationService.NotifyPaymentSuccess(poolId, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee);
             }
         }
 
-        protected virtual void NotifyPayoutFailure(Balance[] balances, string error, Exception ex)
+        protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
         {
-            // admin notifications
-            if (clusterConfig.Notifications?.Admin?.Enabled == true)
-            {
-                notificationService.NotifyAdmin(
-                    "Payout Failure Notification",
-                    $"Failed to pay out {balances.Sum(x => x.Amount)} {poolConfig.Coin.Type} from pool {poolConfig.Id}: {error ?? ex?.Message}");
-            }
+            notificationService.NotifyPaymentFailure(poolId, balances.Sum(x => x.Amount), error ?? ex?.Message);
         }
     }
 }

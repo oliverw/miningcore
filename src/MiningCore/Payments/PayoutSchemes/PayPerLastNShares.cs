@@ -154,7 +154,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     else
                         shares[address] += 1;
 
-                    var score = (decimal) share.Difficulty / (decimal) share.NetworkDifficulty;
+                    var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if (accumulatedScore + score >= window)

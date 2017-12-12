@@ -289,12 +289,12 @@ namespace MiningCore.Blockchain.Ethereum
                 {
                     logger.Error(ex);
 
-                    NotifyPayoutFailure(new[] { balance }, ex.Message, null);
+                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
                 }
             }
 
             if (txHashes.Any())
-                NotifyPayoutSuccess(balances, txHashes.ToArray(), null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
         }
 
         #endregion // IPayoutHandler

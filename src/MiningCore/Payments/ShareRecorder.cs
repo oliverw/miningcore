@@ -118,10 +118,7 @@ namespace MiningCore.Payments
                         blockEntity.Status = BlockStatus.Pending;
                         blockRepo.Insert(con, tx, blockEntity);
 
-                        // Queue notification
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
-                            clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
-                            notificationService.NotifyAdmin("Block Notification", $"Pool {share.PoolId} found block candidate {share.BlockHeight}");
+                        notificationService.NotifyBlock(share.PoolId, share.BlockHeight);
                     }
                 }
             });
@@ -301,7 +298,9 @@ namespace MiningCore.Payments
 
         public void Start(ClusterConfig clusterConfig)
         {
-            ConfigureRecovery(clusterConfig);
+            this.clusterConfig = clusterConfig;
+
+            ConfigureRecovery();
             InitializeQueue();
 
             logger.Info(() => "Online");
@@ -338,10 +337,8 @@ namespace MiningCore.Payments
                 });
         }
 
-        private void ConfigureRecovery(ClusterConfig clusterConfig)
+        private void ConfigureRecovery()
         {
-            this.clusterConfig = clusterConfig;
-
             recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
                 ? clusterConfig.PaymentProcessing.ShareRecoveryFile
                 : "recovered-shares.txt";
