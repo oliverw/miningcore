@@ -49,9 +49,10 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties groestlCoin =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256S, groestl, new DigestReverser(groestl));
 
-        private static readonly BitcoinCoinProperties lyra2Rev2Coin =
+        private static readonly BitcoinCoinProperties lyra2Rev2CoinVariantA =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, sha256DReverse);
-        private static readonly BitcoinCoinProperties stakCoin =
+
+        private static readonly BitcoinCoinProperties lyra2Rev2CoinVariantB =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(lyra2Rev2));
 
         private static readonly BitcoinCoinProperties x11Coin =
@@ -86,10 +87,12 @@ namespace MiningCore.Blockchain.Bitcoin
             // Groestl
             { CoinType.GRS, groestlCoin },
 
-            // Lyra2Rev2
-            { CoinType.MONA, lyra2Rev2Coin },
-            { CoinType.STAK, stakCoin },
-            { CoinType.VTC, lyra2Rev2Coin },
+            // Lyra2Rev2 - Variant A
+            { CoinType.MONA, lyra2Rev2CoinVariantA },
+            { CoinType.VTC, lyra2Rev2CoinVariantA },
+
+            // Lyra2Rev2 - Variant B
+            { CoinType.STAK, lyra2Rev2CoinVariantB },
 
             // X11
             { CoinType.DASH, x11Coin },
