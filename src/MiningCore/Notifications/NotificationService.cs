@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac.Features.Metadata;
 using MailKit.Net.Smtp;
@@ -54,6 +55,7 @@ namespace MiningCore.Notifications
         private readonly string adminEmail;
         private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue = new BlockingCollection<QueuedNotification>();
+        private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
 
         private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler
@@ -97,7 +99,7 @@ namespace MiningCore.Notifications
                 Category = NotificationCategory.PaymentSuccess,
                 PoolId = poolId,
                 Subject = "Payout Success Notification",
-                Msg = $"Paid out {FormatAmount(amount, poolId)} from pool {poolId} to {recpientsCount} recipients in Transaction(s) {txInfo}.\n\nTxFee was {(txFee.HasValue ? FormatAmount(txFee.Value, poolId) : "N/A")}."
+                Msg = $"Paid out {FormatAmount(amount, poolId)} from pool {poolId} to {recpientsCount} recipients in Transaction(s) {txInfo}."
             });
         }
 
@@ -221,7 +223,7 @@ namespace MiningCore.Notifications
             var notification = new SlackNotification
             {
                 Channel = channel,
-                Body = msg,
+                Body = regexStripHtml.Replace(msg, string.Empty),
                 Username = username,
                 Emoji = emoji
             };
