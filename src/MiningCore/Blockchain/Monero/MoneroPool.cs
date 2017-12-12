@@ -47,7 +47,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Monero
 {
     [CoinMetadata(CoinType.XMR, CoinType.AEON)]
-    public class MoneroPool : PoolBase
+    public class MoneroPool : PoolBase<MoneroShare>
     {
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -231,9 +231,9 @@ namespace MiningCore.Blockchain.Monero
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-                shareSubject.OnNext(Tuple.Create((object) client, share));
+				shareSubject.OnNext(new ClientShare(client, share));
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+				logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -299,10 +299,13 @@ namespace MiningCore.Blockchain.Monero
 
             await manager.StartAsync();
 
-            disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
+	        if (!poolConfig.ExternalStratum)
+	        {
+		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
-            // we need work before opening the gates
-            await manager.Blocks.Take(1).ToTask();
+		        // we need work before opening the gates
+		        await manager.Blocks.Take(1).ToTask();
+	        }
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -348,7 +351,7 @@ namespace MiningCore.Blockchain.Monero
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .ObserveOn(ThreadPoolScheduler.Instance)
@@ -384,9 +387,9 @@ namespace MiningCore.Blockchain.Monero
                 .Subscribe());
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
-            var result = Math.Ceiling(shares.Sum(share => share.Item2.Difficulty) / interval);
+            var result = Math.Ceiling(shares.Sum(share => share.Share.Difficulty) / interval);
             return (ulong) result;
         }
 

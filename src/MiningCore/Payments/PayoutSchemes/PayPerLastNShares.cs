@@ -102,6 +102,8 @@ namespace MiningCore.Payments.PayoutSchemes
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
                 }
+
+                logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
             }
 
             // diagnostics

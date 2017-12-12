@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
@@ -41,7 +42,7 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase
+    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase<BitcoinShare>
         where TBlockTemplate : BlockTemplate
         where TJob : BitcoinJob<TBlockTemplate>, new()
     {
@@ -162,9 +163,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(Tuple.Create((object) client, share));
+                shareSubject.OnNext(new ClientShare(client, share));
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * manager.ShareMultiplier, 3)}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -287,10 +288,14 @@ namespace MiningCore.Blockchain.Bitcoin
             manager.Configure(poolConfig, clusterConfig);
 
             await manager.StartAsync();
-            disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
-            // we need work before opening the gates
-            await manager.Jobs.Take(1).ToTask();
+	        if (!poolConfig.ExternalStratum)
+	        {
+		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
+
+		        // we need work before opening the gates
+		        await manager.Jobs.Take(1).ToTask();
+	        }
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -342,7 +347,7 @@ namespace MiningCore.Blockchain.Bitcoin
             base.SetupStats();
 
             // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 5;
+            var poolHashRateSampleIntervalSeconds = 60 * 10;
 
             disposables.Add(Shares
                 .ObserveOn(ThreadPoolScheduler.Instance)
@@ -378,11 +383,16 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Subscribe());
         }
 
-        protected override ulong HashrateFromShares(IEnumerable<Tuple<object, IShare>> shares, int interval)
+        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
-            var sum = shares.Sum(share => Math.Max(0.00000001, share.Item2.Difficulty * manager.ShareMultiplier));
+            var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty));
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(sum * multiplier / interval);
+
+            // OW: tmp hotfix
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
+                result *= 2;
+
             return (ulong) result;
         }
 

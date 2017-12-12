@@ -5,28 +5,38 @@ namespace MiningCore.Blockchain
 {
     public static class CoinMetaData
     {
-        public static readonly Dictionary<CoinType, string> BlockInfoLinks = new Dictionary<CoinType, string>
+        public static readonly Dictionary<CoinType, Dictionary<string, string>> BlockInfoLinks = new Dictionary<CoinType, Dictionary<string, string>>
         {
-            { CoinType.XMR, "https://chainradar.com/xmr/block/{0}" },
-            { CoinType.ETH, "https://etherscan.io/block/{0}" },
-            { CoinType.ETC, "https://gastracker.io/block/{0}" },
-            { CoinType.LTC, "http://explorer.litecoin.net/block/{0}" },
-            { CoinType.BCC, "https://www.blocktrail.com/BCC/block/{0}" },
-            { CoinType.DASH, "https://chainz.cryptoid.info/dash/block.dws?{0}.htm" },
-            { CoinType.BTC, "https://blockchain.info/block/{0}" },
-            { CoinType.DOGE, "https://dogechain.info/block/{0}" },
-            { CoinType.ZEC, "https://explorer.zcha.in/blocks/{0}" },
-            { CoinType.DGB, "https://digiexplorer.info/block/{0}" },
-            { CoinType.NMC, "https://explorer.namecoin.info/b/{0}" },
-            { CoinType.GRS, "https://groestlsight.groestlcoin.org/block/{0}" },
-            { CoinType.MONA, "https://bchain.info/MONA/block/{0}" },
-            { CoinType.STAK, "https://straks.info/block/{0}" },
-    	    { CoinType.GLT, "https://bchain.info/GLT/block/{0}" },
-            { CoinType.VTC, "https://bchain.info/VTC/block/{0}" },
-            //{ CoinType.BTG, "https://btgexp.com/block/{0}" },
-            { CoinType.ELLA, "https://explorer.ellaism.org/block/{0}" },
-            { CoinType.EXP, "http://www.gander.tech/blocks/{0}" },
-            { CoinType.AEON, "https://chainradar.com/aeon/block/{0}" },
+            { CoinType.ETH, new Dictionary<string, string>
+            {
+                { string.Empty, "https://etherscan.io/block/{0}" },
+                { "uncle", "https://etherscan.io/uncle/{0}" },
+            }},
+
+            { CoinType.ETC, new Dictionary<string, string>
+            {
+                { string.Empty, "https://gastracker.io/block/{0}" },
+                { "uncle", "https://gastracker.io/uncle/{0}" }
+            }},
+
+            { CoinType.XMR, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/xmr/block/{0}" }}},
+            { CoinType.LTC, new Dictionary<string, string> { { string.Empty, "http://explorer.litecoin.net/block/{0}" }}},
+            { CoinType.BCC, new Dictionary<string, string> { { string.Empty, "https://www.blocktrail.com/BCC/block/{0}" }}},
+            { CoinType.DASH, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/dash/block.dws?{0}.htm" }}},
+            { CoinType.BTC, new Dictionary<string, string> { { string.Empty, "https://blockchain.info/block/{0}" }}},
+            { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, "https://dogechain.info/block/{0}" }}},
+            { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, "https://explorer.zcha.in/blocks/{0}" }}},
+            { CoinType.DGB, new Dictionary<string, string> { { string.Empty, "https://digiexplorer.info/block/{0}" }}},
+            { CoinType.NMC, new Dictionary<string, string> { { string.Empty, "https://explorer.namecoin.info/b/{0}" }}},
+            { CoinType.GRS, new Dictionary<string, string> { { string.Empty, "https://groestlsight.groestlcoin.org/block/{0}" }}},
+            { CoinType.MONA, new Dictionary<string, string> { { string.Empty, "https://bchain.info/MONA/block/{0}" }}},
+            { CoinType.GLT, new Dictionary<string, string> { { string.Empty, "https://bchain.info/GLT/block/{0}" }}},
+            { CoinType.VTC, new Dictionary<string, string> { { string.Empty, "https://bchain.info/VTC/block/{0}" }}},
+            //{ CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btgexp.com/block/{0}" }}},
+            { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, "https://explorer.ellaism.org/block/{0}" }}},
+            { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
+            { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
+            { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>

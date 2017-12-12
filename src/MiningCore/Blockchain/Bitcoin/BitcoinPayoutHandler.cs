@@ -70,6 +70,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected readonly IComponentContext ctx;
         protected DaemonClient daemon;
+        private BitcoinCoinProperties coinProperties;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
@@ -81,6 +82,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+
+            coinProperties = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
@@ -168,7 +171,9 @@ namespace MiningCore.Blockchain.Bitcoin
                                 break;
 
                             default:
-                                block.Status = BlockStatus.Orphaned;
+	                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
+
+								block.Status = BlockStatus.Orphaned;
                                 result.Add(block);
                                 break;
                         }

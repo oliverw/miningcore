@@ -230,7 +230,7 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public async Task<IShare> SubmitShareAsync(StratumClient worker,
+        public async Task<MoneroShare> SubmitShareAsync(StratumClient worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -439,8 +439,11 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-            // periodically update block-template from daemon
-            Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+	        if (poolConfig.ExternalStratum)
+		        return;
+
+			// periodically update block-template from daemon
+			Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
                 .Select(_ => Observable.FromAsync(UpdateJob))
                 .Concat()
                 .Do(isNew =>

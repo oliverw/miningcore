@@ -95,6 +95,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void SetupJobUpdates()
         {
+	        if (poolConfig.ExternalStratum)
+		        return;
+
             jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
 
             // periodically update block-template from daemon
@@ -262,7 +265,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
         }
 
-        public virtual async Task<IShare> SubmitShareAsync(StratumClient worker, object submission,
+        public virtual async Task<BitcoinShare> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -335,8 +338,6 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
-            share.NetworkDifficulty = job.Difficulty;
-            share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.Now;
 
             return share;
