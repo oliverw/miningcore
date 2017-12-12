@@ -341,8 +341,8 @@ namespace MiningCore.Blockchain.Bitcoin
             result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
             result.BlockHeight = BlockTemplate.Height;
             result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-            result.NetworkDifficulty = Difficulty * shareMultiplier;
-            result.Difficulty = stratumDifficulty * shareMultiplier;
+            result.NetworkDifficulty = Difficulty;
+            result.Difficulty = stratumDifficulty;
 
             return result;
         }

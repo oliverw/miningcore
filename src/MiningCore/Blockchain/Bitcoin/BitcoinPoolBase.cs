@@ -165,7 +165,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Respond(true, request.Id);
                 shareSubject.OnNext(new ClientShare(client, share));
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * manager.ShareMultiplier, 3)}");
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -385,7 +385,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
         {
-            var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty / manager.ShareMultiplier));
+            var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty));
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = Math.Ceiling(sum * multiplier / interval);
 
