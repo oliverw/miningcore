@@ -227,9 +227,10 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-            var addressName = poolConfig.Extra.ContainsKey("addressName") 
+            var addressName = poolConfig.Extra?.ContainsKey("addressName") == true
                 ? poolConfig.Extra["addressName"] //name of account where balance is held
                 : string.Empty; // default account
+
             var args = new object[]
             {
                 addressName,          
