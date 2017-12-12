@@ -56,7 +56,7 @@ namespace MiningCore.Notifications
         private readonly BlockingCollection<QueuedNotification> queue = new BlockingCollection<QueuedNotification>();
         private IDisposable queueSub;
 
-        private HttpClient httpClient = new HttpClient(new HttpClientHandler
+        private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler
         {
             AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
         });
@@ -163,7 +163,7 @@ namespace MiningCore.Notifications
 
                     case NotificationCategory.PaymentSuccess:
                         // notify admin
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true && 
+                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
 
@@ -172,7 +172,7 @@ namespace MiningCore.Notifications
                             poolConfig?.SlackNotifications?.NotifyBlockFound == true)
                         {
                             await SendSlackNotificationAsync(poolConfig.SlackNotifications.WebHookUrl, notification.Subject, notification.Msg,
-                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.BlockFoundUsername,
+                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.PaymentSuccessUsername,
                                 poolConfig.SlackNotifications.PaymentSuccessEmoji);
                         }
 
