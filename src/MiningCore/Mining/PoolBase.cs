@@ -526,7 +526,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
 			            .ToArray();
 
-		            StartListeners(ipEndpoints);
+		            StartListeners(poolConfig.Id, ipEndpoints);
 	            }
 
 	            else
