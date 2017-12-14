@@ -103,7 +103,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     shareRepo.DeletePoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
                 }
 
-                logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
+                //logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
             }
 
             // diagnostics
