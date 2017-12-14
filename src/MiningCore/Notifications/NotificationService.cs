@@ -39,7 +39,7 @@ namespace MiningCore.Notifications
             poolConfigs = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
-            adminPhone = null;
+            //adminPhone = null;
 
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)
@@ -53,7 +53,7 @@ namespace MiningCore.Notifications
         private readonly JsonSerializerSettings serializerSettings;
         private readonly Dictionary<string, PoolConfig> poolConfigs;
         private readonly string adminEmail;
-        private readonly string adminPhone;
+        //private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue = new BlockingCollection<QueuedNotification>();
         private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;

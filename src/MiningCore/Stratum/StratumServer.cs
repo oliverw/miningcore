@@ -152,7 +152,7 @@ namespace MiningCore.Stratum
                 var client = new StratumClient();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
-                    data => OnReceive(client, data), 
+                    data => OnReceive(client, data),
                     () => OnReceiveComplete(client),
                     ex => OnReceiveError(client, ex));
 
