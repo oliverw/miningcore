@@ -171,55 +171,59 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected virtual async void OnReceive(StratumClient client, PooledArraySegment<byte> data)
+        protected virtual void OnReceive(StratumClient client, PooledArraySegment<byte> data)
         {
-            JsonRpcRequest request = null;
-
-            try
+            // get off of LibUV event-loop-thread immediately
+            Task.Run(async () =>
             {
                 using (data)
                 {
-                    // boot pre-connected clients
-                    if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                    JsonRpcRequest request = null;
+
+                    try
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
-                        DisconnectClient(client);
-                        return;
+                        // boot pre-connected clients
+                        if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+                        {
+                            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // de-serialize
+                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumConstants.Encoding.GetString(data.Array, 0, data.Size)}");
+                        request = client.DeserializeRequest(data);
+
+                        // dispatch
+                        if (request != null)
+                        {
+                            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+                            await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
+                        }
+
+                        else
+                            logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Unable to deserialize request");
                     }
 
-                    // de-serialize
-                    logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumConstants.Encoding.GetString(data.Array, 0, data.Size)}");
-                    request = client.DeserializeRequest(data);
-
-                    // dispatch
-                    if (request != null)
+                    catch (JsonReaderException jsonEx)
                     {
-                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
-                        await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
+                        // junk received (no valid json)
+                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
+
+                        if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                        {
+                            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        }
                     }
 
-                    else
-                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Unable to deserialize request");
+                    catch (Exception ex)
+                    {
+                        if (request != null)
+                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
+                    }
                 }
-            }
-
-            catch (JsonReaderException jsonEx)
-            {
-                // junk received (no valid json)
-                logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
-
-                if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
-                {
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
-                    banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
-                }
-            }
-
-            catch (Exception ex)
-            {
-                if (request != null)
-                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
-            }
+            });
         }
 
         protected virtual void OnReceiveError(StratumClient client, Exception ex)
