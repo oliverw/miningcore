@@ -241,9 +241,10 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 context.Stats.ValidShares++;
+                UpdateVarDiff(client);
             }
 
-            catch(StratumException ex)
+            catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 

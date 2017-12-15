@@ -12,6 +12,7 @@ namespace MiningCore.Tests.VarDiff
 {
     public class VarDiffManagerTests : TestBase
     {
+/*
         private static readonly VarDiffConfig config = new VarDiffConfig
         {
             RetargetTime = 90,
@@ -72,5 +73,6 @@ namespace MiningCore.Tests.VarDiff
             Assert.NotNull(newDiff);
             Assert.True(newDiff.Value.EqualsDigitPrecision3(1000));
         }
+*/
     }
 }
