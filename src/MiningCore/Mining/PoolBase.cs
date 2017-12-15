@@ -242,8 +242,7 @@ namespace MiningCore.Mining
 
             if (context.VarDiff != null)
             {
-                if(isIdleUpdate)
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
 
                 // get or create manager
                 VarDiffManager varDiffManager;
