@@ -25,9 +25,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using MiningCore.Blockchain.Bitcoin.Configuration;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
+using MiningCore.Extensions;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
@@ -44,7 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCC, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.DASH, CoinType.MONA, CoinType.VTC,
+        CoinType.GRS, CoinType.MONA, CoinType.VTC,
         CoinType.BTG, CoinType.GLT, CoinType.STAK)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
@@ -70,7 +72,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected readonly IComponentContext ctx;
         protected DaemonClient daemon;
-        private BitcoinCoinProperties coinProperties;
+        protected BitcoinCoinProperties coinProperties;
+        protected BitcoinPoolConfigExtra extraPoolConfig;
+        protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
@@ -83,6 +87,8 @@ namespace MiningCore.Blockchain.Bitcoin
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+            extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
             coinProperties = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
@@ -154,9 +160,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                var minConfirmations = poolConfig.Extra?.ContainsKey("minimumConfirmations") == true
-                                    ? int.Parse(poolConfig.Extra["minimumConfirmations"].ToString())
-                                    : BitcoinConstants.CoinbaseMinConfimations;
+                                var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
                                 break;
@@ -228,11 +232,31 @@ namespace MiningCore.Blockchain.Bitcoin
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-            var args = new object[]
+            object[] args;
+
+            if (extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
             {
-                string.Empty,          
-                amounts                // addresses and associated amounts
-            };
+                var comment = (poolConfig.PoolName ?? clusterConfig.ClusterName ?? "MiningCore").Trim() + " Payment";
+                var subtractFeesFrom = amounts.Keys.ToArray();
+
+                args = new object[]
+                {
+                    string.Empty,           // default account 
+                    amounts,                // addresses and associated amounts
+                    1,                      // only spend funds covered by this many confirmations
+                    comment,                // tx comment
+                    subtractFeesFrom        // distribute transaction fee equally over all recipients
+                };
+            }
+
+            else
+            {
+                args = new object[]
+                {
+                    string.Empty,           // default account 
+                    amounts,                // addresses and associated amounts
+                };
+            }
 
             // send command
             var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
