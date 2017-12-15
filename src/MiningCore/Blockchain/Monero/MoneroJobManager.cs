@@ -26,6 +26,7 @@ using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
@@ -421,7 +422,7 @@ namespace MiningCore.Blockchain.Monero
                 string address = null;
 
                 if (networkType == MoneroNetworkType.Main && poolConfig.Coin.Type == CoinType.XMR)
-                    address = MoneroConstants.DevAddress;
+                    address = KnownAddresses.DevFeeAddresses[CoinType.XMR];
 
                 if (!string.IsNullOrEmpty(address))
                 {

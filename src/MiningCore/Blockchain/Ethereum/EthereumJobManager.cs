@@ -30,6 +30,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Buffers;
@@ -579,9 +580,9 @@ namespace MiningCore.Blockchain.Ethereum
                 string address = null;
 
                 if (chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
-                    address = EthereumConstants.EthDevAddress;
+                    address = KnownAddresses.DevFeeAddresses[CoinType.ETH];
                 else if (chainType == ParityChainType.Classic && networkType == EthereumNetworkType.Main)
-                    address = EthereumConstants.EtcDevAddress;
+                    address = KnownAddresses.DevFeeAddresses[CoinType.ETC];
 
                 if (!string.IsNullOrEmpty(address))
                 {

@@ -53,7 +53,6 @@ namespace MiningCore.Blockchain.Monero
 
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".HexToByteArray().ToBigInteger();
-        public const string DevAddress = "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH";
 
 #if DEBUG
         public const int PayoutMinBlockConfirmations = 2;
