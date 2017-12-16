@@ -134,7 +134,7 @@ namespace MiningCore.Payments.PayoutSchemes
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
-            var pageSize = 3000;
+            var pageSize = 5000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
