@@ -21,7 +21,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -29,6 +32,9 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using NLog;
+using Polly;
+using Polly.CircuitBreaker;
+using Polly.Wrap;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments.PayoutSchemes
@@ -52,6 +58,8 @@ namespace MiningCore.Payments.PayoutSchemes
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
+
+            BuildFaultHandlingPolicy();
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -59,6 +67,9 @@ namespace MiningCore.Payments.PayoutSchemes
         private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        private const int RetryCount = 3;
+        private Policy shareReadFaultPolicy;
 
         private class Config
         {
@@ -122,16 +133,20 @@ namespace MiningCore.Payments.PayoutSchemes
             Dictionary<string, ulong> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
-            var pageSize = 10000;
+            var pageSize = 3000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
+            var sw = new Stopwatch();
 
             while(!done)
             {
                 // fetch next page
-                var blockPage = cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize));
+                logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+
+                var blockPage = shareReadFaultPolicy.Execute(() =>
+                    cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize), sw, logger));
 
                 if (blockPage.Length == 0)
                     break;
@@ -184,9 +199,26 @@ namespace MiningCore.Payments.PayoutSchemes
                 }
             }
 
-            logger.Info(() => $"Balance-calculation completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
+            logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
 
             return shareCutOffDate;
+        }
+
+        private void BuildFaultHandlingPolicy()
+        {
+            // retry with increasing delay (1s, 2s, 4s etc)
+            var retry = Policy
+                .Handle<DbException>()
+                .Or<SocketException>()
+                .Or<TimeoutException>()
+                .Retry(RetryCount, OnPolicyRetry);
+
+            shareReadFaultPolicy = retry;
+        }
+
+        private static void OnPolicyRetry(Exception ex, int retry, object context)
+        {
+            logger.Warn(() => $"Retry {retry} due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
         }
     }
 }
