@@ -55,7 +55,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             con.Execute(query, mapped, tx);
         }
 
-        public Share[] PageSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
+        public Share[] ReadSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 

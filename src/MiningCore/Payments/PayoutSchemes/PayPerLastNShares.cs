@@ -111,6 +111,8 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (cutOffCount > 0)
                 {
+                    RecordObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
                 }
@@ -128,6 +130,55 @@ namespace MiningCore.Payments.PayoutSchemes
             return Task.FromResult(true);
         }
 
+        private void RecordObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
+        {
+            var done = false;
+            var before = value;
+            var pageSize = 50000;
+            var currentPage = 0;
+            var shares = new Dictionary<string, double>();
+
+            while (true)
+            {
+                // fetch next page
+                logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+
+                var blockPage = shareReadFaultPolicy.Execute(() =>
+                    cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
+
+                if (blockPage.Length == 0)
+                    break;
+
+                // iterate over shares
+                var start = Math.Max(0, blockPage.Length - 1);
+
+                for (var i = start; i >= 0; i--)
+                {
+                    var share = blockPage[i];
+                    before = share.Created;
+
+                    // build address
+                    var address = share.Miner;
+                    if (!string.IsNullOrEmpty(share.PayoutInfo))
+                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
+
+                    // record attributed shares for diagnostic purposes
+                    if (!shares.ContainsKey(address))
+                        shares[address] = share.Difficulty;
+                    else
+                        shares[address] += share.Difficulty;
+                }
+            }
+
+            // sort addresses by shares
+            var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
+
+            // compute summary
+            var summary = string.Join("\n", addressesByShares.Select(address=> $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares"));
+
+            logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares:\n"+ summary);
+        }
+
         #endregion // IPayoutScheme
 
         private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
@@ -141,7 +192,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
-            var sw = new Stopwatch();
+            //var sw = new Stopwatch();
 
             while (!done)
             {
@@ -149,7 +200,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.PageSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize), sw, logger));
+                    cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
 
                 if (blockPage.Length == 0)
                     break;
@@ -212,7 +263,6 @@ namespace MiningCore.Payments.PayoutSchemes
 
         private void BuildFaultHandlingPolicy()
         {
-            // retry with increasing delay (1s, 2s, 4s etc)
             var retry = Policy
                 .Handle<DbException>()
                 .Or<SocketException>()

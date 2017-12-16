@@ -27,7 +27,7 @@ namespace MiningCore.Persistence.Repositories
     public interface IShareRepository
     {
         void Insert(IDbConnection con, IDbTransaction tx, Share share);
-        Share[] PageSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
+        Share[] ReadSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
         Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
 
         long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
