@@ -59,10 +59,12 @@ namespace MiningCore.Extensions
         {
             using (var con = factory.OpenConnection())
             {
-                sw.Start();
-                action(con);
+                sw.Reset();
                 sw.Start();
 
+                action(con);
+
+                sw.Stop();
                 logger.Debug(()=> $"Query took {sw.ElapsedMilliseconds} ms");
             }
         }
@@ -75,10 +77,12 @@ namespace MiningCore.Extensions
         {
             using (var con = factory.OpenConnection())
             {
-                sw.Start();
-                var result = action(con);
+                sw.Reset();
                 sw.Start();
 
+                var result = action(con);
+
+                sw.Stop();
                 logger.Debug(() => $"Query took {sw.ElapsedMilliseconds} ms");
                 return result;
             }
