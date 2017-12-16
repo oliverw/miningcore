@@ -107,12 +107,12 @@ namespace MiningCore.Payments.PayoutSchemes
             // delete obsolete shares
             if (shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountPoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = shareRepo.CountPoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
                 if (cutOffCount > 0)
                 {
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
-                    shareRepo.DeletePoolSharesBefore(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                    shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
                 }
 
                 //logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
@@ -134,6 +134,8 @@ namespace MiningCore.Payments.PayoutSchemes
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
+            var before = block.Created;
+            var inclusive = true;
             var pageSize = 50000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
@@ -141,16 +143,18 @@ namespace MiningCore.Payments.PayoutSchemes
             DateTime? shareCutOffDate = null;
             var sw = new Stopwatch();
 
-            while(!done)
+            while (!done)
             {
                 // fetch next page
                 logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.PageSharesBefore(con, poolConfig.Id, block.Created, currentPage++, pageSize), sw, logger));
+                    cf.Run(con => shareRepo.PageSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize), sw, logger));
 
                 if (blockPage.Length == 0)
                     break;
+
+                inclusive = false;
 
                 // iterate over shares
                 var start = Math.Max(0, blockPage.Length - 1);
@@ -158,6 +162,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 for(var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
+                    before = share.Created;
 
                     // build address
                     var address = share.Miner;

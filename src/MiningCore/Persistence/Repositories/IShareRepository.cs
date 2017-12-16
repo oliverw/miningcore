@@ -27,13 +27,13 @@ namespace MiningCore.Persistence.Repositories
     public interface IShareRepository
     {
         void Insert(IDbConnection con, IDbTransaction tx, Share share);
-        Share[] PageSharesBefore(IDbConnection con, string poolId, DateTime before, int page, int pageSize);
-        Share[] PageSharesBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
+        Share[] PageSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
+        Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
 
-        long CountPoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-        void DeletePoolSharesBefore(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+        long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+        void DeletePoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
 
-        long CountMinerSharesBetween(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
-        ulong? GetAccumulatedShareDifficultyBetween(IDbConnection con, string poolId, DateTime start, DateTime end);
+        long CountMinerSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
+        ulong? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end);
     }
 }
