@@ -69,7 +69,7 @@ namespace MiningCore.Payments.PayoutSchemes
         private readonly IShareRepository shareRepo;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private const int RetryCount = 3;
+        private const int RetryCount = 10;
         private Policy shareReadFaultPolicy;
 
         private class Config
@@ -134,7 +134,7 @@ namespace MiningCore.Payments.PayoutSchemes
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
-            var pageSize = 5000;
+            var pageSize = 50000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
