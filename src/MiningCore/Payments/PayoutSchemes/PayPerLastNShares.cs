@@ -31,6 +31,7 @@ using MiningCore.Extensions;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Util;
 using NLog;
 using Polly;
 using Polly.CircuitBreaker;
@@ -87,7 +88,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
 
             // calculate rewards
-            var shares = new Dictionary<string, ulong>();
+            var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
             var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
 
@@ -98,7 +99,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (amount > 0)
                 {
-                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {shares[address]} shares");
+                    logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares");
                     balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
                 }
             }
@@ -130,7 +131,7 @@ namespace MiningCore.Payments.PayoutSchemes
         #endregion // IPayoutScheme
 
         private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
-            Dictionary<string, ulong> shares, Dictionary<string, decimal> rewards)
+            Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
             var pageSize = 3000;
@@ -165,9 +166,9 @@ namespace MiningCore.Payments.PayoutSchemes
 
                     // record attributed shares for diagnostic purposes
                     if (!shares.ContainsKey(address))
-                        shares[address] = 1;
+                        shares[address] = share.Difficulty;
                     else
-                        shares[address] += 1;
+                        shares[address] += share.Difficulty;
 
                     var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
