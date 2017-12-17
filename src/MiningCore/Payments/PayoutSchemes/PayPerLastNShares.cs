@@ -148,7 +148,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 if (blockPage.Length == 0 || (lastId.HasValue && blockPage[0].Id == lastId))
                     break;
 
-logger.Info(() => $"{blockPage.Length} - {blockPage[0].Id}");
+logger.Info(() => $"{blockPage.Length} - {before}");
 
                 lastId = blockPage[0].Id;
                 currentPage++;
