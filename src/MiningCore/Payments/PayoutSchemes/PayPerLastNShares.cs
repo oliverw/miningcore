@@ -69,7 +69,7 @@ namespace MiningCore.Payments.PayoutSchemes
         private readonly IShareRepository shareRepo;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private const int RetryCount = 10;
+        private const int RetryCount = 4;
         private Policy shareReadFaultPolicy;
 
         private class Config
@@ -136,6 +136,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var before = value;
             var pageSize = 50000;
             var currentPage = 0;
+            long? lastId = null;
             var shares = new Dictionary<string, double>();
 
             while (true)
@@ -146,8 +147,10 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-                if (blockPage.Length == 0)
+                if (blockPage.Length == 0 || (lastId.HasValue && blockPage[0].Id == lastId))
                     break;
+
+                lastId = blockPage[0].Id;
 
                 // iterate over shares
                 var start = Math.Max(0, blockPage.Length - 1);
