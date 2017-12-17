@@ -133,29 +133,27 @@ namespace MiningCore.Payments.PayoutSchemes
         private void LogObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
         {
             var before = value;
-            var beforeLast = value;
             var pageSize = 50000;
             var currentPage = 0;
             var shares = new Dictionary<string, double>();
 
             while (true)
             {
-                logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Fetching page {currentPage} of obsolete shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-                if (blockPage.Length == 0 || (before == beforeLast))
+                if (blockPage.Length == 0)
                     break;
 
                 currentPage++;
+                var i = 0;
                 var start = blockPage.Length - 1;
 
-                for (var i = start; i >= 0; i--)
+                for (i = start; i >= 0; i--)
                 {
                     var share = blockPage[i];
-                    beforeLast = before;
-                    before = share.Created;
 
                     // build address
                     var address = share.Miner;
@@ -168,15 +166,20 @@ namespace MiningCore.Payments.PayoutSchemes
                     else
                         shares[address] += share.Difficulty;
                 }
+
+                before = blockPage[i].Created.AddTicks(-1);
             }
 
-            // sort addresses by shares
-            var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
+            if (shares.Keys.Count > 0)
+            {
+                // sort addresses by shares
+                var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
 
-            // compute summary
-            var summary = string.Join("\n", addressesByShares.Select(address=> $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares"));
+                // compute summary
+                var summary = string.Join("\n", addressesByShares.Select(address => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares"));
 
-            logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares:\n"+ summary);
+                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares:\n" + summary);
+            }
         }
 
         #endregion // IPayoutScheme
@@ -186,6 +189,7 @@ namespace MiningCore.Payments.PayoutSchemes
         {
             var done = false;
             var before = block.Created;
+            var beforePrev = (DateTime?) null;
             var inclusive = true;
             var pageSize = 50000;
             var currentPage = 0;
@@ -201,17 +205,19 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
 
-                if (blockPage.Length == 0)
+                if (blockPage.Length == 0 || (beforePrev.HasValue && before == beforePrev))
                     break;
 
                 inclusive = false;
                 currentPage++;
+                beforePrev = before;
+
+                var i = 0;
                 var start = blockPage.Length - 1;
 
-                for (var i = start; !done && i >= 0; i--)
+                for (i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
-                    before = share.Created;
 
                     // build address
                     var address = share.Miner;
@@ -252,6 +258,8 @@ namespace MiningCore.Payments.PayoutSchemes
                             rewards[address] += reward;
                     }
                 }
+
+                before = blockPage[i].Created.AddTicks(-1);
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
