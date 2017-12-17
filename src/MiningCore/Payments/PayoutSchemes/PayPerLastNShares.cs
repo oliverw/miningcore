@@ -125,7 +125,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
             if (totalRewards > 0)
-                logger.Info(() => $"{totalShareCount} shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward)");
+                logger.Info(() => $"{FormatUtil.FormatQuantity((double) totalShareCount)} ({Math.Round(totalShareCount, 2)}) shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward)");
 
             return Task.FromResult(true);
         }
