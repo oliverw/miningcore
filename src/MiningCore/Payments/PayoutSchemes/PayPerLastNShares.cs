@@ -148,10 +148,9 @@ namespace MiningCore.Payments.PayoutSchemes
                     break;
 
                 currentPage++;
-                var i = 0;
                 var start = blockPage.Length - 1;
 
-                for (i = start; i >= 0; i--)
+                for (var i = start; i >= 0; i--)
                 {
                     var share = blockPage[i];
 
@@ -167,7 +166,7 @@ namespace MiningCore.Payments.PayoutSchemes
                         shares[address] += share.Difficulty;
                 }
 
-                before = blockPage[i].Created.AddTicks(-1);
+                before = blockPage[0].Created.AddTicks(-1);
             }
 
             if (shares.Keys.Count > 0)
@@ -212,10 +211,9 @@ namespace MiningCore.Payments.PayoutSchemes
                 currentPage++;
                 beforePrev = before;
 
-                var i = 0;
                 var start = blockPage.Length - 1;
 
-                for (i = start; !done && i >= 0; i--)
+                for (var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
 
@@ -259,7 +257,7 @@ namespace MiningCore.Payments.PayoutSchemes
                     }
                 }
 
-                before = blockPage[i].Created.AddTicks(-1);
+                before = blockPage[0].Created.AddTicks(-1);
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
