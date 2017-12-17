@@ -133,9 +133,9 @@ namespace MiningCore.Payments.PayoutSchemes
         private void LogObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
         {
             var before = value;
+            var beforeLast = value;
             var pageSize = 50000;
             var currentPage = 0;
-            long? lastId = null;
             var shares = new Dictionary<string, double>();
 
             while (true)
@@ -145,18 +145,16 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-                if (blockPage.Length == 0 || (lastId.HasValue && blockPage[0].Id == lastId))
+                if (blockPage.Length == 0 || (before == beforeLast))
                     break;
 
-logger.Info(() => $"{blockPage.Length} - {before}");
-
-                lastId = blockPage[0].Id;
                 currentPage++;
                 var start = blockPage.Length - 1;
 
                 for (var i = start; i >= 0; i--)
                 {
                     var share = blockPage[i];
+                    beforeLast = before;
                     before = share.Created;
 
                     // build address
