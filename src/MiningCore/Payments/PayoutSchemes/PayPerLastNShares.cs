@@ -111,7 +111,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (cutOffCount > 0)
                 {
-                    RecordObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+                    LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
 
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
@@ -130,9 +130,8 @@ namespace MiningCore.Payments.PayoutSchemes
             return Task.FromResult(true);
         }
 
-        private void RecordObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
+        private void LogObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
         {
-            var done = false;
             var before = value;
             var pageSize = 50000;
             var currentPage = 0;
@@ -141,8 +140,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
             while (true)
             {
-                // fetch next page
-                logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
@@ -150,10 +148,11 @@ namespace MiningCore.Payments.PayoutSchemes
                 if (blockPage.Length == 0 || (lastId.HasValue && blockPage[0].Id == lastId))
                     break;
 
-                lastId = blockPage[0].Id;
+logger.Info(() => $"{blockPage.Length} - {blockPage[0].Id}");
 
-                // iterate over shares
-                var start = Math.Max(0, blockPage.Length - 1);
+                lastId = blockPage[0].Id;
+                currentPage++;
+                var start = blockPage.Length;
 
                 for (var i = start; i >= 0; i--)
                 {
@@ -199,8 +198,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
             while (!done)
             {
-                // fetch next page
-                logger.Debug(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
@@ -209,11 +207,10 @@ namespace MiningCore.Payments.PayoutSchemes
                     break;
 
                 inclusive = false;
+                currentPage++;
+                var start = blockPage.Length;
 
-                // iterate over shares
-                var start = Math.Max(0, blockPage.Length - 1);
-
-                for(var i = start; !done && i >= 0; i--)
+                for (var i = start; !done && i >= 0; i--)
                 {
                     var share = blockPage[i];
                     before = share.Created;
