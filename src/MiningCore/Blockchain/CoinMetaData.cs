@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MiningCore.Blockchain.Ethereum;
 using MiningCore.Configuration;
 
 namespace MiningCore.Blockchain
@@ -10,13 +11,13 @@ namespace MiningCore.Blockchain
             { CoinType.ETH, new Dictionary<string, string>
             {
                 { string.Empty, "https://etherscan.io/block/{0}" },
-                { "uncle", "https://etherscan.io/uncle/{0}" },
+                { EthereumConstants.BlockTypeUncle, "https://etherscan.io/uncle/{0}" },
             }},
 
             { CoinType.ETC, new Dictionary<string, string>
             {
                 { string.Empty, "https://gastracker.io/block/{0}" },
-                { "uncle", "https://gastracker.io/uncle/{0}" }
+                { EthereumConstants.BlockTypeUncle, "https://gastracker.io/uncle/{0}" }
             }},
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/xmr/block/{0}" }}},

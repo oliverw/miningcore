@@ -17,6 +17,7 @@ namespace MiningCore.Blockchain.Ethereum
         public static BigInteger WeiBig = new BigInteger(1000000000000000000);
         public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
         public const decimal StaticTransactionFeeReserve = 0.0025m; // in ETH
+        public const string BlockTypeUncle = "uncle";
 
 #if !DEBUG
         public const int MinPayoutPeerCount = 3;
