@@ -111,7 +111,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (cutOffCount > 0)
                 {
-                    //LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+                    LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
 
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
@@ -144,11 +144,8 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-                if (blockPage.Length == 0)
-                    break;
-
                 currentPage++;
-                var start = blockPage.Length - 1;
+                var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
 
                 for (var i = start; i >= 0; i--)
                 {
@@ -166,7 +163,10 @@ namespace MiningCore.Payments.PayoutSchemes
                         shares[address] += share.Difficulty;
                 }
 
-                before = blockPage[0].Created.AddTicks(-1);
+                if (blockPage.Length < pageSize)
+                    break;
+
+                before = blockPage[0].Created;
             }
 
             if (shares.Keys.Count > 0)
@@ -188,7 +188,6 @@ namespace MiningCore.Payments.PayoutSchemes
         {
             var done = false;
             var before = block.Created;
-            var beforePrev = (DateTime?) null;
             var inclusive = true;
             var pageSize = 50000;
             var currentPage = 0;
@@ -204,14 +203,13 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
 
-                if (blockPage.Length == 0 || (beforePrev.HasValue && before == beforePrev))
+                if (blockPage.Length == 0)
                     break;
 
                 inclusive = false;
                 currentPage++;
-                beforePrev = before;
 
-                var start = blockPage.Length - 1;
+                var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
 
                 for (var i = start; !done && i >= 0; i--)
                 {
@@ -257,7 +255,10 @@ namespace MiningCore.Payments.PayoutSchemes
                     }
                 }
 
-                before = blockPage[0].Created.AddTicks(-1);
+                if (blockPage.Length < pageSize)
+                    break;
+
+                before = blockPage[0].Created;
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
