@@ -152,7 +152,7 @@ logger.Info(() => $"{blockPage.Length} - {blockPage[0].Id}");
 
                 lastId = blockPage[0].Id;
                 currentPage++;
-                var start = blockPage.Length;
+                var start = blockPage.Length - 1;
 
                 for (var i = start; i >= 0; i--)
                 {
@@ -208,7 +208,7 @@ logger.Info(() => $"{blockPage.Length} - {blockPage[0].Id}");
 
                 inclusive = false;
                 currentPage++;
-                var start = blockPage.Length;
+                var start = blockPage.Length - 1;
 
                 for (var i = start; !done && i >= 0; i--)
                 {
