@@ -111,7 +111,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (cutOffCount > 0)
                 {
-                    LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+                    //LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
 
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
