@@ -144,9 +144,6 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-                if (blockPage.Length == 0)
-                    break;
-
                 currentPage++;
 
                 for (var i = 0;i < blockPage.Length; i++)
@@ -204,9 +201,6 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
-
-                if (blockPage.Length == 0)
-                    break;
 
                 inclusive = false;
                 currentPage++;
