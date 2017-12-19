@@ -39,7 +39,6 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 using EC = MiningCore.Blockchain.Ethereum.EthCommands;
@@ -190,11 +189,11 @@ namespace MiningCore.Blockchain.Ethereum
                                     new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
                                 .ToArray();
 
-                            logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {block.BlockHeight}");
+                            logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
 
                             var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
 
-                            logger.Info(() => $"[{LogCategory}] Fetched {uncleResponses.Count(x => x.Error == null && x.Response != null)} uncles for block {block.BlockHeight}");
+                            logger.Info(() => $"[{LogCategory}] Fetched {uncleResponses.Count(x => x.Error == null && x.Response != null)} uncles for block {blockInfo2.Height}");
 
                             var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
                                 .Select(x => x.Response.ToObject<DaemonResponses.Block>())
@@ -203,17 +202,19 @@ namespace MiningCore.Blockchain.Ethereum
                             if (uncle != null)
                             {
                                 // mature?
-                                if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+                                if (latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
                                 {
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
-                                    block.Reward = GetUncleReward(uncle.Height.Value, block.BlockHeight);
+                                    block.Reward = GetUncleReward(uncle.Height.Value, blockInfo2.Height.Value);
+                                    block.BlockHeight = uncle.Height.Value;
+                                    block.Type = EthereumConstants.BlockTypeUncle;
 
-                                    logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {block.BlockHeight} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+                                    logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
                                 }
 
                                 else
-                                    logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {block.BlockHeight}. Will try again.");
+                                    logger.Info(() => $"[{LogCategory}] Got immature matching uncle for block {blockInfo2.Height.Value}. Will try again.");
 
                                 break;
                             }

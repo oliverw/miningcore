@@ -102,6 +102,7 @@ namespace MiningCore.Stratum
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
+        public bool IsAlive { get; set; } = true;
 
         public void SetContext<T>(T value) where T : WorkerContextBase
         {
@@ -192,6 +193,8 @@ namespace MiningCore.Stratum
         {
             subscription?.Dispose();
             subscription = null;
+
+            IsAlive = false;
         }
 
         public void RespondError(object id, int code, string message)

@@ -268,6 +268,7 @@ namespace MiningCore.Configuration
     public partial class PoolConfig
     {
         public string Id { get; set; }
+        public string PoolName { get; set; }
         public bool Enabled { get; set; }
         public CoinConfig Coin { get; set; }
         public Dictionary<int, PoolEndpoint> Ports { get; set; }
@@ -291,6 +292,7 @@ namespace MiningCore.Configuration
 
     public partial class ClusterConfig
     {
+        public string ClusterName { get; set; }
         public ClusterLoggingConfig Logging { get; set; }
         public ClusterBanningConfig Banning { get; set; }
         public PersistenceConfig Persistence { get; set; }

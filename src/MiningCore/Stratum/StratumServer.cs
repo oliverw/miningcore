@@ -64,17 +64,17 @@ namespace MiningCore.Stratum
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(params IPEndPoint[] stratumPorts)
+        public void StartListeners(string id, params IPEndPoint[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
-            foreach (var endpoint in stratumPorts)
+            // every port gets serviced by a dedicated loop thread
+            var thread = new Thread(_ =>
             {
-                // every port gets serviced by a dedicated loop thread
-                var thread = new Thread(_ =>
-                {
-                    var loop = new Loop();
+                var loop = new Loop();
 
+                foreach (var endpoint in stratumPorts)
+                {
                     var listener = loop
                         .CreateTcp()
                         .NoDelay(true)
@@ -92,13 +92,21 @@ namespace MiningCore.Stratum
                         ports[endpoint.Port] = listener;
                     }
 
+                    logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
+                }
+
+                try
+                {
                     loop.RunDefault();
-                }) { Name = $"UvLoop Thread Port {endpoint.Port}" };
+                }
 
-                thread.Start();
+                catch (Exception ex)
+                {
+                    logger.Error(ex, () => Thread.CurrentThread.Name);
+                }
+            }) { Name = $"UvLoopThread {id}" };
 
-                logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
-            }
+            thread.Start();
         }
 
         public void StopListeners()
@@ -144,7 +152,7 @@ namespace MiningCore.Stratum
                 var client = new StratumClient();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
-                    data => OnReceive(client, data), 
+                    data => OnReceive(client, data),
                     () => OnReceiveComplete(client),
                     ex => OnReceiveError(client, ex));
 

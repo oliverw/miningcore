@@ -18,22 +18,13 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using System.Data;
-using MiningCore.Persistence.Model;
-
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Blockchain.Bitcoin.Configuration
 {
-    public interface IShareRepository
+    public class BitcoinPoolPaymentProcessingConfigExtra
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Share share);
-        Share[] ReadSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
-        Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
-
-        long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-        void DeletePoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-
-        long CountMinerSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
-        ulong? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end);
+        /// <summary>
+        /// if True, miners pay payment tx fees
+        /// </summary>
+        public bool MinersPayTxFees { get; set; }
     }
 }

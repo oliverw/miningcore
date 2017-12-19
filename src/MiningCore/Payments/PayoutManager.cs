@@ -209,7 +209,7 @@ namespace MiningCore.Payments
 
             // get combined diff of all shares for block
             var accumulatedShareDiffForBlock = cf.Run(con =>
-                shareRepo.GetAccumulatedShareDifficultyBetween(con, pool.Id, from, to));
+                shareRepo.GetAccumulatedShareDifficultyBetweenCreated(con, pool.Id, from, to));
 
             // handler has the final say
             if (accumulatedShareDiffForBlock.HasValue)

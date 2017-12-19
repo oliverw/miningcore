@@ -19,19 +19,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using MiningCore.Util;
 
 namespace MiningCore.VarDiff
 {
-    public class VarDiffContext : IDisposable
+    public class VarDiffContext
     {
-        public IDisposable Subscription { get; set; }
-        public long? LastShareTs { get; set; }
-        public int SilenceCount { get; set; }
+        public double? LastTs { get; set; }
+        public double LastRtc { get; set; }
+        public CircularDoubleBuffer TimeBuffer { get; set; }
         public DateTime? LastUpdate { get; set; }
-
-        public void Dispose()
-        {
-            Subscription?.Dispose();
-        }
     }
 }

@@ -18,22 +18,38 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using System.Data;
-using MiningCore.Persistence.Model;
+using System.Linq;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Util
 {
-    public interface IShareRepository
+    public class CircularDoubleBuffer : CircularBuffer<double>
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Share share);
-        Share[] ReadSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
-        Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
+        public CircularDoubleBuffer(int capacity) : base(capacity)
+        {
+        }
 
-        long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-        void DeletePoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+        public CircularDoubleBuffer(int capacity, double[] items) : base(capacity, items)
+        {
+        }
 
-        long CountMinerSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
-        ulong? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end);
+        public double Average()
+        {
+            return ToArray().Average();
+        }
+
+        public double Sum()
+        {
+            double sum = 0;
+            using (var enumerator = GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    sum += enumerator.Current;
+                }
+            }
+
+            return sum;
+        }
+
     }
 }
