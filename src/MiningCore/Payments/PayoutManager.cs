@@ -157,7 +157,7 @@ namespace MiningCore.Payments
             }
 
             else
-                logger.Info(() => $"No updated blocks for {pool.Id}");
+                logger.Info(() => $"No updated blocks for pool {pool.Id}");
         }
 
         private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
