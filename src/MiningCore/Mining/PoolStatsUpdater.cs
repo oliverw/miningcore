@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using MiningCore.Contracts;
 using MiningCore.Extensions;
 using MiningCore.Payments;
 using MiningCore.Persistence;
+using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using NLog;
@@ -137,18 +139,54 @@ namespace MiningCore.Mining
                 {
                     logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolId}");
 
-                    var blockPage = shareReadFaultPolicy.Execute(() =>
+                    var page = shareReadFaultPolicy.Execute(() =>
                         cf.Run(con => shareRepo.ReadSharesBeforeAndAfterCreated(con, poolId, before, target, true, pageSize)));
 
                     currentPage++;
 
+                    var sharesByMiner = page.GroupBy(x => x.Miner).ToArray();
+
+                    foreach (var minerShares in sharesByMiner)
+                    {
+                        // Total hashrate
+                        var miner = minerShares.Key;
+                        var hashRate = HashrateFromShares(minerShares, interval);
+
+                        var sample = new MinerHashrateSample
+                        {
+                            PoolId = poolConfig.Id,
+                            Miner = miner,
+                            Hashrate = hashRate,
+                            Created = clock.Now
+                        };
+
+                        // Per worker hashrates
+                        var sharesPerWorker = minerShares
+                            .GroupBy(x => x.Share.Worker)
+                            .Where(x => !string.IsNullOrEmpty(x.Key));
+
+                        foreach (var workerShares in sharesPerWorker)
+                        {
+                            var worker = workerShares.Key;
+                            hashRate = HashrateFromShares(workerShares, interval);
+
+                            if (sample.WorkerHashrates == null)
+                                sample.WorkerHashrates = new Dictionary<string, ulong>();
+
+                            sample.WorkerHashrates[worker] = hashRate;
+                        }
+
+                        // Persist
+                        cf.RunTx((con, tx) => { statsRepo.RecordMinerHashrateSample(con, tx, sample); });
+                    }
+
                     // accumulate per pool, miner and worker
                     // accumulated += pool.HashrateAccumulate(blockPage);
 
-                    if (blockPage.Length < pageSize)
+                    if (page.Length < pageSize)
                         break;
 
-                    before = blockPage[blockPage.Length - 1].Created;
+                    before = page[page.Length - 1].Created;
                 }
             }
         }
