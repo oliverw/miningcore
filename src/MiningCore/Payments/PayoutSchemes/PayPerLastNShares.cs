@@ -176,10 +176,10 @@ namespace MiningCore.Payments.PayoutSchemes
                 // sort addresses by shares
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
 
-                // compute summary
-                var summary = string.Join("\n", addressesByShares.Select(address => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}"));
+                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares total for block {block.BlockHeight}");
 
-                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares:\n" + summary);
+                foreach (var address in addressesByShares)
+                    logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
             }
         }
 
