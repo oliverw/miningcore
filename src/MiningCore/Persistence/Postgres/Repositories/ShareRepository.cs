@@ -67,6 +67,19 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
+        public Share[] ReadSharesBeforeAndAfterCreated(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
+                        $"AND created {(inclusive ? " >= " : " > ")} @after" + 
+                        "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.Share>(query, new { poolId, before, after, pageSize })
+                .Select(mapper.Map<Share>)
+                .ToArray();
+        }
+
         public Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });

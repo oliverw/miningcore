@@ -104,7 +104,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 }
             }
 
-            // delete obsolete shares
+            // delete discarded shares
             if (shareCutOffDate.HasValue)
             {
                 var cutOffCount = shareRepo.CountPoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
@@ -113,11 +113,9 @@ namespace MiningCore.Payments.PayoutSchemes
                 {
                     LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
 
-                    logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
+                    logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
                 }
-
-                //logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
             }
 
             // diagnostics
@@ -139,7 +137,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
             while (true)
             {
-                logger.Info(() => $"Fetching page {currentPage} of obsolete shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
@@ -173,10 +171,10 @@ namespace MiningCore.Payments.PayoutSchemes
                 // sort addresses by shares
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
 
-                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares total for block {block.BlockHeight}");
+                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) total discarded shares, block {block.BlockHeight}");
 
                 foreach (var address in addressesByShares)
-                    logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
+                    logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) discarded shares, block {block.BlockHeight}");
             }
         }
 

@@ -22,6 +22,7 @@ using System;
 using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
+using MiningCore.Persistence.Model;
 using MiningCore.Stratum;
 
 namespace MiningCore.Mining
