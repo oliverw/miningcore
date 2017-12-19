@@ -135,7 +135,6 @@ namespace MiningCore.Payments.PayoutSchemes
             var before = value;
             var pageSize = 50000;
             var currentPage = 0;
-            var lastId = (long?) null;
             var shares = new Dictionary<string, double>();
 
             while (true)
@@ -145,12 +144,12 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-logger.Info(() => $"page {currentPage}: {before:O} {lastId} {blockPage.Length} {(blockPage.Length > 0 ? blockPage[0].Id : 0)}");
+                if (blockPage.Length == 0)
+                    break;
 
                 currentPage++;
-                var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
 
-                for (var i = start; i >= 0; i--)
+                for (var i = 0;i < blockPage.Length; i++)
                 {
                     var share = blockPage[i];
 
@@ -169,7 +168,7 @@ logger.Info(() => $"page {currentPage}: {before:O} {lastId} {blockPage.Length} {
                 if (blockPage.Length < pageSize)
                     break;
 
-                before = blockPage[0].Created;
+                before = blockPage[blockPage.Length - 1].Created;
             }
 
             if (shares.Keys.Count > 0)
@@ -212,9 +211,7 @@ logger.Info(() => $"page {currentPage}: {before:O} {lastId} {blockPage.Length} {
                 inclusive = false;
                 currentPage++;
 
-                var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
-
-                for (var i = start; !done && i >= 0; i--)
+                for (var i = 0; !done && i < blockPage.Length; i++)
                 {
                     var share = blockPage[i];
 
@@ -261,7 +258,7 @@ logger.Info(() => $"page {currentPage}: {before:O} {lastId} {blockPage.Length} {
                 if (blockPage.Length < pageSize)
                     break;
 
-                before = blockPage[0].Created;
+                before = blockPage[blockPage.Length - 1].Created;
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
