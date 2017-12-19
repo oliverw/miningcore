@@ -111,7 +111,7 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 if (cutOffCount > 0)
                 {
-                    //LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+                    LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
 
                     logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
                     shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
@@ -135,6 +135,7 @@ namespace MiningCore.Payments.PayoutSchemes
             var before = value;
             var pageSize = 50000;
             var currentPage = 0;
+            var lastId = (long?) null;
             var shares = new Dictionary<string, double>();
 
             while (true)
@@ -143,6 +144,8 @@ namespace MiningCore.Payments.PayoutSchemes
 
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
+
+logger.Info(() => $"page {currentPage}: {before} {lastId} {blockPage.Length} {(blockPage.Length > 0 ? blockPage[0].Id : 0)}");
 
                 currentPage++;
                 var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
@@ -175,7 +178,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
 
                 // compute summary
-                var summary = string.Join("\n", addressesByShares.Select(address => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares"));
+                var summary = string.Join("\n", addressesByShares.Select(address => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}"));
 
                 logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares:\n" + summary);
             }
