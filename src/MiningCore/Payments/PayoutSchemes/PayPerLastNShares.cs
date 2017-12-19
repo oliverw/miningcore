@@ -145,7 +145,7 @@ namespace MiningCore.Payments.PayoutSchemes
                 var blockPage = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
 
-logger.Info(() => $"page {currentPage}: {before} {lastId} {blockPage.Length} {(blockPage.Length > 0 ? blockPage[0].Id : 0)}");
+logger.Info(() => $"page {currentPage}: {before:O} {lastId} {blockPage.Length} {(blockPage.Length > 0 ? blockPage[0].Id : 0)}");
 
                 currentPage++;
                 var start = blockPage.Length > 0 ? blockPage.Length - 1 : -1;
