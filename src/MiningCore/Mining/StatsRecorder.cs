@@ -79,7 +79,7 @@ namespace MiningCore.Mining
             {
                 logger.Info(() => "Online");
 
-                var interval = TimeSpan.FromMinutes(1);
+                var interval = TimeSpan.FromMinutes(5);
 
                 while (true)
                 {
@@ -126,7 +126,7 @@ namespace MiningCore.Mining
 
         private void UpdateHashrates()
         {
-            var start = clock.Now; //DateTime.Parse("2017-12-22 15:26:48.925534");// clock.Now;
+            var start = clock.Now;
             var target = start.AddSeconds(-HashrateCalculationWindow);
 
             var stats = new MinerWorkerPerformanceStats
