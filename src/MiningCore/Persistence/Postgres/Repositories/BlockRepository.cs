@@ -48,8 +48,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.Block>(block);
 
             var query =
-                "INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, transactionconfirmationdata, reward, effort, confirmationprogress, created) " +
-                "VALUES(@poolid, @blockheight, @networkdifficulty, @status, @transactionconfirmationdata, @reward, @effort, @confirmationprogress, @created)";
+                "INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata, reward, effort, confirmationprogress, created) " +
+                "VALUES(@poolid, @blockheight, @networkdifficulty, @status, @type, @transactionconfirmationdata, @reward, @effort, @confirmationprogress, @created)";
 
             con.Execute(query, mapped, tx);
         }
@@ -68,7 +68,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Block>(block);
 
-            var query = "UPDATE blocks SET status = @status, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress WHERE id = @id";
+            var query = "UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress WHERE id = @id";
             con.Execute(query, mapped, tx);
         }
 

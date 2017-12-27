@@ -22,7 +22,6 @@ using System;
 using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
-using MiningCore.Persistence.Model;
 using MiningCore.Stratum;
 
 namespace MiningCore.Mining
@@ -46,6 +45,7 @@ namespace MiningCore.Mining
         PoolStats PoolStats { get; }
         BlockchainStats NetworkStats { get; }
         void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
+        ulong HashrateFromShares(double shares, double interval);
         Task StartAsync();
     }
 }

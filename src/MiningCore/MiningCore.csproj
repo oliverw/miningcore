@@ -90,7 +90,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Payments\PayoutSchemes\" />
+    <Folder Include="Maintenance\Jobs\" />
   </ItemGroup>
 
 </Project>

@@ -6,10 +6,10 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.Extensions;
-using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -19,23 +19,26 @@ using Polly;
 
 namespace MiningCore.Mining
 {
-    public class PoolStatsUpdater
+    public class StatsRecorder
     {
-        public PoolStatsUpdater(IComponentContext ctx,
+        public StatsRecorder(IComponentContext ctx,
             IMasterClock clock,
             IConnectionFactory cf,
+            IMapper mapper,
             IShareRepository shareRepo,
             IStatsRepository statsRepo)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(cf, nameof(cf));
+            Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
 
             this.ctx = ctx;
             this.clock = clock;
             this.cf = cf;
+            this.mapper = mapper;
             this.shareRepo = shareRepo;
             this.statsRepo = statsRepo;
 
@@ -45,14 +48,16 @@ namespace MiningCore.Mining
         private readonly IMasterClock clock;
         private readonly IStatsRepository statsRepo;
         private readonly IConnectionFactory cf;
+        private readonly IMapper mapper;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private const int HashrateCalculationWindow = 1200;  // seconds
         private ClusterConfig clusterConfig;
         private Thread thread;
         private const int RetryCount = 4;
-        private Policy shareReadFaultPolicy;
+        private Policy readFaultPolicy;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -74,8 +79,7 @@ namespace MiningCore.Mining
             {
                 logger.Info(() => "Online");
 
-                var interval = TimeSpan.FromSeconds(
-                    clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
+                var interval = TimeSpan.FromMinutes(1);
 
                 while (true)
                 {
@@ -97,7 +101,7 @@ namespace MiningCore.Mining
                 }
             });
 
-            thread.Name = "Pool Stats Updater";
+            thread.Name = "StatsRecorder";
             thread.Start();
         }
 
@@ -122,71 +126,74 @@ namespace MiningCore.Mining
 
         private void UpdateHashrates()
         {
-            var start = clock.Now;
-            var target = start.AddMinutes(-10);
-            var pageSize = 50000;
-            var currentPage = 0;
+            var start = clock.Now; //DateTime.Parse("2017-12-22 15:26:48.925534");// clock.Now;
+            var target = start.AddSeconds(-HashrateCalculationWindow);
+
+            var stats = new MinerWorkerPerformanceStats
+            {
+                Created = start
+            };
 
             foreach (var poolId in pools.Keys)
             {
+                stats.PoolId = poolId;
+
                 logger.Info(() => $"Updating hashrates for pool {poolId}");
 
-                var before = start;
                 var pool = pools[poolId];
-                var accumulated = 0d;
 
-                while (true)
+                // fetch stats
+                var result = readFaultPolicy.Execute(() =>
+                    cf.Run(con => shareRepo.GetHashAccumulationBetweenCreated(con, poolId, target, start)));
+
+                if (result.Length == 0)
+                    continue;
+
+                var byMiner = result.GroupBy(x => x.Miner).ToArray();
+
+                // calculate pool stats
+                var windowActual = Math.Max(1, (result.Max(x => x.LastShare) - result.Max(x => x.FirstShare)).TotalSeconds);
+                var poolHashesAccumulated = result.Sum(x => x.Sum);
+                var poolHashesCountAccumulated = result.Sum(x => x.Count);
+                var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+
+                // update
+                pool.PoolStats.ConnectedMiners = byMiner.Length;
+                pool.PoolStats.PoolHashRate = poolHashrate;
+                pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+
+                // persist
+                cf.RunTx((con, tx) =>
                 {
-                    logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolId}");
+                    var mapped = mapper.Map<Persistence.Model.PoolStats>(pool.PoolStats);
+                    mapped.PoolId = poolId;
+                    mapped.Created = start;
 
-                    var page = shareReadFaultPolicy.Execute(() =>
-                        cf.Run(con => shareRepo.ReadSharesBeforeAndAfterCreated(con, poolId, before, target, true, pageSize)));
+                    statsRepo.InsertPoolStats(con, tx, mapped);
+                });
 
-                    currentPage++;
-
-                    var sharesByMiner = page.GroupBy(x => x.Miner).ToArray();
-
-                    foreach (var minerShares in sharesByMiner)
+                // calculate & update miner, worker hashrates
+                foreach (var minerHashes in byMiner)
+                {
+                    cf.RunTx((con, tx) =>
                     {
-                        // Total hashrate
-                        var miner = minerShares.Key;
-                        var hashRate = HashrateFromShares(minerShares, interval);
+                        stats.Miner = minerHashes.Key;
 
-                        var sample = new MinerHashrateSample
+                        foreach (var item in minerHashes)
                         {
-                            PoolId = poolConfig.Id,
-                            Miner = miner,
-                            Hashrate = hashRate,
-                            Created = clock.Now
-                        };
+                            // calculate miner/worker stats
+                            windowActual = Math.Max(1, (minerHashes.Max(x => x.LastShare) - minerHashes.Max(x => x.FirstShare)).TotalSeconds);
+                            var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
 
-                        // Per worker hashrates
-                        var sharesPerWorker = minerShares
-                            .GroupBy(x => x.Share.Worker)
-                            .Where(x => !string.IsNullOrEmpty(x.Key));
+                            // update
+                            stats.Hashrate = hashrate;
+                            stats.Worker = item.Worker;
+                            stats.SharesPerSecond = (double) item.Count / HashrateCalculationWindow;
 
-                        foreach (var workerShares in sharesPerWorker)
-                        {
-                            var worker = workerShares.Key;
-                            hashRate = HashrateFromShares(workerShares, interval);
-
-                            if (sample.WorkerHashrates == null)
-                                sample.WorkerHashrates = new Dictionary<string, ulong>();
-
-                            sample.WorkerHashrates[worker] = hashRate;
+                            // persist
+                            statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
                         }
-
-                        // Persist
-                        cf.RunTx((con, tx) => { statsRepo.RecordMinerHashrateSample(con, tx, sample); });
-                    }
-
-                    // accumulate per pool, miner and worker
-                    // accumulated += pool.HashrateAccumulate(blockPage);
-
-                    if (page.Length < pageSize)
-                        break;
-
-                    before = page[page.Length - 1].Created;
+                    });
                 }
             }
         }
@@ -199,7 +206,7 @@ namespace MiningCore.Mining
                 .Or<TimeoutException>()
                 .Retry(RetryCount, OnPolicyRetry);
 
-            shareReadFaultPolicy = retry;
+            readFaultPolicy = retry;
         }
 
         private static void OnPolicyRetry(Exception ex, int retry, object context)

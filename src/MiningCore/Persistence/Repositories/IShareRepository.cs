@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data;
 using MiningCore.Persistence.Model;
+using MiningCore.Persistence.Model.Projections;
 
 namespace MiningCore.Persistence.Repositories
 {
@@ -31,10 +32,11 @@ namespace MiningCore.Persistence.Repositories
         Share[] ReadSharesBeforeAndAfterCreated(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize);
         Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
 
-        long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
-        void DeletePoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+        long CountSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
+        void DeleteSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
 
-        long CountMinerSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
+        long CountSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
         ulong? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end);
+        MinerWorkerHashes[] GetHashAccumulationBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end);
     }
 }

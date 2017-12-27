@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -34,8 +33,6 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using NLog;
 using Polly;
-using Polly.CircuitBreaker;
-using Polly.Wrap;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments.PayoutSchemes
@@ -43,9 +40,10 @@ namespace MiningCore.Payments.PayoutSchemes
     /// <summary>
     /// PPLNS payout scheme implementation
     /// </summary>
-    public class PayPerLastNShares : IPayoutScheme
+    // ReSharper disable once InconsistentNaming
+    public class PPLNS : IPayoutScheme
     {
-        public PayPerLastNShares(IConnectionFactory cf,
+        public PPLNS(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo)
@@ -107,14 +105,16 @@ namespace MiningCore.Payments.PayoutSchemes
             // delete discarded shares
             if (shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountPoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = shareRepo.CountSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
                 if (cutOffCount > 0)
                 {
                     LogDiscardedShares(poolConfig, block, shareCutOffDate.Value);
 
+#if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                    shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                    shareRepo.DeleteSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+#endif
                 }
             }
 

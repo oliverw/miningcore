@@ -18,18 +18,14 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-using MiningCore.Persistence.Model;
-
-namespace MiningCore.Api.Responses
+namespace MiningCore.Persistence.Model.Projections
 {
     public class MinerStats
     {
         public ulong PendingShares { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
-        public DateTime? LastPayment { get; set; }
-        public string LastPaymentLink { get; set; }
+        public Payment LastPayment { get; set; }
         public MinerWorkerPerformanceStats[] PerformanceStats { get; set; }
     }
 }

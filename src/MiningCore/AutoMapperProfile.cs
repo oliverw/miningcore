@@ -22,6 +22,8 @@ using AutoMapper;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Persistence.Model;
+using MiningCore.Persistence.Model.Projections;
+using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
 namespace MiningCore
 {
@@ -63,6 +65,9 @@ namespace MiningCore
             CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
             CreateMap<PoolStats, Persistence.Postgres.Entities.PoolStats>();
 
+            CreateMap<MinerWorkerPerformanceStats, Persistence.Postgres.Entities.MinerWorkerPerformanceStats>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
             //////////////////////
             // incoming mappings
 
@@ -72,6 +77,9 @@ namespace MiningCore
             CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
             CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
+            CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
+
+            CreateMap<PoolStats, Mining.PoolStats>();
         }
     }
 }

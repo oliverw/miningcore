@@ -24,16 +24,15 @@ using System.Linq;
 using AutoMapper;
 using Dapper;
 using MiningCore.Extensions;
-using MiningCore.Persistence.Common.Repositories;
 using MiningCore.Persistence.Model;
+using MiningCore.Persistence.Model.Projections;
 using MiningCore.Persistence.Repositories;
-using MiningCore.Util;
 using NLog;
+using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
 namespace MiningCore.Persistence.Postgres.Repositories
 {
-    public class StatsRepository : StatsRepositoryBase,
-        IStatsRepository
+    public class StatsRepository : IStatsRepository
     {
         public StatsRepository(IMapper mapper)
         {
@@ -51,6 +50,18 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, created) " +
                 "VALUES(@poolid, @connectedminers, @poolhashrate, @created)";
+
+            con.Execute(query, mapped, tx);
+        }
+
+        public void InsertMinerWorkerPerformanceStats(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats)
+        {
+            logger.LogInvoke();
+
+            var mapped = mapper.Map<Entities.MinerWorkerPerformanceStats>(stats);
+
+            var query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
+                "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
             con.Execute(query, mapped, tx);
         }
@@ -97,7 +108,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public MinerStats GetMinerStats(IDbConnection con, string poolId, string miner)
+        public MinerStats GetMinerStats(IDbConnection con, IDbTransaction tx, string poolId, string miner)
         {
             logger.LogInvoke(new[] { poolId, miner });
 
@@ -105,15 +116,32 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
                 "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
 
-            var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner });
+            var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner }, tx);
 
             if (result != null)
             {
                 query = "SELECT * FROM payments WHERE poolid = @poolId AND address = @miner" +
                     " ORDER BY created DESC LIMIT 1";
 
-                result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new { poolId, miner });
-                result.Hashrate = GetMinerHashrateSamples(poolId, miner);
+                result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new { poolId, miner }, tx);
+
+                // query timestamp of last stats update
+                query = "SELECT created FROM minerstats WHERE poolid = @poolId AND miner = @miner" +
+                    " ORDER BY created DESC LIMIT 1";
+
+                var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
+
+                if (lastUpdate.HasValue)
+                {
+                    // load rows rows by timestamp
+                    query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
+
+                    var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
+                        .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                        .ToArray();
+
+                    result.PerformanceStats = stats;
+                }
             }
 
             return result;

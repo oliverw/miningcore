@@ -295,7 +295,10 @@ namespace MiningCore.Stratum
         }
 
         protected abstract void OnConnect(StratumClient client);
-        protected abstract void OnDisconnect(string subscriptionId);
+
+        protected virtual void OnDisconnect(string subscriptionId)
+        {
+        }
 
         protected abstract Task OnRequestAsync(StratumClient client,
             Timestamped<JsonRpcRequest> request);

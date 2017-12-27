@@ -70,7 +70,7 @@ namespace MiningCore
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
         private static PayoutManager payoutManager;
-        private static PoolStatsUpdater poolStatsUpdater;
+        private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
 
@@ -547,8 +547,8 @@ namespace MiningCore
 		        logger.Info("Payment processing is not enabled");
 
             // start pool stats updater
-            poolStatsUpdater = container.Resolve<PoolStatsUpdater>();
-            poolStatsUpdater.Configure(clusterConfig);
+            statsRecorder = container.Resolve<StatsRecorder>();
+            statsRecorder.Configure(clusterConfig);
 
             // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
@@ -568,10 +568,10 @@ namespace MiningCore
 
                 // post-start attachments
                 apiServer.AttachPool(pool);
-                poolStatsUpdater.AttachPool(pool);
+                statsRecorder.AttachPool(pool);
             }));
 
-            poolStatsUpdater.Start();
+            statsRecorder.Start();
 
             // keep running
             await Observable.Never<Unit>().ToTask();
