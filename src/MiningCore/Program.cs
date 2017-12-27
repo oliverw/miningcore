@@ -549,6 +549,7 @@ namespace MiningCore
             // start pool stats updater
             statsRecorder = container.Resolve<StatsRecorder>();
             statsRecorder.Configure(clusterConfig);
+            statsRecorder.Start();
 
             // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
@@ -563,15 +564,13 @@ namespace MiningCore
 
                 // pre-start attachments
                 shareRecorder.AttachPool(pool);
+                statsRecorder.AttachPool(pool);
 
                 await pool.StartAsync();
 
                 // post-start attachments
                 apiServer.AttachPool(pool);
-                statsRecorder.AttachPool(pool);
             }));
-
-            statsRecorder.Start();
 
             // keep running
             await Observable.Never<Unit>().ToTask();

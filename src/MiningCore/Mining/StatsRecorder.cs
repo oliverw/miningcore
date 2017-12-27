@@ -79,6 +79,9 @@ namespace MiningCore.Mining
             {
                 logger.Info(() => "Online");
 
+                // warm-up delay
+                await Task.Delay(TimeSpan.FromSeconds(10));
+
                 var interval = TimeSpan.FromMinutes(5);
 
                 while (true)
