@@ -343,58 +343,16 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected override void SetupStats()
+        public override ulong HashrateFromShares(double shares, double interval)
         {
-            base.SetupStats();
-
-            // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
-
-            disposables.Add(Shares
-                .ObserveOn(ThreadPoolScheduler.Instance)
-                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
-                .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
-                .Select(shares =>
-                {
-                    if (!shares.Any())
-                        return 0ul;
-
-                    try
-                    {
-                        return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                        return 0ul;
-                    }
-                })
-                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
-
-            // shares/sec
-            disposables.Add(Shares
-                .Buffer(TimeSpan.FromSeconds(1))
-                .Do(shares =>
-                {
-                    poolStats.ValidSharesPerSecond = shares.Count;
-
-                    logger.Debug(() => $"[{LogCat}] Share/sec = {poolStats.ValidSharesPerSecond}");
-                })
-                .Subscribe());
-        }
-
-        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
-        {
-            var sum = shares.Sum(share => Math.Max(0.00000001, share.Share.Difficulty));
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
-            var result = Math.Ceiling(sum * multiplier / interval);
+            var result = Math.Ceiling(shares * multiplier / interval);
 
             // OW: tmp hotfix
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
                 result *= 1.3;
-
-            return (ulong) result;
+            Console.WriteLine(result);
+            return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

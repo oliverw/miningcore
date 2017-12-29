@@ -20,14 +20,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 
-namespace MiningCore.Persistence.Model
+namespace MiningCore.Persistence.Postgres.Entities
 {
-    public class MinerStats
+    public class MinerWorkerPerformanceStats
     {
-        public ulong PendingShares { get; set; }
-        public decimal PendingBalance { get; set; }
-        public decimal TotalPaid { get; set; }
-        public Payment LastPayment { get; set; }
-        public MinerHashrateSample[] Hashrate { get; set; }
+        public long Id { get; set; }
+        public string PoolId { get; set; }
+        public string Miner { get; set; }
+        public string Worker { get; set; }
+        public double Hashrate { get; set; }
+        public double SharesPerSecond { get; set; }
+        public DateTime Created { get; set; }
     }
 }

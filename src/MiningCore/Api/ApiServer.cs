@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -35,14 +36,12 @@ using Microsoft.Extensions.Primitives;
 using MiningCore.Api.Extensions;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
-using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
@@ -171,7 +170,7 @@ namespace MiningCore.Api
                 lock(pools)
                 {
                     var pool = pools.FirstOrDefault(x => x.Config.Id == poolId);
- 
+
                     if (pool != null)
                         return pool;
                 }
@@ -206,7 +205,7 @@ namespace MiningCore.Api
             {
                 Pool = pool.ToPoolInfo(mapper)
             };
-            
+
             await SendJson(context, response);
         }
 
@@ -247,7 +246,7 @@ namespace MiningCore.Api
             }
 
             var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Config.Id,
-                    new[] { BlockStatus.Confirmed, BlockStatus.Pending }, page, pageSize))
+                    new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned }, page, pageSize))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
@@ -320,12 +319,15 @@ namespace MiningCore.Api
                 return;
             }
 
-            var statsResult = cf.Run(con => statsRepo.GetMinerStats(con, pool.Config.Id, address));
-            Responses.MinerStats stats = null;
+            var statsResult = cf.RunTx((con, tx) =>
+                statsRepo.GetMinerStats(con, tx, pool.Config.Id, address),
+                true, IsolationLevel.Serializable);
+
+            MinerStats stats = null;
 
             if (statsResult != null)
             {
-                stats = mapper.Map<Responses.MinerStats>(statsResult);
+                stats = mapper.Map<MinerStats>(statsResult);
 
                 // optional fields
                 if (statsResult.LastPayment != null)
@@ -393,6 +395,6 @@ namespace MiningCore.Api
         }
 
         #endregion // API-Surface
-        
+
     }
 }

@@ -9,7 +9,7 @@ namespace MiningCore.Util
         public static readonly string[] HashRateUnits = { " KH/s", " MH/s", " GH/s", " TH/s", " PH/s" };
         public static readonly string[] DifficultyUnits = { " K", " M", " G", " T", " P" };
         public static readonly string[] CapacityUnits = { " KB", " MB", " GB", " TB", " PB" };
-        public static readonly string[] QuantityUnits = { " K", " M", " B", " T", " Q" };
+        public static readonly string[] QuantityUnits = { "K", "M", "B", "T", "Q" };
 
         public static string FormatHashRate(double hashrate)
         {

@@ -309,51 +309,10 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        protected override void SetupStats()
+        public override ulong HashrateFromShares(double shares, double interval)
         {
-            base.SetupStats();
-
-            // Pool Hashrate
-            var poolHashRateSampleIntervalSeconds = 60 * 10;
-
-            disposables.Add(Shares
-                .ObserveOn(ThreadPoolScheduler.Instance)
-                .Buffer(TimeSpan.FromSeconds(poolHashRateSampleIntervalSeconds))
-                .Do(shares => UpdateMinerHashrates(shares, poolHashRateSampleIntervalSeconds))
-                .Select(shares =>
-                {
-                    if (!shares.Any())
-                        return 0ul;
-
-                    try
-                    {
-                        return HashrateFromShares(shares, poolHashRateSampleIntervalSeconds);
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                        return 0ul;
-                    }
-                })
-                .Subscribe(hashRate => poolStats.PoolHashRate = hashRate));
-
-            // shares/sec
-            disposables.Add(Shares
-                .Buffer(TimeSpan.FromSeconds(1))
-                .Do(shares =>
-                {
-                    poolStats.ValidSharesPerSecond = shares.Count;
-
-                    logger.Debug(() => $"[{LogCat}] Share/sec = {poolStats.ValidSharesPerSecond}");
-                })
-                .Subscribe());
-        }
-
-        protected override ulong HashrateFromShares(IEnumerable<ClientShare> shares, int interval)
-        {
-            var result = Math.Ceiling(shares.Sum(share => share.Share.Difficulty) / interval);
-            return (ulong) result;
+            var result = Math.Ceiling(shares / interval);
+            return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

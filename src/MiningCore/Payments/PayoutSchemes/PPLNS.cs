@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -34,8 +33,6 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using NLog;
 using Polly;
-using Polly.CircuitBreaker;
-using Polly.Wrap;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Payments.PayoutSchemes
@@ -43,9 +40,10 @@ namespace MiningCore.Payments.PayoutSchemes
     /// <summary>
     /// PPLNS payout scheme implementation
     /// </summary>
-    public class PayPerLastNShares : IPayoutScheme
+    // ReSharper disable once InconsistentNaming
+    public class PPLNS : IPayoutScheme
     {
-        public PayPerLastNShares(IConnectionFactory cf,
+        public PPLNS(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo)
@@ -104,20 +102,20 @@ namespace MiningCore.Payments.PayoutSchemes
                 }
             }
 
-            // delete obsolete shares
+            // delete discarded shares
             if (shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountPoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = shareRepo.CountSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
                 if (cutOffCount > 0)
                 {
-                    LogObsoleteShares(poolConfig, block, shareCutOffDate.Value);
+                    LogDiscardedShares(poolConfig, block, shareCutOffDate.Value);
 
-                    logger.Info(() => $"Deleting {cutOffCount} obsolete shares before {shareCutOffDate.Value}");
-                    shareRepo.DeletePoolSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+#if !DEBUG
+                    logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
+                    shareRepo.DeleteSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+#endif
                 }
-
-                //logger.Info(() => $"Shares before {shareCutOffDate.Value} can be deleted");
             }
 
             // diagnostics
@@ -130,7 +128,7 @@ namespace MiningCore.Payments.PayoutSchemes
             return Task.FromResult(true);
         }
 
-        private void LogObsoleteShares(PoolConfig poolConfig, Block block, DateTime value)
+        private void LogDiscardedShares(PoolConfig poolConfig, Block block, DateTime value)
         {
             var before = value;
             var pageSize = 50000;
@@ -139,19 +137,16 @@ namespace MiningCore.Payments.PayoutSchemes
 
             while (true)
             {
-                logger.Info(() => $"Fetching page {currentPage} of obsolete shares for pool {poolConfig.Id}, block {block.BlockHeight}");
+                logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
-                var blockPage = shareReadFaultPolicy.Execute(() =>
+                var page = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
-
-                if (blockPage.Length == 0)
-                    break;
 
                 currentPage++;
 
-                for (var i = 0;i < blockPage.Length; i++)
+                for (var i = 0;i < page.Length; i++)
                 {
-                    var share = blockPage[i];
+                    var share = page[i];
 
                     // build address
                     var address = share.Miner;
@@ -165,10 +160,10 @@ namespace MiningCore.Payments.PayoutSchemes
                         shares[address] += share.Difficulty;
                 }
 
-                if (blockPage.Length < pageSize)
+                if (page.Length < pageSize)
                     break;
 
-                before = blockPage[blockPage.Length - 1].Created;
+                before = page[page.Length - 1].Created;
             }
 
             if (shares.Keys.Count > 0)
@@ -176,10 +171,10 @@ namespace MiningCore.Payments.PayoutSchemes
                 // sort addresses by shares
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
 
-                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) obsolete shares total for block {block.BlockHeight}");
+                logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) total discarded shares, block {block.BlockHeight}");
 
                 foreach (var address in addressesByShares)
-                    logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
+                    logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) discarded shares, block {block.BlockHeight}");
             }
         }
 
@@ -202,18 +197,15 @@ namespace MiningCore.Payments.PayoutSchemes
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
-                var blockPage = shareReadFaultPolicy.Execute(() =>
+                var page = shareReadFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
-
-                if (blockPage.Length == 0)
-                    break;
 
                 inclusive = false;
                 currentPage++;
 
-                for (var i = 0; !done && i < blockPage.Length; i++)
+                for (var i = 0; !done && i < page.Length; i++)
                 {
-                    var share = blockPage[i];
+                    var share = page[i];
 
                     // build address
                     var address = share.Miner;
@@ -255,10 +247,10 @@ namespace MiningCore.Payments.PayoutSchemes
                     }
                 }
 
-                if (blockPage.Length < pageSize)
+                if (page.Length < pageSize)
                     break;
 
-                before = blockPage[blockPage.Length - 1].Created;
+                before = page[page.Length - 1].Created;
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");

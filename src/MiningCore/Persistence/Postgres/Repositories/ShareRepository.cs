@@ -25,6 +25,7 @@ using AutoMapper;
 using Dapper;
 using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
+using MiningCore.Persistence.Model.Projections;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Util;
 using NLog;
@@ -67,6 +68,19 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
+        public Share[] ReadSharesBeforeAndAfterCreated(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
+                        $"AND created {(inclusive ? " >= " : " > ")} @after" +
+                        "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.Share>(query, new { poolId, before, after, pageSize })
+                .Select(mapper.Map<Share>)
+                .ToArray();
+        }
+
         public Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
@@ -79,7 +93,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public long CountPoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public long CountSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -88,7 +102,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return con.QuerySingle<long>(query, new { poolId, before }, tx);
         }
 
-        public void DeletePoolSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public void DeleteSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -97,7 +111,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             con.Execute(query, new { poolId, before }, tx);
         }
 
-        public long CountMinerSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
+        public long CountSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -120,6 +134,18 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
             return con.QuerySingle<ulong?>(query, new { poolId, start, end });
+        }
+
+        public MinerWorkerHashes[] GetHashAccumulationBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = "SELECT SUM(difficulty), COUNT(difficulty), min(created) as firstshare, max(created) as lastshare, miner, worker FROM shares " +
+                        "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
+                        "GROUP BY miner, worker";
+
+            return con.Query<MinerWorkerHashes>(query, new { poolId, start, end })
+                .ToArray();
         }
     }
 }
