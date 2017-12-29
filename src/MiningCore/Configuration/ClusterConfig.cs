@@ -48,7 +48,8 @@ namespace MiningCore.Configuration
         GLT, // Globaltoken
         ELLA, // Ellaism
         AEON, // AEON
-        STAK // Straks
+        STAK, // Straks
+        ETN   // Electroneum
     }
 
     public class CoinConfig

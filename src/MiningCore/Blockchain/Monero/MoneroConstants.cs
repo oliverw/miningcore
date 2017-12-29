@@ -41,6 +41,7 @@ namespace MiningCore.Blockchain.Monero
         public static readonly Dictionary<CoinType, int> AddressLength = new Dictionary<CoinType, int>
         {
             { CoinType.XMR, 95 },
+            { CoinType.ETN, 98 },
             { CoinType.AEON, 97 },
         };
 

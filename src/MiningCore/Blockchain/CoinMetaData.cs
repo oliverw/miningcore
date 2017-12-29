@@ -21,6 +21,7 @@ namespace MiningCore.Blockchain
             }},
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/xmr/block/{0}" }}},
+            { CoinType.ETN, new Dictionary<string, string> { { string.Empty, "https://blockexplorer.electroneum.com/block/{0}" } }},
             { CoinType.LTC, new Dictionary<string, string> { { string.Empty, "http://explorer.litecoin.net/block/{0}" }}},
             { CoinType.BCH, new Dictionary<string, string> { { string.Empty, "https://www.blocktrail.com/BCC/block/{0}" }}},
             { CoinType.DASH, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/dash/block.dws?{0}.htm" }}},
@@ -43,6 +44,7 @@ namespace MiningCore.Blockchain
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
         {
             { CoinType.XMR, "https://chainradar.com/xmr/transaction/{0}" },
+            { CoinType.ETN, "https://blockexplorer.electroneum.com/tx/{0}" },
             { CoinType.ETH, "https://etherscan.io/tx/{0}" },
             { CoinType.ETC, "https://gastracker.io/tx/{0}" },
             { CoinType.LTC, "http://explorer.litecoin.net/tx/{0}" },

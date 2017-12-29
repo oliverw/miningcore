@@ -19,18 +19,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using Autofac.Features.Metadata;
 using AutoMapper;
 using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
@@ -46,7 +42,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Monero
 {
-    [CoinMetadata(CoinType.XMR, CoinType.AEON)]
+    [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN)]
     public class MoneroPool : PoolBase<MoneroShare>
     {
         public MoneroPool(IComponentContext ctx,
