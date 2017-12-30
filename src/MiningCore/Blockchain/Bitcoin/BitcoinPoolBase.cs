@@ -347,7 +347,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = Math.Ceiling(shares * multiplier / interval);
 
             // OW: tmp hotfix
-            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
                 result *= 2;
 
             return (ulong)result;
