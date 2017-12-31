@@ -96,12 +96,12 @@ namespace MiningCore.Persistence.Postgres.Repositories
             logger.LogInvoke(new []{ poolId });
 
             var query = "SELECT date_trunc('hour', created) AS created, " +
-                "   AVG(poolhashrate) AS poolhashrate, " +
-                "   CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
-                "FROM poolstats " +
-                "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                "GROUP BY date_trunc('hour', created) " +
-                "ORDER BY created;";
+                        "AVG(poolhashrate) AS poolhashrate, " +
+                        "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
+                        "FROM poolstats " +
+                        "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
+                        "GROUP BY date_trunc('hour', created) " +
+                        "ORDER BY created;";
 
             return con.Query<Entities.PoolStats>(query, new { poolId, start, end })
                 .Select(mapper.Map<PoolStats>)
@@ -140,11 +140,49 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         .Select(mapper.Map<MinerWorkerPerformanceStats>)
                         .ToArray();
 
-                    result.PerformanceStats = stats;
+                    if (stats.Any())
+                    {
+                        // replace null worker with empty string
+                        foreach(var stat in stats)
+                        {
+                            if (stat.Worker == null)
+                            {
+                                stat.Worker = string.Empty;
+                                break;
+                            }
+                        }
+
+                        // transform to dictionary
+                        result.Performance = new WorkerPerformanceStatsContainer
+                        {
+                            Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                            {
+                                Hashrate = x.Hashrate,
+                                SharesPerSecond = x.SharesPerSecond
+                            }),
+
+                            Created = stats.First().Created
+                        };
+                    }
                 }
             }
 
             return result;
+        }
+
+        public MinerWorkerPerformanceStats[] GetMinerStatsBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = "SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate, " +
+                        "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
+                        "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
+                        "GROUP BY date_trunc('hour', created), worker " +
+                        "ORDER BY created, worker;";
+
+            return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+                .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                .ToArray();
         }
     }
 }

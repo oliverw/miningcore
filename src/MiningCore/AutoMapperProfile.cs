@@ -58,6 +58,9 @@ namespace MiningCore
                 .ForMember(dest => dest.LastPayment, opt => opt.Ignore())
                 .ForMember(dest => dest.LastPaymentLink, opt => opt.Ignore());
 
+            CreateMap<WorkerPerformanceStats, Api.Responses.WorkerPerformanceStats>();
+            CreateMap<WorkerPerformanceStatsContainer, Api.Responses.WorkerPerformanceStatsContainer>();
+
             // PostgreSQL
             CreateMap<Share, Persistence.Postgres.Entities.Share>();
             CreateMap<Block, Persistence.Postgres.Entities.Block>();

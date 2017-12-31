@@ -339,6 +339,7 @@ namespace MiningCore.Blockchain.Monero
                     if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
                     {
                         block.Status = BlockStatus.Orphaned;
+                        block.Reward = 0;
                         continue;
                     }
 
