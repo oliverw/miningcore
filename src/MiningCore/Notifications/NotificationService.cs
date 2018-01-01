@@ -18,6 +18,7 @@ using MimeKit;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.JsonRpc;
+using MiningCore.Notifications.SignalR;
 using MiningCore.Notifications.Slack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -28,11 +29,13 @@ namespace MiningCore.Notifications
     public class NotificationService
     {
         public NotificationService(
+            NotificationsHub notificationsHub,
             ClusterConfig clusterConfig,
             JsonSerializerSettings serializerSettings)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
+            this.notificationsHub = notificationsHub;
             this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
 
@@ -49,6 +52,7 @@ namespace MiningCore.Notifications
         }
 
         private readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly NotificationsHub notificationsHub;
         private readonly ClusterConfig clusterConfig;
         private readonly JsonSerializerSettings serializerSettings;
         private readonly Dictionary<string, PoolConfig> poolConfigs;
@@ -144,7 +148,10 @@ namespace MiningCore.Notifications
                     case NotificationCategory.Admin:
                         if (clusterConfig.Notifications?.Admin?.Enabled == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
+                        if (clusterConfig.Notifications?.Api?.Enabled == true && clusterConfig.Notifications?.Api?.NotifyAdmin == true)
+                            await SendApiNotificationAsync(notification.PoolId, notification.Subject, notification.Msg);
                         break;
+
 
                     case NotificationCategory.Block:
                         // notify admin
@@ -160,6 +167,8 @@ namespace MiningCore.Notifications
                                 poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.BlockFoundUsername,
                                 poolConfig.SlackNotifications.BlockFoundEmoji);
                         }
+                        if (clusterConfig.Notifications?.Api?.Enabled == true && clusterConfig.Notifications?.Api?.NotifyBlockFound == true)
+                            await SendApiNotificationAsync(notification.PoolId, notification.Subject, notification.Msg);
 
                         break;
 
@@ -177,6 +186,8 @@ namespace MiningCore.Notifications
                                 poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.PaymentSuccessUsername,
                                 poolConfig.SlackNotifications.PaymentSuccessEmoji);
                         }
+                        if (clusterConfig.Notifications?.Api?.Enabled == true && clusterConfig.Notifications?.Api?.NotifyPaymentSuccess == true)
+                            await SendApiNotificationAsync(notification.PoolId, notification.Subject, notification.Msg);
 
                         break;
 
@@ -185,6 +196,9 @@ namespace MiningCore.Notifications
                         if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
+
+                        if (clusterConfig.Notifications?.Api?.Enabled == true && clusterConfig.Notifications?.Api?.NotifyPaymentFailed == true)
+                            await SendApiNotificationAsync(notification.PoolId, notification.Subject, notification.Msg);
                         break;
                 }
             }
@@ -216,6 +230,10 @@ namespace MiningCore.Notifications
             }
 
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
+        }
+        public async Task SendApiNotificationAsync(string poolId, string subject, string body)
+        {
+           await notificationsHub.Clients.All.InvokeAsync("notify", new[] {poolId, subject, body});
         }
 
         private async Task SendSlackNotificationAsync(string webHookUrl, string subject, string msg, string channel, string username, string emoji)
