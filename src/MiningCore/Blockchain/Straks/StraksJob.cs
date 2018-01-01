@@ -46,6 +46,12 @@ namespace MiningCore.Blockchain.Straks
 
             return tx;
         }
+        private bool ShouldHandleMasternodePayment()
+        {
+            return BlockTemplate.MasternodePaymentsStarted &&
+            BlockTemplate.MasternodePaymentsEnforced &&
+            !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
+        }
 
         private Money CreateStraksOutputs(Transaction tx, Money reward)
         {
@@ -59,21 +65,10 @@ namespace MiningCore.Blockchain.Straks
                 reward -= treasuryReward;
             }
 
-            if (!string.IsNullOrEmpty(BlockTemplate.Masternode?.Payee))
-            {
-                var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Masternode.Payee);
-                var payeeReward = BlockTemplate.Masternode.Amount;
-
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
-
-                tx.AddOutput(payeeReward, payeeAddress);
-            }
-
-            if (!string.IsNullOrEmpty(BlockTemplate.Payee))
+            if (ShouldHandleMasternodePayment())
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Payee);
-                var payeeReward = BlockTemplate.PayeeAmount ?? reward / 5;
+                var payeeReward = BlockTemplate.PayeeAmount.Value;
 
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
