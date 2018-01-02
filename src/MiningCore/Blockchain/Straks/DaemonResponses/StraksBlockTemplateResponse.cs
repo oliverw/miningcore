@@ -22,13 +22,6 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Straks.DaemonResponses
 {
-    public class StraksMasternode
-    {
-        public string Payee { get; set; }
-        public string Script { get; set; }
-        public long Amount { get; set; }
-    }
-
     public class StraksCoinbaseTransaction
     {
         public string Data { get; set; }
@@ -55,8 +48,6 @@ namespace MiningCore.Blockchain.Straks.DaemonResponses
 
         [JsonProperty("payee_amount")]
         public long? PayeeAmount { get; set; }
-
-        public StraksMasternode Masternode { get; set; }
 
         [JsonProperty("masternode_payments")]
         public bool MasternodePaymentsStarted { get; set; }
