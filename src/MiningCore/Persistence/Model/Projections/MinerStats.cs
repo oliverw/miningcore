@@ -35,6 +35,8 @@ namespace MiningCore.Persistence.Model.Projections
         public Dictionary<string, WorkerPerformanceStats> Workers { get; set; }
     }
 
+namespace MiningCore.Persistence.Model.Projections
+{
     public class MinerStats
     {
         public ulong PendingShares { get; set; }
@@ -42,5 +44,6 @@ namespace MiningCore.Persistence.Model.Projections
         public decimal TotalPaid { get; set; }
         public Payment LastPayment { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }
+        public MinerWorkerPerformanceStats[] PerformanceStats { get; set; }
     }
 }

@@ -350,7 +350,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
                 result *= 2;
 
-            return (ulong)result;
+          return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
