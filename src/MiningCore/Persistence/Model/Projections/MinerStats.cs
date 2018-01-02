@@ -35,8 +35,6 @@ namespace MiningCore.Persistence.Model.Projections
         public Dictionary<string, WorkerPerformanceStats> Workers { get; set; }
     }
 
-namespace MiningCore.Persistence.Model.Projections
-{
     public class MinerStats
     {
         public ulong PendingShares { get; set; }
