@@ -430,7 +430,7 @@ namespace MiningCore.Blockchain.Monero
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
-                .Where(x => x.Amount >= minimumPaymentToPaymentId)
+                .Where(x => x.Address.Contains(PayoutConstants.PayoutInfoSeperator) && x.Amount >= minimumPaymentToPaymentId)
                 .ToArray();
 
             foreach(var balance in paymentIdBalances)
