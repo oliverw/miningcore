@@ -156,27 +156,27 @@ namespace MiningCore.Blockchain.Monero
             // send command
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
-            if (walletSupportsTransferSplit)
+            // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+            if (transferResponse.Error?.Code == -4)
             {
-                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-                if (transferResponse.Error?.Code == -4)
+                if (walletSupportsTransferSplit)
                 {
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
-                    HandleTransferResponse(transferSplitResponse, balances);
+
+                    // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+                    if (transferResponse.Error?.Code != -4)
+                    {
+                        HandleTransferResponse(transferSplitResponse, balances);
+                        return;
+                    }
                 }
 
-                else
-                    HandleTransferResponse(transferResponse, balances);
-            }
-
-            else
-            {
                 // retry paged
                 var validBalances = balances.Where(x => x.Amount > 0).ToArray();
                 var pageSize = 10;
-                var pageCount = (int) Math.Ceiling((double) validBalances.Length / pageSize);
+                var pageCount = (int)Math.Ceiling((double)validBalances.Length / pageSize);
 
                 for (var i = 0; i < pageCount; i++)
                 {
@@ -191,7 +191,7 @@ namespace MiningCore.Blockchain.Monero
                         .Select(x => new TransferDestination
                         {
                             Address = x.Address,
-                            Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
+                            Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.Piconero)
                         }).ToArray();
 
                     transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
@@ -201,6 +201,9 @@ namespace MiningCore.Blockchain.Monero
                         break;
                 }
             }
+
+            else
+                HandleTransferResponse(transferResponse, balances);
         }
 
         private async Task PayoutToPaymentId(Balance balance)
