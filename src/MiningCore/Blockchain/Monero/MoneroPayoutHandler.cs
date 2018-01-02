@@ -406,7 +406,7 @@ namespace MiningCore.Blockchain.Monero
         public async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
-throw new Exception("");
+
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
