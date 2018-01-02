@@ -355,7 +355,12 @@ namespace MiningCore.Blockchain.Monero
                     {
                         block.Status = BlockStatus.Confirmed;
                         block.ConfirmationProgress = 1;
-                        block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
+
+                        // workaround for https://github.com/electroneum/electroneum/issues/77
+                        if(poolConfig.Coin.Type == CoinType.ETN)
+                            block.Reward = blockHeader.Reward * 1E10m / MoneroConstants.Piconero;
+                        else
+                            block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                     }
@@ -401,7 +406,7 @@ namespace MiningCore.Blockchain.Monero
         public async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
-
+throw new Exception("");
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
