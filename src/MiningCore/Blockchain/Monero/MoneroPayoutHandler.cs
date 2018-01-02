@@ -82,7 +82,7 @@ namespace MiningCore.Blockchain.Monero
             if (response.Error == null)
             {
                 var txHash = response.Response.TxHash;
-                var txFee = (decimal) response.Response.Fee / MoneroConstants.Piconero;
+                var txFee = (decimal) response.Response.Fee / MoneroConstants.SmallestUnit[poolConfig.Coin.Type];
 
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
@@ -103,7 +103,7 @@ namespace MiningCore.Blockchain.Monero
             if (response.Error == null)
             {
                 var txHashes = response.Response.TxHashList;
-                var txFees = response.Response.FeeList.Select(x => (decimal) x / MoneroConstants.Piconero).ToArray();
+                var txFees = response.Response.FeeList.Select(x => (decimal) x / MoneroConstants.SmallestUnit[poolConfig.Coin.Type]).ToArray();
 
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.Monero
                     .Select(x => new TransferDestination
                     {
                         Address = x.Address,
-                        Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.Piconero)
+                        Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
                     }).ToArray(),
 
                 GetTxKey = true
@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.Monero
                         .Select(x => new TransferDestination
                         {
                             Address = x.Address,
-                            Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.Piconero)
+                            Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
                         }).ToArray();
 
                     logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
@@ -234,7 +234,7 @@ namespace MiningCore.Blockchain.Monero
                     new TransferDestination
                     {
                         Address = address,
-                        Amount = (ulong) Math.Floor(balance.Amount * MoneroConstants.Piconero)
+                        Amount = (ulong) Math.Floor(balance.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
                     }
                 },
                 PaymentId = paymentId,
@@ -355,12 +355,7 @@ namespace MiningCore.Blockchain.Monero
                     {
                         block.Status = BlockStatus.Confirmed;
                         block.ConfirmationProgress = 1;
-
-                        // workaround for https://github.com/electroneum/electroneum/issues/77
-                        if(poolConfig.Coin.Type == CoinType.ETN)
-                            block.Reward = blockHeader.Reward * 1E10m / MoneroConstants.Piconero;
-                        else
-                            block.Reward = (decimal) blockHeader.Reward / MoneroConstants.Piconero;
+                        block.Reward = (decimal) blockHeader.Reward / MoneroConstants.SmallestUnit[poolConfig.Coin.Type];
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                     }
