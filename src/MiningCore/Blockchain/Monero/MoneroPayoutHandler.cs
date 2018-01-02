@@ -174,6 +174,8 @@ namespace MiningCore.Blockchain.Monero
                 }
 
                 // retry paged
+                logger.Info(() => $"[{LogCategory}] Retrying paged");
+
                 var validBalances = balances.Where(x => x.Amount > 0).ToArray();
                 var pageSize = 10;
                 var pageCount = (int)Math.Ceiling((double)validBalances.Length / pageSize);
@@ -193,6 +195,8 @@ namespace MiningCore.Blockchain.Monero
                             Address = x.Address,
                             Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.Piconero)
                         }).ToArray();
+
+                    logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
 
                     transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
                     HandleTransferResponse(transferResponse, page);
