@@ -100,6 +100,7 @@ namespace MiningCore.Api
         private readonly List<IMiningPool> pools = new List<IMiningPool>();
         private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Encoding encoding = new UTF8Encoding(false);
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -120,7 +121,7 @@ namespace MiningCore.Api
 
             using (var stream = context.Response.Body)
             {
-                using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                using (var writer = new StreamWriter(stream, encoding))
                 {
                     serializer.Serialize(writer, response);
 
