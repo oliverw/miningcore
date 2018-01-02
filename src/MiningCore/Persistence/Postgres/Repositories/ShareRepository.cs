@@ -140,7 +140,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT SUM(difficulty), COUNT(difficulty), min(created) as firstshare, max(created) as lastshare, miner, worker FROM shares " +
+            var query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares " +
                         "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                         "GROUP BY miner, worker";
 

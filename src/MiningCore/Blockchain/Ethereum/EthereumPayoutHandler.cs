@@ -225,6 +225,7 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         // we've lost this one
                         block.Status = BlockStatus.Orphaned;
+                        block.Reward = 0;
                     }
                 }
             }

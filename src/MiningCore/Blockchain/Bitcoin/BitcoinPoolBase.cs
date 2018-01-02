@@ -19,10 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
@@ -349,10 +347,10 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = Math.Ceiling(shares * multiplier / interval);
 
             // OW: tmp hotfix
-            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC)
-                result *= 1.3;
-            Console.WriteLine(result);
-            return (ulong)result;
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
+                result *= 2;
+
+          return (ulong)result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

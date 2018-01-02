@@ -51,6 +51,7 @@ Namecoin | Yes | No | |
 Viacoin | Yes | No | |
 Peercoin | Yes | No | |
 Straks | Yes | Yes | |
+Electroneum | Yes | No | |
 #### Ethereum
 
 Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
