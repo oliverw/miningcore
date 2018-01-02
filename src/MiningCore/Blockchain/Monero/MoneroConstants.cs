@@ -45,6 +45,13 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.AEON, 97 },
         };
 
+        public static readonly Dictionary<CoinType, decimal> SmallestUnit = new Dictionary<CoinType, decimal>
+        {
+            { CoinType.XMR, Piconero },
+            { CoinType.ETN, 100m }, // BUG: https://github.com/electroneum/electroneum/issues/77
+            { CoinType.AEON, Piconero },
+        };
+
         public const string DaemonRpcLocation = "json_rpc";
         public const string DaemonRpcDigestAuthRealm = "monero_rpc";
         public const int MoneroRpcMethodNotFound = -32601;
