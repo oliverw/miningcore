@@ -81,7 +81,7 @@ namespace MiningCore.Mining
                 .Synchronize();
         }
 
-        protected PoolStats poolStats;
+        protected PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
         protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
@@ -312,8 +312,6 @@ namespace MiningCore.Mining
 
                 if (stats != null)
                     poolStats = mapper.Map<PoolStats>(stats);
-                else
-                    poolStats = new PoolStats();
             }
 
             catch (Exception ex)
