@@ -214,11 +214,11 @@ namespace MiningCore.Blockchain.ZCash
             });
         }
 
-        public override ulong HashrateFromShares(double shares, double interval)
+        public override double HashrateFromShares(double shares, double interval)
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
-            var result = Math.Ceiling(((shares * multiplier / interval) / 1000000) * 2);
-            return (ulong)result;
+            var result = shares * multiplier / interval / 1000000 * 2;
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

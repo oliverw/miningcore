@@ -341,16 +341,16 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        public override ulong HashrateFromShares(double shares, double interval)
+        public override double HashrateFromShares(double shares, double interval)
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
-            var result = Math.Ceiling(shares * multiplier / interval);
+            var result = shares * multiplier / interval;
 
             // OW: tmp hotfix
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
                 result *= 2;
 
-          return (ulong)result;
+          return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

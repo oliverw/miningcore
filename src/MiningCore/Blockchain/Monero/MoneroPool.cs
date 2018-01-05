@@ -343,10 +343,10 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public override ulong HashrateFromShares(double shares, double interval)
+        public override double HashrateFromShares(double shares, double interval)
         {
-            var result = Math.Ceiling(shares / interval);
-            return (ulong)result;
+            var result = shares / interval;
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
