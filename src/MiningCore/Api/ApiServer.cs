@@ -80,6 +80,7 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), HandleGetPoolAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), HandleGetPoolMinersAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
@@ -230,6 +231,33 @@ namespace MiningCore.Api
             };
 
             await SendJson(context, response);
+        }
+
+        private async Task HandleGetPoolMinersAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            // set range
+            var end = clock.Now;
+            var start = end.AddDays(-1);
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var miners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
+                    con, pool.Config.Id, start, page, pageSize))
+                .Select(mapper.Map<MinerPerformanceStats>)
+                .ToArray();
+
+            await SendJson(context, miners);
         }
 
         private async Task HandleGetBlocksPagedAsync(HttpContext context, Match m)

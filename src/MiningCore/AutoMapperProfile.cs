@@ -81,6 +81,7 @@ namespace MiningCore
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
             CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
+            CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
             CreateMap<PoolStats, Mining.PoolStats>();
         }

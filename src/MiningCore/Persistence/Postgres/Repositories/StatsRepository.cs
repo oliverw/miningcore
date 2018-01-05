@@ -184,5 +184,18 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .Select(mapper.Map<MinerWorkerPerformanceStats>)
                 .ToArray();
         }
+
+        public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
+        {
+            logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
+
+            var query = "SELECT miner, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
+                        "FROM minerstats WHERE poolid = @poolid AND created >= @from GROUP BY miner " +
+                        "ORDER BY hashrate DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize })
+                .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                .ToArray();
+        }
     }
 }
