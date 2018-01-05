@@ -69,12 +69,12 @@ namespace MiningCore.Stratum
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             // every port gets serviced by a dedicated loop thread
-            var thread = new Thread(_ =>
+            foreach(var endpoint in stratumPorts)
             {
-                var loop = new Loop();
-
-                foreach (var endpoint in stratumPorts)
+                var thread = new Thread(_ =>
                 {
+                    var loop = new Loop();
+
                     var listener = loop
                         .CreateTcp()
                         .NoDelay(true)
@@ -87,26 +87,26 @@ namespace MiningCore.Stratum
                                 logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
                         });
 
-                    lock (ports)
+                    lock(ports)
                     {
                         ports[endpoint.Port] = listener;
                     }
 
                     logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
-                }
 
-                try
-                {
-                    loop.RunDefault();
-                }
+                    try
+                    {
+                        loop.RunDefault();
+                    }
 
-                catch (Exception ex)
-                {
-                    logger.Error(ex, () => Thread.CurrentThread.Name);
-                }
-            }) { Name = $"UvLoopThread {id}" };
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex, () => Thread.CurrentThread.Name);
+                    }
+                }) { Name = $"UvLoopThread {id}:{endpoint.Port}" };
 
-            thread.Start();
+                thread.Start();
+            }
         }
 
         public void StopListeners()
