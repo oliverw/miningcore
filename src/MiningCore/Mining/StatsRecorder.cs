@@ -155,7 +155,7 @@ namespace MiningCore.Mining
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
                 // calculate pool stats
-                var windowActual = Math.Max(1, (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds);
+                var windowActual = Math.Max(0.000000001, (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds);
                 var poolHashesAccumulated = result.Sum(x => x.Sum);
                 var poolHashesCountAccumulated = result.Sum(x => x.Count);
                 var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
@@ -185,7 +185,7 @@ namespace MiningCore.Mining
                         foreach (var item in minerHashes)
                         {
                             // calculate miner/worker stats
-                            windowActual = Math.Max(1, (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds);
+                            windowActual = Math.Max(0.000000001, (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds);
                             var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
 
                             // update
