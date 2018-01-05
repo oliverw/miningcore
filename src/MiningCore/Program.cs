@@ -23,9 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reactive;
-using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,11 +31,18 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using FluentValidation;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.CommandLineUtils;
-using MiningCore.Api;
+using Microsoft.Extensions.DependencyInjection;
 using MiningCore.Api.Responses;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
@@ -60,56 +65,33 @@ using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace MiningCore
 {
-    public class Program
+    public class Program : IStartup
     {
-        private static readonly CancellationTokenSource cts = new CancellationTokenSource();
+        public static Program Instance = null;
+
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static ILogger logger;
-        private static IContainer container;
-        private static CommandOption dumpConfigOption;
-        private static CommandOption shareRecoveryOption;
-        private static ShareRecorder shareRecorder;
-        private static PayoutManager payoutManager;
-        private static StatsRecorder statsRecorder;
-        private static ClusterConfig clusterConfig;
-        private static ApiServer apiServer;
-
-        public static AdminGcStats gcStats = new AdminGcStats();
-
+        private IContainer container;
+        private CommandOption dumpConfigOption;
+        private CommandOption shareRecoveryOption;
+        private ShareRecorder shareRecorder;
+        private PayoutManager payoutManager;
+        private StatsRecorder statsRecorder;
+        private ClusterConfig clusterConfig;
+        private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private IWebHost webHost;
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+
+        public AdminGcStats gcStats = new AdminGcStats();
+        public Dictionary<string, IMiningPool> Pools => pools;
 
         public static void Main(string[] args)
         {
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
-#if DEBUG
-                PreloadNativeLibs();
-#endif
-                //TouchNativeLibs();
-                if (!HandleCommandLineOptions(args, out var configFile))
-                    return;
-
-                Logo();
-                clusterConfig = ReadConfig(configFile);
-
-                if (dumpConfigOption.HasValue())
-                {
-                    DumpParsedConfig(clusterConfig);
-                    return;
-                }
-
-                ValidateConfig();
-                Bootstrap();
-
-                if (!shareRecoveryOption.HasValue())
-                {
-                    Console.CancelKeyPress += OnCancelKeyPress;
-                    Start().Wait(cts.Token);
-                }
-
-                else
-                    RecoverShares(shareRecoveryOption.Value());
+                Instance = new Program();
+                Instance.InitializeAsync(args).Wait();
             }
 
             catch(PoolStartupAbortException ex)
@@ -151,7 +133,66 @@ namespace MiningCore
             }
         }
 
-        private static void ValidateConfig()
+        private async Task InitializeAsync(string[] args)
+        {
+            AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+#if DEBUG
+            PreloadNativeLibs();
+#endif
+            //TouchNativeLibs();
+            if (!HandleCommandLineOptions(args, out var configFile))
+                return;
+
+            Logo();
+            clusterConfig = ReadConfig(configFile);
+
+            if (dumpConfigOption.HasValue())
+            {
+                DumpParsedConfig(clusterConfig);
+                return;
+            }
+
+            ValidateConfig();
+
+            var builder = WebHost.CreateDefaultBuilder();
+            builder.ConfigureAppConfiguration((ctx, cb) =>
+            {
+            }).ConfigureServices(services =>
+            {
+                services.AddSingleton<IStartup>(this);
+            })
+            .UseSetting(WebHostDefaults.ApplicationKey, typeof(Program).GetTypeInfo().Assembly.FullName);
+
+            // API
+            if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
+            {
+                var address = clusterConfig.Api?.ListenAddress != null
+                    ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                    : IPAddress.Parse("127.0.0.1");
+
+                var port = clusterConfig.Api?.Port ?? 4000;
+
+                builder = builder.UseKestrel(options =>
+                {
+                    options.Listen(address, port);
+                });
+            }
+
+            webHost = builder.Build();
+
+            if (!shareRecoveryOption.HasValue())
+            {
+                Console.CancelKeyPress += OnCancelKeyPress;
+
+                await Start();
+                await webHost.StartAsync(cts.Token);
+            }
+
+            else
+                RecoverShares(shareRecoveryOption.Value());
+        }
+
+        private void ValidateConfig()
         {
             try
             {
@@ -165,7 +206,7 @@ namespace MiningCore
             }
         }
 
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             logger.Info(() => "SIGINT received. Exiting.");
 
@@ -173,7 +214,7 @@ namespace MiningCore
             Process.GetCurrentProcess().Close();
         }
 
-        private static void DumpParsedConfig(ClusterConfig config)
+        private void DumpParsedConfig(ClusterConfig config)
         {
             Console.WriteLine("\nCurrent configuration as parsed from config file:");
 
@@ -184,7 +225,7 @@ namespace MiningCore
             }));
         }
 
-        private static bool HandleCommandLineOptions(string[] args, out string configFile)
+        private bool HandleCommandLineOptions(string[] args, out string configFile)
         {
             configFile = null;
 
@@ -224,27 +265,7 @@ namespace MiningCore
             return true;
         }
 
-        private static void Bootstrap()
-        {
-            // Service collection
-            var builder = new ContainerBuilder();
-
-            builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
-            builder.RegisterInstance(clusterConfig);
-
-            // AutoMapper
-            var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
-            builder.Register((ctx, parms) => amConf.CreateMapper());
-
-            ConfigurePersistence(builder);
-            container = builder.Build();
-            ConfigureLogging();
-            ConfigureMisc();
-            ValidateRuntimeEnvironment();
-            MonitorGc();
-        }
-
-        private static ClusterConfig ReadConfig(string file)
+        private ClusterConfig ReadConfig(string file)
         {
             try
             {
@@ -283,7 +304,7 @@ namespace MiningCore
             }
         }
 
-        private static void HumanizeJsonParseException(JsonSerializationException ex)
+        private void HumanizeJsonParseException(JsonSerializationException ex)
         {
             var m = regexJsonTypeConversionError.Match(ex.Message);
 
@@ -307,14 +328,14 @@ namespace MiningCore
             }
         }
 
-        private static void ValidateRuntimeEnvironment()
+        private void ValidateRuntimeEnvironment()
         {
             // root check
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
                 logger.Warn(() => "Running as root is discouraged!");
         }
 
-        private static void MonitorGc()
+        private void MonitorGc()
         {
             var thread = new Thread(() =>
             {
@@ -349,7 +370,7 @@ namespace MiningCore
             thread.Start();
         }
 
-        private static void Logo()
+        private void Logo()
         {
             Console.WriteLine($@"
  ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗  ██████╗ ██████╗ ██████╗ ███████╗
@@ -367,7 +388,28 @@ namespace MiningCore
             Console.WriteLine();
         }
 
-        private static void ConfigureLogging()
+        private ContainerBuilder ConfigureDI()
+        {
+            var builder = new ContainerBuilder();
+
+            builder.RegisterAssemblyModules(new[]
+            {
+                //typeof(SqlServerDataAccess.AutofacModule).GetTypeInfo().Assembly,
+                typeof(AutofacModule).GetTypeInfo().Assembly,
+            });
+
+            builder.RegisterInstance(clusterConfig);
+
+            ConfigurePersistence(builder);
+
+            // AutoMapper
+            var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
+            builder.Register((ctx, parms) => amConf.CreateMapper());
+
+            return builder;
+        }
+
+        private void ConfigureLogging()
         {
             var config = clusterConfig.Logging;
             var loggingConfig = new LoggingConfiguration();
@@ -465,7 +507,7 @@ namespace MiningCore
             logger = LogManager.GetCurrentClassLogger();
         }
 
-        private static Layout GetLogPath(ClusterLoggingConfig config, string name)
+        private Layout GetLogPath(ClusterLoggingConfig config, string name)
         {
             if (string.IsNullOrEmpty(config.LogBaseDirectory))
                 return name;
@@ -473,14 +515,14 @@ namespace MiningCore
             return Path.Combine(config.LogBaseDirectory, name);
         }
 
-        private static void ConfigureMisc()
+        private void ConfigureMisc()
         {
             // Configure Equihash
             if (clusterConfig.EquihashMaxThreads.HasValue)
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
-        private static void ConfigurePersistence(ContainerBuilder builder)
+        private void ConfigurePersistence(ContainerBuilder builder)
         {
             if (clusterConfig.Persistence == null)
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
@@ -489,7 +531,7 @@ namespace MiningCore
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
         }
 
-        private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+        private void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
         {
             // validate config
             if (string.IsNullOrEmpty(pgConfig.Host))
@@ -519,18 +561,11 @@ namespace MiningCore
                 .SingleInstance();
         }
 
-        private static async Task Start()
+        private async Task Start()
         {
             // start share recorder
             shareRecorder = container.Resolve<ShareRecorder>();
             shareRecorder.Start(clusterConfig);
-
-            // start API
-            if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
-            {
-                apiServer = container.Resolve<ApiServer>();
-                apiServer.Start(clusterConfig);
-            }
 
 	        // start payment processor
 	        if (clusterConfig.PaymentProcessing?.Enabled == true &&
@@ -568,20 +603,22 @@ namespace MiningCore
                 await pool.StartAsync();
 
                 // post-start attachments
-                apiServer.AttachPool(pool);
+                lock(pools)
+                {
+                    pools[pool.Config.Id] = pool;
+                }
             }));
 
-            // keep running
-            await Observable.Never<Unit>().ToTask();
+            webHost.Run();
         }
 
-        private static void RecoverShares(string recoveryFilename)
+        private void RecoverShares(string recoveryFilename)
         {
             shareRecorder = container.Resolve<ShareRecorder>();
             shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
         }
 
-        private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             if (logger != null)
             {
@@ -592,7 +629,7 @@ namespace MiningCore
             Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
 
-        private static void TouchNativeLibs()
+        private void TouchNativeLibs()
         {
             Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test")).ToHexString());
             Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
@@ -611,7 +648,7 @@ namespace MiningCore
         /// <summary>
         /// work-around for libmultihash.dll not being found when running in dev-environment
         /// </summary>
-        public static void PreloadNativeLibs()
+        public void PreloadNativeLibs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -632,5 +669,73 @@ namespace MiningCore
                     Console.WriteLine($"Unable to load {path}");
             }
         }
+
+        #region Implementation of IStartup
+
+        public IServiceProvider ConfigureServices(IServiceCollection services)
+        {
+            services.AddResponseCompression(options =>
+            {
+                options.MimeTypes = new[]
+                {
+                    // Default
+                    "text/plain",
+                    "text/css",
+                    "application/javascript",
+                    "text/html",
+                    "application/xml",
+                    "text/xml",
+                    "application/json",
+                    "text/json",
+                    // Custom
+                    "image/svg+xml"
+                };
+
+                options.Providers.Add<GzipCompressionProvider>();
+            });
+
+            services.AddResponseCompression();
+            services.AddMemoryCache();
+
+            services.AddMvc(options =>
+            {
+            })
+            .AddDataAnnotationsLocalization().AddJsonOptions(options =>
+            {
+                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            });
+
+            services.AddOptions();
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+
+            // Create the containerbuilder
+            var builder = ConfigureDI();
+
+            // Populate with framework services
+            builder.Populate(services);
+
+            // Build container
+            container = builder.Build();
+
+            return new AutofacServiceProvider(container);
+        }
+
+        public void Configure(IApplicationBuilder app)
+        {
+            app.UseResponseCompression();
+
+            app.UseMvc(routes =>
+            {
+            });
+
+            ConfigureLogging();
+            ConfigureMisc();
+            ValidateRuntimeEnvironment();
+            MonitorGc();
+        }
+
+        #endregion
     }
 }
