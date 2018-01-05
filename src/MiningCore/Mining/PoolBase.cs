@@ -391,7 +391,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             this.clusterConfig = clusterConfig;
         }
 
-        public abstract ulong HashrateFromShares(double shares, double interval);
+        public abstract double HashrateFromShares(double shares, double interval);
 
         public virtual async Task StartAsync()
         {
