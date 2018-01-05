@@ -83,6 +83,7 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/payments$", RegexOptions.Compiled), HandleGetMinerPaymentsAsync },
 
                 // admin api
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
@@ -285,7 +286,7 @@ namespace MiningCore.Api
             }
 
             var payments = cf.Run(con => paymentsRepo.PagePayments(
-                    con, pool.Config.Id, page, pageSize))
+                    con, pool.Config.Id, null, page, pageSize))
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
@@ -321,8 +322,7 @@ namespace MiningCore.Api
             }
 
             var statsResult = cf.RunTx((con, tx) =>
-                statsRepo.GetMinerStats(con, tx, pool.Config.Id, address),
-                true, IsolationLevel.Serializable);
+                statsRepo.GetMinerStats(con, tx, pool.Config.Id, address), true, IsolationLevel.Serializable);
 
             MinerStats stats = null;
 
@@ -343,6 +343,51 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, stats);
+        }
+
+        private async Task HandleGetMinerPaymentsAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var payments = cf.Run(con => paymentsRepo.PagePayments(
+                    con, pool.Config.Id, address, page, pageSize))
+                .Select(mapper.Map<Responses.Payment>)
+                .ToArray();
+
+            // enrich payments
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
+
+            foreach (var payment in payments)
+            {
+                // compute transaction infoLink
+                if (!string.IsNullOrEmpty(txInfobaseUrl))
+                    payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
+
+                // pool wallet link
+                if (!string.IsNullOrEmpty(addressInfobaseUrl))
+                    payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
+            }
+
+            await SendJson(context, payments);
         }
 
         private async Task HandleForceGcAsync(HttpContext context, Match m)
