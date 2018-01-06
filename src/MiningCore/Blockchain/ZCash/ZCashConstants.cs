@@ -119,11 +119,55 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
         };
+        
+        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCLCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        {
+            {
+                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                    }
+                }
+            },
+        };
 
         public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
             new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
             {
                 { CoinType.ZEC, ZCashCoinbaseTxConfig },
+                { CoinType.ZCL, ZCLCoinbaseTxConfig }
             };
     }
 
