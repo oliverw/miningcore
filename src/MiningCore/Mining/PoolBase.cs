@@ -416,8 +416,9 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             {
 	            SetupBanning(clusterConfig);
 	            await SetupJobManager();
+                InitStats();
 
-	            if (!poolConfig.ExternalStratum)
+                if (!poolConfig.ExternalStratum)
 	            {
 		            var ipEndpoints = poolConfig.Ports.Keys
 			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
@@ -435,8 +436,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
 					StartExternalStratumPublisherListener();
 	            }
-
-	            InitStats();
 
                 logger.Info(() => $"[{LogCat}] Online");
                 OutputPoolInfo();
