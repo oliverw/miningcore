@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Configuration;
 
@@ -34,7 +34,7 @@ namespace MiningCore.Blockchain
             { CoinType.MONA, new Dictionary<string, string> { { string.Empty, "https://bchain.info/MONA/block/{0}" }}},
             { CoinType.GLT, new Dictionary<string, string> { { string.Empty, "https://bchain.info/GLT/block/{0}" }}},
             { CoinType.VTC, new Dictionary<string, string> { { string.Empty, "https://bchain.info/VTC/block/{0}" }}},
-            //{ CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btgexp.com/block/{0}" }}},
+            { CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btg-bitcore2.trezor.io/block/{0}" }}},
             { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, "https://explorer.ellaism.org/block/{0}" }}},
             { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
             { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
@@ -60,7 +60,7 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, "https://straks.info/transaction/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/tx/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/tx/{0}" },
-            { CoinType.BTG, "https://btgexp.com/tx/{0}" },
+            { CoinType.BTG, "https://btg-bitcore2.trezor.io/tx/{0}" },
             { CoinType.ELLA, "https://explorer.ellaism.org/tx/{0}" },
             { CoinType.EXP, "http://www.gander.tech/tx/{0}" },
             { CoinType.AEON, "https://chainradar.com/aeon/transaction/{0}" },
@@ -83,7 +83,7 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, "https://straks.info/address/{0}" },
             { CoinType.GLT, "https://bchain.info/GLT/addr/{0}" },
             { CoinType.VTC, "https://bchain.info/VTC/addr/{0}" },
-            { CoinType.BTG, "https://btgexp.com/address/{0}" },
+            { CoinType.BTG, "https://btg-bitcore2.trezor.io/address/{0}" },
             { CoinType.ELLA, "https://explorer.ellaism.org/addr/{0}" },
             { CoinType.EXP, "http://www.gander.tech/address/{0}" },
         };
