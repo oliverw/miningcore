@@ -149,6 +149,7 @@ namespace MiningCore.Mining
 				};
 
 			    var currentHeight = 0L;
+			    var lastBlockTime = clock.Now;
 
 				while(true)
 				{
@@ -206,7 +207,10 @@ namespace MiningCore.Mining
 							    {
 							        blockchainStats.LastNetworkBlockTime = clock.Now;
 							        currentHeight = share.BlockHeight;
-							    }
+							        lastBlockTime = clock.Now;
+                                }
+
+							    blockchainStats.LastNetworkBlockTime = lastBlockTime;
 
                                 // fill in the blacks
                                 share.PoolId = poolConfig.Id;
