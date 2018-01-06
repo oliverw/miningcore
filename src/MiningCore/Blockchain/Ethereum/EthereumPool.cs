@@ -262,13 +262,20 @@ namespace MiningCore.Blockchain.Ethereum
 
             await manager.StartAsync();
 
-	        if (!poolConfig.ExternalStratum)
+            if (!poolConfig.ExternalStratum)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
 		        await manager.Jobs.Take(1).ToTask();
 	        }
+        }
+
+        protected override void InitStats()
+        {
+            base.InitStats();
+
+            blockchainStats = manager.BlockchainStats;
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -328,13 +335,6 @@ namespace MiningCore.Blockchain.Ethereum
                 client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
-        }
-
-        protected override async Task UpdateBlockChainStatsAsync()
-        {
-            await manager.UpdateNetworkStatsAsync();
-
-            blockchainStats = manager.BlockchainStats;
         }
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)

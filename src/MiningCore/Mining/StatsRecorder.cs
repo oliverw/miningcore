@@ -149,31 +149,39 @@ namespace MiningCore.Mining
                 var result = readFaultPolicy.Execute(() =>
                     cf.Run(con => shareRepo.GetHashAccumulationBetweenCreated(con, poolId, target, start)));
 
-                if (result.Length == 0)
-                    continue;
-
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
-                // calculate pool stats
-                var windowActual = Math.Max(0.000000001, (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds);
-                var poolHashesAccumulated = result.Sum(x => x.Sum);
-                var poolHashesCountAccumulated = result.Sum(x => x.Count);
-                var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+                if (result.Length > 0)
+                {
+                    // calculate pool stats
+                    var windowActual = Math.Max(0.000000001, (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds);
+                    var poolHashesAccumulated = result.Sum(x => x.Sum);
+                    var poolHashesCountAccumulated = result.Sum(x => x.Count);
+                    var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
 
-                // update
-                pool.PoolStats.ConnectedMiners = byMiner.Length;
-                pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
-                pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+                    // update
+                    pool.PoolStats.ConnectedMiners = byMiner.Length;
+                    pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
+                    pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+                }
 
                 // persist
                 cf.RunTx((con, tx) =>
                 {
-                    var mapped = mapper.Map<Persistence.Model.PoolStats>(pool.PoolStats);
-                    mapped.PoolId = poolId;
-                    mapped.Created = start;
+                    var mapped = new Persistence.Model.PoolStats
+                    {
+                        PoolId = poolId,
+                        Created = start
+                    };
+
+                    mapper.Map(pool.PoolStats, mapped);
+                    mapper.Map(pool.NetworkStats, mapped);
 
                     statsRepo.InsertPoolStats(con, tx, mapped);
                 });
+
+                if (result.Length == 0)
+                    continue;
 
                 // calculate & update miner, worker hashrates
                 foreach (var minerHashes in byMiner)
@@ -185,7 +193,7 @@ namespace MiningCore.Mining
                         foreach (var item in minerHashes)
                         {
                             // calculate miner/worker stats
-                            windowActual = Math.Max(0.000000001, (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds);
+                            var windowActual = Math.Max(0.000000001, (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds);
                             var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
 
                             // update

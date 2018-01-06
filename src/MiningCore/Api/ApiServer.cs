@@ -99,7 +99,7 @@ namespace MiningCore.Api
         private readonly IMapper mapper;
         private readonly IMasterClock clock;
 
-        private readonly List<IMiningPool> pools = new List<IMiningPool>();
+        private ClusterConfig clusterConfig;
         private IWebHost webHost;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly Encoding encoding = new UTF8Encoding(false);
@@ -112,6 +112,22 @@ namespace MiningCore.Api
         };
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
+
+        private PoolConfig GetPool(HttpContext context, Match m)
+        {
+            var poolId = m.Groups["poolId"]?.Value;
+
+            if (!string.IsNullOrEmpty(poolId))
+            {
+                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId);
+
+                if (pool != null)
+                    return pool;
+            }
+
+            context.Response.StatusCode = 404;
+            return null;
+        }
 
         private async Task SendJson(HttpContext context, object response)
         {
@@ -164,47 +180,33 @@ namespace MiningCore.Api
             }
         }
 
-        private IMiningPool GetPool(HttpContext context, Match m)
-        {
-            var poolId = m.Groups["poolId"]?.Value;
-
-            if (!string.IsNullOrEmpty(poolId))
-            {
-                lock(pools)
-                {
-                    var pool = pools.FirstOrDefault(x => x.Config.Id == poolId);
-
-                    if (pool != null)
-                        return pool;
-                }
-            }
-
-            context.Response.StatusCode = 404;
-            return null;
-        }
-
         private async Task HandleGetPoolsAsync(HttpContext context, Match m)
         {
-            GetPoolsResponse response;
-
-            lock(pools)
+            var response = new GetPoolsResponse
             {
-                response = new GetPoolsResponse
+                Pools = clusterConfig.Pools.Select(config =>
                 {
-                    Pools = pools.Select(pool => pool.ToPoolInfo(mapper)).ToArray()
-                };
-            }
+                    var result = config.ToPoolInfo(mapper);
+
+                    // load stats
+                    var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
+
+                    // enrich
+                    mapper.Map(stats, result);
+
+                    return result;
+                }).ToArray()
+            };
 
             await SendJson(context, response);
         }
         private async Task HandleGetPoolAsync(HttpContext context, Match m)
         {
-            GetPoolResponse response;
             var pool = GetPool(context, m);
             if (pool == null)
                 return;
 
-            response = new GetPoolResponse()
+            var response = new GetPoolResponse()
             {
                 Pool = pool.ToPoolInfo(mapper)
             };
@@ -223,7 +225,7 @@ namespace MiningCore.Api
             var start = end.AddDays(-1);
 
             var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(
-                con, pool.Config.Id, start, end));
+                con, pool.Id, start, end));
 
             var response = new GetPoolStatsResponse
             {
@@ -253,7 +255,7 @@ namespace MiningCore.Api
             }
 
             var miners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
-                    con, pool.Config.Id, start, page, pageSize))
+                    con, pool.Id, start, page, pageSize))
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
@@ -275,13 +277,13 @@ namespace MiningCore.Api
                 return;
             }
 
-            var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Config.Id,
+            var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Id,
                     new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned }, page, pageSize))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
             // enrich blocks
-            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Config.Coin.Type, out var blockInfobaseDict);
+            CoinMetaData.BlockInfoLinks.TryGetValue(pool.Coin.Type, out var blockInfobaseDict);
 
             foreach(var block in blocks)
             {
@@ -314,13 +316,13 @@ namespace MiningCore.Api
             }
 
             var payments = cf.Run(con => paymentsRepo.PagePayments(
-                    con, pool.Config.Id, null, page, pageSize))
+                    con, pool.Id, null, page, pageSize))
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var txInfobaseUrl);
-            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)
             {
@@ -350,7 +352,7 @@ namespace MiningCore.Api
             }
 
             var statsResult = cf.RunTx((con, tx) =>
-                statsRepo.GetMinerStats(con, tx, pool.Config.Id, address), true, IsolationLevel.Serializable);
+                statsRepo.GetMinerStats(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
 
             MinerStats stats = null;
 
@@ -365,7 +367,7 @@ namespace MiningCore.Api
                     stats.LastPayment = statsResult.LastPayment.Created;
 
                     // Compute info link
-                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var baseUrl))
+                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
             }
@@ -396,13 +398,13 @@ namespace MiningCore.Api
             }
 
             var payments = cf.Run(con => paymentsRepo.PagePayments(
-                    con, pool.Config.Id, address, page, pageSize))
+                    con, pool.Id, address, page, pageSize))
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Config.Coin.Type, out var txInfobaseUrl);
-            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Config.Coin.Type, out var addressInfobaseUrl);
+            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)
             {
@@ -441,6 +443,7 @@ namespace MiningCore.Api
         public void Start(ClusterConfig clusterConfig)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            this.clusterConfig = clusterConfig;
 
             logger.Info(() => $"Launching ...");
 
@@ -458,14 +461,6 @@ namespace MiningCore.Api
             webHost.Start();
 
             logger.Info(() => $"Online @ {address}:{port}");
-        }
-
-        public void AttachPool(IMiningPool pool)
-        {
-            lock(pools)
-            {
-                pools.Add(pool);
-            }
         }
 
         #endregion // API-Surface

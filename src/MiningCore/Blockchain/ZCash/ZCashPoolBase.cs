@@ -20,7 +20,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -29,10 +28,8 @@ using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
-using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
-using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;

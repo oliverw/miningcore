@@ -288,13 +288,20 @@ namespace MiningCore.Blockchain.Bitcoin
 
             await manager.StartAsync();
 
-	        if (!poolConfig.ExternalStratum)
+            if (!poolConfig.ExternalStratum)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
 		        await manager.Jobs.Take(1).ToTask();
 	        }
+        }
+
+        protected override void InitStats()
+        {
+            base.InitStats();
+
+            blockchainStats = manager.BlockchainStats;
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -366,13 +373,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
-        }
-
-        protected override async Task UpdateBlockChainStatsAsync()
-        {
-            await manager.UpdateNetworkStatsAsync();
-
-            blockchainStats = manager.BlockchainStats;
         }
 
         #endregion // Overrides

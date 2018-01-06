@@ -106,6 +106,8 @@ namespace MiningCore.Blockchain.Monero
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
+                    BlockchainStats.BlockHeight = job.BlockTemplate.Height;
+                    BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                 }
 
                 return isNew;
@@ -147,6 +149,23 @@ namespace MiningCore.Blockchain.Monero
 
                 logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {firstValidResponse.OutgoingConnectionsCount} peers");
             }
+        }
+
+        private async Task UpdateNetworkStatsAsync()
+        {
+            logger.LogInvoke(LogCat);
+
+            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+
+            if (infoResponse.Error != null)
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+
+            var info = infoResponse.Response.ToObject<GetInfoResponse>();
+
+            BlockchainStats.BlockHeight = (int)info.Height;
+            BlockchainStats.NetworkDifficulty = info.Difficulty;
+            BlockchainStats.NetworkHashRate = info.Target > 0 ? (double)info.Difficulty / info.Target : 0;
+            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
         private async Task<bool> SubmitBlockAsync(MoneroShare share)
@@ -279,23 +298,6 @@ namespace MiningCore.Blockchain.Monero
             share.Created = clock.Now;
 
             return share;
-        }
-
-        public async Task UpdateNetworkStatsAsync()
-        {
-            logger.LogInvoke(LogCat);
-
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-
-            if (infoResponse.Error != null)
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
-
-            var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-            BlockchainStats.BlockHeight = (int) info.Height;
-            BlockchainStats.NetworkDifficulty = info.Difficulty;
-            BlockchainStats.NetworkHashRate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
-            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
         #endregion // API-Surface

@@ -148,6 +148,8 @@ namespace MiningCore.Mining
 					ContractResolver = new CamelCasePropertyNamesContractResolver()
 				};
 
+			    var currentHeight = 0L;
+
 				while(true)
 				{
 					try
@@ -196,8 +198,18 @@ namespace MiningCore.Mining
 									continue;
 								}
 
-								// fill in the blacks
-								share.PoolId = poolConfig.Id;
+							    // update network stats
+							    blockchainStats.BlockHeight = share.BlockHeight;
+							    blockchainStats.NetworkDifficulty = share.NetworkDifficulty;
+
+							    if (currentHeight != share.BlockHeight)
+							    {
+							        blockchainStats.LastNetworkBlockTime = clock.Now;
+							        currentHeight = share.BlockHeight;
+							    }
+
+                                // fill in the blacks
+                                share.PoolId = poolConfig.Id;
 								share.Created = clock.Now;
 
 								// re-publish
@@ -300,8 +312,6 @@ namespace MiningCore.Mining
             LoadStats();
         }
 
-        protected abstract Task UpdateBlockChainStatsAsync();
-
         private void LoadStats()
         {
             try
@@ -311,7 +321,10 @@ namespace MiningCore.Mining
                 var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
 
                 if (stats != null)
+                {
                     poolStats = mapper.Map<PoolStats>(stats);
+                    blockchainStats = mapper.Map<BlockchainStats>(stats);
+                }
             }
 
             catch (Exception ex)
@@ -424,7 +437,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 	            }
 
 	            InitStats();
-                await UpdateBlockChainStatsAsync();
 
                 logger.Info(() => $"[{LogCat}] Online");
                 OutputPoolInfo();

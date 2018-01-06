@@ -566,9 +566,6 @@ namespace MiningCore
                 statsRecorder.AttachPool(pool);
 
                 await pool.StartAsync();
-
-                // post-start attachments
-                apiServer.AttachPool(pool);
             }));
 
             // keep running

@@ -160,6 +160,34 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
+        private async Task UpdateNetworkStatsAsync()
+        {
+            logger.LogInvoke(LogCat);
+
+            var results = await daemon.ExecuteBatchAnyAsync(
+                new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
+                new DaemonCmd(BitcoinCommands.GetMiningInfo),
+                new DaemonCmd(BitcoinCommands.GetNetworkInfo)
+            );
+
+            if (results.Any(x => x.Error != null))
+            {
+                var errors = results.Where(x => x.Error != null).ToArray();
+
+                if (errors.Any())
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+            }
+
+            var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
+            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
+            var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
+
+            BlockchainStats.BlockHeight = infoResponse.Blocks;
+            BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
+            BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+        }
+
         protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
         {
             // execute command batch
@@ -341,34 +369,6 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Created = clock.Now;
 
             return share;
-        }
-
-        public async Task UpdateNetworkStatsAsync()
-        {
-            logger.LogInvoke(LogCat);
-
-            var results = await daemon.ExecuteBatchAnyAsync(
-                new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
-                new DaemonCmd(BitcoinCommands.GetMiningInfo),
-                new DaemonCmd(BitcoinCommands.GetNetworkInfo)
-            );
-
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null).ToArray();
-
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
-            }
-
-            var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
-            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
-            var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
-
-            BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
-            BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
@@ -573,7 +573,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     // update stats
                     if (isNew)
+                    {
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                    }
 
                     lock (jobLock)
                     {
