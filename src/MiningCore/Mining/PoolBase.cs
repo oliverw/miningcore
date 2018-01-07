@@ -210,7 +210,8 @@ namespace MiningCore.Mining
 							        lastBlockTime = clock.Now;
                                 }
 
-							    blockchainStats.LastNetworkBlockTime = lastBlockTime;
+                                else
+							        blockchainStats.LastNetworkBlockTime = lastBlockTime;
 
                                 // fill in the blacks
                                 share.PoolId = poolConfig.Id;
