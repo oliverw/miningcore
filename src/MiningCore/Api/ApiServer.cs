@@ -188,7 +188,11 @@ namespace MiningCore.Api
             if (mode == "day" || mode != "month")
             {
                 // set range
+#if DEBUG
+                var end = new DateTime(2018, 1, 7, 16, 0, 0);
+#else
                 var end = clock.Now; // new DateTime(2018, 1, 7, 16, 0, 0);
+#endif
                 var start = end.AddDays(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
@@ -490,7 +494,7 @@ namespace MiningCore.Api
             await SendJson(context, Program.gcStats);
         }
 
-        #region API-Surface
+#region API-Surface
 
         public void Start(ClusterConfig clusterConfig)
         {
@@ -515,7 +519,7 @@ namespace MiningCore.Api
             logger.Info(() => $"Online @ {address}:{port}");
         }
 
-        #endregion // API-Surface
+#endregion // API-Surface
 
     }
 }
