@@ -81,19 +81,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return mapper.Map<PoolStats>(entity);
         }
 
-        public PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
-        {
-            logger.LogInvoke();
-
-            var query = "SELECT * FROM poolstats WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
-
-            return con.Query<Entities.PoolStats>(query, new { poolId, start, end, offset = page * pageSize, pageSize })
-                .Select(mapper.Map<PoolStats>)
-                .ToArray();
-        }
-
-        public PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public PoolStats[] GetPoolPerformanceBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new []{ poolId });
 
@@ -172,7 +160,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return result;
         }
 
-        public MinerWorkerPerformanceStats[] GetMinerStatsBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -182,9 +170,52 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         "GROUP BY date_trunc('hour', created), worker " +
                         "ORDER BY created, worker;";
 
-            return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
-                .Select(mapper.Map<MinerWorkerPerformanceStats>)
-                .ToArray();
+            var entitiesByDate = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+                .ToArray()
+                .GroupBy(x=> x.Created);
+
+            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                {
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
+                })
+            })
+            .OrderBy(x=> x.Created)
+            .ToArray();
+
+            return result;
+        }
+
+        public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = "SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate, " +
+                "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
+                "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
+                "GROUP BY date_trunc('day', created), worker " +
+                "ORDER BY created, worker;";
+
+            var entitiesByDate = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+                .ToArray()
+                .GroupBy(x => x.Created);
+
+            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                {
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
+                })
+            })
+            .OrderBy(x => x.Created)
+            .ToArray();
+
+            return result;
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)

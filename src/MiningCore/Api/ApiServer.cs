@@ -77,14 +77,15 @@ namespace MiningCore.Api
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                { new Regex("^/api/pools$", RegexOptions.Compiled), HandleGetPoolsAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), HandleGetPoolAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/stats/hourly$", RegexOptions.Compiled), HandleGetPoolStatsAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), HandleGetPoolMinersAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), HandleGetBlocksPagedAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), HandleGetPaymentsPagedAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/stats$", RegexOptions.Compiled), HandleGetMinerStatsAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miner/(?<address>[^/]+)/payments$", RegexOptions.Compiled), HandleGetMinerPaymentsAsync },
+                { new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/performance$", RegexOptions.Compiled), GetPoolPerformanceAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), PagePoolMinersAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), PagePoolBlocksPagedAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
 
                 // admin api
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
@@ -180,7 +181,36 @@ namespace MiningCore.Api
             }
         }
 
-        private async Task HandleGetPoolsAsync(HttpContext context, Match m)
+        private WorkerPerformanceStatsContainer[] GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
+        {
+            Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats;
+
+            if (mode == "day" || mode != "month")
+            {
+                // set range
+                var end = clock.Now;
+                var start = end.AddDays(-1);
+
+                stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
+                    con, pool.Id, address, start, end));
+            }
+
+            else
+            {
+                // set range
+                var end = clock.Now;
+                var start = end.AddMonths(-1);
+
+                stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenDaily(
+                    con, pool.Id, address, start, end));
+            }
+
+            // map
+            var result = mapper.Map<WorkerPerformanceStatsContainer[]>(stats);
+            return result;
+        }
+
+        private async Task GetPoolInfosAsync(HttpContext context, Match m)
         {
             var response = new GetPoolsResponse
             {
@@ -191,8 +221,9 @@ namespace MiningCore.Api
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
 
-                    // enrich
-                    mapper.Map(stats, result);
+                    // map
+                    result.PoolStats = mapper.Map<Mining.PoolStats>(stats);
+                    result.NetworkStats = mapper.Map<BlockchainStats>(stats);
 
                     return result;
                 }).ToArray()
@@ -200,7 +231,7 @@ namespace MiningCore.Api
 
             await SendJson(context, response);
         }
-        private async Task HandleGetPoolAsync(HttpContext context, Match m)
+        private async Task GetPoolInfoAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -214,7 +245,7 @@ namespace MiningCore.Api
             await SendJson(context, response);
         }
 
-        private async Task HandleGetPoolStatsAsync(HttpContext context, Match m)
+        private async Task GetPoolPerformanceAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -224,7 +255,7 @@ namespace MiningCore.Api
             var end = clock.Now;
             var start = end.AddDays(-1);
 
-            var stats = cf.Run(con => statsRepo.GetPoolStatsBetweenHourly(
+            var stats = cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourly(
                 con, pool.Id, start, end));
 
             var response = new GetPoolStatsResponse
@@ -235,7 +266,7 @@ namespace MiningCore.Api
             await SendJson(context, response);
         }
 
-        private async Task HandleGetPoolMinersAsync(HttpContext context, Match m)
+        private async Task PagePoolMinersAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -262,7 +293,7 @@ namespace MiningCore.Api
             await SendJson(context, miners);
         }
 
-        private async Task HandleGetBlocksPagedAsync(HttpContext context, Match m)
+        private async Task PagePoolBlocksPagedAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -300,7 +331,7 @@ namespace MiningCore.Api
             await SendJson(context, blocks);
         }
 
-        private async Task HandleGetPaymentsPagedAsync(HttpContext context, Match m)
+        private async Task PagePoolPaymentsAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -338,7 +369,7 @@ namespace MiningCore.Api
             await SendJson(context, payments);
         }
 
-        private async Task HandleGetMinerStatsAsync(HttpContext context, Match m)
+        private async Task GetMinerInfoAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -370,12 +401,14 @@ namespace MiningCore.Api
                     if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
+
+                stats.Performance24H = GetMinerPerformanceInternal("day", pool, address);
             }
 
             await SendJson(context, stats);
         }
 
-        private async Task HandleGetMinerPaymentsAsync(HttpContext context, Match m)
+        private async Task PageMinerPaymentsAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
             if (pool == null)
@@ -418,6 +451,25 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, payments);
+        }
+
+        private async Task GetMinerPerformanceAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var mode = context.GetQueryParameter<string>("mode", "day").ToLower(); // "day" or "month"
+            var result = GetMinerPerformanceInternal(mode, pool, address);
+
+            await SendJson(context, result);
         }
 
         private async Task HandleForceGcAsync(HttpContext context, Match m)

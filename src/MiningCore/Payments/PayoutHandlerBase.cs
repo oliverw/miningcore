@@ -110,7 +110,8 @@ namespace MiningCore.Payments
                     {
                         foreach(var balance in balances)
                         {
-                            if (!string.IsNullOrEmpty(transactionConfirmation))
+                            if (!string.IsNullOrEmpty(transactionConfirmation) &&
+                                !poolConfig.RewardRecipients.Any(x=> x.Address == balance.Address))
                             {
                                 // record payment
                                 var payment = new Payment
@@ -128,7 +129,6 @@ namespace MiningCore.Payments
 
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
-
                             balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, balance.Address, -balance.Amount);
                         }
                     });

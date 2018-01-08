@@ -50,5 +50,6 @@ namespace MiningCore.Api.Responses
         public DateTime? LastPayment { get; set; }
         public string LastPaymentLink { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }
+        public WorkerPerformanceStatsContainer[] Performance24H { get; set; }
     }
 }
