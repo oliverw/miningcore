@@ -132,6 +132,7 @@ namespace MiningCore.Blockchain.ZCash
 
                     FoundersRewardAddresses = new[]
                     {
+                        ""
                     }
                 }
             },
@@ -145,6 +146,7 @@ namespace MiningCore.Blockchain.ZCash
 
                     FoundersRewardAddresses = new[]
                     {
+                        ""
                     }
                 }
             },
@@ -158,6 +160,7 @@ namespace MiningCore.Blockchain.ZCash
 
                     FoundersRewardAddresses = new[]
                     {
+                        ""
                     }
                 }
             },
