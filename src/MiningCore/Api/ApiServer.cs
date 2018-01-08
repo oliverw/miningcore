@@ -188,7 +188,7 @@ namespace MiningCore.Api
             if (mode == "day" || mode != "month")
             {
                 // set range
-                var end = clock.Now;
+                var end = clock.Now; // new DateTime(2018, 1, 7, 16, 0, 0);
                 var start = end.AddDays(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
