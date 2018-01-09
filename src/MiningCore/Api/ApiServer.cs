@@ -229,12 +229,24 @@ namespace MiningCore.Api
                     result.PoolStats = mapper.Map<Mining.PoolStats>(stats);
                     result.NetworkStats = mapper.Map<BlockchainStats>(stats);
 
+                    // enrich
+#if DEBUG
+                    var from = new DateTime(2018, 1, 6, 16, 0, 0);
+#else
+                    var from = clock.Now;
+#endif
+                    result.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
+                            con, config.Id, from, 0, 15))
+                        .Select(mapper.Map<MinerPerformanceStats>)
+                        .ToArray();
+
                     return result;
                 }).ToArray()
             };
 
             await SendJson(context, response);
         }
+
         private async Task GetPoolInfoAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
@@ -245,6 +257,18 @@ namespace MiningCore.Api
             {
                 Pool = pool.ToPoolInfo(mapper)
             };
+
+            // enrich
+#if DEBUG
+            var from = new DateTime(2018, 1, 7, 16, 0, 0);
+#else
+            var from = clock.Now;
+#endif
+
+            response.Pool.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
+                    con, pool.Id, from, 0, 15))
+                .Select(mapper.Map<MinerPerformanceStats>)
+                .ToArray();
 
             await SendJson(context, response);
         }

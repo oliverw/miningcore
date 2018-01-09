@@ -54,6 +54,7 @@ namespace MiningCore.Mining
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
         private const int HashrateCalculationWindow = 1200;  // seconds
+        private const int MinHashrateCalculationWindow = 300;  // seconds
         private ClusterConfig clusterConfig;
         private Thread thread;
         private const int RetryCount = 4;
@@ -154,15 +155,19 @@ namespace MiningCore.Mining
                 if (result.Length > 0)
                 {
                     // calculate pool stats
-                    var windowActual = Math.Max(0.000000001, (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds);
-                    var poolHashesAccumulated = result.Sum(x => x.Sum);
-                    var poolHashesCountAccumulated = result.Sum(x => x.Count);
-                    var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+                    var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;
 
-                    // update
-                    pool.PoolStats.ConnectedMiners = byMiner.Length;
-                    pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
-                    pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+                    if (windowActual >= MinHashrateCalculationWindow)
+                    {
+                        var poolHashesAccumulated = result.Sum(x => x.Sum);
+                        var poolHashesCountAccumulated = result.Sum(x => x.Count);
+                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+
+                        // update
+                        pool.PoolStats.ConnectedMiners = byMiner.Length;
+                        pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
+                        pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+                    }
                 }
 
                 // persist
@@ -193,16 +198,20 @@ namespace MiningCore.Mining
                         foreach (var item in minerHashes)
                         {
                             // calculate miner/worker stats
-                            var windowActual = Math.Max(0.000000001, (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds);
-                            var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
+                            var windowActual = (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds;
 
-                            // update
-                            stats.Hashrate = hashrate;
-                            stats.Worker = item.Worker;
-                            stats.SharesPerSecond = (double) item.Count / HashrateCalculationWindow;
+                            if (windowActual >= MinHashrateCalculationWindow)
+                            {
+                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
 
-                            // persist
-                            statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
+                                // update
+                                stats.Hashrate = hashrate;
+                                stats.Worker = item.Worker;
+                                stats.SharesPerSecond = (double) item.Count / windowActual;
+
+                                // persist
+                                statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
+                            }
                         }
                     });
                 }
