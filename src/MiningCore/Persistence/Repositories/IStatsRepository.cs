@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data;
 using MiningCore.Persistence.Model;
+using MiningCore.Persistence.Model.Projections;
 using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
 namespace MiningCore.Persistence.Repositories
@@ -30,8 +31,10 @@ namespace MiningCore.Persistence.Repositories
         void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats);
         void InsertMinerWorkerPerformanceStats(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats);
         PoolStats GetLastPoolStats(IDbConnection con, string poolId);
-        PoolStats[] PagePoolStatsBetween(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);
-        PoolStats[] GetPoolStatsBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end);
+        PoolStats[] GetPoolPerformanceBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end);
         MinerStats GetMinerStats(IDbConnection con, IDbTransaction tx, string poolId, string miner);
+        MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize);
+        WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
+        WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
     }
 }

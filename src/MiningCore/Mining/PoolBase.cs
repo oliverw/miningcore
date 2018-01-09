@@ -148,6 +148,9 @@ namespace MiningCore.Mining
 					ContractResolver = new CamelCasePropertyNamesContractResolver()
 				};
 
+			    var currentHeight = 0L;
+			    var lastBlockTime = clock.Now;
+
 				while(true)
 				{
 					try
@@ -196,8 +199,22 @@ namespace MiningCore.Mining
 									continue;
 								}
 
-								// fill in the blacks
-								share.PoolId = poolConfig.Id;
+							    // update network stats
+							    blockchainStats.BlockHeight = share.BlockHeight;
+							    blockchainStats.NetworkDifficulty = share.NetworkDifficulty;
+
+							    if (currentHeight != share.BlockHeight)
+							    {
+							        blockchainStats.LastNetworkBlockTime = clock.Now;
+							        currentHeight = share.BlockHeight;
+							        lastBlockTime = clock.Now;
+                                }
+
+                                else
+							        blockchainStats.LastNetworkBlockTime = lastBlockTime;
+
+                                // fill in the blacks
+                                share.PoolId = poolConfig.Id;
 								share.Created = clock.Now;
 
 								// re-publish
@@ -300,8 +317,6 @@ namespace MiningCore.Mining
             LoadStats();
         }
 
-        protected abstract Task UpdateBlockChainStatsAsync();
-
         private void LoadStats()
         {
             try
@@ -311,7 +326,10 @@ namespace MiningCore.Mining
                 var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
 
                 if (stats != null)
+                {
                     poolStats = mapper.Map<PoolStats>(stats);
+                    blockchainStats = mapper.Map<BlockchainStats>(stats);
+                }
             }
 
             catch (Exception ex)
@@ -391,7 +409,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             this.clusterConfig = clusterConfig;
         }
 
-        public abstract ulong HashrateFromShares(double shares, double interval);
+        public abstract double HashrateFromShares(double shares, double interval);
 
         public virtual async Task StartAsync()
         {
@@ -403,8 +421,9 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
             {
 	            SetupBanning(clusterConfig);
 	            await SetupJobManager();
+                InitStats();
 
-	            if (!poolConfig.ExternalStratum)
+                if (!poolConfig.ExternalStratum)
 	            {
 		            var ipEndpoints = poolConfig.Ports.Keys
 			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
@@ -422,9 +441,6 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 
 					StartExternalStratumPublisherListener();
 	            }
-
-	            InitStats();
-                await UpdateBlockChainStatsAsync();
 
                 logger.Info(() => $"[{LogCat}] Online");
                 OutputPoolInfo();

@@ -29,6 +29,11 @@ namespace MiningCore.Persistence.Postgres.Entities
 
         public int ConnectedMiners { get; set; }
         public float PoolHashRate { get; set; }
+        public double NetworkHashRate { get; set; }
+        public double NetworkDifficulty { get; set; }
+        public DateTime? LastNetworkBlockTime { get; set; }
+        public long BlockHeight { get; set; }
+        public int ConnectedPeers { get; set; }
 
         public DateTime Created { get; set; }
     }

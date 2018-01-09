@@ -288,13 +288,20 @@ namespace MiningCore.Blockchain.Bitcoin
 
             await manager.StartAsync();
 
-	        if (!poolConfig.ExternalStratum)
+            if (!poolConfig.ExternalStratum)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
 		        await manager.Jobs.Take(1).ToTask();
 	        }
+        }
+
+        protected override void InitStats()
+        {
+            base.InitStats();
+
+            blockchainStats = manager.BlockchainStats;
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -341,16 +348,16 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        public override ulong HashrateFromShares(double shares, double interval)
+        public override double HashrateFromShares(double shares, double interval)
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
-            var result = Math.Ceiling(shares * multiplier / interval);
+            var result = shares * multiplier / interval;
 
             // OW: tmp hotfix
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
                 result *= 2;
 
-          return (ulong)result;
+          return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
@@ -366,13 +373,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
-        }
-
-        protected override async Task UpdateBlockChainStatsAsync()
-        {
-            await manager.UpdateNetworkStatsAsync();
-
-            blockchainStats = manager.BlockchainStats;
         }
 
         #endregion // Overrides

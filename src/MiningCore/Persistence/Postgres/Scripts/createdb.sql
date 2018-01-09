@@ -68,6 +68,11 @@ CREATE TABLE poolstats
 	poolid TEXT NOT NULL,
 	connectedminers INT NOT NULL DEFAULT 0,
 	poolhashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
+	networkhashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
+	networkdifficulty DOUBLE PRECISION NOT NULL DEFAULT 0,
+	lastnetworkblocktime TIMESTAMP NULL,
+    blockheight BIGINT NOT NULL DEFAULT 0,
+    connectedpeers INT NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL
 );
 
@@ -85,5 +90,7 @@ CREATE TABLE minerstats
 	created TIMESTAMP NOT NULL
 );
 
+CREATE INDEX IDX_MINERSTATS_POOL_CREATED on minerstats(poolid, created);
 CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED on minerstats(poolid, miner, created);
 CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED_HOUR on minerstats(poolid, miner, date_trunc('hour',created));
+CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED_DAY on minerstats(poolid, miner, date_trunc('day',created));
