@@ -121,39 +121,39 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
 
-                if (lastUpdate.HasValue)
+                if (!lastUpdate.HasValue)
+                    return null;
+
+                // load rows rows by timestamp
+                query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
+
+                var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
+                    .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                    .ToArray();
+
+                if (stats.Any())
                 {
-                    // load rows rows by timestamp
-                    query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
-
-                    var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
-                        .Select(mapper.Map<MinerWorkerPerformanceStats>)
-                        .ToArray();
-
-                    if (stats.Any())
+                    // replace null worker with empty string
+                    foreach(var stat in stats)
                     {
-                        // replace null worker with empty string
-                        foreach(var stat in stats)
+                        if (stat.Worker == null)
                         {
-                            if (stat.Worker == null)
-                            {
-                                stat.Worker = string.Empty;
-                                break;
-                            }
+                            stat.Worker = string.Empty;
+                            break;
                         }
-
-                        // transform to dictionary
-                        result.Performance = new WorkerPerformanceStatsContainer
-                        {
-                            Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
-                            {
-                                Hashrate = x.Hashrate,
-                                SharesPerSecond = x.SharesPerSecond
-                            }),
-
-                            Created = stats.First().Created
-                        };
                     }
+
+                    // transform to dictionary
+                    result.Performance = new WorkerPerformanceStatsContainer
+                    {
+                        Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                        {
+                            Hashrate = x.Hashrate,
+                            SharesPerSecond = x.SharesPerSecond
+                        }),
+
+                        Created = stats.First().Created
+                    };
                 }
             }
 
@@ -170,14 +170,21 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         "GROUP BY date_trunc('hour', created), worker " +
                         "ORDER BY created, worker;";
 
-            var entitiesByDate = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
-                .ToArray()
+            var entities = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+                .ToArray();
+
+            // ensure worker is not null
+            foreach (var entity in entities)
+                entity.Worker = entity.Worker ?? string.Empty;
+
+            // group 
+            var entitiesByDate = entities
                 .GroupBy(x=> x.Created);
 
             var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond
