@@ -233,7 +233,7 @@ namespace MiningCore.Api
 #if DEBUG
                     var from = new DateTime(2018, 1, 6, 16, 0, 0);
 #else
-                    var from = clock.Now;
+                    var from = clock.Now.AddDays(-1);
 #endif
                     result.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
                             con, config.Id, from, 0, 15))
@@ -262,7 +262,7 @@ namespace MiningCore.Api
 #if DEBUG
             var from = new DateTime(2018, 1, 7, 16, 0, 0);
 #else
-            var from = clock.Now;
+            var from = clock.Now.AddDays(-1);
 #endif
 
             response.Pool.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
