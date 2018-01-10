@@ -229,9 +229,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
 
-            var query = "SELECT miner, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
-                        "FROM minerstats WHERE poolid = @poolid AND created >= @from GROUP BY miner " +
-                        "ORDER BY hashrate DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            var query = "WITH tmp AS " +
+                        "( " +
+                        "	SELECT  " +
+                        "		ms.miner,  " +
+                        "		ms.hashrate,  " +
+                        "		ms.sharespersecond,  " +
+                        "		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk  " +
+                        "	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
+                        "       FROM minerstats " +
+                        "       WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms " +
+                        ") " +
+                        "SELECT t.miner, t.hashrate, t.sharespersecond " +
+                        "FROM tmp t " +
+                        "WHERE t.rk = 1 " +
+                        "ORDER by t.hashrate DESC " +
+                        "OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<MinerWorkerPerformanceStats>)
