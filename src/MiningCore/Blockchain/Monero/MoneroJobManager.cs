@@ -255,9 +255,9 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
-            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             var job = currentJob;
             if (workerJob.Height != job?.BlockTemplate.Height)
@@ -275,7 +275,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submitted by {context.MinerName}");
 
                     share.TransactionConfirmationData = share.BlobHash;
                 }

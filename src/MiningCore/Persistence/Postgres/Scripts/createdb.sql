@@ -31,6 +31,7 @@ CREATE TABLE blocks
     confirmationprogress FLOAT NOT NULL DEFAULT 0,
 	effort FLOAT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
+	miner TEXT NULL,
 	reward decimal(28,12) NULL,
 	created TIMESTAMP NOT NULL
 );
