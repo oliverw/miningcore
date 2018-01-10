@@ -9,9 +9,12 @@ namespace MiningCore.Api.Extensions
 {
     public static class MiningPoolExtensions
     {
-        public static PoolInfo ToPoolInfo(this PoolConfig pool, IMapper mapper)
+        public static PoolInfo ToPoolInfo(this PoolConfig pool, IMapper mapper, Persistence.Model.PoolStats stats)
         {
             var poolInfo = mapper.Map<PoolInfo>(pool);
+
+            poolInfo.PoolStats = mapper.Map<PoolStats>(stats);
+            poolInfo.NetworkStats = mapper.Map<BlockchainStats>(stats);
 
             // pool wallet link
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);

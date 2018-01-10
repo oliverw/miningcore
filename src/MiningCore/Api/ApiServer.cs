@@ -220,14 +220,11 @@ namespace MiningCore.Api
             {
                 Pools = clusterConfig.Pools.Select(config =>
                 {
-                    var result = config.ToPoolInfo(mapper);
-
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
 
                     // map
-                    result.PoolStats = mapper.Map<Mining.PoolStats>(stats);
-                    result.NetworkStats = mapper.Map<BlockchainStats>(stats);
+                    var result = config.ToPoolInfo(mapper, stats);
 
                     // enrich
 #if DEBUG
@@ -253,9 +250,12 @@ namespace MiningCore.Api
             if (pool == null)
                 return;
 
-            var response = new GetPoolResponse()
+            // load stats
+            var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, pool.Id));
+
+            var response = new GetPoolResponse
             {
-                Pool = pool.ToPoolInfo(mapper)
+                Pool = pool.ToPoolInfo(mapper, stats)
             };
 
             // enrich
