@@ -121,39 +121,40 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
 
-                if (!lastUpdate.HasValue)
-                    return null;
-
-                // load rows rows by timestamp
-                query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
-
-                var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
-                    .Select(mapper.Map<MinerWorkerPerformanceStats>)
-                    .ToArray();
-
-                if (stats.Any())
+                if (lastUpdate.HasValue)
                 {
-                    // replace null worker with empty string
-                    foreach(var stat in stats)
+
+                    // load rows rows by timestamp
+                    query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
+
+                    var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
+                        .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                        .ToArray();
+
+                    if (stats.Any())
                     {
-                        if (stat.Worker == null)
+                        // replace null worker with empty string
+                        foreach(var stat in stats)
                         {
-                            stat.Worker = string.Empty;
-                            break;
+                            if (stat.Worker == null)
+                            {
+                                stat.Worker = string.Empty;
+                                break;
+                            }
                         }
-                    }
 
-                    // transform to dictionary
-                    result.Performance = new WorkerPerformanceStatsContainer
-                    {
-                        Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                        // transform to dictionary
+                        result.Performance = new WorkerPerformanceStatsContainer
                         {
-                            Hashrate = x.Hashrate,
-                            SharesPerSecond = x.SharesPerSecond
-                        }),
+                            Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                            {
+                                Hashrate = x.Hashrate,
+                                SharesPerSecond = x.SharesPerSecond
+                            }),
 
-                        Created = stats.First().Created
-                    };
+                            Created = stats.First().Created
+                        };
+                    }
                 }
             }
 
@@ -177,7 +178,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             foreach (var entity in entities)
                 entity.Worker = entity.Worker ?? string.Empty;
 
-            // group 
+            // group
             var entitiesByDate = entities
                 .GroupBy(x=> x.Created);
 
