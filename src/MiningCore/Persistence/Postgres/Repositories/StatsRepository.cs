@@ -62,6 +62,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.MinerWorkerPerformanceStats>(stats);
 
+            if (string.IsNullOrEmpty(mapped.Worker))
+                mapped.Worker = string.Empty;
+
             var query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
                 "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
@@ -123,7 +126,6 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
                 if (lastUpdate.HasValue)
                 {
-
                     // load rows rows by timestamp
                     query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
 
@@ -146,7 +148,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                         // transform to dictionary
                         result.Performance = new WorkerPerformanceStatsContainer
                         {
-                            Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                            Workers = stats.ToDictionary(x => x.Worker ?? string.Empty, x => new WorkerPerformanceStats
                             {
                                 Hashrate = x.Hashrate,
                                 SharesPerSecond = x.SharesPerSecond
