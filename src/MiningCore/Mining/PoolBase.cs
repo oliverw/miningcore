@@ -158,7 +158,7 @@ namespace MiningCore.Mining
 						using (var subSocket = new SubscriberSocket())
 						{
 							//subSocket.Options.ReceiveHighWatermark = 1000;
-							subSocket.Connect(poolConfig.ExternalStratumZmqSocket);
+							subSocket.Bind(poolConfig.ExternalStratumZmqSocket);
 							subSocket.Subscribe(poolConfig.ExternalStratumZmqTopic);
 
 							logger.Info($"Monitoring external stratum {poolConfig.ExternalStratumZmqSocket}/{poolConfig.ExternalStratumZmqTopic}");
