@@ -38,7 +38,7 @@ namespace MiningCore.Configuration
         VIA, // Viacoin
         PPC, // Peercoin
         ZEC, // ZCash
-        ZCL, // ZCassic
+        ZCL, // Zcassic
         ETH, // Ethereum
         ETC, // Ethereum Classic
         EXP, // Expanse
