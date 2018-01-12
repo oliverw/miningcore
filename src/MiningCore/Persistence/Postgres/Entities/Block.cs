@@ -33,6 +33,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public double ConfirmationProgress { get; set; }
         public double? Effort { get; set; }
         public string TransactionConfirmationData { get; set; }
+        public string Miner { get; set; }
         public decimal Reward { get; set; }
         public DateTime Created { get; set; }
     }

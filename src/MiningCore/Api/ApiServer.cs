@@ -120,7 +120,7 @@ namespace MiningCore.Api
 
             if (!string.IsNullOrEmpty(poolId))
             {
-                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId);
+                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
                 if (pool != null)
                     return pool;
@@ -218,7 +218,7 @@ namespace MiningCore.Api
         {
             var response = new GetPoolsResponse
             {
-                Pools = clusterConfig.Pools.Select(config =>
+                Pools = clusterConfig.Pools.Where(x=> x.Enabled).Select(config =>
                 {
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));

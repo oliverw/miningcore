@@ -404,6 +404,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(request, nameof(request));
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            var context = worker.GetContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
             var jobId = request[1];
@@ -429,7 +430,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight}");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
                 }
             }
 
