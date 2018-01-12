@@ -140,10 +140,15 @@ namespace MiningCore.Blockchain.Monero
             {
                 Destinations = balances
                     .Where(x => x.Amount > 0)
-                    .Select(x => new TransferDestination
+                    .Select(x =>
                     {
-                        Address = x.Address,
-                        Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                        ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                        return new TransferDestination
+                        {
+                            Address = address,
+                            Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                        };
                     }).ToArray(),
 
                 GetTxKey = true
