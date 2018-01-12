@@ -76,7 +76,7 @@ namespace MiningCore.Blockchain.Monero
         private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private MoneroNetworkType networkType;
-        private uint poolAddressBase58Prefix;
+        private UInt64 poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob()
@@ -220,18 +220,19 @@ namespace MiningCore.Blockchain.Monero
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             var addressPrefix = LibCryptonote.DecodeAddress(address);
+            var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
             switch (networkType)
             {
                 case MoneroNetworkType.Main:
-                    if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] && 
-                        addressPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                    if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
+                        addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
                         return false;
                     break;
 
                 case MoneroNetworkType.Test:
                     if (addressPrefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type] &&
-                        addressPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                        addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
                         return false;
                     break;
             }

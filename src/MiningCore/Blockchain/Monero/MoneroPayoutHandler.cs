@@ -419,12 +419,13 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x =>
                 {
                     var addressPrefix = LibCryptonote.DecodeAddress(x.Address);
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(x.Address);
 
                     switch (networkType)
                     {
                         case MoneroNetworkType.Main:
                             if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
-                                addressPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                                addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
                             {
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
                                 return false;
@@ -433,7 +434,7 @@ namespace MiningCore.Blockchain.Monero
 
                         case MoneroNetworkType.Test:
                             if (addressPrefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type] &&
-                                addressPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                                addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
                             {
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
                                 return false;
@@ -451,17 +452,17 @@ namespace MiningCore.Blockchain.Monero
                 {
                     var hasPaymentId = x.Address.Contains(PayoutConstants.PayoutInfoSeperator);
                     var isIntegratedAddress = false;
-                    var addressPrefix = LibCryptonote.DecodeAddress(x.Address);
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(x.Address);
 
                     switch (networkType)
                     {
                         case MoneroNetworkType.Main:
-                            if (addressPrefix == MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                            if (addressIntegratedPrefix == MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
                                 isIntegratedAddress = true;
                             break;
 
                         case MoneroNetworkType.Test:
-                            if (addressPrefix == MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                            if (addressIntegratedPrefix == MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
                                 isIntegratedAddress = true;
                             break;
                     }
