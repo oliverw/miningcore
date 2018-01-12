@@ -196,10 +196,15 @@ namespace MiningCore.Blockchain.Monero
                     // update request
                     request.Destinations = page
                         .Where(x => x.Amount > 0)
-                        .Select(x => new TransferDestination
+                        .Select(x =>
                         {
-                            Address = x.Address,
-                            Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                            ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                            return new TransferDestination
+                            {
+                                Address = address,
+                                Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                            };
                         }).ToArray();
 
                     logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
@@ -309,6 +314,9 @@ namespace MiningCore.Blockchain.Monero
 
             walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+
+            // detect network
+            await GetNetworkTypeAsync();
 
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
@@ -473,7 +481,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
 
-                    var hasPaymentId = !string.IsNullOrEmpty(paymentId);
+                    var hasPaymentId = paymentId != null;
                     var isIntegratedAddress = false;
                     var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
