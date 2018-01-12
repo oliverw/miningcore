@@ -211,18 +211,32 @@ namespace MiningCore.Blockchain.Monero
                 HandleTransferResponse(transferResponse, balances);
         }
 
-        private async Task PayoutToPaymentId(Balance balance)
+        private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
         {
-            // extract paymentId
-            var address = (string) null;
-            var paymentId = (string) null;
+            paymentId = null;
+            var index = input.IndexOf(PayoutConstants.PayoutInfoSeperator);
 
-            var index = balance.Address.IndexOf(PayoutConstants.PayoutInfoSeperator);
             if (index != -1)
             {
-                paymentId = balance.Address.Substring(index + 1);
-                address = balance.Address.Substring(0, index);
+                address = input.Substring(0, index);
+
+                if (index + 1 < input.Length)
+                {
+                    paymentId = input.Substring(index + 1);
+
+                    // ignore invalid payment ids
+                    if (paymentId.Length != MoneroConstants.PaymentIdHexLength)
+                        paymentId = null;
+                }
             }
+
+            else
+                address = input;
+        }
+
+        private async Task PayoutToPaymentId(Balance balance)
+        {
+            ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
 
             if (string.IsNullOrEmpty(paymentId))
                 throw new InvalidOperationException("invalid paymentid");
@@ -418,8 +432,10 @@ namespace MiningCore.Blockchain.Monero
             balances = balances
                 .Where(x =>
                 {
-                    var addressPrefix = LibCryptonote.DecodeAddress(x.Address);
-                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(x.Address);
+                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                    var addressPrefix = LibCryptonote.DecodeAddress(address);
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
                     switch (networkType)
                     {
@@ -450,9 +466,11 @@ namespace MiningCore.Blockchain.Monero
             var simpleBalances = balances
                 .Where(x =>
                 {
-                    var hasPaymentId = x.Address.Contains(PayoutConstants.PayoutInfoSeperator);
+                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                    var hasPaymentId = !string.IsNullOrEmpty(paymentId);
                     var isIntegratedAddress = false;
-                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(x.Address);
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
                     switch (networkType)
                     {

@@ -86,6 +86,7 @@ namespace MiningCore.Blockchain.Monero
         public const int MoneroRpcMethodNotFound = -32601;
         public const char MainNetAddressPrefix = '4';
         public const char TestNetAddressPrefix = '9';
+        public const int PaymentIdHexLength = 64;
         public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
 
         public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
