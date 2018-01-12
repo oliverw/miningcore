@@ -45,6 +45,34 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.AEON, 97 },
         };
 
+        public static readonly Dictionary<CoinType, int> AddressPrefix = new Dictionary<CoinType, int>
+        {
+            { CoinType.XMR, 18 },
+            { CoinType.ETN, 18018 },
+            { CoinType.AEON, 178 },
+        };
+
+        public static readonly Dictionary<CoinType, int> AddressPrefixTestnet = new Dictionary<CoinType, int>
+        {
+            { CoinType.XMR, 53 },
+            { CoinType.ETN, 53 },
+            { CoinType.AEON, 178 },
+        };
+
+        public static readonly Dictionary<CoinType, int> AddressPrefixIntegrated = new Dictionary<CoinType, int>
+        {
+            { CoinType.XMR, 19 },
+            { CoinType.ETN, 18019 },
+            { CoinType.AEON, 178 },
+        };
+
+        public static readonly Dictionary<CoinType, int> AddressPrefixIntegratedTestnet = new Dictionary<CoinType, int>
+        {
+            { CoinType.XMR, 54 },
+            { CoinType.ETN, 54 },
+            { CoinType.AEON, 178 },
+        };
+
         public static readonly Dictionary<CoinType, decimal> SmallestUnit = new Dictionary<CoinType, decimal>
         {
             { CoinType.XMR, Piconero },

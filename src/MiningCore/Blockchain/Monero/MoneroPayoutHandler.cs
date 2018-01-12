@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
@@ -413,9 +414,60 @@ namespace MiningCore.Blockchain.Monero
 #endif
             }
 
+            // validate addresses
+            balances = balances
+                .Where(x =>
+                {
+                    var addressPrefix = LibCryptonote.DecodeAddress(x.Address);
+
+                    switch (networkType)
+                    {
+                        case MoneroNetworkType.Main:
+                            if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
+                                addressPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                            {
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                return false;
+                            }
+                            break;
+
+                        case MoneroNetworkType.Test:
+                            if (addressPrefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type] &&
+                                addressPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                            {
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                return false;
+                            }
+                            break;
+                    }
+
+                    return true;
+                })
+                .ToArray();
+
             // simple balances first
             var simpleBalances = balances
-                .Where(x => !x.Address.Contains(PayoutConstants.PayoutInfoSeperator))
+                .Where(x =>
+                {
+                    var hasPaymentId = x.Address.Contains(PayoutConstants.PayoutInfoSeperator);
+                    var isIntegratedAddress = false;
+                    var addressPrefix = LibCryptonote.DecodeAddress(x.Address);
+
+                    switch (networkType)
+                    {
+                        case MoneroNetworkType.Main:
+                            if (addressPrefix == MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                                isIntegratedAddress = true;
+                            break;
+
+                        case MoneroNetworkType.Test:
+                            if (addressPrefix == MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                                isIntegratedAddress = true;
+                            break;
+                    }
+
+                    return !hasPaymentId && !isIntegratedAddress;
+                })
                 .ToArray();
 
             if (simpleBalances.Length > 0)
@@ -425,7 +477,7 @@ namespace MiningCore.Blockchain.Monero
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
-                .Where(x => x.Address.Contains(PayoutConstants.PayoutInfoSeperator) && x.Amount >= minimumPaymentToPaymentId)
+                .Where(x => x.Amount >= minimumPaymentToPaymentId)
                 .ToArray();
 
             foreach(var balance in paymentIdBalances)
