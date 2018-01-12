@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+
+﻿using System.Collections.Generic;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Configuration;
 
