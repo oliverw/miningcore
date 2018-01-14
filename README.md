@@ -36,7 +36,7 @@ Zcash | Yes | Yes | |
 Monero | Yes | Yes | |
 Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Expanse | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
+Expanse | Yes | Yes | | **Not working for Byzantinium update** Requires [Parity](https://github.com/paritytech/parity/releases)
 DASH | Yes | Yes | |
 Bitcoin Gold | Yes | Yes | |
 Bitcoin Cash | Yes | Yes | |
@@ -52,6 +52,7 @@ Viacoin | Yes | No | |
 Peercoin | Yes | No | |
 Straks | Yes | Yes | |
 Electroneum | Yes | No | |
+MoonCoin | Yes | Yes | |
 #### Ethereum
 
 Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
