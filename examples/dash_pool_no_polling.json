@@ -53,7 +53,7 @@
             "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
             "percentage": 0
         }],
-        "blockRefreshInterval": 500,
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
         "jobRebroadcastTimeout": 10,
         "clientConnectionTimeout": 600,
         "banning": {

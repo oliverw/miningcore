@@ -355,7 +355,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // OW: tmp hotfix
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
-                result *= 2;
+                result *= 4;
 
           return result;
         }
