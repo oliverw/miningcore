@@ -20,11 +20,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using MiningCore.Blockchain.Bitcoin.Configuration;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
@@ -33,11 +38,14 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
+using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -68,6 +76,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
+        protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IExtraNonceProvider extraNonceProvider;
         protected const int ExtranonceBytes = 4;
         protected readonly IHashAlgorithm sha256d = new Sha256D();
@@ -99,29 +108,83 @@ namespace MiningCore.Blockchain.Bitcoin
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
+            var sources = new List<IObservable<bool>>();
+
+            // block updates via ZMQ pub/sub
+            var zmqPublisherSocket = extraPoolConfig?.ZmqBlockNotifySocket?.Trim();
+
+            if (!string.IsNullOrEmpty(zmqPublisherSocket))
+            {
+                sources.Add(Observable.Defer(()=> Observable.Create<bool>(obs =>
+                {
+                    var tcs = new CancellationTokenSource();
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        while (!tcs.IsCancellationRequested)
+                        {
+                            try
+                            {
+                                using (var subSocket = new SubscriberSocket())
+                                {
+                                    //subSocket.Options.ReceiveHighWatermark = 1000;
+                                    subSocket.Connect(zmqPublisherSocket);
+                                    subSocket.Subscribe(BitcoinConstants.ZmqPublisherTopicBlockHash);
+
+                                    logger.Info($"Subscribed to {zmqPublisherSocket}/{BitcoinConstants.ZmqPublisherTopicBlockHash} for ZMQ pub/sub block updates");
+
+                                    while (true)
+                                    {
+                                        subSocket.ReceiveMultipartMessage(2);
+                                        //var msg = subSocket.ReceiveMultipartMessage(2);
+                                        //var topic = msg.First().ConvertToString(Encoding.UTF8);
+                                        //var body = msg.Last().ConvertToString(Encoding.UTF8);
+
+                                        obs.OnNext(true);
+                                    }
+                                }
+                            }
+
+                            catch (Exception ex)
+                            {
+                                logger.Error(ex);
+                            }
+
+                            // do not consume all CPU cycles in case of a long lasting error condition
+                            Thread.Sleep(1000);
+                        }
+                    }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+                    return Disposable.Create(() =>
+                    {
+                        tcs.Cancel();
+                    });
+                }))
+                .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
+                .Concat()
+                .Publish()
+                .RefCount());
+            }
 
             // periodically update block-template from daemon
-            var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                .Select(_ => Observable.FromAsync(() => UpdateJob(false)))
+            var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
                 .Concat()
-                .Do(isNew =>
-                {
-                    if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                })
                 .Where(isNew => isNew)
                 .Publish()
                 .RefCount();
 
+            sources.Add(newJobsPolled);
+
             // if there haven't been any new jobs for a while, force an update
-            var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
-                .TakeUntil(newJobs) // cancel timeout if an actual new job has been detected
+            sources.Add(Observable.Timer(jobRebroadcastTimeout)
+                .TakeUntil(newJobsPolled) // cancel timeout if an actual new job has been detected
                 .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
                 .Select(x => Observable.FromAsync(() => UpdateJob(true)))
                 .Concat()
-                .Repeat();
+                .Repeat());
 
-            Jobs = newJobs.Merge(forcedNewJobs)
+            Jobs = Observable.Merge(sources)
                 .Select(GetJobParamsForStratum);
         }
 
@@ -380,6 +443,13 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override string LogCat => "Bitcoin Job Manager";
 
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+
+            base.Configure(poolConfig, clusterConfig);
+        }
+
         protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
@@ -540,7 +610,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual async Task<bool> UpdateJob(bool forceUpdate)
+        protected virtual async Task<bool> UpdateJob(bool forceUpdate, string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -571,9 +641,12 @@ namespace MiningCore.Blockchain.Bitcoin
                         ShareMultiplier,
                         coinbaseHasher, headerHasher, blockHasher);
 
-                    // update stats
                     if (isNew)
                     {
+                        if(via != null)
+                            logger.Info($"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+
+                        // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = blockTemplate.Height;
                         BlockchainStats.NetworkDifficulty = job.Difficulty;

@@ -37,14 +37,13 @@ namespace MiningCore.Blockchain.ZCash
             };
         }
 
-        private ZCashPoolConfigExtra poolExtraConfig;
+        private ZCashPoolConfigExtra zcashExtraPoolConfig;
 
         #region Overrides of JobManagerBase<TJob>
 
-        /// <inheritdoc />
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
-            poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+            zcashExtraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
             base.Configure(poolConfig, clusterConfig);
         }
