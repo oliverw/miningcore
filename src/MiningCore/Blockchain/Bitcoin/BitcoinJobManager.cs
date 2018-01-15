@@ -135,7 +135,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                                     logger.Info($"Subscribed to {zmqPublisherSocket}/{BitcoinConstants.ZmqPublisherTopicBlockHash} for ZMQ pub/sub block updates");
 
-                                    while (true)
+                                    while (!tcs.IsCancellationRequested)
                                     {
                                         subSocket.ReceiveMultipartMessage(2);
                                         //var msg = subSocket.ReceiveMultipartMessage(2);
