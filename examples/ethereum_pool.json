@@ -54,8 +54,7 @@
                 "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
                 "percentage": 0
         }],
-        "blockRefreshInterval": 1000,
-        "jobRebroadcastTimeout": 55,
+        "blockRefreshInterval": 500,
         "clientConnectionTimeout": 600,
         "banning": {
             "enabled": true,

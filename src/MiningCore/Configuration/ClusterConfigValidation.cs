@@ -70,7 +70,7 @@ namespace MiningCore.Configuration
                 .WithMessage("You must provide the webhook url");
         }
     }
-    
+
     public class NetworkEndpointConfigValidator<T> : AbstractValidator<T>
         where T : NetworkEndpointConfig
     {

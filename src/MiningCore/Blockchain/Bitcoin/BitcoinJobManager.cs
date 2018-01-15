@@ -107,15 +107,17 @@ namespace MiningCore.Blockchain.Bitcoin
 	        if (poolConfig.ExternalStratum)
 		        return;
 
-            jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
+            jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
+
             var sources = new List<IObservable<bool>>();
+            var cancelTimeout = new List<IObservable<bool>>();
 
             // block updates via ZMQ pub/sub
             var zmqPublisherSocket = extraPoolConfig?.ZmqBlockNotifySocket?.Trim();
 
             if (!string.IsNullOrEmpty(zmqPublisherSocket))
             {
-                sources.Add(Observable.Defer(()=> Observable.Create<bool>(obs =>
+                var newJobsPubSub = Observable.Defer(()=> Observable.Create<bool>(obs =>
                 {
                     var tcs = new CancellationTokenSource();
 
@@ -163,22 +165,48 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
                 .Concat()
                 .Publish()
-                .RefCount());
-            }
-
-            // periodically update block-template from daemon
-            var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
-                .Concat()
-                .Where(isNew => isNew)
-                .Publish()
                 .RefCount();
 
-            sources.Add(newJobsPolled);
+                sources.Add(newJobsPubSub);
+                cancelTimeout.Add(newJobsPubSub);
+            }
+
+            if (poolConfig.BlockRefreshInterval > 0)
+            {
+                // periodically update block-template from daemon
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
+
+            else
+            {
+                // poll for the first successful update after which polling is suspended forever
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Take(1)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
 
             // if there haven't been any new jobs for a while, force an update
+            var cancelRebroadcast = cancelTimeout.Count > 0 ?
+                cancelTimeout.Count > 1 ? Observable.Merge(cancelTimeout) : cancelTimeout.First() :
+                Observable.Never<bool>();
+
             sources.Add(Observable.Timer(jobRebroadcastTimeout)
-                .TakeUntil(newJobsPolled) // cancel timeout if an actual new job has been detected
+                .TakeUntil(cancelRebroadcast) // cancel timeout if an actual new job has been detected
                 .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
                 .Select(x => Observable.FromAsync(() => UpdateJob(true)))
                 .Concat()
