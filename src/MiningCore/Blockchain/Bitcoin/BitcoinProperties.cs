@@ -101,6 +101,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // Equihash
             { CoinType.ZEC, equihashCoin },
             { CoinType.BTG, equihashCoin },
+            { CoinType.ZCL, equihashCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
