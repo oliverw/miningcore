@@ -20,12 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Numerics;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,7 +40,6 @@ using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
-using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -143,6 +139,8 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
+                    BlockchainStats.BlockHeight = (long) job.BlockTemplate.Height;
+                    BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                 }
 
                 return isNew;
@@ -262,6 +260,37 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
+        private async Task UpdateNetworkStatsAsync()
+        {
+            logger.LogInvoke(LogCat);
+
+            var commands = new[]
+            {
+                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
+                new DaemonCmd(EC.GetPeerCount),
+            };
+
+            var results = await daemon.ExecuteBatchAnyAsync(commands);
+
+            if (results.Any(x => x.Error != null))
+            {
+                var errors = results.Where(x => x.Error != null)
+                    .ToArray();
+
+                if (errors.Any())
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
+            }
+
+            // extract results
+            var block = results[0].Response.ToObject<Block>();
+            var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
+
+            BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
+            BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
+            BlockchainStats.NetworkHashRate = 0; // TODO
+            BlockchainStats.ConnectedPeers = peerCount;
+        }
+
         private async Task<bool> SubmitBlockAsync(EthereumShare share)
         {
             // submit work
@@ -371,6 +400,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(request, nameof(request));
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            var context = worker.GetContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
             var jobId = request[1];
@@ -396,7 +426,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight}");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
                 }
             }
 
@@ -406,37 +436,6 @@ namespace MiningCore.Blockchain.Ethereum
             share.Created = clock.Now;
 
             return share;
-        }
-
-        public async Task UpdateNetworkStatsAsync()
-        {
-            logger.LogInvoke(LogCat);
-
-            var commands = new[]
-            {
-                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
-                new DaemonCmd(EC.GetPeerCount),
-            };
-
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
-
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null)
-                    .ToArray();
-
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
-            }
-
-            // extract results
-            var block = results[0].Response.ToObject<Block>();
-            var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
-
-            BlockchainStats.BlockHeight = block.Height.HasValue ? (long) block.Height.Value : -1;
-            BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
-            BlockchainStats.NetworkHashRate = 0; // TODO
-            BlockchainStats.ConnectedPeers = peerCount;
         }
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();

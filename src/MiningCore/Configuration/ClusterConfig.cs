@@ -50,7 +50,8 @@ namespace MiningCore.Configuration
         ELLA, // Ellaism
         AEON, // AEON
         STAK, // Straks
-        ETN   // Electroneum
+        ETN, // Electroneum
+        MOON //MoonCoin
     }
 
     public class CoinConfig

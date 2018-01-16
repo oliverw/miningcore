@@ -296,13 +296,20 @@ namespace MiningCore.Blockchain.Monero
 
             await manager.StartAsync();
 
-	        if (!poolConfig.ExternalStratum)
+            if (!poolConfig.ExternalStratum)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
 		        // we need work before opening the gates
 		        await manager.Blocks.Take(1).ToTask();
 	        }
+        }
+
+        protected override void InitStats()
+        {
+            base.InitStats();
+
+            blockchainStats = manager.BlockchainStats;
         }
 
         protected override WorkerContextBase CreateClientContext()
@@ -343,10 +350,10 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public override ulong HashrateFromShares(double shares, double interval)
+        public override double HashrateFromShares(double shares, double interval)
         {
-            var result = Math.Ceiling(shares / interval);
-            return (ulong)result;
+            var result = shares / interval;
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
@@ -364,13 +371,6 @@ namespace MiningCore.Blockchain.Monero
                 var job = CreateWorkerJob(client);
                 client.Notify(MoneroStratumMethods.JobNotify, job);
             }
-        }
-
-        protected override async Task UpdateBlockChainStatsAsync()
-        {
-            await manager.UpdateNetworkStatsAsync();
-
-            blockchainStats = manager.BlockchainStats;
         }
 
         #endregion // Overrides

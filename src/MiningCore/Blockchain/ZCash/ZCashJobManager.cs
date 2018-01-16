@@ -37,14 +37,13 @@ namespace MiningCore.Blockchain.ZCash
             };
         }
 
-        private ZCashPoolConfigExtra poolExtraConfig;
+        private ZCashPoolConfigExtra zcashExtraPoolConfig;
 
         #region Overrides of JobManagerBase<TJob>
 
-        /// <inheritdoc />
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
-            poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+            zcashExtraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
             base.Configure(poolConfig, clusterConfig);
         }
@@ -163,7 +162,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

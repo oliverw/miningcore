@@ -52,14 +52,18 @@ namespace MiningCore.Persistence.Postgres.Repositories
             con.Execute(query, mapped, tx);
         }
 
-        public Payment[] PagePayments(IDbConnection con, string poolId, int page, int pageSize)
+        public Payment[] PagePayments(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM payments WHERE poolid = @poolid " +
-                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            var query = "SELECT * FROM payments WHERE poolid = @poolid ";
 
-            return con.Query<Entities.Payment>(query, new { poolId, offset = page * pageSize, pageSize })
+            if (!string.IsNullOrEmpty(address))
+                query += " AND address = @address ";
+
+            query += "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<Entities.Payment>(query, new { poolId, address, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<Payment>)
                 .ToArray();
         }

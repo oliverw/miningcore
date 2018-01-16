@@ -8,7 +8,7 @@
         "perPoolLogFile": false
     },
     "banning": {
-        "manager": "integrated"
+        "manager": "integrated",
         "banOnJunkReceive": true,
         "banOnInvalidShares": false
     },
@@ -56,8 +56,8 @@
           "percentage": 1.0
         }
       ],
-      "blockRefreshInterval": 1000,
-      "jobRebroadcastTimeout": 55,
+      "blockRefreshInterval": 500,
+      "jobRebroadcastTimeout": 10,
       "clientConnectionTimeout": 600,
       "banning": {
         "enabled": true,

@@ -76,7 +76,7 @@ extern "C" MODULE_API bool convert_blob_export(const char* input, unsigned int i
 	return true;
 }
 
-extern "C" MODULE_API uint32_t decode_address_export(const char* input, unsigned int inputSize)
+extern "C" MODULE_API uint64_t decode_address_export(const char* input, unsigned int inputSize)
 {
 	blobdata input_blob = std::string(input, inputSize);
 	blobdata data = "";
@@ -85,16 +85,34 @@ extern "C" MODULE_API uint32_t decode_address_export(const char* input, unsigned
 	bool decodeResult = tools::base58::decode_addr(input_blob, prefix, data);
 
 	if (!decodeResult || data.length() == 0)
-		return 0;	// error
+		return 0L;	// error
 
 	account_public_address adr;
 	if (!::serialization::parse_binary(data, adr))
-		return 0;
+		return 0L;
 
 	if (!crypto::check_key(adr.m_spend_public_key) || !crypto::check_key(adr.m_view_public_key))
-		return 0;
+		return 0L;
 
-	return static_cast<uint32_t>(prefix);
+	return prefix;
+}
+
+extern "C" MODULE_API uint64_t decode_integrated_address_export(const char* input, unsigned int inputSize)
+{
+    blobdata input_blob = std::string(input, inputSize);
+    blobdata data = "";
+
+    uint64_t prefix;
+    bool decodeResult = tools::base58::decode_addr(input_blob, prefix, data);
+
+    if (!decodeResult || data.length() == 0)
+        return 0L;	// error
+
+    integrated_address iadr;
+    if (!::serialization::parse_binary(data, iadr) || !crypto::check_key(iadr.adr.m_spend_public_key) || !crypto::check_key(iadr.adr.m_view_public_key))
+        return 0L;	// error
+
+    return prefix;
 }
 
 extern "C" MODULE_API void cn_slow_hash_export(const char* input, unsigned char *output, uint32_t inputSize)

@@ -46,8 +46,13 @@ namespace MiningCore
                 .ForMember(dest => dest.PoolId, opt => opt.Ignore())
                 .ForMember(dest => dest.Created, opt => opt.Ignore());
 
+            CreateMap<BlockchainStats, PoolStats>()
+                .ForMember(dest => dest.PoolId, opt => opt.Ignore())
+                .ForMember(dest => dest.Created, opt => opt.Ignore());
+
             // API
             CreateMap<PoolConfig, Api.Responses.PoolInfo>();
+            CreateMap<PoolStats, Api.Responses.PoolInfo>();
             CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
             CreateMap<Block, Api.Responses.Block>();
             CreateMap<Payment, Api.Responses.Payment>();
@@ -81,8 +86,14 @@ namespace MiningCore
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
             CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
+            CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
             CreateMap<PoolStats, Mining.PoolStats>();
+            CreateMap<BlockchainStats, Mining.PoolStats>();
+
+            CreateMap<PoolStats, BlockchainStats>()
+                .ForMember(dest => dest.RewardType, opt => opt.Ignore())
+                .ForMember(dest => dest.NetworkType, opt => opt.Ignore());
         }
     }
 }
