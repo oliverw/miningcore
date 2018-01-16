@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Configuration;
 
@@ -28,13 +28,14 @@ namespace MiningCore.Blockchain
             { CoinType.BTC, new Dictionary<string, string> { { string.Empty, "https://blockchain.info/block/{0}" }}},
             { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, "https://dogechain.info/block/{0}" }}},
             { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, "https://explorer.zcha.in/blocks/{0}" }}},
+            { CoinType.ZCL, new Dictionary<string, string> { { string.Empty, "http://explorer.zclmine.pro/blocks/{0}" }}},
             { CoinType.DGB, new Dictionary<string, string> { { string.Empty, "https://digiexplorer.info/block/{0}" }}},
             { CoinType.NMC, new Dictionary<string, string> { { string.Empty, "https://explorer.namecoin.info/b/{0}" }}},
             { CoinType.GRS, new Dictionary<string, string> { { string.Empty, "https://groestlsight.groestlcoin.org/block/{0}" }}},
             { CoinType.MONA, new Dictionary<string, string> { { string.Empty, "https://bchain.info/MONA/block/{0}" }}},
             { CoinType.GLT, new Dictionary<string, string> { { string.Empty, "https://bchain.info/GLT/block/{0}" }}},
             { CoinType.VTC, new Dictionary<string, string> { { string.Empty, "https://bchain.info/VTC/block/{0}" }}},
-            //{ CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btgexp.com/block/{0}" }}},
+            { CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btg-bitcore2.trezor.io/block/{0}" }}},
             { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, "https://explorer.ellaism.org/block/{0}" }}},
             { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
             { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
@@ -54,6 +55,7 @@ namespace MiningCore.Blockchain
             { CoinType.BTC, "https://blockchain.info/tx/{0}" },
             { CoinType.DOGE, "https://dogechain.info/tx/{0}" },
             { CoinType.ZEC, "https://explorer.zcha.in/transactions/{0}" },
+            { CoinType.ZCL, "http://explorer.zclmine.pro/transactions/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/tx/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/tx/{0}" },
@@ -78,6 +80,7 @@ namespace MiningCore.Blockchain
             { CoinType.BTC, "https://blockchain.info/address/{0}" },
             { CoinType.DOGE, "https://dogechain.info/address/{0}" },
             { CoinType.ZEC, "https://explorer.zcha.in/accounts/{0}" },
+            { CoinType.ZCL, "http://explorer.zclmine.pro/accounts/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/address/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/a/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/address/{0}" },

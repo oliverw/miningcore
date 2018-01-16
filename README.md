@@ -69,7 +69,7 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 
 ### Donations
 
-This software comes with a built-in dontation of 0.15% per block-reward to support the ongoing development of this project. If you do not want to support the project, you can remove or alter the donation by adding <code>devDonation = 0.0</code> to the configuration file. You can also send donations directly to the following accounts:
+This software comes with a built-in donation of 0.15% per block-reward to support the ongoing development of this project. If you do not want to support the project, you can remove or alter the donation by adding <code>devDonation = 0.0</code> to the configuration file. You can also send donations directly to the following accounts:
 
 * BTC:  17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm
 * LTC:  LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC
