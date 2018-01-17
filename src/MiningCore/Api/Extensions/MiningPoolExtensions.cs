@@ -2,7 +2,9 @@ using System.Linq;
 using AutoMapper;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
+using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.Mining;
 
 namespace MiningCore.Api.Extensions
@@ -23,6 +25,14 @@ namespace MiningCore.Api.Extensions
 
             // pool fees
             poolInfo.PoolFeePercent = (float)pool.RewardRecipients.Sum(x => x.Percentage);
+
+            // strip security critical stuff
+            if (poolInfo.PaymentProcessing.Extra != null)
+            {
+                var extra = poolInfo.PaymentProcessing.Extra;
+
+                extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
+            }
 
             return poolInfo;
         }

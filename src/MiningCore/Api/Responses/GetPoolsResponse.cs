@@ -38,6 +38,9 @@ namespace MiningCore.Api.Responses
         public decimal MinimumPayment { get; set; } // in pool-base-currency (ie. Bitcoin, not Satoshis)
         public string PayoutScheme { get; set; }
         public JToken PayoutSchemeConfig { get; set; }
+
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
     }
 
     public partial class PoolInfo
