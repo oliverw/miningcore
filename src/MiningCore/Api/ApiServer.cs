@@ -227,6 +227,7 @@ namespace MiningCore.Api
                     var result = config.ToPoolInfo(mapper, stats);
 
                     // enrich
+                    result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
 #if DEBUG
                     var from = new DateTime(2018, 1, 6, 16, 0, 0);
 #else
@@ -259,6 +260,7 @@ namespace MiningCore.Api
             };
 
             // enrich
+            response.Pool.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, pool.Id));
 #if DEBUG
             var from = new DateTime(2018, 1, 7, 16, 0, 0);
 #else
