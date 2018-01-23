@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Configuration;
 
@@ -98,6 +100,39 @@ namespace MiningCore.Blockchain
             { CoinType.EXP, "http://www.gander.tech/address/{0}" },
             { CoinType.MOON, "https://chainz.cryptoid.info/moon/address.dws?{0}.htm" },
             { CoinType.XVG, "https://verge-blockchain.info/address/{0}" },
+        };
+
+        private const string Ethash = "Dagger-Hashimoto";
+        private const string Cryptonight = "Cryptonight";
+        private const string CryptonightLight = "Cryptonight-Light";
+
+        public static readonly Dictionary<CoinType, Func<CoinType, string>> CoinAlgorithm = new Dictionary<CoinType, Func<CoinType, string>>
+        {
+            { CoinType.ETH, (coin)=> Ethash },
+            { CoinType.ETC, (coin)=> Ethash },
+            { CoinType.LTC, BitcoinProperties.GetAlgorithm },
+            { CoinType.BCH, BitcoinProperties.GetAlgorithm },
+            { CoinType.DASH, BitcoinProperties.GetAlgorithm },
+            { CoinType.BTC, BitcoinProperties.GetAlgorithm },
+            { CoinType.DOGE, BitcoinProperties.GetAlgorithm },
+            { CoinType.ZEC, BitcoinProperties.GetAlgorithm },
+            { CoinType.ZCL, BitcoinProperties.GetAlgorithm },
+            { CoinType.ZEN, BitcoinProperties.GetAlgorithm },
+            { CoinType.DGB, BitcoinProperties.GetAlgorithm },
+            { CoinType.NMC, BitcoinProperties.GetAlgorithm },
+            { CoinType.GRS, BitcoinProperties.GetAlgorithm },
+            { CoinType.MONA, BitcoinProperties.GetAlgorithm },
+            { CoinType.STAK, BitcoinProperties.GetAlgorithm },
+            { CoinType.GLT, BitcoinProperties.GetAlgorithm },
+            { CoinType.VTC, BitcoinProperties.GetAlgorithm },
+            { CoinType.BTG, BitcoinProperties.GetAlgorithm },
+            { CoinType.ELLA, (coin)=> Ethash },
+            { CoinType.EXP, (coin)=> Ethash },
+            { CoinType.MOON, BitcoinProperties.GetAlgorithm },
+            { CoinType.XVG, BitcoinProperties.GetAlgorithm },
+            { CoinType.XMR, (coin)=> Cryptonight },
+            { CoinType.ETN, (coin)=> Cryptonight },
+            { CoinType.AEON, (coin)=> CryptonightLight },
         };
     }
 }

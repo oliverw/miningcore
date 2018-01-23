@@ -30,6 +30,7 @@ namespace MiningCore.Api.Responses
     public class ApiCoinConfig
     {
         public string Type { get; set; }
+        public string Algorithm { get; set; }
     }
 
     public class ApiPoolPaymentProcessingConfig
