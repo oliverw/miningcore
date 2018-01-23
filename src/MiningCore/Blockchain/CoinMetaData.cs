@@ -29,6 +29,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, "https://dogechain.info/block/{0}" }}},
             { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, "https://explorer.zcha.in/blocks/{0}" }}},
             { CoinType.ZCL, new Dictionary<string, string> { { string.Empty, "http://explorer.zclmine.pro/blocks/{0}" }}},
+            { CoinType.ZEN, new Dictionary<string, string> { { string.Empty, "http://explorer.zensystem.io/blocks/{0}" } }},
             { CoinType.DGB, new Dictionary<string, string> { { string.Empty, "https://digiexplorer.info/block/{0}" }}},
             { CoinType.NMC, new Dictionary<string, string> { { string.Empty, "https://explorer.namecoin.info/b/{0}" }}},
             { CoinType.GRS, new Dictionary<string, string> { { string.Empty, "https://groestlsight.groestlcoin.org/block/{0}" }}},
@@ -40,7 +41,8 @@ namespace MiningCore.Blockchain
             { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
             { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
-            { CoinType.MOON, new Dictionary<string, string> { { string.Empty, " https://chainz.cryptoid.info/moon/block.dws?{0}.htm" }}},
+            { CoinType.MOON, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/moon/block.dws?{0}.htm" }}},
+            { CoinType.XVG, new Dictionary<string, string> { { string.Empty, "https://verge-blockchain.info/block/{0}" } }},
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -56,6 +58,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, "https://dogechain.info/tx/{0}" },
             { CoinType.ZEC, "https://explorer.zcha.in/transactions/{0}" },
             { CoinType.ZCL, "http://explorer.zclmine.pro/transactions/{0}" },
+            { CoinType.ZEN, "http://explorer.zensystem.io/transactions/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/tx/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/tx/{0}" },
@@ -68,6 +71,7 @@ namespace MiningCore.Blockchain
             { CoinType.EXP, "http://www.gander.tech/tx/{0}" },
             { CoinType.AEON, "https://chainradar.com/aeon/transaction/{0}" },
             { CoinType.MOON, "https://chainz.cryptoid.info/moon/tx.dws?{0}.htm" },
+            { CoinType.XVG, "https://verge-blockchain.info/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -81,6 +85,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, "https://dogechain.info/address/{0}" },
             { CoinType.ZEC, "https://explorer.zcha.in/accounts/{0}" },
             { CoinType.ZCL, "http://explorer.zclmine.pro/accounts/{0}" },
+            { CoinType.ZEN, "http://explorer.zensystem.io/accounts/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/address/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/a/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/address/{0}" },
@@ -92,6 +97,7 @@ namespace MiningCore.Blockchain
             { CoinType.ELLA, "https://explorer.ellaism.org/addr/{0}" },
             { CoinType.EXP, "http://www.gander.tech/address/{0}" },
             { CoinType.MOON, "https://chainz.cryptoid.info/moon/address.dws?{0}.htm" },
+            { CoinType.XVG, "https://verge-blockchain.info/address/{0}" },
         };
     }
 }

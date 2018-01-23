@@ -102,12 +102,15 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.ZEC, equihashCoin },
             { CoinType.BTG, equihashCoin },
             { CoinType.ZCL, equihashCoin },
+            { CoinType.ZEN, equihashCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
         {
             if (coin == CoinType.DGB)
                 return GetDigiByteProperties(algorithm);
+            else if (coin == CoinType.XVG)
+                return GetVergeProperties(algorithm);
 
             coinProperties.TryGetValue(coin, out var props);
             return props;
@@ -118,6 +121,25 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
             switch(algorithm)
+            {
+                case "lyra2rev2":
+                    return lyra2Rev2CoinVariantA;
+
+                case "x17":
+                case "groestl-myriad":
+                case "blake2s":
+                    throw new NotSupportedException($"algorithm {algorithm} not yet supported");
+
+                default: // scrypt
+                    return scryptCoin;
+            }
+        }
+
+        private static BitcoinCoinProperties GetVergeProperties(string algorithm)
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
+
+            switch (algorithm)
             {
                 case "sha256d":
                     return sha256Coin;
