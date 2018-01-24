@@ -23,16 +23,14 @@ using MiningCore.Native;
 
 namespace MiningCore.Crypto.Hashing.Algorithms
 {
-    public unsafe class Scrypt : IHashAlgorithm
+    public unsafe class NeoScrypt : IHashAlgorithm
     {
-        public Scrypt(uint n, uint r)
+        public NeoScrypt(uint profile)
         {
-            this.n = n;
-            this.r = r;
+            this.profile = profile;
         }
 
-        private readonly uint n;
-        private readonly uint r;
+        private readonly uint profile;
 
         public byte[] Digest(byte[] data, params object[] extra)
         {
@@ -44,7 +42,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.scrypt(input, output, n, r, (uint)data.Length);
+                    LibMultihash.neoscrypt(input, output, (uint)data.Length, profile);
                 }
             }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -74,6 +75,23 @@ namespace MiningCore.Tests.Crypto
         public void Scrypt_Hash_Should_Throw_On_Null_Input()
         {
             var hasher = new Scrypt(1024, 1);
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+/*
+        [Fact]
+        public void NeoScrypt_Hash_Should_Match()
+        {
+            var hasher = new NeoScrypt(0);
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("2d48f6104ede1ecee0021b1e92f4c85aa6fbf38fe93c6b94bc4addf370ae8bb7", result);
+        }
+*/
+        [Fact]
+        public void NeoScrypt_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new NeoScrypt(0);
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
 
