@@ -14,6 +14,9 @@ namespace MiningCore.Tests.Crypto
     {
         private static readonly byte[] testValue = Enumerable.Repeat((byte) 0x80, 32).ToArray();
 
+        // some algos need 80 byte input buffers
+        private static readonly byte[] testValue2 = Enumerable.Repeat((byte)0x80, 80).ToArray();
+
         [Fact]
         public void Blake_Hash_Should_Match()
         {
@@ -78,16 +81,15 @@ namespace MiningCore.Tests.Crypto
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
 
-/*
         [Fact]
         public void NeoScrypt_Hash_Should_Match()
         {
             var hasher = new NeoScrypt(0);
-            var result = hasher.Digest(testValue).ToHexString();
+            var result = hasher.Digest(testValue2).ToHexString();
 
-            Assert.Equal("2d48f6104ede1ecee0021b1e92f4c85aa6fbf38fe93c6b94bc4addf370ae8bb7", result);
+            Assert.Equal("7915d56de262bf23b1fb9104cf5d2a13fcbed2f6b4b9b657309c222b09f54bc0", result);
         }
-*/
+
         [Fact]
         public void NeoScrypt_Hash_Should_Throw_On_Null_Input()
         {
