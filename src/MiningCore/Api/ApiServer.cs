@@ -382,7 +382,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)
@@ -428,7 +428,7 @@ namespace MiningCore.Api
                     stats.LastPayment = statsResult.LastPayment.Created;
 
                     // Compute info link
-                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
+                    if (CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
@@ -466,7 +466,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)

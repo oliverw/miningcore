@@ -54,6 +54,8 @@ namespace MiningCore.Configuration
         ETN, // Electroneum
         MOON, // MoonCoin
         XVG,  // Verge
+        GBX,  // GoByte
+        CRC,  // CrowdCoin
     }
 
     public class CoinConfig

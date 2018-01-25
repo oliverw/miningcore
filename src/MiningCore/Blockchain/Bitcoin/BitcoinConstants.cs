@@ -99,7 +99,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.MOON, "2QvpGimMYLyqKsczQXZjv56h6me3M8orwj" },
             {CoinType.XVG, "D5xPoHLM6HPkwWSqAweECTSQirJBmRjS8i" },
             {CoinType.XMR, "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH"},
-            {CoinType.ETN, "etnkQJwBCjmR1MfkU8D355ZWxxLMhs8miPrtKHWN4U3uUowq9ugeKccVBoEG3n13n74us5AkT8tEoTog46w4HBgn8sMuBRhm9h"}
+            {CoinType.ETN, "etnkQJwBCjmR1MfkU8D355ZWxxLMhs8miPrtKHWN4U3uUowq9ugeKccVBoEG3n13n74us5AkT8tEoTog46w4HBgn8sMuBRhm9h"},
         };
     }
 
