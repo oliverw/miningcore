@@ -41,7 +41,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm skein = new Skein();
         private static readonly IHashAlgorithm qubit = new Qubit();
         private static readonly IHashAlgorithm groestlMyriad = new GroestlMyriad();
-        private static readonly IHashAlgorithm neoScrypt = new NeoScrypt(0);
+        private static readonly IHashAlgorithm neoScryptProfile1 = new NeoScrypt(0x80000620);
 
         private static readonly BitcoinCoinProperties sha256Coin =
             new BitcoinCoinProperties(1, sha256D, sha256D, sha256DReverse, "Sha256");
@@ -74,7 +74,7 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(1, new DummyHasher(), sha256D, sha256DReverse, "Equihash");
 
         private static readonly BitcoinCoinProperties neoScryptCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, neoScrypt, sha256DReverse, "Neoscrypt");
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, sha256DReverse, "Neoscrypt");
 
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
