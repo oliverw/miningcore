@@ -430,11 +430,7 @@ namespace MiningCore.Blockchain.Bitcoin
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
 
             if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
-            {
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
-
-                logger.Info(() => $"[{LogCat}] Setting {nameof(maxActiveJobs)} to {maxActiveJobs}");
-            }
 
             base.Configure(poolConfig, clusterConfig);
         }
