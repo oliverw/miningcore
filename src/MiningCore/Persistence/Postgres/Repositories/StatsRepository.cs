@@ -84,6 +84,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return mapper.Map<PoolStats>(entity);
         }
 
+        public decimal GetTotalPoolPayments(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke();
+
+            var query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
+
+            var result = con.ExecuteScalar<decimal>(query, new { poolId });
+            return result;
+        }
+
         public PoolStats[] GetPoolPerformanceBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new []{ poolId });

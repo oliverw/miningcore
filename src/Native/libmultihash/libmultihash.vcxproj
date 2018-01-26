@@ -202,10 +202,12 @@
     <ClInclude Include="sha3\sph_fugue.h" />
     <ClInclude Include="sha3\sph_groestl.h" />
     <ClInclude Include="sha3\sph_hamsi.h" />
+    <ClInclude Include="sha3\sph_haval.h" />
     <ClInclude Include="sha3\sph_hefty1.h" />
     <ClInclude Include="sha3\sph_jh.h" />
     <ClInclude Include="sha3\sph_keccak.h" />
     <ClInclude Include="sha3\sph_luffa.h" />
+    <ClInclude Include="sha3\sph_sha2.h" />
     <ClInclude Include="sha3\sph_shabal.h" />
     <ClInclude Include="sha3\sph_shavite.h" />
     <ClInclude Include="sha3\sph_simd.h" />
@@ -222,6 +224,7 @@
     <ClInclude Include="x13.h" />
     <ClInclude Include="x14.h" />
     <ClInclude Include="x15.h" />
+    <ClInclude Include="x17.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
@@ -254,17 +257,19 @@
     <ClCompile Include="scryptn.c" />
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\hamsi.c" />
-    <ClCompile Include="sha3\hamsi_helper.c" />
     <ClCompile Include="sha3\sph_blake.c" />
     <ClCompile Include="sha3\sph_bmw.c" />
     <ClCompile Include="sha3\sph_cubehash.c" />
     <ClCompile Include="sha3\sph_echo.c" />
     <ClCompile Include="sha3\sph_fugue.c" />
     <ClCompile Include="sha3\sph_groestl.c" />
+    <ClCompile Include="sha3\sph_haval.c" />
     <ClCompile Include="sha3\sph_hefty1.c" />
     <ClCompile Include="sha3\sph_jh.c" />
     <ClCompile Include="sha3\sph_keccak.c" />
     <ClCompile Include="sha3\sph_luffa.c" />
+    <ClCompile Include="sha3\sph_sha2.c" />
+    <ClCompile Include="sha3\sph_sha2big.c" />
     <ClCompile Include="sha3\sph_shabal.c" />
     <ClCompile Include="sha3\sph_shavite.c" />
     <ClCompile Include="sha3\sph_simd.c" />
@@ -278,6 +283,7 @@
     <ClCompile Include="x13.c" />
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
+    <ClCompile Include="x17.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

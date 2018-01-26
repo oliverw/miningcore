@@ -20,13 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin.Configuration;
@@ -38,14 +34,11 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
-using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -76,12 +69,12 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
-        protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IExtraNonceProvider extraNonceProvider;
         protected const int ExtranonceBytes = 4;
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
-        protected const int MaxActiveJobs = 4;
+        protected int maxActiveJobs = 4;
+        protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
         protected IHashAlgorithm blockHasher;
@@ -112,60 +105,21 @@ namespace MiningCore.Blockchain.Bitcoin
             var sources = new List<IObservable<bool>>();
             var cancelTimeout = new List<IObservable<bool>>();
 
-            // block updates via ZMQ pub/sub
-            var zmqPublisherSocket = extraPoolConfig?.ZmqBlockNotifySocket?.Trim();
+            // collect ports
+            var zmq = poolConfig.Daemons
+                .Where(x => !string.IsNullOrEmpty(x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>()?.ZmqBlockNotifySocket))
+                .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>().ZmqBlockNotifySocket);
 
-            if (!string.IsNullOrEmpty(zmqPublisherSocket))
+            if (zmq.Count > 0)
             {
-                var newJobsPubSub = Observable.Defer(()=> Observable.Create<bool>(obs =>
-                {
-                    var tcs = new CancellationTokenSource();
+                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    Task.Factory.StartNew(() =>
-                    {
-                        while (!tcs.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                using (var subSocket = new SubscriberSocket())
-                                {
-                                    //subSocket.Options.ReceiveHighWatermark = 1000;
-                                    subSocket.Connect(zmqPublisherSocket);
-                                    subSocket.Subscribe(BitcoinConstants.ZmqPublisherTopicBlockHash);
-
-                                    logger.Info($"Subscribed to {zmqPublisherSocket}/{BitcoinConstants.ZmqPublisherTopicBlockHash} for ZMQ pub/sub block updates");
-
-                                    while (true)
-                                    {
-                                        subSocket.ReceiveMultipartMessage(2);
-                                        //var msg = subSocket.ReceiveMultipartMessage(2);
-                                        //var topic = msg.First().ConvertToString(Encoding.UTF8);
-                                        //var body = msg.Last().ConvertToString(Encoding.UTF8);
-
-                                        obs.OnNext(true);
-                                    }
-                                }
-                            }
-
-                            catch (Exception ex)
-                            {
-                                logger.Error(ex);
-                            }
-
-                            // do not consume all CPU cycles in case of a long lasting error condition
-                            Thread.Sleep(1000);
-                        }
-                    }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-                    return Disposable.Create(() =>
-                    {
-                        tcs.Cancel();
-                    });
-                }))
-                .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
-                .Concat()
-                .Publish()
-                .RefCount();
+                var newJobsPubSub = daemon.ZmqSubscribe(zmq, BitcoinConstants.ZmqPublisherTopicBlockHash, 2)
+                    .Do(x=> x.Dispose())    // we don't care about the contents
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
+                    .Concat()
+                    .Publish()
+                    .RefCount();
 
                 sources.Add(newJobsPubSub);
                 cancelTimeout.Add(newJobsPubSub);
@@ -475,6 +429,9 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
 
+            if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
+                maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
+
             base.Configure(poolConfig, clusterConfig);
         }
 
@@ -657,8 +614,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var job = currentJob;
                 var isNew = job == null ||
-                            job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                            job.BlockTemplate?.Height < blockTemplate.Height;
+                    (blockTemplate != null &&
+                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                    blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {
@@ -685,7 +643,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         validJobs.Add(job);
 
                         // trim active jobs
-                        while (validJobs.Count > MaxActiveJobs)
+                        while (validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(0);
                     }
 

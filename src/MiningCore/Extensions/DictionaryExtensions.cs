@@ -18,10 +18,28 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.Configuration
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+
+namespace MiningCore.Extensions
 {
-    public class BitcoinPoolConfigExtra
+    public static class DictionaryExtensions
     {
-        public int? MaxActiveJobs { get; set; }
+        public static void StripValue<T>(this IDictionary<string, T> dict, string key)
+        {
+            key = key.ToLower(CultureInfo.InvariantCulture);
+
+            var keyActual = dict.Keys.FirstOrDefault(x => x.ToLower(CultureInfo.InvariantCulture) == key);
+
+            if (keyActual != null)
+            {
+                var result = dict.Remove(keyActual);
+                Debug.Assert(result);
+            }
+        }
     }
 }

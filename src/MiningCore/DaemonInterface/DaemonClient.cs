@@ -28,17 +28,21 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Stratum;
 using MiningCore.Util;
+using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -225,6 +229,18 @@ namespace MiningCore.DaemonInterface
 
             return Observable.Merge(portMap.Keys
                     .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
+                .Publish()
+                .RefCount();
+        }
+
+        public IObservable<PooledArraySegment<byte>[]> ZmqSubscribe(Dictionary<DaemonEndpointConfig, string> portMap, string topic, int numMsgSegments = 2)
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(topic), $"{nameof(topic)} must not be empty");
+
+            logger.LogInvoke(new[] { topic });
+
+            return Observable.Merge(portMap.Keys
+                    .Select(endPoint => ZmqSubscribeEndpoint(endPoint, portMap[endPoint], topic, numMsgSegments)))
                 .Publish()
                 .RefCount();
         }
@@ -468,6 +484,63 @@ namespace MiningCore.DaemonInterface
                 return Disposable.Create(() =>
                 {
                     cts.Cancel();
+                });
+            }));
+        }
+
+        private IObservable<PooledArraySegment<byte>[]> ZmqSubscribeEndpoint(DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
+        {
+            return Observable.Defer(() => Observable.Create<PooledArraySegment<byte>[]>(obs =>
+            {
+                var tcs = new CancellationTokenSource();
+
+                Task.Factory.StartNew(() =>
+                {
+                    using (tcs)
+                    {
+                        while (!tcs.IsCancellationRequested)
+                        {
+                            try
+                            {
+                                using (var subSocket = new SubscriberSocket())
+                                {
+                                    //subSocket.Options.ReceiveHighWatermark = 1000;
+                                    subSocket.Connect(url);
+                                    subSocket.Subscribe(topic);
+
+                                    logger.Debug($"Subscribed to {url}/{BitcoinConstants.ZmqPublisherTopicBlockHash}");
+
+                                    while (!tcs.IsCancellationRequested)
+                                    {
+                                        var msg = subSocket.ReceiveMultipartMessage(numMsgSegments);
+
+                                        // Export all frame data as array of PooledArraySegments
+                                        var result = msg.Select(x =>
+                                        {
+                                            var buf = ArrayPool<byte>.Shared.Rent(x.BufferSize);
+                                            Array.Copy(x.ToByteArray(), buf, x.BufferSize);
+                                            return new PooledArraySegment<byte>(buf, 0, x.BufferSize);
+                                        }).ToArray();
+
+                                        obs.OnNext(result);
+                                    }
+                                }
+                            }
+
+                            catch (Exception ex)
+                            {
+                                logger.Error(ex);
+                            }
+
+                            // do not consume all CPU cycles in case of a long lasting error condition
+                            Thread.Sleep(1000);
+                        }
+                    }
+                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+                return Disposable.Create(() =>
+                {
+                    tcs.Cancel();
                 });
             }));
         }

@@ -20,8 +20,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace MiningCore.Blockchain.Bitcoin.Configuration
 {
-    public class BitcoinPoolConfigExtra
+    public class BitcoinDaemonEndpointConfigExtra
     {
-        public int? MaxActiveJobs { get; set; }
+        public int? MinimumConfirmations { get; set; }
+
+        /// <summary>
+        /// Address of ZeroMQ block notify socket
+        /// Should match the value of -zmqpubhashblock daemon start parameter
+        /// </summary>
+        public string ZmqBlockNotifySocket { get; set; }
     }
 }

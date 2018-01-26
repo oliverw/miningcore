@@ -191,6 +191,15 @@
     <ClInclude Include="Sponge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x17.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\sph_haval.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\sph_sha2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -269,9 +278,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\hamsi.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sha3\hamsi_helper.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sph_blake.c">
@@ -353,6 +359,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sponge.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x17.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sph_haval.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sph_sha2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sph_sha2big.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

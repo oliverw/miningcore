@@ -18,10 +18,37 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.Configuration
+using System;
+using MiningCore.Contracts;
+using MiningCore.Native;
+
+namespace MiningCore.Crypto.Hashing.Algorithms
 {
-    public class BitcoinPoolConfigExtra
+    public unsafe class NeoScrypt : IHashAlgorithm
     {
-        public int? MaxActiveJobs { get; set; }
+        public NeoScrypt(uint profile)
+        {
+            this.profile = profile;
+        }
+
+        private readonly uint profile;
+
+        public byte[] Digest(byte[] data, params object[] extra)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} length must be exactly 80 bytes");
+
+            var result = new byte[32];
+
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.neoscrypt(input, output, (uint)data.Length, profile);
+                }
+            }
+
+            return result;
+        }
     }
 }
