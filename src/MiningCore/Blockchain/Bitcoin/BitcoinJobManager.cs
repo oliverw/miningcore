@@ -118,7 +118,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (zmq.Count > 0)
             {
-                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Keys.Select(x => x.Host).Distinct())}");
+                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
                 var newJobsPubSub = daemon.ZmqSubscribe(zmq, BitcoinConstants.ZmqPublisherTopicBlockHash, 2)
                     .Do(x=> x.Dispose())    // we don't care about the contents
@@ -610,8 +610,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var job = currentJob;
                 var isNew = job == null ||
-                            job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                            job.BlockTemplate?.Height < blockTemplate.Height;
+                    (blockTemplate != null &&
+                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                    blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {

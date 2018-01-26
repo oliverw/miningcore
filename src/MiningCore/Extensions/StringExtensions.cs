@@ -54,6 +54,11 @@ namespace MiningCore.Extensions
             return value.ToString("x8", CultureInfo.InvariantCulture);
         }
 
+        public static string ToStringHex8(this int value)
+        {
+            return value.ToString("x8", CultureInfo.InvariantCulture);
+        }
+
         public static string ToStringHexWithPrefix(this ulong value)
         {
             if (value == 0)
