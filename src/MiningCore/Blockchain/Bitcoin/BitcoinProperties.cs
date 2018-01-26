@@ -35,6 +35,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm sha256D = new Sha256D();
         private static readonly IHashAlgorithm sha256DReverse = new DigestReverser(sha256D);
         private static readonly IHashAlgorithm x11 = new X11();
+        private static readonly IHashAlgorithm x17 = new X17();
         private static readonly IHashAlgorithm groestl = new Groestl();
         private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
         private static readonly IHashAlgorithm scrypt_1024_1 = new Scrypt(1024, 1);
