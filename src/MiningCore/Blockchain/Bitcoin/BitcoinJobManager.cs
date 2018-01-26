@@ -20,13 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin.Configuration;
@@ -38,14 +34,11 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
-using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -80,7 +73,8 @@ namespace MiningCore.Blockchain.Bitcoin
         protected const int ExtranonceBytes = 4;
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
-        protected const int MaxActiveJobs = 4;
+        protected int maxActiveJobs = 4;
+        protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
         protected IHashAlgorithm blockHasher;
@@ -431,6 +425,16 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override string LogCat => "Bitcoin Job Manager";
 
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+
+            if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
+                maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
+
+            base.Configure(poolConfig, clusterConfig);
+        }
+
         protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
@@ -639,7 +643,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         validJobs.Add(job);
 
                         // trim active jobs
-                        while (validJobs.Count > MaxActiveJobs)
+                        while (validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(0);
                     }
 
