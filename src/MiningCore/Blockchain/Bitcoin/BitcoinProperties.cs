@@ -77,6 +77,9 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties neoScryptCoin =
             new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, sha256DReverse, "Neoscrypt");
 
+        private static readonly BitcoinCoinProperties x17Coin =
+            new BitcoinCoinProperties(1, sha256D, x17, new DigestReverser(x17), "X17");
+
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
             // SHA256
@@ -131,7 +134,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch(algorithm)
+            switch(algorithm.ToLower())
             {
                 case "sha256d":
                     return sha256Coin;
@@ -155,7 +158,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch (algorithm)
+            switch (algorithm.ToLower())
             {
                 case "lyra2rev2":
                     return lyra2Rev2CoinVariantA;
@@ -164,6 +167,8 @@ namespace MiningCore.Blockchain.Bitcoin
                     return groestlMyriadCoin;
 
                 case "x17":
+                    return x17Coin;
+
                 case "blake2s":
                     throw new NotSupportedException($"algorithm {algorithm} not yet supported");
 
