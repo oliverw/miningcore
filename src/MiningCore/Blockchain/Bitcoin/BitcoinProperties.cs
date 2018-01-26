@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch(algorithm)
+            switch(algorithm.ToLower())
             {
                 case "sha256d":
                     return sha256Coin;
@@ -158,7 +158,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch (algorithm)
+            switch (algorithm.ToLower())
             {
                 case "lyra2rev2":
                     return lyra2Rev2CoinVariantA;
