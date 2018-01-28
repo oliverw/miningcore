@@ -274,9 +274,6 @@ namespace MiningCore.Blockchain.Monero
             walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
-            // detect network
-            await GetNetworkTypeAsync();
-
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
             walletSupportsTransferSplit = response.Error.Code != MoneroConstants.MoneroRpcMethodNotFound;
@@ -399,6 +396,9 @@ namespace MiningCore.Blockchain.Monero
                 return;
 #endif
             }
+
+            // detect network
+            await GetNetworkTypeAsync();
 
             // validate addresses
             balances = balances
