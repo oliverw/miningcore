@@ -661,11 +661,17 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     lock (jobLock)
                     {
+                        if(isNew)
+                            validJobs.Clear();
+
                         validJobs.Add(job);
 
-                        // trim active jobs
-                        while (validJobs.Count > maxActiveJobs)
-                            validJobs.RemoveAt(0);
+                        if (!isNew)
+                        {
+                            // trim active jobs
+                            while(validJobs.Count > maxActiveJobs)
+                                validJobs.RemoveAt(0);
+                        }
                     }
 
                     currentJob = job;
