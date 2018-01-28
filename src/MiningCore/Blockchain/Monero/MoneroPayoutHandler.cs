@@ -274,6 +274,9 @@ namespace MiningCore.Blockchain.Monero
             walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
+            // detect network
+            await GetNetworkTypeAsync();
+
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
             walletSupportsTransferSplit = response.Error.Code != MoneroConstants.MoneroRpcMethodNotFound;
@@ -386,19 +389,16 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
+#if !DEBUG
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
-#if !DEBUG
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
-#endif
             }
-
-            // detect network
-            await GetNetworkTypeAsync();
+#endif
 
             // validate addresses
             balances = balances
