@@ -412,7 +412,7 @@ namespace MiningCore.Api
                 return;
             }
 
-            var perfMode = context.GetQueryParameter<int>("perfMode", 1);
+            var perfMode = context.GetQueryParameter<string>("perfMode", "day");
 
             var statsResult = cf.RunTx((con, tx) =>
                 statsRepo.GetMinerStats(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
@@ -434,7 +434,7 @@ namespace MiningCore.Api
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
-                stats.Performance24H = GetMinerPerformanceInternal(perfMode == 1 ? "day" : "month", pool, address);
+                stats.Performance24H = GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
             await SendJson(context, stats);
