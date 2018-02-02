@@ -124,7 +124,7 @@ namespace MiningCore.Blockchain.Monero
         {
             if (!networkType.HasValue)
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
                 networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;

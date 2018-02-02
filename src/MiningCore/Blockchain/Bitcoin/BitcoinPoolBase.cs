@@ -328,12 +328,13 @@ namespace MiningCore.Blockchain.Bitcoin
                     await OnSubmitAsync(client, tsRequest);
                     break;
 
-                //case BitcoinStratumMethods.SuggestDifficulty:
-                //    OnSuggestDifficulty(client, tsRequest);
-                //    break;
+                case BitcoinStratumMethods.SuggestDifficulty:
+                    OnSuggestDifficulty(client, tsRequest);
+                    break;
 
                 case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                    //OnGetTransactions(client, tsRequest);
+                    // ignored
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
