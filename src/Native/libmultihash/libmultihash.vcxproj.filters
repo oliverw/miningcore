@@ -200,6 +200,9 @@
     <ClInclude Include="sha3\sph_sha2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lyra2Z.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -371,6 +374,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sph_sha2big.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lyra2Z.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

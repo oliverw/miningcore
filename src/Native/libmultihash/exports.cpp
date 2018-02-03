@@ -40,6 +40,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "jh.h"
 #include "c11.h"
 #include "Lyra2RE.h"
+#include "Lyra2Z.h"
 #include "Lyra2.h"
 #include "equi/equi.h"
 #include "libethash/sha3.h"
@@ -169,6 +170,11 @@ extern "C" MODULE_API void jh_export(const char* input, char* output, uint32_t i
 extern "C" MODULE_API void c11_export(const char* input, char* output)
 {
 	c11_hash(input, output);
+}
+
+extern "C" MODULE_API void lyra2z_export(const char* input, char* output)
+{
+	lyra2z_hash(input, output);
 }
 
 extern "C" MODULE_API void lyra2re_export(const char* input, char* output)
