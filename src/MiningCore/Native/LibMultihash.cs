@@ -94,6 +94,9 @@ namespace MiningCore.Native
         [DllImport("libmultihash", EntryPoint = "c11_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int c11(byte* input, byte* output, uint inputLength);
 
+		[DllImport("libmultihash", EntryPoint = "lyra2z_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lyra2z(byte* input, byte* output);
+		
         [DllImport("libmultihash", EntryPoint = "lyra2re_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int lyra2re(byte* input, byte* output);
 

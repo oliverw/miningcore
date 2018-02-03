@@ -56,6 +56,8 @@ namespace MiningCore.Configuration
         XVG,  // Verge
         GBX,  // GoByte
         CRC,  // CrowdCoin
+		XZC,  // ZCoin
+		TLR,  // Taler
     }
 
     public class CoinConfig

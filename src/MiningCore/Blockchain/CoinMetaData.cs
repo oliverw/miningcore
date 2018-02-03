@@ -45,6 +45,8 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
             { CoinType.MOON, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/moon/block.dws?{0}.htm" }}},
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, "https://verge-blockchain.info/block/{0}" } }},
+			{ CoinType.TLR, new Dictionary<string, string> { { string.Empty, "http://taler.lchain.cc/block/{0}" }}},
+            { CoinType.XZC, new Dictionary<string, string> { { string.Empty, "https://explorer.zcoin.io/block/{0}" } }},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -76,6 +78,8 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/tx/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/tx/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/tx/{0}" },
+			{ CoinType.TLR, "http://taler.lchain.cc/tx/{0}" },
+			{ CoinType.XZC, "https://explorer.zcoin.io/tx/{0}" },
         };
         
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -104,6 +108,8 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/address/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/address/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/address/{0}" },
+			{ CoinType.TLR, "http://taler.lchain.cc/address/{0}" },
+			{ CoinType.XZC, "https://explorer.zcoin.io/address/{0}" },
         };
 
         private const string Ethash = "Dagger-Hashimoto";
@@ -139,6 +145,8 @@ namespace MiningCore.Blockchain
             { CoinType.AEON, (coin)=> CryptonightLight },
             { CoinType.GBX, BitcoinProperties.GetAlgorithm },
             { CoinType.CRC, BitcoinProperties.GetAlgorithm },
+			{ CoinType.XZC, BitcoinProperties.GetAlgorithm },
+			{ CoinType.TLR, BitcoinProperties.GetAlgorithm },
         };
     }
 }
