@@ -12,7 +12,7 @@ OBJECTS = bcrypt.o blake.o c11.o dcrypt.o fresh.o \
 	sha3/sph_luffa.o sha3/sph_shabal.o sha3/sph_shavite.o sha3/sph_simd.o sha3/sph_skein.o sha3/sph_whirlpool.o \
     sha3/sph_haval.o sha3/sph_sha2.o sha3/sph_sha2big.o \
 	shavite3.o skein.o x11.o x15.o x17.o \
-	Lyra2.o Lyra2RE.o Sponge.o  \
+	Lyra2.o Lyra2RE.o Lyra2Z.o Sponge.o  \
 	equi/endian.o equi/equi.o \
 	libethash/internal.o libethash/io.o libethash/io_posix.o libethash/sha3.o
 
