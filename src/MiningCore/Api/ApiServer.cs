@@ -434,8 +434,7 @@ namespace MiningCore.Api
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
-                if(statsResult.Performance != null)
-                    stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
+                stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
             await SendJson(context, stats);
