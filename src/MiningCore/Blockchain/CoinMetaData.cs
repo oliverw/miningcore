@@ -39,6 +39,7 @@ namespace MiningCore.Blockchain
             { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{0}" }}},
             { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{0}" }}},
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
+            { CoinType.PUSHI, new Dictionary<string, string> { { string.Empty, "http://pushiplay.pw:8080/block/{0}" } }},
         };
 
         public static readonly Dictionary<CoinType, string> PaymentInfoLinks = new Dictionary<CoinType, string>
@@ -64,6 +65,7 @@ namespace MiningCore.Blockchain
             { CoinType.ELLA, "https://explorer.ellaism.org/tx/{0}" },
             { CoinType.EXP, "http://www.gander.tech/tx/{0}" },
             { CoinType.AEON, "https://chainradar.com/aeon/transaction/{0}" },
+            { CoinType.PUSHI, "http://pushiplay.pw:8080/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -86,6 +88,7 @@ namespace MiningCore.Blockchain
             { CoinType.BTG, "https://btgexp.com/address/{0}" },
             { CoinType.ELLA, "https://explorer.ellaism.org/addr/{0}" },
             { CoinType.EXP, "http://www.gander.tech/address/{0}" },
+            { CoinType.PUSHI, "http://pushiplay.pw:8080/address/{0}" },
         };
     }
 }

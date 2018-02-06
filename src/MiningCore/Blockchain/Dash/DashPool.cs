@@ -30,7 +30,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Dash
 {
-    [CoinMetadata(CoinType.DASH)]
+    [CoinMetadata(CoinType.DASH, CoinType.PUSHI)]
     public class DashPool : BitcoinPoolBase<DashJob, DaemonResponses.DashBlockTemplate>
     {
         public DashPool(IComponentContext ctx,

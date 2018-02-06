@@ -49,7 +49,8 @@ namespace MiningCore.Configuration
         ELLA, // Ellaism
         AEON, // AEON
         STAK, // Straks
-        ETN   // Electroneum
+        ETN,   // Electroneum
+        PUSHI //Pushi
     }
 
     public class CoinConfig
