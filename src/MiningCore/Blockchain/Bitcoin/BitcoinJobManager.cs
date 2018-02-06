@@ -25,6 +25,7 @@ using System.Net;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Autofac;
+using MiningCore.Blockchain.Bitcoin.Configuration;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
@@ -72,7 +73,8 @@ namespace MiningCore.Blockchain.Bitcoin
         protected const int ExtranonceBytes = 4;
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
-        protected const int MaxActiveJobs = 4;
+        protected int maxActiveJobs = 4;
+        protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
         protected IHashAlgorithm blockHasher;
@@ -98,30 +100,73 @@ namespace MiningCore.Blockchain.Bitcoin
 	        if (poolConfig.ExternalStratum)
 		        return;
 
-            jobRebroadcastTimeout = TimeSpan.FromSeconds(poolConfig.JobRebroadcastTimeout);
+            jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
 
-            // periodically update block-template from daemon
-            var newJobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                .Select(_ => Observable.FromAsync(() => UpdateJob(false)))
-                .Concat()
-                .Do(isNew =>
-                {
-                    if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                })
-                .Where(isNew => isNew)
-                .Publish()
-                .RefCount();
+            var sources = new List<IObservable<bool>>();
+            var cancelTimeout = new List<IObservable<bool>>();
+
+            // collect ports
+            var zmq = poolConfig.Daemons
+                .Where(x => !string.IsNullOrEmpty(x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>()?.ZmqBlockNotifySocket))
+                .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>().ZmqBlockNotifySocket);
+
+            if (zmq.Count > 0)
+            {
+                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
+
+                var newJobsPubSub = daemon.ZmqSubscribe(zmq, BitcoinConstants.ZmqPublisherTopicBlockHash, 2)
+                    .Do(x=> x.Dispose())    // we don't care about the contents
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
+                    .Concat()
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPubSub);
+                cancelTimeout.Add(newJobsPubSub);
+            }
+
+            if (poolConfig.BlockRefreshInterval > 0)
+            {
+                // periodically update block-template from daemon
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
+
+            else
+            {
+                // poll for the first successful update after which polling is suspended forever
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Take(1)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
 
             // if there haven't been any new jobs for a while, force an update
-            var forcedNewJobs = Observable.Timer(jobRebroadcastTimeout)
-                .TakeUntil(newJobs) // cancel timeout if an actual new job has been detected
+            var cancelRebroadcast = cancelTimeout.Count > 0 ?
+                cancelTimeout.Count > 1 ? Observable.Merge(cancelTimeout) : cancelTimeout.First() :
+                Observable.Never<bool>();
+
+            sources.Add(Observable.Timer(jobRebroadcastTimeout)
+                .TakeUntil(cancelRebroadcast) // cancel timeout if an actual new job has been detected
                 .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
                 .Select(x => Observable.FromAsync(() => UpdateJob(true)))
                 .Concat()
-                .Repeat();
+                .Repeat());
 
-            Jobs = newJobs.Merge(forcedNewJobs)
+            Jobs = Observable.Merge(sources)
                 .Select(GetJobParamsForStratum);
         }
 
@@ -346,7 +391,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}]");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
@@ -379,6 +424,16 @@ namespace MiningCore.Blockchain.Bitcoin
         #region Overrides
 
         protected override string LogCat => "Bitcoin Job Manager";
+
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+
+            if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
+                maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
+
+            base.Configure(poolConfig, clusterConfig);
+        }
 
         protected override void ConfigureDaemons()
         {
@@ -540,7 +595,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual async Task<bool> UpdateJob(bool forceUpdate)
+        protected virtual async Task<bool> UpdateJob(bool forceUpdate, string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -559,8 +614,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var job = currentJob;
                 var isNew = job == null ||
-                            job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
-                            job.BlockTemplate?.Height < blockTemplate.Height;
+                    (blockTemplate != null &&
+                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                    blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {
@@ -571,9 +627,12 @@ namespace MiningCore.Blockchain.Bitcoin
                         ShareMultiplier,
                         coinbaseHasher, headerHasher, blockHasher);
 
-                    // update stats
                     if (isNew)
                     {
+                        if(via != null)
+                            logger.Info($"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+
+                        // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = blockTemplate.Height;
                         BlockchainStats.NetworkDifficulty = job.Difficulty;
@@ -584,7 +643,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         validJobs.Add(job);
 
                         // trim active jobs
-                        while (validJobs.Count > MaxActiveJobs)
+                        while (validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(0);
                     }
 

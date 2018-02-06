@@ -68,6 +68,11 @@ namespace MiningCore.Blockchain.Bitcoin
         public static double Pow2x32 = Math.Pow(2, 32);
         public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
         public const int CoinbaseMinConfimations = 102;
+
+        public const string ZmqPublisherTopicBlockHash = "hashblock";
+        public const string ZmqPublisherTopicTxHash = "hashtx";
+        public const string ZmqPublisherTopicBlockRaw = "rawblock";
+        public const string ZmqPublisherTopicTxRaw = "rawtx";
     }
 
     public class KnownAddresses
@@ -75,6 +80,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public static readonly Dictionary<CoinType, string> DevFeeAddresses = new Dictionary<CoinType, string>
         {
             {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
+            {CoinType.BCH, "1LJGTzNDTuTvkHpTxNSdmAEBAXAnEHDVqQ"},
             {CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC"},
             {CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q"},
             {CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o"},
@@ -87,8 +93,13 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.MONA, "MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S"},
             {CoinType.VTC, "VfCAvPVrksYvwcpU7E44e51HxfvVhcxMXf"},
             {CoinType.ZEC, "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7"},
+            {CoinType.ZCL, "t1MFU1vD3YKgsK6Uh8hW7UTY8mKAV2xVqBr"},
+            {CoinType.ZEN, "znigQacfTvRiwD2TRhwkBHLNchQ2AZisD94"},
             {CoinType.BTG, "GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6"},
-            {CoinType.XMR, "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH"}
+            {CoinType.MOON, "2QvpGimMYLyqKsczQXZjv56h6me3M8orwj" },
+            {CoinType.XVG, "D5xPoHLM6HPkwWSqAweECTSQirJBmRjS8i" },
+            {CoinType.XMR, "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH"},
+            {CoinType.ETN, "etnkQJwBCjmR1MfkU8D355ZWxxLMhs8miPrtKHWN4U3uUowq9ugeKccVBoEG3n13n74us5AkT8tEoTog46w4HBgn8sMuBRhm9h"},
         };
     }
 

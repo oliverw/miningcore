@@ -120,7 +120,7 @@ namespace MiningCore.Api
 
             if (!string.IsNullOrEmpty(poolId))
             {
-                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId);
+                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
                 if (pool != null)
                     return pool;
@@ -218,7 +218,7 @@ namespace MiningCore.Api
         {
             var response = new GetPoolsResponse
             {
-                Pools = clusterConfig.Pools.Select(config =>
+                Pools = clusterConfig.Pools.Where(x=> x.Enabled).Select(config =>
                 {
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
@@ -227,6 +227,7 @@ namespace MiningCore.Api
                     var result = config.ToPoolInfo(mapper, stats);
 
                     // enrich
+                    result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
 #if DEBUG
                     var from = new DateTime(2018, 1, 6, 16, 0, 0);
 #else
@@ -259,6 +260,7 @@ namespace MiningCore.Api
             };
 
             // enrich
+            response.Pool.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, pool.Id));
 #if DEBUG
             var from = new DateTime(2018, 1, 7, 16, 0, 0);
 #else
@@ -380,7 +382,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)
@@ -426,7 +428,7 @@ namespace MiningCore.Api
                     stats.LastPayment = statsResult.LastPayment.Created;
 
                     // Compute info link
-                    if (CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
+                    if (CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
@@ -464,7 +466,7 @@ namespace MiningCore.Api
                 .ToArray();
 
             // enrich payments
-            CoinMetaData.PaymentInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
+            CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
             foreach (var payment in payments)

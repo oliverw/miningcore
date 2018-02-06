@@ -26,6 +26,7 @@ using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
+using Microsoft.Extensions.DependencyInjection;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
@@ -75,7 +76,7 @@ namespace MiningCore.Blockchain.Monero
         private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private MoneroNetworkType networkType;
-        private uint poolAddressBase58Prefix;
+        private UInt64 poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob()
@@ -198,10 +199,6 @@ namespace MiningCore.Blockchain.Monero
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 
-            poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
-            if (poolAddressBase58Prefix == 0)
-                logger.ThrowLogPoolStartupException("Unable to decode pool-address", LogCat);
-
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
@@ -222,12 +219,23 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            if (address.Length != MoneroConstants.AddressLength[poolConfig.Coin.Type])
-                return false;
-
             var addressPrefix = LibCryptonote.DecodeAddress(address);
-            if (addressPrefix != poolAddressBase58Prefix)
-                return false;
+            var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+
+            switch (networkType)
+            {
+                case MoneroNetworkType.Main:
+                    if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
+                        addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                        return false;
+                    break;
+
+                case MoneroNetworkType.Test:
+                    if (addressPrefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type] &&
+                        addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                        return false;
+                    break;
+            }
 
             return true;
         }
@@ -255,9 +263,9 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
-            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            var context = worker.GetContextAs<MoneroWorkerContext>();
 
             var job = currentJob;
             if (workerJob.Height != job?.BlockTemplate.Height)
@@ -275,7 +283,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submitted by {context.MinerName}");
 
                     share.TransactionConfirmationData = share.BlobHash;
                 }
@@ -402,6 +410,24 @@ namespace MiningCore.Blockchain.Monero
 
             // chain detection
             networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
+
+            // address validation
+            poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
+            if (poolAddressBase58Prefix == 0)
+                logger.ThrowLogPoolStartupException("Unable to decode pool-address", LogCat);
+
+            switch(networkType)
+            {
+                case MoneroNetworkType.Main:
+                    if(poolAddressBase58Prefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type])
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {MoneroConstants.AddressPrefix[poolConfig.Coin.Type]}, got {poolAddressBase58Prefix}", LogCat);
+                    break;
+
+                case MoneroNetworkType.Test:
+                    if (poolAddressBase58Prefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type])
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {MoneroConstants.AddressPrefix[poolConfig.Coin.Type]}, got {poolAddressBase58Prefix}", LogCat);
+                    break;
+            }
 
             ConfigureRewards();
 

@@ -22,6 +22,6 @@ namespace MiningCore.Blockchain.Bitcoin.Configuration
 {
     public class BitcoinPoolConfigExtra
     {
-        public int? MinimumConfirmations { get; set; }
+        public int? MaxActiveJobs { get; set; }
     }
 }

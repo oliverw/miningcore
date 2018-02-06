@@ -34,6 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x14.h"
 #include "nist5.h"
 #include "x15.h"
+#include "x17.h"
 #include "fresh.h"
 #include "dcrypt.h"
 #include "jh.h"
@@ -68,12 +69,17 @@ extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t 
 	x11_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x17_export(const char* input, char* output, uint32_t input_len)
+{
+    x17_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void x15_export(const char* input, char* output, uint32_t input_len)
 {
 	x15_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void neoscrypt_export(const char* input, char* output, uint32_t profile)
+extern "C" MODULE_API void neoscrypt_export(const unsigned char* input, unsigned char* output, uint32_t profile)
 {
 	neoscrypt(input, output, profile);
 }

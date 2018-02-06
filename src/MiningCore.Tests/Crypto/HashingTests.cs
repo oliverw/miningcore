@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -12,6 +13,9 @@ namespace MiningCore.Tests.Crypto
     public class HashingTests : TestBase
     {
         private static readonly byte[] testValue = Enumerable.Repeat((byte) 0x80, 32).ToArray();
+
+        // some algos need 80 byte input buffers
+        private static readonly byte[] testValue2 = Enumerable.Repeat((byte)0x80, 80).ToArray();
 
         [Fact]
         public void Blake_Hash_Should_Match()
@@ -74,6 +78,22 @@ namespace MiningCore.Tests.Crypto
         public void Scrypt_Hash_Should_Throw_On_Null_Input()
         {
             var hasher = new Scrypt(1024, 1);
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void NeoScrypt_Hash_Should_Match()
+        {
+            var hasher = new NeoScrypt(0);
+            var result = hasher.Digest(testValue2).ToHexString();
+
+            Assert.Equal("7915d56de262bf23b1fb9104cf5d2a13fcbed2f6b4b9b657309c222b09f54bc0", result);
+        }
+
+        [Fact]
+        public void NeoScrypt_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new NeoScrypt(0);
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
 
@@ -161,6 +181,22 @@ namespace MiningCore.Tests.Crypto
 
         [Fact]
         public void X11_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new Sha256S();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void X17_Hash_Should_Match()
+        {
+            var hasher = new X17();
+            var result = hasher.Digest(testValue).ToHexString();
+
+            Assert.Equal("6a9a4f558168e60241e46fe44365021c4d7e7344144ab1739d6fb0125ac4c592", result);
+        }
+
+        [Fact]
+        public void X17_Hash_Should_Throw_On_Null_Input()
         {
             var hasher = new Sha256S();
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));

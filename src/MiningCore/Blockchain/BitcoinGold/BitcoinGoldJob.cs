@@ -125,7 +125,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             // build tx hashes
             var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
-            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
 
             // build merkle root
             merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();

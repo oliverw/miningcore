@@ -19,22 +19,27 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
 
-namespace MiningCore.Persistence.Postgres.Entities
+namespace MiningCore.Extensions
 {
-    public class Block
+    public static class DictionaryExtensions
     {
-        public long Id { get; set; }
-        public string PoolId { get; set; }
-        public long BlockHeight { get; set; }
-        public double NetworkDifficulty { get; set; }
-        public string Status { get; set; }
-        public string Type { get; set; }
-        public double ConfirmationProgress { get; set; }
-        public double? Effort { get; set; }
-        public string TransactionConfirmationData { get; set; }
-        public string Miner { get; set; }
-        public decimal Reward { get; set; }
-        public DateTime Created { get; set; }
+        public static void StripValue<T>(this IDictionary<string, T> dict, string key)
+        {
+            key = key.ToLower(CultureInfo.InvariantCulture);
+
+            var keyActual = dict.Keys.FirstOrDefault(x => x.ToLower(CultureInfo.InvariantCulture) == key);
+
+            if (keyActual != null)
+            {
+                var result = dict.Remove(keyActual);
+                Debug.Assert(result);
+            }
+        }
     }
 }

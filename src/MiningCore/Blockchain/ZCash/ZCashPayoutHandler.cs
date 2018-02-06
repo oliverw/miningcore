@@ -39,7 +39,7 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
 {
-    [CoinMetadata(CoinType.ZEC)]
+    [CoinMetadata(CoinType.ZEC, CoinType.ZCL, CoinType.ZEN)]
     public class ZCashPayoutHandler : BitcoinPayoutHandler
     {
         public ZCashPayoutHandler(

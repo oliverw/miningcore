@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
@@ -139,10 +140,15 @@ namespace MiningCore.Blockchain.Monero
             {
                 Destinations = balances
                     .Where(x => x.Amount > 0)
-                    .Select(x => new TransferDestination
+                    .Select(x =>
                     {
-                        Address = x.Address,
-                        Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                        ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                        return new TransferDestination
+                        {
+                            Address = address,
+                            Amount = (ulong) Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                        };
                     }).ToArray(),
 
                 GetTxKey = true
@@ -157,71 +163,49 @@ namespace MiningCore.Blockchain.Monero
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (transferResponse.Error?.Code == -4)
+            if (transferResponse.Error?.Code == -4 && walletSupportsTransferSplit)
             {
-                if (walletSupportsTransferSplit)
+                logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+
+                var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+
+                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+                if (transferResponse.Error?.Code != -4)
                 {
-                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
-
-                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
-
-                    // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-                    if (transferResponse.Error?.Code != -4)
-                    {
-                        HandleTransferResponse(transferSplitResponse, balances);
-                        return;
-                    }
+                    HandleTransferResponse(transferSplitResponse, balances);
+                    return;
                 }
+            }
 
-                // retry paged
-                logger.Info(() => $"[{LogCategory}] Retrying paged");
+            HandleTransferResponse(transferResponse, balances);
+        }
 
-                var validBalances = balances.Where(x => x.Amount > 0).ToArray();
-                var pageSize = 10;
-                var pageCount = (int)Math.Ceiling((double)validBalances.Length / pageSize);
+        private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
+        {
+            paymentId = null;
+            var index = input.IndexOf(PayoutConstants.PayoutInfoSeperator);
 
-                for (var i = 0; i < pageCount; i++)
+            if (index != -1)
+            {
+                address = input.Substring(0, index);
+
+                if (index + 1 < input.Length)
                 {
-                    var page = validBalances
-                        .Skip(i * pageSize)
-                        .Take(pageSize)
-                        .ToArray();
+                    paymentId = input.Substring(index + 1);
 
-                    // update request
-                    request.Destinations = page
-                        .Where(x => x.Amount > 0)
-                        .Select(x => new TransferDestination
-                        {
-                            Address = x.Address,
-                            Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
-                        }).ToArray();
-
-                    logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
-
-                    transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
-                    HandleTransferResponse(transferResponse, page);
-
-                    if (transferResponse.Error != null)
-                        break;
+                    // ignore invalid payment ids
+                    if (paymentId.Length != MoneroConstants.PaymentIdHexLength)
+                        paymentId = null;
                 }
             }
 
             else
-                HandleTransferResponse(transferResponse, balances);
+                address = input;
         }
 
         private async Task PayoutToPaymentId(Balance balance)
         {
-            // extract paymentId
-            var address = (string) null;
-            var paymentId = (string) null;
-
-            var index = balance.Address.IndexOf(PayoutConstants.PayoutInfoSeperator);
-            if (index != -1)
-            {
-                paymentId = balance.Address.Substring(index + 1);
-                address = balance.Address.Substring(0, index);
-            }
+            ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
 
             if (string.IsNullOrEmpty(paymentId))
                 throw new InvalidOperationException("invalid paymentid");
@@ -289,6 +273,9 @@ namespace MiningCore.Blockchain.Monero
 
             walletDaemon = new DaemonClient(jsonSerializerSettings);
             walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+
+            // detect network
+            await GetNetworkTypeAsync();
 
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
@@ -413,9 +400,65 @@ namespace MiningCore.Blockchain.Monero
 #endif
             }
 
+            // validate addresses
+            balances = balances
+                .Where(x =>
+                {
+                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                    var addressPrefix = LibCryptonote.DecodeAddress(address);
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+
+                    switch (networkType)
+                    {
+                        case MoneroNetworkType.Main:
+                            if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
+                                addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                            {
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                return false;
+                            }
+                            break;
+
+                        case MoneroNetworkType.Test:
+                            if (addressPrefix != MoneroConstants.AddressPrefixTestnet[poolConfig.Coin.Type] &&
+                                addressIntegratedPrefix != MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                            {
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                return false;
+                            }
+                            break;
+                    }
+
+                    return true;
+                })
+                .ToArray();
+
             // simple balances first
             var simpleBalances = balances
-                .Where(x => !x.Address.Contains(PayoutConstants.PayoutInfoSeperator))
+                .Where(x =>
+                {
+                    ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                    var hasPaymentId = paymentId != null;
+                    var isIntegratedAddress = false;
+                    var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
+
+                    switch (networkType)
+                    {
+                        case MoneroNetworkType.Main:
+                            if (addressIntegratedPrefix == MoneroConstants.AddressPrefixIntegrated[poolConfig.Coin.Type])
+                                isIntegratedAddress = true;
+                            break;
+
+                        case MoneroNetworkType.Test:
+                            if (addressIntegratedPrefix == MoneroConstants.AddressPrefixIntegratedTestnet[poolConfig.Coin.Type])
+                                isIntegratedAddress = true;
+                            break;
+                    }
+
+                    return !hasPaymentId && !isIntegratedAddress;
+                })
                 .ToArray();
 
             if (simpleBalances.Length > 0)
@@ -425,7 +468,7 @@ namespace MiningCore.Blockchain.Monero
             var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
-                .Where(x => x.Address.Contains(PayoutConstants.PayoutInfoSeperator) && x.Amount >= minimumPaymentToPaymentId)
+                .Where(x => x.Amount >= minimumPaymentToPaymentId)
                 .ToArray();
 
             foreach(var balance in paymentIdBalances)

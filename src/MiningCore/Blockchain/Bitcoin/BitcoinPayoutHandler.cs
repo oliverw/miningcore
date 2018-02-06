@@ -46,8 +46,9 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC,
-        CoinType.BTG, CoinType.GLT, CoinType.STAK)]
+        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG, 
+        CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG, 
+        CoinType.GBX, CoinType.CRC)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -73,7 +74,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly IComponentContext ctx;
         protected DaemonClient daemon;
         protected BitcoinCoinProperties coinProperties;
-        protected BitcoinPoolConfigExtra extraPoolConfig;
+        protected BitcoinDaemonEndpointConfigExtra extraPoolConfig;
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
@@ -87,7 +88,7 @@ namespace MiningCore.Blockchain.Bitcoin
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 
-            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
             extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
             coinProperties = BitcoinProperties.GetCoinProperties(poolConfig.Coin.Type, poolConfig.Coin.Algorithm);
 

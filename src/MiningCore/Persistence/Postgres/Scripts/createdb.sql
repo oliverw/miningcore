@@ -31,6 +31,7 @@ CREATE TABLE blocks
     confirmationprogress FLOAT NOT NULL DEFAULT 0,
 	effort FLOAT NULL,
 	transactionconfirmationdata TEXT NOT NULL,
+	miner TEXT NULL,
 	reward decimal(28,12) NULL,
 	created TIMESTAMP NOT NULL
 );
@@ -84,7 +85,7 @@ CREATE TABLE minerstats
 	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
 	miner TEXT NOT NULL,
-	worker TEXT NULL,
+	worker TEXT NOT NULL,
 	hashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
 	sharespersecond DOUBLE PRECISION NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL

@@ -19,22 +19,36 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using MiningCore.Contracts;
+using MiningCore.Native;
 
-namespace MiningCore.Persistence.Postgres.Entities
+namespace MiningCore.Crypto.Hashing.Algorithms
 {
-    public class Block
+    public unsafe class NeoScrypt : IHashAlgorithm
     {
-        public long Id { get; set; }
-        public string PoolId { get; set; }
-        public long BlockHeight { get; set; }
-        public double NetworkDifficulty { get; set; }
-        public string Status { get; set; }
-        public string Type { get; set; }
-        public double ConfirmationProgress { get; set; }
-        public double? Effort { get; set; }
-        public string TransactionConfirmationData { get; set; }
-        public string Miner { get; set; }
-        public decimal Reward { get; set; }
-        public DateTime Created { get; set; }
+        public NeoScrypt(uint profile)
+        {
+            this.profile = profile;
+        }
+
+        private readonly uint profile;
+
+        public byte[] Digest(byte[] data, params object[] extra)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} length must be exactly 80 bytes");
+
+            var result = new byte[32];
+
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.neoscrypt(input, output, (uint)data.Length, profile);
+                }
+            }
+
+            return result;
+        }
     }
 }

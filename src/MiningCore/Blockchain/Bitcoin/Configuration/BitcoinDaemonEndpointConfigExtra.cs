@@ -18,23 +18,16 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-
-namespace MiningCore.Persistence.Postgres.Entities
+namespace MiningCore.Blockchain.Bitcoin.Configuration
 {
-    public class Block
+    public class BitcoinDaemonEndpointConfigExtra
     {
-        public long Id { get; set; }
-        public string PoolId { get; set; }
-        public long BlockHeight { get; set; }
-        public double NetworkDifficulty { get; set; }
-        public string Status { get; set; }
-        public string Type { get; set; }
-        public double ConfirmationProgress { get; set; }
-        public double? Effort { get; set; }
-        public string TransactionConfirmationData { get; set; }
-        public string Miner { get; set; }
-        public decimal Reward { get; set; }
-        public DateTime Created { get; set; }
+        public int? MinimumConfirmations { get; set; }
+
+        /// <summary>
+        /// Address of ZeroMQ block notify socket
+        /// Should match the value of -zmqpubhashblock daemon start parameter
+        /// </summary>
+        public string ZmqBlockNotifySocket { get; set; }
     }
 }

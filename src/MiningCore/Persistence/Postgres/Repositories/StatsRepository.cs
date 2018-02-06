@@ -62,6 +62,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.MinerWorkerPerformanceStats>(stats);
 
+            if (string.IsNullOrEmpty(mapped.Worker))
+                mapped.Worker = string.Empty;
+
             var query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
                 "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
@@ -79,6 +82,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 return null;
 
             return mapper.Map<PoolStats>(entity);
+        }
+
+        public decimal GetTotalPoolPayments(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke();
+
+            var query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
+
+            var result = con.ExecuteScalar<decimal>(query, new { poolId });
+            return result;
         }
 
         public PoolStats[] GetPoolPerformanceBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
@@ -121,39 +134,39 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
 
-                if (!lastUpdate.HasValue)
-                    return null;
-
-                // load rows rows by timestamp
-                query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
-
-                var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
-                    .Select(mapper.Map<MinerWorkerPerformanceStats>)
-                    .ToArray();
-
-                if (stats.Any())
+                if (lastUpdate.HasValue)
                 {
-                    // replace null worker with empty string
-                    foreach(var stat in stats)
+                    // load rows rows by timestamp
+                    query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
+
+                    var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
+                        .Select(mapper.Map<MinerWorkerPerformanceStats>)
+                        .ToArray();
+
+                    if (stats.Any())
                     {
-                        if (stat.Worker == null)
+                        // replace null worker with empty string
+                        foreach(var stat in stats)
                         {
-                            stat.Worker = string.Empty;
-                            break;
+                            if (stat.Worker == null)
+                            {
+                                stat.Worker = string.Empty;
+                                break;
+                            }
                         }
-                    }
 
-                    // transform to dictionary
-                    result.Performance = new WorkerPerformanceStatsContainer
-                    {
-                        Workers = stats.ToDictionary(x => x.Worker, x => new WorkerPerformanceStats
+                        // transform to dictionary
+                        result.Performance = new WorkerPerformanceStatsContainer
                         {
-                            Hashrate = x.Hashrate,
-                            SharesPerSecond = x.SharesPerSecond
-                        }),
+                            Workers = stats.ToDictionary(x => x.Worker ?? string.Empty, x => new WorkerPerformanceStats
+                            {
+                                Hashrate = x.Hashrate,
+                                SharesPerSecond = x.SharesPerSecond
+                            }),
 
-                        Created = stats.First().Created
-                    };
+                            Created = stats.First().Created
+                        };
+                    }
                 }
             }
 
@@ -177,7 +190,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             foreach (var entity in entities)
                 entity.Worker = entity.Worker ?? string.Empty;
 
-            // group 
+            // group
             var entitiesByDate = entities
                 .GroupBy(x=> x.Created);
 
@@ -229,9 +242,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
 
-            var query = "SELECT miner, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
-                        "FROM minerstats WHERE poolid = @poolid AND created >= @from GROUP BY miner " +
-                        "ORDER BY hashrate DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+            var query = "WITH tmp AS " +
+                        "( " +
+                        "	SELECT  " +
+                        "		ms.miner,  " +
+                        "		ms.hashrate,  " +
+                        "		ms.sharespersecond,  " +
+                        "		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk  " +
+                        "	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
+                        "       FROM minerstats " +
+                        "       WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms " +
+                        ") " +
+                        "SELECT t.miner, t.hashrate, t.sharespersecond " +
+                        "FROM tmp t " +
+                        "WHERE t.rk = 1 " +
+                        "ORDER by t.hashrate DESC " +
+                        "OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<MinerWorkerPerformanceStats>)

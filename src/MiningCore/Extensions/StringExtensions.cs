@@ -25,7 +25,6 @@ namespace MiningCore.Extensions
 {
     public static class StringExtensions
     {
-
         /// <summary>
         /// Converts a str string to byte array.
         /// </summary>
@@ -51,6 +50,11 @@ namespace MiningCore.Extensions
         }
 
         public static string ToStringHex8(this uint value)
+        {
+            return value.ToString("x8", CultureInfo.InvariantCulture);
+        }
+
+        public static string ToStringHex8(this int value)
         {
             return value.ToString("x8", CultureInfo.InvariantCulture);
         }

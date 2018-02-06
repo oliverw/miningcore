@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
@@ -333,16 +332,19 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = new BitcoinShare
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate
+                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC),
+                NetworkDifficulty = Difficulty * shareMultiplier,
+                Difficulty = stratumDifficulty,
             };
 
             var blockBytes = SerializeBlock(headerBytes, coinbase);
-            result.BlockHex = blockBytes.ToHexString();
-            result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
-            result.BlockHeight = BlockTemplate.Height;
-            result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-            result.NetworkDifficulty = Difficulty * shareMultiplier;
-            result.Difficulty = stratumDifficulty;
+
+            if (isBlockCandidate)
+            {
+                result.IsBlockCandidate = true;
+                result.BlockHex = blockBytes.ToHexString();
+                result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+            }
 
             return result;
         }

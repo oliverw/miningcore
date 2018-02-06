@@ -38,6 +38,8 @@ namespace MiningCore.Configuration
         VIA, // Viacoin
         PPC, // Peercoin
         ZEC, // ZCash
+        ZCL, // ZClassic
+        ZEN, // Zencash
         ETH, // Ethereum
         ETC, // Ethereum Classic
         EXP, // Expanse
@@ -49,6 +51,11 @@ namespace MiningCore.Configuration
         ELLA, // Ellaism
         AEON, // AEON
         STAK, // Straks
+        ETN, // Electroneum
+        MOON, // MoonCoin
+        XVG,  // Verge
+        GBX,  // GoByte
+        CRC,  // CrowdCoin
         ETN,   // Electroneum
         PUSHI //Pushi
     }
