@@ -35,7 +35,8 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Dash
 {
-    [CoinMetadata(CoinType.DASH, CoinType.PUSHI)]
+
+    [CoinMetadata(CoinType.DASH, CoinType.GBX, CoinType.CRC, CoinType.PUSHI)]
     public class DashPayoutHandler : BitcoinPayoutHandler
     {
         public DashPayoutHandler(
@@ -79,7 +80,7 @@ namespace MiningCore.Blockchain.Dash
 
                 args = new object[]
                 {
-                    string.Empty,           // default account 
+                    string.Empty,           // default account
                     amounts,                // addresses and associated amounts
                     1,                      // only spend funds covered by this many confirmations
                     false,                  // Whether to add confirmations to transactions locked via InstantSend
@@ -94,7 +95,7 @@ namespace MiningCore.Blockchain.Dash
             {
                 args = new object[]
                 {
-                    string.Empty,           // default account 
+                    string.Empty,           // default account
                     amounts,                // addresses and associated amounts
                 };
             }

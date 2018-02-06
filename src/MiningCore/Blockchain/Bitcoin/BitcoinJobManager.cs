@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin.Configuration;
@@ -115,7 +116,27 @@ namespace MiningCore.Blockchain.Bitcoin
                 logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
                 var newJobsPubSub = daemon.ZmqSubscribe(zmq, BitcoinConstants.ZmqPublisherTopicBlockHash, 2)
-                    .Do(x=> x.Dispose())    // we don't care about the contents
+                    .Select(frames =>
+                    {
+                        try
+                        {
+                            // second frame contains the block hash as binary data
+                            if (frames.Length > 1)
+                            {
+                                var hash = frames[1].ToHexString();
+                                return hash;
+                            }
+                        }
+
+                        finally
+                        {
+                            frames.Dispose();
+                        }
+
+                        return null;
+                    })
+                    .Where(x=> x != null)
+                    .DistinctUntilChanged()
                     .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
                     .Concat()
                     .Publish()
@@ -640,11 +661,17 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     lock (jobLock)
                     {
+                        if(isNew)
+                            validJobs.Clear();
+
                         validJobs.Add(job);
 
-                        // trim active jobs
-                        while (validJobs.Count > maxActiveJobs)
-                            validJobs.RemoveAt(0);
+                        if (!isNew)
+                        {
+                            // trim active jobs
+                            while(validJobs.Count > maxActiveJobs)
+                                validJobs.RemoveAt(0);
+                        }
                     }
 
                     currentJob = job;

@@ -110,7 +110,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // extract worker/miner
             var split = workerValue?.Split('.');
-            var minerName = split?.FirstOrDefault();
+            var minerName = split?.FirstOrDefault()?.Trim();
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
@@ -333,7 +333,8 @@ namespace MiningCore.Blockchain.Bitcoin
                     break;
 
                 case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                    //OnGetTransactions(client, tsRequest);
+                    // ignored
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
