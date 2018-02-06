@@ -56,7 +56,6 @@ namespace MiningCore.Configuration
         XVG,  // Verge
         GBX,  // GoByte
         CRC,  // CrowdCoin
-        ETN,   // Electroneum
         PUSHI //Pushi
     }
 
