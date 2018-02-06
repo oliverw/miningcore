@@ -56,6 +56,7 @@ namespace MiningCore.Configuration
         XVG,  // Verge
         GBX,  // GoByte
         CRC,  // CrowdCoin
+        PUSHI //Pushi
     }
 
     public class CoinConfig
