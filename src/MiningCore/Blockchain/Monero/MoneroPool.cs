@@ -96,22 +96,19 @@ namespace MiningCore.Blockchain.Monero
             // validate login
             var result = manager.ValidateAddress(context.MinerName);
 
-            // validate payment Id
-            if (!string.IsNullOrEmpty(context.PaymentId))
-            {
-                if (context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
-                {
-                    client.RespondError(StratumError.MinusOne, "invalid payment id", request.Id);
-                    return;
-                }
-            }
-
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
             if (!context.IsAuthorized)
             {
                 client.RespondError(StratumError.MinusOne, "invalid login", request.Id);
+                return;
+            }
+
+            // validate payment Id
+            if (!string.IsNullOrEmpty(context.PaymentId) && context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
+            {
+                client.RespondError(StratumError.MinusOne, "invalid payment id", request.Id);
                 return;
             }
 
