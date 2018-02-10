@@ -230,7 +230,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var context = client.GetContextAs<EthereumWorkerContext>();
 
-                if (context.IsSubscribed && context.IsAuthorized)
+                if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                 {
                     // check alive
                     var lastActivityAgo = clock.Now - context.LastActivity;
