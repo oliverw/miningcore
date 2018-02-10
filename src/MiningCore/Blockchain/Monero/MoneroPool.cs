@@ -81,20 +81,30 @@ namespace MiningCore.Blockchain.Monero
 
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
-            context.MinerName = split[0];
-            context.WorkerName = split.Length > 1 ? split[1] : null;
-            context.UserAgent = loginRequest.UserAgent;
+            context.MinerName = split[0].Trim();
+            context.WorkerName = split.Length > 1 ? split[1].Trim() : null;
+            context.UserAgent = loginRequest.UserAgent.Trim();
 
             // extract paymentid
             var index = context.MinerName.IndexOf('#');
             if (index != -1)
             {
-                context.PaymentId = context.MinerName.Substring(index + 1);
-                context.MinerName = context.MinerName.Substring(0, index);
+                context.PaymentId = context.MinerName.Substring(index + 1).Trim();
+                context.MinerName = context.MinerName.Substring(0, index).Trim();
             }
 
             // validate login
             var result = manager.ValidateAddress(context.MinerName);
+
+            // validate payment Id
+            if (!string.IsNullOrEmpty(context.PaymentId))
+            {
+                if (context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
+                {
+                    client.RespondError(StratumError.MinusOne, "invalid payment id", request.Id);
+                    return;
+                }
+            }
 
             context.IsSubscribed = result;
             context.IsAuthorized = result;
