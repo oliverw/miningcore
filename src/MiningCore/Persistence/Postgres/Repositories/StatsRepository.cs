@@ -27,6 +27,7 @@ using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Model.Projections;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
 using NLog;
 using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
@@ -34,13 +35,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class StatsRepository : IStatsRepository
     {
-        public StatsRepository(IMapper mapper)
+        public StatsRepository(IMapper mapper, IMasterClock clock)
         {
             this.mapper = mapper;
+            this.clock = clock;
         }
 
         private readonly IMapper mapper;
+        private readonly IMasterClock clock;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(15);
 
         public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
@@ -133,6 +137,10 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     " ORDER BY created DESC LIMIT 1";
 
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
+
+                // ignore stale minerstats
+                if (lastUpdate.HasValue && (clock.Now - lastUpdate) > MinerStatsMaxAge)
+                    lastUpdate = null;
 
                 if (lastUpdate.HasValue)
                 {
