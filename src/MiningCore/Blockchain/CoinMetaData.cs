@@ -121,6 +121,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, BitcoinProperties.GetAlgorithm },
             { CoinType.ZEC, BitcoinProperties.GetAlgorithm },
             { CoinType.ZCL, BitcoinProperties.GetAlgorithm },
+            { CoinType.BTCP, BitcoinProperties.GetAlgorithm },
             { CoinType.ZEN, BitcoinProperties.GetAlgorithm },
             { CoinType.DGB, BitcoinProperties.GetAlgorithm },
             { CoinType.NMC, BitcoinProperties.GetAlgorithm },

@@ -56,7 +56,7 @@ namespace MiningCore.Configuration
         XVG,  // Verge
         GBX,  // GoByte
         CRC,  // CrowdCoin
-        BTCP
+        BTCP, // Bitcoin Private
     }
 
     public class CoinConfig

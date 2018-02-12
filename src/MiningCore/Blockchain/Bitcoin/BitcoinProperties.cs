@@ -113,6 +113,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.BTG, equihashCoin },
             { CoinType.ZCL, equihashCoin },
             { CoinType.ZEN, equihashCoin },
+            { CoinType.BTCP, equihashCoin },
 
             // Neoscrypt
             { CoinType.GBX, neoScryptCoin },
