@@ -25,6 +25,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x11.h"
 #include "groestl.h"
 #include "blake.h"
+#include "blake2s.h"
 #include "fugue.h"
 #include "qubit.h"
 #include "s3.h"
@@ -119,6 +120,11 @@ extern "C" MODULE_API void groestl_myriad_export(const char* input, char* output
 extern "C" MODULE_API void blake_export(const char* input, char* output, uint32_t input_len)
 {
 	blake_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void blake2s_export(const char* input, char* output, uint32_t input_len)
+{
+    blake2s_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void dcrypt_export(const char* input, char* output, uint32_t input_len)

@@ -164,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="blake.h" />
+    <ClInclude Include="blake2s.h" />
     <ClInclude Include="boolberry.h" />
     <ClInclude Include="c11.h" />
     <ClInclude Include="dcrypt.h" />
@@ -196,6 +197,7 @@
     <ClInclude Include="scryptn.h" />
     <ClInclude Include="sha256.h" />
     <ClInclude Include="sha3\sph_blake.h" />
+    <ClInclude Include="sha3\sph_blake2s.h" />
     <ClInclude Include="sha3\sph_bmw.h" />
     <ClInclude Include="sha3\sph_cubehash.h" />
     <ClInclude Include="sha3\sph_echo.h" />
@@ -229,6 +231,7 @@
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
     <ClCompile Include="blake.c" />
+    <ClCompile Include="blake2s.c" />
     <ClCompile Include="c11.c" />
     <ClCompile Include="dcrypt.c" />
     <ClCompile Include="dllmain.cpp" />
@@ -258,6 +261,7 @@
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\hamsi.c" />
     <ClCompile Include="sha3\sph_blake.c" />
+    <ClCompile Include="sha3\sph_blake2s.c" />
     <ClCompile Include="sha3\sph_bmw.c" />
     <ClCompile Include="sha3\sph_cubehash.c" />
     <ClCompile Include="sha3\sph_echo.c" />
