@@ -118,5 +118,8 @@ namespace MiningCore.Blockchain.Bitcoin
         public const string GetBlock = "getblock";
         public const string GetTransaction = "gettransaction";
         public const string SendMany = "sendmany";
+
+        // Legacy commands
+        public const string GetInfo = "getinfo";
     }
 }

@@ -75,6 +75,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
         protected int maxActiveJobs = 4;
+        private bool hasLegacyDaemon;
         protected BitcoinPoolConfigExtra extraPoolConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
@@ -95,6 +96,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 rules = new[] { "segwit" }
             }
         };
+
 
         protected virtual void SetupJobUpdates()
         {
@@ -203,6 +205,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual async Task ShowDaemonSyncProgressAsync()
         {
+            if (hasLegacyDaemon)
+            {
+                await ShowDaemonSyncProgressLegacyAsync();
+                return;
+            }
+
             var infos = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
             if (infos.Length > 0)
@@ -300,6 +308,50 @@ namespace MiningCore.Blockchain.Bitcoin
             headerHasher = coinProps.HeaderHasher;
             blockHasher = !isPoS ? coinProps.BlockHasher : coinProps.PoSBlockHasher;
             ShareMultiplier = coinProps.ShareMultiplier;
+        }
+
+        protected virtual async Task<bool> AreDaemonsHealthyLegacyAsync()
+        {
+            var responses = await daemon.ExecuteCmdAllAsync<DaemonInfo>(BitcoinCommands.GetInfo);
+
+            if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
+
+            return responses.All(x => x.Error == null);
+        }
+
+        protected virtual async Task<bool> AreDaemonsConnectedLegacyAsync()
+        {
+            var response = await daemon.ExecuteCmdAnyAsync<DaemonInfo>(BitcoinCommands.GetInfo);
+
+            return response.Error == null && response.Response.Connections > 0;
+        }
+
+        protected virtual async Task ShowDaemonSyncProgressLegacyAsync()
+        {
+            var infos = await daemon.ExecuteCmdAllAsync<DaemonInfo>(BitcoinCommands.GetInfo);
+
+            if (infos.Length > 0)
+            {
+                var blockCount = infos
+                    .Max(x => x.Response?.Blocks);
+
+                if (blockCount.HasValue)
+                {
+                    // get list of peers and their highest block height to compare to ours
+                    var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(BitcoinCommands.GetPeerInfo);
+                    var peers = peerInfo.Response;
+
+                    if (peers != null && peers.Length > 0)
+                    {
+                        var totalBlocks = peers.Max(x => x.StartingHeight);
+                        var percent = totalBlocks > 0 ? (double)blockCount / totalBlocks * 100 : 0;
+                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
+                    }
+                }
+            }
         }
 
         #region API-Surface
@@ -453,6 +505,8 @@ namespace MiningCore.Blockchain.Bitcoin
             if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
+            hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
+
             base.Configure(poolConfig, clusterConfig);
         }
 
@@ -464,20 +518,26 @@ namespace MiningCore.Blockchain.Bitcoin
             daemon.Configure(poolConfig.Daemons);
         }
 
-        protected override async Task<bool> AreDaemonsHealthy()
+        protected override async Task<bool> AreDaemonsHealthyAsync()
         {
+            if (hasLegacyDaemon)
+                return await AreDaemonsHealthyLegacyAsync();
+
             var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
+                .Select(x => (DaemonClientException)x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> AreDaemonsConnected()
+        protected override async Task<bool> AreDaemonsConnectedAsync()
         {
+            if (hasLegacyDaemon)
+                return await AreDaemonsConnectedLegacyAsync();
+
             var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(BitcoinCommands.GetNetworkInfo);
 
             return response.Error == null && response.Response.Connections > 0;
@@ -520,7 +580,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 new DaemonCmd(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
                 new DaemonCmd(BitcoinCommands.GetDifficulty),
                 new DaemonCmd(BitcoinCommands.SubmitBlock),
-                new DaemonCmd(BitcoinCommands.GetBlockchainInfo)
+                new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo)
             };
 
             var results = await daemon.ExecuteBatchAnyAsync(commands);
@@ -539,7 +599,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var validateAddressResponse = results[0].Response.ToObject<ValidateAddressResponse>();
             var difficultyResponse = results[1].Response.ToObject<JToken>();
             var submitBlockResponse = results[2];
-            var blockchainInfoResponse = results[3].Response.ToObject<BlockchainInfo>();
+            var blockchainInfoResponse = !hasLegacyDaemon ? results[3].Response.ToObject<BlockchainInfo>() : null;
+            var daemonInfoResponse = hasLegacyDaemon ? results[3].Response.ToObject<DaemonInfo>() : null;
 
             // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
@@ -557,12 +618,18 @@ namespace MiningCore.Blockchain.Bitcoin
                 poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
 
             // chain detection
-            if (blockchainInfoResponse.Chain.ToLower() == "test")
-                networkType = BitcoinNetworkType.Test;
-            else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
-                networkType = BitcoinNetworkType.RegTest;
+            if (!hasLegacyDaemon)
+            {
+                if (blockchainInfoResponse.Chain.ToLower() == "test")
+                    networkType = BitcoinNetworkType.Test;
+                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
+                    networkType = BitcoinNetworkType.RegTest;
+                else
+                    networkType = BitcoinNetworkType.Main;
+            }
+
             else
-                networkType = BitcoinNetworkType.Main;
+                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
 
             ConfigureRewards();
 
