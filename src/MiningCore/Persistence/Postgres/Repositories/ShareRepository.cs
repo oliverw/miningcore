@@ -127,13 +127,23 @@ namespace MiningCore.Persistence.Postgres.Repositories
             return con.QuerySingle<long>(query, new { poolId, miner, start, end });
         }
 
-        public ulong? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public double? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
             var query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
             return con.QuerySingle<ulong?>(query, new { poolId, start, end });
+        }
+
+        public MinerWorkerHashes[] GetAccumulatedShareDifficultyTotal(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke(new[] { (object)poolId });
+
+            var query = "SELECT SUM(difficulty) AS sum, COUNT(difficulty) AS count, miner, worker FROM shares WHERE poolid = @poolid group by miner, worker";
+
+            return con.Query<MinerWorkerHashes>(query, new { poolId })
+                .ToArray();
         }
 
         public MinerWorkerHashes[] GetHashAccumulationBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)

@@ -37,5 +37,7 @@ namespace MiningCore.Persistence.Repositories
         MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize);
         WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
         WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
+        void UpdateMinerWorkerStatsPreAgg(IDbConnection con, IDbTransaction tx, MinerWorkerStatsPreAgg stats);
+        void DeleteMinerWorkerStatsExcept(IDbConnection con, IDbTransaction tx, string poolId, string miner, string[] activeWorkers);
     }
 }

@@ -233,9 +233,9 @@ namespace MiningCore.Blockchain.Ethereum
             return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }

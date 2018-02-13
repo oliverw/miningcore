@@ -18,28 +18,20 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using System.Threading.Tasks;
-using MiningCore.Configuration;
-using MiningCore.Persistence.Model;
+using System;
 
-namespace MiningCore.Payments
+namespace MiningCore.Persistence.Model
 {
-    public interface IPayoutHandler
+    public class MinerWorkerStatsPreAgg
     {
-        Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig);
+        public string PoolId { get; set; }
+        public string Miner { get; set; }
+        public string Worker { get; set; }
 
-        Task<Block[]> ClassifyBlocksAsync(Block[] blocks);
-        Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff);
-        Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool);
-        Task PayoutAsync(Balance[] balances);
+        public long ShareCount { get; set; }
+        public double SharesAccumulated { get; set; }
 
-        string FormatAmount(decimal amount);
-    }
-
-    public interface IPayoutScheme
-    {
-        Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block, decimal blockReward);
+        public DateTime Created { get; set; }
+        public DateTime Updated { get; set; }
     }
 }

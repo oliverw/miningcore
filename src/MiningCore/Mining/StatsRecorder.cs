@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -56,7 +57,8 @@ namespace MiningCore.Mining
         private const int HashrateCalculationWindow = 1200;  // seconds
         private const int MinHashrateCalculationWindow = 300;  // seconds
         private ClusterConfig clusterConfig;
-        private Thread thread;
+        private Thread thread1;
+        private Thread thread2;
         private const int RetryCount = 4;
         private Policy readFaultPolicy;
 
@@ -76,12 +78,12 @@ namespace MiningCore.Mining
 
         public void Start()
         {
-            thread = new Thread(async () =>
-            {
-                logger.Info(() => "Online");
+            logger.Info(() => "Online");
 
+            thread1 = new Thread(() =>
+            {
                 // warm-up delay
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                Thread.Sleep(TimeSpan.FromSeconds(10));
 
                 var interval = TimeSpan.FromMinutes(5);
 
@@ -89,7 +91,7 @@ namespace MiningCore.Mining
                 {
                     try
                     {
-                        await UpdatePoolsAsync();
+                        UpdatePoolHashrates();
                     }
 
                     catch (Exception ex)
@@ -105,8 +107,38 @@ namespace MiningCore.Mining
                 }
             });
 
-            thread.Name = "StatsRecorder";
-            thread.Start();
+            thread1.Name = "StatsRecorder";
+            thread1.Start();
+
+            thread2 = new Thread(() =>
+            {
+                // warm-up delay
+                Thread.Sleep(TimeSpan.FromSeconds(10));
+
+                var interval = TimeSpan.FromMinutes(15);
+
+                while (true)
+                {
+                    try
+                    {
+                        UpdatePoolPreAggs();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+
+                    var waitResult = stopEvent.WaitOne(interval);
+
+                    // check if stop was signalled
+                    if (waitResult)
+                        break;
+                }
+            });
+
+            thread2.Name = "StatsRecorder - PreAggs";
+            thread2.Start();
         }
 
         public void Stop()
@@ -114,21 +146,14 @@ namespace MiningCore.Mining
             logger.Info(() => "Stopping ..");
 
             stopEvent.Set();
-            thread.Join();
+            thread1.Join();
 
             logger.Info(() => "Stopped");
         }
 
         #endregion // API-Surface
 
-        private Task UpdatePoolsAsync()
-        {
-            UpdateHashrates();
-
-            return Task.FromResult(true);
-        }
-
-        private void UpdateHashrates()
+        private void UpdatePoolHashrates()
         {
             var start = clock.Now;
             var target = start.AddSeconds(-HashrateCalculationWindow);
@@ -213,6 +238,60 @@ namespace MiningCore.Mining
                                 statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
                             }
                         }
+                    });
+                }
+            }
+        }
+
+        private void UpdatePoolPreAggs()
+        {
+            var start = clock.Now;
+
+            var stats = new MinerWorkerStatsPreAgg
+            {
+                Created = start,
+                Updated = start,
+            };
+
+            var sw = new Stopwatch();
+
+            foreach (var poolId in pools.Keys)
+            {
+                stats.PoolId = poolId;
+
+                logger.Info(() => $"Updating pre-aggregated miner stats for pool {poolId}");
+
+                // fetch stats
+                var result = readFaultPolicy.Execute(() =>
+                    cf.Run(con => shareRepo.GetAccumulatedShareDifficultyTotal(con, poolId), sw, logger));
+
+                var byMiner = result.GroupBy(x => x.Miner).ToArray();
+
+                // update miner, worker
+                foreach (var minerHashes in byMiner)
+                {
+                    cf.RunTx((con, tx) =>
+                    {
+                        stats.Miner = minerHashes.Key;
+
+                        foreach (var item in minerHashes)
+                        {
+                            // update
+                            stats.Worker = item.Worker ?? string.Empty;
+                            stats.ShareCount = item.Count;
+                            stats.SharesAccumulated = item.Sum;
+
+                            // persist
+                            statsRepo.UpdateMinerWorkerStatsPreAgg(con, tx, stats);
+                        }
+
+                        // delete records for workers that are no longer producing shares
+                        var activeWorkers = minerHashes
+                            .Select(x => x.Worker ?? string.Empty)
+                            .Distinct()
+                            .ToArray();
+
+                        statsRepo.DeleteMinerWorkerStatsExcept(con, tx, poolId, stats.Miner, activeWorkers);
                     });
                 }
             }
