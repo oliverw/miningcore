@@ -35,6 +35,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm sha256D = new Sha256D();
         private static readonly IHashAlgorithm sha256DReverse = new DigestReverser(sha256D);
         private static readonly IHashAlgorithm x11 = new X11();
+        private static readonly IHashAlgorithm blake2s = new Blake2s();
         private static readonly IHashAlgorithm x17 = new X17();
         private static readonly IHashAlgorithm groestl = new Groestl();
         private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
@@ -62,6 +63,9 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties x11Coin =
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11), "X11");
 
+        private static readonly BitcoinCoinProperties blake2sCoin =
+            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(blake2s), "Blake2s");
+
         private static readonly BitcoinCoinProperties skeinCoin =
             new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse, "Skein");
 
@@ -75,7 +79,7 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(1, new DummyHasher(), sha256D, sha256DReverse, "Equihash");
 
         private static readonly BitcoinCoinProperties neoScryptCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, sha256DReverse, "Neoscrypt");
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
         private static readonly BitcoinCoinProperties x17Coin =
             new BitcoinCoinProperties(1, sha256D, x17, new DigestReverser(x17), "X17");
@@ -171,7 +175,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     return x17Coin;
 
                 case "blake2s":
-                    throw new NotSupportedException($"algorithm {algorithm} not yet supported");
+                    return blake2sCoin;
 
                 default: // scrypt
                     return scryptCoin;
