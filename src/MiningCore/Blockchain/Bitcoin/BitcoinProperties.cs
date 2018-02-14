@@ -79,7 +79,7 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(1, new DummyHasher(), sha256D, sha256DReverse, "Equihash");
 
         private static readonly BitcoinCoinProperties neoScryptCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, sha256DReverse, "Neoscrypt");
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
         private static readonly BitcoinCoinProperties x17Coin =
             new BitcoinCoinProperties(1, sha256D, x17, new DigestReverser(x17), "X17");
