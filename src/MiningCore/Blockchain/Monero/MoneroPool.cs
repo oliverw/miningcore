@@ -256,8 +256,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 

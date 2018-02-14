@@ -355,11 +355,16 @@ namespace MiningCore.Mining
 
                 else
                 {
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                    if (poolConfig.Banning?.Enabled == true &&
+                        (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
+                         clusterConfig.Banning?.BanOnInvalidShares == true))
+                    {
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
-                    banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
+                        banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
-                    DisconnectClient(client);
+                        DisconnectClient(client);
+                    }
                 }
             }
         }
