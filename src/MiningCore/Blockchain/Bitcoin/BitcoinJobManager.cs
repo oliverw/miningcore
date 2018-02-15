@@ -257,7 +257,6 @@ namespace MiningCore.Blockchain.Bitcoin
             var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
 
             BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkDifficulty = miningInfoResponse.Difficulty;
             BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
             BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
@@ -352,6 +351,31 @@ namespace MiningCore.Blockchain.Bitcoin
                     }
                 }
             }
+        }
+
+        private async Task UpdateNetworkStatsLegacyAsync()
+        {
+            logger.LogInvoke(LogCat);
+
+            var results = await daemon.ExecuteBatchAnyAsync(
+                new DaemonCmd(BitcoinCommands.GetMiningInfo),
+                new DaemonCmd(BitcoinCommands.GetConnectionCount)
+            );
+
+            if (results.Any(x => x.Error != null))
+            {
+                var errors = results.Where(x => x.Error != null).ToArray();
+
+                if (errors.Any())
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+            }
+
+            var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
+            var connectionCountResponse = results[1].Response.ToObject<object>();
+
+            BlockchainStats.BlockHeight = miningInfoResponse.Blocks;
+            //BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+            BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
         }
 
         #region API-Surface
@@ -645,7 +669,10 @@ namespace MiningCore.Blockchain.Bitcoin
             else
                 logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCat);
 
-            await UpdateNetworkStatsAsync();
+            if(!hasLegacyDaemon)
+                await UpdateNetworkStatsAsync();
+            else
+                await UpdateNetworkStatsLegacyAsync();
 
             SetupCrypto();
             SetupJobUpdates();

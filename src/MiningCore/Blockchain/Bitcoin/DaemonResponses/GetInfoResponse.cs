@@ -29,5 +29,6 @@ namespace MiningCore.Blockchain.Bitcoin.DaemonResponses
         public ulong Blocks { get; set; }
         public bool Testnet { get; set; }
         public int Connections { get; set; }
+        public double Difficulty { get; set; }
     }
 }
