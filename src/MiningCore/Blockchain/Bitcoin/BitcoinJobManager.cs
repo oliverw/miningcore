@@ -633,7 +633,8 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!validateAddressResponse.IsMine)
                 logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
-            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake") &&
+                    !difficultyResponse.Values().Any(x => x.Path == "proof-of-work");
 
             // Create pool address script from response
             if (isPoS)
