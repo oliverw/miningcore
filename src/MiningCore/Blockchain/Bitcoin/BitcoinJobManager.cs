@@ -530,6 +530,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
             hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
+            isPoS = extraPoolConfig?.IsPoS == true;
 
             base.Configure(poolConfig, clusterConfig);
         }
@@ -602,7 +603,6 @@ namespace MiningCore.Blockchain.Bitcoin
             var commands = new[]
             {
                 new DaemonCmd(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
-                new DaemonCmd(BitcoinCommands.GetDifficulty),
                 new DaemonCmd(BitcoinCommands.SubmitBlock),
                 new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo)
             };
@@ -621,10 +621,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // extract results
             var validateAddressResponse = results[0].Response.ToObject<ValidateAddressResponse>();
-            var difficultyResponse = results[1].Response.ToObject<JToken>();
-            var submitBlockResponse = results[2];
-            var blockchainInfoResponse = !hasLegacyDaemon ? results[3].Response.ToObject<BlockchainInfo>() : null;
-            var daemonInfoResponse = hasLegacyDaemon ? results[3].Response.ToObject<DaemonInfo>() : null;
+            var submitBlockResponse = results[1];
+            var blockchainInfoResponse = !hasLegacyDaemon ? results[2].Response.ToObject<BlockchainInfo>() : null;
+            var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
 
             // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
@@ -632,9 +631,6 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (!validateAddressResponse.IsMine)
                 logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
-
-            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake") &&
-                    !difficultyResponse.Values().Any(x => x.Path == "proof-of-work");
 
             // Create pool address script from response
             if (isPoS)
