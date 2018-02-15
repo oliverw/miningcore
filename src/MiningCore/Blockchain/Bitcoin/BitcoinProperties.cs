@@ -165,16 +165,16 @@ namespace MiningCore.Blockchain.Bitcoin
 
             switch (algorithm.ToLower())
             {
-                case "lyra2rev2":
+                case "lyra":
                     return lyra2Rev2CoinVariantA;
 
-                case "groestl-myriad":
+                case "groestl":
                     return groestlMyriadCoin;
 
                 case "x17":
                     return x17Coin;
 
-                case "blake2s":
+                case "blake":
                     return blake2sCoin;
 
                 default: // scrypt
