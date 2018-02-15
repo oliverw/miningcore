@@ -47,7 +47,7 @@ namespace MiningCore.Api.Extensions
             if (string.IsNullOrEmpty(result))
             {
                 if (CoinMetaData.CoinAlgorithm.TryGetValue(pool.Coin.Type, out var getter))
-                    result = getter(pool.Coin.Type);
+                    result = getter(pool.Coin.Type, pool.Coin.Algorithm);
             }
 
             // Capitalize

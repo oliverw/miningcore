@@ -182,9 +182,11 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        public static string GetAlgorithm(CoinType coin)
+        public static string GetAlgorithm(CoinType coin, string configuredAlgorithm)
         {
-            if (coinProperties.TryGetValue(coin, out var props))
+            var props = GetCoinProperties(coin, configuredAlgorithm);
+
+            if (props != null)
                 return props.Algorithm;
 
             return string.Empty;
