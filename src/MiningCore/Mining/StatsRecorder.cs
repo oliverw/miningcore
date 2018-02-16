@@ -58,7 +58,6 @@ namespace MiningCore.Mining
         private const int MinHashrateCalculationWindow = 300;  // seconds
         private ClusterConfig clusterConfig;
         private Thread thread1;
-        private Thread thread2;
         private const int RetryCount = 4;
         private Policy readFaultPolicy;
 
