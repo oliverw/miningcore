@@ -42,13 +42,10 @@ namespace MiningCore.Api.Extensions
 
         private static string GetPoolAlgorithm(PoolConfig pool)
         {
-            var result = pool.Coin.Algorithm;
+            string result = null;
 
-            if (string.IsNullOrEmpty(result))
-            {
-                if (CoinMetaData.CoinAlgorithm.TryGetValue(pool.Coin.Type, out var getter))
-                    result = getter(pool.Coin.Type, pool.Coin.Algorithm);
-            }
+            if (CoinMetaData.CoinAlgorithm.TryGetValue(pool.Coin.Type, out var getter))
+                result = getter(pool.Coin.Type, pool.Coin.Algorithm);
 
             // Capitalize
             if (!string.IsNullOrEmpty(result) && result.Length > 1)
