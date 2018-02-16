@@ -109,36 +109,6 @@ namespace MiningCore.Mining
 
             thread1.Name = "StatsRecorder";
             thread1.Start();
-
-            thread2 = new Thread(() =>
-            {
-                // warm-up delay
-                Thread.Sleep(TimeSpan.FromSeconds(10));
-
-                var interval = TimeSpan.FromMinutes(15);
-
-                while (true)
-                {
-                    try
-                    {
-                        UpdatePoolPreAggs();
-                    }
-
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
-                }
-            });
-
-            thread2.Name = "StatsRecorder - PreAggs";
-            thread2.Start();
         }
 
         public void Stop()
@@ -238,60 +208,6 @@ namespace MiningCore.Mining
                                 statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
                             }
                         }
-                    });
-                }
-            }
-        }
-
-        private void UpdatePoolPreAggs()
-        {
-            var start = clock.Now;
-
-            var stats = new MinerWorkerStatsPreAgg
-            {
-                Created = start,
-                Updated = start,
-            };
-
-            var sw = new Stopwatch();
-
-            foreach (var poolId in pools.Keys)
-            {
-                stats.PoolId = poolId;
-
-                logger.Info(() => $"Updating pre-aggregated miner stats for pool {poolId}");
-
-                // fetch stats
-                var result = readFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.GetAccumulatedShareDifficultyTotal(con, poolId), sw, logger));
-
-                var byMiner = result.GroupBy(x => x.Miner).ToArray();
-
-                // update miner, worker
-                foreach (var minerHashes in byMiner)
-                {
-                    cf.RunTx((con, tx) =>
-                    {
-                        stats.Miner = minerHashes.Key;
-
-                        foreach (var item in minerHashes)
-                        {
-                            // update
-                            stats.Worker = item.Worker ?? string.Empty;
-                            stats.ShareCount = item.Count;
-                            stats.SharesAccumulated = item.Sum;
-
-                            // persist
-                            statsRepo.UpdateMinerWorkerStatsPreAgg(con, tx, stats);
-                        }
-
-                        // delete records for workers that are no longer producing shares
-                        var activeWorkers = minerHashes
-                            .Select(x => x.Worker ?? string.Empty)
-                            .Distinct()
-                            .ToArray();
-
-                        statsRepo.DeleteMinerWorkerStatsExcept(con, tx, poolId, stats.Miner, activeWorkers);
                     });
                 }
             }

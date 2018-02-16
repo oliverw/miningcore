@@ -119,9 +119,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId, miner });
 
-            var query = "SELECT (SELECT SUM(sharesaccumulated) FROM minerstats_pre_agg WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
-                "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
-                "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
+            var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
+                        "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                        "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
 
             var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner }, tx);
 
@@ -244,28 +244,6 @@ namespace MiningCore.Persistence.Postgres.Repositories
             .ToArray();
 
             return result;
-        }
-
-        public void UpdateMinerWorkerStatsPreAgg(IDbConnection con, IDbTransaction tx, MinerWorkerStatsPreAgg stats)
-        {
-            logger.LogInvoke();
-
-            var query = "INSERT INTO minerstats_pre_agg(poolid, miner, worker, sharecount, sharesaccumulated, created, updated) " +
-                        "VALUES(@poolid, @miner, @worker, @sharecount, @sharesaccumulated, @created, @updated)" +
-                        "ON CONFLICT ON CONSTRAINT minerstats_pre_agg_pkey " +
-                        "DO UPDATE SET " +
-                        "sharecount = @sharecount, sharesaccumulated = @sharesaccumulated, updated = @updated";
-
-            con.Execute(query, stats, tx);
-        }
-
-        public void DeleteMinerWorkerStatsExcept(IDbConnection con, IDbTransaction tx, string poolId, string miner, string[] activeWorkers)
-        {
-            logger.LogInvoke();
-
-            var query = "DELETE FROM minerstats_pre_agg WHERE poolid = @poolid AND miner = @miner AND NOT(worker = ANY(@activeWorkers))";
-
-            con.Execute(query, new { poolId, miner, activeWorkers }, tx);
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
