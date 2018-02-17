@@ -119,10 +119,15 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId, miner });
 
+#if true
+            var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
+                        "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                        "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
+#else
             var query = "SELECT (SELECT SUM(sharesaccumulated) FROM minerstats_pre_agg WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
                         "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
                         "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
-
+#endif
             var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner }, tx);
 
             if (result != null)
