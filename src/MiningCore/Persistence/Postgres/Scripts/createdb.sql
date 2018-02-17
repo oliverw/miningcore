@@ -134,7 +134,7 @@ $BODY$
 BEGIN
   UPDATE minerstats_pre_agg SET
 	sharecount = GREATEST(sharecount - 1, 0), sharesaccumulated = GREATEST(sharesaccumulated - old.difficulty, 0), updated = now() at time zone 'utc'
-  WHERE poolid = old.poolid AND miner = old.miner AND worker = old.worker;
+  WHERE poolid = old.poolid AND miner = old.miner AND worker = COALESCE(old.worker, '');
 
   RETURN new;
 END;
