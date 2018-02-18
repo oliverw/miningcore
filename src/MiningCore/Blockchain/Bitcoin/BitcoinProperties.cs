@@ -64,7 +64,7 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11), "X11");
 
         private static readonly BitcoinCoinProperties blake2sCoin =
-            new BitcoinCoinProperties(1, sha256D, blake2s, sha256DReverse, "Blake2s");
+            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(blake2s), "Blake2s");
 
         private static readonly BitcoinCoinProperties skeinCoin =
             new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse, "Skein");
@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.Bitcoin
             switch (algorithm.ToLower())
             {
                 case "lyra":
-                    return lyra2Rev2CoinVariantB;
+                    return lyra2Rev2CoinVariantA;
 
                 case "groestl":
                     return groestlMyriadCoin;
