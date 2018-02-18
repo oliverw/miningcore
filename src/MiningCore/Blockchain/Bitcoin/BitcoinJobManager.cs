@@ -289,8 +289,8 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (!accepted)
             {
-                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed because block was not found after submission");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed because block was not found after submission");
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());
