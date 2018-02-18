@@ -32,10 +32,5 @@ namespace MiningCore.Blockchain.Bitcoin.Configuration
         /// Set to true to limit RPC commands to old Bitcoin command set
         /// </summary>
         public bool? HasLegacyDaemon { get; set; }
-
-        /// <summary>
-        /// Set to true to indicate Prof-of-stake
-        /// </summary>
-        public bool? IsPoS { get; set; }
     }
 }

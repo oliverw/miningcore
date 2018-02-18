@@ -305,7 +305,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             coinbaseHasher = coinProps.CoinbaseHasher;
             headerHasher = coinProps.HeaderHasher;
-            blockHasher = !isPoS ? coinProps.BlockHasher : coinProps.PoSBlockHasher;
+            blockHasher = !isPoS ? coinProps.BlockHasher : (coinProps.PoSBlockHasher ?? coinProps.BlockHasher);
             ShareMultiplier = coinProps.ShareMultiplier;
         }
 
@@ -530,7 +530,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
             hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
-            isPoS = extraPoolConfig?.IsPoS == true;
 
             base.Configure(poolConfig, clusterConfig);
         }
@@ -604,7 +603,8 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 new DaemonCmd(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
                 new DaemonCmd(BitcoinCommands.SubmitBlock),
-                new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo)
+                new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo),
+                new DaemonCmd(BitcoinCommands.GetDifficulty),
             };
 
             var results = await daemon.ExecuteBatchAnyAsync(commands);
@@ -624,6 +624,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var submitBlockResponse = results[1];
             var blockchainInfoResponse = !hasLegacyDaemon ? results[2].Response.ToObject<BlockchainInfo>() : null;
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
+            var difficultyResponse = results[3].Response.ToObject<JToken>();
 
             // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
@@ -632,11 +633,12 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!validateAddressResponse.IsMine)
                 logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
+            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+
             // Create pool address script from response
-            if (isPoS)
-                poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
-            else
-                poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
+            poolAddressDestination = !isPoS ?
+                AddressToDestination(validateAddressResponse.Address) :
+                new PubKey(validateAddressResponse.PubKey);
 
             // chain detection
             if (!hasLegacyDaemon)
