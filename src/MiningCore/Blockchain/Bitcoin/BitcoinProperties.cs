@@ -104,6 +104,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.DOGE, scryptCoin },
             { CoinType.VIA, scryptCoin },
             { CoinType.MOON, scryptCoin },
+            { CoinType.FLO, scryptCoin },
 
             // Groestl
             { CoinType.GRS, groestlCoin },
