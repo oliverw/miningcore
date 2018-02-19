@@ -240,7 +240,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money((long) (BlockTemplate.CoinbaseValue * blockRewardMultiplier), MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 

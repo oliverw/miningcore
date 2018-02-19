@@ -740,7 +740,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     job.Init(blockTemplate, NextJobId(),
                         poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
-                        ShareMultiplier, extraPoolPaymentProcessingConfig.BlockrewardMultiplier ?? 1.0m,
+                        ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher);
 
                     if (isNew)
