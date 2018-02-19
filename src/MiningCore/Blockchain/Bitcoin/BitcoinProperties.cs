@@ -63,9 +63,6 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties x11Coin =
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11), "X11");
 
-        private static readonly BitcoinCoinProperties blake2sCoin =
-            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(blake2s), "Blake2s");
-
         private static readonly BitcoinCoinProperties skeinCoin =
             new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse, "Skein");
 
@@ -81,8 +78,17 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties neoScryptCoin =
             new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
-        private static readonly BitcoinCoinProperties x17Coin =
-            new BitcoinCoinProperties(1, sha256D, x17, new DigestReverser(x17), "X17");
+        private static readonly BitcoinCoinProperties vergeLyraCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(scrypt_1024_1), "Lyra2re2");
+
+        private static readonly BitcoinCoinProperties vergeBlake2sCoin =
+            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(scrypt_1024_1), "Blake2s");
+
+        private static readonly BitcoinCoinProperties vergeX17Coin =
+            new BitcoinCoinProperties(1, x17, blake2s, new DigestReverser(scrypt_1024_1), "X17");
+
+        private static readonly BitcoinCoinProperties vergeGroestlCoin =
+            new BitcoinCoinProperties(1, groestlMyriad, blake2s, new DigestReverser(scrypt_1024_1), "Groestl-Myriad");
 
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
@@ -166,16 +172,16 @@ namespace MiningCore.Blockchain.Bitcoin
             switch (algorithm.ToLower())
             {
                 case "lyra":
-                    return lyra2Rev2CoinVariantA;
+                    return vergeLyraCoin;
 
                 case "groestl":
-                    return groestlMyriadCoin;
+                    return vergeGroestlCoin;
 
                 case "x17":
-                    return x17Coin;
+                    return vergeX17Coin;
 
                 case "blake":
-                    return blake2sCoin;
+                    return vergeBlake2sCoin;
 
                 default: // scrypt
                     return scryptCoin;
