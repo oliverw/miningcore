@@ -50,6 +50,7 @@ using MiningCore.Payments;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;

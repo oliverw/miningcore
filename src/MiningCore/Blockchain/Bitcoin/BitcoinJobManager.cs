@@ -75,8 +75,9 @@ namespace MiningCore.Blockchain.Bitcoin
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
         protected int maxActiveJobs = 4;
-        private bool hasLegacyDaemon;
+        protected bool hasLegacyDaemon;
         protected BitcoinPoolConfigExtra extraPoolConfig;
+        protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
         protected IHashAlgorithm blockHasher;
@@ -525,6 +526,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
+            extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
             if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
@@ -738,7 +740,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     job.Init(blockTemplate, NextJobId(),
                         poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
-                        ShareMultiplier,
+                        ShareMultiplier, extraPoolPaymentProcessingConfig.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher);
 
                     if (isNew)
