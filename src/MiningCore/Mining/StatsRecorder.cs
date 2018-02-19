@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Configuration;
@@ -56,6 +54,7 @@ namespace MiningCore.Mining
         private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
         private const int HashrateCalculationWindow = 1200;  // seconds
         private const int MinHashrateCalculationWindow = 300;  // seconds
+        private const double HashrateBoostFactor = 1.07d;
         private ClusterConfig clusterConfig;
         private Thread thread1;
         private const int RetryCount = 4;
@@ -155,7 +154,7 @@ namespace MiningCore.Mining
                     {
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
-                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
 
                         // update
                         pool.PoolStats.ConnectedMiners = byMiner.Length;
@@ -196,7 +195,7 @@ namespace MiningCore.Mining
 
                             if (windowActual >= MinHashrateCalculationWindow)
                             {
-                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
+                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
 
                                 // update
                                 stats.Hashrate = hashrate;
