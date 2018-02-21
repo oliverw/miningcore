@@ -18,16 +18,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
+using System;
 using MiningCore.Configuration;
-using MiningCore.Persistence.Model;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Persistence.Model
 {
-    public interface IBalanceRepository
+    public class BalanceChange
     {
-        void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount, string usage);
+        public long Id { get; set; }
+        public string PoolId { get; set; }
+        public CoinType Coin { get; set; }
+        public string Address { get; set; }
 
-        Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum);
+        /// <summary>
+        /// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
+        /// </summary>
+        public decimal Amount { get; set; }
+
+        public string Usage { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }

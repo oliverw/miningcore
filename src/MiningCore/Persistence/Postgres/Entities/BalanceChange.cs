@@ -18,16 +18,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using MiningCore.Configuration;
-using MiningCore.Persistence.Model;
+using System;
 
-namespace MiningCore.Persistence.Repositories
+namespace MiningCore.Persistence.Postgres.Entities
 {
-    public interface IBalanceRepository
+    public class BalanceChange
     {
-        void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount, string usage);
-
-        Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum);
+        public long Id { get; set; }
+        public string PoolId { get; set; }
+        public string Coin { get; set; }
+        public string Address { get; set; }
+        public decimal Amount { get; set; }
+        public string Usage { get; set; }
+        public DateTime Created { get; set; }
     }
 }

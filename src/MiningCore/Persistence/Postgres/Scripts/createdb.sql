@@ -50,6 +50,17 @@ CREATE TABLE balances
 	primary key(poolid, address, coin)
 );
 
+CREATE TABLE balance_changes
+(
+	id BIGSERIAL NOT NULL PRIMARY KEY,
+	poolid TEXT NOT NULL,
+	coin TEXT NOT NULL,
+	address TEXT NOT NULL,
+	amount decimal(28,12) NOT NULL DEFAULT 0,
+	usage TEXT NULL,
+	created TIMESTAMP NOT NULL
+);
+
 CREATE TABLE payments
 (
 	id BIGSERIAL NOT NULL PRIMARY KEY,
