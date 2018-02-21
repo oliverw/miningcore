@@ -49,7 +49,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var now = DateTime.UtcNow;
 
             // record balance change
-            var query = "INSERT INTO balances_changes(poolid, coin, address, amount, usage, created) " +
+            var query = "INSERT INTO balance_changes(poolid, coin, address, amount, usage, created) " +
                     "VALUES(@poolid, @coin, @address, @amount, @usage, @created)";
 
             var balanceChange = new Entities.BalanceChange
