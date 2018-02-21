@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using AutoMapper;
@@ -207,7 +208,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var entitiesByDate = entities
                 .GroupBy(x=> x.Created);
 
-            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
                 Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
@@ -219,7 +220,27 @@ namespace MiningCore.Persistence.Postgres.Repositories
             .OrderBy(x=> x.Created)
             .ToArray();
 
-            return result;
+            // fill in blanks
+            var result = new List<WorkerPerformanceStatsContainer>();
+            var lastCreated = start;
+            var maxItemCount = 24;
+
+            foreach (var item in tmp)
+            {
+                while (result.Count < maxItemCount && 
+                    (item.Created - lastCreated > TimeSpan.FromHours(1)))
+                {
+                    result.Add(new WorkerPerformanceStatsContainer { Created = lastCreated });
+                    lastCreated = lastCreated.AddHours(1);
+                }
+
+                if (result.Count >= maxItemCount)
+                    break;
+
+                result.Add(item);
+            }
+
+            return result.ToArray();
         }
 
         public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
@@ -236,7 +257,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray()
                 .GroupBy(x => x.Created);
 
-            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
                 Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
@@ -248,7 +269,27 @@ namespace MiningCore.Persistence.Postgres.Repositories
             .OrderBy(x => x.Created)
             .ToArray();
 
-            return result;
+            // fill in blanks
+            var result = new List<WorkerPerformanceStatsContainer>();
+            var lastCreated = start;
+            var maxItemCount = 31;
+
+            foreach (var item in tmp)
+            {
+                while (result.Count < maxItemCount &&
+                       (item.Created - lastCreated > TimeSpan.FromDays(1)))
+                {
+                    result.Add(new WorkerPerformanceStatsContainer { Created = lastCreated });
+                    lastCreated = lastCreated.AddDays(1);
+                }
+
+                if (result.Count >= maxItemCount)
+                    break;
+
+                result.Add(item);
+            }
+
+            return result.ToArray();
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
