@@ -18,18 +18,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.Configuration
+using System;
+using MiningCore.Configuration;
+
+namespace MiningCore.Persistence.Model
 {
-    public class BitcoinPoolPaymentProcessingConfigExtra
+    public class BalanceChange
     {
-        /// <summary>
-        /// if True, miners pay payment tx fees
-        /// </summary>
-        public bool MinersPayTxFees { get; set; }
+        public long Id { get; set; }
+        public string PoolId { get; set; }
+        public CoinType Coin { get; set; }
+        public string Address { get; set; }
 
         /// <summary>
-        /// Multiply blockreward by this amount
+        /// Amount owed in pool-base-currency (ie. Bitcoin, not Satoshis)
         /// </summary>
-        public decimal? BlockrewardMultiplier { get; set; }
+        public decimal Amount { get; set; }
+
+        public string Usage { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }

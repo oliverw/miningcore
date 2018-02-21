@@ -198,8 +198,7 @@ namespace MiningCore.Blockchain.Ethereum
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -230,7 +229,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var context = client.GetContextAs<EthereumWorkerContext>();
 
-                if (context.IsSubscribed && context.IsAuthorized)
+                if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                 {
                     // check alive
                     var lastActivityAgo = clock.Now - context.LastActivity;

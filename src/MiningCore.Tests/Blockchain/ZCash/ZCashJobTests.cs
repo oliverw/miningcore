@@ -49,7 +49,7 @@ namespace MiningCore.Tests.Blockchain.ZCash
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
             job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, BitcoinNetworkType.Test,
-                false, 1, sha256d, sha256d, sha256dReverse);
+                false, 1, 1, sha256d, sha256d, sha256dReverse);
 
             bt.Height = 1;
             Assert.Equal(job.GetFoundersRewardAddress(), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");

@@ -412,6 +412,8 @@ namespace MiningCore.Api
                 return;
             }
 
+            var perfMode = context.GetQueryParameter<string>("perfMode", "day");
+
             var statsResult = cf.RunTx((con, tx) =>
                 statsRepo.GetMinerStats(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
 
@@ -432,7 +434,7 @@ namespace MiningCore.Api
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
-                stats.Performance24H = GetMinerPerformanceInternal("day", pool, address);
+                stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
             await SendJson(context, stats);

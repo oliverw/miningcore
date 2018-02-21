@@ -275,7 +275,8 @@ namespace MiningCore.Blockchain.ZCash
             {
                 { CoinType.ZEC, ZCashCoinbaseTxConfig },
                 { CoinType.ZCL, ZCLCoinbaseTxConfig },
-                { CoinType.ZEN, ZencashCoinbaseTxConfig }
+                { CoinType.ZEN, ZencashCoinbaseTxConfig },
+                { CoinType.BTCP, ZCLCoinbaseTxConfig },
             };
     }
 

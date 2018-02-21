@@ -34,6 +34,22 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void Blake2s_Hash_Should_Match()
+        {
+            var hasher = new Blake2s();
+            var result = hasher.Digest(testValue2).ToHexString();
+
+            Assert.Equal("c3ee938582d70ccd9a323b6097357449365d1fdfbbe2ecd7ee44e4bdbbb24392", result);
+        }
+
+        [Fact]
+        public void Blake2s_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new Blake2s();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
         public void Groestl_Hash_Should_Match()
         {
             var hasher = new Groestl();

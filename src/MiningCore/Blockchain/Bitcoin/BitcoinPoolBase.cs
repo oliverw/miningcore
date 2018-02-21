@@ -110,7 +110,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // extract worker/miner
             var split = workerValue?.Split('.');
-            var minerName = split?.FirstOrDefault();
+            var minerName = split?.FirstOrDefault()?.Trim();
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
@@ -183,8 +183,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -333,7 +332,8 @@ namespace MiningCore.Blockchain.Bitcoin
                     break;
 
                 case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                    //OnGetTransactions(client, tsRequest);
+                    // ignored
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
@@ -354,7 +354,9 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = shares * multiplier / interval;
 
             // OW: tmp hotfix
-            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC ||
+                poolConfig.Coin.Type == CoinType.STAK ||
+                (poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "lyra"))
                 result *= 4;
 
           return result;

@@ -22,6 +22,15 @@ namespace MiningCore.Blockchain.Bitcoin.Configuration
 {
     public class BitcoinPoolConfigExtra
     {
+        /// <summary>
+        /// Maximum number of tracked jobs.
+        /// Default: 12 - you should increase this value if your blockrefreshinterval is higher than 300ms
+        /// </summary>
         public int? MaxActiveJobs { get; set; }
+
+        /// <summary>
+        /// Set to true to limit RPC commands to old Bitcoin command set
+        /// </summary>
+        public bool? HasLegacyDaemon { get; set; }
     }
 }

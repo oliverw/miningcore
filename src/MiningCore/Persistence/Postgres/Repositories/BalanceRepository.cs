@@ -42,16 +42,33 @@ namespace MiningCore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount)
+        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, CoinType coin, string address, decimal amount, string usage)
         {
             logger.LogInvoke();
 
-            var query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
+            var now = DateTime.UtcNow;
+
+            // record balance change
+            var query = "INSERT INTO balances_changes(poolid, coin, address, amount, usage, created) " +
+                    "VALUES(@poolid, @coin, @address, @amount, @usage, @created)";
+
+            var balanceChange = new Entities.BalanceChange
+            {
+                PoolId = poolId,
+                Coin = coin.ToString(),
+                Created = now,
+                Address = address,
+                Amount = amount,
+                Usage = usage,
+            };
+
+            con.Execute(query, balanceChange, tx);
+
+            // update balance
+            query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
             var balance = con.Query<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx)
                 .FirstOrDefault();
-
-            var now = DateTime.UtcNow;
 
             if (balance == null)
             {

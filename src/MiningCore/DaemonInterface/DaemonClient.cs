@@ -142,22 +142,19 @@ namespace MiningCore.DaemonInterface
         /// <summary>
         /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
-        /// <param name="method"></param>
         /// <returns></returns>
-        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method)
+        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method, bool throwOnError = false)
         {
-            return ExecuteCmdAnyAsync<JToken>(method);
+            return ExecuteCmdAnyAsync<JToken>(method, null, null, throwOnError);
         }
 
         /// <summary>
         /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
-        /// <param name="method"></param>
-        /// <param name="payload"></param>
         /// <returns></returns>
         public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
+            JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
@@ -167,7 +164,7 @@ namespace MiningCore.DaemonInterface
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
-            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted);
+            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
             return result;
         }
 
@@ -348,7 +345,7 @@ namespace MiningCore.DaemonInterface
             return rpcRequestId;
         }
 
-        private DaemonResponse<TResponse> MapDaemonResponse<TResponse>(int i, Task<JsonRpcResponse> x)
+        private DaemonResponse<TResponse> MapDaemonResponse<TResponse>(int i, Task<JsonRpcResponse> x, bool throwOnError = false)
             where TResponse : class
         {
             var resp = new DaemonResponse<TResponse>
@@ -364,6 +361,9 @@ namespace MiningCore.DaemonInterface
                     inner = x.Exception.InnerException;
                 else
                     inner = x.Exception;
+
+                if (throwOnError)
+                    throw inner;
 
                 resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }

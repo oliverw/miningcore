@@ -110,7 +110,6 @@ namespace MiningCore.Blockchain.Bitcoin
         public const string GetMiningInfo = "getmininginfo";
         public const string GetPeerInfo = "getpeerinfo";
         public const string ValidateAddress = "validateaddress";
-        public const string GetDifficulty = "getdifficulty";
         public const string GetBlockTemplate = "getblocktemplate";
         public const string GetBlockSubsidy = "getblocksubsidy";
         public const string SubmitBlock = "submitblock";
@@ -118,5 +117,10 @@ namespace MiningCore.Blockchain.Bitcoin
         public const string GetBlock = "getblock";
         public const string GetTransaction = "gettransaction";
         public const string SendMany = "sendmany";
+
+        // Legacy commands
+        public const string GetInfo = "getinfo";
+        public const string GetDifficulty = "getdifficulty";
+        public const string GetConnectionCount = "getconnectioncount";
     }
 }

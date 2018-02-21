@@ -124,7 +124,7 @@ namespace MiningCore.Blockchain.Monero
         {
             if (!networkType.HasValue)
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
                 networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
@@ -163,21 +163,62 @@ namespace MiningCore.Blockchain.Monero
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (transferResponse.Error?.Code == -4 && walletSupportsTransferSplit)
+            if (transferResponse.Error?.Code == -4)
             {
-                logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
-
-                var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
-
-                // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-                if (transferResponse.Error?.Code != -4)
+                if (walletSupportsTransferSplit)
                 {
-                    HandleTransferResponse(transferSplitResponse, balances);
-                    return;
+                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+
+                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+
+                    // gracefully handle error -4 (transaction would be too large. try /transfer_split)
+                    if (transferResponse.Error?.Code != -4)
+                    {
+                        HandleTransferResponse(transferSplitResponse, balances);
+                        return;
+                    }
+                }
+
+                // retry paged
+                logger.Info(() => $"[{LogCategory}] Retrying paged");
+
+                var validBalances = balances.Where(x => x.Amount > 0).ToArray();
+                var pageSize = 10;
+                var pageCount = (int)Math.Ceiling((double)validBalances.Length / pageSize);
+
+                for (var i = 0; i < pageCount; i++)
+                {
+                    var page = validBalances
+                        .Skip(i * pageSize)
+                        .Take(pageSize)
+                        .ToArray();
+
+                    // update request
+                    request.Destinations = page
+                        .Where(x => x.Amount > 0)
+                        .Select(x =>
+                        {
+                            ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
+
+                            return new TransferDestination
+                            {
+                                Address = address,
+                                Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
+                            };
+                        }).ToArray();
+
+                    logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
+
+                    transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
+                    HandleTransferResponse(transferResponse, page);
+
+                    if (transferResponse.Error != null)
+                        break;
                 }
             }
 
-            HandleTransferResponse(transferResponse, balances);
+            else
+                HandleTransferResponse(transferResponse, balances);
         }
 
         private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
@@ -352,9 +393,9 @@ namespace MiningCore.Blockchain.Monero
             return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
@@ -375,7 +416,7 @@ namespace MiningCore.Blockchain.Monero
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
@@ -389,16 +430,16 @@ namespace MiningCore.Blockchain.Monero
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
+#if !DEBUG
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
-#if !DEBUG
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
-#endif
             }
+#endif
 
             // validate addresses
             balances = balances

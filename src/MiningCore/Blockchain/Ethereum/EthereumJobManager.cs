@@ -454,7 +454,7 @@ namespace MiningCore.Blockchain.Ethereum
             daemon.Configure(daemonEndpoints);
         }
 
-        protected override async Task<bool> AreDaemonsHealthy()
+        protected override async Task<bool> AreDaemonsHealthyAsync()
         {
             var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
 
@@ -466,7 +466,7 @@ namespace MiningCore.Blockchain.Ethereum
             return responses.All(x => x.Error == null);
         }
 
-        protected override async Task<bool> AreDaemonsConnected()
+        protected override async Task<bool> AreDaemonsConnectedAsync()
         {
             var response = await daemon.ExecuteCmdAnyAsync<string>(EC.GetPeerCount);
 

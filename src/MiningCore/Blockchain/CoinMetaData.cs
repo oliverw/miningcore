@@ -77,7 +77,7 @@ namespace MiningCore.Blockchain
             { CoinType.GBX, "http://gobyte.ezmine.io/tx/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/tx/{0}" },
         };
-        
+
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
         {
             { CoinType.ETH, "https://etherscan.io/address/{0}" },
@@ -110,10 +110,10 @@ namespace MiningCore.Blockchain
         private const string Cryptonight = "Cryptonight";
         private const string CryptonightLight = "Cryptonight-Light";
 
-        public static readonly Dictionary<CoinType, Func<CoinType, string>> CoinAlgorithm = new Dictionary<CoinType, Func<CoinType, string>>
+        public static readonly Dictionary<CoinType, Func<CoinType, string, string>> CoinAlgorithm = new Dictionary<CoinType, Func<CoinType, string, string>>
         {
-            { CoinType.ETH, (coin)=> Ethash },
-            { CoinType.ETC, (coin)=> Ethash },
+            { CoinType.ETH, (coin, alg)=> Ethash },
+            { CoinType.ETC, (coin, alg)=> Ethash },
             { CoinType.LTC, BitcoinProperties.GetAlgorithm },
             { CoinType.BCH, BitcoinProperties.GetAlgorithm },
             { CoinType.DASH, BitcoinProperties.GetAlgorithm },
@@ -121,6 +121,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, BitcoinProperties.GetAlgorithm },
             { CoinType.ZEC, BitcoinProperties.GetAlgorithm },
             { CoinType.ZCL, BitcoinProperties.GetAlgorithm },
+            { CoinType.BTCP, BitcoinProperties.GetAlgorithm },
             { CoinType.ZEN, BitcoinProperties.GetAlgorithm },
             { CoinType.DGB, BitcoinProperties.GetAlgorithm },
             { CoinType.NMC, BitcoinProperties.GetAlgorithm },
@@ -130,13 +131,13 @@ namespace MiningCore.Blockchain
             { CoinType.GLT, BitcoinProperties.GetAlgorithm },
             { CoinType.VTC, BitcoinProperties.GetAlgorithm },
             { CoinType.BTG, BitcoinProperties.GetAlgorithm },
-            { CoinType.ELLA, (coin)=> Ethash },
-            { CoinType.EXP, (coin)=> Ethash },
+            { CoinType.ELLA, (coin, alg)=> Ethash },
+            { CoinType.EXP, (coin, alg)=> Ethash },
             { CoinType.MOON, BitcoinProperties.GetAlgorithm },
             { CoinType.XVG, BitcoinProperties.GetAlgorithm },
-            { CoinType.XMR, (coin)=> Cryptonight },
-            { CoinType.ETN, (coin)=> Cryptonight },
-            { CoinType.AEON, (coin)=> CryptonightLight },
+            { CoinType.XMR, (coin, alg)=> Cryptonight },
+            { CoinType.ETN, (coin, alg)=> Cryptonight },
+            { CoinType.AEON, (coin, alg)=> CryptonightLight },
             { CoinType.GBX, BitcoinProperties.GetAlgorithm },
             { CoinType.CRC, BitcoinProperties.GetAlgorithm },
         };

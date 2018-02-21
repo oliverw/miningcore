@@ -200,6 +200,12 @@
     <ClInclude Include="sha3\sph_sha2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sha3\sph_blake2s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -371,6 +377,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sph_sha2big.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sph_blake2s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

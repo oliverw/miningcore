@@ -31,7 +31,7 @@ namespace MiningCore.Blockchain.Dash
     {
         protected override Transaction CreateOutputTransaction()
         {
-            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            var blockReward = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();

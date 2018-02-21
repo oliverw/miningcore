@@ -46,6 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IMasterClock clock;
         protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
+        protected decimal blockRewardMultiplier;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
@@ -239,7 +240,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 
@@ -411,7 +412,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier,
+            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -436,6 +437,7 @@ namespace MiningCore.Blockchain.Bitcoin
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
+            this.blockRewardMultiplier = blockrewardMultiplier;
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;

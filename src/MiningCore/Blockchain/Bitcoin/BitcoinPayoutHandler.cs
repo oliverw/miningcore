@@ -46,9 +46,8 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG, 
-        CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG, 
-        CoinType.GBX, CoinType.CRC)]
+        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG,
+        CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -190,9 +189,9 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
@@ -213,7 +212,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
