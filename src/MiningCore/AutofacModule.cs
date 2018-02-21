@@ -123,7 +123,13 @@ namespace MiningCore
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()
                 .AsSelf();
 
-            builder.RegisterType<FloJobManager<FloJob>>()
+            builder.RegisterType<BitcoinJobManager<FloJob, BlockTemplate>>()
+                .AsSelf();
+
+            //////////////////////
+            // Flo
+            
+            builder.RegisterType<FloJobManager>()
                 .AsSelf();
 
             //////////////////////

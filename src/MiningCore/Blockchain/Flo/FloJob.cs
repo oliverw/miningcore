@@ -39,13 +39,13 @@ namespace MiningCore.Blockchain.Flo
     public class FloJob : BitcoinJob<BlockTemplate>
     {
         protected new static uint txVersion = 2u;
-        protected static byte[] txFloDataBytes;
+        protected byte[] txFloDataBytes = {};
 
-        protected static string _txFloData;
-        protected string txFloData
+        protected string _txFloData;
+        public string txFloData
         {
             get => _txFloData;
-            set
+            protected set
             {
                 txFloDataBytes = Encoding.ASCII.GetBytes(value);
                 _txFloData = value;
@@ -135,8 +135,8 @@ namespace MiningCore.Blockchain.Flo
             bool isPoS, double shareMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher, string txFloData)
         {
-            base.Init(blockTemplate, jobId, poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS, shareMultiplier, coinbaseHasher, headerHasher, blockHasher);
             this.txFloData = txFloData;
+            base.Init(blockTemplate, jobId, poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS, shareMultiplier, coinbaseHasher, headerHasher, blockHasher);
         }
     }
 }

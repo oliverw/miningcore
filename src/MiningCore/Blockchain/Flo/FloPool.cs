@@ -35,7 +35,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Flo
 {
     [CoinMetadata(CoinType.FLO)]
-    public class FloPool : BitcoinPoolBase<FloJob,BlockTemplate>
+    public class FloPool : FloPoolBase
     {
         public FloPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
