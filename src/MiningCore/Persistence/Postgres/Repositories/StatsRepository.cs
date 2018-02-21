@@ -238,6 +238,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     break;
 
                 result.Add(item);
+                lastCreated = item.Created;
             }
 
             return result.ToArray();
@@ -287,6 +288,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     break;
 
                 result.Add(item);
+                lastCreated = item.Created;
             }
 
             return result.ToArray();
