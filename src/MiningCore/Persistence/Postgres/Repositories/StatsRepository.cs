@@ -29,6 +29,7 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Model.Projections;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using NBitcoin;
 using NLog;
 using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
@@ -217,14 +218,14 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .ToDictionary(x=> x.Created, x=> x);
+            .ToDictionary(x=> x.Created.UnixTimestamp(), x=> x);
 
             // fill in blanks
             var result = new List<WorkerPerformanceStatsContainer>();
 
             for (var i = 0; i < 24; i++)
             {
-                if(tmp.TryGetValue(end, out var item))
+                if(tmp.TryGetValue(end.UnixTimestamp(), out var item))
                     result.Insert(0, item);
                 else
                     result.Add(new WorkerPerformanceStatsContainer { Created = end });
@@ -258,14 +259,14 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-                .ToDictionary(x => x.Created, x => x);
+            .ToDictionary(x => x.Created.UnixTimestamp(), x => x);
 
             // fill in blanks
             var result = new List<WorkerPerformanceStatsContainer>();
 
             for (var i = 0; i < 30; i++)
             {
-                if (tmp.TryGetValue(end, out var item))
+                if (tmp.TryGetValue(end.UnixTimestamp(), out var item))
                     result.Insert(0, item);
                 else
                     result.Add(new WorkerPerformanceStatsContainer { Created = end });
