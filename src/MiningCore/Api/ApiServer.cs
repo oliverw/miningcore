@@ -192,6 +192,7 @@ namespace MiningCore.Api
                 // set range
                 end = end.AddMinutes(-end.Minute);
                 end = end.AddSeconds(-end.Second);
+                end = end.AddHours(-1);
 
                 var start = end.AddDays(-1);
 
@@ -202,6 +203,7 @@ namespace MiningCore.Api
             else
             {
                 end = end.Date;
+                end = end.AddDays(-1);
 
                 // set range
                 var start = end.AddMonths(-1);
