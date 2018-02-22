@@ -158,7 +158,7 @@ namespace MiningCore.Mining
 
                         // update
                         pool.PoolStats.ConnectedMiners = byMiner.Length;
-                        pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
+                        pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
                     }
                 }

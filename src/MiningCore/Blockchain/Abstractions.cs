@@ -25,7 +25,7 @@ namespace MiningCore.Blockchain
     public class BlockchainStats
     {
         public string NetworkType { get; set; }
-        public double NetworkHashRate { get; set; }
+        public double NetworkHashrate { get; set; }
         public double NetworkDifficulty { get; set; }
         public DateTime? LastNetworkBlockTime { get; set; }
         public long BlockHeight { get; set; }

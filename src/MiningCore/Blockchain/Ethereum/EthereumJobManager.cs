@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
             BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
-            BlockchainStats.NetworkHashRate = 0; // TODO
+            BlockchainStats.NetworkHashrate = 0; // TODO
             BlockchainStats.ConnectedPeers = peerCount;
         }
 

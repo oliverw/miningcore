@@ -389,7 +389,7 @@ Detected Reward Type:   {blockchainStats.RewardType}
 Current Block Height:   {blockchainStats.BlockHeight}
 Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
-Network Hash Rate:      {FormatUtil.FormatHashRate(blockchainStats.NetworkHashRate)}
+Network Hash Rate:      {FormatUtil.FormatHashrate(blockchainStats.NetworkHashrate)}
 Stratum Port(s):        {string.Join(", ", poolConfig.Ports.Keys)}
 Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 ";

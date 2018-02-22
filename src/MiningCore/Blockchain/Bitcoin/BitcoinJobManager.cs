@@ -258,7 +258,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
 
             BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
             BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
 
@@ -375,7 +375,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var connectionCountResponse = results[1].Response.ToObject<object>();
 
             BlockchainStats.BlockHeight = miningInfoResponse.Blocks;
-            //BlockchainStats.NetworkHashRate = miningInfoResponse.NetworkHashps;
+            //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
             BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
         }
 
