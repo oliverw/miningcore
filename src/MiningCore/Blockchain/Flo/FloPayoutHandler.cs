@@ -45,8 +45,7 @@ using Contract = MiningCore.Contracts.Contract;
 namespace MiningCore.Blockchain.Flo
 {
     [CoinMetadata(CoinType.FLO)]
-    public class FloPayoutHandler : PayoutHandlerBase,
-        IPayoutHandler
+    public class FloPayoutHandler : BitcoinPayoutHandler
     {
         public FloPayoutHandler(
             IComponentContext ctx,
@@ -58,26 +57,15 @@ namespace MiningCore.Blockchain.Flo
             IPaymentRepository paymentRepo,
             IMasterClock clock,
             NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
         {
-            Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
-
-            this.ctx = ctx;
         }
-
-        protected readonly IComponentContext ctx;
-        protected DaemonClient daemon;
-        protected BitcoinCoinProperties coinProperties;
-        protected BitcoinDaemonEndpointConfigExtra extraPoolConfig;
-        protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
         protected override string LogCategory => "Flo Payout Handler";
 
         #region IPayoutHandler
 
-        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public override Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -97,103 +85,7 @@ namespace MiningCore.Blockchain.Flo
             return Task.FromResult(true);
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
-        {
-            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-            Contract.RequiresNonNull(blocks, nameof(blocks));
-
-            var pageSize = 100;
-            var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
-            var result = new List<Block>();
-
-            for(var i = 0; i < pageCount; i++)
-            {
-                // get a page full of blocks
-                var page = blocks
-                    .Skip(i * pageSize)
-                    .Take(pageSize)
-                    .ToArray();
-
-                // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
-                var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
-                    new[] { block.TransactionConfirmationData })).ToArray();
-
-                // execute batch
-                var results = await daemon.ExecuteBatchAnyAsync(batch);
-
-                for(var j = 0; j < results.Length; j++)
-                {
-                    var cmdResult = results[j];
-
-                    var transactionInfo = cmdResult.Response?.ToObject<Transaction>();
-                    var block = page[j];
-
-                    // check error
-                    if (cmdResult.Error != null)
-                    {
-                        // Code -5 interpreted as "orphaned"
-                        if (cmdResult.Error.Code == -5)
-                        {
-                            block.Status = BlockStatus.Orphaned;
-                            result.Add(block);
-                        }
-
-                        else
-                        {
-                            logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
-                        }
-                    }
-
-                    // missing transaction details are interpreted as "orphaned"
-                    else if (transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
-                    {
-                        block.Status = BlockStatus.Orphaned;
-                        result.Add(block);
-                    }
-
-                    else
-                    {
-                        switch(transactionInfo.Details[0].Category)
-                        {
-                            case "immature":
-                                // update progress
-                                var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
-                                block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
-                                result.Add(block);
-                                break;
-
-                            case "generate":
-                                // matured and spendable coinbase transaction
-                                block.Status = BlockStatus.Confirmed;
-                                block.ConfirmationProgress = 1;
-								result.Add(block);
-
-                                logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
-                                break;
-
-                            default:
-	                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
-
-								block.Status = BlockStatus.Orphaned;
-                                block.Reward = 0;
-                                result.Add(block);
-                                break;
-                        }
-                    }
-                }
-            }
-
-            return result.ToArray();
-        }
-
-        public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
-        {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
-
-            return Task.FromResult(true);
-        }
-
-        public virtual Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public override Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -216,7 +108,7 @@ namespace MiningCore.Blockchain.Flo
             return Task.FromResult(blockRewardRemaining);
         }
 
-        public virtual async Task PayoutAsync(Balance[] balances)
+        public override async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
