@@ -2,7 +2,6 @@
 
 CREATE TABLE shares
 (
-	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
 	blockheight BIGINT NOT NULL,
 	difficulty DOUBLE PRECISION NOT NULL,
@@ -60,6 +59,8 @@ CREATE TABLE balance_changes
 	created TIMESTAMP NOT NULL
 );
 
+CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, miner, created desc);
+
 CREATE TABLE payments
 (
 	id BIGSERIAL NOT NULL PRIMARY KEY,
@@ -105,18 +106,3 @@ CREATE INDEX IDX_MINERSTATS_POOL_CREATED on minerstats(poolid, created);
 CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED on minerstats(poolid, miner, created);
 CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED_HOUR on minerstats(poolid, miner, date_trunc('hour',created));
 CREATE INDEX IDX_MINERSTATS_POOL_MINER_CREATED_DAY on minerstats(poolid, miner, date_trunc('day',created));
-
-CREATE TABLE minerstats_pre_agg
-(
-	poolid TEXT NOT NULL,
-	miner TEXT NOT NULL,
-	worker TEXT NOT NULL,
-
- 	sharecount BIGINT NOT NULL,
- 	sharesaccumulated DOUBLE PRECISION NOT NULL,
-
-	created TIMESTAMP NOT NULL,
-	updated TIMESTAMP NOT NULL,
-
-	primary key(poolid, miner, worker)
-);
