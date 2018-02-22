@@ -185,15 +185,14 @@ namespace MiningCore.Api
         private WorkerPerformanceStatsContainer[] GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
         {
             Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats;
+            var end = clock.Now;
 
             if (mode == "day" || mode != "month")
             {
                 // set range
-#if DEBUG
-                var end = new DateTime(2018, 1, 7, 16, 0, 0);
-#else
-                var end = clock.Now; // new DateTime(2018, 1, 7, 16, 0, 0);
-#endif
+                end = end.AddMinutes(-end.Minute);
+                end = end.AddSeconds(-end.Second);
+
                 var start = end.AddDays(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
@@ -202,8 +201,9 @@ namespace MiningCore.Api
 
             else
             {
+                end = end.Date;
+
                 // set range
-                var end = clock.Now;
                 var start = end.AddMonths(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenDaily(

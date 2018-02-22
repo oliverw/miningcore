@@ -218,24 +218,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .ToArray();
-            //.ToDictionary(x=> x.Created.UnixTimestamp(), x=> x);
+            .ToDictionary(x=> x.Created.ToUnixTimestamp(), x=> x);
 
-            //// fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
+            // fill in blanks
+            var result = new List<WorkerPerformanceStatsContainer>();
 
-            //for (var i = 0; i < 24; i++)
-            //{
-            //    if(tmp.TryGetValue(end.UnixTimestamp(), out var item))
-            //        result.Insert(0, item);
-            //    else
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = end });
+            for (var i = 0; i < 24; i++)
+            {
+                if(tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
+                    result.Insert(0, item);
+                else
+                    result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
 
-            //    end = end.AddHours(-1);
-            //}
+                end = end.AddHours(-1);
+            }
 
-            //return result.ToArray();
-            return tmp;
+            return result.ToArray();
         }
 
         public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
@@ -261,25 +259,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .ToArray();
-            //.ToDictionary(x => x.Created.UnixTimestamp(), x => x);
+            .ToDictionary(x => x.Created.ToUnixTimestamp(), x => x);
 
-            //// fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
+            // fill in blanks
+            var result = new List<WorkerPerformanceStatsContainer>();
 
-            //for (var i = 0; i < 30; i++)
-            //{
-            //    if (tmp.TryGetValue(end.UnixTimestamp(), out var item))
-            //        result.Insert(0, item);
-            //    else
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = end });
+            for (var i = 0; i < 30; i++)
+            {
+                if (tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
+                    result.Insert(0, item);
+                else
+                    result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
 
-            //    end = end.AddDays(-1);
-            //}
+                end = end.AddDays(-1);
+            }
 
-            //return result.ToArray();
-
-            return tmp;
+            return result.ToArray();
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
