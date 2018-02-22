@@ -218,7 +218,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .ToDictionary(x=> x.Created.ToUnixTimestamp(), x=> x);
+            .ToDictionary(x=> x.Created.ToUniversalTime().ToUnixTimestamp(), x=> x);
 
             // fill in blanks
             var result = new List<WorkerPerformanceStatsContainer>();
@@ -259,7 +259,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .ToDictionary(x => x.Created.ToUnixTimestamp(), x => x);
+            .ToDictionary(x => x.Created.ToUniversalTime().ToUnixTimestamp(), x => x);
 
             // fill in blanks
             var result = new List<WorkerPerformanceStatsContainer>();

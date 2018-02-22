@@ -190,9 +190,11 @@ namespace MiningCore.Api
             if (mode == "day" || mode != "month")
             {
                 // set range
+                if(end.Minute < 30)
+                    end = end.AddHours(-1);
+
                 end = end.AddMinutes(-end.Minute);
                 end = end.AddSeconds(-end.Second);
-                end = end.AddHours(-1);
 
                 var start = end.AddDays(-1);
 
@@ -202,8 +204,10 @@ namespace MiningCore.Api
 
             else
             {
+                if(end.Hour < 12)
+                    end = end.AddDays(-1);
+
                 end = end.Date;
-                end = end.AddDays(-1);
 
                 // set range
                 var start = end.AddMonths(-1);
