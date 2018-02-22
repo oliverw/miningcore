@@ -217,32 +217,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .OrderBy(x=> x.Created)
-            .ToArray();
+            .ToDictionary(x=> x.Created, x=> x);
 
             // fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
-            //var lastCreated = start;
-            //var maxItemCount = 24;
+            var result = new List<WorkerPerformanceStatsContainer>();
 
-            //foreach (var item in tmp)
-            //{
-            //    while (result.Count < maxItemCount && 
-            //        (item.Created - lastCreated > TimeSpan.FromHours(1)))
-            //    {
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = lastCreated });
-            //        lastCreated = lastCreated.AddHours(1);
-            //    }
+            for (var i = 0; i < 24; i++)
+            {
+                if(tmp.TryGetValue(end, out var item))
+                    result.Insert(0, item);
+                else
+                    result.Add(new WorkerPerformanceStatsContainer { Created = end });
 
-            //    if (result.Count >= maxItemCount)
-            //        break;
+                end = end.AddHours(-1);
+            }
 
-            //    result.Add(item);
-            //    lastCreated = item.Created;
-            //}
-
-            //return result.ToArray();
-            return tmp;
+            return result.ToArray();
         }
 
         public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
@@ -268,33 +258,22 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .OrderBy(x => x.Created)
-            .ToArray();
+                .ToDictionary(x => x.Created, x => x);
 
-            //// fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
-            //var lastCreated = start;
-            //var maxItemCount = 31;
+            // fill in blanks
+            var result = new List<WorkerPerformanceStatsContainer>();
 
-            //foreach (var item in tmp)
-            //{
-            //    while (result.Count < maxItemCount &&
-            //           (item.Created - lastCreated > TimeSpan.FromDays(1)))
-            //    {
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = lastCreated });
-            //        lastCreated = lastCreated.AddDays(1);
-            //    }
+            for (var i = 0; i < 30; i++)
+            {
+                if (tmp.TryGetValue(end, out var item))
+                    result.Insert(0, item);
+                else
+                    result.Add(new WorkerPerformanceStatsContainer { Created = end });
 
-            //    if (result.Count >= maxItemCount)
-            //        break;
+                end = end.AddDays(-1);
+            }
 
-            //    result.Add(item);
-            //    lastCreated = item.Created;
-            //}
-
-            //return result.ToArray();
-
-            return tmp;
+            return result.ToArray();
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
