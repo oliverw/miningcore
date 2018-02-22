@@ -2,7 +2,6 @@
 
 CREATE TABLE shares
 (
-	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
 	blockheight BIGINT NOT NULL,
 	difficulty DOUBLE PRECISION NOT NULL,
@@ -59,6 +58,8 @@ CREATE TABLE balance_changes
 	usage TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
+
+CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, miner, created desc);
 
 CREATE TABLE payments
 (
