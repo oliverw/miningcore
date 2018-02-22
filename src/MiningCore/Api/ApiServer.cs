@@ -84,6 +84,7 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
 
@@ -483,6 +484,36 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, payments);
+        }
+
+        private async Task PageMinerBalanceChangesAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var balanceChanges = cf.Run(con => paymentsRepo.PageBalanceChanges(
+                    con, pool.Id, address, page, pageSize))
+                .Select(mapper.Map<Responses.BalanceChange>)
+                .ToArray();
+
+            await SendJson(context, balanceChanges);
         }
 
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)

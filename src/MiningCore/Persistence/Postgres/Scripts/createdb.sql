@@ -59,7 +59,7 @@ CREATE TABLE balance_changes
 	created TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, miner, created desc);
+CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, address, created desc);
 
 CREATE TABLE payments
 (
