@@ -52,11 +52,6 @@ namespace MiningCore.Blockchain.Flo
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
-            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
-
-            if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
-                maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
-
             extraFloPoolConfig = poolConfig.Extra.SafeExtensionDataAs<FloPoolConfigExtra>();
 
             base.Configure(poolConfig, clusterConfig);
@@ -91,7 +86,7 @@ namespace MiningCore.Blockchain.Flo
 
                     job.Init(blockTemplate, NextJobId(),
                         poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
-                        ShareMultiplier,
+                        ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher, extraFloPoolConfig.FloData);
 
                     if (isNew)
@@ -107,11 +102,17 @@ namespace MiningCore.Blockchain.Flo
 
                     lock (jobLock)
                     {
+                        if(isNew)
+                            validJobs.Clear();
+
                         validJobs.Add(job);
 
-                        // trim active jobs
-                        while (validJobs.Count > maxActiveJobs)
-                            validJobs.RemoveAt(0);
+                        if (!isNew)
+                        {
+                            // trim active jobs
+                            while(validJobs.Count > maxActiveJobs)
+                                validJobs.RemoveAt(0);
+                        }
                     }
 
                     currentJob = job;
@@ -127,7 +128,6 @@ namespace MiningCore.Blockchain.Flo
 
             return false;
         }
-
         #endregion // Overrides
     }
 }

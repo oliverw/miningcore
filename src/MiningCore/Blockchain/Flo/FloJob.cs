@@ -132,11 +132,11 @@ namespace MiningCore.Blockchain.Flo
         public virtual void Init(BlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier,
+            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher, string txFloData)
         {
             this.txFloData = txFloData;
-            base.Init(blockTemplate, jobId, poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS, shareMultiplier, coinbaseHasher, headerHasher, blockHasher);
+            base.Init(blockTemplate, jobId, poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS, shareMultiplier, blockrewardMultiplier, coinbaseHasher, headerHasher, blockHasher);
         }
     }
 }
