@@ -304,7 +304,9 @@ namespace MiningCore.Blockchain.ZCash
             // make sure there's enough balance to shield after reserves
             if (balance - TransferFee <= TransferFee)
             {
-                logger.Info(() => $"[{LogCategory}] Balance {FormatAmount(balance)} too small for emulated shielding");
+                if(balance > 0)
+                    logger.Info(() => $"[{LogCategory}] Balance {FormatAmount(balance)} too small for emulated shielding");
+
                 return;
             }
 
