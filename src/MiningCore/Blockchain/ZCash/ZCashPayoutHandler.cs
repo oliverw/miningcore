@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -37,7 +36,6 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json.Linq;
-using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -65,6 +63,7 @@ namespace MiningCore.Blockchain.ZCash
         protected ZCashCoinbaseTxConfig coinbaseTxConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
+        protected const int ZMinConfirmations = 8;
 
         #region IPayoutHandler
 
@@ -124,13 +123,28 @@ namespace MiningCore.Blockchain.ZCash
                 if (amounts.Count == 0)
                     return;
 
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
+                var pageAmount = amounts.Sum(x => x.Amount);
+
+                // check shielded balance
+                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(ZCashCommands.ZGetBalance, new object[]
+                {
+                    poolExtraConfig.ZAddress,   // default account
+                    ZMinConfirmations,          // only spend funds covered by this many confirmations
+                });
+
+                if (balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
+                {
+                    logger.Info(() => $"[{LogCategory}] Insufficient shielded balance for payment of {FormatAmount(pageAmount)}");
+                    return;
+                }
+
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(pageAmount)} to {page.Length} addresses");
 
                 var args = new object[]
                 {
                     poolExtraConfig.ZAddress,   // default account
                     amounts,                    // addresses and associated amounts
-                    10,                         // only spend funds covered by this many confirmations
+                    ZMinConfirmations,          // only spend funds covered by this many confirmations
                     TransferFee
                 };
 
