@@ -566,7 +566,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(BitcoinCommands.GetNetworkInfo);
 
-            return response.Error == null && response.Response.Connections > 0;
+            return response.Error == null && response.Response?.Connections > 0;
         }
 
         protected override async Task EnsureDaemonsSynchedAsync()

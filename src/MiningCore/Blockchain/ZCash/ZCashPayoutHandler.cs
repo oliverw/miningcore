@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash.Configuration;
 using MiningCore.Blockchain.ZCash.DaemonRequests;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
@@ -35,6 +36,8 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using Newtonsoft.Json.Linq;
+using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -56,7 +59,10 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
-        private ZCashPoolConfigExtra poolExtraConfig;
+        protected ZCashPoolConfigExtra poolExtraConfig;
+        protected bool supportsNativeShielding;
+        protected BitcoinNetworkType networkType;
+        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
 
@@ -67,11 +73,32 @@ namespace MiningCore.Blockchain.ZCash
             await base.ConfigureAsync(clusterConfig, poolConfig);
 
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
+
+            // detect network
+            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
+
+            if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
+                networkType = BitcoinNetworkType.Test;
+            else if (blockchainInfoResponse.Response.Chain.ToLower() == "regtest")
+                networkType = BitcoinNetworkType.RegTest;
+            else
+                networkType = BitcoinNetworkType.Main;
+
+            // lookup config
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+
+            // detect z_shieldcoinbase support
+            var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);
+            supportsNativeShielding = response.Error.Code != BitcoinConstants.ErrorMethodNotFound;
         }
 
         public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
-            await ShieldCoinbaseAsync();
+            if (supportsNativeShielding)
+                await ShieldCoinbaseAsync();
+            else
+                await ShieldCoinbaseEmulatedAsync();
 
             return await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
         }
@@ -246,6 +273,103 @@ namespace MiningCore.Blockchain.ZCash
 
                 logger.Info(() => $"[{LogCategory}] Waiting for operation completion: {operationId}");
                 await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+        }
+
+        private async Task ShieldCoinbaseEmulatedAsync()
+        {
+            logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
+
+            // get t-addr balance
+            var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(BitcoinCommands.GetBalance);
+
+            if (balanceResult.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.GetBalance} returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                return;
+            }
+
+            var balance = (decimal)(double)balanceResult.Response;
+
+            // make sure there's enough balance to shield after reserves
+            if (balance - TransferFee <= TransferFee)
+            {
+                logger.Info(() => $"[{LogCategory}] Balance {FormatAmount(balance)} too small for emulated shielding");
+                return;
+            }
+
+            if (balance > 0)
+            {
+                logger.Info(() => $"[{LogCategory}] Transferring {FormatAmount(balance - TransferFee)} to pool's z-addr");
+
+                // transfer to z-addr
+                var recipient = new ZSendManyRecipient
+                {
+                    Address = poolExtraConfig.ZAddress,
+                    Amount = balance - TransferFee
+                };
+
+                var args = new object[]
+                {
+                    poolConfig.Address, // default account
+                    new object[] // addresses and associated amounts
+                    {
+                        recipient
+                    }
+                };
+
+                // send command
+                var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+
+                if (sendResult.Error != null)
+                {
+                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                    return;
+                }
+
+                var operationId = sendResult.Response;
+
+                logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} operation id: {operationId}");
+
+                var continueWaiting = true;
+
+                while (continueWaiting)
+                {
+                    var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                        ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+
+                    if (operationResultResponse.Error == null &&
+                        operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
+                    {
+                        var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
+
+                        if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                        {
+                            logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
+                            break;
+                        }
+
+                        switch (status)
+                        {
+                            case ZOperationStatus.Success:
+                                var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
+                                logger.Info(() => $"[{LogCategory}] Transfer completed with transaction id: {txId}");
+
+                                continueWaiting = false;
+                                continue;
+
+                            case ZOperationStatus.Cancelled:
+                            case ZOperationStatus.Failed:
+                                logger.Error(() => $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
+
+                                continueWaiting = false;
+                                continue;
+                        }
+                    }
+
+                    logger.Info(() => $"[{LogCategory}] Waiting for transfer completion: {operationId}");
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                }
             }
         }
     }
