@@ -93,19 +93,15 @@ namespace MiningCore.Blockchain.ZCash
             supportsNativeShielding = response.Error.Code != BitcoinConstants.ErrorMethodNotFound;
         }
 
-        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public override async Task PayoutAsync(Balance[] balances)
         {
+            Contract.RequiresNonNull(balances, nameof(balances));
+
+            // Shield first
             if (supportsNativeShielding)
                 await ShieldCoinbaseAsync();
             else
                 await ShieldCoinbaseEmulatedAsync();
-
-            return await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
-        }
-
-        public override async Task PayoutAsync(Balance[] balances)
-        {
-            Contract.RequiresNonNull(balances, nameof(balances));
 
             // send in batches with no more than 50 recipients to avoid running into tx size limits
             var pageSize = 50;
