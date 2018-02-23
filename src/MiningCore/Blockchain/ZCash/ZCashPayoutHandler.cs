@@ -184,7 +184,7 @@ namespace MiningCore.Blockchain.ZCash
                                 {
                                     case ZOperationStatus.Success:
                                         var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                        logger.Info(() => $"[{LogCategory}]      completed with transaction id: {txId}");
+                                        logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} completed with transaction id: {txId}");
 
                                         PersistPayments(page, txId);
                                         NotifyPayoutSuccess(poolConfig.Id, page, new[] {txId}, null);
