@@ -169,8 +169,8 @@ namespace MiningCore.Mining
 	                            while (true)
 	                            {
 	                                var msg = subSocket.ReceiveMultipartMessage(2);
-	                                var topic = msg.First().ConvertToString(Encoding.UTF8);
-	                                var data = msg.Last().ConvertToString(Encoding.UTF8);
+	                                var topic = msg.Pop().ConvertToString(Encoding.UTF8);
+	                                var data = msg.Pop().ConvertToString(Encoding.UTF8);
 
 	                                // validate
 	                                if (topic != config.Topic)
@@ -317,7 +317,8 @@ namespace MiningCore.Mining
 
         protected virtual void InitStats()
         {
-            LoadStats();
+            if(string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+                LoadStats();
         }
 
         private void LoadStats()

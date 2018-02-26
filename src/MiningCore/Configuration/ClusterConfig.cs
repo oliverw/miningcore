@@ -323,9 +323,10 @@ namespace MiningCore.Configuration
 
         /// <summary>
         /// If this is enabled, shares are not written to the database 
-        /// but published on the specified ZeroMQ Url and Topic
+        /// but published on the specified ZeroMQ Url and using the 
+        /// poolid as topic
         /// </summary>
-        public ZmqPubSubEndpointConfig ShareRelayEndpoint { get; set; }
+        public string ShareRelayPublisherUrl { get; set; }
 
         /// <summary>
         /// Maximum parallelism of Equihash solver
