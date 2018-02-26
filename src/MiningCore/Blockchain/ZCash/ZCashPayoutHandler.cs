@@ -290,16 +290,18 @@ namespace MiningCore.Blockchain.ZCash
         {
             logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
 
-            // get t-addr balance
-            var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(BitcoinCommands.GetBalance);
+            // get t-addr unspent balance for just the coinbase address (pool wallet)
+            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(BitcoinCommands.ListUnspent);
 
-            if (balanceResult.Error != null)
+            if (unspentResult.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.GetBalance} returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.ListUnspent} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
                 return;
             }
 
-            var balance = (decimal)(double)balanceResult.Response;
+            var balance = unspentResult.Response
+                .Where(x=> x.Spendable && x.Address == poolConfig.Address)
+                .Sum(x=> x.Amount);
 
             // make sure there's enough balance to shield after reserves
             if (balance - TransferFee <= TransferFee)
@@ -335,7 +337,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 if (sendResult.Error != null)
                 {
-                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {balanceResult.Error.Message} code {balanceResult.Error.Code}");
+                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
                     return;
                 }
 
