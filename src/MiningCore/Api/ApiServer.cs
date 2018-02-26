@@ -84,6 +84,7 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
 
@@ -184,15 +185,17 @@ namespace MiningCore.Api
         private WorkerPerformanceStatsContainer[] GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
         {
             Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats;
+            var end = clock.Now;
 
             if (mode == "day" || mode != "month")
             {
                 // set range
-#if DEBUG
-                var end = new DateTime(2018, 1, 7, 16, 0, 0);
-#else
-                var end = clock.Now; // new DateTime(2018, 1, 7, 16, 0, 0);
-#endif
+                if(end.Minute < 30)
+                    end = end.AddHours(-1);
+
+                end = end.AddMinutes(-end.Minute);
+                end = end.AddSeconds(-end.Second);
+
                 var start = end.AddDays(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
@@ -201,8 +204,12 @@ namespace MiningCore.Api
 
             else
             {
+                if(end.Hour < 12)
+                    end = end.AddDays(-1);
+
+                end = end.Date;
+
                 // set range
-                var end = clock.Now;
                 var start = end.AddMonths(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenDaily(
@@ -483,6 +490,36 @@ namespace MiningCore.Api
             }
 
             await SendJson(context, payments);
+        }
+
+        private async Task PageMinerBalanceChangesAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var balanceChanges = cf.Run(con => paymentsRepo.PageBalanceChanges(
+                    con, pool.Id, address, page, pageSize))
+                .Select(mapper.Map<Responses.BalanceChange>)
+                .ToArray();
+
+            await SendJson(context, balanceChanges);
         }
 
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)

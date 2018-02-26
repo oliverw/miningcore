@@ -56,6 +56,7 @@ namespace MiningCore
             CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
             CreateMap<Block, Api.Responses.Block>();
             CreateMap<Payment, Api.Responses.Payment>();
+            CreateMap<BalanceChange, Api.Responses.BalanceChange>();
             CreateMap<CoinConfig, Api.Responses.ApiCoinConfig>();
             CreateMap<PoolPaymentProcessingConfig, Api.Responses.ApiPoolPaymentProcessingConfig>();
 
@@ -84,6 +85,7 @@ namespace MiningCore
             CreateMap<Persistence.Postgres.Entities.Block, Block>();
             CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
+            CreateMap<Persistence.Postgres.Entities.BalanceChange, BalanceChange>();
             CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();

@@ -98,10 +98,9 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         };
 
-
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.ExternalStratum)
+	        if (!poolConfig.EnableInternalStratum)
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
@@ -566,7 +565,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var response = await daemon.ExecuteCmdAnyAsync<NetworkInfo>(BitcoinCommands.GetNetworkInfo);
 
-            return response.Error == null && response.Response.Connections > 0;
+            return response.Error == null && response.Response?.Connections > 0;
         }
 
         protected override async Task EnsureDaemonsSynchedAsync()

@@ -19,12 +19,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash.Configuration;
 using MiningCore.Blockchain.ZCash.DaemonRequests;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
@@ -35,6 +35,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using Newtonsoft.Json.Linq;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -56,9 +57,13 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
-        private ZCashPoolConfigExtra poolExtraConfig;
+        protected ZCashPoolConfigExtra poolExtraConfig;
+        protected bool supportsNativeShielding;
+        protected BitcoinNetworkType networkType;
+        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
+        protected const int ZMinConfirmations = 8;
 
         #region IPayoutHandler
 
@@ -67,18 +72,35 @@ namespace MiningCore.Blockchain.ZCash
             await base.ConfigureAsync(clusterConfig, poolConfig);
 
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
-        }
 
-        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
-        {
-            await ShieldCoinbaseAsync();
+            // detect network
+            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
-            return await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+            if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
+                networkType = BitcoinNetworkType.Test;
+            else if (blockchainInfoResponse.Response.Chain.ToLower() == "regtest")
+                networkType = BitcoinNetworkType.RegTest;
+            else
+                networkType = BitcoinNetworkType.Main;
+
+            // lookup config
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+
+            // detect z_shieldcoinbase support
+            var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);
+            supportsNativeShielding = response.Error.Code != BitcoinConstants.ErrorMethodNotFound;
         }
 
         public override async Task PayoutAsync(Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
+
+            // Shield first
+            if (supportsNativeShielding)
+                await ShieldCoinbaseAsync();
+            else
+                await ShieldCoinbaseEmulatedAsync();
 
             // send in batches with no more than 50 recipients to avoid running into tx size limits
             var pageSize = 50;
@@ -101,13 +123,28 @@ namespace MiningCore.Blockchain.ZCash
                 if (amounts.Count == 0)
                     return;
 
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
+                var pageAmount = amounts.Sum(x => x.Amount);
+
+                // check shielded balance
+                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(ZCashCommands.ZGetBalance, new object[]
+                {
+                    poolExtraConfig.ZAddress,   // default account
+                    ZMinConfirmations,          // only spend funds covered by this many confirmations
+                });
+
+                if (balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
+                {
+                    logger.Info(() => $"[{LogCategory}] Insufficient shielded balance for payment of {FormatAmount(pageAmount)}");
+                    return;
+                }
+
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(pageAmount)} to {page.Length} addresses");
 
                 var args = new object[]
                 {
                     poolExtraConfig.ZAddress,   // default account
                     amounts,                    // addresses and associated amounts
-                    10,                         // only spend funds covered by this many confirmations
+                    ZMinConfirmations,          // only spend funds covered by this many confirmations
                     TransferFee
                 };
 
@@ -147,7 +184,7 @@ namespace MiningCore.Blockchain.ZCash
                                 {
                                     case ZOperationStatus.Success:
                                         var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
-                                        logger.Info(() => $"[{LogCategory}]      completed with transaction id: {txId}");
+                                        logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} completed with transaction id: {txId}");
 
                                         PersistPayments(page, txId);
                                         NotifyPayoutSuccess(poolConfig.Id, page, new[] {txId}, null);
@@ -245,6 +282,104 @@ namespace MiningCore.Blockchain.ZCash
                 }
 
                 logger.Info(() => $"[{LogCategory}] Waiting for operation completion: {operationId}");
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+        }
+
+        private async Task ShieldCoinbaseEmulatedAsync()
+        {
+            logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
+
+            // get t-addr unspent balance for just the coinbase address (pool wallet)
+            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(BitcoinCommands.ListUnspent);
+
+            if (unspentResult.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.ListUnspent} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
+                return;
+            }
+
+            var balance = unspentResult.Response
+                .Where(x=> x.Spendable && x.Address == poolConfig.Address)
+                .Sum(x=> x.Amount);
+
+            // make sure there's enough balance to shield after reserves
+            if (balance - TransferFee <= TransferFee)
+            {
+                logger.Info(() => $"[{LogCategory}] Balance {FormatAmount(balance)} too small for emulated shielding");
+                return;
+            }
+
+            logger.Info(() => $"[{LogCategory}] Transferring {FormatAmount(balance - TransferFee)} to pool's z-addr");
+
+            // transfer to z-addr
+            var recipient = new ZSendManyRecipient
+            {
+                Address = poolExtraConfig.ZAddress,
+                Amount = balance - TransferFee
+            };
+
+            var args = new object[]
+            {
+                poolConfig.Address, // default account
+                new object[] // addresses and associated amounts
+                {
+                    recipient
+                },
+                1,
+                TransferFee
+            };
+
+            // send command
+            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+
+            if (sendResult.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
+                return;
+            }
+
+            var operationId = sendResult.Response;
+
+            logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} operation id: {operationId}");
+
+            var continueWaiting = true;
+
+            while (continueWaiting)
+            {
+                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+
+                if (operationResultResponse.Error == null &&
+                    operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
+                {
+                    var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
+
+                    if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                    {
+                        logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
+                        break;
+                    }
+
+                    switch (status)
+                    {
+                        case ZOperationStatus.Success:
+                            var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
+                            logger.Info(() => $"[{LogCategory}] Transfer completed with transaction id: {txId}");
+
+                            continueWaiting = false;
+                            continue;
+
+                        case ZOperationStatus.Cancelled:
+                        case ZOperationStatus.Failed:
+                            logger.Error(() => $"{ZCashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
+
+                            continueWaiting = false;
+                            continue;
+                    }
+                }
+
+                logger.Info(() => $"[{LogCategory}] Waiting for transfer completion: {operationId}");
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }

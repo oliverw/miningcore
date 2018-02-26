@@ -316,6 +316,8 @@ namespace MiningCore.Payments
             logger.Info(() => "Stopped");
         }
 
+        #endregion // API-Surface
+
         private void InitializeQueue()
         {
             queueSub = queue.GetConsumingEnumerable()
@@ -393,7 +395,5 @@ namespace MiningCore.Payments
                 fallbackOnBrokenCircuit,
                 Policy.Wrap(fallback, breaker, retry));
         }
-
-        #endregion // API-Surface
     }
 }

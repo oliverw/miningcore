@@ -69,6 +69,8 @@ namespace MiningCore.Blockchain.Bitcoin
         public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
         public const int CoinbaseMinConfimations = 102;
 
+        public const int ErrorMethodNotFound = -32601;
+
         public const string ZmqPublisherTopicBlockHash = "hashblock";
         public const string ZmqPublisherTopicTxHash = "hashtx";
         public const string ZmqPublisherTopicBlockRaw = "rawblock";
@@ -106,6 +108,7 @@ namespace MiningCore.Blockchain.Bitcoin
     public static class BitcoinCommands
     {
         public const string GetBalance = "getbalance";
+        public const string ListUnspent = "listunspent";
         public const string GetNetworkInfo = "getnetworkinfo";
         public const string GetMiningInfo = "getmininginfo";
         public const string GetPeerInfo = "getpeerinfo";

@@ -70,6 +70,7 @@ namespace MiningCore
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
+        private static ShareRelay shareRelay;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
@@ -161,6 +162,13 @@ namespace MiningCore
 
         private static void ValidateConfig()
         {
+            // set some defaults
+            foreach (var config in clusterConfig.Pools)
+            {
+                config.EnableInternalStratum = config.EnableInternalStratum || 
+                    config.ExternalStratums == null || config.ExternalStratums.Length == 0;
+            }
+
             try
             {
                 clusterConfig.Validate();
@@ -533,9 +541,19 @@ namespace MiningCore
 
         private static async Task Start()
         {
-            // start share recorder
-            shareRecorder = container.Resolve<ShareRecorder>();
-            shareRecorder.Start(clusterConfig);
+            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            {
+                // start share recorder
+                shareRecorder = container.Resolve<ShareRecorder>();
+                shareRecorder.Start(clusterConfig);
+            }
+
+            else
+            {
+                // start share relay
+                shareRelay = container.Resolve<ShareRelay>();
+                shareRelay.Start(clusterConfig);
+            }
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
@@ -557,10 +575,13 @@ namespace MiningCore
             else
                 logger.Info("Payment processing is not enabled");
 
-            // start pool stats updater
-            statsRecorder = container.Resolve<StatsRecorder>();
-            statsRecorder.Configure(clusterConfig);
-            statsRecorder.Start();
+            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            {
+                // start pool stats updater
+                statsRecorder = container.Resolve<StatsRecorder>();
+                statsRecorder.Configure(clusterConfig);
+                statsRecorder.Start();
+            }
 
             // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
@@ -574,8 +595,9 @@ namespace MiningCore
                 pool.Configure(poolConfig, clusterConfig);
 
                 // pre-start attachments
-                shareRecorder.AttachPool(pool);
-                statsRecorder.AttachPool(pool);
+                shareRecorder?.AttachPool(pool);
+                shareRelay?.AttachPool(pool);
+                statsRecorder?.AttachPool(pool);
 
                 await pool.StartAsync();
             }));
