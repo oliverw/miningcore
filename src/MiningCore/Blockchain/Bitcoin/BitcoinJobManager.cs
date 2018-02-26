@@ -100,7 +100,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.ExternalStratumsOnly)
+	        if (!poolConfig.EnableInternalStratum)
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));

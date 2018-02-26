@@ -108,7 +108,7 @@ namespace MiningCore.Mining
             var context = CreateClientContext();
 
             var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
-            context.Init(poolConfig, poolEndpoint.Difficulty, !poolConfig.ExternalStratumsOnly ? poolEndpoint.VarDiff : null, clock);
+            context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum ? poolEndpoint.VarDiff : null, clock);
             client.SetContext(context);
 
             // varDiff setup
@@ -432,7 +432,7 @@ Pool Fee:               {poolConfig.RewardRecipients.Sum(x => x.Percentage)}%
 	            await SetupJobManager();
                 InitStats();
 
-                if (!poolConfig.ExternalStratumsOnly)
+                if (poolConfig.EnableInternalStratum)
 	            {
 		            var ipEndpoints = poolConfig.Ports.Keys
 			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))

@@ -75,21 +75,30 @@ namespace MiningCore.Stratum
                 {
                     var loop = new Loop();
 
-                    var listener = loop
-                        .CreateTcp()
-                        .NoDelay(true)
-                        .SimultaneousAccepts(false)
-                        .Listen(endpoint, (con, ex) =>
-                        {
-                            if (ex == null)
-                                OnClientConnected(con, endpoint, loop);
-                            else
-                                logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
-                        });
-
-                    lock(ports)
+                    try
                     {
-                        ports[endpoint.Port] = listener;
+                        var listener = loop
+                            .CreateTcp()
+                            .NoDelay(true)
+                            .SimultaneousAccepts(false)
+                            .Listen(endpoint, (con, ex) =>
+                            {
+                                if (ex == null)
+                                    OnClientConnected(con, endpoint, loop);
+                                else
+                                    logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
+                            });
+
+                        lock (ports)
+                        {
+                            ports[endpoint.Port] = listener;
+                        }
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, $"[{LogCat}] {ex}");
+                        throw;
                     }
 
                     logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
@@ -101,7 +110,7 @@ namespace MiningCore.Stratum
 
                     catch(Exception ex)
                     {
-                        logger.Error(ex, () => Thread.CurrentThread.Name);
+                        logger.Error(ex, $"[{LogCat}] {ex}");
                     }
                 }) { Name = $"UvLoopThread {id}:{endpoint.Port}" };
 

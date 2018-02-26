@@ -192,8 +192,8 @@ namespace MiningCore.Configuration
             RuleFor(j => j.ExternalStratums)
                 .NotNull()
                 .NotEmpty()
-                .When(j=> j.ExternalStratumsOnly)
-                .WithMessage("Pool: You must configure external stratum endpoints when enabling externalStratumsOnly");
+                .When(j=> !j.EnableInternalStratum)
+                .WithMessage("Pool: You must configure external stratum endpoints when enabling disabling internal stratum");
 
             RuleFor(j => j.Daemons)
                 .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());

@@ -302,7 +302,7 @@ namespace MiningCore.Blockchain.Monero
 
             await manager.StartAsync();
 
-            if (!poolConfig.ExternalStratumsOnly)
+            if (poolConfig.EnableInternalStratum)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
