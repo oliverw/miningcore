@@ -261,7 +261,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             await manager.StartAsync();
 
-            if (!poolConfig.ExternalStratum)
+            if (!poolConfig.ExternalStratumsOnly)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 

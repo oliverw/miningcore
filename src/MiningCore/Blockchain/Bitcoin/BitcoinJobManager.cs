@@ -98,10 +98,9 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         };
 
-
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.ExternalStratum)
+	        if (poolConfig.ExternalStratumsOnly)
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));

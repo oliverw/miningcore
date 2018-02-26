@@ -189,6 +189,12 @@ namespace MiningCore.Configuration
                 .NotEmpty()
                 .WithMessage("Pool: Daemons missing or empty");
 
+            RuleFor(j => j.ExternalStratums)
+                .NotNull()
+                .NotEmpty()
+                .When(j=> j.ExternalStratumsOnly)
+                .WithMessage("Pool: You must configure external stratum endpoints when enabling externalStratumsOnly");
+
             RuleFor(j => j.Daemons)
                 .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
         }

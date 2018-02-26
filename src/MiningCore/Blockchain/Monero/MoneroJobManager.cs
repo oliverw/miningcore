@@ -468,7 +468,7 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.ExternalStratum)
+	        if (poolConfig.ExternalStratumsOnly)
 		        return;
 
 			// periodically update block-template from daemon
