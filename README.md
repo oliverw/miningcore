@@ -51,7 +51,7 @@ Namecoin | Yes | No | |
 Viacoin | Yes | No | |
 Peercoin | Yes | No | |
 Straks | Yes | Yes | |
-Electroneum | Yes | No | |
+Electroneum | Yes | Yes | |
 MoonCoin | Yes | Yes | |
 #### Ethereum
 
