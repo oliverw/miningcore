@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,12 +26,11 @@ using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Bitcoin.Configuration;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.Flo.DaemonRequests;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.Notifications;
-using MiningCore.Payments;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -122,34 +120,20 @@ namespace MiningCore.Blockchain.Flo
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-            object[] args;
+            var smr = new SendManyRequest();
+            smr.FromAccount = String.Empty;
+            smr.Amounts = amounts;
+            smr.FloData = "MiningCore payout";
 
             if (extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
             {
-                var comment = (poolConfig.PoolName ?? clusterConfig.ClusterName ?? "MiningCore").Trim() + " Payment";
+                // distribute transaction fee equally over all recipients
                 var subtractFeesFrom = amounts.Keys.ToArray();
-
-                args = new object[]
-                {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
-                    1,                      // only spend funds covered by this many confirmations
-                    comment,                // tx comment
-                    subtractFeesFrom        // distribute transaction fee equally over all recipients
-                };
-            }
-
-            else
-            {
-                args = new object[]
-                {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
-                };
+                smr.SubtractFeeFrom = subtractFeesFrom;
             }
 
             // send command
-            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, smr, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
