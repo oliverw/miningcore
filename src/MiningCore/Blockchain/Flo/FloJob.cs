@@ -48,19 +48,79 @@ namespace MiningCore.Blockchain.Flo
 
         protected override void BuildCoinbase()
         {            
-            base.BuildCoinbase();
+             var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
 
-            // add floData to the end
-            if (txVersion >= 2)
+            // generate script parts
+            var sigScriptInitial = GenerateScriptSigInitial();
+            var sigScriptInitialBytes = sigScriptInitial.ToBytes();
+
+            var sigScriptLength = (uint) (
+                sigScriptInitial.Length +
+                1 + // for extranonce-placeholder length after sigScriptInitial
+                extraNoncePlaceHolderLength +
+                scriptSigFinalBytes.Length);
+
+            // output transaction
+            txOut = CreateOutputTransaction();
+
+            // build coinbase initial
+            using(var stream = new MemoryStream())
             {
-                using (var stream = new MemoryStream())
+                var bs = new BitcoinStream(stream, true);
+
+                // version
+                bs.ReadWrite(ref txVersion);
+
+                // timestamp for POS coins
+                if (isPoS)
                 {
-                    var bs = new BitcoinStream(stream, true);                
-                    bs.ReadWrite(ref coinbaseFinal);                
-                    bs.ReadWriteAsVarString(ref txFloDataBytes);
-                    coinbaseFinal = stream.ToArray();
-                    coinbaseFinalHex = coinbaseFinal.ToHexString();
+                    var timestamp = BlockTemplate.CurTime;
+                    bs.ReadWrite(ref timestamp);
                 }
+
+                // serialize (simulated) input transaction
+                bs.ReadWriteAsVarInt(ref txInputCount);
+                bs.ReadWrite(ref sha256Empty);
+                bs.ReadWrite(ref txInPrevOutIndex);
+
+                // signature script initial part
+                bs.ReadWriteAsVarInt(ref sigScriptLength);
+                bs.ReadWrite(ref sigScriptInitialBytes);
+
+                // emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
+                bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
+
+                // done
+                coinbaseInitial = stream.ToArray();
+                coinbaseInitialHex = coinbaseInitial.ToHexString();
+            }
+
+            // build coinbase final
+            using(var stream = new MemoryStream())
+            {
+                var bs = new BitcoinStream(stream, true);
+
+                // signature script final part
+                bs.ReadWrite(ref scriptSigFinalBytes);
+
+                // tx in sequence
+                bs.ReadWrite(ref txInSequence);
+
+                // serialize output transaction
+                var txOutBytes = SerializeOutputTransaction(txOut);
+                bs.ReadWrite(ref txOutBytes);
+
+                // misc
+                bs.ReadWrite(ref txLockTime);
+
+                if (txVersion >= 2)
+                {
+                    bs.ReadWriteAsVarString(ref txFloDataBytes);
+                }
+
+                // done
+                coinbaseFinal = stream.ToArray();
+                coinbaseFinalHex = coinbaseFinal.ToHexString();
             }
         }
         
