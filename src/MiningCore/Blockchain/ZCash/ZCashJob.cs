@@ -166,7 +166,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
+            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
