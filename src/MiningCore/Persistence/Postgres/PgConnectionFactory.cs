@@ -23,9 +23,9 @@ using Npgsql;
 
 namespace MiningCore.Persistence.Postgres
 {
-    public class ConnectionFactory : IConnectionFactory
+    public class PgConnectionFactory : IConnectionFactory
     {
-        public ConnectionFactory(string connectionString)
+        public PgConnectionFactory(string connectionString)
         {
             this.connectionString = connectionString;
         }

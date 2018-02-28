@@ -47,6 +47,7 @@ using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
 using MiningCore.Payments;
+using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
@@ -509,6 +510,8 @@ namespace MiningCore
 
             if (clusterConfig.Persistence?.Postgres != null)
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
+            else
+                ConfigureDummyPersistence(builder);
         }
 
         private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
@@ -530,7 +533,7 @@ namespace MiningCore
             var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
 
             // register connection factory
-            builder.RegisterInstance(new ConnectionFactory(connectionString))
+            builder.RegisterInstance(new PgConnectionFactory(connectionString))
                 .AsImplementedInterfaces();
 
             // register repositories
@@ -539,6 +542,13 @@ namespace MiningCore
                     t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
+        }
+
+        private static void ConfigureDummyPersistence(ContainerBuilder builder)
+        {
+            // register connection factory
+            builder.RegisterInstance(new DummyConnectionFactory())
+                .AsImplementedInterfaces();
         }
 
         private static async Task Start()
