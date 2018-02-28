@@ -504,7 +504,7 @@ namespace MiningCore
         {
             if (clusterConfig.Persistence == null &&
                 clusterConfig.PaymentProcessing?.Enabled == true &&
-                string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+                clusterConfig.ShareRelay == null)
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
             if (clusterConfig.Persistence?.Postgres != null)
@@ -543,7 +543,7 @@ namespace MiningCore
 
         private static async Task Start()
         {
-            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            if (clusterConfig.ShareRelay != null)
             {
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
@@ -577,7 +577,7 @@ namespace MiningCore
             else
                 logger.Info("Payment processing is not enabled");
 
-            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            if (clusterConfig.ShareRelay != null)
             {
                 // start pool stats updater
                 statsRecorder = container.Resolve<StatsRecorder>();
