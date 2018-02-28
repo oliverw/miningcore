@@ -549,6 +549,13 @@ namespace MiningCore
             // register connection factory
             builder.RegisterInstance(new DummyConnectionFactory())
                 .AsImplementedInterfaces();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t =>
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
         }
 
         private static async Task Start()
