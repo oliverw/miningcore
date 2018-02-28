@@ -165,7 +165,7 @@ namespace MiningCore
             // set some defaults
             foreach (var config in clusterConfig.Pools)
             {
-                config.EnableInternalStratum = config.EnableInternalStratum || 
+                config.EnableInternalStratum = config.EnableInternalStratum ||
                     config.ExternalStratums == null || config.ExternalStratums.Length == 0;
             }
 
@@ -502,10 +502,12 @@ namespace MiningCore
 
         private static void ConfigurePersistence(ContainerBuilder builder)
         {
-            if (clusterConfig.Persistence == null)
+            if (clusterConfig.Persistence == null &&
+                clusterConfig.PaymentProcessing?.Enabled == true &&
+                string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-            if (clusterConfig.Persistence.Postgres != null)
+            if (clusterConfig.Persistence?.Postgres != null)
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
         }
 
