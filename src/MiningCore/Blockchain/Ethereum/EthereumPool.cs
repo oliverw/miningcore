@@ -342,7 +342,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             // validate mandatory extra config
             var extraConfig = poolConfig.PaymentProcessing?.Extra?.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
-            if (extraConfig?.CoinbasePassword == null)
+            if (clusterConfig.PaymentProcessing?.Enabled == true && extraConfig?.CoinbasePassword == null)
                 logger.ThrowLogPoolStartupException("\"paymentProcessing.coinbasePassword\" pool-configuration property missing or empty (required for unlocking wallet during payment processing)");
         }
 
