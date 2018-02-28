@@ -547,7 +547,7 @@ namespace MiningCore
         private static void ConfigureDummyPersistence(ContainerBuilder builder)
         {
             // register connection factory
-            builder.RegisterInstance(new DummyConnectionFactory())
+            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
                 .AsImplementedInterfaces();
 
             // register repositories
@@ -560,7 +560,7 @@ namespace MiningCore
 
         private static async Task Start()
         {
-            if (clusterConfig.ShareRelay != null)
+            if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
@@ -594,7 +594,7 @@ namespace MiningCore
             else
                 logger.Info("Payment processing is not enabled");
 
-            if (clusterConfig.ShareRelay != null)
+            if (clusterConfig.ShareRelay == null)
             {
                 // start pool stats updater
                 statsRecorder = container.Resolve<StatsRecorder>();
