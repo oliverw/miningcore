@@ -27,7 +27,6 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Notifications;
@@ -108,7 +107,7 @@ namespace MiningCore.Blockchain.Flo
 
             // extract worker/miner
             var split = workerValue?.Split('.');
-            var minerName = split?.FirstOrDefault();
+            var minerName = split?.FirstOrDefault()?.Trim();
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
@@ -181,8 +180,7 @@ namespace MiningCore.Blockchain.Flo
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -286,7 +284,7 @@ namespace MiningCore.Blockchain.Flo
 
             await manager.StartAsync();
 
-            if (!poolConfig.ExternalStratum)
+            if (poolConfig.EnableInternalStratum)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
@@ -331,7 +329,8 @@ namespace MiningCore.Blockchain.Flo
                     break;
 
                 case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                    //OnGetTransactions(client, tsRequest);
+                    // ignored
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
@@ -354,12 +353,7 @@ namespace MiningCore.Blockchain.Flo
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = shares * multiplier / interval;
-
-            // OW: tmp hotfix
-            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
-                result *= 4;
-
-          return result;
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
