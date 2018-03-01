@@ -44,7 +44,7 @@ namespace MiningCore.Payments
             this.clusterConfig = clusterConfig;
 
             pubSocket = new PublisherSocket();
-            pubSocket.Bind(clusterConfig.ShareRelayPublisherUrl);
+            pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
 
             InitializeQueue();
 

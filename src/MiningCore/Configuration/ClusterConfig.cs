@@ -279,6 +279,12 @@ namespace MiningCore.Configuration
         public string Topic { get; set; }
     }
 
+    public partial class ShareRelayConfig
+    {
+        public string PublishUrl { get; set; }
+        //public bool Compress { get; set; }
+    }
+
     public partial class PoolConfig
     {
         public string Id { get; set; }
@@ -322,11 +328,11 @@ namespace MiningCore.Configuration
         public decimal? DevDonation { get; set; }
 
         /// <summary>
-        /// If this is enabled, shares are not written to the database 
-        /// but published on the specified ZeroMQ Url and using the 
+        /// If this is enabled, shares are not written to the database
+        /// but published on the specified ZeroMQ Url and using the
         /// poolid as topic
         /// </summary>
-        public string ShareRelayPublisherUrl { get; set; }
+        public ShareRelayConfig ShareRelay { get; set; }
 
         /// <summary>
         /// Maximum parallelism of Equihash solver
