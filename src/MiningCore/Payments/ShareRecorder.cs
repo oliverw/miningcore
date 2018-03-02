@@ -109,6 +109,8 @@ namespace MiningCore.Payments
             {
                 foreach(var share in shares)
                 {
+                    share.Source = clusterConfig.ClusterName;
+
                     var shareEntity = mapper.Map<Share>(share);
                     shareRepo.Insert(con, tx, shareEntity);
 

@@ -33,6 +33,7 @@ namespace MiningCore.Persistence.Model
         public double Difficulty { get; set; }
         public double NetworkDifficulty { get; set; }
         public string IpAddress { get; set; }
+        public string Source { get; set; }
         public DateTime Created { get; set; }
     }
 }

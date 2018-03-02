@@ -11,6 +11,7 @@ CREATE TABLE shares
 	worker TEXT NULL,
 	useragent TEXT NULL,
 	ipaddress TEXT NOT NULL,
+    source TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
 
@@ -31,6 +32,7 @@ CREATE TABLE blocks
 	transactionconfirmationdata TEXT NOT NULL,
 	miner TEXT NULL,
 	reward decimal(28,12) NULL,
+    source TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
 

@@ -72,6 +72,8 @@ namespace MiningCore.Payments
                 .Do(_ => CheckQueueBacklog())
                 .Subscribe(share =>
                 {
+                    share.Source = clusterConfig.ClusterName;
+
                     try
                     {
                         var json = JsonConvert.SerializeObject(share, serializerSettings);
