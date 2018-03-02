@@ -230,14 +230,12 @@ namespace MiningCore.DaemonInterface
                 .RefCount();
         }
 
-        public IObservable<PooledArraySegment<byte>[]> ZmqSubscribe(Dictionary<DaemonEndpointConfig, string> portMap, string topic, int numMsgSegments = 2)
+        public IObservable<PooledArraySegment<byte>[]> ZmqSubscribe(Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(topic), $"{nameof(topic)} must not be empty");
-
-            logger.LogInvoke(new[] { topic });
+            logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(endPoint, portMap[endPoint], topic, numMsgSegments)))
+                    .Select(endPoint => ZmqSubscribeEndpoint(endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic, numMsgSegments)))
                 .Publish()
                 .RefCount();
         }
@@ -508,7 +506,7 @@ namespace MiningCore.DaemonInterface
                                     subSocket.Connect(url);
                                     subSocket.Subscribe(topic);
 
-                                    logger.Debug($"Subscribed to {url}/{BitcoinConstants.ZmqPublisherTopicBlockHash}");
+                                    logger.Debug($"Subscribed to {url}/{topic}");
 
                                     while (!tcs.IsCancellationRequested)
                                     {

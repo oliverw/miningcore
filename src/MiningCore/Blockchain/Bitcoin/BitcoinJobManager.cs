@@ -111,13 +111,21 @@ namespace MiningCore.Blockchain.Bitcoin
             // collect ports
             var zmq = poolConfig.Daemons
                 .Where(x => !string.IsNullOrEmpty(x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>()?.ZmqBlockNotifySocket))
-                .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>().ZmqBlockNotifySocket);
+                .ToDictionary(x => x, x =>
+                {
+                    var extra = x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ? 
+                        extra.ZmqBlockNotifyTopic : 
+                        BitcoinConstants.ZmqPublisherTopicBlockHash;
+
+                    return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
+                });
 
             if (zmq.Count > 0)
             {
                 logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var newJobsPubSub = daemon.ZmqSubscribe(zmq, BitcoinConstants.ZmqPublisherTopicBlockHash, 2)
+                var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
                         try
