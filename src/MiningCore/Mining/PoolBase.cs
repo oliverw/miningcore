@@ -317,7 +317,7 @@ namespace MiningCore.Mining
 
         protected virtual void InitStats()
         {
-            if(clusterConfig.ShareRelay != null)
+            if(clusterConfig.ShareRelay == null)
                 LoadStats();
         }
 
