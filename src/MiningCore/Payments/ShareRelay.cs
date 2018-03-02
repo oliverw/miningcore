@@ -42,7 +42,7 @@ namespace MiningCore.Payments
         public void Start(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
-
+logger.Warn(() => $"SR");
             pubSocket = new PublisherSocket();
 
             if (!clusterConfig.ShareRelay.Connect)
