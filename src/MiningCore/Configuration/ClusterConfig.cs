@@ -282,7 +282,11 @@ namespace MiningCore.Configuration
     public partial class ShareRelayConfig
     {
         public string PublishUrl { get; set; }
-        //public bool Compress { get; set; }
+
+        /// <summary>
+        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it 
+        /// </summary>
+        public bool Connect { get; set; }
     }
 
     public partial class PoolConfig
