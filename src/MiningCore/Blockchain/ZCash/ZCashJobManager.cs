@@ -182,6 +182,7 @@ namespace MiningCore.Blockchain.ZCash
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.Now;

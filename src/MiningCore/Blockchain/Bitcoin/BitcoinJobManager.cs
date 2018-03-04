@@ -518,6 +518,7 @@ namespace MiningCore.Blockchain.Bitcoin
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
 
             return share;

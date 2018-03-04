@@ -302,6 +302,7 @@ namespace MiningCore.Blockchain.Monero
             share.Worker = context.WorkerName;
             share.PayoutInfo = context.PaymentId;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
 

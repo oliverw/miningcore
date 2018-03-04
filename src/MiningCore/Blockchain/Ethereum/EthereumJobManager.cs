@@ -433,6 +433,7 @@ namespace MiningCore.Blockchain.Ethereum
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
+            share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
 
             return share;

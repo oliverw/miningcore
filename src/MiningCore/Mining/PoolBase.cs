@@ -223,8 +223,8 @@ namespace MiningCore.Mining
 	                                // re-publish
 	                                shareSubject.OnNext(new ClientShare(null, share));
 
-	                                var source = !string.IsNullOrEmpty(share.Source) ? $" [{share.Source.ToUpper()}]" : string.Empty;
-	                                logger.Info(() => $"[{LogCat}] External share accepted: D={Math.Round(share.Difficulty, 3)}{source}");
+	                                var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty;
+	                                logger.Info(() => $"[{LogCat}] External {source} share accepted: D={Math.Round(share.Difficulty, 3)}");
 	                            }
 	                        }
 	                    }
