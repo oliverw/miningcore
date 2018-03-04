@@ -114,8 +114,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 .ToDictionary(x => x, x =>
                 {
                     var extra = x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
-                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ? 
-                        extra.ZmqBlockNotifyTopic : 
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ?
+                        extra.ZmqBlockNotifyTopic :
                         BitcoinConstants.ZmqPublisherTopicBlockHash;
 
                     return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
@@ -387,6 +387,8 @@ namespace MiningCore.Blockchain.Bitcoin
         }
 
         #region API-Surface
+
+        public BitcoinNetworkType NetworkType => networkType;
 
         public IObservable<object> Jobs { get; private set; }
 

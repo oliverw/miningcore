@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -40,6 +41,8 @@ using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.ZCash;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
