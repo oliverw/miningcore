@@ -35,6 +35,7 @@ namespace MiningCore.Persistence.Model
         public string TransactionConfirmationData { get; set; }
         public string Miner { get; set; }
         public decimal Reward { get; set; }
+        public string Source { get; set; }
         public DateTime Created { get; set; }
     }
 }
