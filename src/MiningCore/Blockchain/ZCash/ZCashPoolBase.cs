@@ -28,6 +28,7 @@ using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Notifications;
@@ -231,6 +232,10 @@ namespace MiningCore.Blockchain.ZCash
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = shares * multiplier / interval / 1000000 * 2;
+
+            if (poolConfig.Coin.Type == CoinType.BTCP)
+                result /= 256;
+
             return result;
         }
 
