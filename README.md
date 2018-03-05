@@ -6,7 +6,7 @@
 
 ## Miningcore
 
-Miningcore is the multi-currency stratum-engine powering [coinfoundry.org](https://coinfoundry.org).
+Miningcore a the multi-currency stratum-engine.
 
 Even though the pool engine can be used to run a production-pool, doing so currently requires to
 develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
