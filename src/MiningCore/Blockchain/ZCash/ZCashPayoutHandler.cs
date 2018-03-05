@@ -35,7 +35,9 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using MiningCore.Util;
 using Newtonsoft.Json.Linq;
+using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -216,6 +218,19 @@ namespace MiningCore.Blockchain.ZCash
                 }
             }
         }
+
+        #region Overrides of BitcoinPayoutHandler
+
+        public override Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
+        {
+            var divisor = (double) new BigRational(coinbaseTxConfig.Diff1b, ZCashConstants.CoinbaseTxConfig[CoinType.ZEC][networkType].Diff1b);
+            var networkDiff = block.NetworkDifficulty / divisor;
+
+            block.Effort = accumulatedBlockShareDiff / networkDiff;
+            return Task.FromResult(true);
+        }
+
+        #endregion
 
         #endregion // IPayoutHandler
 
