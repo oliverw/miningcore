@@ -35,6 +35,7 @@ namespace MiningCore.Blockchain
         public double NetworkDifficulty { get; set; }
         public long BlockHeight { get; set; }
         public decimal BlockReward { get; set; }
+        public string BlockHash { get; set; }
         public bool IsBlockCandidate { get; set; }
         public string TransactionConfirmationData { get; set; }
         public DateTime Created { get; set; }

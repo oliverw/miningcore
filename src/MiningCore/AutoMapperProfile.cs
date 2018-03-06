@@ -38,6 +38,7 @@ namespace MiningCore
 
             CreateMap<IShare, Block>()
                 .ForMember(dest => dest.Reward, opt => opt.MapFrom(src => src.BlockReward))
+                .ForMember(dest => dest.Hash, opt => opt.MapFrom(src => src.BlockHash))
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             CreateMap<BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());

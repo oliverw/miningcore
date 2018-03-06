@@ -36,6 +36,7 @@ namespace MiningCore.Persistence.Model
         public string Miner { get; set; }
         public decimal Reward { get; set; }
         public string Source { get; set; }
+        public string Hash { get; set; }
         public DateTime Created { get; set; }
     }
 }

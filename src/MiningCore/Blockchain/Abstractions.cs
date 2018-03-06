@@ -92,6 +92,11 @@ namespace MiningCore.Blockchain
         decimal BlockReward { get; set; }
 
         /// <summary>
+        /// Block hash
+        /// </summary>
+        string BlockHash { get; set; }
+
+        /// <summary>
         /// If this share presumably resulted in a block
         /// </summary>
         bool IsBlockCandidate { get; set; }

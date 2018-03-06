@@ -33,6 +33,7 @@ CREATE TABLE blocks
 	miner TEXT NULL,
 	reward decimal(28,12) NULL,
     source TEXT NULL,
+    hash TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
 
