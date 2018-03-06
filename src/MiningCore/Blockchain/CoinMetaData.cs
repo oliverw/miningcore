@@ -8,6 +8,9 @@ namespace MiningCore.Blockchain
 {
     public static class CoinMetaData
     {
+        public const string BlockHeightPH = "$height$";
+        public const string BlockHashPH = "$hash$";
+
         public static readonly Dictionary<CoinType, Dictionary<string, string>> BlockInfoLinks = new Dictionary<CoinType, Dictionary<string, string>>
         {
             { CoinType.ETH, new Dictionary<string, string>
@@ -22,30 +25,30 @@ namespace MiningCore.Blockchain
                 { EthereumConstants.BlockTypeUncle, "https://gastracker.io/uncle/{0}" }
             }},
 
-            { CoinType.XMR, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/xmr/block/{height}" }}},
-            { CoinType.ETN, new Dictionary<string, string> { { string.Empty, "https://blockexplorer.electroneum.com/block/{height}" } }},
-            { CoinType.LTC, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/ltc/block.dws?{height}.htm" } }},
-            { CoinType.BCH, new Dictionary<string, string> { { string.Empty, "https://www.blocktrail.com/BCC/block/{height}" }}},
-            { CoinType.DASH, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/dash/block.dws?{height}.htm" }}},
-            { CoinType.BTC, new Dictionary<string, string> { { string.Empty, "https://blockchain.info/block/{height}" }}},
-            { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, "https://dogechain.info/block/{height}" }}},
-            { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, "https://explorer.zcha.in/blocks/{hash}" } }},
-            { CoinType.BTCP, new Dictionary<string, string> { { string.Empty, "http://explorer.btcprivate.org/blocks/{hash}" } }},
-            { CoinType.ZCL, new Dictionary<string, string> { { string.Empty, "http://explorer.zclmine.pro/blocks/{height}" }}},
-            { CoinType.ZEN, new Dictionary<string, string> { { string.Empty, "http://explorer.zensystem.io/blocks/{hash}" } }},
-            { CoinType.DGB, new Dictionary<string, string> { { string.Empty, "https://digiexplorer.info/block/{height}" }}},
-            { CoinType.NMC, new Dictionary<string, string> { { string.Empty, "https://explorer.namecoin.info/b/{height}" }}},
-            { CoinType.GRS, new Dictionary<string, string> { { string.Empty, "https://groestlsight.groestlcoin.org/block/{height}" }}},
-            { CoinType.MONA, new Dictionary<string, string> { { string.Empty, "https://bchain.info/MONA/block/{height}" }}},
-            { CoinType.GLT, new Dictionary<string, string> { { string.Empty, "https://bchain.info/GLT/block/{height}" }}},
-            { CoinType.VTC, new Dictionary<string, string> { { string.Empty, "https://bchain.info/VTC/block/{height}" }}},
-            { CoinType.BTG, new Dictionary<string, string> { { string.Empty, "https://btg-bitcore2.trezor.io/block/{hash}" } }},
-            { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, "https://explorer.ellaism.org/block/{height}" }}},
-            { CoinType.EXP, new Dictionary<string, string> { { string.Empty, "http://www.gander.tech/blocks/{height}" }}},
-            { CoinType.AEON, new Dictionary<string, string> { { string.Empty, "https://chainradar.com/aeon/block/{height}" }}},
-            { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{height}" }}},
-            { CoinType.MOON, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/moon/block.dws?{height}.htm" }}},
-            { CoinType.XVG, new Dictionary<string, string> { { string.Empty, "https://verge-blockchain.info/block/{hash}" } }},
+            { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" }}},
+            { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } }},
+            { CoinType.LTC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ltc/block.dws?{BlockHeightPH}.htm" } }},
+            { CoinType.BCH, new Dictionary<string, string> { { string.Empty, $"https://www.blocktrail.com/BCC/block/{BlockHeightPH}" }}},
+            { CoinType.DASH, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/dash/block.dws?{BlockHeightPH}.htm" }}},
+            { CoinType.BTC, new Dictionary<string, string> { { string.Empty, $"https://blockchain.info/block/{BlockHeightPH}" }}},
+            { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, $"https://dogechain.info/block/{BlockHeightPH}" }}},
+            { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, $"https://explorer.zcha.in/blocks/{BlockHashPH}" } }},
+            { CoinType.BTCP, new Dictionary<string, string> { { string.Empty, $"http://explorer.btcprivate.org/blocks/{BlockHashPH}" } }},
+            { CoinType.ZCL, new Dictionary<string, string> { { string.Empty, $"http://explorer.zclmine.pro/blocks/{BlockHeightPH}" }}},
+            { CoinType.ZEN, new Dictionary<string, string> { { string.Empty, $"http://explorer.zensystem.io/blocks/{BlockHashPH}" } }},
+            { CoinType.DGB, new Dictionary<string, string> { { string.Empty, $"https://digiexplorer.info/block/{BlockHeightPH}" }}},
+            { CoinType.NMC, new Dictionary<string, string> { { string.Empty, $"https://explorer.namecoin.info/b/{BlockHeightPH}" }}},
+            { CoinType.GRS, new Dictionary<string, string> { { string.Empty, $"https://groestlsight.groestlcoin.org/block/{BlockHeightPH}" }}},
+            { CoinType.MONA, new Dictionary<string, string> { { string.Empty, $"https://bchain.info/MONA/block/{BlockHeightPH}" }}},
+            { CoinType.GLT, new Dictionary<string, string> { { string.Empty, $"https://bchain.info/GLT/block/{BlockHeightPH}" }}},
+            { CoinType.VTC, new Dictionary<string, string> { { string.Empty, $"https://bchain.info/VTC/block/{BlockHeightPH}" }}},
+            { CoinType.BTG, new Dictionary<string, string> { { string.Empty, $"https://btg-bitcore2.trezor.io/block/{BlockHashPH}" } }},
+            { CoinType.ELLA, new Dictionary<string, string> { { string.Empty, $"https://explorer.ellaism.org/block/{BlockHeightPH}" }}},
+            { CoinType.EXP, new Dictionary<string, string> { { string.Empty, $"http://www.gander.tech/blocks/{BlockHeightPH}" }}},
+            { CoinType.AEON, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/aeon/block/{BlockHeightPH}" }}},
+            { CoinType.STAK, new Dictionary<string, string> { { string.Empty, $"https://straks.info/block/{BlockHeightPH}" }}},
+            { CoinType.MOON, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/moon/block.dws?{BlockHeightPH}.htm" }}},
+            { CoinType.XVG, new Dictionary<string, string> { { string.Empty, $"https://verge-blockchain.info/block/{BlockHashPH}" } }},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>

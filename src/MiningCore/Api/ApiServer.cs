@@ -363,11 +363,10 @@ namespace MiningCore.Api
 
                     if (!string.IsNullOrEmpty(blockInfobaseUrl))
                     {
-                        blockInfobaseUrl = blockInfobaseUrl.Replace("{height}", block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                        if(!string.IsNullOrEmpty(block.Hash))
-                            blockInfobaseUrl = blockInfobaseUrl.Replace("{hash}", block.Hash);
-
-                        block.InfoLink = blockInfobaseUrl;
+                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
                     }
                 }
             }
