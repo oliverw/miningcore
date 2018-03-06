@@ -367,7 +367,7 @@ namespace MiningCore.Api
                         if(!string.IsNullOrEmpty(block.Hash))
                             blockInfobaseUrl = blockInfobaseUrl.Replace("{hash}", block.Hash);
 
-                        block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                        block.InfoLink = blockInfobaseUrl;
                     }
                 }
             }
