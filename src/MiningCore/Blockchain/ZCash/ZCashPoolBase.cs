@@ -57,6 +57,7 @@ namespace MiningCore.Blockchain.ZCash
         }
 
         private ZCashCoinbaseTxConfig coinbaseTxConfig;
+        private double hashrateDivisor;
 
         protected override BitcoinJobManager<TJob, ZCashBlockTemplate> CreateJobManager()
         {
@@ -74,6 +75,8 @@ namespace MiningCore.Blockchain.ZCash
             if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
                 coinbaseTx.TryGetValue(manager.NetworkType, out coinbaseTxConfig);
 
+            hashrateDivisor = (double)new BigRational(coinbaseTxConfig.Diff1b,
+                ZCashConstants.CoinbaseTxConfig[CoinType.ZEC][manager.NetworkType].Diff1b);
         }
 
         #endregion
@@ -233,9 +236,7 @@ namespace MiningCore.Blockchain.ZCash
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = shares * multiplier / interval / 1000000 * 2;
 
-            if (poolConfig.Coin.Type == CoinType.BTCP)
-                result /= 256;
-
+            result /= hashrateDivisor;
             return result;
         }
 
