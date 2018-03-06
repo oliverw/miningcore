@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -361,7 +362,13 @@ namespace MiningCore.Api
                     blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : string.Empty, out var blockInfobaseUrl);
 
                     if (!string.IsNullOrEmpty(blockInfobaseUrl))
+                    {
+                        blockInfobaseUrl = blockInfobaseUrl.Replace("{height}", block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                        if(!string.IsNullOrEmpty(block.Hash))
+                            blockInfobaseUrl = blockInfobaseUrl.Replace("{hash}", block.Hash);
+
                         block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                    }
                 }
             }
 
