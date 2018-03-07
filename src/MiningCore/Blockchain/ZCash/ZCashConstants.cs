@@ -390,8 +390,8 @@ namespace MiningCore.Blockchain.ZCash
                     },
 
                     PercentTreasuryReward = 0,
-                    TreasuryRewardAddressChangeInterval = 0,
-                    TreasuryRewardStartBlockHeight = 0,
+                    TreasuryRewardAddressChangeInterval = 105320.95,
+                    TreasuryRewardStartBlockHeight = 2106399,
 
                     TreasuryRewardAddresses = new[]
                     {
