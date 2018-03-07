@@ -97,7 +97,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.BCH, sha256Coin },
             { CoinType.NMC, sha256Coin },
             { CoinType.PPC, sha256Coin },
-			{ CoinType.GLT, sha256Coin },
+	        { CoinType.GLT, sha256Coin },
 
             // Scrypt
             { CoinType.LTC, scryptCoin },
@@ -124,6 +124,11 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.ZCL, equihashCoin },
             { CoinType.ZEN, equihashCoin },
             { CoinType.BTCP, equihashCoin },
+	        { CoinType.VIS, equihashCoin },
+	        { CoinType.HUSH, equihashCoin },
+	        { CoinType.ZEL, equihashCoin },
+	        { CoinType.KMD, equihashCoin },
+			{ CoinType.SNG, equihashCoin },
 
             // Neoscrypt
             { CoinType.GBX, neoScryptCoin },

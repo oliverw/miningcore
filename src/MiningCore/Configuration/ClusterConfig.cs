@@ -61,6 +61,7 @@ namespace MiningCore.Configuration
         HUSH, // Hush
         VIS, // Vision
 		KMD, // Komodo
+		SNG, // SnowGem
     }
 
     public class CoinConfig
