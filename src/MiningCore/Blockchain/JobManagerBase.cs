@@ -74,11 +74,14 @@ namespace MiningCore.Blockchain
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
 
-            ScheduledUpdateJob = Observable.Interval(TimeSpan.FromSeconds(poolConfig.UpdateInterval))
-                .Select(_ => { return poolConfig; })
-                .Repeat();
+            if (poolConfig.UpdateInterval > 0)
+            {
+                ScheduledUpdateJob = Observable.Interval(TimeSpan.FromSeconds(poolConfig.UpdateInterval))
+                    .Select(_ => { return poolConfig; })
+                    .Repeat();
 
-            disposables.Add(ScheduledUpdateJob.Subscribe(RunUpdateJob));
+                disposables.Add(ScheduledUpdateJob.Subscribe(RunUpdateJob));
+            }
         }
 
         private async void RunUpdateJob(PoolConfig pool)
