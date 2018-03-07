@@ -81,9 +81,9 @@ namespace MiningCore.Blockchain
             disposables.Add(ScheduledUpdateJob.Subscribe(RunUpdateJob));
         }
 
-        private void RunUpdateJob(PoolConfig pool)
+        private async void RunUpdateJob(PoolConfig pool)
         {
-            RunUpdates(pool);
+            await RunUpdates(pool);
         }
 
         protected string NextJobId(string format = null)

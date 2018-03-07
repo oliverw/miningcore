@@ -406,7 +406,7 @@ namespace MiningCore.Blockchain.ZCash
                     PayFoundersReward = true,
                     PercentFoundersReward = 10,
                     FoundersRewardSubsidyHalvingInterval = 2106399,
-                    FoundersRewardSubsidySlowStartInterval = 105320.95,
+                    FoundersRewardSubsidySlowStartInterval = 105320,
 
                     FoundersRewardAddresses = new[]
                     {
@@ -466,22 +466,6 @@ namespace MiningCore.Blockchain.ZCash
 				{ CoinType.SNG, SNGCoinbaseTxConfig },
 				
             };
-		
-        public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
-            new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
-            {
-                { CoinType.ZEC, ZCashCoinbaseTxConfig },
-                { CoinType.ZCL, ZCLCoinbaseTxConfig },
-                { CoinType.ZEN, ZencashCoinbaseTxConfig },
-                { CoinType.BTCP, ZCLCoinbaseTxConfig },
-				{ CoinType.ZEL, ZCLCoinbaseTxConfig },
-				{ CoinType.VIS, VisionCoinbaseTxConfig },
-				{ CoinType.HUSH, ZCLCoinbaseTxConfig },
-				{ CoinType.KMD, ZCLCoinbaseTxConfig },
-				{ CoinType.SNG, SNGCoinbaseTxConfig },
-				
-            };
-			
     }
 
     public enum ZOperationStatus
