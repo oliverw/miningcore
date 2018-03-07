@@ -788,6 +788,16 @@ namespace MiningCore.Blockchain.Bitcoin
             return job?.GetJobParams(isNew);
         }
 
+        protected override async Task RunUpdates(PoolConfig config)
+        {
+            logger.Info($"Updating stats for pool {config.PoolName} : PoolId {config.Id}");
+            if (!hasLegacyDaemon)
+                await UpdateNetworkStatsAsync();
+            else
+                await UpdateNetworkStatsLegacyAsync();
+            logger.Info($"Update complete for pool {config.PoolName} : PoolId {config.Id}");
+        }
+
         #endregion // Overrides
     }
 }

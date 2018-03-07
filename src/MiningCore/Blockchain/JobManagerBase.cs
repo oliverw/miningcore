@@ -20,6 +20,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Globalization;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -48,8 +50,9 @@ namespace MiningCore.Blockchain
         protected object jobLock = new object();
         protected ILogger logger;
         protected PoolConfig poolConfig;
-
         protected virtual string LogCat { get; } = "Job Manager";
+        public IObservable<PoolConfig> ScheduledUpdateJob { get; private set; }
+        protected readonly CompositeDisposable disposables = new CompositeDisposable();
 
         protected abstract void ConfigureDaemons();
 
@@ -70,6 +73,17 @@ namespace MiningCore.Blockchain
 
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
+
+            ScheduledUpdateJob = Observable.Interval(TimeSpan.FromSeconds(poolConfig.UpdateInterval))
+                .Select(_ => { return poolConfig; })
+                .Repeat();
+
+            disposables.Add(ScheduledUpdateJob.Subscribe(RunUpdateJob));
+        }
+
+        private void RunUpdateJob(PoolConfig pool)
+        {
+            RunUpdates(pool);
         }
 
         protected string NextJobId(string format = null)
@@ -87,6 +101,12 @@ namespace MiningCore.Blockchain
         protected abstract Task<bool> AreDaemonsConnectedAsync();
         protected abstract Task EnsureDaemonsSynchedAsync();
         protected abstract Task PostStartInitAsync();
+
+        protected virtual async Task RunUpdates(PoolConfig config)
+        {
+            // Override this son of a bitch to periodically do stuff.
+            await Task.CompletedTask;
+        }
 
         #region API-Surface
 
@@ -111,6 +131,7 @@ namespace MiningCore.Blockchain
             await StartDaemonAsync();
             await EnsureDaemonsSynchedAsync();
             await PostStartInitAsync();
+            
 
             logger.Info(() => $"[{LogCat}] Online");
         }
