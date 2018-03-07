@@ -169,8 +169,8 @@ namespace MiningCore
             // set some defaults
             foreach (var config in clusterConfig.Pools)
             {
-                config.EnableInternalStratum = config.EnableInternalStratum ||
-                    config.ExternalStratums == null || config.ExternalStratums.Length == 0;
+                if (!config.EnableInternalStratum.HasValue)
+                    config.EnableInternalStratum = config.ExternalStratums == null || config.ExternalStratums.Length == 0;
             }
 
             try

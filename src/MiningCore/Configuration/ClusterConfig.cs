@@ -309,7 +309,7 @@ namespace MiningCore.Configuration
         /// <summary>
         /// If true, internal stratum ports are not initialized
         /// </summary>
-        public bool EnableInternalStratum { get; set; }
+        public bool? EnableInternalStratum { get; set; }
 
         /// <summary>
         /// External stratums (ZMQ based share publishers)
