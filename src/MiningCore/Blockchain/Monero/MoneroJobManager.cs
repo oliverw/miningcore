@@ -440,6 +440,13 @@ namespace MiningCore.Blockchain.Monero
             SetupJobUpdates();
         }
 
+        protected override async Task RunUpdates(PoolConfig config)
+        {
+            logger.Info($"Updating stats for pool {config.PoolName} : PoolId {config.Id}");
+            await UpdateNetworkStatsAsync();
+            logger.Info($"Update complete for pool {config.PoolName} : PoolId {config.Id}");
+        }
+
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
