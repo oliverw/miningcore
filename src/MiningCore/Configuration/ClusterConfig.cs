@@ -57,6 +57,10 @@ namespace MiningCore.Configuration
         GBX,  // GoByte
         CRC,  // CrowdCoin
         BTCP, // Bitcoin Private
+		ZEL, // Zelcash
+        HUSH, // Hush
+        VIS, // Vision
+		KMD, // Komodo
     }
 
     public class CoinConfig
