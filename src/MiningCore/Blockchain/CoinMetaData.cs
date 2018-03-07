@@ -45,6 +45,11 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, "https://straks.info/block/{0}" }}},
             { CoinType.MOON, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/moon/block.dws?{0}.htm" }}},
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, "https://verge-blockchain.info/block/{0}" } }},
+			{ CoinType.ZEL, new Dictionary<string, string> { { string.Empty, "http://explorer.zel.cash/block-index/{0}" } }},
+			{ CoinType.HUSH, new Dictionary<string, string> { { string.Empty, "http://explorer.myhush.org/block-index/{0}" } }},
+			{ CoinType.VIS, new Dictionary<string, string> { { string.Empty, "http://explorer.visioncha.in/block-index/{0}" } }},
+			{ CoinType.KMD, new Dictionary<string, string> { { string.Empty, "https://kmd.explorer.supernet.org/block-index/{0}" } }},
+			{ CoinType.SNG, new Dictionary<string, string> { { string.Empty, "https://explorer.snowgem.org/block/{0}" } }},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -76,6 +81,11 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/tx/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/tx/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/tx/{0}" },
+			{ CoinType.ZEL, "http://explorer.zel.cash/tx/{0}" },
+			{ CoinType.HUSH, "http://explorer.myhush.org/tx/{0}" },
+			{ CoinType.VIS, "http://explorer.visioncha.in/tx/{0}" },
+			{ CoinType.KMD, "https://kmd.explorer.supernet.org/tx/{0}" },
+			{ CoinType.SNG, "https://explorer.snowgem.org/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -104,6 +114,11 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/address/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/address/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/address/{0}" },
+			{ CoinType.ZEL, "http://explorer.zel.cash/address/{0}" },
+			{ CoinType.HUSH, "http://explorer.myhush.org/address/{0}" },
+			{ CoinType.VIS, "http://explorer.visioncha.in/address/{0}" },
+			{ CoinType.KMD, "https://kmd.explorer.supernet.org/address/{0}" },
+			{ CoinType.SNG, "https://explorer.snowgem.org/address/{0}" },
         };
 
         private const string Ethash = "Dagger-Hashimoto";
@@ -140,6 +155,11 @@ namespace MiningCore.Blockchain
             { CoinType.AEON, (coin, alg)=> CryptonightLight },
             { CoinType.GBX, BitcoinProperties.GetAlgorithm },
             { CoinType.CRC, BitcoinProperties.GetAlgorithm },
+			{ CoinType.HUSH, BitcoinProperties.GetAlgorithm },
+			{ CoinType.ZEL, BitcoinProperties.GetAlgorithm },
+			{ CoinType.VIS, BitcoinProperties.GetAlgorithm },
+			{ CoinType.KMD, BitcoinProperties.GetAlgorithm },
+			{ CoinType.SNG, BitcoinProperties.GetAlgorithm },
         };
     }
 }

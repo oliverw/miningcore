@@ -269,6 +269,188 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
         };
+				private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> VisionCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        {
+            {
+                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 10,
+                    FoundersRewardSubsidyHalvingInterval = 840000,
+                    FoundersRewardSubsidySlowStartInterval = 2,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe"							 
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 10,
+                    FoundersRewardSubsidyHalvingInterval = 840000,
+                    FoundersRewardSubsidySlowStartInterval = 2,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe",
+                        "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                        "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF",
+                        "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye", "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx",
+                        "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe", "v3t9XHMCxsH21fXwf1sdZ5s6GJ1PGriR5zF", "v3qn5TGwMCaBk3mLTeFveUog294epTAHtye",
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8", "v3mSKzzqvdHtpBvwUkQm1sWt7L3ENJYixhx", "v3uYa2aVJPqJ9K3DtjboUru9MMfQk4GYNQe"
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 10,
+                    FoundersRewardSubsidyHalvingInterval = 2000,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        "v3xGmaNRHmvDy5RNokpMG8GLdNU9iZFJqu8",
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+        };
+				private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> SNGCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        {
+            {
+                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 5,
+                    FoundersRewardSubsidyHalvingInterval = 840000,
+                    FoundersRewardSubsidySlowStartInterval = 2,
+
+                    FoundersRewardAddresses = new[]
+                    {
+						"s3d27MhkBRt3ha2UuxhjXaYF4DCnttTMnL1", "s3Wws6Mx3GHJkAe8QkNr4jhW28WU21Fp9gL", "s3QD18CKEA9Cw4kgnssnmk4rbf9Y3rU1uWG", "s3esoTmHdcXdDwCkoGSxC4YkfzBo1ySuher",
+						"s3Q8NwoBv4aq9RRvqjT3LqN9TQnZrS2RdcV", "s3ix12RLstrzFEJKVsbLxCsPuUSjAqs3Bqp", "s3bCvm5zDv9KYFwHxaZjz2eKecEnbdFz98f", "s3UfvUuHahzTmYViL3KrGZeUPug69denBm3",
+						"s3gmzNUmttwDJbUcpmW4gxVqHf3J58fDKpp", "s3YuWMW4Kpij7gW91WHLhjfi5Dwc7dKyPNn", "s3k2MaTdZyFBqyndrHdCDFnET5atCdC4iod", "s3YFHxL9euG89LMgPT5wGka4Ek8XVyw4FWG",
+						"s3TKKkNnvBXphdv4ce84UKePdssWLHGBe1A", "s3PLrY7e7jzzAxnMY7A6GkjhkGc1CVkuEoi", "s3Ug8VAGcUijwD6QMhyFcCYXQEFABaA9VFy", "s3b4DAbbrTb4FPz3mHeyE89fUq6Liqg5vxX",
+						"s3cM379BTJyCe5yJC4jkPn6qJwpZaHK2kXb", "s3TKWLar6bZEHppF4ZR1MbPuBfe33a1bHX9", "s3UpY6Q3T3v3F7MEpNDnV3rTucLEJkkHR4q", "s3eWx3DcwLiusTBfhWu6z7zM4TffaV1Ng9r"						 
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 10,
+                    FoundersRewardSubsidyHalvingInterval = 2106399,
+                    FoundersRewardSubsidySlowStartInterval = 105320.95,
+
+                    FoundersRewardAddresses = new[]
+                    {
+						"s3d27MhkBRt3ha2UuxhjXaYF4DCnttTMnL1", "s3Wws6Mx3GHJkAe8QkNr4jhW28WU21Fp9gL", "s3QD18CKEA9Cw4kgnssnmk4rbf9Y3rU1uWG", "s3esoTmHdcXdDwCkoGSxC4YkfzBo1ySuher",
+						"s3Q8NwoBv4aq9RRvqjT3LqN9TQnZrS2RdcV", "s3ix12RLstrzFEJKVsbLxCsPuUSjAqs3Bqp", "s3bCvm5zDv9KYFwHxaZjz2eKecEnbdFz98f", "s3UfvUuHahzTmYViL3KrGZeUPug69denBm3",
+						"s3gmzNUmttwDJbUcpmW4gxVqHf3J58fDKpp", "s3YuWMW4Kpij7gW91WHLhjfi5Dwc7dKyPNn", "s3k2MaTdZyFBqyndrHdCDFnET5atCdC4iod", "s3YFHxL9euG89LMgPT5wGka4Ek8XVyw4FWG",
+						"s3TKKkNnvBXphdv4ce84UKePdssWLHGBe1A", "s3PLrY7e7jzzAxnMY7A6GkjhkGc1CVkuEoi", "s3Ug8VAGcUijwD6QMhyFcCYXQEFABaA9VFy", "s3b4DAbbrTb4FPz3mHeyE89fUq6Liqg5vxX",
+						"s3cM379BTJyCe5yJC4jkPn6qJwpZaHK2kXb", "s3TKWLar6bZEHppF4ZR1MbPuBfe33a1bHX9", "s3UpY6Q3T3v3F7MEpNDnV3rTucLEJkkHR4q", "s3eWx3DcwLiusTBfhWu6z7zM4TffaV1Ng9r"	
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                {
+                    PayFoundersReward = true,
+                    PercentFoundersReward = 10,
+                    FoundersRewardSubsidyHalvingInterval = 2000,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        "s3d27MhkBRt3ha2UuxhjXaYF4DCnttTMnL1",
+                    },
+
+                    PercentTreasuryReward = 0,
+                    TreasuryRewardAddressChangeInterval = 0,
+                    TreasuryRewardStartBlockHeight = 0,
+
+                    TreasuryRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+        };
 
         public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
             new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
@@ -277,7 +459,29 @@ namespace MiningCore.Blockchain.ZCash
                 { CoinType.ZCL, ZCLCoinbaseTxConfig },
                 { CoinType.ZEN, ZencashCoinbaseTxConfig },
                 { CoinType.BTCP, ZCLCoinbaseTxConfig },
+				{ CoinType.ZEL, ZCLCoinbaseTxConfig },
+				{ CoinType.VIS, VisionCoinbaseTxConfig },
+				{ CoinType.HUSH, ZCLCoinbaseTxConfig },
+				{ CoinType.KMD, ZCLCoinbaseTxConfig },
+				{ CoinType.SNG, SNGCoinbaseTxConfig },
+				
             };
+		
+        public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
+            new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
+            {
+                { CoinType.ZEC, ZCashCoinbaseTxConfig },
+                { CoinType.ZCL, ZCLCoinbaseTxConfig },
+                { CoinType.ZEN, ZencashCoinbaseTxConfig },
+                { CoinType.BTCP, ZCLCoinbaseTxConfig },
+				{ CoinType.ZEL, ZCLCoinbaseTxConfig },
+				{ CoinType.VIS, VisionCoinbaseTxConfig },
+				{ CoinType.HUSH, ZCLCoinbaseTxConfig },
+				{ CoinType.KMD, ZCLCoinbaseTxConfig },
+				{ CoinType.SNG, SNGCoinbaseTxConfig },
+				
+            };
+			
     }
 
     public enum ZOperationStatus
