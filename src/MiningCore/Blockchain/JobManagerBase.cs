@@ -77,16 +77,22 @@ namespace MiningCore.Blockchain
             if (poolConfig.UpdateInterval > 0)
             {
                 ScheduledUpdateJob = Observable.Interval(TimeSpan.FromSeconds(poolConfig.UpdateInterval))
+                    .DistinctUntilChanged()
                     .Select(_ => { return poolConfig; })
                     .Repeat();
-
                 disposables.Add(ScheduledUpdateJob.Subscribe(RunUpdateJob));
             }
         }
 
-        private async void RunUpdateJob(PoolConfig pool)
+        private void RunUpdateJob(PoolConfig pool)
         {
-            await RunUpdates(pool);
+            try
+            {
+                RunUpdates(pool);
+            } catch (Exception x)
+            {
+                logger.Error(x, $"[{pool.PoolName}] Exception Running UpdateJob - {x.Message} \n {x.InnerException}");
+            }
         }
 
         protected string NextJobId(string format = null)
@@ -105,10 +111,9 @@ namespace MiningCore.Blockchain
         protected abstract Task EnsureDaemonsSynchedAsync();
         protected abstract Task PostStartInitAsync();
 
-        protected virtual async Task RunUpdates(PoolConfig config)
+        protected virtual void RunUpdates(PoolConfig config)
         {
             // Override this son of a bitch to periodically do stuff.
-            await Task.CompletedTask;
         }
 
         #region API-Surface
