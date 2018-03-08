@@ -323,7 +323,7 @@ namespace MiningCore.Payments
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)
                 .Do(_ => CheckQueueBacklog())
-                .Buffer(TimeSpan.FromSeconds(1), 20)
+                .Buffer(TimeSpan.FromSeconds(1), 100)
                 .Where(shares => shares.Any())
                 .Subscribe(shares =>
                 {
