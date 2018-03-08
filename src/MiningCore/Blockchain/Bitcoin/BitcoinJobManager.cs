@@ -251,14 +251,16 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (errors.Any())
                     logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
             }
+            else
+            {
+                var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
+                var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
+                var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
 
-            var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
-            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
-            var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
-
-            BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+                BlockchainStats.BlockHeight = infoResponse.Blocks;
+                BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
+                BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+            }
         }
 
         protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
