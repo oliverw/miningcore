@@ -106,7 +106,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var query = "SELECT date_trunc('hour', created) AS created, " +
                         "AVG(poolhashrate) AS poolhashrate, " +
-                        "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
+                        "AVG(networkhashrate) AS networkhashrate," +                        "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
                         "FROM poolstats " +
                         "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                         "GROUP BY date_trunc('hour', created) " +

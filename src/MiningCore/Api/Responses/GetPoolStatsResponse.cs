@@ -25,6 +25,7 @@ namespace MiningCore.Api.Responses
     public partial class AggregatedPoolStats
     {
         public float PoolHashrate { get; set; }
+        public float NetworkHashrate { get; set; }
         public int ConnectedMiners { get; set; }
         public int ValidSharesPerSecond { get; set; }
 

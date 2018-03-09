@@ -57,6 +57,11 @@ namespace MiningCore.Configuration
         GBX,  // GoByte
         CRC,  // CrowdCoin
         BTCP, // Bitcoin Private
+		ZEL, // Zelcash
+        HUSH, // Hush
+        VIS, // Vision
+		KMD, // Komodo
+		SNG, // SnowGem
     }
 
     public class CoinConfig
@@ -295,7 +300,7 @@ namespace MiningCore.Configuration
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
-
+        public int UpdateInterval { get; set; }
         /// <summary>
         /// If true, internal stratum ports are not initialized
         /// </summary>
