@@ -16,13 +16,13 @@ namespace MiningCore.Blockchain
             { CoinType.ETH, new Dictionary<string, string>
             {
                 { string.Empty, "https://etherscan.io/block/{0}" },
-                { EthereumConstants.BlockTypeUncle, "https://etherscan.io/uncle/{0}" },
+                { EthereumConstants.BlockTypeUncle, "https://etherscan.io/uncle/{BlockHeightPH}" },
             }},
 
             { CoinType.ETC, new Dictionary<string, string>
             {
                 { string.Empty, "https://gastracker.io/block/{0}" },
-                { EthereumConstants.BlockTypeUncle, "https://gastracker.io/uncle/{0}" }
+                { EthereumConstants.BlockTypeUncle, "https://gastracker.io/uncle/{BlockHeightPH}" }
             }},
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" }}},
