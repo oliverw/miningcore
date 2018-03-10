@@ -35,6 +35,8 @@ namespace MiningCore.Persistence.Postgres.Entities
         public string TransactionConfirmationData { get; set; }
         public string Miner { get; set; }
         public decimal Reward { get; set; }
+        public string Source { get; set; }
+        public string Hash { get; set; }
         public DateTime Created { get; set; }
     }
 }

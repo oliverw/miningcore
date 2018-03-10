@@ -189,7 +189,7 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
         {
             // only parity returns the 4th element (block height)
-            if (work.Length < 3)
+            if (work.Length < 4)
             {
                 logger.Error(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
                 return null;
@@ -433,6 +433,7 @@ namespace MiningCore.Blockchain.Ethereum
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
+            share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
 
             return share;
@@ -536,7 +537,7 @@ namespace MiningCore.Blockchain.Ethereum
             var parityChain = results[4].Response.ToObject<string>();
 
             // ensure pool owns wallet
-            if (!accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
+            if (clusterConfig.PaymentProcessing?.Enabled == true && !accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
                 logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
@@ -599,7 +600,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-	        if (!poolConfig.EnableInternalStratum)
+	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
 			var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;

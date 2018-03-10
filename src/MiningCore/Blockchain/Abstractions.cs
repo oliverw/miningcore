@@ -71,6 +71,11 @@ namespace MiningCore.Blockchain
         string IpAddress { get; }
 
         /// <summary>
+        /// Submission source (pool, external stratum etc)
+        /// </summary>
+        string Source { get; set; }
+
+        /// <summary>
         /// Stratum difficulty assigned to the miner at the time the share was submitted/accepted (used for payout
         /// calculations)
         /// </summary>
@@ -85,6 +90,11 @@ namespace MiningCore.Blockchain
         /// Block reward after deducting pool fee and donations
         /// </summary>
         decimal BlockReward { get; set; }
+
+        /// <summary>
+        /// Block hash
+        /// </summary>
+        string BlockHash { get; set; }
 
         /// <summary>
         /// If this share presumably resulted in a block

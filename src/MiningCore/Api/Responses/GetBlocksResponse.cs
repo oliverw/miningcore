@@ -33,6 +33,7 @@ namespace MiningCore.Api.Responses
         public string TransactionConfirmationData { get; set; }
         public decimal Reward { get; set; }
         public string InfoLink { get; set; }
+        public string Hash { get; set; }
         public DateTime Created { get; set; }
     }
 }

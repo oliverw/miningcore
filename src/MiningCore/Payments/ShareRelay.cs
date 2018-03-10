@@ -44,7 +44,18 @@ namespace MiningCore.Payments
             this.clusterConfig = clusterConfig;
 
             pubSocket = new PublisherSocket();
-            pubSocket.Bind(clusterConfig.ShareRelayPublisherUrl);
+
+            if (!clusterConfig.ShareRelay.Connect)
+            {
+                pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
+                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
+            }
+
+            else
+            {
+                pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
+                logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
+            }
 
             InitializeQueue();
 
@@ -72,6 +83,8 @@ namespace MiningCore.Payments
                 .Do(_ => CheckQueueBacklog())
                 .Subscribe(share =>
                 {
+                    share.Source = clusterConfig.ClusterName;
+
                     try
                     {
                         var json = JsonConvert.SerializeObject(share, serializerSettings);

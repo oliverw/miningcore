@@ -97,9 +97,12 @@ namespace MiningCore.Blockchain.BitcoinGold
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
 
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
+            Difficulty = (double)new BigRational(coinbaseTxConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;

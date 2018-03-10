@@ -160,12 +160,13 @@ namespace MiningCore.Configuration
             RuleFor(j => j.Ports)
                 .NotNull()
                 .NotEmpty()
+                .When(j=> j.EnableInternalStratum == true)
                 .WithMessage("Pool: Stratum port config missing or empty");
 
             RuleFor(j => j.Ports)
                 .Must((pc, ports, ctx) =>
                 {
-                    if (ports.Keys.Any(port => port < 0))
+                    if (ports?.Keys.Any(port => port < 0) == true)
                     {
                         ctx.MessageFormatter.AppendArgument("port", ports.Keys.First(port => port < 0));
                         return false;
@@ -188,12 +189,6 @@ namespace MiningCore.Configuration
                 .NotNull()
                 .NotEmpty()
                 .WithMessage("Pool: Daemons missing or empty");
-
-            RuleFor(j => j.ExternalStratums)
-                .NotNull()
-                .NotEmpty()
-                .When(j=> !j.EnableInternalStratum)
-                .WithMessage("Pool: You must configure external stratum endpoints when enabling disabling internal stratum");
 
             RuleFor(j => j.Daemons)
                 .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
@@ -236,7 +231,7 @@ namespace MiningCore.Configuration
             RuleFor(j => j.Pools)
                 .Must((pc, pools, ctx) =>
                 {
-                    var ports = pools.SelectMany(x => x.Ports.Select(y => y.Key))
+                    var ports = pools.Where(x=> x.Ports?.Any() == true).SelectMany(x => x.Ports.Select(y => y.Key))
                         .GroupBy(x => x)
                         .ToArray();
 

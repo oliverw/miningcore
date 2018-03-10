@@ -110,6 +110,7 @@ namespace MiningCore.Blockchain.Ethereum
                 MixHash = mixDigest.ToHexString(true),
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
+                BlockHash = mixDigest.ToHexString(true)     // OW: is this correct?
             };
 
             if (share.IsBlockCandidate)

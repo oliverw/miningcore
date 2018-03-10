@@ -30,10 +30,12 @@ namespace MiningCore.Blockchain
         public string PayoutInfo { get; set; }
         public string UserAgent { get; set; }
         public string IpAddress { get; set; }
+        public string Source { get; set; }
         public double Difficulty { get; set; }
         public double NetworkDifficulty { get; set; }
         public long BlockHeight { get; set; }
         public decimal BlockReward { get; set; }
+        public string BlockHash { get; set; }
         public bool IsBlockCandidate { get; set; }
         public string TransactionConfirmationData { get; set; }
         public DateTime Created { get; set; }

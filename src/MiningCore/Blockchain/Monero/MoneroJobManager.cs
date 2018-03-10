@@ -302,6 +302,7 @@ namespace MiningCore.Blockchain.Monero
             share.Worker = context.WorkerName;
             share.PayoutInfo = context.PaymentId;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
 
@@ -403,7 +404,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
             // ensure pool owns wallet
-            if (addressResponse.Response?.Address != poolConfig.Address)
+            if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
                 logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -468,7 +469,7 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-	        if (!poolConfig.EnableInternalStratum)
+	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
 			// periodically update block-template from daemon

@@ -11,6 +11,7 @@ CREATE TABLE shares
 	worker TEXT NULL,
 	useragent TEXT NULL,
 	ipaddress TEXT NOT NULL,
+    source TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
 
@@ -31,6 +32,8 @@ CREATE TABLE blocks
 	transactionconfirmationdata TEXT NOT NULL,
 	miner TEXT NULL,
 	reward decimal(28,12) NULL,
+    source TEXT NULL,
+    hash TEXT NULL,
 	created TIMESTAMP NOT NULL
 );
 
@@ -80,6 +83,7 @@ CREATE TABLE poolstats
 	poolid TEXT NOT NULL,
 	connectedminers INT NOT NULL DEFAULT 0,
 	poolhashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
+	sharespersecond DOUBLE PRECISION NOT NULL DEFAULT 0,
 	networkhashrate DOUBLE PRECISION NOT NULL DEFAULT 0,
 	networkdifficulty DOUBLE PRECISION NOT NULL DEFAULT 0,
 	lastnetworkblocktime TIMESTAMP NULL,
