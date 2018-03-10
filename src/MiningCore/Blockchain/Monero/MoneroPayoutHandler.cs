@@ -167,7 +167,7 @@ namespace MiningCore.Blockchain.Monero
             {
                 if (walletSupportsTransferSplit)
                 {
-                    logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
+                    logger.Info(() => $"[{LogCategory}] {MWC.Transfer} failed with {transferResponse.Error?.Code} [{transferResponse.Error?.Message}] - retrying transfer using {MWC.TransferSplit}");
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
 

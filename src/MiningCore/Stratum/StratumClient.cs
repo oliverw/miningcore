@@ -235,7 +235,7 @@ namespace MiningCore.Stratum
 
         #endregion // API-Surface
 
-        private void Receive(Tcp tcp, IMasterClock clock, 
+        private void Receive(Tcp tcp, IMasterClock clock,
             Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
             tcp.OnRead((handle, buffer) =>
