@@ -177,6 +177,8 @@ namespace MiningCore.Blockchain.Monero
                         HandleTransferResponse(transferSplitResponse, balances);
                         return;
                     }
+
+                    logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.TransferSplit}' returned error: {transferSplitResponse.Error.Message} code {transferSplitResponse.Error.Code}");
                 }
 
                 // retry paged - unfortunately this is necessary for cases like this: https://github.com/monero-project/monero/issues/3379
