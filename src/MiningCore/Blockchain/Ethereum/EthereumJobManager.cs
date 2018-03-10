@@ -189,7 +189,7 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
         {
             // only parity returns the 4th element (block height)
-            if (work.Length < 3)
+            if (work.Length < 4)
             {
                 logger.Error(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
                 return null;
