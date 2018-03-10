@@ -172,50 +172,8 @@ namespace MiningCore.Blockchain.Monero
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
 
-                    if (transferResponse.Error == null)
-                    {
-                        HandleTransferResponse(transferSplitResponse, balances);
-                        return;
-                    }
-
-                    logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.TransferSplit}' returned error: {transferSplitResponse.Error.Message} code {transferSplitResponse.Error.Code}");
-                }
-
-                // retry paged - unfortunately this is necessary for cases like this: https://github.com/monero-project/monero/issues/3379
-                logger.Info(() => $"[{LogCategory}] Retrying paged");
-
-                var validBalances = balances.Where(x => x.Amount > 0).ToArray();
-                var pageSize = 10;
-                var pageCount = (int)Math.Ceiling((double)validBalances.Length / pageSize);
-
-                for (var i = 0; i < pageCount; i++)
-                {
-                    var page = validBalances
-                        .Skip(i * pageSize)
-                        .Take(pageSize)
-                        .ToArray();
-
-                    // update request
-                    request.Destinations = page
-                        .Where(x => x.Amount > 0)
-                        .Select(x =>
-                        {
-                            ExtractAddressAndPaymentId(x.Address, out var address, out var paymentId);
-
-                            return new TransferDestination
-                            {
-                                Address = address,
-                                Amount = (ulong)Math.Floor(x.Amount * MoneroConstants.SmallestUnit[poolConfig.Coin.Type])
-                            };
-                        }).ToArray();
-
-                    logger.Info(() => $"[{LogCategory}] Page {i + 1}: Paying out {FormatAmount(page.Sum(x => x.Amount))} to {page.Length} addresses");
-
-                    transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
-                    HandleTransferResponse(transferResponse, balances);
-
-                    if (transferResponse.Error != null)
-                        return;
+                    HandleTransferResponse(transferSplitResponse, balances);
+                    return;
                 }
             }
 
