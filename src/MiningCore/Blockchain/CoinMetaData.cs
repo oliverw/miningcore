@@ -49,6 +49,7 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, $"https://straks.info/block/{BlockHeightPH}" }}},
             { CoinType.MOON, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/moon/block.dws?{BlockHeightPH}.htm" }}},
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, $"https://verge-blockchain.info/block/{BlockHashPH}" } }},
+            { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{0}.htm" } }},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -81,6 +82,7 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/tx/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/tx/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/tx/{0}" },
+            { CoinType.PAK, "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -109,6 +111,7 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, "https://verge-blockchain.info/address/{0}" },
             { CoinType.GBX, "http://gobyte.ezmine.io/address/{0}" },
             { CoinType.CRC, "http://explorer.cryptopros.us/address/{0}" },
+            { CoinType.PAK, "https://chainz.cryptoid.info/pak/address.dws?{0}.htm" },
         };
 
         private const string Ethash = "Dagger-Hashimoto";
@@ -145,6 +148,7 @@ namespace MiningCore.Blockchain
             { CoinType.AEON, (coin, alg)=> CryptonightLight },
             { CoinType.GBX, BitcoinProperties.GetAlgorithm },
             { CoinType.CRC, BitcoinProperties.GetAlgorithm },
+            { CoinType.PAK, BitcoinProperties.GetAlgorithm },
         };
     }
 }
