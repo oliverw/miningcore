@@ -97,7 +97,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.BCH, sha256Coin },
             { CoinType.NMC, sha256Coin },
             { CoinType.PPC, sha256Coin },
-			{ CoinType.GLT, sha256Coin },
+            { CoinType.GLT, sha256Coin },
 
             // Scrypt
             { CoinType.LTC, scryptCoin },
@@ -145,9 +145,10 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch(algorithm.ToLower())
+            switch (algorithm.ToLower())
             {
                 case "sha256d":
+                case "sha256":
                     return sha256Coin;
 
                 case "skein":
