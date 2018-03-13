@@ -1,8 +1,8 @@
 {
-    "profiles": {
-        "MiningCore": {
-            "commandName": "Project",
-            "commandLineArgs": "-c config.json"
-        }
+  "profiles": {
+    "MiningCore": {
+      "commandName": "Project",
+      "commandLineArgs": "-c ..\\..\\..\\config.json"
     }
+  }
 }

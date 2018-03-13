@@ -99,15 +99,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void BuildCoinbase()
         {
-            var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
-
             // generate script parts
             var sigScriptInitial = GenerateScriptSigInitial();
             var sigScriptInitialBytes = sigScriptInitial.ToBytes();
 
             var sigScriptLength = (uint) (
                 sigScriptInitial.Length +
-                1 + // for extranonce-placeholder length after sigScriptInitial
                 extraNoncePlaceHolderLength +
                 scriptSigFinalBytes.Length);
 
@@ -137,9 +134,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 // signature script initial part
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
-
-                // emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
-                bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
 
                 // done
                 coinbaseInitial = stream.ToArray();
@@ -234,6 +228,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // push timestamp
             ops.Add(Op.GetPushOp(now));
+
+            // push placeholder
+            ops.Add(Op.GetPushOp((uint) 0));
 
             return new Script(ops);
         }
