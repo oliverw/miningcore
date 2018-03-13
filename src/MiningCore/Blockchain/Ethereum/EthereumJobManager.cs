@@ -542,7 +542,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
-            ConfigureRewards();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+                ConfigureRewards();
 
             // update stats
             BlockchainStats.RewardType = "POW";
