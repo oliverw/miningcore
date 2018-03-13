@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
@@ -280,12 +281,14 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // did submission succeed?
             var submitResult = results[0];
-            var submitError = submitResult.Error?.Message ?? submitResult.Response?.ToString();
+            var submitError = submitResult.Error?.Message ??
+                submitResult.Error?.Code.ToString(CultureInfo.InvariantCulture) ??
+                submitResult.Response?.ToString();
 
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {submitError}");
+                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed with: {submitError}");
 
                 return (false, null);
             }
@@ -298,7 +301,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!accepted)
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());
