@@ -4,13 +4,12 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
-using MiningCore.Mining;
 using NetMQ;
 using NetMQ.Sockets;
 using Newtonsoft.Json;
 using NLog;
 
-namespace MiningCore.Payments
+namespace MiningCore.Mining
 {
     public class ShareRelay
     {

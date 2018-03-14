@@ -31,7 +31,6 @@ using System.Text;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -43,7 +42,7 @@ using Polly.CircuitBreaker;
 using Contract = MiningCore.Contracts.Contract;
 using Share = MiningCore.Blockchain.Share;
 
-namespace MiningCore.Payments
+namespace MiningCore.Mining
 {
     /// <summary>
     /// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
