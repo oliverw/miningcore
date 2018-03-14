@@ -47,12 +47,12 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
             // set clock to submission time
             clock.CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869907).UtcDateTime;
 
-            var share = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
+            var (share, blockHex) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
 
             Assert.NotNull(share);
             Assert.True(share.IsBlockCandidate);
-            Assert.Equal(share.BlockHash, "000000000fccf11cd0b7d9057441e430c320384b95b034bd28092c4553594b4a");
-            Assert.Equal(share.BlockHex, "00000020bb76da6422b707a90831c421798123293bc5fd377bbeb51985570909000000008677145722cbe6f1ebec19fecc724cab5487f3292a69f6908bd512f645bb0635f286ef59ffff7f206aae848d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff295e0c0b2f454231362f414431322f04f286ef590801000058010000000c2f4d696e696e67436f72652f000000000100f2052a010000001976a9142ebb5cccf9a6bb927661d2953655c43c04accc3788ac00000000");
+            Assert.Equal(share.BlockHash, "601ed85039804bcecbbdb53e0ca358aeb8dabef2366fb64c216aac3aba02b716");
+            Assert.Equal(blockHex, "00000020bb76da6422b707a90831c421798123293bc5fd377bbeb5198557090900000000fd5418fe788ef961678e4bacdd1fe3903185b9ec63865bb3d2d279bb0eb48c0bf286ef59ffff7f206aae848d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff295e0c0b2f454231362f414431322f04f286ef590001000058010000000c2f4d696e696e67436f72652f000000000100f2052a010000001976a9142ebb5cccf9a6bb927661d2953655c43c04accc3788ac00000000");
             Assert.Equal(share.BlockHeight, 14);
             Assert.Equal(share.BlockReward, 50);
             Assert.Equal(share.Difficulty, 0.5);
@@ -87,14 +87,14 @@ namespace MiningCore.Tests.Blockchain.Bitcoin
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "02000000", "59ef86f2", "8d84ae6a"));
 
             // make sure we don't accept case-sensitive duplicate shares as basically 0xdeadbeaf = 0xDEADBEAF.
-            var share = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
+            var (share, blockHex) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "59ef86f2", "8D84AE6A"));
 
             // invalid time
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "69ef86f2", "8d84ae6a"));
 
             // invalid nonce
-            Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "59ef86f2", "ad84be6a"));
+            Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "59ef86f2", "4a84be6a"));
 
             // valid share data but invalid submission time
             clock.CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1408869907).UtcDateTime;

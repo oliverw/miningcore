@@ -52,9 +52,8 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Mining
 {
-    public abstract class PoolBase<TShare> : StratumServer,
+    public abstract class PoolBase : StratumServer,
         IMiningPool
-		where TShare: IShare
     {
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -186,13 +185,13 @@ namespace MiningCore.Mining
 	                                }
 
 	                                // deserialize
-	                                TShare share;
+	                                Blockchain.Share share;
 
 	                                using (var reader = new StringReader(data))
 	                                {
 	                                    using (var jreader = new JsonTextReader(reader))
 	                                    {
-	                                        share = serializer.Deserialize<TShare>(jreader);
+	                                        share = serializer.Deserialize<Blockchain.Share>(jreader);
 	                                    }
 	                                }
 
@@ -414,7 +413,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase<TShare>), poolConfig);
+            logger = LogUtil.GetPoolScopedLogger(typeof(PoolBase), poolConfig);
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
         }

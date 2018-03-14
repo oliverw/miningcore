@@ -40,7 +40,7 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase<BitcoinShare>
+    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase
         where TBlockTemplate : BlockTemplate
         where TJob : BitcoinJob<TBlockTemplate>, new()
     {

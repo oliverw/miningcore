@@ -270,13 +270,13 @@ namespace MiningCore.Blockchain.Bitcoin
             BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
 
-        protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
+        protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(Share share, string blockHex)
         {
             // execute command batch
             var results = await daemon.ExecuteBatchAnyAsync(
                 hasSubmitBlockMethod
-                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { share.BlockHex })
-                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
+                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { blockHex })
+                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
                 new DaemonCmd(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
 
             // did submission succeed?
@@ -448,7 +448,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
         }
 
-        public virtual async Task<BitcoinShare> SubmitShareAsync(StratumClient worker, object submission,
+        public virtual async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -487,14 +487,14 @@ namespace MiningCore.Blockchain.Bitcoin
             var workerName = split.Length > 1 ? split[1] : null;
 
             // validate & process
-            var share = job.ProcessShare(worker, extraNonce2, nTime, nonce);
+            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
                 logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-                var acceptResponse = await SubmitBlockAsync(share);
+                var acceptResponse = await SubmitBlockAsync(share, blockHex);
 
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;

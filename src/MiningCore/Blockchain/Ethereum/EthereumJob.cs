@@ -49,7 +49,7 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        public async Task<EthereumShare> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
+        public async Task<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
             lock(workerNonces)
@@ -98,25 +98,30 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // create share
-            var share = new EthereumShare
+            var share = new Share
             {
                 BlockHeight = (long) BlockTemplate.Height,
                 IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
                 Miner = context.MinerName,
                 Worker = context.WorkerName,
                 UserAgent = context.UserAgent,
-                FullNonceHex = "0x" + fullNonceHex,
-                HeaderHash = BlockTemplate.Header,
-                MixHash = mixDigest.ToHexString(true),
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
                 BlockHash = mixDigest.ToHexString(true)     // OW: is this correct?
             };
 
             if (share.IsBlockCandidate)
-                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{share.FullNonceHex}";
+            {
+                fullNonceHex = "0x" + fullNonceHex;
+                var headerHash = BlockTemplate.Header;
+                var mixHash = mixDigest.ToHexString(true);
 
-            return share;
+                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{fullNonceHex}";
+
+                return (share, fullNonceHex, headerHash, mixHash);
+            }
+
+            return (share, null, null, null);
         }
     }
 }

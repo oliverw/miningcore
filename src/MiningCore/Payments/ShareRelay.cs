@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Mining;
@@ -23,7 +20,7 @@ namespace MiningCore.Payments
         }
 
         private ClusterConfig clusterConfig;
-        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
         private IDisposable queueSub;
         private readonly int QueueSizeWarningThreshold = 1024;
         private bool hasWarnedAboutBacklogSize;

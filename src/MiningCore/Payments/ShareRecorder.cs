@@ -28,9 +28,7 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
-using Autofac.Features.Metadata;
 using AutoMapper;
-using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Mining;
@@ -43,6 +41,7 @@ using NLog;
 using Polly;
 using Polly.CircuitBreaker;
 using Contract = MiningCore.Contracts.Contract;
+using Share = MiningCore.Blockchain.Share;
 
 namespace MiningCore.Payments
 {
@@ -81,7 +80,7 @@ namespace MiningCore.Payments
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
-        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
         private readonly IShareRepository shareRepo;
@@ -96,20 +95,20 @@ namespace MiningCore.Payments
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private void PersistSharesFaulTolerant(IList<IShare> shares)
+        private void PersistSharesFaulTolerant(IList<Share> shares)
         {
             var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
             faultPolicy.Execute(() => { PersistShares(shares); }, context);
         }
 
-        private void PersistShares(IList<IShare> shares)
+        private void PersistShares(IList<Share> shares)
         {
             cf.RunTx((con, tx) =>
             {
                 foreach(var share in shares)
                 {
-                    var shareEntity = mapper.Map<Share>(share);
+                    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
                     shareRepo.Insert(con, tx, shareEntity);
 
                     if (share.IsBlockCandidate)
@@ -136,7 +135,7 @@ namespace MiningCore.Payments
 
         private void OnExecutePolicyFallback(Context context)
         {
-            var shares = (IList<IShare>) context[PolicyContextKeyShares];
+            var shares = (IList<Share>) context[PolicyContextKeyShares];
 
             try
             {
@@ -189,7 +188,7 @@ namespace MiningCore.Payments
                 {
                     using(var reader = new StreamReader(stream, new UTF8Encoding(false)))
                     {
-                        var shares = new List<IShare>();
+                        var shares = new List<Share>();
                         var lastProgressUpdate = DateTime.UtcNow;
 
                         while(!reader.EndOfStream)
@@ -207,7 +206,7 @@ namespace MiningCore.Payments
                             // parse
                             try
                             {
-                                var share = JsonConvert.DeserializeObject<ShareBase>(line, jsonSerializerSettings);
+                                var share = JsonConvert.DeserializeObject<Share>(line, jsonSerializerSettings);
                                 shares.Add(share);
                             }
 

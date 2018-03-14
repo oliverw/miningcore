@@ -22,22 +22,83 @@ using System;
 
 namespace MiningCore.Blockchain
 {
-    public class ShareBase : IShare
+    public class Share
     {
+        /// <summary>
+        /// The pool originating this share from
+        /// </summary>
         public string PoolId { get; set; }
+
+        /// <summary>
+        /// Who mined it (wallet address)
+        /// </summary>
         public string Miner { get; set; }
+
+        /// <summary>
+        /// Who mined it
+        /// </summary>
         public string Worker { get; set; }
+
+        /// <summary>
+        /// Extra information for payout processing
+        /// </summary>
         public string PayoutInfo { get; set; }
+
+        /// <summary>
+        /// Mining Software
+        /// </summary>
         public string UserAgent { get; set; }
+
+        /// <summary>
+        /// From where was it submitted
+        /// </summary>
         public string IpAddress { get; set; }
+
+        /// <summary>
+        /// Submission source (pool, external stratum etc)
+        /// </summary>
         public string Source { get; set; }
+
+        /// <summary>
+        /// Stratum difficulty assigned to the miner at the time the share was submitted/accepted (used for payout
+        /// calculations)
+        /// </summary>
         public double Difficulty { get; set; }
-        public double NetworkDifficulty { get; set; }
+
+        /// <summary>
+        /// Block this share refers to
+        /// </summary>
         public long BlockHeight { get; set; }
+
+        /// <summary>
+        /// Block reward after deducting pool fee and donations
+        /// </summary>
         public decimal BlockReward { get; set; }
+
+        /// <summary>
+        /// Block hash
+        /// </summary>
         public string BlockHash { get; set; }
+
+        /// <summary>
+        /// If this share presumably resulted in a block
+        /// </summary>
         public bool IsBlockCandidate { get; set; }
+
+        /// <summary>
+        /// Arbitrary data to be interpreted by the payment processor specialized
+        /// in this coin to verify this block candidate was accepted by the network
+        /// </summary>
         public string TransactionConfirmationData { get; set; }
+
+        /// <summary>
+        /// Network difficulty at the time the share was submitted (used for some payout schemes like PPLNS)
+        /// </summary>
+        public double NetworkDifficulty { get; set; }
+
+        /// <summary>
+        /// When the share was found
+        /// </summary>
         public DateTime Created { get; set; }
     }
 }

@@ -169,15 +169,15 @@ namespace MiningCore.Blockchain.Monero
             BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
-        private async Task<bool> SubmitBlockAsync(MoneroShare share)
+        private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { share.BlobHex });
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { blobHex });
 
             if (response.Error != null || response?.Response?.Status != "OK")
             {
                 var error = response.Error?.Message ?? response.Response?.Status;
 
-                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
                 notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {error}");
 
                 return false;
@@ -258,7 +258,7 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public async Task<MoneroShare> SubmitShareAsync(StratumClient worker,
+        public async Task<Share> SubmitShareAsync(StratumClient worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -272,20 +272,20 @@ namespace MiningCore.Blockchain.Monero
                 throw new StratumException(StratumError.MinusOne, "block expired");
 
             // validate & process
-            var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
+            var (share, blobHex, blobHash) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
-                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
+                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{blobHash.Substring(0, 6)}]");
 
-                share.IsBlockCandidate = await SubmitBlockAsync(share);
+                share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, blobHash);
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submitted by {context.MinerName}");
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submitted by {context.MinerName}");
 
-                    share.TransactionConfirmationData = share.BlobHash;
+                    share.TransactionConfirmationData = blobHash;
                 }
 
                 else

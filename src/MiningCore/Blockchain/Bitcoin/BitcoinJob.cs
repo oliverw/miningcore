@@ -286,7 +286,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
             var context = worker.GetContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
@@ -327,7 +327,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            var result = new BitcoinShare
+            var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
                 BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC),
@@ -335,16 +335,18 @@ namespace MiningCore.Blockchain.Bitcoin
                 Difficulty = stratumDifficulty,
             };
 
-            var blockBytes = SerializeBlock(headerBytes, coinbase);
-
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-                result.BlockHex = blockBytes.ToHexString();
                 result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+
+                var blockBytes = SerializeBlock(headerBytes, coinbase);
+                var blockHex = blockBytes.ToHexString();
+
+                return (result, blockHex);
             }
 
-            return result;
+            return (result, null);
         }
 
         protected virtual byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
@@ -476,7 +478,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient worker,
+        public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

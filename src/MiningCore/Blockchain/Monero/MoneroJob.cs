@@ -19,10 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
-using System.Globalization;
 using System.Linq;
-using Microsoft.AspNetCore.Server.Kestrel.Internal.System;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
@@ -135,7 +132,7 @@ namespace MiningCore.Blockchain.Monero
 			target = EncodeTarget(workerJob.Difficulty);
 		}
 
-		public MoneroShare ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
+		public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
 		{
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -200,17 +197,18 @@ namespace MiningCore.Blockchain.Monero
 
 					using (var blockHash = ComputeBlockHash(blobConverted))
 					{
-						var result = new MoneroShare
+						var result = new Share
 						{
 							BlockHeight = BlockTemplate.Height,
 							IsBlockCandidate = isBlockCandidate,
-							BlobHex = blob.ToHexString(),
-							BlobHash = blockHash.ToHexString(),
                             BlockHash = blockHash.ToHexString(),
                             Difficulty = stratumDifficulty,
 						};
 
-						return result;
+					    var blobHex = blob.ToHexString();
+					    var blobHash = blockHash.ToHexString();
+
+                        return (result, blobHex, blobHash);
 					}
 				}
 			}

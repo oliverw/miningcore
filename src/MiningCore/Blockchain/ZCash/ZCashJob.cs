@@ -20,11 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -227,7 +225,7 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        public override BitcoinShare ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
+        public override (Share Share, string BlockHex) ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
@@ -295,7 +293,7 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string nonce,
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.GetContextAs<BitcoinWorkerContext>();
@@ -341,22 +339,22 @@ namespace MiningCore.Blockchain.ZCash
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            var result = new BitcoinShare
+            var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
                 IsBlockCandidate = isBlockCandidate,
-                Difficulty = stratumDifficulty
+                Difficulty = stratumDifficulty,
+                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC)
             };
 
             if (isBlockCandidate)
             {
                 var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
-                result.BlockHex = blockBytes.ToHexString();
-                result.BlockHash = headerHashReversed.ToHexString();
-                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+                var blockHex = blockBytes.ToHexString();
+                return (result, blockHex);
             }
 
-            return result;
+            return (result, null);
         }
 
         protected bool RegisterSubmit(string nonce, string solution)
