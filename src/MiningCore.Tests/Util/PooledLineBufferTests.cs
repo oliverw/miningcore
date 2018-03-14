@@ -10,7 +10,7 @@ using Xunit;
 
 namespace MiningCore.Tests.Util
 {
-    public class PooledArraySegmentLineBufferTests : TestBase
+    public class PooledLineBufferTests : TestBase
     {
         private byte[] GetBuffer(string str)
         {
@@ -25,7 +25,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Line()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
 
@@ -42,7 +42,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Line_Double()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
 
@@ -65,7 +65,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Line_Double_With_NewLine()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
             var result = string.Empty;
@@ -94,7 +94,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Line_Double_With_NewLine_With_Leading_NewLines()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
             var result = string.Empty;
@@ -123,7 +123,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Line_Double_With_NewLine_With_Trailing_NewLines()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
             var result = string.Empty;
@@ -152,7 +152,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Dont_Emit_Empty_Lines()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
 
@@ -172,7 +172,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Enforce_Limits()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger(), 3);
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger(), 3);
             var recvCount = 0;
             var errCount = 0;
 
@@ -192,7 +192,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Partial_Enforce_Limits_Queued()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger(), 5);
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger(), 5);
             var recvCount = 0;
             var errCount = 0;
 
@@ -224,7 +224,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Single_Line()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var recvCount = 0;
             var errCount = 0;
             var result = string.Empty;
@@ -247,7 +247,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Multi_Line_Batch()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 
@@ -270,7 +270,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Single_Characters()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 
@@ -309,7 +309,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Single_Character_Lines()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 
@@ -350,7 +350,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Combo1()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 
@@ -371,7 +371,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Combo2()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 
@@ -402,7 +402,7 @@ namespace MiningCore.Tests.Util
         [Fact]
         public void PooledLineBuffer_Combo3()
         {
-            var plb = new PooledArraySegmentLineBuffer(LogManager.CreateNullLogger());
+            var plb = new PooledLineBuffer(LogManager.CreateNullLogger());
             var errCount = 0;
             var results = new List<string>();
 

@@ -420,7 +420,7 @@ namespace MiningCore.DaemonInterface
                         {
                             try
                             {
-                                using (var plb = new PooledArraySegmentLineBuffer(logger))
+                                using (var plb = new PooledLineBuffer(logger))
                                 {
                                     using(var client = new ClientWebSocket())
                                     {

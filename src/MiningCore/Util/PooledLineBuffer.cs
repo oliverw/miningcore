@@ -10,9 +10,9 @@ using NLog;
 
 namespace MiningCore.Util
 {
-    public class PooledArraySegmentLineBuffer : IDisposable
+    public class PooledLineBuffer : IDisposable
     {
-        public PooledArraySegmentLineBuffer(ILogger logger, int? maxLength = null)
+        public PooledLineBuffer(ILogger logger, int? maxLength = null)
         {
             this.maxLength = maxLength;
             this.logger = logger ?? LogManager.GetCurrentClassLogger();
