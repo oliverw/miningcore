@@ -47,7 +47,7 @@ namespace MiningCore.Stratum
 
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;
-        private readonly PooledLineBuffer plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
+        private readonly PooledArraySegmentLineBuffer plb = new PooledArraySegmentLineBuffer(logger, MaxInboundRequestLength);
         private IDisposable subscription;
         private bool isAlive = true;
         private WorkerContextBase context;
