@@ -28,6 +28,7 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -35,8 +36,13 @@ using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
+using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using NLog;
+using Org.BouncyCastle.Utilities.Collections;
 using Polly;
 using Polly.CircuitBreaker;
 using Contract = MiningCore.Contracts.Contract;
@@ -52,6 +58,7 @@ namespace MiningCore.Mining
         public ShareRecorder(IConnectionFactory cf, IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
+            IMasterClock clock,
             NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -59,11 +66,13 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
+            Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
+            this.clock = clock;
             this.notificationService = notificationService;
 
             this.shareRepo = shareRepo;
@@ -76,9 +85,11 @@ namespace MiningCore.Mining
 
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly IMasterClock clock;
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
@@ -287,10 +298,127 @@ namespace MiningCore.Mining
             }
         }
 
+        private void StartExternalStratumPublisherListeners()
+        {
+            var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
+                .SelectMany(x => x.ExternalStratums)
+                .GroupBy(x => x.Url, x=> x.Topic);
+
+            var serializer = new JsonSerializer
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+
+            foreach (var item in stratumsByUrl)
+            {
+                var thread = new Thread(arg =>
+                {
+                    var urlAndTopic = (IGrouping<string, string>) arg;
+                    var url = urlAndTopic.Key;
+                    var topics = new HashSet<string>(urlAndTopic.Distinct());
+
+                    var currentHeight = 0L;
+                    var lastBlockTime = clock.Now;
+
+                    while (true)
+                    {
+                        try
+                        {
+                            using (var subSocket = new SubscriberSocket())
+                            {
+                                //subSocket.Options.ReceiveHighWatermark = 1000;
+                                subSocket.Connect(url);
+
+                                foreach(var topic in topics)
+                                {
+                                    subSocket.Subscribe(topic);
+                                    logger.Info($"Monitoring external stratum {url}/{topic}");
+                                }
+
+                                while (true)
+                                {
+                                    var msg = subSocket.ReceiveMultipartMessage(2);
+                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
+                                    var data = msg.Pop().ConvertToString(Encoding.UTF8);
+
+                                    // validate
+                                    if (topics.Contains(topic))
+                                    {
+                                        logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
+                                        continue;
+                                    }
+
+                                    if (string.IsNullOrEmpty(data))
+                                    {
+                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
+                                        continue;
+                                    }
+
+                                    // deserialize
+                                    Share share;
+
+                                    using (var reader = new StringReader(data))
+                                    {
+                                        using (var jreader = new JsonTextReader(reader))
+                                        {
+                                            share = serializer.Deserialize<Share>(jreader);
+                                        }
+                                    }
+
+                                    if (share == null)
+                                    {
+                                        logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
+                                        continue;
+                                    }
+
+                                    // fill in blanks
+                                    share.PoolId = topic;
+                                    share.Created = clock.Now;
+
+                                    // persist
+                                    queue.Add(share);
+
+                                    // log it
+                                    var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty;
+                                    logger.Info(() => $"[{share.PoolId}] External {source} share accepted: D={Math.Round(share.Difficulty, 3)}");
+
+                                    // update pool stats
+                                    if (pools.TryGetValue(topic, out var pool) && pool.NetworkStats != null)
+                                    {
+                                        pool.NetworkStats.BlockHeight = share.BlockHeight;
+                                        pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
+
+                                        if (currentHeight != share.BlockHeight)
+                                        {
+                                            pool.NetworkStats.LastNetworkBlockTime = clock.Now;
+                                            currentHeight = share.BlockHeight;
+                                            lastBlockTime = clock.Now;
+                                        }
+
+                                        else
+                                            pool.NetworkStats.LastNetworkBlockTime = lastBlockTime;
+                                    }
+                                }
+                            }
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex);
+                        }
+                    }
+                });
+
+                thread.Start(item);
+            }
+        }
+
         #region API-Surface
 
         public void AttachPool(IMiningPool pool)
         {
+            pools[pool.Config.Id] = pool;
+
             pool.Shares.Subscribe(x => { queue.Add(x.Share); });
         }
 
@@ -300,6 +428,9 @@ namespace MiningCore.Mining
 
             ConfigureRecovery();
             InitializeQueue();
+
+            if (clusterConfig.Pools.Any(x=> x.ExternalStratums?.Length > 0))
+                StartExternalStratumPublisherListeners();
 
             logger.Info(() => "Online");
         }
