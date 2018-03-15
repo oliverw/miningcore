@@ -330,7 +330,6 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC),
                 NetworkDifficulty = Difficulty * shareMultiplier,
                 Difficulty = stratumDifficulty,
             };
@@ -338,6 +337,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
+                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
                 result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
 
                 var blockBytes = SerializeBlock(headerBytes, coinbase);

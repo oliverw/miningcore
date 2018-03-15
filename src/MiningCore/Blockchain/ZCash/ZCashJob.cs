@@ -342,15 +342,19 @@ namespace MiningCore.Blockchain.ZCash
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate,
+                NetworkDifficulty = Difficulty,
                 Difficulty = stratumDifficulty,
-                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC)
             };
 
             if (isBlockCandidate)
             {
+                result.IsBlockCandidate = true;
+                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+                result.BlockHash = headerHashReversed.ToHexString();
+
                 var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
                 var blockHex = blockBytes.ToHexString();
+
                 return (result, blockHex);
             }
 
