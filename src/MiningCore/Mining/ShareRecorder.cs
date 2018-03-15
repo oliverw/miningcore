@@ -45,6 +45,7 @@ using NLog;
 using Org.BouncyCastle.Utilities.Collections;
 using Polly;
 using Polly.CircuitBreaker;
+using ProtoBuf;
 using Contract = MiningCore.Contracts.Contract;
 using Share = MiningCore.Blockchain.Share;
 
@@ -344,7 +345,7 @@ namespace MiningCore.Mining
                                     var msg = subSocket.ReceiveMultipartMessage(3);
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                     var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ConvertToString(Encoding.UTF8);
+                                    var data = msg.Pop().ToByteArray();
 
                                     // validate
                                     if (!topics.Contains(topic))
@@ -353,7 +354,7 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
-                                    if (string.IsNullOrEmpty(data))
+                                    if (data?.Length == 0)
                                     {
                                         logger.Warn(() => $"Received empty data from {url}/{topic}");
                                         continue;
@@ -368,16 +369,23 @@ namespace MiningCore.Mining
                                     switch (wireFormat)
                                     {
                                         case ShareRelay.WireFormat.Json:
-                                            using (var reader = new StringReader(data))
+                                            using (var stream = new MemoryStream(data))
                                             {
-                                                using (var jreader = new JsonTextReader(reader))
+                                                using (var reader = new StreamReader(stream, Encoding.UTF8))
                                                 {
-                                                    share = serializer.Deserialize<Share>(jreader);
+                                                    using (var jreader = new JsonTextReader(reader))
+                                                    {
+                                                        share = serializer.Deserialize<Share>(jreader);
+                                                    }
                                                 }
                                             }
                                             break;
 
                                         case ShareRelay.WireFormat.ProtocolBuffers:
+                                            using (var stream = new MemoryStream(data))
+                                            {
+                                                share = Serializer.Deserialize<Share>(stream);
+                                            }
                                             break;
 
                                         default:

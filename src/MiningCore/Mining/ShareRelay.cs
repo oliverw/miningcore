@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using MiningCore.Blockchain;
@@ -8,6 +9,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using Newtonsoft.Json;
 using NLog;
+using ProtoBuf;
 
 namespace MiningCore.Mining
 {
@@ -92,11 +94,15 @@ namespace MiningCore.Mining
 
                     try
                     {
-                        var json = JsonConvert.SerializeObject(share, serializerSettings);
-                        var flags = (int) WireFormat.Json;
-
+                        var flags = (int) WireFormat.ProtocolBuffers;
                         var msg = new NetMQMessage(2);
-                        msg.Push(json);
+
+                        using (var stream = new MemoryStream())
+                        {
+                            Serializer.Serialize(stream, share);
+                            msg.Push(stream.ToArray());
+                        }
+
                         msg.Push(flags);
                         msg.Push(share.PoolId);
                         pubSocket.SendMultipartMessage(msg);
