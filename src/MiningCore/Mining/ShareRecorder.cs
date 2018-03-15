@@ -428,9 +428,7 @@ namespace MiningCore.Mining
 
             ConfigureRecovery();
             InitializeQueue();
-
-            if (clusterConfig.Pools.Any(x=> x.ExternalStratums?.Length > 0))
-                StartExternalStratumPublisherListeners();
+            StartExternalStratumPublisherListeners();
 
             logger.Info(() => "Online");
         }
