@@ -44,6 +44,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm qubit = new Qubit();
         private static readonly IHashAlgorithm groestlMyriad = new GroestlMyriad();
         private static readonly IHashAlgorithm neoScryptProfile1 = new NeoScrypt(0x80000620);
+        private static readonly IHashAlgorithm vergeBlockHasher = new DigestReverser(scrypt_1024_1);
 
         private static readonly BitcoinCoinProperties sha256Coin =
             new BitcoinCoinProperties(1, sha256D, sha256D, sha256DReverse, "Sha256");
@@ -79,25 +80,19 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
         private static readonly BitcoinCoinProperties vergeLyraCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(scrypt_1024_1), "Lyra2re2");
-
-        private static readonly BitcoinCoinProperties vergeScryptCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, scrypt_1024_1, sha256DReverse, "Scrypt");
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, vergeBlockHasher, "Lyra2re2");
 
         private static readonly BitcoinCoinProperties vergeBlake2sCoin =
-            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(scrypt_1024_1), "Blake2s");
+            new BitcoinCoinProperties(1, sha256D, blake2s, vergeBlockHasher, "Blake2s");
 
         private static readonly BitcoinCoinProperties vergeX17Coin =
-            new BitcoinCoinProperties(1, sha256D, x17, new DigestReverser(scrypt_1024_1), "X17");
+            new BitcoinCoinProperties(1, sha256D, x17, vergeBlockHasher, "X17");
 
-        private static readonly BitcoinCoinProperties vergeSkeinCoin =
-            new BitcoinCoinProperties(1, sha256D, skein, new DigestReverser(scrypt_1024_1), "Skein");
-
-        private static readonly BitcoinCoinProperties vergeQubitCoin =
-            new BitcoinCoinProperties(1, sha256D, qubit, new DigestReverser(scrypt_1024_1), "Qubit");
+        private static readonly BitcoinCoinProperties vergeScryptCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, scrypt_1024_1, vergeBlockHasher, "Scrypt");
 
         private static readonly BitcoinCoinProperties vergeGroestlCoin =
-            new BitcoinCoinProperties(1, sha256D, groestlMyriad, new DigestReverser(scrypt_1024_1), "Groestl-Myriad");
+            new BitcoinCoinProperties(1, sha256D, groestlMyriad, vergeBlockHasher, "Groestl-Myriad");
 
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
@@ -161,17 +156,17 @@ namespace MiningCore.Blockchain.Bitcoin
                     return sha256Coin;
 
                 case "skein":
-                    return vergeSkeinCoin;
+                    return skeinCoin;
 
                 case "qubit":
-                    return vergeQubitCoin;
+                    return qubitCoin;
 
                 case "groestl":
                 case "groestl-myriad":
                     return groestlMyriadCoin;
 
                 default: // scrypt
-                    return vergeScryptCoin;
+                    return scryptCoin;
             }
         }
 
@@ -194,7 +189,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     return vergeBlake2sCoin;
 
                 default: // scrypt
-                    return scryptCoin;
+                    return vergeScryptCoin;
             }
         }
 
