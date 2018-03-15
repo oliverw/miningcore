@@ -302,7 +302,12 @@ namespace MiningCore.Mining
         {
             var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
                 .SelectMany(x => x.ExternalStratums)
-                .GroupBy(x => x.Url, x=> x.Topic);
+                .Where(x => x.Url != null && x.Topic != null)
+                .GroupBy(x =>
+                {
+                    var tmp = x.Url.Trim();
+                    return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
+                }, x=> x.Topic.Trim());
 
             var serializer = new JsonSerializer
             {
