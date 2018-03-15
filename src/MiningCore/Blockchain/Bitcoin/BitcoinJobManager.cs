@@ -489,6 +489,15 @@ namespace MiningCore.Blockchain.Bitcoin
             // validate & process
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce);
 
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+            share.Miner = minerName;
+            share.Worker = workerName;
+            share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
+            share.Created = clock.Now;
+
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
@@ -514,15 +523,6 @@ namespace MiningCore.Blockchain.Bitcoin
                     share.TransactionConfirmationData = null;
                 }
             }
-
-            // enrich share with common data
-            share.PoolId = poolConfig.Id;
-            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
-            share.UserAgent = context.UserAgent;
-            share.Source = clusterConfig.ClusterName;
-            share.Created = clock.Now;
 
             return share;
         }

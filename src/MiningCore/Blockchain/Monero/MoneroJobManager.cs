@@ -277,6 +277,17 @@ namespace MiningCore.Blockchain.Monero
             // validate & process
             var (share, blobHex, blobHash) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+            share.Miner = context.MinerName;
+            share.Worker = context.WorkerName;
+            share.PayoutInfo = context.PaymentId;
+            share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
+            share.NetworkDifficulty = job.BlockTemplate.Difficulty;
+            share.Created = clock.Now;
+
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
@@ -297,17 +308,6 @@ namespace MiningCore.Blockchain.Monero
                     share.TransactionConfirmationData = null;
                 }
             }
-
-            // enrich share with common data
-            share.PoolId = poolConfig.Id;
-            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = context.MinerName;
-            share.Worker = context.WorkerName;
-            share.PayoutInfo = context.PaymentId;
-            share.UserAgent = context.UserAgent;
-            share.Source = clusterConfig.ClusterName;
-            share.NetworkDifficulty = job.BlockTemplate.Difficulty;
-            share.Created = clock.Now;
 
             return share;
         }

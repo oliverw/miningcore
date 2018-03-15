@@ -417,6 +417,12 @@ namespace MiningCore.Blockchain.Ethereum
             // validate & process
             var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash);
 
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
+            share.Source = clusterConfig.ClusterName;
+            share.Created = clock.Now;
+
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
@@ -429,12 +435,6 @@ namespace MiningCore.Blockchain.Ethereum
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
                 }
             }
-
-            // enrich share with common data
-            share.PoolId = poolConfig.Id;
-            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.Source = clusterConfig.ClusterName;
-            share.Created = clock.Now;
 
             return share;
         }
