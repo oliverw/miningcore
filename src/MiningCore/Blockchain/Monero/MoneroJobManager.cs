@@ -204,13 +204,16 @@ namespace MiningCore.Blockchain.Monero
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .ToArray();
 
-            // extract wallet daemon endpoints
-            walletDaemonEndpoints = poolConfig.Daemons
-                .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
-                .ToArray();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // extract wallet daemon endpoints
+                walletDaemonEndpoints = poolConfig.Daemons
+                    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+                    .ToArray();
 
-            if (walletDaemonEndpoints.Length == 0)
-                logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
+                if (walletDaemonEndpoints.Length == 0)
+                    logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
+            }
 
             ConfigureDaemons();
         }
@@ -322,9 +325,12 @@ namespace MiningCore.Blockchain.Monero
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
 
-            // also setup wallet daemon
-            walletDaemon = new DaemonClient(jsonSerializerSettings);
-            walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // also setup wallet daemon
+                walletDaemon = new DaemonClient(jsonSerializerSettings);
+                walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            }
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
@@ -340,15 +346,20 @@ namespace MiningCore.Blockchain.Monero
             if (!responses.All(x => x.Error == null))
                 return false;
 
-            // test wallet daemons
-            var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // test wallet daemons
+                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
 
-            if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
-                .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
+                if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                    .Select(x => (DaemonClientException) x.Error.InnerException)
+                    .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                    logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
 
-            return responses2.All(x => x.Error == null);
+                return responses2.All(x => x.Error == null);
+            }
+
+            return true;
         }
 
         protected override async Task<bool> AreDaemonsConnectedAsync()
@@ -398,14 +409,18 @@ namespace MiningCore.Blockchain.Monero
         protected override async Task PostStartInitAsync()
         {
             var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-            var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
 
             if (infoResponse.Error != null)
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
-            // ensure pool owns wallet
-            if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
+
+                // ensure pool owns wallet
+                if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
+                    logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            }
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
