@@ -95,6 +95,7 @@ namespace MiningCore.Mining
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
+        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(15);
         private readonly IShareRepository shareRepo;
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
@@ -340,9 +341,16 @@ namespace MiningCore.Mining
 
                                 logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
 
+                                var msg = (NetMQMessage) null;
+
                                 while (true)
                                 {
-                                    var msg = subSocket.ReceiveMultipartMessage(3);
+                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
+                                    {
+                                        logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                        break;
+                                    }
+
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                     var flags = msg.Pop().ConvertToInt32();
                                     var data = msg.Pop().ToByteArray();
