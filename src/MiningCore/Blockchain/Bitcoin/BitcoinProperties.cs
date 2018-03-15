@@ -79,13 +79,22 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
         private static readonly BitcoinCoinProperties vergeLyraCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(scrypt_1024_1), "Lyra2re2");
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(scrypt_1024_1), "Lyra2re2", new DigestReverser(scrypt_1024_1));
+
+        private static readonly BitcoinCoinProperties vergeScryptCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, scrypt_1024_1, sha256DReverse, "Scrypt", new DigestReverser(scrypt_1024_1));
 
         private static readonly BitcoinCoinProperties vergeBlake2sCoin =
-            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(scrypt_1024_1), "Blake2s");
+            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(scrypt_1024_1), "Blake2s", new DigestReverser(scrypt_1024_1));
 
         private static readonly BitcoinCoinProperties vergeX17Coin =
-            new BitcoinCoinProperties(1, x17, blake2s, new DigestReverser(scrypt_1024_1), "X17");
+            new BitcoinCoinProperties(1, x17, blake2s, new DigestReverser(scrypt_1024_1), "X17", new DigestReverser(scrypt_1024_1));
+
+        private static readonly BitcoinCoinProperties vergeSkeinCoin =
+            new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse, "Skein", new DigestReverser(scrypt_1024_1));
+
+        private static readonly BitcoinCoinProperties vergeQubitCoin =
+            new BitcoinCoinProperties(1, sha256D, qubit, sha256DReverse, "Qubit", new DigestReverser(scrypt_1024_1));
 
         private static readonly BitcoinCoinProperties vergeGroestlCoin =
             new BitcoinCoinProperties(1, groestlMyriad, blake2s, new DigestReverser(scrypt_1024_1), "Groestl-Myriad");
@@ -152,17 +161,17 @@ namespace MiningCore.Blockchain.Bitcoin
                     return sha256Coin;
 
                 case "skein":
-                    return skeinCoin;
+                    return vergeSkeinCoin;
 
                 case "qubit":
-                    return qubitCoin;
+                    return vergeQubitCoin;
 
                 case "groestl":
                 case "groestl-myriad":
                     return groestlMyriadCoin;
 
                 default: // scrypt
-                    return scryptCoin;
+                    return vergeScryptCoin;
             }
         }
 
