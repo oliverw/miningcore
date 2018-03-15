@@ -95,7 +95,7 @@ namespace MiningCore.Mining
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
         private readonly IShareRepository shareRepo;
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
@@ -325,8 +325,8 @@ namespace MiningCore.Mining
                     var url = urlAndTopic.Key;
                     var topics = new HashSet<string>(urlAndTopic.Distinct());
 
-                    var currentHeight = 0L;
-                    var lastBlockTime = clock.Now;
+                    var currentHeights = new Dictionary<string, long>();
+                    var lastBlockTimes = new Dictionary<string, DateTime?>();
 
                     while (true)
                     {
@@ -434,11 +434,14 @@ namespace MiningCore.Mining
                                         pool.NetworkStats.BlockHeight = share.BlockHeight;
                                         pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
 
+                                        currentHeights.TryGetValue(topic, out var currentHeight);
+                                        lastBlockTimes.TryGetValue(topic, out var lastBlockTime);
+
                                         if (currentHeight != share.BlockHeight)
                                         {
                                             pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                            currentHeight = share.BlockHeight;
-                                            lastBlockTime = clock.Now;
+                                            currentHeights[topic] = share.BlockHeight;
+                                            lastBlockTimes[topic] = clock.Now;
                                         }
 
                                         else
