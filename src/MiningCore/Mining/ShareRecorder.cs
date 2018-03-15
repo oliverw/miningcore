@@ -83,16 +83,30 @@ namespace MiningCore.Mining
             BuildFaultHandlingPolicy();
         }
 
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private readonly IBlockRepository blockRepo;
-
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
-        private readonly ConcurrentDictionary<string, Tuple<IMiningPool, ILogger>> pools = new ConcurrentDictionary<string, Tuple<IMiningPool, ILogger>>();
+        private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
+
+        class PoolContext
+        {
+            public PoolContext(IMiningPool pool, ILogger logger)
+            {
+                Pool = pool;
+                Logger = logger;
+            }
+
+            public IMiningPool Pool;
+            public ILogger Logger;
+            public DateTime? LastBlock;
+            public long BlockHeight;
+        }
 
         private readonly int QueueSizeWarningThreshold = 1024;
         private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
@@ -105,8 +119,6 @@ namespace MiningCore.Mining
         private const int RetryCount = 3;
         private const string PolicyContextKeyShares = "share";
         private bool notifiedAdminOnPolicyFallback = false;
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private void PersistSharesFaulTolerant(IList<Share> shares)
         {
@@ -324,9 +336,7 @@ namespace MiningCore.Mining
                     var urlAndTopic = (IGrouping<string, string>) arg;
                     var url = urlAndTopic.Key;
                     var topics = new HashSet<string>(urlAndTopic.Distinct());
-
-                    var currentHeights = new Dictionary<string, long>();
-                    var lastBlockTimes = new Dictionary<string, DateTime?>();
+                    var receivedOnce = false;
 
                     while (true)
                     {
@@ -347,13 +357,19 @@ namespace MiningCore.Mining
                                 {
                                     if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
                                     {
-                                        logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                        break;
+                                        if (receivedOnce)
+                                        {
+                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                            break;
+                                        }
+
+                                        continue;
                                     }
 
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                     var flags = msg.Pop().ConvertToInt32();
                                     var data = msg.Pop().ToByteArray();
+                                    receivedOnce = true;
 
                                     // validate
                                     if (!topics.Contains(topic))
@@ -368,20 +384,8 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
-                                    // lookup pool
-                                    IMiningPool pool = null;
-                                    ILogger poolLogger = null;
-
-                                    if (pools.TryGetValue(topic, out var poolData))
-                                    {
-                                        pool = poolData.Item1;
-                                        poolLogger = poolData.Item2;
-                                    }
-
-                                    // extract flags
-                                    var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
-
                                     // deserialize
+                                    var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
                                     Share share = null;
 
                                     switch (wireFormat)
@@ -417,35 +421,33 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
-                                    // fill in blanks
+                                    // store
                                     share.PoolId = topic;
                                     share.Created = clock.Now;
-
-                                    // persist
                                     queue.Add(share);
 
-                                    // log it
-                                    var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty;
-                                    poolLogger?.Info(() => $"External {source}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                                    // update pool stats
-                                    if (pool?.NetworkStats != null)
+                                    // misc
+                                    if (pools.TryGetValue(topic, out var poolContext))
                                     {
-                                        pool.NetworkStats.BlockHeight = share.BlockHeight;
-                                        pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
+                                        var pool = poolContext.Pool;
+                                        poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
 
-                                        currentHeights.TryGetValue(topic, out var currentHeight);
-                                        lastBlockTimes.TryGetValue(topic, out var lastBlockTime);
-
-                                        if (currentHeight != share.BlockHeight)
+                                        // update pool stats
+                                        if (pool.NetworkStats != null)
                                         {
-                                            pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                            currentHeights[topic] = share.BlockHeight;
-                                            lastBlockTimes[topic] = clock.Now;
-                                        }
+                                            pool.NetworkStats.BlockHeight = share.BlockHeight;
+                                            pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
 
-                                        else
-                                            pool.NetworkStats.LastNetworkBlockTime = lastBlockTime;
+                                            if (poolContext.BlockHeight != share.BlockHeight)
+                                            {
+                                                pool.NetworkStats.LastNetworkBlockTime = clock.Now;
+                                                poolContext.BlockHeight = share.BlockHeight;
+                                                poolContext.LastBlock = clock.Now;
+                                            }
+
+                                            else
+                                                pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
+                                        }
                                     }
                                 }
                             }
@@ -466,7 +468,7 @@ namespace MiningCore.Mining
 
         public void AttachPool(IMiningPool pool)
         {
-            pools[pool.Config.Id] = Tuple.Create(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
+            pools[pool.Config.Id] = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
 
             pool.Shares.Subscribe(x => { queue.Add(x.Share); });
         }
