@@ -332,10 +332,9 @@ namespace MiningCore.Mining
                         {
                             using (var subSocket = new SubscriberSocket())
                             {
-                                //subSocket.Options.ReceiveHighWatermark = 1000;
                                 subSocket.Connect(url);
 
-                                foreach(var topic in topics)
+                                foreach (var topic in topics)
                                     subSocket.Subscribe(topic);
 
                                 logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
