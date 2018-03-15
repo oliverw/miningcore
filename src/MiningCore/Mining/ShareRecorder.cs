@@ -335,19 +335,19 @@ namespace MiningCore.Mining
                                 subSocket.Connect(url);
 
                                 foreach(var topic in topics)
-                                {
                                     subSocket.Subscribe(topic);
-                                    logger.Info($"Monitoring external stratum {url}/{topic}");
-                                }
+
+                                logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
 
                                 while (true)
                                 {
-                                    var msg = subSocket.ReceiveMultipartMessage(2);
+                                    var msg = subSocket.ReceiveMultipartMessage(3);
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
+                                    var flags = msg.Pop().ConvertToInt32();
                                     var data = msg.Pop().ConvertToString(Encoding.UTF8);
 
                                     // validate
-                                    if (topics.Contains(topic))
+                                    if (!topics.Contains(topic))
                                     {
                                         logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
                                         continue;
@@ -359,15 +359,30 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
-                                    // deserialize
-                                    Share share;
+                                    // extract flags
+                                    var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
 
-                                    using (var reader = new StringReader(data))
+                                    // deserialize
+                                    Share share = null;
+
+                                    switch (wireFormat)
                                     {
-                                        using (var jreader = new JsonTextReader(reader))
-                                        {
-                                            share = serializer.Deserialize<Share>(jreader);
-                                        }
+                                        case ShareRelay.WireFormat.Json:
+                                            using (var reader = new StringReader(data))
+                                            {
+                                                using (var jreader = new JsonTextReader(reader))
+                                                {
+                                                    share = serializer.Deserialize<Share>(jreader);
+                                                }
+                                            }
+                                            break;
+
+                                        case ShareRelay.WireFormat.ProtocolBuffers:
+                                            break;
+
+                                        default:
+                                            logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
+                                            break;
                                     }
 
                                     if (share == null)
@@ -384,8 +399,8 @@ namespace MiningCore.Mining
                                     queue.Add(share);
 
                                     // log it
-                                    var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty;
-                                    logger.Info(() => $"[{share.PoolId}] External {source} share accepted: D={Math.Round(share.Difficulty, 3)}");
+                                    var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty;
+                                    logger.Info(() => $"[{share.PoolId}] External {source}share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                                     // update pool stats
                                     if (pools.TryGetValue(topic, out var pool) && pool.NetworkStats != null)

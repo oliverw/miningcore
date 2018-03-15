@@ -28,6 +28,15 @@ namespace MiningCore.Mining
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
+        [Flags]
+        public enum WireFormat
+        {
+            Json = 1,
+            ProtocolBuffers = 2
+        }
+
+        public const int WireFormatMask = 0xF;
+
         #region API-Surface
 
         public void AttachPool(IMiningPool pool)
@@ -84,9 +93,11 @@ namespace MiningCore.Mining
                     try
                     {
                         var json = JsonConvert.SerializeObject(share, serializerSettings);
+                        var flags = (int) WireFormat.Json;
 
                         var msg = new NetMQMessage(2);
                         msg.Push(json);
+                        msg.Push(flags);
                         msg.Push(share.PoolId);
                         pubSocket.SendMultipartMessage(msg);
                     }
