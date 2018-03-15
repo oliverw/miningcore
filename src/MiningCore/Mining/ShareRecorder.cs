@@ -37,6 +37,7 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
+using MiningCore.Util;
 using NetMQ;
 using NetMQ.Sockets;
 using Newtonsoft.Json;
@@ -90,7 +91,7 @@ namespace MiningCore.Mining
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
-        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
+        private readonly ConcurrentDictionary<string, Tuple<IMiningPool, ILogger>> pools = new ConcurrentDictionary<string, Tuple<IMiningPool, ILogger>>();
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
@@ -359,6 +360,16 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
+                                    // lookup pool
+                                    IMiningPool pool = null;
+                                    ILogger poolLogger = null;
+
+                                    if (pools.TryGetValue(topic, out var poolData))
+                                    {
+                                        pool = poolData.Item1;
+                                        poolLogger = poolData.Item2;
+                                    }
+
                                     // extract flags
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
 
@@ -407,10 +418,10 @@ namespace MiningCore.Mining
 
                                     // log it
                                     var source = !string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty;
-                                    logger.Info(() => $"[{share.PoolId}] External {source}share accepted: D={Math.Round(share.Difficulty, 3)}");
+                                    poolLogger?.Info(() => $"External {source}share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                                     // update pool stats
-                                    if (pools.TryGetValue(topic, out var pool) && pool.NetworkStats != null)
+                                    if (pool?.NetworkStats != null)
                                     {
                                         pool.NetworkStats.BlockHeight = share.BlockHeight;
                                         pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
@@ -444,7 +455,7 @@ namespace MiningCore.Mining
 
         public void AttachPool(IMiningPool pool)
         {
-            pools[pool.Config.Id] = pool;
+            pools[pool.Config.Id] = Tuple.Create(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
 
             pool.Shares.Subscribe(x => { queue.Add(x.Share); });
         }
