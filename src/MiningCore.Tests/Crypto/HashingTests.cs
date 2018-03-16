@@ -18,7 +18,7 @@ namespace MiningCore.Tests.Crypto
         private static readonly byte[] testValue2 = Enumerable.Repeat((byte)0x80, 80).ToArray();
 
         [Fact]
-        public void Blake_Hash_Should_Match()
+        public void Blake_Hash()
         {
             var hasher = new Blake();
             var result = hasher.Digest(testValue).ToHexString();
@@ -34,7 +34,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Blake2s_Hash_Should_Match()
+        public void Blake2s_Hash()
         {
             var hasher = new Blake2s();
             var result = hasher.Digest(testValue2).ToHexString();
@@ -50,7 +50,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Groestl_Hash_Should_Match()
+        public void Groestl_Hash()
         {
             var hasher = new Groestl();
             var result = hasher.Digest(testValue).ToHexString();
@@ -66,7 +66,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Kezzak_Hash_Should_Match()
+        public void Kezzak_Hash()
         {
             var hasher = new Kezzak();
             var result = hasher.Digest(testValue, 0ul).ToHexString();
@@ -82,7 +82,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Scrypt_Hash_Should_Match()
+        public void Scrypt_Hash()
         {
             var hasher = new Scrypt(1024, 1);
             var result = hasher.Digest(testValue).ToHexString();
@@ -98,7 +98,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void NeoScrypt_Hash_Should_Match()
+        public void NeoScrypt_Hash()
         {
             var hasher = new NeoScrypt(0);
             var result = hasher.Digest(testValue2).ToHexString();
@@ -114,7 +114,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void ScryptN_Hash_Should_Match()
+        public void ScryptN_Hash()
         {
             var clock = new MockMasterClock { CurrentTime = new DateTime(2017, 10, 16) };
             var hasher = new ScryptN(clock, new []{ Tuple.Create(2048L, 1389306217L) });
@@ -132,7 +132,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Lyra2Rev2_Hash_Should_Match()
+        public void Lyra2Rev2_Hash()
         {
             var hasher = new Lyra2Rev2();
             var result = hasher.Digest(Enumerable.Repeat((byte) 5, 80).ToArray()).ToHexString();
@@ -155,7 +155,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha256D_Hash_Should_Match()
+        public void Sha256D_Hash()
         {
             var hasher = new Sha256D();
             var result = hasher.Digest(testValue).ToHexString();
@@ -171,7 +171,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha256S_Hash_Should_Match()
+        public void Sha256S_Hash()
         {
             var hasher = new Sha256S();
             var result = hasher.Digest(testValue).ToHexString();
@@ -187,7 +187,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void X11_Hash_Should_Match()
+        public void X11_Hash()
         {
             var hasher = new X11();
             var result = hasher.Digest(testValue).ToHexString();
@@ -203,7 +203,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void X17_Hash_Should_Match()
+        public void X17_Hash()
         {
             var hasher = new X17();
             var result = hasher.Digest(testValue).ToHexString();
@@ -219,7 +219,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Skein_Hash_Should_Match()
+        public void Skein_Hash()
         {
             var hasher = new Skein();
             var result = hasher.Digest(testValue).ToHexString();
@@ -235,7 +235,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Qubit_Hash_Should_Match()
+        public void Qubit_Hash()
         {
             var hasher = new Qubit();
             var result = hasher.Digest(testValue).ToHexString();
@@ -251,7 +251,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void GroestlMyriad_Hash_Should_Match()
+        public void GroestlMyriad_Hash()
         {
             var hasher = new GroestlMyriad();
             var result = hasher.Digest(testValue).ToHexString();
@@ -267,7 +267,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void DigestReverser_Hash_Should_Match()
+        public void DigestReverser_Hash()
         {
             var hasher = new DigestReverser(new Sha256S());
             var result = hasher.Digest(testValue).ToHexString();
@@ -317,7 +317,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha3_256_Hash_Should_Match()
+        public void Sha3_256_Hash()
         {
             var hasher = new Sha3_256();
             var result = hasher.Digest(testValue).ToHexString();
@@ -333,7 +333,7 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha3_512_Hash_Should_Match()
+        public void Sha3_512_Hash()
         {
             var hasher = new Sha3_512();
             var result = hasher.Digest(testValue).ToHexString();
