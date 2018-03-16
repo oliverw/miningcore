@@ -651,9 +651,17 @@ namespace MiningCore.Blockchain.Bitcoin
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
-            poolAddressDestination = !isPoS ?
-                AddressToDestination(validateAddressResponse.Address) :
-                new PubKey(validateAddressResponse.PubKey);
+            if (!isPoS)
+            {
+                // bitcoincashd returns a different address than what was passed in
+                if(!validateAddressResponse.Address.StartsWith("bitcoincash:"))
+                    poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
+                else
+                    poolAddressDestination = AddressToDestination(poolConfig.Address);
+            }
+
+            else
+                poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
 
             // chain detection
             if (!hasLegacyDaemon)
