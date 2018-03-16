@@ -346,15 +346,17 @@ namespace MiningCore.Mining
                             {
                                 subSocket.Connect(url);
 
+                                // subscribe to all topics
                                 foreach (var topic in topics)
                                     subSocket.Subscribe(topic);
 
                                 logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
 
-                                var msg = (NetMQMessage) null;
-
                                 while (true)
                                 {
+                                    // receive
+                                    var msg = (NetMQMessage)null;
+
                                     if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
                                     {
                                         if (receivedOnce)
@@ -363,9 +365,11 @@ namespace MiningCore.Mining
                                             break;
                                         }
 
+                                        // retry
                                         continue;
                                     }
 
+                                    // extract frames
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                     var flags = msg.Pop().ConvertToInt32();
                                     var data = msg.Pop().ToByteArray();
