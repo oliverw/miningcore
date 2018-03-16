@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -33,8 +33,6 @@
 #include "cryptonote_basic.h"
 #include "crypto/crypto.h"
 #include "crypto/hash.h"
-#include "hex.h"
-#include "span.h"
 
 
 namespace cryptonote {
@@ -77,6 +75,14 @@ namespace cryptonote {
     }
   }
 
+  struct address_parse_info
+  {
+    account_public_address address;
+    bool is_subaddress;
+    bool has_payment_id;
+    crypto::hash8 payment_id;
+  };
+
   /************************************************************************/
   /* Cryptonote helper functions                                          */
   /************************************************************************/
@@ -88,42 +94,26 @@ namespace cryptonote {
   uint8_t get_account_integrated_address_checksum(const public_integrated_address_outer_blob& bl);
 
   std::string get_account_address_as_str(
-      bool testnet
+      uint8_t nettype
+    , bool subaddress
     , const account_public_address& adr
     );
 
   std::string get_account_integrated_address_as_str(
-      bool testnet
+      uint8_t nettype
     , const account_public_address& adr
     , const crypto::hash8& payment_id
     );
 
-  bool get_account_integrated_address_from_str(
-      account_public_address& adr
-    , bool& has_payment_id
-    , crypto::hash8& payment_id
-    , bool testnet
-    , const std::string& str
-    );
-
   bool get_account_address_from_str(
-      account_public_address& adr
-    , bool testnet
+      address_parse_info& info
+    , uint8_t nettype
     , const std::string& str
     );
 
   bool get_account_address_from_str_or_url(
-      cryptonote::account_public_address& address
-    , bool& has_payment_id
-    , crypto::hash8& payment_id
-    , bool testnet
-    , const std::string& str_or_url
-    , std::function<std::string(const std::string&, const std::vector<std::string>&, bool)> dns_confirm = return_first_address
-    );
-
-  bool get_account_address_from_str_or_url(
-      cryptonote::account_public_address& address
-    , bool testnet
+      address_parse_info& info
+    , uint8_t nettype
     , const std::string& str_or_url
     , std::function<std::string(const std::string&, const std::vector<std::string>&, bool)> dns_confirm = return_first_address
     );
@@ -136,26 +126,3 @@ namespace cryptonote {
 
 bool parse_hash256(const std::string str_hash, crypto::hash& hash);
 
-namespace crypto {
-  inline std::ostream &operator <<(std::ostream &o, const crypto::public_key &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::secret_key &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::key_derivation &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::key_image &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::signature &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::hash &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-  inline std::ostream &operator <<(std::ostream &o, const crypto::hash8 &v) {
-    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
-  }
-}

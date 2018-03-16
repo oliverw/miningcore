@@ -46,7 +46,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private readonly IMasterClock clock;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(20);
 
         public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
@@ -146,7 +146,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
 
                 // ignore stale minerstats
-                if (lastUpdate.HasValue && (clock.Now - lastUpdate) > MinerStatsMaxAge)
+                if (lastUpdate.HasValue && (clock.Now - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
                     lastUpdate = null;
 
                 if (lastUpdate.HasValue)

@@ -99,15 +99,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void BuildCoinbase()
         {
-            var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
-
             // generate script parts
             var sigScriptInitial = GenerateScriptSigInitial();
             var sigScriptInitialBytes = sigScriptInitial.ToBytes();
 
             var sigScriptLength = (uint) (
                 sigScriptInitial.Length +
-                1 + // for extranonce-placeholder length after sigScriptInitial
                 extraNoncePlaceHolderLength +
                 scriptSigFinalBytes.Length);
 
@@ -137,9 +134,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 // signature script initial part
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
-
-                // emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
-                bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
 
                 // done
                 coinbaseInitial = stream.ToArray();
@@ -235,6 +229,9 @@ namespace MiningCore.Blockchain.Bitcoin
             // push timestamp
             ops.Add(Op.GetPushOp(now));
 
+            // push placeholder
+            ops.Add(Op.GetPushOp((uint) 0));
+
             return new Script(ops);
         }
 
@@ -289,7 +286,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
             var context = worker.GetContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
@@ -330,24 +327,26 @@ namespace MiningCore.Blockchain.Bitcoin
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            var result = new BitcoinShare
+            var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC),
                 NetworkDifficulty = Difficulty * shareMultiplier,
                 Difficulty = stratumDifficulty,
             };
 
-            var blockBytes = SerializeBlock(headerBytes, coinbase);
-
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-                result.BlockHex = blockBytes.ToHexString();
+                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
                 result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+
+                var blockBytes = SerializeBlock(headerBytes, coinbase);
+                var blockHex = blockBytes.ToHexString();
+
+                return (result, blockHex);
             }
 
-            return result;
+            return (result, null);
         }
 
         protected virtual byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
@@ -479,7 +478,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient worker,
+        public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

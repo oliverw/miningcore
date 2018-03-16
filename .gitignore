@@ -117,3 +117,4 @@ recovered-shares.json
 
 
 src/MiningCore/config\.json
+/src/MiningCore/config2.json

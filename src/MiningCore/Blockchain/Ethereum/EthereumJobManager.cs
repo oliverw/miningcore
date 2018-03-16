@@ -291,14 +291,14 @@ namespace MiningCore.Blockchain.Ethereum
             BlockchainStats.ConnectedPeers = peerCount;
         }
 
-        private async Task<bool> SubmitBlockAsync(EthereumShare share)
+        private async Task<bool> SubmitBlockAsync(Share share, string fullNonceHex, string headerHash, string mixHash)
         {
             // submit work
             var response = await daemon.ExecuteCmdAnyAsync<object>(EC.SubmitWork, new[]
             {
-                share.FullNonceHex,
-                share.HeaderHash,
-                share.MixHash
+                fullNonceHex,
+                headerHash,
+                mixHash
             });
 
             if (response.Error != null || (bool?) response.Response == false)
@@ -393,7 +393,7 @@ namespace MiningCore.Blockchain.Ethereum
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<EthereumShare> SubmitShareAsync(StratumClient worker,
+        public async Task<Share> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -415,26 +415,26 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // validate & process
-            var share = await job.ProcessShareAsync(worker, nonce, ethash);
-
-            // if block candidate, submit & check if accepted by network
-            if (share.IsBlockCandidate)
-            {
-                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight}");
-
-                share.IsBlockCandidate = await SubmitBlockAsync(share);
-
-                if (share.IsBlockCandidate)
-                {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
-                }
-            }
+            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
             share.Source = clusterConfig.ClusterName;
             share.Created = clock.Now;
+
+            // if block candidate, submit & check if accepted by network
+            if (share.IsBlockCandidate)
+            {
+                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight}");
+
+                share.IsBlockCandidate = await SubmitBlockAsync(share, fullNonceHex, headerHash, mixHash);
+
+                if (share.IsBlockCandidate)
+                {
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
+                }
+            }
 
             return share;
         }
@@ -542,7 +542,8 @@ namespace MiningCore.Blockchain.Ethereum
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
-            ConfigureRewards();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+                ConfigureRewards();
 
             // update stats
             BlockchainStats.RewardType = "POW";
