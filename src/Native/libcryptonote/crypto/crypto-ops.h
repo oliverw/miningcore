@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -79,6 +79,7 @@ typedef ge_cached ge_dsmp[8];
 extern const ge_precomp ge_Bi[8];
 void ge_dsm_precomp(ge_dsmp r, const ge_p3 *s);
 void ge_double_scalarmult_base_vartime(ge_p2 *, const unsigned char *, const ge_p3 *, const unsigned char *);
+void ge_double_scalarmult_base_vartime_p3(ge_p3 *, const unsigned char *, const ge_p3 *, const unsigned char *);
 
 /* From ge_frombytes.c, modified */
 
@@ -127,7 +128,10 @@ void sc_reduce(unsigned char *);
 /* New code */
 
 void ge_scalarmult(ge_p2 *, const unsigned char *, const ge_p3 *);
+void ge_scalarmult_p3(ge_p3 *, const unsigned char *, const ge_p3 *);
 void ge_double_scalarmult_precomp_vartime(ge_p2 *, const unsigned char *, const ge_p3 *, const unsigned char *, const ge_dsmp);
+void ge_double_scalarmult_precomp_vartime2(ge_p2 *, const unsigned char *, const ge_dsmp, const unsigned char *, const ge_dsmp);
+void ge_double_scalarmult_precomp_vartime2_p3(ge_p3 *, const unsigned char *, const ge_dsmp, const unsigned char *, const ge_dsmp);
 void ge_mul8(ge_p1p1 *, const ge_p2 *);
 extern const fe fe_ma2;
 extern const fe fe_ma;
@@ -135,12 +139,15 @@ extern const fe fe_fffb1;
 extern const fe fe_fffb2;
 extern const fe fe_fffb3;
 extern const fe fe_fffb4;
+extern const ge_p3 ge_p3_identity;
 void ge_fromfe_frombytes_vartime(ge_p2 *, const unsigned char *);
 void sc_0(unsigned char *);
 void sc_reduce32(unsigned char *);
 void sc_add(unsigned char *, const unsigned char *, const unsigned char *);
 void sc_sub(unsigned char *, const unsigned char *, const unsigned char *);
 void sc_mulsub(unsigned char *, const unsigned char *, const unsigned char *, const unsigned char *);
+void sc_mul(unsigned char *, const unsigned char *, const unsigned char *);
+void sc_muladd(unsigned char *s, const unsigned char *a, const unsigned char *b, const unsigned char *c);
 int sc_check(const unsigned char *);
 int sc_isnonzero(const unsigned char *); /* Doesn't normalize */
 

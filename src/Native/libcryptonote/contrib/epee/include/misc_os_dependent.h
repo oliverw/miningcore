@@ -23,6 +23,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif
+
 #ifdef WIN32
   #ifndef WIN32_LEAN_AND_MEAN 
   #define WIN32_LEAN_AND_MEAN
@@ -41,6 +45,9 @@
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
+
+#include <iostream>
+#include <boost/lexical_cast.hpp>
 
 #pragma once 
 namespace epee
@@ -68,13 +75,13 @@ namespace misc_utils
                 clock_get_time(cclock, &mts);
                 mach_port_deallocate(mach_task_self(), cclock);
 
-                return (mts.tv_sec * 1000000000) + (mts.tv_nsec);
+                return ((uint64_t)mts.tv_sec * 1000000000) + (mts.tv_nsec);
 #else
                 struct timespec ts;
                 if(clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
                         return 0;
                 }
-                return (ts.tv_sec * 1000000000) + (ts.tv_nsec);
+                return ((uint64_t)ts.tv_sec * 1000000000) + (ts.tv_nsec);
 #endif
         }
 

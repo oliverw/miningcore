@@ -97,7 +97,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -114,7 +114,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -133,7 +133,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -154,7 +154,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;netmultihashnative_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);NEOSCRYPT_SHA256;NEOSCRYPT_BLAKE256;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSWIN32_LEAN_AND_MEAN;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)contrib\epee\include;;$(ProjectDir)contrib\easylogging;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -172,10 +172,11 @@
     <ClInclude Include="common\int-util.h" />
     <ClInclude Include="common\pod-class.h" />
     <ClInclude Include="common\varint.h" />
+    <ClInclude Include="cryptonote_basic\cryptonote_basic_impl.h" />
     <ClInclude Include="cryptonote_basic\cryptonote_format_utils.h" />
     <ClInclude Include="cryptonote_config.h" />
     <ClInclude Include="crypto\blake256.h" />
-    <ClInclude Include="crypto\chacha8.h" />
+    <ClInclude Include="crypto\chacha.h" />
     <ClInclude Include="crypto\crypto-ops.h" />
     <ClInclude Include="crypto\generic-ops.h" />
     <ClInclude Include="crypto\groestl.h" />
@@ -206,9 +207,10 @@
   <ItemGroup>
     <ClCompile Include="common\base58.cpp" />
     <ClCompile Include="contrib\epee\src\hex.cpp" />
+    <ClCompile Include="contrib\epee\src\memwipe.c" />
     <ClCompile Include="crypto\aesb.c" />
     <ClCompile Include="crypto\blake256.c" />
-    <ClCompile Include="crypto\chacha8.c" />
+    <ClCompile Include="crypto\chacha.c" />
     <ClCompile Include="crypto\crypto-ops-data.c" />
     <ClCompile Include="crypto\crypto-ops.c" />
     <ClCompile Include="crypto\crypto.cpp" />

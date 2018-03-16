@@ -647,7 +647,7 @@ namespace MiningCore
 
         private static void TouchNativeLibs()
         {
-            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test")).ToHexString());
+            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
             Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
             Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
         }

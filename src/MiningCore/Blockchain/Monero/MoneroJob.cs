@@ -46,11 +46,15 @@ namespace MiningCore.Blockchain.Monero
 			switch (poolConfig.Coin.Type)
 			{
 				case CoinType.AEON:
-					hashSlow = LibCryptonote.CryptonightHashSlowLite;
+					hashSlow = (buf, variant)=> LibCryptonote.CryptonightHashSlowLite(buf);
 					break;
 
-				default:
-					hashSlow = LibCryptonote.CryptonightHashSlow;
+			    case CoinType.XMR:
+                    hashSlow = LibCryptonote.CryptonightHashSlow;
+			        break;
+
+                default:
+					hashSlow = (buf, variant) => LibCryptonote.CryptonightHashSlow(buf, 0);
 					break;
 			}
 
@@ -58,7 +62,7 @@ namespace MiningCore.Blockchain.Monero
 			PrepareBlobTemplate(instanceId);
 		}
 
-		private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
+		private readonly Func<byte[], int, PooledArraySegment<byte>> hashSlow;
 
 		private byte[] blobTemplate;
 		private uint extraNonce;
@@ -162,8 +166,11 @@ namespace MiningCore.Blockchain.Monero
 				if (blobConverted == null)
 					throw new StratumException(StratumError.MinusOne, "malformed blob");
 
-				// hash it
-				using (var hashSeg = hashSlow(blobConverted))
+                // PoW variant
+			    var hashVariant = blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0;
+
+                // hash it
+                using (var hashSeg = hashSlow(blobConverted, hashVariant))
 				{
 					var hash = hashSeg.ToHexString();
 					if (hash != workerHash)

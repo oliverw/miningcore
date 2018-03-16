@@ -44,8 +44,11 @@ namespace epee
       if(!serialization::store_t_to_json(out_struct, req_param))
         return false;
 
+      http::fields_list additional_params;
+      additional_params.push_back(std::make_pair("Content-Type","application/json; charset=utf-8"));
+
       const http::http_response_info* pri = NULL;
-      if(!transport.invoke(uri, method, req_param, timeout, std::addressof(pri)))
+      if(!transport.invoke(uri, method, req_param, timeout, std::addressof(pri), std::move(additional_params)))
       {
         LOG_PRINT_L1("Failed to invoke http request to  " << uri);
         return false;
@@ -112,7 +115,7 @@ namespace epee
       }
       if(resp_t.error.code || resp_t.error.message.size())
       {
-        LOG_ERROR("RPC call of \"" << method_name << "\" returned error: " << resp_t.error.code << ", message: " << resp_t.error.message);
+        LOG_ERROR("RPC call of \"" << req_t.method << "\" returned error: " << resp_t.error.code << ", message: " << resp_t.error.message);
         return false;
       }
       result_struct = resp_t.result;

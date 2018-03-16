@@ -39,7 +39,7 @@ namespace MiningCore.Native
         private static extern UInt64 decode_integrated_address(byte* input, int inputSize);
 
         [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength);
+        private static extern int cn_slow_hash(byte* input, byte* output, uint inputLength, int variant);
 
         [DllImport("libcryptonote", EntryPoint = "cn_slow_hash_lite_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_slow_hash_lite(byte* input, byte* output, uint inputLength);
@@ -124,7 +124,7 @@ namespace MiningCore.Native
             }
         }
 
-        public static PooledArraySegment<byte> CryptonightHashSlow(byte[] data)
+        public static PooledArraySegment<byte> CryptonightHashSlow(byte[] data, int variant)
         {
             Contract.RequiresNonNull(data, nameof(data));
 
@@ -134,7 +134,7 @@ namespace MiningCore.Native
             {
                 fixed(byte* output = result.Array)
                 {
-                    cn_slow_hash(input, output, (uint) data.Length);
+                    cn_slow_hash(input, output, (uint) data.Length, variant);
                 }
             }
 
