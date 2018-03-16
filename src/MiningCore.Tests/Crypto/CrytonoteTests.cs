@@ -1,4 +1,5 @@
-﻿using MiningCore.Extensions;
+﻿using System;
+using MiningCore.Extensions;
 using MiningCore.Native;
 using Xunit;
 
@@ -16,12 +17,24 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void Cryptonote_SlowHash_Should_Throw_On_Null_Argument()
+        {
+            Assert.Throws<ArgumentNullException>(() => LibCryptonote.CryptonightHashSlow(null));
+        }
+
+        [Fact]
         public void Crytonote_Hash_Fast()
         {
             var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
             var result = LibCryptonote.CryptonightHashFast(blobConverted).ToHexString();
 
             Assert.Equal("ddc0e3a33b605ce39fa2d16a98d7634e33399ab1e4b56b3bdd3414b655fe9a98", result);
+        }
+
+        [Fact]
+        public void Cryptonote_FastHash_Should_Throw_On_Null_Argument()
+        {
+            Assert.Throws<ArgumentNullException>(() => LibCryptonote.CryptonightHashFast(null));
         }
 
         [Fact]
@@ -43,12 +56,25 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void Cryptonote_ConvertBlob_Should_Throw_On_Null_Argument()
+        {
+            Assert.Throws<ArgumentNullException>(() => LibCryptonote.ConvertBlob(null, 0));
+        }
+
+        [Fact]
         public void Crytonote_DecodeAddress()
         {
             var address = "48nhyWcSey31ngSEhV8j8NPm6B8PistCQJBjjDjmTvRSTWYg6iocAw131vE2JPh3ps33vgQDKLrUx3fcErusYWcMJBxpm1d";
             var result = LibCryptonote.DecodeAddress(address);
 
             Assert.Equal(18ul, result);
+        }
+
+        [Fact]
+        public void Cryptonote_DecodeAddress_Should_Throw_On_Null_Or_Empty_Argument()
+        {
+            Assert.Throws<ArgumentException>(() => LibCryptonote.DecodeAddress(null));
+            Assert.Throws<ArgumentException>(() => LibCryptonote.DecodeAddress(""));
         }
 
         [Fact]
