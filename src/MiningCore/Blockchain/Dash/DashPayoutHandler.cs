@@ -31,6 +31,7 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Dash
@@ -111,7 +112,7 @@ namespace MiningCore.Blockchain.Dash
                 if (didUnlockWallet)
                 {
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
                 }
 
                 // check result
@@ -135,7 +136,7 @@ namespace MiningCore.Blockchain.Dash
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletPassphrase, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5  // unlock for N seconds

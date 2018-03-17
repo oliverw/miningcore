@@ -38,6 +38,7 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -271,7 +272,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (didUnlockWallet)
                 {
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
                 }
 
                 // check result
@@ -295,7 +296,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletPassphrase, new []
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new []
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5  // unlock for N seconds
