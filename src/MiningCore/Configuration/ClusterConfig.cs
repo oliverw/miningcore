@@ -99,7 +99,15 @@ namespace MiningCore.Configuration
 
     public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     {
+        /// <summary>
+        /// Optional endpoint category
+        /// </summary>
         public string Category { get; set; }
+
+        /// <summary>
+        /// Optional request path used for RPC Http requests
+        /// </summary>
+        public string HttpPath { get; set; }
 
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }

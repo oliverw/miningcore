@@ -472,9 +472,9 @@ namespace MiningCore.Blockchain.Monero
             {
                 var maxBatchSize = 28;
                 var pageSize = maxBatchSize;
-                var pageCount = (int)Math.Ceiling((double)simpleBalances.Length / pageSize);
+                var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
 
-                for (var i = 0; i < pageCount; i++)
+                for(var i = 0; i < pageCount; i++)
                 {
                     var page = simpleBalances
                         .Skip(i * pageSize)
@@ -484,6 +484,7 @@ namespace MiningCore.Blockchain.Monero
                     if (!await PayoutBatch(page))
                         break;
                 }
+            }
 #endif
                 // balances with paymentIds
                 var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
