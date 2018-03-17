@@ -269,7 +269,10 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 // lock wallet
                 if (didUnlockWallet)
+                {
+                    logger.Info(() => $"[{LogCategory}] Locking wallet");
                     await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletLock);
+                }
 
                 // check result
                 var txId = result.Response;
@@ -290,6 +293,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                     {
+                        logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+
                         var unlockResult = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletPassphrase, new []
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,

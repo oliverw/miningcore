@@ -221,6 +221,8 @@ namespace MiningCore.Blockchain.ZCash
                     {
                         if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                         {
+                            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+
                             var unlockResult = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletPassphrase, new[]
                             {
                                 (object) extraPoolPaymentProcessingConfig.WalletPassword,
@@ -260,7 +262,10 @@ namespace MiningCore.Blockchain.ZCash
 
             // lock wallet
             if (didUnlockWallet)
+            {
+                logger.Info(() => $"[{LogCategory}] Locking wallet");
                 await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.WalletLock);
+            }
         }
 
         #endregion // IPayoutHandler
