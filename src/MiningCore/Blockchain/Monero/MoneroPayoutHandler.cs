@@ -467,7 +467,6 @@ namespace MiningCore.Blockchain.Monero
             if (simpleBalances.Length > 0)
 #if false
                 await PayoutBatch(simpleBalances);
-
 #else
             {
                 var maxBatchSize = 28;
