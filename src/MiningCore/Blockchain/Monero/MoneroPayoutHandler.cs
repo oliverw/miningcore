@@ -264,18 +264,32 @@ namespace MiningCore.Blockchain.Monero
 
             var daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
             daemon = new DaemonClient(jsonSerializerSettings);
-            daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            daemon.Configure(daemonEndpoints);
 
             // configure wallet daemon
             var walletDaemonEndpoints = poolConfig.Daemons
                 .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
             walletDaemon = new DaemonClient(jsonSerializerSettings);
-            walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network
             await GetNetworkTypeAsync();

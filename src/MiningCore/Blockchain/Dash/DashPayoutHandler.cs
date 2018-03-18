@@ -109,11 +109,8 @@ namespace MiningCore.Blockchain.Dash
             if (result.Error == null)
             {
                 // lock wallet
-                if (didUnlockWallet)
-                {
-                    logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
-                }
+                logger.Info(() => $"[{LogCategory}] Locking wallet");
+                await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
 
                 // check result
                 var txId = result.Response;

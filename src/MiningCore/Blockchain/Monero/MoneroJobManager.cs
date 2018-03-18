@@ -202,6 +202,13 @@ namespace MiningCore.Blockchain.Monero
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
@@ -209,6 +216,13 @@ namespace MiningCore.Blockchain.Monero
                 // extract wallet daemon endpoints
                 walletDaemonEndpoints = poolConfig.Daemons
                     .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+                    .Select(x =>
+                    {
+                        if (string.IsNullOrEmpty(x.HttpPath))
+                            x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                        return x;
+                    })
                     .ToArray();
 
                 if (walletDaemonEndpoints.Length == 0)
@@ -323,13 +337,13 @@ namespace MiningCore.Blockchain.Monero
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
             daemon = new DaemonClient(jsonSerializerSettings);
-            daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            daemon.Configure(daemonEndpoints);
 
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // also setup wallet daemon
                 walletDaemon = new DaemonClient(jsonSerializerSettings);
-                walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+                walletDaemon.Configure(walletDaemonEndpoints);
             }
         }
 

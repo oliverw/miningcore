@@ -261,11 +261,8 @@ namespace MiningCore.Blockchain.ZCash
             }
 
             // lock wallet
-            if (didUnlockWallet)
-            {
-                logger.Info(() => $"[{LogCategory}] Locking wallet");
-                await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
-            }
+            logger.Info(() => $"[{LogCategory}] Locking wallet");
+            await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
         }
 
         #endregion // IPayoutHandler

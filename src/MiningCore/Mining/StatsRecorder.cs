@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -51,7 +52,7 @@ namespace MiningCore.Mining
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
-        private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
         private const int HashrateCalculationWindow = 1200;  // seconds
         private const int MinHashrateCalculationWindow = 300;  // seconds
         private const double HashrateBoostFactor = 1.07d;
@@ -131,7 +132,9 @@ namespace MiningCore.Mining
                 Created = start
             };
 
-            foreach (var poolId in pools.Keys)
+            var poolIds = pools.Keys;
+
+            foreach (var poolId in poolIds)
             {
                 stats.PoolId = poolId;
 

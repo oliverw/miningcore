@@ -100,9 +100,24 @@ namespace MiningCore.Configuration
     public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     {
         /// <summary>
+        /// Use SSL to for daemon http-rpc requests
+        /// </summary>
+        public bool Ssl { get; set; }
+
+        /// <summary>
+        /// Validate SSL certificate (if SSL option is set to true)
+        /// </summary>
+        public bool ValidateCert { get; set; }
+
+        /// <summary>
         /// Optional endpoint category
         /// </summary>
         public string Category { get; set; }
+
+        /// <summary>
+        /// Optional request path used for RPC Http requests
+        /// </summary>
+        public string HttpPath { get; set; }
 
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
