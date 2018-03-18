@@ -116,8 +116,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     var extra = x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
                     var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ?
-                        extra.ZmqBlockNotifyTopic :
-                        BitcoinConstants.ZmqPublisherTopicBlockHash;
+                        extra.ZmqBlockNotifyTopic : BitcoinConstants.ZmqPublisherTopicBlockHash;
 
                     return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
                 });
@@ -768,7 +767,9 @@ namespace MiningCore.Blockchain.Bitcoin
                     if (isNew)
                     {
                         if(via != null)
-                            logger.Info($"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                            logger.Info(()=> $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                        else
+                            logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
 
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;

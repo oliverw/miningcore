@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reactive;
@@ -26,8 +27,8 @@ using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autofac;
-using Microsoft.Extensions.DependencyInjection;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Monero.Configuration;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
@@ -79,7 +80,7 @@ namespace MiningCore.Blockchain.Monero
         private UInt64 poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
-        protected async Task<bool> UpdateJob()
+        protected async Task<bool> UpdateJob(string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -101,6 +102,11 @@ namespace MiningCore.Blockchain.Monero
 
                 if (isNew)
                 {
+                    if (via != null)
+                        logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                    else
+                        logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+
                     job = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
                     job.Init();
                     currentJob = job;
@@ -502,15 +508,86 @@ namespace MiningCore.Blockchain.Monero
 	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
-			// periodically update block-template from daemon
-			Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                .Select(_ => Observable.FromAsync(UpdateJob))
-                .Concat()
-                .Do(isNew =>
+            var sources = new List<IObservable<bool>>();
+            var cancelTimeout = new List<IObservable<bool>>();
+
+            // collect ports
+            var zmq = poolConfig.Daemons
+                .Where(x => !string.IsNullOrEmpty(x.Extra.SafeExtensionDataAs<MoneroDaemonEndpointConfigExtra>()?.ZmqBlockNotifySocket))
+                .ToDictionary(x => x, x =>
                 {
-                    if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                })
+                    var extra = x.Extra.SafeExtensionDataAs<MoneroDaemonEndpointConfigExtra>();
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ?
+                        extra.ZmqBlockNotifyTopic : BitcoinConstants.ZmqPublisherTopicBlockHash;
+
+                    return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
+                });
+
+            if (zmq.Count > 0)
+            {
+                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
+
+                var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
+                    .Select(frames =>
+                    {
+                        try
+                        {
+                            // second frame contains the block hash as binary data
+                            if (frames.Length > 1)
+                            {
+                                var hash = frames[1].ToHexString();
+                                return hash;
+                            }
+                        }
+
+                        finally
+                        {
+                            frames.Dispose();
+                        }
+
+                        return null;
+                    })
+                    .Where(x => x != null)
+                    .DistinctUntilChanged()
+                    .Select(_ => Observable.FromAsync(() => UpdateJob("ZMQ pub/sub")))
+                    .Concat()
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPubSub);
+                cancelTimeout.Add(newJobsPubSub);
+            }
+
+            if (poolConfig.BlockRefreshInterval > 0)
+            {
+                // periodically update block-template from daemon
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob("RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
+
+            else
+            {
+                // poll for the first successful update after which polling is suspended forever
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob("RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Take(1)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
+            }
+
+            Blocks = Observable.Merge(sources)
                 .Where(isNew => isNew)
                 .Select(_ => Unit.Default)
                 .Publish()
