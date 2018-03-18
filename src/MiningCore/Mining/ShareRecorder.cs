@@ -102,8 +102,8 @@ namespace MiningCore.Mining
                 Logger = logger;
             }
 
-            public IMiningPool Pool;
-            public ILogger Logger;
+            public readonly IMiningPool Pool;
+            public readonly ILogger Logger;
             public DateTime? LastBlock;
             public long BlockHeight;
         }
@@ -368,6 +368,8 @@ namespace MiningCore.Mining
                                         // retry
                                         continue;
                                     }
+
+                                    msg.Pop().
 
                                     // extract frames
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
