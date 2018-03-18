@@ -369,8 +369,6 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
-                                    msg.Pop().
-
                                     // extract frames
                                     var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                     var flags = msg.Pop().ConvertToInt32();
