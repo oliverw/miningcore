@@ -54,6 +54,7 @@ namespace net_utils
 		struct http_server_config
 		{
 			std::string m_folder;
+			std::vector<std::string> m_access_control_origins;
 			boost::optional<login> m_user;
 			critical_section m_lock;
 		};
@@ -159,6 +160,7 @@ namespace net_utils
 		struct custum_handler_config: public http_server_config
 		{
 			i_http_server_handler<t_connection_context>* m_phandler;
+			std::function<void(size_t, uint8_t*)> rng;
 		};
 
 		/************************************************************************/
@@ -175,7 +177,7 @@ namespace net_utils
 				: simple_http_connection_handler<t_connection_context>(psnd_hndlr, config),
 					m_config(config),
 					m_conn_context(conn_context),
-					m_auth(m_config.m_user ? http_server_auth{*m_config.m_user} : http_server_auth{})
+					m_auth(m_config.m_user ? http_server_auth{*m_config.m_user, config.rng} : http_server_auth{})
 			{}
 			inline bool handle_request(const http_request_info& query_info, http_response_info& response)
 			{
@@ -193,6 +195,7 @@ namespace net_utils
 				response.m_response_code = 200;
 				response.m_response_comment = "OK";
 				response.m_body.clear();
+
 				return m_config.m_phandler->handle_http_request(query_info, response, m_conn_context);
 			}
 

@@ -43,7 +43,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Monero
 {
     [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN)]
-    public class MoneroPool : PoolBase<MoneroShare>
+    public class MoneroPool : PoolBase
     {
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,

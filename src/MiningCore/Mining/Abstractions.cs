@@ -28,14 +28,14 @@ namespace MiningCore.Mining
 {
 	public struct ClientShare
 	{
-		public ClientShare(StratumClient client, IShare share)
+		public ClientShare(StratumClient client, Share share)
 		{
 			Client = client;
 			Share = share;
 		}
 
 		public StratumClient Client;
-		public IShare Share;
+		public Share Share;
 	}
 
 	public interface IMiningPool

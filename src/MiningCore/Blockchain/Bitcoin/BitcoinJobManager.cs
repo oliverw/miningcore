@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
@@ -269,23 +270,25 @@ namespace MiningCore.Blockchain.Bitcoin
             BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
         }
 
-        protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(BitcoinShare share)
+        protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(Share share, string blockHex)
         {
             // execute command batch
             var results = await daemon.ExecuteBatchAnyAsync(
                 hasSubmitBlockMethod
-                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { share.BlockHex })
-                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = share.BlockHex }),
+                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { blockHex })
+                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
                 new DaemonCmd(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
 
             // did submission succeed?
             var submitResult = results[0];
-            var submitError = submitResult.Error?.Message ?? submitResult.Response?.ToString();
+            var submitError = submitResult.Error?.Message ??
+                submitResult.Error?.Code.ToString(CultureInfo.InvariantCulture) ??
+                submitResult.Response?.ToString();
 
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {submitError}");
+                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed with: {submitError}");
 
                 return (false, null);
             }
@@ -298,7 +301,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!accepted)
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());
@@ -445,7 +448,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return job.BlockTemplate.Transactions.Select(x => x.Data).ToArray();
         }
 
-        public virtual async Task<BitcoinShare> SubmitShareAsync(StratumClient worker, object submission,
+        public virtual async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -484,14 +487,23 @@ namespace MiningCore.Blockchain.Bitcoin
             var workerName = split.Length > 1 ? split[1] : null;
 
             // validate & process
-            var share = job.ProcessShare(worker, extraNonce2, nTime, nonce);
+            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce);
+
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+            share.Miner = minerName;
+            share.Worker = workerName;
+            share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
+            share.Created = clock.Now;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
                 logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-                var acceptResponse = await SubmitBlockAsync(share);
+                var acceptResponse = await SubmitBlockAsync(share, blockHex);
 
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;
@@ -511,15 +523,6 @@ namespace MiningCore.Blockchain.Bitcoin
                     share.TransactionConfirmationData = null;
                 }
             }
-
-            // enrich share with common data
-            share.PoolId = poolConfig.Id;
-            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = minerName;
-            share.Worker = workerName;
-            share.UserAgent = context.UserAgent;
-            share.Source = clusterConfig.ClusterName;
-            share.Created = clock.Now;
 
             return share;
         }
@@ -666,7 +669,8 @@ namespace MiningCore.Blockchain.Bitcoin
             else
                 networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
 
-            ConfigureRewards();
+            if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+                ConfigureRewards();
 
             // update stats
             BlockchainStats.NetworkType = networkType.ToString();
