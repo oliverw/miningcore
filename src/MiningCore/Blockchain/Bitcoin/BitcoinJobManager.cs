@@ -181,7 +181,7 @@ namespace MiningCore.Blockchain.Bitcoin
             sources.Add(Observable.Timer(jobRebroadcastTimeout)
                 .TakeUntil(cancelRebroadcast) // cancel timeout if an actual new job has been detected
                 .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
-                .Select(x => Observable.FromAsync(() => UpdateJob(true)))
+                .Select(x => Observable.FromAsync(() => UpdateJob(true, "Job-Refresh")))
                 .Concat()
                 .Repeat());
 
