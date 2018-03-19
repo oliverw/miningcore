@@ -92,7 +92,7 @@ namespace MiningCore.Mining
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
         private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
-        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
+        private BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         class PoolContext
         {
@@ -494,6 +494,9 @@ namespace MiningCore.Mining
 
             queueSub?.Dispose();
             queueSub = null;
+
+            queue?.Dispose();
+            queue = null;
 
             logger.Info(() => "Stopped");
         }

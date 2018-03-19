@@ -138,6 +138,11 @@ namespace MiningCore.Blockchain.Bitcoin
                             }
                         }
 
+                        catch
+                        {
+                            // ignored
+                        }
+
                         finally
                         {
                             frames.Dispose();

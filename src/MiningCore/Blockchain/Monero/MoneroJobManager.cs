@@ -25,6 +25,7 @@ using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -532,12 +533,18 @@ namespace MiningCore.Blockchain.Monero
                     {
                         try
                         {
-                            // second frame contains the block hash as binary data
+                            // second frame contains the block number as string
                             if (frames.Length > 1)
                             {
-                                var hash = frames[1].ToHexString();
-                                return hash;
+                                var heightString = Encoding.UTF8.GetString(frames[1].Array, frames[1].Offset, frames[1].Size);
+                                var height = int.Parse(heightString);
+                                return height;
                             }
+                        }
+
+                        catch
+                        {
+                            // ignored
                         }
 
                         finally
@@ -545,9 +552,9 @@ namespace MiningCore.Blockchain.Monero
                             frames.Dispose();
                         }
 
-                        return null;
+                        return -1;
                     })
-                    .Where(x => x != null)
+                    .Where(x => x != -1)
                     .DistinctUntilChanged()
                     .Select(_ => Observable.FromAsync(() => UpdateJob("ZMQ pub/sub")))
                     .Concat()
