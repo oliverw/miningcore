@@ -531,30 +531,12 @@ namespace MiningCore.Blockchain.Monero
                 var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
-                        try
-                        {
-                            // second frame contains the block number as string
-                            if (frames.Length > 1)
-                            {
-                                var heightString = Encoding.UTF8.GetString(frames[1].Array, frames[1].Offset, frames[1].Size);
-                                var height = int.Parse(heightString);
-                                return height;
-                            }
-                        }
-
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        finally
-                        {
-                            frames.Dispose();
-                        }
-
-                        return -1;
+                        // We just take the second frame's raw data and turn it into a hex string.
+                        // If that string changes, we got an update (DistinctUntilChanged)
+                        var result = frames[1].ToHexString();
+                        frames.Dispose();
+                        return result;
                     })
-                    .Where(x => x != -1)
                     .DistinctUntilChanged()
                     .Select(_ => Observable.FromAsync(() => UpdateJob("ZMQ pub/sub")))
                     .Concat()

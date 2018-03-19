@@ -128,29 +128,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
-                        try
-                        {
-                            // second frame contains the block hash as binary data
-                            if (frames.Length > 1)
-                            {
-                                var hash = frames[1].ToHexString();
-                                return hash;
-                            }
-                        }
-
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        finally
-                        {
-                            frames.Dispose();
-                        }
-
-                        return null;
+                        // We just take the second frame's raw data and turn it into a hex string.
+                        // If that string changes, we got an update (DistinctUntilChanged)
+                        var result = frames[1].ToHexString();
+                        frames.Dispose();
+                        return result;
                     })
-                    .Where(x=> x != null)
                     .DistinctUntilChanged()
                     .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
                     .Concat()
