@@ -320,6 +320,8 @@ namespace MiningCore.Blockchain.Monero
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submitted by {context.MinerName}");
 
+                    blockSubmissionSubject.OnNext(Unit.Default);
+
                     share.TransactionConfirmationData = blobHash;
                 }
 
@@ -509,8 +511,13 @@ namespace MiningCore.Blockchain.Monero
 	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
-            var sources = new List<IObservable<bool>>();
-            var cancelTimeout = new List<IObservable<bool>>();
+            var blockSubmission = blockSubmissionSubject.Synchronize();
+            var pollTimerRestart = blockSubmissionSubject.Synchronize();
+
+            var triggers = new List<IObservable<string>>
+            {
+                blockSubmission.Select(x=> "Block-submission")
+            };
 
             // collect ports
             var zmq = poolConfig.Daemons
@@ -528,7 +535,7 @@ namespace MiningCore.Blockchain.Monero
             {
                 logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
+                var blockNotify = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
                         // We just take the second frame's raw data and turn it into a hex string.
@@ -538,46 +545,41 @@ namespace MiningCore.Blockchain.Monero
                         return result;
                     })
                     .DistinctUntilChanged()
-                    .Select(_ => Observable.FromAsync(() => UpdateJob("ZMQ pub/sub")))
-                    .Concat()
+                    .Select(_ => "ZMQ pub/sub")
                     .Publish()
                     .RefCount();
 
-                sources.Add(newJobsPubSub);
-                cancelTimeout.Add(newJobsPubSub);
+                pollTimerRestart = Observable.Merge(
+                        blockSubmission,
+                        blockNotify.Select(_ => Unit.Default))
+                    .Publish()
+                    .RefCount();
+
+                triggers.Add(blockNotify);
             }
 
             if (poolConfig.BlockRefreshInterval > 0)
             {
-                // periodically update block-template from daemon
-                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .Select(_ => Observable.FromAsync(() => UpdateJob("RPC polling")))
-                    .Concat()
-                    .Where(isNew => isNew)
-                    .Publish()
-                    .RefCount();
-
-                sources.Add(newJobsPolled);
-                cancelTimeout.Add(newJobsPolled);
+                // periodically update block-template
+                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .TakeUntil(pollTimerRestart)
+                    .Select(_ => "RPC polling")
+                    .Repeat());
             }
 
             else
             {
-                // poll for the first successful update after which polling is suspended forever
-                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .Select(_ => Observable.FromAsync(() => UpdateJob("RPC polling")))
-                    .Concat()
-                    .Where(isNew => isNew)
-                    .Take(1)
-                    .Publish()
-                    .RefCount();
-
-                sources.Add(newJobsPolled);
-                cancelTimeout.Add(newJobsPolled);
+                // get initial blocktemplate
+                triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+                    .Select(_ => "Initial template")
+                    .TakeWhile(_=> !hasInitialBlockTemplate));
             }
 
-            Blocks = Observable.Merge(sources)
+            Blocks = Observable.Merge(triggers)
+                .Select(via => Observable.FromAsync(() => UpdateJob(via)))
+                .Concat()
                 .Where(isNew => isNew)
+                .Do(_=> hasInitialBlockTemplate = true)
                 .Select(_ => Unit.Default)
                 .Publish()
                 .RefCount();
