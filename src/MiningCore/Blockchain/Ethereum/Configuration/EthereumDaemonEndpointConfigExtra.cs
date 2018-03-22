@@ -14,7 +14,7 @@ namespace MiningCore.Blockchain.Ethereum.Configuration
         /// <summary>
         /// Optional http-path for streaming WebSocket data
         /// </summary>
-        public string PathWs { get; set; }
+        public string HttpPathWs { get; set; }
 
         /// <summary>
         /// Optional: Use SSL to for daemon websocket streaming

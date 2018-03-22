@@ -622,7 +622,7 @@ namespace MiningCore.Blockchain.Ethereum
                     {
                         var extra = x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>();
 
-                        return (extra.PortWs.Value, extra.PathWs, extra.SslWs);
+                        return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
                     });
 
                 logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
