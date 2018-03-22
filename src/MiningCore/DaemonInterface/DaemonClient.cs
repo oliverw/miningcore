@@ -224,7 +224,8 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig, int> portMap, string method, object payload = null,
+        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig, 
+            (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
@@ -414,7 +415,8 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint, int port, string method, object payload = null,
+        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint,
+            (int Port, string HttpPath, bool Ssl) conf, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             return Observable.Defer(()=> Observable.Create<PooledArraySegment<byte>>(obs =>
@@ -434,7 +436,8 @@ namespace MiningCore.DaemonInterface
                                     using(var client = new ClientWebSocket())
                                     {
                                         // connect
-                                        var uri = new Uri($"ws://{endPoint.Host}:{port}");
+                                        var protocol = conf.Ssl ? "wss" : "ws";
+                                        var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
 
                                         logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                         await client.ConnectAsync(uri, cts.Token);
