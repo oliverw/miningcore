@@ -19,7 +19,6 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public ulong Epoch { get; set; }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private IntPtr handle = IntPtr.Zero;
         private bool isGenerated = false;
         private readonly object genLock = new object();
@@ -57,7 +56,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             }
         }
 
-        public async Task GenerateAsync(string dagDir)
+        public async Task GenerateAsync(string dagDir, ILogger logger)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
@@ -101,7 +100,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             });
         }
 
-        public unsafe bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
             Contract.RequiresNonNull(hash, nameof(hash));
 

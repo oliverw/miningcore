@@ -120,7 +120,7 @@ namespace MiningCore.Blockchain.Ethereum
                     var jobId = NextJobId("x8");
 
                     // update template
-                    job = new EthereumJob(jobId, blockTemplate);
+                    job = new EthereumJob(jobId, blockTemplate, logger);
 
                     lock (jobLock)
                     {
@@ -556,20 +556,18 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var blockTemplate = await GetBlockTemplateAsync();
 
-                if (blockTemplate == null)
+                if (blockTemplate != null)
                 {
-                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    logger.Info(() => $"[{LogCat}] Getting current DAG ...");
 
-                    await Task.Delay(TimeSpan.FromSeconds(5));
-                    continue;
+                    await ethash.GetDagAsync(blockTemplate.Height, logger);
+
+                    logger.Info(() => $"[{LogCat}] Got current DAG");
+                    break;
                 }
 
-                logger.Info(() => $"[{LogCat}] Getting current DAG ...");
-
-                await ethash.GetDagAsync(blockTemplate.Height);
-
-                logger.Info(() => $"[{LogCat}] Got current DAG");
-                break;
+                logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                await Task.Delay(TimeSpan.FromSeconds(5));
             }
 
             SetupJobUpdates();
