@@ -269,6 +269,9 @@ namespace MiningCore.DaemonInterface
             var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
+            if(endPoint.Http2)
+                request.Version = new Version(2, 0);
+
             // build auth header
             if (!string.IsNullOrEmpty(endPoint.User))
             {
@@ -313,6 +316,9 @@ namespace MiningCore.DaemonInterface
             {
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (endPoint.Http2)
+                    request.Version = new Version(2, 0);
 
                 // build auth header
                 if (!string.IsNullOrEmpty(endPoint.User))
