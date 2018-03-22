@@ -62,6 +62,7 @@ using NLog.Conditions;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
+using NLog.Targets.Wrappers;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace MiningCore
@@ -457,7 +458,7 @@ namespace MiningCore
                         Layout = layout
                     };
 
-                    loggingConfig.AddTarget(target);
+                    loggingConfig.AddTarget("async", new AsyncTargetWrapper(target));
                     loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
@@ -472,7 +473,7 @@ namespace MiningCore
                             Layout = layout
                         };
 
-                        loggingConfig.AddTarget(target);
+                        loggingConfig.AddTarget("async", new AsyncTargetWrapper(target));
                         loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
                     }
                 }
