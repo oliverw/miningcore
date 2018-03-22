@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -106,13 +105,9 @@ namespace MiningCore.Blockchain.Bitcoin
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
-            var blockSubmission = blockSubmissionSubject.Synchronize();
-            var pollTimerRestart = blockSubmissionSubject.Synchronize();
 
-            var triggers = new List<IObservable<(bool Force, string Via)>>
-            {
-                blockSubmission.Select(x=> (false, "Block-submission"))
-            };
+            var sources = new List<IObservable<bool>>();
+            var cancelTimeout = new List<IObservable<bool>>();
 
             // collect ports
             var zmq = poolConfig.Daemons
@@ -130,7 +125,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var blockNotify = daemon.ZmqSubscribe(zmq, 2)
+                var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
                         // We just take the second frame's raw data and turn it into a hex string.
@@ -140,50 +135,58 @@ namespace MiningCore.Blockchain.Bitcoin
                         return result;
                     })
                     .DistinctUntilChanged()
-                    .Select(_ => (false, "ZMQ pub/sub"))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
+                    .Concat()
                     .Publish()
                     .RefCount();
 
-                pollTimerRestart = Observable.Merge(
-                        blockSubmission,
-                        blockNotify.Select(_ => Unit.Default))
-                    .Publish()
-                    .RefCount();
-
-                triggers.Add(blockNotify);
+                sources.Add(newJobsPubSub);
+                cancelTimeout.Add(newJobsPubSub);
             }
 
             if (poolConfig.BlockRefreshInterval > 0)
             {
-                // periodically update block-template
-                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .TakeUntil(pollTimerRestart)
-                    .Select(_ => (false, "RPC polling"))
-                    .Repeat());
+                // periodically update block-template from daemon
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
             }
 
             else
             {
-                // get initial blocktemplate
-                triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => (false, "Initial template"))
-                    .TakeWhile(_ => !hasInitialBlockTemplate));
+                // poll for the first successful update after which polling is suspended forever
+                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
+                    .Concat()
+                    .Where(isNew => isNew)
+                    .Take(1)
+                    .Publish()
+                    .RefCount();
+
+                sources.Add(newJobsPolled);
+                cancelTimeout.Add(newJobsPolled);
             }
 
-            // periodically update transactions for current template
-            triggers.Add(Observable.Timer(jobRebroadcastTimeout)
-                .TakeUntil(pollTimerRestart)
-                .Select(_ => (true, "Job-Refresh"))
+            // if there haven't been any new jobs for a while, force an update
+            var cancelRebroadcast = cancelTimeout.Count > 0 ?
+                cancelTimeout.Count > 1 ? Observable.Merge(cancelTimeout) : cancelTimeout.First() :
+                Observable.Never<bool>();
+
+            sources.Add(Observable.Timer(jobRebroadcastTimeout)
+                .TakeUntil(cancelRebroadcast) // cancel timeout if an actual new job has been detected
+                .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
+                .Select(x => Observable.FromAsync(() => UpdateJob(true, "Job-Refresh")))
+                .Concat()
                 .Repeat());
 
-            Jobs = Observable.Merge(triggers)
-                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via)))
-                .Concat()
-                .Where(isNew => isNew)
-                .Do(_ => hasInitialBlockTemplate = true)
-                .Select(GetJobParamsForStratum)
-                .Publish()
-                .RefCount();
+            Jobs = Observable.Merge(sources)
+                .Select(GetJobParamsForStratum);
         }
 
         protected virtual async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
@@ -495,8 +498,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
-
-                    blockSubmissionSubject.OnNext(Unit.Default);
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
