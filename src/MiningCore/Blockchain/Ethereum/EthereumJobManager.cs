@@ -564,7 +564,11 @@ namespace MiningCore.Blockchain.Ethereum
                     continue;
                 }
 
+                logger.Info(() => $"[{LogCat}] Getting current DAG ...");
+
                 await ethash.GetDagAsync(blockTemplate.Height);
+
+                logger.Info(() => $"[{LogCat}] Got current DAG");
                 break;
             }
 
