@@ -99,7 +99,10 @@ namespace MiningCore.DaemonInterface
                     handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true;
                 }
 
-                return new HttpClient(handler);
+                return new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(3)
+                };
             });
         }
 
