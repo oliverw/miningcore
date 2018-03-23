@@ -558,11 +558,11 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (blockTemplate != null)
                 {
-                    logger.Info(() => $"[{LogCat}] Getting current DAG ...");
+                    logger.Info(() => $"[{LogCat}] Loading current DAG ...");
 
                     await ethash.GetDagAsync(blockTemplate.Height, logger);
 
-                    logger.Info(() => $"[{LogCat}] Got current DAG");
+                    logger.Info(() => $"[{LogCat}] Loaded current DAG");
                     break;
                 }
 

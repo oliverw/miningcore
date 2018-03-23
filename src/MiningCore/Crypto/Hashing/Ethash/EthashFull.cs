@@ -10,13 +10,12 @@ namespace MiningCore.Crypto.Hashing.Ethash
 {
     public class EthashFull : IDisposable
     {
-        public EthashFull(int numCaches, string dagDir, bool noFutureDag = false)
+        public EthashFull(int numCaches, string dagDir)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
             this.numCaches = numCaches;
             this.dagDir = dagDir;
-            this.noFutureDag = noFutureDag;
         }
 
         private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
@@ -24,7 +23,6 @@ namespace MiningCore.Crypto.Hashing.Ethash
         private readonly Dictionary<ulong, Dag> caches = new Dictionary<ulong, Dag>();
         private Dag future;
         private readonly string dagDir;
-        private readonly bool noFutureDag;
 
         public void Dispose()
         {
@@ -72,16 +70,19 @@ namespace MiningCore.Crypto.Hashing.Ethash
                     }
 
                     caches[epoch] = result;
+                }
 
-                    // If we just used up the future cache, or need a refresh, regenerate
-                    if ((future == null || future.Epoch <= epoch) && !noFutureDag)
+                else
+                {
+                    // If we used up the future cache, or need a refresh, regenerate
+                    if (future == null || future.Epoch <= epoch)
                     {
                         logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
                         future = new Dag(epoch + 1);
 
-#pragma warning disable 4014
+                        #pragma warning disable 4014
                         future.GenerateAsync(dagDir, logger);
-#pragma warning restore 4014
+                        #pragma warning restore 4014
                     }
                 }
 
