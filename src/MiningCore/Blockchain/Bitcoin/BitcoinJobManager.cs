@@ -699,27 +699,17 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (networkType == BitcoinNetworkType.Main &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (networkType == BitcoinNetworkType.Main &&
-                    KnownAddresses.DevFeeAddresses.ContainsKey(poolConfig.Coin.Type))
-                    address = KnownAddresses.DevFeeAddresses[poolConfig.Coin.Type];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 

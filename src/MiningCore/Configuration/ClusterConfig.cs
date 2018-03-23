@@ -352,7 +352,6 @@ namespace MiningCore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
-        public decimal? DevDonation { get; set; }
 
         /// <summary>
         /// If this is enabled, shares are not written to the database

@@ -576,28 +576,17 @@ namespace MiningCore.Blockchain.Ethereum
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (chainType == ParityChainType.Mainnet &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.ETH];
-                else if (chainType == ParityChainType.Classic && networkType == EthereumNetworkType.Main)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.ETC];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 

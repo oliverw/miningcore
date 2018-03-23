@@ -133,9 +133,11 @@ namespace MiningCore.Blockchain.Bitcoin
         RPC_WALLET_NOT_SPECIFIED = -19, //!< No wallet specified (error when there are multiple wallets loaded)
     }
 
-    public class KnownAddresses
+    public class DevDonation
     {
-        public static readonly Dictionary<CoinType, string> DevFeeAddresses = new Dictionary<CoinType, string>
+        public const decimal Percent = 0.1m;
+
+        public static readonly Dictionary<CoinType, string> Addresses = new Dictionary<CoinType, string>
         {
             {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
             {CoinType.BCH, "1LJGTzNDTuTvkHpTxNSdmAEBAXAnEHDVqQ"},

@@ -483,26 +483,17 @@ namespace MiningCore.Blockchain.Monero
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (networkType == MoneroNetworkType.Main &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (networkType == MoneroNetworkType.Main && poolConfig.Coin.Type == CoinType.XMR)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.XMR];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 
