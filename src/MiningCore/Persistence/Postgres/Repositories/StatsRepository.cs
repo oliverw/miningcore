@@ -55,7 +55,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
-                        "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, created) " +
+                        "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
                         "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
                         "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
