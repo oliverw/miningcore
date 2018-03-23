@@ -247,6 +247,17 @@ namespace MiningCore.Configuration
         public bool NotifyPaymentSuccess { get; set; }
     }
 
+    public class ApiNotifyConfig
+    {
+        public bool Enabled { get; set; }
+        
+        public bool NotifyAdmin { get; set; }
+        public bool NotifyBlockFound { get; set; }
+        public bool NotifyPaymentSuccess { get; set; }
+        public bool NotifyPaymentFailed { get; set; }
+        
+    }
+
     public partial class SlackNotifications
     {
         public bool Enabled { get; set; }
@@ -287,6 +298,7 @@ namespace MiningCore.Configuration
 
         public EmailSenderConfig Email { get; set; }
         public AdminNotifications Admin { get; set; }
+        public ApiNotifyConfig Api { get; set; }
     }
 
     public partial class ApiConfig
