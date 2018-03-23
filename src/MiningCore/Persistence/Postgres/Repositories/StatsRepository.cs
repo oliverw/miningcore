@@ -57,7 +57,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
                         "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, created) " +
                         "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
-                        "@lastnetworkblocktime, @blockheight, @connectedpeers, @created)";
+                        "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
             con.Execute(query, mapped, tx);
         }
