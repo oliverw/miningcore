@@ -50,7 +50,7 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, $"https://straks.info/block/{BlockHeightPH}" }}},
             { CoinType.MOON, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/moon/block.dws?{BlockHeightPH}.htm" }}},
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, $"https://verge-blockchain.info/block/{BlockHashPH}" } }},
-            { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{0}.htm" } }},
+            { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } }},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
