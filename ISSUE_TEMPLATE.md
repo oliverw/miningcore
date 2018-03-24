@@ -1,3 +1,7 @@
+## Note
+Please use the following format to file an issue. Issues that fail to comply will delay our responses.
+Please remove this section when you submit the issue. Thank you for your cooperation.
+
 ### Description
 
 [Description of the issue]
@@ -23,8 +27,8 @@
 ### Version
 
 If you are using released version, please state your version.
-If you are using clone from `dev` branch, please state current commit hash.
-Also, please include the OS and what version of the OS you're running.
+If you are using clone from `dev` branch, please state commit hash of your copy.
+Also, please include the OS name and version you're currently running.
 
 ### Additional Information
 
