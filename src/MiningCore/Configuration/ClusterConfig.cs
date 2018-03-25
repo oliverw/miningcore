@@ -30,6 +30,7 @@ namespace MiningCore.Configuration
         BTC = 1, // Bitcoin
         BCH, // Bitcoin Cash
         LTC, // Litecoin
+        LTCC, // Litecoin Cash
         DOGE, // Dogecoin,
         XMR, // Monero
         GRS, // GroestlCoin
