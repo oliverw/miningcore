@@ -37,6 +37,7 @@
             "database": "name of database"
         }
     },
+    "devDonation":0.1,
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
