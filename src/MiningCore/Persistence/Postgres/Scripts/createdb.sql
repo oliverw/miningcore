@@ -1,4 +1,4 @@
-set role b2poolop;
+set role miningcore;
 
 CREATE TABLE shares
 (
