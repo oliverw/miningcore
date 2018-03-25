@@ -120,7 +120,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .ToDictionary(x => x, x =>
                 {
                     var extra = x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
-                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic.Trim()) ?
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic?.Trim()) ?
                         extra.ZmqBlockNotifyTopic.Trim() : BitcoinConstants.ZmqPublisherTopicBlockHash;
 
                     return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
