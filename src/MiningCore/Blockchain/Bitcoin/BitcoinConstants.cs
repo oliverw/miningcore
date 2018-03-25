@@ -113,7 +113,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public const string GetMiningInfo = "getmininginfo";
         public const string GetPeerInfo = "getpeerinfo";
         public const string ValidateAddress = "validateaddress";
-        public const string GetAddressinfo = "getaddressinfo";   // Get IsMine result from Globaltoken
+        public const string GetAddressinfo = "getaddressinfo";   // Get IsMine result from Globaltoken v0.16.0 and future bitcoin v0.17.0 to validate address for IsMine result.
         public const string GetBlockTemplate = "getblocktemplate";
         public const string GetBlockSubsidy = "getblocksubsidy";
         public const string SubmitBlock = "submitblock";
