@@ -1,4 +1,4 @@
-﻿set role miningcore;
+set role miningcore;
 
 CREATE TABLE shares
 (

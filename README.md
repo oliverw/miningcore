@@ -32,6 +32,7 @@ Coin | Implemented | Tested | Planned | Notes
 :--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | Yes | |
 Litecoin | Yes | Yes | |
+Litecoin Cash | Yes | Yes || [LCC Daemon](https://www.litecoinca.sh/#download)
 Zcash | Yes | Yes | |
 Monero | Yes | Yes | |
 Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
