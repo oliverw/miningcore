@@ -1,0 +1,339 @@
+{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "logBaseDirectory": "logs",
+        "perPoolLogFile": true
+    },
+    "banning": {
+        "manager": "integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": true,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "root",
+            "password": "PostgreSQL",
+            "database": "name of database"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+	"pools": [{
+        "id": "BTC0",
+        "enabled": true,
+        "coin": {
+            "type": "BTC"
+        },
+        "address": "Address for Pool",",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3333": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "BTC Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 8332,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	],
+ 	"pools": [{
+        "id": "DOGE1",
+        "enabled": false,
+        "coin": {
+            "type": "DOGE"
+        },
+        "address": "Address for Pool",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3334": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "DOGE Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9320,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	],	
+ 	"pools": [{
+        "id": "GLT2",
+        "enabled": true,
+        "coin": {
+            "type": "GLT"
+        },
+        "address": "Address for Pool",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3335": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "GLT Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9320,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	],
+	"pools": [{
+        "id": "LTC3",
+        "enabled": true,
+        "coin": {
+            "type": "LTC"
+        },
+        "address": "Address for Pool",",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3336": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "LTC Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9320,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	],
+	"pools": [{
+        "id": "LCC4",
+        "enabled": true,
+        "coin": {
+            "type": "LCC"
+        },
+        "address": "Address for Pool",",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3337": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "LCC Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9320,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	],
+	"pools": [{
+        "id": "ZEC1",
+        "enabled": false,
+        "coin": {
+            "type": "ZEC"
+        },
+        "address": "Address for Pool",
+        "rewardRecipients": [{
+            "address": "Address for reward",
+            "percentage": 0
+        }],
+        "zmqBlockNotifySocket": "tcp://127.0.0.1:3000",
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3338": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "ZEC Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9998,
+            "user": "RPC_User_name",
+            "password": "RPC_Password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
+      }
+	]
+}
