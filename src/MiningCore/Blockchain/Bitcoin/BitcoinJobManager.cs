@@ -277,7 +277,6 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
                 notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}");
-
                 return (false, null);
             }
 

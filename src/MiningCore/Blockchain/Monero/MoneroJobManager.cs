@@ -186,7 +186,6 @@ namespace MiningCore.Blockchain.Monero
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
                 notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
-
                 return false;
             }
 
@@ -319,7 +318,6 @@ namespace MiningCore.Blockchain.Monero
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submitted by {context.MinerName}");
-
                     blockSubmissionSubject.OnNext(Unit.Default);
 
                     share.TransactionConfirmationData = blobHash;
