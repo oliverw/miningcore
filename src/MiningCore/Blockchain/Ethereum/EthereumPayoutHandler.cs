@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Ethereum
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
-                            block.Reward = GetBaseBlockReward(block.BlockHeight); // base reward
+                            block.Reward = GetBaseBlockReward(chainType, block.BlockHeight); // base reward
 
                             if (extraConfig?.KeepUncles == false)
                                 block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
@@ -206,7 +206,7 @@ namespace MiningCore.Blockchain.Ethereum
                                 {
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
-                                    block.Reward = GetUncleReward(uncle.Height.Value, blockInfo2.Height.Value);
+                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
                                     block.BlockHeight = uncle.Height.Value;
                                     block.Type = EthereumConstants.BlockTypeUncle;
 
@@ -329,7 +329,7 @@ namespace MiningCore.Blockchain.Ethereum
             return blockHeights.Select(x => blockCache[x]).ToArray();
         }
 
-        private decimal GetBaseBlockReward(ulong height)
+        internal static decimal GetBaseBlockReward(ParityChainType chainType, ulong height)
         {
             switch(chainType)
             {
@@ -340,7 +340,10 @@ namespace MiningCore.Blockchain.Ethereum
                     return EthereumConstants.HomesteadBlockReward;
 
                 case ParityChainType.Classic:
-                    return EthereumConstants.HomesteadBlockReward;
+                {
+                    var era = Math.Floor(((double) height + 1) / EthereumClassicConstants.BlockPerEra);
+                    return (decimal) Math.Pow((double) EthereumClassicConstants.BasePercent, era) * EthereumClassicConstants.BaseRewardInitial;
+                }
 
                 case ParityChainType.Expanse:
                     return EthereumConstants.ExpanseBlockReward;
@@ -377,13 +380,23 @@ namespace MiningCore.Blockchain.Ethereum
             return result;
         }
 
-        private decimal GetUncleReward(ulong uheight, ulong height)
+        internal static decimal GetUncleReward(ParityChainType chainType, ulong uheight, ulong height)
         {
-            var reward = GetBaseBlockReward(height);
+            var reward = GetBaseBlockReward(chainType, height);
 
-            // https://ethereum.stackexchange.com/a/27195/18000
-            reward *= uheight + 8 - height;
-            reward /= 8m;
+            switch (chainType)
+            {
+                case ParityChainType.Classic:
+                    reward *= EthereumClassicConstants.UnclePercent;
+                    break;
+
+                default:
+                    // https://ethereum.stackexchange.com/a/27195/18000
+                    reward *= uheight + 8 - height;
+                    reward /= 8m;
+                    break;
+            }
+
             return reward;
         }
 
