@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -105,9 +106,13 @@ namespace MiningCore.Blockchain.Bitcoin
 		        return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
+            var blockSubmission = blockSubmissionSubject.Synchronize();
+            var pollTimerRestart = blockSubmissionSubject.Synchronize();
 
-            var sources = new List<IObservable<bool>>();
-            var cancelTimeout = new List<IObservable<bool>>();
+            var triggers = new List<IObservable<(bool Force, string Via)>>
+            {
+                blockSubmission.Select(x=> (false, "Block-submission"))
+            };
 
             // collect ports
             var zmq = poolConfig.Daemons
@@ -115,9 +120,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 .ToDictionary(x => x, x =>
                 {
                     var extra = x.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
-                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic) ?
-                        extra.ZmqBlockNotifyTopic :
-                        BitcoinConstants.ZmqPublisherTopicBlockHash;
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic?.Trim()) ?
+                        extra.ZmqBlockNotifyTopic.Trim() : BitcoinConstants.ZmqPublisherTopicBlockHash;
 
                     return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
                 });
@@ -126,80 +130,64 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                var newJobsPubSub = daemon.ZmqSubscribe(zmq, 2)
+                var blockNotify = daemon.ZmqSubscribe(zmq, 2)
                     .Select(frames =>
                     {
-                        try
-                        {
-                            // second frame contains the block hash as binary data
-                            if (frames.Length > 1)
-                            {
-                                var hash = frames[1].ToHexString();
-                                return hash;
-                            }
-                        }
-
-                        finally
-                        {
-                            frames.Dispose();
-                        }
-
-                        return null;
+                        // We just take the second frame's raw data and turn it into a hex string.
+                        // If that string changes, we got an update (DistinctUntilChanged)
+                        var result = frames[1].ToHexString();
+                        frames.Dispose();
+                        return result;
                     })
-                    .Where(x=> x != null)
                     .DistinctUntilChanged()
-                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "ZMQ pub/sub")))
-                    .Concat()
+                    .Select(_ => (false, "ZMQ pub/sub"))
                     .Publish()
                     .RefCount();
 
-                sources.Add(newJobsPubSub);
-                cancelTimeout.Add(newJobsPubSub);
+                pollTimerRestart = Observable.Merge(
+                        blockSubmission,
+                        blockNotify.Select(_ => Unit.Default))
+                    .Publish()
+                    .RefCount();
+
+                triggers.Add(blockNotify);
             }
 
             if (poolConfig.BlockRefreshInterval > 0)
             {
-                // periodically update block-template from daemon
-                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
-                    .Concat()
-                    .Where(isNew => isNew)
-                    .Publish()
-                    .RefCount();
-
-                sources.Add(newJobsPolled);
-                cancelTimeout.Add(newJobsPolled);
+                // periodically update block-template
+                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .TakeUntil(pollTimerRestart)
+                    .Select(_ => (false, "RPC polling"))
+                    .Repeat());
             }
 
             else
             {
-                // poll for the first successful update after which polling is suspended forever
-                var newJobsPolled = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                    .Select(_ => Observable.FromAsync(() => UpdateJob(false, "RPC polling")))
-                    .Concat()
-                    .Where(isNew => isNew)
-                    .Take(1)
-                    .Publish()
-                    .RefCount();
-
-                sources.Add(newJobsPolled);
-                cancelTimeout.Add(newJobsPolled);
+                // get initial blocktemplate
+                triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+                    .Select(_ => (false, "Initial template"))
+                    .TakeWhile(_ => !hasInitialBlockTemplate));
             }
 
-            // if there haven't been any new jobs for a while, force an update
-            var cancelRebroadcast = cancelTimeout.Count > 0 ?
-                cancelTimeout.Count > 1 ? Observable.Merge(cancelTimeout) : cancelTimeout.First() :
-                Observable.Never<bool>();
-
-            sources.Add(Observable.Timer(jobRebroadcastTimeout)
-                .TakeUntil(cancelRebroadcast) // cancel timeout if an actual new job has been detected
-                .Do(_ => logger.Debug(() => $"[{LogCat}] No new blocks for {jobRebroadcastTimeout.TotalSeconds} seconds - updating transactions & rebroadcasting work"))
-                .Select(x => Observable.FromAsync(() => UpdateJob(true)))
-                .Concat()
+            // periodically update transactions for current template
+            triggers.Add(Observable.Timer(jobRebroadcastTimeout)
+                .TakeUntil(pollTimerRestart)
+                .Select(_ => (true, "Job-Refresh"))
                 .Repeat());
 
-            Jobs = Observable.Merge(sources)
-                .Select(GetJobParamsForStratum);
+            Jobs = Observable.Merge(triggers)
+                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via)))
+                .Concat()
+                .Where(x=> x.IsNew || x.Force)
+                .Do(x =>
+                {
+                    if(x.IsNew)
+                        hasInitialBlockTemplate = true;
+                })
+                .Select(x=> GetJobParamsForStratum(x.IsNew))
+                .Publish()
+                .RefCount();
         }
 
         protected virtual async Task<DaemonResponse<TBlockTemplate>> GetBlockTemplateAsync()
@@ -288,8 +276,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed with: {submitError}");
-
+                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}");
                 return (false, null);
             }
 
@@ -512,6 +499,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
+                    blockSubmissionSubject.OnNext(Unit.Default);
+
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
                     share.TransactionConfirmationData = acceptResponse.CoinbaseTransaction;
@@ -651,9 +640,17 @@ namespace MiningCore.Blockchain.Bitcoin
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
-            poolAddressDestination = !isPoS ?
-                AddressToDestination(validateAddressResponse.Address) :
-                new PubKey(validateAddressResponse.PubKey);
+            if (!isPoS)
+            {
+                // bitcoincashd returns a different address than what was passed in
+                if(!validateAddressResponse.Address.StartsWith("bitcoincash:"))
+                    poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
+                else
+                    poolAddressDestination = AddressToDestination(poolConfig.Address);
+            }
+
+            else
+                poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
 
             // chain detection
             if (!hasLegacyDaemon)
@@ -701,31 +698,21 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (networkType == BitcoinNetworkType.Main &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (networkType == BitcoinNetworkType.Main &&
-                    KnownAddresses.DevFeeAddresses.ContainsKey(poolConfig.Coin.Type))
-                    address = KnownAddresses.DevFeeAddresses[poolConfig.Coin.Type];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 
-        protected virtual async Task<bool> UpdateJob(bool forceUpdate, string via = null)
+        protected virtual async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -737,7 +724,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (response.Error != null)
                 {
                     logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
-                    return false;
+                    return (false, forceUpdate);
                 }
 
                 var blockTemplate = response.Response;
@@ -757,36 +744,37 @@ namespace MiningCore.Blockchain.Bitcoin
                         ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher);
 
-                    if (isNew)
-                    {
-                        if(via != null)
-                            logger.Info($"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.Now;
-                        BlockchainStats.BlockHeight = blockTemplate.Height;
-                        BlockchainStats.NetworkDifficulty = job.Difficulty;
-                    }
-
                     lock (jobLock)
                     {
-                        if(isNew)
+                        if (isNew)
+                        {
+                            if(via != null)
+                                logger.Info(()=> $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                            else
+                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+
                             validJobs.Clear();
 
-                        validJobs.Add(job);
+                            // update stats
+                            BlockchainStats.LastNetworkBlockTime = clock.Now;
+                            BlockchainStats.BlockHeight = blockTemplate.Height;
+                            BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        }
 
-                        if (!isNew)
+                        else
                         {
                             // trim active jobs
-                            while(validJobs.Count > maxActiveJobs)
+                            while(validJobs.Count > maxActiveJobs - 1)
                                 validJobs.RemoveAt(0);
                         }
+
+                        validJobs.Add(job);
                     }
 
                     currentJob = job;
                 }
 
-                return isNew;
+                return (isNew, forceUpdate);
             }
 
             catch(Exception ex)
@@ -794,7 +782,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
 
-            return false;
+            return (false, forceUpdate);
         }
 
         protected virtual object GetJobParamsForStratum(bool isNew)

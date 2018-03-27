@@ -14,7 +14,7 @@ namespace MiningCore.Tests.Blockchain.Ethereum
 	/// </summary>
 	public class EthereumJobTests : TestBase
     {
-        static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath(), true);
+        static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath());
 
 		/*
         [Fact]

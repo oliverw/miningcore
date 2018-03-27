@@ -90,6 +90,7 @@ namespace MiningCore
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -114,6 +115,7 @@ namespace MiningCore
                 {
                     Console.CancelKeyPress += OnCancelKeyPress;
                     Start().Wait(cts.Token);
+                    Shutdown();
                 }
 
                 else
@@ -183,14 +185,6 @@ namespace MiningCore
                 Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
             }
-        }
-
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            logger.Info(() => "SIGINT received. Exiting.");
-
-            cts.Cancel();
-            Process.GetCurrentProcess().Close();
         }
 
         private static void DumpParsedConfig(ClusterConfig config)
@@ -643,6 +637,31 @@ namespace MiningCore
             }
 
             Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
+        }
+
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            logger.Info(() => "SIGINT received. Exiting.");
+
+            cts.Cancel();
+        }
+
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            logger.Info(() => "SIGTERM received. Exiting.");
+
+            cts.Cancel();
+        }
+
+        private static void Shutdown()
+        {
+            logger.Info(() => "Shutdown ...");
+
+            shareRelay.Stop();
+            shareRecorder.Stop();
+            statsRecorder.Stop();
+
+            Process.GetCurrentProcess().Close();
         }
 
         private static void TouchNativeLibs()

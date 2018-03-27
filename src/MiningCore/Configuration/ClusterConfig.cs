@@ -99,7 +99,30 @@ namespace MiningCore.Configuration
 
     public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     {
+        /// <summary>
+        /// Use SSL to for RPC requests
+        /// </summary>
+        public bool Ssl { get; set; }
+
+        /// <summary>
+        /// Use HTTP2 protocol for RPC requests (don't use this unless your daemon(s) live behind a HTTP reverse proxy)
+        /// </summary>
+        public bool Http2 { get; set; }
+
+        /// <summary>
+        /// Validate SSL certificate (if SSL option is set to true)
+        /// </summary>
+        public bool ValidateCert { get; set; }
+
+        /// <summary>
+        /// Optional endpoint category
+        /// </summary>
         public string Category { get; set; }
+
+        /// <summary>
+        /// Optional request path for RPC requests
+        /// </summary>
+        public string HttpPath { get; set; }
 
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
@@ -329,7 +352,6 @@ namespace MiningCore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
-        public decimal? DevDonation { get; set; }
 
         /// <summary>
         /// If this is enabled, shares are not written to the database

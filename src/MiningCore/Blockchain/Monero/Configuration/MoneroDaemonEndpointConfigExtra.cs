@@ -18,23 +18,20 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin.Configuration
+namespace MiningCore.Blockchain.Monero.Configuration
 {
-    public class BitcoinPoolPaymentProcessingConfigExtra
+    public class MoneroDaemonEndpointConfigExtra
     {
         /// <summary>
-        /// Wallet Password if the daemon is running with an encrypted wallet (used for unlocking wallet during payment processing)
+        /// Address of ZeroMQ block notify socket
+        /// Should match the value of -zmqpubhashblock daemon start parameter
         /// </summary>
-        public string WalletPassword { get; set; }
+        public string ZmqBlockNotifySocket { get; set; }
 
         /// <summary>
-        /// if True, miners pay payment tx fees
+        /// Optional: ZeroMQ block notify topic
+        /// Defaults to "hashblock" if left blank
         /// </summary>
-        public bool MinersPayTxFees { get; set; }
-
-        /// <summary>
-        /// Multiply blockreward by this amount
-        /// </summary>
-        public decimal? BlockrewardMultiplier { get; set; }
+        public string ZmqBlockNotifyTopic { get; set; }
     }
 }

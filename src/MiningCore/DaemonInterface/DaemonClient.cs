@@ -72,28 +72,35 @@ namespace MiningCore.DaemonInterface
 
         protected DaemonEndpointConfig[] endPoints;
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
-        private string rpcLocation;
         private readonly JsonSerializer serializer;
 
         #region API-Surface
 
-        public void Configure(DaemonEndpointConfig[] endPoints, string rpcLocation = null,
-            string digestAuthRealm = null)
+        public void Configure(DaemonEndpointConfig[] endPoints, string digestAuthRealm = null)
         {
             Contract.RequiresNonNull(endPoints, nameof(endPoints));
             Contract.Requires<ArgumentException>(endPoints.Length > 0, $"{nameof(endPoints)} must not be empty");
 
             this.endPoints = endPoints;
-            this.rpcLocation = rpcLocation;
 
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
-                new HttpClient(new HttpClientHandler
+            {
+                var handler = new HttpClientHandler
                 {
                     Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
                     PreAuthenticate = true,
                     AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-                }));
+                };
+
+                if (endpoint.Ssl && !endpoint.ValidateCert)
+                {
+                    handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                    handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true;
+                }
+
+                return new HttpClient(handler);
+            });
         }
 
         /// <summary>
@@ -217,7 +224,8 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig, int> portMap, string method, object payload = null,
+        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig, 
+            (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
@@ -251,14 +259,18 @@ namespace MiningCore.DaemonInterface
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
             // build request url
-            var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(rpcLocation))
-                requestUrl += $"/{rpcLocation}";
+            var protocol = endPoint.Ssl ? "https" : "http";
+            var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+                requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
             var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
             var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            if(endPoint.Http2)
+                request.Version = new Version(2, 0);
 
             // build auth header
             if (!string.IsNullOrEmpty(endPoint.User))
@@ -294,15 +306,19 @@ namespace MiningCore.DaemonInterface
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
             // build request url
-            var requestUrl = $"http://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(rpcLocation))
-                requestUrl += $"/{rpcLocation}";
+            var protocol = endPoint.Ssl ? "https" : "http";
+            var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
+            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+                requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
             using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (endPoint.Http2)
+                    request.Version = new Version(2, 0);
 
                 // build auth header
                 if (!string.IsNullOrEmpty(endPoint.User))
@@ -405,7 +421,8 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint, int port, string method, object payload = null,
+        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint,
+            (int Port, string HttpPath, bool Ssl) conf, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             return Observable.Defer(()=> Observable.Create<PooledArraySegment<byte>>(obs =>
@@ -425,7 +442,8 @@ namespace MiningCore.DaemonInterface
                                     using(var client = new ClientWebSocket())
                                     {
                                         // connect
-                                        var uri = new Uri($"ws://{endPoint.Host}:{port}");
+                                        var protocol = conf.Ssl ? "wss" : "ws";
+                                        var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
 
                                         logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                         await client.ConnectAsync(uri, cts.Token);

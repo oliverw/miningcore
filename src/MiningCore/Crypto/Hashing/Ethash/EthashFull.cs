@@ -10,22 +10,19 @@ namespace MiningCore.Crypto.Hashing.Ethash
 {
     public class EthashFull : IDisposable
     {
-        public EthashFull(int numCaches, string dagDir, bool noFutureDag = false)
+        public EthashFull(int numCaches, string dagDir)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
             this.numCaches = numCaches;
             this.dagDir = dagDir;
-            this.noFutureDag = noFutureDag;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
         private readonly object cacheLock = new object();
         private readonly Dictionary<ulong, Dag> caches = new Dictionary<ulong, Dag>();
         private Dag future;
         private readonly string dagDir;
-        private readonly bool noFutureDag;
 
         public void Dispose()
         {
@@ -33,7 +30,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 value.Dispose();
         }
 
-        public async Task<Dag> GetDagAsync(ulong block)
+        public async Task<Dag> GetDagAsync(ulong block, ILogger logger)
         {
             var epoch = block / EthereumConstants.EpochLength;
             Dag result;
@@ -52,7 +49,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                         var key = caches.First(pair => pair.Value == toEvict).Key;
                         var epochToEvict = toEvict.Epoch;
 
-                        logger.Debug(() => $"Evicting DAG for epoch {epochToEvict} in favour of epoch {epoch}");
+                        logger.Info(() => $"Evicting DAG for epoch {epochToEvict} in favour of epoch {epoch}");
                         toEvict.Dispose();
                         caches.Remove(key);
                     }
@@ -68,28 +65,31 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
                     else
                     {
-                        logger.Debug(() => $"No pre-generated DAG available, creating new for epoch {epoch}");
+                        logger.Info(() => $"No pre-generated DAG available, creating new for epoch {epoch}");
                         result = new Dag(epoch);
                     }
 
                     caches[epoch] = result;
+                }
 
-                    // If we just used up the future cache, or need a refresh, regenerate
-                    if ((future == null || future.Epoch <= epoch) && !noFutureDag)
+                else
+                {
+                    // If we used up the future cache, or need a refresh, regenerate
+                    if (future == null || future.Epoch <= epoch)
                     {
-                        logger.Debug(() => $"Pre-generating DAG for epoch {epoch + 1}");
+                        logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
                         future = new Dag(epoch + 1);
 
-#pragma warning disable 4014
-                        future.GenerateAsync(dagDir);
-#pragma warning restore 4014
+                        #pragma warning disable 4014
+                        future.GenerateAsync(dagDir, logger);
+                        #pragma warning restore 4014
                     }
                 }
 
                 result.LastUsed = DateTime.Now;
             }
 
-            await result.GenerateAsync(dagDir);
+            await result.GenerateAsync(dagDir, logger);
             return result;
         }
     }

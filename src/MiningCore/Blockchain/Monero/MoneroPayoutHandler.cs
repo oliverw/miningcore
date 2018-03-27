@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Monero
 
         protected override string LogCategory => "Monero Payout Handler";
 
-        private void HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private bool HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
             if (response.Error == null)
             {
@@ -89,6 +89,7 @@ namespace MiningCore.Blockchain.Monero
 
                 PersistPayments(balances, txHash);
                 NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
+                return true;
             }
 
             else
@@ -96,10 +97,11 @@ namespace MiningCore.Blockchain.Monero
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
 
                 NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{MWC.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                return false;
             }
         }
 
-        private void HandleTransferResponse(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        private bool HandleTransferResponse(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
         {
             if (response.Error == null)
             {
@@ -110,6 +112,7 @@ namespace MiningCore.Blockchain.Monero
 
                 PersistPayments(balances, txHashes.First());
                 NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
+                return true;
             }
 
             else
@@ -117,6 +120,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
 
                 NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{MWC.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                return false;
             }
         }
 
@@ -133,7 +137,7 @@ namespace MiningCore.Blockchain.Monero
             return networkType.Value;
         }
 
-        private async Task PayoutBatch(Balance[] balances)
+        private async Task<bool> PayoutBatch(Balance[] balances)
         {
             // build request
             var request = new TransferRequest
@@ -155,7 +159,7 @@ namespace MiningCore.Blockchain.Monero
             };
 
             if (request.Destinations.Length == 0)
-                return;
+                return true;
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
@@ -172,12 +176,11 @@ namespace MiningCore.Blockchain.Monero
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
 
-                    HandleTransferResponse(transferSplitResponse, balances);
-                    return;
+                    return HandleTransferResponse(transferSplitResponse, balances);
                 }
             }
 
-            HandleTransferResponse(transferResponse, balances);
+            return HandleTransferResponse(transferResponse, balances);
         }
 
         private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
@@ -261,18 +264,32 @@ namespace MiningCore.Blockchain.Monero
 
             var daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
             daemon = new DaemonClient(jsonSerializerSettings);
-            daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            daemon.Configure(daemonEndpoints);
 
             // configure wallet daemon
             var walletDaemonEndpoints = poolConfig.Daemons
                 .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
             walletDaemon = new DaemonClient(jsonSerializerSettings);
-            walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network
             await GetNetworkTypeAsync();
@@ -462,10 +479,28 @@ namespace MiningCore.Blockchain.Monero
                 .ToArray();
 
             if (simpleBalances.Length > 0)
+#if false
                 await PayoutBatch(simpleBalances);
+#else
+            {
+                var maxBatchSize = 28;
+                var pageSize = maxBatchSize;
+                var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
 
-            // balances with paymentIds
-            var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
+                for(var i = 0; i < pageCount; i++)
+                {
+                    var page = simpleBalances
+                        .Skip(i * pageSize)
+                        .Take(pageSize)
+                        .ToArray();
+
+                    if (!await PayoutBatch(page))
+                        break;
+                }
+            }
+#endif
+                // balances with paymentIds
+                var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
                 .Where(x => x.Amount >= minimumPaymentToPaymentId)
@@ -475,6 +510,6 @@ namespace MiningCore.Blockchain.Monero
                 await PayoutToPaymentId(balance);
         }
 
-        #endregion // IPayoutHandler
+#endregion // IPayoutHandler
     }
 }

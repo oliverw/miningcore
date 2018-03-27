@@ -83,7 +83,7 @@ namespace MiningCore.Blockchain.Monero
             var split = loginRequest.Login.Split('.');
             context.MinerName = split[0].Trim();
             context.WorkerName = split.Length > 1 ? split[1].Trim() : null;
-            context.UserAgent = loginRequest.UserAgent.Trim();
+            context.UserAgent = loginRequest.UserAgent?.Trim();
 
             // extract paymentid
             var index = context.MinerName.IndexOf('#');

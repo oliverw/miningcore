@@ -20,6 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Globalization;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -48,6 +51,8 @@ namespace MiningCore.Blockchain
         protected object jobLock = new object();
         protected ILogger logger;
         protected PoolConfig poolConfig;
+        protected bool hasInitialBlockTemplate = false;
+        protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
 
         protected virtual string LogCat { get; } = "Job Manager";
 

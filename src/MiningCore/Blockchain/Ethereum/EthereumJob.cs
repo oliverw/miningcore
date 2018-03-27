@@ -6,15 +6,17 @@ using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
 using NBitcoin;
+using NLog;
 
 namespace MiningCore.Blockchain.Ethereum
 {
     public class EthereumJob
     {
-        public EthereumJob(string id, EthereumBlockTemplate blockTemplate)
+        public EthereumJob(string id, EthereumBlockTemplate blockTemplate, ILogger logger)
         {
             Id = id;
             BlockTemplate = blockTemplate;
+            this.logger = logger;
 
             var target = blockTemplate.Target;
             if (target.StartsWith("0x"))
@@ -29,6 +31,7 @@ namespace MiningCore.Blockchain.Ethereum
         public string Id { get; }
         public EthereumBlockTemplate BlockTemplate { get; }
         private readonly uint256 blockTarget;
+        private readonly ILogger logger;
 
         private void RegisterNonce(StratumClient worker, string nonce)
         {
@@ -63,10 +66,10 @@ namespace MiningCore.Blockchain.Ethereum
             var fullNonce = ulong.Parse(fullNonceHex, NumberStyles.HexNumber);
 
             // get dag for block
-            var dag = await ethash.GetDagAsync(BlockTemplate.Height);
+            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger);
 
             // compute
-            if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
+            if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             resultBytes.ReverseArray();

@@ -16,7 +16,6 @@ namespace MiningCore.Crypto.Hashing.Ethash
             LastUsed = DateTime.Now;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private IntPtr handle = IntPtr.Zero;
         private bool isGenerated = false;
         private readonly object genLock = new object();
@@ -33,7 +32,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             }
         }
 
-        public async Task GenerateAsync()
+        public async Task GenerateAsync(ILogger logger)
         {
             await Task.Run(() =>
             {
@@ -54,7 +53,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             });
         }
 
-        public unsafe bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
             Contract.RequiresNonNull(hash, nameof(hash));
 

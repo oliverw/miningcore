@@ -17,7 +17,6 @@ namespace MiningCore.Crypto.Hashing.Ethash
             this.numCaches = numCaches;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
         private readonly object cacheLock = new object();
         private readonly Dictionary<ulong, Cache> caches = new Dictionary<ulong, Cache>();
@@ -29,7 +28,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 value.Dispose();
         }
 
-        public async Task<bool> VerifyBlockAsync(Block block)
+        public async Task<bool> VerifyBlockAsync(Block block, ILogger logger)
         {
             Contract.RequiresNonNull(block, nameof(block));
 
@@ -46,10 +45,10 @@ namespace MiningCore.Crypto.Hashing.Ethash
             }
 
             // look up cache
-            var cache = await GetCacheAsync(block.Height);
+            var cache = await GetCacheAsync(block.Height, logger);
 
             // Recompute the hash using the cache
-            if (!cache.Compute(block.HashNoNonce, block.Nonce, out var mixDigest, out var resultBytes))
+            if (!cache.Compute(logger, block.HashNoNonce, block.Nonce, out var mixDigest, out var resultBytes))
                 return false;
 
             // avoid mixdigest malleability as it's not included in a block's "hashNononce"
@@ -63,7 +62,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             return result;
         }
 
-        private async Task<Cache> GetCacheAsync(ulong block)
+        private async Task<Cache> GetCacheAsync(ulong block, ILogger logger)
         {
             var epoch = block / EthereumConstants.EpochLength;
             Cache result;
@@ -111,7 +110,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                         future = new Cache(epoch + 1);
 
 #pragma warning disable 4014
-                        future.GenerateAsync();
+                        future.GenerateAsync(logger);
 #pragma warning restore 4014
                     }
                 }
@@ -119,7 +118,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 result.LastUsed = DateTime.Now;
             }
 
-            await result.GenerateAsync();
+            await result.GenerateAsync(logger);
             return result;
         }
     }

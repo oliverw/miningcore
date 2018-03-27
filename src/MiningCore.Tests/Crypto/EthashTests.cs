@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.Extensions;
+using NLog;
 using Xunit;
 
 namespace MiningCore.Tests.Crypto
 {
     public class EthashTests : TestBase
     {
+        private ILogger logger = LogManager.GetCurrentClassLogger();
+
         [Fact]
         public async Task Ethhash_Verify_Valid_Blocks()
         {
@@ -47,9 +50,9 @@ namespace MiningCore.Tests.Crypto
 
             using (var ethash = new EthashLight(3))
             {
-                Assert.True(await ethash.VerifyBlockAsync(validBlocks[0]));
-                Assert.True(await ethash.VerifyBlockAsync(validBlocks[1]));
-                Assert.True(await ethash.VerifyBlockAsync(validBlocks[2]));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[0], logger));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[1], logger));
+                Assert.True(await ethash.VerifyBlockAsync(validBlocks[2], logger));
             }
         }
 
@@ -99,10 +102,10 @@ namespace MiningCore.Tests.Crypto
 
             using (var ethash = new EthashLight(3))
             {
-                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[0]));
-                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[1]));
-                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[2]));
-                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[3]));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[0], logger));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[1], logger));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[2], logger));
+                Assert.False(await ethash.VerifyBlockAsync(invalidBlocks[3], logger));
             }
         }
 
@@ -111,7 +114,7 @@ namespace MiningCore.Tests.Crypto
         {
             using (var ethash = new EthashLight(3))
             {
-                await Assert.ThrowsAsync<ArgumentNullException>(async () => await ethash.VerifyBlockAsync(null));
+                await Assert.ThrowsAsync<ArgumentNullException>(async () => await ethash.VerifyBlockAsync(null, logger));
             }
         }
     }
