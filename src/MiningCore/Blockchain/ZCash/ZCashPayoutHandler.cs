@@ -296,7 +296,7 @@ namespace MiningCore.Blockchain.ZCash
 
             var operationId = result.Response.OperationId;
 
-            logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} operation id: {operationId}, ShieldedUtxOs: {result.Response.ShieldedUtxOs}, ShieldedValue: {FormatAmount(result.Response.ShieldedValue)}");
+            logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} operation id: {operationId}");
 
             var continueWaiting = true;
 

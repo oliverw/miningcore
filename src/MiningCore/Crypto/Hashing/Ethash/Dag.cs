@@ -85,7 +85,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                             // Generate the actual DAG
                             handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
                             {
-                                logger.Info(() => $"Generating DAG: {progress}%");
+                                logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
                                 return 0;
                             });
 

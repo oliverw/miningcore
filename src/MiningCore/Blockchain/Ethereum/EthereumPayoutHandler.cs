@@ -45,7 +45,7 @@ using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
+    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA, CoinType.CLO)]
     public class EthereumPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -353,6 +353,9 @@ namespace MiningCore.Blockchain.Ethereum
 
                 case ParityChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
+
+                case ParityChainType.CallistoTestnet:
+                    return CallistoConstants.BaseRewardInitial * (1.0m - CallistoConstants.TreasuryPercent);
 
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");

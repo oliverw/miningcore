@@ -8,29 +8,5 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
     {
         [JsonProperty("opid")]
         public string OperationId { get; set; }
-
-        /// <summary>
-        /// Number of coinbase utxos being shielded
-        /// </summary>
-        [JsonProperty("shieldedUTXOs")]
-        public int ShieldedUtxOs { get; set; }
-
-        /// <summary>
-        /// Value of coinbase utxos being shielded
-        /// </summary>
-        [JsonProperty("shieldedValue")]
-        public decimal ShieldedValue { get; set; }
-
-        /// <summary>
-        /// Number of coinbase utxos still available for shielding
-        /// </summary>
-        [JsonProperty("remainingUTXOs")]
-        public int RemainingUtxOs { get; set; }
-
-        /// <summary>
-        /// Value of coinbase utxos still available for shielding
-        /// </summary>
-        [JsonProperty("remainingValue")]
-        public decimal RemainingValue { get; set; }
     }
 }

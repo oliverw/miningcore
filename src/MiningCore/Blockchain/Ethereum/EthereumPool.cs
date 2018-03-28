@@ -41,7 +41,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
+    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA, CoinType.CLO)]
     public class EthereumPool : PoolBase
     {
         public EthereumPool(IComponentContext ctx,

@@ -25,6 +25,12 @@ namespace MiningCore.Blockchain
                 { EthereumConstants.BlockTypeUncle, $"https://gastracker.io/uncle/{BlockHeightPH}" }
             }},
 
+            { CoinType.CLO, new Dictionary<string, string>
+            {
+                { string.Empty, $"https://explorer.callisto.network/block/{BlockHeightPH}" },
+                { EthereumConstants.BlockTypeUncle, $"https://explorer.callisto.network/uncle/{BlockHeightPH}" }
+            }},
+
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" }}},
             { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } }},
             { CoinType.LTC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ltc/block.dws?{BlockHeightPH}.htm" } }},
@@ -58,6 +64,7 @@ namespace MiningCore.Blockchain
             { CoinType.ETN, "https://blockexplorer.electroneum.com/tx/{0}" },
             { CoinType.ETH, "https://etherscan.io/tx/{0}" },
             { CoinType.ETC, "https://gastracker.io/tx/{0}" },
+            { CoinType.CLO, "https://explorer.callisto.network/tx/{0}" },
             { CoinType.LTC, "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm" },
             { CoinType.PPC, "https://chainz.cryptoid.info/ppc/tx.dws?{0}.htm" },
             { CoinType.BCH, "https://www.blocktrail.com/BCC/tx/{0}" },
@@ -89,6 +96,7 @@ namespace MiningCore.Blockchain
         {
             { CoinType.ETH, "https://etherscan.io/address/{0}" },
             { CoinType.ETC, "https://gastracker.io/addr/{0}" },
+            { CoinType.CLO, "https://explorer.callisto.network/account/{0}" },
             { CoinType.LTC, "https://chainz.cryptoid.info/ltc/address.dws?{0}.htm" },
             { CoinType.PPC, "https://chainz.cryptoid.info/ppc/address.dws?{0}.htm" },
             { CoinType.BCH, "https://www.blocktrail.com/BCC/address/{0}" },
