@@ -17,7 +17,9 @@ OBJECTS = utilstrencodings.o \
 	crypto/sha256.o \
 	crypto/hmac_sha256.o \
 	crypto/equihash.o \
-	crypto/ripemd160.o
+	crypto/ripemd160.o \
+	equihashverify.o \
+	exports.o
 
 all: $(TARGET)
 
