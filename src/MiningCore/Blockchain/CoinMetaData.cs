@@ -130,6 +130,7 @@ namespace MiningCore.Blockchain
         {
             { CoinType.ETH, (coin, alg)=> Ethash },
             { CoinType.ETC, (coin, alg)=> Ethash },
+            { CoinType.CLO, (coin, alg)=> Ethash },
             { CoinType.LTC, BitcoinProperties.GetAlgorithm },
             { CoinType.PPC, BitcoinProperties.GetAlgorithm },
             { CoinType.BCH, BitcoinProperties.GetAlgorithm },
