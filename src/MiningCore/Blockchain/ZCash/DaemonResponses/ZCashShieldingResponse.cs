@@ -6,6 +6,7 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
 {
     public class ZCashShieldingResponse
     {
+        [JsonProperty("opid")]
         public string OperationId { get; set; }
 
         /// <summary>
