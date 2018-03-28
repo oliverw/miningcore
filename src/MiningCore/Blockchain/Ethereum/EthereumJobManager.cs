@@ -551,26 +551,29 @@ namespace MiningCore.Blockchain.Ethereum
 
             await UpdateNetworkStatsAsync();
 
-            // make sure we have a current DAG
-            while(true)
+            if (poolConfig.EnableInternalStratum == true)
             {
-                var blockTemplate = await GetBlockTemplateAsync();
-
-                if (blockTemplate != null)
+                // make sure we have a current DAG
+                while (true)
                 {
-                    logger.Info(() => $"[{LogCat}] Loading current DAG ...");
+                    var blockTemplate = await GetBlockTemplateAsync();
 
-                    await ethash.GetDagAsync(blockTemplate.Height, logger);
+                    if (blockTemplate != null)
+                    {
+                        logger.Info(() => $"[{LogCat}] Loading current DAG ...");
 
-                    logger.Info(() => $"[{LogCat}] Loaded current DAG");
-                    break;
+                        await ethash.GetDagAsync(blockTemplate.Height, logger);
+
+                        logger.Info(() => $"[{LogCat}] Loaded current DAG");
+                        break;
+                    }
+
+                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
                 }
 
-                logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                SetupJobUpdates();
             }
-
-            SetupJobUpdates();
         }
 
         private void ConfigureRewards()
