@@ -364,16 +364,19 @@ namespace MiningCore.Blockchain.Ethereum
 
             base.Configure(poolConfig, clusterConfig);
 
-            // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                Dag.GetDefaultDagDirectory();
+            if (poolConfig.EnableInternalStratum == true)
+            { 
+                // ensure dag location is configured
+                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
+                    Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
+                    Dag.GetDefaultDagDirectory();
 
-            // create it if necessary
-            Directory.CreateDirectory(dagDir);
+                // create it if necessary
+                Directory.CreateDirectory(dagDir);
 
-            // setup ethash
-            ethash = new EthashFull(3, dagDir);
+                // setup ethash
+                ethash = new EthashFull(3, dagDir);
+            }
         }
 
         public bool ValidateAddress(string address)
