@@ -286,7 +286,11 @@ namespace MiningCore.Blockchain.ZCash
 
             if (result.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
+                if(result.Error.Code == -6)
+                    logger.Info(() => $"[{LogCategory}] No funds to shield");
+                else
+                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
+
                 return;
             }
 
