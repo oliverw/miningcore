@@ -658,6 +658,7 @@ namespace MiningCore
         private static readonly string[] NativeLibs =
         {
             "libmultihash.dll",
+            "libequihashverifynew.dll",
             "libcryptonote.dll"
         };
 
