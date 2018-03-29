@@ -550,7 +550,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             // update stats
             BlockchainStats.RewardType = "POW";
-            BlockchainStats.NetworkType = $"{chainType}";
+            BlockchainStats.NetworkType = $"{chainType}-{networkType}";
 
             await UpdateNetworkStatsAsync();
 

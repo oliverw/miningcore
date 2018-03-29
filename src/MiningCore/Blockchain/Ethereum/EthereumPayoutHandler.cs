@@ -79,7 +79,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region IPayoutHandler
 
-        public Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
@@ -97,15 +97,13 @@ namespace MiningCore.Blockchain.Ethereum
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints);
 
-            return Task.FromResult(true);
+            await DetectChainAsync();
         }
 
         public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
-
-            await DetectChainAsync();
 
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
@@ -270,7 +268,9 @@ namespace MiningCore.Blockchain.Ethereum
         {
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(EC.GetPeerCount);
-            if (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
+
+            if (networkType == EthereumNetworkType.Main &&
+                infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
                 infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount)
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
