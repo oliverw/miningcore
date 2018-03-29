@@ -73,7 +73,8 @@ namespace MiningCore.Configuration
     public enum PayoutScheme
     {
         // ReSharper disable once InconsistentNaming
-        PPLNS = 1
+        PPLNS = 1,
+        Solo
     }
 
     public partial class ClusterLoggingConfig
@@ -232,6 +233,11 @@ namespace MiningCore.Configuration
     {
         public string Address { get; set; }
         public decimal Percentage { get; set; }
+
+        /// <summary>
+        /// Optional recipient type
+        /// </summary>
+        public string Type { get; set; }
     }
 
     public partial class EmailSenderConfig : AuthenticatedNetworkEndpointConfig
