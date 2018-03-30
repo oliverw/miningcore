@@ -280,7 +280,7 @@ namespace MiningCore.DaemonInterface
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
             }
 
-            logger.Info(()=> $"Sending RPC request to {requestUrl}: {json}");
+            logger.Trace(()=> $"Sending RPC request to {requestUrl}: {json}");
 
             // send request
             using(var response = await httpClients[endPoint].SendAsync(request))
