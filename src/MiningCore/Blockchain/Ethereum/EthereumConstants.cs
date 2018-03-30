@@ -13,7 +13,7 @@ namespace MiningCore.Blockchain.Ethereum
         public static double Pow2x32 = Math.Pow(2, 32);
         public static BigInteger BigPow2x32 = new BigInteger(Pow2x32);
         public const int AddressLength = 20;
-        public const ulong Wei = 1000000000000000000UL;
+        public const decimal Wei = 1000000000000000000;
         public static BigInteger WeiBig = new BigInteger(1000000000000000000);
         public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
         public const decimal StaticTransactionFeeReserve = 0.0025m; // in ETH

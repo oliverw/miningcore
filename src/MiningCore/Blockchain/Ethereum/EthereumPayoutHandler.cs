@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -452,7 +453,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 From = poolConfig.Address,
                 To = balance.Address,
-                Value = (ulong) Math.Floor(balance.Amount * EthereumConstants.Wei),
+                Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
             var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });
