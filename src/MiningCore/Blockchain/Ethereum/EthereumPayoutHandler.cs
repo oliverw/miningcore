@@ -452,7 +452,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 From = poolConfig.Address,
                 To = balance.Address,
-                Value = (ulong) Math.Floor((double) balance.Amount * (double) EthereumConstants.Wei),
+                Value = (ulong) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
             var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });
