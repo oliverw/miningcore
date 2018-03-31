@@ -36,7 +36,7 @@ CREATE TABLE blocks
     hash TEXT NULL,
 	created TIMESTAMP NOT NULL,
 
-    CONSTRAINT BLOCKS_POOL_HEIGHT UNIQUE (poolid, blockheight)
+    CONSTRAINT BLOCKS_POOL_HEIGHT UNIQUE (poolid, blockheight, type) DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status);
