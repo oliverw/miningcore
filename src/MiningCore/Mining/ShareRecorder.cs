@@ -411,6 +411,7 @@ namespace MiningCore.Mining
                                             using (var stream = new MemoryStream(data))
                                             {
                                                 share = Serializer.Deserialize<Share>(stream);
+                                                share.BlockReward = (decimal) share.BlockRewardDouble;
                                             }
                                             break;
 
