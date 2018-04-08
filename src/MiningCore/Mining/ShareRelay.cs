@@ -91,6 +91,7 @@ namespace MiningCore.Mining
                 .Subscribe(share =>
                 {
                     share.Source = clusterConfig.ClusterName;
+                    share.BlockRewardDouble = (double) share.BlockReward;
 
                     try
                     {
