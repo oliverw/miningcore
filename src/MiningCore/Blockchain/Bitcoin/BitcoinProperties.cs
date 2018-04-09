@@ -121,6 +121,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // X11
             { CoinType.DASH, x11Coin },
+            { CoinType.CANN, x11Coin },
 
             // Equihash
             { CoinType.ZEC, equihashCoin },
