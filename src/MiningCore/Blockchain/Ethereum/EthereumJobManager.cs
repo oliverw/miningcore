@@ -268,7 +268,6 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var commands = new[]
                 {
-                    new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
                     new DaemonCmd(EC.GetPeerCount),
                 };
 
@@ -284,11 +283,8 @@ namespace MiningCore.Blockchain.Ethereum
                 }
 
                 // extract results
-                var block = results[0].Response.ToObject<Block>();
-                var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
+                var peerCount = results[0].Response.ToObject<string>().IntegralFromHex<int>();
 
-                BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
-                BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
                 BlockchainStats.NetworkHashrate = 0; // TODO
                 BlockchainStats.ConnectedPeers = peerCount;
             }
