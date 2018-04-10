@@ -63,5 +63,11 @@ namespace MiningCore.Blockchain.Bitcoin
         /// Used to subscribe to work from a server, required before all other communication.
         /// </summary>
         public const string ExtraNonceSubscribe = "mining.extranonce.subscribe";
+
+        /// <summary>
+        /// Appears to be a command sent by AntMiner devices for use with ASICBOOST.
+        /// https://www.reddit.com/r/Bitcoin/comments/63yo27/some_circumstantial_evidence_supporting_the_claim/dfy5o65/
+        /// </summary>
+        public const string MiningMultiVersion = "mining.multi_version";
     }
 }

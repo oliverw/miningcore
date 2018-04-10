@@ -1,0 +1,101 @@
+{
+  "logging": {
+    "level": "info",
+    "enableConsoleLog": true,
+    "enableConsoleColors": true,
+    "logFile": "",
+    "logBaseDirectory": "",
+    "perPoolLogFile": false
+  },
+  "banning": {
+    "manager": "integrated",
+    "banOnJunkReceive": true,
+    "banOnInvalidShares": false
+  },
+  "notifications": {
+    "enabled": false,
+    "email": {
+      "host": "smtp.example.com",
+      "port": 587,
+      "user": "user",
+      "password": "password",
+      "fromAddress": "info@yourpool.org",
+      "fromName": "support"
+    },
+    "admin": {
+      "enabled": false,
+      "emailAddress": "user@example.com",
+      "notifyBlockFound": true
+    }
+  },
+  "persistence": {
+    "postgres": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "user": "user",
+      "password": "pass",
+      "database": "miningcore"
+    }
+  },
+  "paymentProcessing": {
+    "enabled": true,
+    "interval": 600,
+    "shareRecoveryFile": "recovered-shares.txt"
+  },
+  "pools": [
+    {
+      "id": "flo1",
+      "enabled": true,
+      "coin": {
+        "type": "FLO"
+      },
+      "address": "FC3d6JT1Z3uZvKVNWjKt3qN8PX8knhAU7d",
+      "rewardRecipients": [
+        {
+          "address": "FCH4uesFJADBGK85gW74Cqmka54dpZk4ZH",
+          "percentage": 1.0
+        }
+      ],
+      "floData": "Flo MiningCore",
+      "maxActiveJobs": 10,
+      "blockRefreshInterval": 500,
+      "jobRebroadcastTimeout": 10,
+      "clientConnectionTimeout": 600,
+      "banning": {
+        "enabled": true,
+        "time": 600,
+        "invalidPercent": 50,
+        "checkThreshold": 50
+      },
+      "ports": {
+        "3043": {
+          "listenAddress": "0.0.0.0",
+          "difficulty": 524287,
+          "name": "NiceHash Mining",
+          "varDiff": {
+            "minDiff": 65535,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        }
+      },
+      "daemons": [
+        {
+          "host": "127.0.0.1",
+          "port": 7313,
+          "user": "user",
+          "password": "pass"
+        }
+      ],
+      "paymentProcessing": {
+        "enabled": true,
+        "minimumPayment": 0.5,
+        "payoutScheme": "PPLNS",
+        "payoutSchemeConfig": {
+          "factor": 2.0
+        }
+      }
+    }
+  ]
+}
