@@ -163,17 +163,25 @@ namespace MiningCore.Blockchain.Monero
         {
             logger.LogInvoke(LogCat);
 
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+            try
+            {
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 
-            if (infoResponse.Error != null)
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+                if (infoResponse.Error != null)
+                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
-            var info = infoResponse.Response.ToObject<GetInfoResponse>();
+                var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-            BlockchainStats.BlockHeight = (int)info.Height;
-            BlockchainStats.NetworkDifficulty = info.Difficulty;
-            BlockchainStats.NetworkHashrate = info.Target > 0 ? (double)info.Difficulty / info.Target : 0;
-            BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+                BlockchainStats.BlockHeight = (int)info.Height;
+                BlockchainStats.NetworkDifficulty = info.Difficulty;
+                BlockchainStats.NetworkHashrate = info.Target > 0 ? (double)info.Difficulty / info.Target : 0;
+                BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+            }
+
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
 
         private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
@@ -474,6 +482,12 @@ namespace MiningCore.Blockchain.Monero
             BlockchainStats.NetworkType = networkType.ToString();
 
             await UpdateNetworkStatsAsync();
+
+            // Periodically update network stats
+            Observable.Interval(TimeSpan.FromMinutes(1))
+                .Select(via => Observable.FromAsync(UpdateNetworkStatsAsync))
+                .Concat()
+                .Subscribe();
 
             SetupJobUpdates();
         }

@@ -235,27 +235,35 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             logger.LogInvoke(LogCat);
 
-            var results = await daemon.ExecuteBatchAnyAsync(
-                new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
-                new DaemonCmd(BitcoinCommands.GetMiningInfo),
-                new DaemonCmd(BitcoinCommands.GetNetworkInfo)
-            );
-
-            if (results.Any(x => x.Error != null))
+            try
             {
-                var errors = results.Where(x => x.Error != null).ToArray();
+                var results = await daemon.ExecuteBatchAnyAsync(
+                    new DaemonCmd(BitcoinCommands.GetBlockchainInfo),
+                    new DaemonCmd(BitcoinCommands.GetMiningInfo),
+                    new DaemonCmd(BitcoinCommands.GetNetworkInfo)
+                );
 
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                if (results.Any(x => x.Error != null))
+                {
+                    var errors = results.Where(x => x.Error != null).ToArray();
+
+                    if (errors.Any())
+                        logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                }
+
+                var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
+                var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
+                var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
+
+                BlockchainStats.BlockHeight = infoResponse.Blocks;
+                BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
+                BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
             }
 
-            var infoResponse = results[0].Response.ToObject<BlockchainInfo>();
-            var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
-            var networkInfoResponse = results[2].Response.ToObject<NetworkInfo>();
-
-            BlockchainStats.BlockHeight = infoResponse.Blocks;
-            BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
 
         protected virtual async Task<(bool Accepted, string CoinbaseTransaction)> SubmitBlockAsync(Share share, string blockHex)
@@ -355,25 +363,33 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             logger.LogInvoke(LogCat);
 
-            var results = await daemon.ExecuteBatchAnyAsync(
-                new DaemonCmd(BitcoinCommands.GetMiningInfo),
-                new DaemonCmd(BitcoinCommands.GetConnectionCount)
-            );
-
-            if (results.Any(x => x.Error != null))
+            try
             {
-                var errors = results.Where(x => x.Error != null).ToArray();
+                var results = await daemon.ExecuteBatchAnyAsync(
+                    new DaemonCmd(BitcoinCommands.GetMiningInfo),
+                    new DaemonCmd(BitcoinCommands.GetConnectionCount)
+                );
 
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                if (results.Any(x => x.Error != null))
+                {
+                    var errors = results.Where(x => x.Error != null).ToArray();
+
+                    if (errors.Any())
+                        logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))}");
+                }
+
+                var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
+                var connectionCountResponse = results[1].Response.ToObject<object>();
+
+                BlockchainStats.BlockHeight = miningInfoResponse.Blocks;
+                //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
+                BlockchainStats.ConnectedPeers = (int)(long)connectionCountResponse;
             }
 
-            var miningInfoResponse = results[0].Response.ToObject<MiningInfo>();
-            var connectionCountResponse = results[1].Response.ToObject<object>();
-
-            BlockchainStats.BlockHeight = miningInfoResponse.Blocks;
-            //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-            BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
 
         #region API-Surface
@@ -685,6 +701,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 await UpdateNetworkStatsAsync();
             else
                 await UpdateNetworkStatsLegacyAsync();
+
+            // Periodically update network stats
+            Observable.Interval(TimeSpan.FromMinutes(10))
+                .Select(via => Observable.FromAsync(()=> !hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync()))
+                .Concat()
+                .Subscribe();
 
             SetupCrypto();
             SetupJobUpdates();
