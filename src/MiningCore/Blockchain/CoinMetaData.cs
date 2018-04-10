@@ -52,6 +52,7 @@ namespace MiningCore.Blockchain
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, $"https://verge-blockchain.info/block/{BlockHashPH}" } }},
             { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } }},
             { CoinType.FLO, new Dictionary<string, string> { { string.Empty, "https://florincoin.info/block/{0}" } }},
+            { CoinType.CANN, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/cann/block.dws?{BlockHeightPH}.htm" }}},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -87,6 +88,7 @@ namespace MiningCore.Blockchain
             { CoinType.CRC, "http://explorer.cryptopros.us/tx/{0}" },
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/tx/{0}" },
+            { CoinType.CANN, "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -118,6 +120,7 @@ namespace MiningCore.Blockchain
             { CoinType.CRC, "http://explorer.cryptopros.us/address/{0}" },
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/address.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/address/{0}" },
+            { CoinType.CANN, "https://chainz.cryptoid.info/cann/address.dws?{0}.htm" },
         };
 
         private const string Ethash = "Dagger-Hashimoto";
@@ -157,6 +160,7 @@ namespace MiningCore.Blockchain
             { CoinType.CRC, BitcoinProperties.GetAlgorithm },
             { CoinType.PAK, BitcoinProperties.GetAlgorithm },
             { CoinType.FLO, BitcoinProperties.GetAlgorithm },
+            { CoinType.CANN, BitcoinProperties.GetAlgorithm },
         };
     }
 }

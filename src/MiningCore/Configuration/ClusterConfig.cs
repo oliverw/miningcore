@@ -59,6 +59,7 @@ namespace MiningCore.Configuration
         BTCP, // Bitcoin Private
         FLO, // Flo
         PAK, // PAKcoin
+        CANN, // CannabisCoin
     }
 
     public class CoinConfig
