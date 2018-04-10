@@ -58,6 +58,8 @@ namespace MiningCore.Configuration
         CRC,  // CrowdCoin
         BTCP, // Bitcoin Private
         CLO,  // Callisto
+        FLO, // Flo
+        PAK, // PAKcoin
     }
 
     public class CoinConfig

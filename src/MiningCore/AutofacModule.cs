@@ -29,6 +29,7 @@ using MiningCore.Blockchain.BitcoinGold;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
+using MiningCore.Blockchain.Flo;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.Straks;
 using MiningCore.Blockchain.Straks.DaemonResponses;
@@ -124,6 +125,15 @@ namespace MiningCore
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<FloJob, BlockTemplate>>()
+                .AsSelf();
+
+            //////////////////////
+            // Flo
+            
+            builder.RegisterType<FloJobManager>()
                 .AsSelf();
 
             //////////////////////
