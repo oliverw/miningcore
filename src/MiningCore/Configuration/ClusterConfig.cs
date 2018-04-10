@@ -57,6 +57,8 @@ namespace MiningCore.Configuration
         GBX,  // GoByte
         CRC,  // CrowdCoin
         BTCP, // Bitcoin Private
+        FLO, // Flo
+        PAK, // PAKcoin
         CANN, // CannabisCoin
     }
 
