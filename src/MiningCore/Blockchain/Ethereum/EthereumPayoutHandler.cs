@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -45,7 +46,7 @@ using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
+    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA, CoinType.CLO)]
     public class EthereumPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -79,7 +80,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region IPayoutHandler
 
-        public Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
@@ -97,15 +98,13 @@ namespace MiningCore.Blockchain.Ethereum
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints);
 
-            return Task.FromResult(true);
+            await DetectChainAsync();
         }
 
         public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
-
-            await DetectChainAsync();
 
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
@@ -270,8 +269,10 @@ namespace MiningCore.Blockchain.Ethereum
         {
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(EC.GetPeerCount);
-            if (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
-                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount)
+
+            if (networkType == EthereumNetworkType.Main &&
+                (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
+                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
@@ -353,6 +354,9 @@ namespace MiningCore.Blockchain.Ethereum
 
                 case ParityChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
+
+                case ParityChainType.CallistoTestnet:
+                    return CallistoConstants.BaseRewardInitial * (1.0m - CallistoConstants.TreasuryPercent);
 
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");
@@ -449,7 +453,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 From = poolConfig.Address,
                 To = balance.Address,
-                Value = (ulong) Math.Floor((double) balance.Amount * (double) EthereumConstants.Wei),
+                Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
             var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });

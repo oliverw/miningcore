@@ -206,6 +206,12 @@
     <ClInclude Include="blake2s.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x16r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x16s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -383,6 +389,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="blake2s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

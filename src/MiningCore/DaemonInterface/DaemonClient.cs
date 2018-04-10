@@ -280,9 +280,10 @@ namespace MiningCore.DaemonInterface
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
             }
 
+            logger.Trace(()=> $"Sending RPC request to {requestUrl}: {json}");
+
             // send request
-            var httpClient = httpClients[endPoint];
-            using(var response = await httpClient.SendAsync(request))
+            using(var response = await httpClients[endPoint].SendAsync(request))
             {
                 // deserialize response
                 using (var stream = await response.Content.ReadAsStreamAsync())
@@ -328,10 +329,10 @@ namespace MiningCore.DaemonInterface
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
                 }
 
-                // send request
-                var httpClient = httpClients[endPoint];
+                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
-                using(var response = await httpClient.SendAsync(request))
+                // send request
+                using(var response = await httpClients[endPoint].SendAsync(request))
                 {
                     // check success
                     if (!response.IsSuccessStatusCode)

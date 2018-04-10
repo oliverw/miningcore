@@ -282,15 +282,19 @@ namespace MiningCore.Blockchain.ZCash
                 poolExtraConfig.ZAddress,   // dest:   pool's z-addr
             };
 
-            var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZShieldCoinbase, args);
+            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(ZCashCommands.ZShieldCoinbase, args);
 
             if (result.Error != null)
             {
-                logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
+                if(result.Error.Code == -6)
+                    logger.Info(() => $"[{LogCategory}] No funds to shield");
+                else
+                    logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
+
                 return;
             }
 
-            var operationId = result.Response;
+            var operationId = result.Response.OperationId;
 
             logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} operation id: {operationId}");
 
@@ -329,7 +333,7 @@ namespace MiningCore.Blockchain.ZCash
                     }
                 }
 
-                logger.Info(() => $"[{LogCategory}] Waiting for operation completion: {operationId}");
+                logger.Info(() => $"[{LogCategory}] Waiting for shielding operation completion: {operationId}");
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }
@@ -427,7 +431,7 @@ namespace MiningCore.Blockchain.ZCash
                     }
                 }
 
-                logger.Info(() => $"[{LogCategory}] Waiting for transfer completion: {operationId}");
+                logger.Info(() => $"[{LogCategory}] Waiting for shielding transfer completion: {operationId}");
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }

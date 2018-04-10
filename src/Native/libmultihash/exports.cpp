@@ -42,6 +42,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "c11.h"
 #include "Lyra2RE.h"
 #include "Lyra2.h"
+#include "x16r.h"
+#include "x16s.h"
 #include "equi/equi.h"
 #include "libethash/sha3.h"
 #include "libethash/internal.h"
@@ -185,6 +187,16 @@ extern "C" MODULE_API void lyra2re_export(const char* input, char* output)
 extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
 {
 	lyra2re2_hash(input, output);
+}
+
+extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
+{
+    x16r_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)
+{
+    x16s_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API bool equihash_verify_export(const char* header, const char* solution)

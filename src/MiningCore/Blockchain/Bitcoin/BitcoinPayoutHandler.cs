@@ -269,9 +269,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
             if (result.Error == null)
             {
-                // lock wallet
-                logger.Info(() => $"[{LogCategory}] Locking wallet");
-                await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                if (didUnlockWallet)
+                {
+                    // lock wallet
+                    logger.Info(() => $"[{LogCategory}] Locking wallet");
+                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                }
 
                 // check result
                 var txId = result.Response;

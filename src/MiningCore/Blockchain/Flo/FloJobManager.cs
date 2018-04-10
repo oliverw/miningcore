@@ -56,8 +56,8 @@ namespace MiningCore.Blockchain.Flo
 
             base.Configure(poolConfig, clusterConfig);
         }
-        
-        protected override async Task<bool> UpdateJob(bool forceUpdate, string via = null)
+
+        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -69,7 +69,7 @@ namespace MiningCore.Blockchain.Flo
                 if (response.Error != null)
                 {
                     logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
-                    return false;
+                    return (false, forceUpdate);
                 }
 
                 var blockTemplate = response.Response;
@@ -89,45 +89,47 @@ namespace MiningCore.Blockchain.Flo
                         ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher, extraFloPoolConfig.FloData);
 
-                    if (isNew)
-                    {
-                        if(via != null)
-                            logger.Info($"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
-
-                        // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.Now;
-                        BlockchainStats.BlockHeight = blockTemplate.Height;
-                        BlockchainStats.NetworkDifficulty = job.Difficulty;
-                    }
-
                     lock (jobLock)
                     {
-                        if(isNew)
+                        if (isNew)
+                        {
+                            if (via != null)
+                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                            else
+                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+
                             validJobs.Clear();
 
-                        validJobs.Add(job);
+                            // update stats
+                            BlockchainStats.LastNetworkBlockTime = clock.Now;
+                            BlockchainStats.BlockHeight = blockTemplate.Height;
+                            BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        }
 
-                        if (!isNew)
+                        else
                         {
                             // trim active jobs
-                            while(validJobs.Count > maxActiveJobs)
+                            while (validJobs.Count > maxActiveJobs - 1)
                                 validJobs.RemoveAt(0);
                         }
+
+                        validJobs.Add(job);
                     }
 
                     currentJob = job;
                 }
 
-                return isNew;
+                return (isNew, forceUpdate);
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
 
-            return false;
+            return (false, forceUpdate);
         }
+
         #endregion // Overrides
     }
 }

@@ -84,8 +84,13 @@ namespace MiningCore.Blockchain
         /// <summary>
         /// Block reward after deducting pool fee and donations
         /// </summary>
-        [ProtoMember(10)]
         public decimal BlockReward { get; set; }
+
+        /// <summary>
+        /// Block reward after deducting pool fee and donations
+        /// </summary>
+        [ProtoMember(10)]
+        public double BlockRewardDouble { get; set; }
 
         /// <summary>
         /// Block hash

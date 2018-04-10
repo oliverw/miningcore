@@ -30,12 +30,13 @@ using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
+using MiningCore.Mining;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Flo
 {
     [CoinMetadata(CoinType.FLO)]
-    public class FloPool : FloPoolBase
+    public class FloPool : BitcoinPoolBase<FloJob, BlockTemplate>
     {
         public FloPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -59,6 +60,12 @@ namespace MiningCore.Blockchain.Flo
             if (string.IsNullOrEmpty(extraConfig?.FloData))
                 logger.ThrowLogPoolStartupException("Pool coinbase FloData is not configured", LogCat);
             
+        }
+
+        protected override BitcoinJobManager<FloJob, BlockTemplate> CreateJobManager()
+        {
+            return ctx.Resolve<FloJobManager>(
+                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
     }
 }

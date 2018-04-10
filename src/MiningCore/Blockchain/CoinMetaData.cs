@@ -25,6 +25,12 @@ namespace MiningCore.Blockchain
                 { EthereumConstants.BlockTypeUncle, $"https://gastracker.io/uncle/{BlockHeightPH}" }
             }},
 
+            { CoinType.CLO, new Dictionary<string, string>
+            {
+                { string.Empty, $"https://explorer.callisto.network/block/{BlockHeightPH}" },
+                { EthereumConstants.BlockTypeUncle, $"https://explorer.callisto.network/uncle/{BlockHeightPH}" }
+            }},
+
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" }}},
             { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } }},
             { CoinType.LTC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ltc/block.dws?{BlockHeightPH}.htm" } }},
@@ -34,7 +40,7 @@ namespace MiningCore.Blockchain
             { CoinType.BTC, new Dictionary<string, string> { { string.Empty, $"https://blockchain.info/block/{BlockHeightPH}" }}},
             { CoinType.DOGE, new Dictionary<string, string> { { string.Empty, $"https://dogechain.info/block/{BlockHeightPH}" }}},
             { CoinType.ZEC, new Dictionary<string, string> { { string.Empty, $"https://explorer.zcha.in/blocks/{BlockHashPH}" } }},
-            { CoinType.BTCP, new Dictionary<string, string> { { string.Empty, $"http://explorer.btcprivate.org/block/{BlockHashPH}" } }},
+            { CoinType.BTCP, new Dictionary<string, string> { { string.Empty, $"https://explorer.btcprivate.org/block-index/{BlockHashPH}" } }},
             { CoinType.ZCL, new Dictionary<string, string> { { string.Empty, $"http://explorer.zclmine.pro/block/{BlockHeightPH}" }}},
             { CoinType.ZEN, new Dictionary<string, string> { { string.Empty, $"http://explorer.zensystem.io/block/{BlockHashPH}" } }},
             { CoinType.DGB, new Dictionary<string, string> { { string.Empty, $"https://digiexplorer.info/block/{BlockHeightPH}" }}},
@@ -61,6 +67,7 @@ namespace MiningCore.Blockchain
             { CoinType.ETN, "https://blockexplorer.electroneum.com/tx/{0}" },
             { CoinType.ETH, "https://etherscan.io/tx/{0}" },
             { CoinType.ETC, "https://gastracker.io/tx/{0}" },
+            { CoinType.CLO, "https://explorer.callisto.network/tx/{0}" },
             { CoinType.LTC, "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm" },
             { CoinType.PPC, "https://chainz.cryptoid.info/ppc/tx.dws?{0}.htm" },
             { CoinType.BCH, "https://www.blocktrail.com/BCC/tx/{0}" },
@@ -70,7 +77,7 @@ namespace MiningCore.Blockchain
             { CoinType.ZEC, "https://explorer.zcha.in/transactions/{0}" },
             { CoinType.ZCL, "http://explorer.zclmine.pro/transactions/{0}" },
             { CoinType.ZEN, "http://explorer.zensystem.io/transactions/{0}" },
-            { CoinType.BTCP, "https://explorer.btcprivate.org/transactions/{0}" },
+            { CoinType.BTCP, "https://explorer.btcprivate.org/tx/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/tx/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/tx/{0}" },
             { CoinType.GRS, "https://groestlsight.groestlcoin.org/tx/{0}" },
@@ -95,6 +102,7 @@ namespace MiningCore.Blockchain
         {
             { CoinType.ETH, "https://etherscan.io/address/{0}" },
             { CoinType.ETC, "https://gastracker.io/addr/{0}" },
+            { CoinType.CLO, "https://explorer.callisto.network/account/{0}" },
             { CoinType.LTC, "https://chainz.cryptoid.info/ltc/address.dws?{0}.htm" },
             { CoinType.PPC, "https://chainz.cryptoid.info/ppc/address.dws?{0}.htm" },
             { CoinType.BCH, "https://www.blocktrail.com/BCC/address/{0}" },
@@ -103,6 +111,7 @@ namespace MiningCore.Blockchain
             { CoinType.DOGE, "https://dogechain.info/address/{0}" },
             { CoinType.ZEC, "https://explorer.zcha.in/accounts/{0}" },
             { CoinType.ZCL, "http://explorer.zclmine.pro/accounts/{0}" },
+            { CoinType.BTCP, "https://explorer.btcprivate.org/address/{0}" },
             { CoinType.ZEN, "http://explorer.zensystem.io/accounts/{0}" },
             { CoinType.DGB, "https://digiexplorer.info/address/{0}" },
             { CoinType.NMC, "https://explorer.namecoin.info/a/{0}" },
@@ -131,6 +140,7 @@ namespace MiningCore.Blockchain
         {
             { CoinType.ETH, (coin, alg)=> Ethash },
             { CoinType.ETC, (coin, alg)=> Ethash },
+            { CoinType.CLO, (coin, alg)=> Ethash },
             { CoinType.LTC, BitcoinProperties.GetAlgorithm },
             { CoinType.PPC, BitcoinProperties.GetAlgorithm },
             { CoinType.BCH, BitcoinProperties.GetAlgorithm },

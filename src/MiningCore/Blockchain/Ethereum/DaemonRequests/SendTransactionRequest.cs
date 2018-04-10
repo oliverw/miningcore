@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Numerics;
 using MiningCore.Serialization;
 using Newtonsoft.Json;
 
@@ -53,7 +54,7 @@ namespace MiningCore.Blockchain.Ethereum.DaemonRequests
         /// (Optional) Integer of the value send with this transaction
         /// </summary>
         [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
-        public ulong Value { get; set; }
+        public BigInteger Value { get; set; }
 
         /// <summary>
         /// The compiled code of a contract OR the hash of the invoked method signature and encoded parameters.

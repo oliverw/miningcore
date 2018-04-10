@@ -306,7 +306,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
+                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
 
                 return false;
             }
@@ -364,16 +364,19 @@ namespace MiningCore.Blockchain.Ethereum
 
             base.Configure(poolConfig, clusterConfig);
 
-            // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                Dag.GetDefaultDagDirectory();
+            if (poolConfig.EnableInternalStratum == true)
+            { 
+                // ensure dag location is configured
+                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
+                    Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
+                    Dag.GetDefaultDagDirectory();
 
-            // create it if necessary
-            Directory.CreateDirectory(dagDir);
+                // create it if necessary
+                Directory.CreateDirectory(dagDir);
 
-            // setup ethash
-            ethash = new EthashFull(3, dagDir);
+                // setup ethash
+                ethash = new EthashFull(3, dagDir);
+            }
         }
 
         public bool ValidateAddress(string address)
@@ -547,30 +550,33 @@ namespace MiningCore.Blockchain.Ethereum
 
             // update stats
             BlockchainStats.RewardType = "POW";
-            BlockchainStats.NetworkType = $"{chainType}";
+            BlockchainStats.NetworkType = $"{chainType}-{networkType}";
 
             await UpdateNetworkStatsAsync();
 
-            // make sure we have a current DAG
-            while(true)
+            if (poolConfig.EnableInternalStratum == true)
             {
-                var blockTemplate = await GetBlockTemplateAsync();
-
-                if (blockTemplate != null)
+                // make sure we have a current DAG
+                while (true)
                 {
-                    logger.Info(() => $"[{LogCat}] Loading current DAG ...");
+                    var blockTemplate = await GetBlockTemplateAsync();
 
-                    await ethash.GetDagAsync(blockTemplate.Height, logger);
+                    if (blockTemplate != null)
+                    {
+                        logger.Info(() => $"[{LogCat}] Loading current DAG ...");
 
-                    logger.Info(() => $"[{LogCat}] Loaded current DAG");
-                    break;
+                        await ethash.GetDagAsync(blockTemplate.Height, logger);
+
+                        logger.Info(() => $"[{LogCat}] Loaded current DAG");
+                        break;
+                    }
+
+                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
                 }
 
-                logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                SetupJobUpdates();
             }
-
-            SetupJobUpdates();
         }
 
         private void ConfigureRewards()

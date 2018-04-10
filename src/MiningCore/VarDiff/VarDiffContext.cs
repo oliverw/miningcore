@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using MiningCore.Configuration;
 using MiningCore.Util;
 
 namespace MiningCore.VarDiff
@@ -29,5 +30,6 @@ namespace MiningCore.VarDiff
         public double LastRtc { get; set; }
         public CircularDoubleBuffer TimeBuffer { get; set; }
         public DateTime? LastUpdate { get; set; }
+        public VarDiffConfig Config { get; set; }
     }
 }

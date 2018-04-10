@@ -39,7 +39,7 @@ using MiningCore.Configuration;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Payments;
-using MiningCore.Payments.PayoutSchemes;
+using MiningCore.Payments.PaymentSchemes;
 using MiningCore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -104,8 +104,12 @@ namespace MiningCore
             //////////////////////
             // Payment Schemes
 
-            builder.RegisterType<PPLNS>()
+            builder.RegisterType<PPLNSPaymentScheme>()
                 .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
+                .SingleInstance();
+
+            builder.RegisterType<SoloPaymentScheme>()
+                .Keyed<IPayoutScheme>(PayoutScheme.Solo)
                 .SingleInstance();
 
             //////////////////////
