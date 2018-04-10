@@ -40,7 +40,7 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase<BitcoinShare>
+    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase
         where TBlockTemplate : BlockTemplate
         where TJob : BitcoinJob<TBlockTemplate>, new()
     {
@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             await manager.StartAsync();
 
-            if (poolConfig.EnableInternalStratum)
+            if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 

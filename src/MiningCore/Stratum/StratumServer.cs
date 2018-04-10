@@ -228,8 +228,12 @@ namespace MiningCore.Stratum
 
                     catch (Exception ex)
                     {
+                        var innerEx = ex.InnerException != null ? ": " + ex : "";
+
                         if (request != null)
-                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]");
+                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
+                        else
+                            logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request{innerEx}");
                     }
                 }
             });

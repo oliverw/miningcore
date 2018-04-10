@@ -18,12 +18,24 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Ethereum
+using System;
+using System.Data;
+
+namespace MiningCore.Persistence.Dummy
 {
-    public class EthereumShare : ShareBase
+    public class DummyConnectionFactory : IConnectionFactory
     {
-        public string FullNonceHex { get; set; }
-        public string HeaderHash { get; set; }
-        public string MixHash { get; set; }
+        public DummyConnectionFactory(string connectionString)
+        {
+        }
+
+        /// <summary>
+        /// This implementation ensures that Glimpse.ADO is able to collect data
+        /// </summary>
+        /// <returns></returns>
+        public IDbConnection OpenConnection()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

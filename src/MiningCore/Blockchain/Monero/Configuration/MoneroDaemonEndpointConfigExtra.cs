@@ -18,11 +18,20 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin
+namespace MiningCore.Blockchain.Monero.Configuration
 {
-    public class BitcoinShare : ShareBase
+    public class MoneroDaemonEndpointConfigExtra
     {
-        public string BlockHex { get; set; }
-        public string BlockHash { get; set; }
+        /// <summary>
+        /// Address of ZeroMQ block notify socket
+        /// Should match the value of -zmqpubhashblock daemon start parameter
+        /// </summary>
+        public string ZmqBlockNotifySocket { get; set; }
+
+        /// <summary>
+        /// Optional: ZeroMQ block notify topic
+        /// Defaults to "hashblock" if left blank
+        /// </summary>
+        public string ZmqBlockNotifyTopic { get; set; }
     }
 }

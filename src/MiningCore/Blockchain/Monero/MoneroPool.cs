@@ -43,7 +43,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Monero
 {
     [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN)]
-    public class MoneroPool : PoolBase<MoneroShare>
+    public class MoneroPool : PoolBase
     {
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -83,7 +83,7 @@ namespace MiningCore.Blockchain.Monero
             var split = loginRequest.Login.Split('.');
             context.MinerName = split[0].Trim();
             context.WorkerName = split.Length > 1 ? split[1].Trim() : null;
-            context.UserAgent = loginRequest.UserAgent.Trim();
+            context.UserAgent = loginRequest.UserAgent?.Trim();
 
             // extract paymentid
             var index = context.MinerName.IndexOf('#');
@@ -302,7 +302,7 @@ namespace MiningCore.Blockchain.Monero
 
             await manager.StartAsync();
 
-            if (poolConfig.EnableInternalStratum)
+            if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 

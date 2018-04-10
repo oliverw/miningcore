@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -131,7 +132,7 @@ namespace MiningCore.Api
             return null;
         }
 
-        private async Task SendJson(HttpContext context, object response)
+        private async Task SendJsonAsync(HttpContext context, object response)
         {
             context.Response.ContentType = "application/json";
 
@@ -249,7 +250,7 @@ namespace MiningCore.Api
                 }).ToArray()
             };
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task GetPoolInfoAsync(HttpContext context, Match m)
@@ -279,7 +280,7 @@ namespace MiningCore.Api
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task GetPoolPerformanceAsync(HttpContext context, Match m)
@@ -300,7 +301,7 @@ namespace MiningCore.Api
                 Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
             };
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task PagePoolMinersAsync(HttpContext context, Match m)
@@ -327,7 +328,7 @@ namespace MiningCore.Api
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
-            await SendJson(context, miners);
+            await SendJsonAsync(context, miners);
         }
 
         private async Task PagePoolBlocksPagedAsync(HttpContext context, Match m)
@@ -361,11 +362,16 @@ namespace MiningCore.Api
                     blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : string.Empty, out var blockInfobaseUrl);
 
                     if (!string.IsNullOrEmpty(blockInfobaseUrl))
-                        block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                    {
+                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                    }
                 }
             }
 
-            await SendJson(context, blocks);
+            await SendJsonAsync(context, blocks);
         }
 
         private async Task PagePoolPaymentsAsync(HttpContext context, Match m)
@@ -403,7 +409,7 @@ namespace MiningCore.Api
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
-            await SendJson(context, payments);
+            await SendJsonAsync(context, payments);
         }
 
         private async Task GetMinerInfoAsync(HttpContext context, Match m)
@@ -444,7 +450,7 @@ namespace MiningCore.Api
                 stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
-            await SendJson(context, stats);
+            await SendJsonAsync(context, stats);
         }
 
         private async Task PageMinerPaymentsAsync(HttpContext context, Match m)
@@ -489,7 +495,7 @@ namespace MiningCore.Api
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
-            await SendJson(context, payments);
+            await SendJsonAsync(context, payments);
         }
 
         private async Task PageMinerBalanceChangesAsync(HttpContext context, Match m)
@@ -519,7 +525,7 @@ namespace MiningCore.Api
                 .Select(mapper.Map<Responses.BalanceChange>)
                 .ToArray();
 
-            await SendJson(context, balanceChanges);
+            await SendJsonAsync(context, balanceChanges);
         }
 
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)
@@ -538,14 +544,14 @@ namespace MiningCore.Api
             var mode = context.GetQueryParameter<string>("mode", "day").ToLower(); // "day" or "month"
             var result = GetMinerPerformanceInternal(mode, pool, address);
 
-            await SendJson(context, result);
+            await SendJsonAsync(context, result);
         }
 
         private async Task HandleForceGcAsync(HttpContext context, Match m)
         {
             GC.Collect(2, GCCollectionMode.Forced);
 
-            await SendJson(context, true);
+            await SendJsonAsync(context, true);
         }
 
         private async Task HandleGcStatsAsync(HttpContext context, Match m)
@@ -556,7 +562,7 @@ namespace MiningCore.Api
             Program.gcStats.GcGen2 = GC.CollectionCount(2);
             Program.gcStats.MemAllocated = FormatUtil.FormatCapacity(GC.GetTotalMemory(false));
 
-            await SendJson(context, Program.gcStats);
+            await SendJsonAsync(context, Program.gcStats);
         }
 
 #region API-Surface

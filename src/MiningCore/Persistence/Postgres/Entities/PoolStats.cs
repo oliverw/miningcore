@@ -34,6 +34,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public DateTime? LastNetworkBlockTime { get; set; }
         public long BlockHeight { get; set; }
         public int ConnectedPeers { get; set; }
+        public int SharesPerSecond { get; set; }
 
         public DateTime Created { get; set; }
     }

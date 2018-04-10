@@ -29,5 +29,11 @@ namespace MiningCore.Blockchain.Bitcoin.Configuration
         /// Should match the value of -zmqpubhashblock daemon start parameter
         /// </summary>
         public string ZmqBlockNotifySocket { get; set; }
+
+        /// <summary>
+        /// Optional: ZeroMQ block notify topic
+        /// Defaults to "hashblock" if left blank
+        /// </summary>
+        public string ZmqBlockNotifyTopic { get; set; }
     }
 }

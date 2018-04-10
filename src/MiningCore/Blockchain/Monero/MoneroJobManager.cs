@@ -19,15 +19,17 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
-using Microsoft.Extensions.DependencyInjection;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Monero.Configuration;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
@@ -79,7 +81,7 @@ namespace MiningCore.Blockchain.Monero
         private UInt64 poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
-        protected async Task<bool> UpdateJob()
+        protected async Task<bool> UpdateJob(string via = null)
         {
             logger.LogInvoke(LogCat);
 
@@ -101,6 +103,11 @@ namespace MiningCore.Blockchain.Monero
 
                 if (isNew)
                 {
+                    if (via != null)
+                        logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                    else
+                        logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+
                     job = new MoneroJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
                     job.Init();
                     currentJob = job;
@@ -169,17 +176,16 @@ namespace MiningCore.Blockchain.Monero
             BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
         }
 
-        private async Task<bool> SubmitBlockAsync(MoneroShare share)
+        private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { share.BlobHex });
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { blobHex });
 
             if (response.Error != null || response?.Response?.Status != "OK")
             {
                 var error = response.Error?.Message ?? response.Response?.Status;
 
-                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {error}");
-
+                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
+                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}]" : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
                 return false;
             }
 
@@ -202,15 +208,32 @@ namespace MiningCore.Blockchain.Monero
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
                 .Where(x => string.IsNullOrEmpty(x.Category))
+                .Select(x =>
+                {
+                    if (string.IsNullOrEmpty(x.HttpPath))
+                        x.HttpPath = MoneroConstants.DaemonRpcLocation;
+
+                    return x;
+                })
                 .ToArray();
 
-            // extract wallet daemon endpoints
-            walletDaemonEndpoints = poolConfig.Daemons
-                .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
-                .ToArray();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // extract wallet daemon endpoints
+                walletDaemonEndpoints = poolConfig.Daemons
+                    .Where(x => x.Category?.ToLower() == MoneroConstants.WalletDaemonCategory)
+                    .Select(x =>
+                    {
+                        if (string.IsNullOrEmpty(x.HttpPath))
+                            x.HttpPath = MoneroConstants.DaemonRpcLocation;
 
-            if (walletDaemonEndpoints.Length == 0)
-                logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
+                        return x;
+                    })
+                    .ToArray();
+
+                if (walletDaemonEndpoints.Length == 0)
+                    logger.ThrowLogPoolStartupException("Wallet-RPC daemon is not configured (Daemon configuration for monero-pools require an additional entry of category \'wallet' pointing to the wallet daemon)", LogCat);
+            }
 
             ConfigureDaemons();
         }
@@ -258,7 +281,7 @@ namespace MiningCore.Blockchain.Monero
             }
         }
 
-        public async Task<MoneroShare> SubmitShareAsync(StratumClient worker,
+        public async Task<Share> SubmitShareAsync(StratumClient worker,
             MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -272,28 +295,7 @@ namespace MiningCore.Blockchain.Monero
                 throw new StratumException(StratumError.MinusOne, "block expired");
 
             // validate & process
-            var share = job?.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
-
-            // if block candidate, submit & check if accepted by network
-            if (share.IsBlockCandidate)
-            {
-                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}]");
-
-                share.IsBlockCandidate = await SubmitBlockAsync(share);
-
-                if (share.IsBlockCandidate)
-                {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlobHash.Substring(0, 6)}] submitted by {context.MinerName}");
-
-                    share.TransactionConfirmationData = share.BlobHash;
-                }
-
-                else
-                {
-                    // clear fields that no longer apply
-                    share.TransactionConfirmationData = null;
-                }
-            }
+            var (share, blobHex, blobHash) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
@@ -302,8 +304,31 @@ namespace MiningCore.Blockchain.Monero
             share.Worker = context.WorkerName;
             share.PayoutInfo = context.PaymentId;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
+
+            // if block candidate, submit & check if accepted by network
+            if (share.IsBlockCandidate)
+            {
+                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{blobHash.Substring(0, 6)}]");
+
+                share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, blobHash);
+
+                if (share.IsBlockCandidate)
+                {
+                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submitted by {context.MinerName}");
+                    blockSubmissionSubject.OnNext(Unit.Default);
+
+                    share.TransactionConfirmationData = blobHash;
+                }
+
+                else
+                {
+                    // clear fields that no longer apply
+                    share.TransactionConfirmationData = null;
+                }
+            }
 
             return share;
         }
@@ -319,11 +344,14 @@ namespace MiningCore.Blockchain.Monero
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
             daemon = new DaemonClient(jsonSerializerSettings);
-            daemon.Configure(daemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            daemon.Configure(daemonEndpoints);
 
-            // also setup wallet daemon
-            walletDaemon = new DaemonClient(jsonSerializerSettings);
-            walletDaemon.Configure(walletDaemonEndpoints, MoneroConstants.DaemonRpcLocation);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // also setup wallet daemon
+                walletDaemon = new DaemonClient(jsonSerializerSettings);
+                walletDaemon.Configure(walletDaemonEndpoints);
+            }
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
@@ -339,15 +367,20 @@ namespace MiningCore.Blockchain.Monero
             if (!responses.All(x => x.Error == null))
                 return false;
 
-            // test wallet daemons
-            var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // test wallet daemons
+                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
 
-            if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException) x.Error.InnerException)
-                .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
+                if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
+                    .Select(x => (DaemonClientException) x.Error.InnerException)
+                    .Any(x => x.Code == HttpStatusCode.Unauthorized))
+                    logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials", LogCat);
 
-            return responses2.All(x => x.Error == null);
+                return responses2.All(x => x.Error == null);
+            }
+
+            return true;
         }
 
         protected override async Task<bool> AreDaemonsConnectedAsync()
@@ -397,14 +430,18 @@ namespace MiningCore.Blockchain.Monero
         protected override async Task PostStartInitAsync()
         {
             var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
-            var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
 
             if (infoResponse.Error != null)
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})", LogCat);
 
-            // ensure pool owns wallet
-            if (addressResponse.Response?.Address != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
+
+                // ensure pool owns wallet
+                if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
+                    logger.ThrowLogPoolStartupException($"Wallet-Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            }
 
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
@@ -429,7 +466,8 @@ namespace MiningCore.Blockchain.Monero
                     break;
             }
 
-            ConfigureRewards();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+                ConfigureRewards();
 
             // update stats
             BlockchainStats.RewardType = "POW";
@@ -443,44 +481,94 @@ namespace MiningCore.Blockchain.Monero
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (networkType == MoneroNetworkType.Main &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (networkType == MoneroNetworkType.Main && poolConfig.Coin.Type == CoinType.XMR)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.XMR];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 
         protected virtual void SetupJobUpdates()
         {
-	        if (!poolConfig.EnableInternalStratum)
+	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
-			// periodically update block-template from daemon
-			Blocks = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
-                .Select(_ => Observable.FromAsync(UpdateJob))
-                .Concat()
-                .Do(isNew =>
+            var blockSubmission = blockSubmissionSubject.Synchronize();
+            var pollTimerRestart = blockSubmissionSubject.Synchronize();
+
+            var triggers = new List<IObservable<string>>
+            {
+                blockSubmission.Select(x=> "Block-submission")
+            };
+
+            // collect ports
+            var zmq = poolConfig.Daemons
+                .Where(x => !string.IsNullOrEmpty(x.Extra.SafeExtensionDataAs<MoneroDaemonEndpointConfigExtra>()?.ZmqBlockNotifySocket))
+                .ToDictionary(x => x, x =>
                 {
-                    if (isNew)
-                        logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
-                })
+                    var extra = x.Extra.SafeExtensionDataAs<MoneroDaemonEndpointConfigExtra>();
+                    var topic = !string.IsNullOrEmpty(extra.ZmqBlockNotifyTopic.Trim()) ?
+                        extra.ZmqBlockNotifyTopic.Trim() : BitcoinConstants.ZmqPublisherTopicBlockHash;
+
+                    return (Socket: extra.ZmqBlockNotifySocket, Topic: topic);
+                });
+
+            if (zmq.Count > 0)
+            {
+                logger.Info(() => $"[{LogCat}] Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
+
+                var blockNotify = daemon.ZmqSubscribe(zmq, 2)
+                    .Select(frames =>
+                    {
+                        // We just take the second frame's raw data and turn it into a hex string.
+                        // If that string changes, we got an update (DistinctUntilChanged)
+                        var result = frames[1].ToHexString();
+                        frames.Dispose();
+                        return result;
+                    })
+                    .DistinctUntilChanged()
+                    .Select(_ => "ZMQ pub/sub")
+                    .Publish()
+                    .RefCount();
+
+                pollTimerRestart = Observable.Merge(
+                        blockSubmission,
+                        blockNotify.Select(_ => Unit.Default))
+                    .Publish()
+                    .RefCount();
+
+                triggers.Add(blockNotify);
+            }
+
+            if (poolConfig.BlockRefreshInterval > 0)
+            {
+                // periodically update block-template
+                triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    .TakeUntil(pollTimerRestart)
+                    .Select(_ => "RPC polling")
+                    .Repeat());
+            }
+
+            else
+            {
+                // get initial blocktemplate
+                triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+                    .Select(_ => "Initial template")
+                    .TakeWhile(_=> !hasInitialBlockTemplate));
+            }
+
+            Blocks = Observable.Merge(triggers)
+                .Select(via => Observable.FromAsync(() => UpdateJob(via)))
+                .Concat()
                 .Where(isNew => isNew)
+                .Do(_=> hasInitialBlockTemplate = true)
                 .Select(_ => Unit.Default)
                 .Publish()
                 .RefCount();

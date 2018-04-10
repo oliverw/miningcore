@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -40,6 +41,8 @@ using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.ZCash;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -47,6 +50,7 @@ using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
 using MiningCore.Payments;
+using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
@@ -86,6 +90,7 @@ namespace MiningCore
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -110,6 +115,7 @@ namespace MiningCore
                 {
                     Console.CancelKeyPress += OnCancelKeyPress;
                     Start().Wait(cts.Token);
+                    Shutdown();
                 }
 
                 else
@@ -165,8 +171,8 @@ namespace MiningCore
             // set some defaults
             foreach (var config in clusterConfig.Pools)
             {
-                config.EnableInternalStratum = config.EnableInternalStratum || 
-                    config.ExternalStratums == null || config.ExternalStratums.Length == 0;
+                if (!config.EnableInternalStratum.HasValue)
+                    config.EnableInternalStratum = config.ExternalStratums == null || config.ExternalStratums.Length == 0;
             }
 
             try
@@ -179,14 +185,6 @@ namespace MiningCore
                 Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
             }
-        }
-
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            logger.Info(() => "SIGINT received. Exiting.");
-
-            cts.Cancel();
-            Process.GetCurrentProcess().Close();
         }
 
         private static void DumpParsedConfig(ClusterConfig config)
@@ -502,11 +500,15 @@ namespace MiningCore
 
         private static void ConfigurePersistence(ContainerBuilder builder)
         {
-            if (clusterConfig.Persistence == null)
+            if (clusterConfig.Persistence == null &&
+                clusterConfig.PaymentProcessing?.Enabled == true &&
+                clusterConfig.ShareRelay == null)
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-            if (clusterConfig.Persistence.Postgres != null)
+            if (clusterConfig.Persistence?.Postgres != null)
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
+            else
+                ConfigureDummyPersistence(builder);
         }
 
         private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
@@ -528,7 +530,21 @@ namespace MiningCore
             var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
 
             // register connection factory
-            builder.RegisterInstance(new ConnectionFactory(connectionString))
+            builder.RegisterInstance(new PgConnectionFactory(connectionString))
+                .AsImplementedInterfaces();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t =>
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
+
+        private static void ConfigureDummyPersistence(ContainerBuilder builder)
+        {
+            // register connection factory
+            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
                 .AsImplementedInterfaces();
 
             // register repositories
@@ -541,7 +557,7 @@ namespace MiningCore
 
         private static async Task Start()
         {
-            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
@@ -575,7 +591,7 @@ namespace MiningCore
             else
                 logger.Info("Payment processing is not enabled");
 
-            if (string.IsNullOrEmpty(clusterConfig.ShareRelayPublisherUrl))
+            if (clusterConfig.ShareRelay == null)
             {
                 // start pool stats updater
                 statsRecorder = container.Resolve<StatsRecorder>();
@@ -623,9 +639,34 @@ namespace MiningCore
             Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
 
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            logger.Info(() => "SIGINT received. Exiting.");
+
+            cts.Cancel();
+        }
+
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            logger.Info(() => "SIGTERM received. Exiting.");
+
+            cts.Cancel();
+        }
+
+        private static void Shutdown()
+        {
+            logger.Info(() => "Shutdown ...");
+
+            shareRelay.Stop();
+            shareRecorder.Stop();
+            statsRecorder.Stop();
+
+            Process.GetCurrentProcess().Close();
+        }
+
         private static void TouchNativeLibs()
         {
-            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test")).ToHexString());
+            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
             Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
             Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
         }

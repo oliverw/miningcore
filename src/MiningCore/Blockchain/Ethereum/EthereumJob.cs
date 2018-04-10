@@ -6,15 +6,17 @@ using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.Extensions;
 using MiningCore.Stratum;
 using NBitcoin;
+using NLog;
 
 namespace MiningCore.Blockchain.Ethereum
 {
     public class EthereumJob
     {
-        public EthereumJob(string id, EthereumBlockTemplate blockTemplate)
+        public EthereumJob(string id, EthereumBlockTemplate blockTemplate, ILogger logger)
         {
             Id = id;
             BlockTemplate = blockTemplate;
+            this.logger = logger;
 
             var target = blockTemplate.Target;
             if (target.StartsWith("0x"))
@@ -29,6 +31,7 @@ namespace MiningCore.Blockchain.Ethereum
         public string Id { get; }
         public EthereumBlockTemplate BlockTemplate { get; }
         private readonly uint256 blockTarget;
+        private readonly ILogger logger;
 
         private void RegisterNonce(StratumClient worker, string nonce)
         {
@@ -49,7 +52,7 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        public async Task<EthereumShare> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
+        public async Task<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
             lock(workerNonces)
@@ -63,10 +66,10 @@ namespace MiningCore.Blockchain.Ethereum
             var fullNonce = ulong.Parse(fullNonceHex, NumberStyles.HexNumber);
 
             // get dag for block
-            var dag = await ethash.GetDagAsync(BlockTemplate.Height);
+            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger);
 
             // compute
-            if (!dag.Compute(BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
+            if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             resultBytes.ReverseArray();
@@ -98,24 +101,30 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // create share
-            var share = new EthereumShare
+            var share = new Share
             {
                 BlockHeight = (long) BlockTemplate.Height,
                 IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
                 Miner = context.MinerName,
                 Worker = context.WorkerName,
                 UserAgent = context.UserAgent,
-                FullNonceHex = "0x" + fullNonceHex,
-                HeaderHash = BlockTemplate.Header,
-                MixHash = mixDigest.ToHexString(true),
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
+                BlockHash = mixDigest.ToHexString(true)     // OW: is this correct?
             };
 
             if (share.IsBlockCandidate)
-                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{share.FullNonceHex}";
+            {
+                fullNonceHex = "0x" + fullNonceHex;
+                var headerHash = BlockTemplate.Header;
+                var mixHash = mixDigest.ToHexString(true);
 
-            return share;
+                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{fullNonceHex}";
+
+                return (share, fullNonceHex, headerHash, mixHash);
+            }
+
+            return (share, null, null, null);
         }
     }
 }

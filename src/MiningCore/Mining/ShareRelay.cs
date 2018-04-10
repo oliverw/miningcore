@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
-using MiningCore.Mining;
 using NetMQ;
 using NetMQ.Sockets;
 using Newtonsoft.Json;
 using NLog;
+using ProtoBuf;
 
-namespace MiningCore.Payments
+namespace MiningCore.Mining
 {
     public class ShareRelay
     {
@@ -23,7 +21,7 @@ namespace MiningCore.Payments
         }
 
         private ClusterConfig clusterConfig;
-        private readonly BlockingCollection<IShare> queue = new BlockingCollection<IShare>();
+        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
         private IDisposable queueSub;
         private readonly int QueueSizeWarningThreshold = 1024;
         private bool hasWarnedAboutBacklogSize;
@@ -31,6 +29,15 @@ namespace MiningCore.Payments
         private readonly JsonSerializerSettings serializerSettings;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        [Flags]
+        public enum WireFormat
+        {
+            Json = 1,
+            ProtocolBuffers = 2
+        }
+
+        public const int WireFormatMask = 0xF;
 
         #region API-Surface
 
@@ -44,7 +51,18 @@ namespace MiningCore.Payments
             this.clusterConfig = clusterConfig;
 
             pubSocket = new PublisherSocket();
-            pubSocket.Bind(clusterConfig.ShareRelayPublisherUrl);
+
+            if (!clusterConfig.ShareRelay.Connect)
+            {
+                pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
+                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
+            }
+
+            else
+            {
+                pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
+                logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
+            }
 
             InitializeQueue();
 
@@ -72,12 +90,20 @@ namespace MiningCore.Payments
                 .Do(_ => CheckQueueBacklog())
                 .Subscribe(share =>
                 {
+                    share.Source = clusterConfig.ClusterName;
+
                     try
                     {
-                        var json = JsonConvert.SerializeObject(share, serializerSettings);
-
+                        var flags = (int) WireFormat.ProtocolBuffers;
                         var msg = new NetMQMessage(2);
-                        msg.Push(json);
+
+                        using (var stream = new MemoryStream())
+                        {
+                            Serializer.Serialize(stream, share);
+                            msg.Push(stream.ToArray());
+                        }
+
+                        msg.Push(flags);
                         msg.Push(share.PoolId);
                         pubSocket.SendMultipartMessage(msg);
                     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -82,7 +82,7 @@ protected:
 
 /* \struct binary_archive
  *
- * \brief the actualy binary archive type
+ * \brief the actually binary archive type
  *
  * \detailed The boolean template argument /a W is the is_saving
  * parameter for binary_archive_base.
