@@ -60,6 +60,7 @@ namespace MiningCore.Configuration
         CLO,  // Callisto
         FLO, // Flo
         PAK, // PAKcoin
+        CANN, // CannabisCoin
     }
 
     public class CoinConfig
