@@ -129,7 +129,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SODIUM_STATIC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -149,7 +149,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SODIUM_STATIC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -226,6 +226,8 @@
     <ClInclude Include="x13.h" />
     <ClInclude Include="x14.h" />
     <ClInclude Include="x15.h" />
+    <ClInclude Include="x16r.h" />
+    <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
   </ItemGroup>
   <ItemGroup>
@@ -287,6 +289,8 @@
     <ClCompile Include="x13.c" />
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
+    <ClCompile Include="x16r.c" />
+    <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
   </ItemGroup>
   <ItemGroup>
