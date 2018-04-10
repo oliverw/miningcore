@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -c -fPIC -O2 -g -Wno-pointer-sign -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers
+CFLAGS = -Wall -c -fPIC -O2 -g -Wno-pointer-sign -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable
 CXXFLAGS = -Wall -fPIC -fpermissive -O2 -g -Wno-unused-function -Wno-strict-aliasing
 LDFLAGS = -shared
 LDLIBS = -lsodium
