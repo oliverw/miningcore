@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -481,7 +482,7 @@ namespace MiningCore.Blockchain.Ethereum
             return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
         }
 
-        protected override async Task EnsureDaemonsSynchedAsync()
+        protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
         {
             var syncPendingNotificationShown = false;
 
@@ -507,11 +508,11 @@ namespace MiningCore.Blockchain.Ethereum
                 await ShowDaemonSyncProgressAsync();
 
                 // delay retry by 5s
-                await Task.Delay(5000);
+                await Task.Delay(5000, ct);
             }
         }
 
-        protected override async Task PostStartInitAsync()
+        protected override async Task PostStartInitAsync(CancellationToken ct)
         {
             var commands = new[]
             {
@@ -582,7 +583,7 @@ namespace MiningCore.Blockchain.Ethereum
                     }
 
                     logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
-                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
 
                 SetupJobUpdates();

@@ -26,6 +26,7 @@ using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin.Configuration;
@@ -581,7 +582,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return response.Error == null && response.Response?.Connections > 0;
         }
 
-        protected override async Task EnsureDaemonsSynchedAsync()
+        protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
         {
             var syncPendingNotificationShown = false;
 
@@ -607,11 +608,11 @@ namespace MiningCore.Blockchain.Bitcoin
                 await ShowDaemonSyncProgressAsync();
 
                 // delay retry by 5s
-                await Task.Delay(5000);
+                await Task.Delay(5000, ct);
             }
         }
 
-        protected override async Task PostStartInitAsync()
+        protected override async Task PostStartInitAsync(CancellationToken ct)
         {
             var commands = new[]
             {

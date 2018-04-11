@@ -94,6 +94,7 @@ namespace MiningCore
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                Console.CancelKeyPress += OnCancelKeyPress;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -116,9 +117,8 @@ namespace MiningCore
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    Console.CancelKeyPress += OnCancelKeyPress;
-                    Start().Wait(cts.Token);
-                    Shutdown();
+                    if(!cts.IsCancellationRequested)
+                        Start().Wait(cts.Token);
                 }
 
                 else
@@ -162,6 +162,10 @@ namespace MiningCore
 
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
+
+            Shutdown();
+            Process.GetCurrentProcess().CloseMainWindow();
+            Process.GetCurrentProcess().Close();
         }
 
         private static void LogRuntimeInfo()
@@ -618,11 +622,11 @@ namespace MiningCore
                 shareRelay?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
 
-                await pool.StartAsync();
+                await pool.StartAsync(cts.Token);
             }));
 
             // keep running
-            await Observable.Never<Unit>().ToTask();
+            await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
         private static void RecoverShares(string recoveryFilename)
@@ -644,27 +648,35 @@ namespace MiningCore
 
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            logger.Info(() => "SIGINT received. Exiting.");
+            logger?.Info(() => "SIGINT received. Exiting.");
 
-            cts.Cancel();
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
+
+            e.Cancel = true;
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
-            logger.Info(() => "SIGTERM received. Exiting.");
+            logger?.Info(() => "SIGTERM received. Exiting.");
 
-            cts.Cancel();
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
         }
 
         private static void Shutdown()
         {
             logger.Info(() => "Shutdown ...");
 
-            shareRelay.Stop();
-            shareRecorder.Stop();
-            statsRecorder.Stop();
-
-            Process.GetCurrentProcess().Close();
+            shareRelay?.Stop();
+            shareRecorder?.Stop();
+            statsRecorder?.Stop();
         }
 
         private static void TouchNativeLibs()

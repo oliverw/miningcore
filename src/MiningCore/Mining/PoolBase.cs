@@ -27,6 +27,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -95,7 +96,7 @@ namespace MiningCore.Mining
 
         protected override string LogCat => "Pool";
 
-        protected abstract Task SetupJobManager();
+        protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
 
         protected double? GetStaticDiffFromPassparts(string[] parts)
@@ -336,7 +337,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         public abstract double HashrateFromShares(double shares, double interval);
 
-        public virtual async Task StartAsync()
+        public virtual async Task StartAsync(CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -345,7 +346,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             try
             {
 	            SetupBanning(clusterConfig);
-	            await SetupJobManager();
+	            await SetupJobManager(ct);
                 InitStats();
 
                 if (poolConfig.EnableInternalStratum == true)
@@ -367,7 +368,13 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 throw;
             }
 
-            catch(Exception ex)
+            catch (TaskCanceledException)
+            {
+                // just forward these
+                throw;
+            }
+
+            catch (Exception ex)
             {
                 logger.Error(ex);
                 throw;

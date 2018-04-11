@@ -23,6 +23,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -280,19 +281,19 @@ namespace MiningCore.Blockchain.Bitcoin
                 new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = CreateJobManager();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
             if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
-		        await manager.Jobs.Take(1).ToTask();
+		        await manager.Jobs.Take(1).ToTask(ct);
 	        }
         }
 

@@ -306,19 +306,19 @@ namespace MiningCore.Blockchain.Monero
 
         #region Overrides
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<MoneroJobManager>();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
             if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
 		        // we need work before opening the gates
-		        await manager.Blocks.Take(1).ToTask();
+		        await manager.Blocks.Take(1).ToTask(ct);
 	        }
         }
 

@@ -26,6 +26,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -397,7 +398,7 @@ namespace MiningCore.Blockchain.Monero
                 (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
         }
 
-        protected override async Task EnsureDaemonsSynchedAsync()
+        protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
         {
             var syncPendingNotificationShown = false;
 
@@ -429,11 +430,11 @@ namespace MiningCore.Blockchain.Monero
                 await ShowDaemonSyncProgressAsync();
 
                 // delay retry by 5s
-                await Task.Delay(5000);
+                await Task.Delay(5000, ct);
             }
         }
 
-        protected override async Task PostStartInitAsync()
+        protected override async Task PostStartInitAsync(CancellationToken ct)
         {
             var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
 

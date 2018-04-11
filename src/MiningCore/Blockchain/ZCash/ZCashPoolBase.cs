@@ -23,6 +23,7 @@ using System.Buffers;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -67,10 +68,11 @@ namespace MiningCore.Blockchain.ZCash
 
         #region Overrides of BitcoinPoolBase<TJob,ZCashBlockTemplate>
 
+        /// <param name="ct"></param>
         /// <inheritdoc />
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
-            await base.SetupJobManager();
+            await base.SetupJobManager(ct);
 
             if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
                 coinbaseTx.TryGetValue(manager.NetworkType, out coinbaseTxConfig);

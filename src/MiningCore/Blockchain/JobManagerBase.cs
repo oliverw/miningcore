@@ -58,13 +58,13 @@ namespace MiningCore.Blockchain
 
         protected abstract void ConfigureDaemons();
 
-        protected virtual async Task StartDaemonAsync()
+        protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
             while(!await AreDaemonsHealthyAsync())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
 
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
 
             logger.Info(() => $"[{LogCat}] All daemons online");
@@ -73,7 +73,7 @@ namespace MiningCore.Blockchain
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
 
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
         }
 
@@ -90,8 +90,8 @@ namespace MiningCore.Blockchain
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();
         protected abstract Task<bool> AreDaemonsConnectedAsync();
-        protected abstract Task EnsureDaemonsSynchedAsync();
-        protected abstract Task PostStartInitAsync();
+        protected abstract Task EnsureDaemonsSynchedAsync(CancellationToken ct);
+        protected abstract Task PostStartInitAsync(CancellationToken ct);
 
         #region API-Surface
 
@@ -107,15 +107,15 @@ namespace MiningCore.Blockchain
             ConfigureDaemons();
         }
 
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
             logger.Info(() => $"[{LogCat}] Launching ...");
 
-            await StartDaemonAsync();
-            await EnsureDaemonsSynchedAsync();
-            await PostStartInitAsync();
+            await StartDaemonAsync(ct);
+            await EnsureDaemonsSynchedAsync(ct);
+            await PostStartInitAsync(ct);
 
             logger.Info(() => $"[{LogCat}] Online");
         }
