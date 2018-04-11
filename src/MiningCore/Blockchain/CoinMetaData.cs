@@ -132,7 +132,7 @@ namespace MiningCore.Blockchain
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/address.dws?{0}.htm" },
         };
 
-        private const string Ethash = "Dagger-Hashimoto";
+        private const string Ethash = "Ethash";
         private const string Cryptonight = "Cryptonight";
         private const string CryptonightLight = "Cryptonight-Light";
 
