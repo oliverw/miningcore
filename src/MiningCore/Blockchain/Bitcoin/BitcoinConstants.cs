@@ -160,6 +160,8 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.XVG, "D5xPoHLM6HPkwWSqAweECTSQirJBmRjS8i" },
             {CoinType.XMR, "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH"},
             {CoinType.ETN, "etnkQJwBCjmR1MfkU8D355ZWxxLMhs8miPrtKHWN4U3uUowq9ugeKccVBoEG3n13n74us5AkT8tEoTog46w4HBgn8sMuBRhm9h"},
+            {CoinType.RVN, "REuYrFcx3FSAFr1eskARUcAQyE7RadR3Aa"},
+            {CoinType.PGN, "PX5E7dG6VRxq73qFNkHgE7cbnrN7U7LSLF"},
         };
     }
 
