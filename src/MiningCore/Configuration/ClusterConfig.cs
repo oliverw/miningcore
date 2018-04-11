@@ -61,6 +61,8 @@ namespace MiningCore.Configuration
         FLO, // Flo
         PAK, // PAKcoin
         CANN, // CannabisCoin
+        RVN,  // Ravencoin
+        PGN,  // Pigeoncoin 
     }
 
     public class CoinConfig

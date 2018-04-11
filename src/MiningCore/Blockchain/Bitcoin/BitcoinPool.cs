@@ -34,7 +34,8 @@ namespace MiningCore.Blockchain.Bitcoin
         CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
         CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
-        CoinType.MOON, CoinType.XVG, CoinType.PAK, CoinType.CANN)]
+        CoinType.MOON, CoinType.XVG, CoinType.PAK, CoinType.CANN,
+        CoinType.RVN, CoinType.PGN)]
     public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
     {
         public BitcoinPool(IComponentContext ctx,
