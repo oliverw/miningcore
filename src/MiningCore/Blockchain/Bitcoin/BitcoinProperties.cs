@@ -97,10 +97,10 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(1, sha256D, groestlMyriad, vergeBlockHasher, "Groestl-Myriad");
 
         private static readonly BitcoinCoinProperties x16rCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16r, sha256DReverse, "X16-R");
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16r, new DigestReverser(x16r), "X16-R");
 
         private static readonly BitcoinCoinProperties x16sCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16s, sha256DReverse, "X16-S");
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16s, new DigestReverser(x16s), "X16-S");
 
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
