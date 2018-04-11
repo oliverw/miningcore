@@ -649,6 +649,7 @@ namespace MiningCore
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             logger?.Info(() => "SIGINT received. Exiting.");
+            Console.WriteLine("SIGINT received. Exiting.");
 
             try
             {
@@ -662,6 +663,7 @@ namespace MiningCore
         private static void OnProcessExit(object sender, EventArgs e)
         {
             logger?.Info(() => "SIGTERM received. Exiting.");
+            Console.WriteLine("SIGTERM received. Exiting.");
 
             try
             {
@@ -673,6 +675,7 @@ namespace MiningCore
         private static void Shutdown()
         {
             logger.Info(() => "Shutdown ...");
+            Console.WriteLine("Shutdown...");
 
             shareRelay?.Stop();
             shareRecorder?.Stop();
