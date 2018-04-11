@@ -171,6 +171,8 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, BitcoinProperties.GetAlgorithm },
             { CoinType.FLO, BitcoinProperties.GetAlgorithm },
             { CoinType.CANN, BitcoinProperties.GetAlgorithm },
+            { CoinType.RVN, BitcoinProperties.GetAlgorithm },
+            { CoinType.PGN, BitcoinProperties.GetAlgorithm },
         };
     }
 }
