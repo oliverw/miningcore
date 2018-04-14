@@ -24,6 +24,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Reactive.Disposables;
+using System.Text;
 using Autofac;
 using MiningCore.Buffers;
 using MiningCore.JsonRpc;
@@ -51,6 +52,7 @@ namespace MiningCore.Stratum
         private IDisposable subscription;
         private bool isAlive = true;
         private WorkerContextBase context;
+        private bool expectingTcpProxyProtocolHeader = false;
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -60,12 +62,16 @@ namespace MiningCore.Stratum
         #region API-Surface
 
         public void Init(Loop loop, Tcp tcp, IComponentContext ctx, IMasterClock clock,
-            IPEndPoint endpointConfig, string connectionId,
+            (IPEndPoint IPEndPoint, bool TcpProxyProtocol) endpointConfig, string connectionId,
             Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
-            PoolEndpoint = endpointConfig;
+            PoolEndpoint = endpointConfig.IPEndPoint;
             ConnectionId = connectionId;
-            RemoteEndpoint = tcp.GetPeerEndPoint();
+
+            if (!endpointConfig.TcpProxyProtocol)
+                RemoteEndpoint = tcp.GetPeerEndPoint();
+            else
+                expectingTcpProxyProtocolHeader = true;
 
             // initialize send queue
             sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
@@ -95,7 +101,7 @@ namespace MiningCore.Stratum
             subscription = Disposable.Create(() => { disposer.Send(); });
 
             // go
-            Receive(tcp, clock, onNext, onCompleted, onError);
+            Receive(tcp, endpointConfig.TcpProxyProtocol, clock, onNext, onCompleted, onError);
         }
 
         public string ConnectionId { get; private set; }
@@ -235,7 +241,7 @@ namespace MiningCore.Stratum
 
         #endregion // API-Surface
 
-        private void Receive(Tcp tcp, IMasterClock clock,
+        private void Receive(Tcp tcp, bool tcpProxyProtocol, IMasterClock clock,
             Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
             tcp.OnRead((handle, buffer) =>
@@ -248,9 +254,50 @@ namespace MiningCore.Stratum
 
                     LastReceive = clock.Now;
 
+                    var onLineReceived = !tcpProxyProtocol ?
+                        onNext :
+                        (lineData) =>
+                        {
+                            // are we expecting the Tcp-Proxy-Protocol header?
+                            if (expectingTcpProxyProtocolHeader)
+                            {
+                                using(lineData)
+                                {
+                                    var line = Encoding.ASCII.GetString(lineData.Array, lineData.Offset, lineData.Size);
+
+                                    if (line.StartsWith("PROXY "))
+                                    {
+                                        logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
+
+                                        // split header parts
+                                        var parts = line.Split(" ");
+                                        var remoteAddress = parts[2];
+                                        var remotePort = parts[4];
+
+                                        // Update client
+                                        RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
+                                        logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+
+                                        expectingTcpProxyProtocolHeader = false;
+                                    }
+
+                                    else
+                                    {
+                                        logger.Error(()=> $"[{ConnectionId}] Expected Proxy-Protocol header, got something else - disconnecting client.");
+                                        Disconnect();
+                                    }
+                                }
+
+                                return;
+                            }
+
+                            // forward
+                            onNext(lineData);
+                        };
+
                     plb.Receive(buffer, buffer.Count,
                         (src, dst, count) => src.ReadBytes(dst, count),
-                        onNext,
+                        onLineReceived,
                         onError);
                 }
             }, (handle, ex) =>

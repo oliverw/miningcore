@@ -145,6 +145,12 @@ namespace MiningCore.Configuration
         public string ListenAddress { get; set; }
         public string Name { get; set; }
         public double Difficulty { get; set; }
+
+        /// <summary>
+        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy
+        /// </summary>
+        public bool TcpProxyProtocol { get; set; }
+
         public VarDiffConfig VarDiff { get; set; }
     }
 

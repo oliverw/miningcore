@@ -64,7 +64,7 @@ namespace MiningCore.Stratum
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(string id, params IPEndPoint[] stratumPorts)
+        public void StartListeners(string id, params (IPEndPoint IPEndPoint, bool TcpProxyProtocol)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
@@ -81,7 +81,7 @@ namespace MiningCore.Stratum
                             .CreateTcp()
                             .NoDelay(true)
                             .SimultaneousAccepts(false)
-                            .Listen(endpoint, (con, ex) =>
+                            .Listen(endpoint.IPEndPoint, (con, ex) =>
                             {
                                 if (ex == null)
                                     OnClientConnected(con, endpoint, loop);
@@ -91,7 +91,7 @@ namespace MiningCore.Stratum
 
                         lock (ports)
                         {
-                            ports[endpoint.Port] = listener;
+                            ports[endpoint.IPEndPoint.Port] = listener;
                         }
                     }
 
@@ -101,7 +101,7 @@ namespace MiningCore.Stratum
                         throw;
                     }
 
-                    logger.Info(() => $"[{LogCat}] Stratum port {endpoint.Address}:{endpoint.Port} online");
+                    logger.Info(() => $"[{LogCat}] Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port} online");
 
                     try
                     {
@@ -112,7 +112,7 @@ namespace MiningCore.Stratum
                     {
                         logger.Error(ex, $"[{LogCat}] {ex}");
                     }
-                }) { Name = $"UvLoopThread {id}:{endpoint.Port}" };
+                }) { Name = $"UvLoopThread {id}:{endpoint.IPEndPoint.Port}" };
 
                 thread.Start();
             }
@@ -137,7 +137,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void OnClientConnected(Tcp con, IPEndPoint endpointConfig, Loop loop)
+        private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, bool TcpProxyProtocol) endpointConfig, Loop loop)
         {
             try
             {

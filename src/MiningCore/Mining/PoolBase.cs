@@ -290,13 +290,13 @@ namespace MiningCore.Mining
             }
         }
 
-        private IPEndPoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
+        private (IPEndPoint IPEndPoint, bool TcpProxyProtocol) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
         {
             var listenAddress = IPAddress.Parse("127.0.0.1");
             if (!string.IsNullOrEmpty(pep.ListenAddress))
                 listenAddress = pep.ListenAddress != "*" ? IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
 
-            return new IPEndPoint(listenAddress, port);
+            return (new IPEndPoint(listenAddress, port), pep.TcpProxyProtocol);
         }
 
         private void OutputPoolInfo()
