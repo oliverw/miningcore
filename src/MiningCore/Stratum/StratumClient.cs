@@ -67,11 +67,9 @@ namespace MiningCore.Stratum
         {
             PoolEndpoint = endpointConfig.IPEndPoint;
             ConnectionId = connectionId;
+            RemoteEndpoint = tcp.GetPeerEndPoint();
 
-            if (!endpointConfig.TcpProxyProtocol)
-                RemoteEndpoint = tcp.GetPeerEndPoint();
-            else
-                expectingProxyProtocolHeader = true;
+            expectingProxyProtocolHeader = endpointConfig.TcpProxyProtocol;
 
             // initialize send queue
             sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
