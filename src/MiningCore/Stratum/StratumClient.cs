@@ -52,7 +52,7 @@ namespace MiningCore.Stratum
         private IDisposable subscription;
         private bool isAlive = true;
         private WorkerContextBase context;
-        private bool expectingTcpProxyProtocolHeader = false;
+        private bool expectingProxyProtocolHeader = false;
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -71,7 +71,7 @@ namespace MiningCore.Stratum
             if (!endpointConfig.TcpProxyProtocol)
                 RemoteEndpoint = tcp.GetPeerEndPoint();
             else
-                expectingTcpProxyProtocolHeader = true;
+                expectingProxyProtocolHeader = true;
 
             // initialize send queue
             sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
@@ -254,41 +254,46 @@ namespace MiningCore.Stratum
 
                     LastReceive = clock.Now;
 
-                    var onLineReceived = !tcpProxyProtocol ?
+                    var onLineReceived = !expectingProxyProtocolHeader ?
                         onNext :
                         (lineData) =>
                         {
                             // are we expecting the Tcp-Proxy-Protocol header?
-                            if (expectingTcpProxyProtocolHeader)
+                            if (expectingProxyProtocolHeader)
                             {
-                                using(lineData)
+                                expectingProxyProtocolHeader = false;
+
+                                // peek into line data
+                                var line = Encoding.ASCII.GetString(lineData.Array, lineData.Offset, lineData.Size);
+
+                                if (line.StartsWith("PROXY "))
                                 {
-                                    var line = Encoding.ASCII.GetString(lineData.Array, lineData.Offset, lineData.Size);
-
-                                    if (line.StartsWith("PROXY "))
+                                    using(lineData)
                                     {
-                                        logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
+                                        if (tcp.GetPeerEndPoint().Address.Equals(IPAddress.Loopback))
+                                        {
+                                            logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
 
-                                        // split header parts
-                                        var parts = line.Split(" ");
-                                        var remoteAddress = parts[2];
-                                        var remotePort = parts[4];
+                                            // split header parts
+                                            var parts = line.Split(" ");
+                                            var remoteAddress = parts[2];
+                                            var remotePort = parts[4];
 
-                                        // Update client
-                                        RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
-                                        logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                                            // Update client
+                                            RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
+                                            logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                                        }
 
-                                        expectingTcpProxyProtocolHeader = false;
+                                        else
+                                        {
+                                            logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {tcp.GetPeerEndPoint().Address}");
+                                            lineData.Dispose();
+                                            Disconnect();
+                                        }
                                     }
 
-                                    else
-                                    {
-                                        logger.Error(()=> $"[{ConnectionId}] Expected Proxy-Protocol header, got something else - disconnecting client.");
-                                        Disconnect();
-                                    }
+                                    return;
                                 }
-
-                                return;
                             }
 
                             // forward

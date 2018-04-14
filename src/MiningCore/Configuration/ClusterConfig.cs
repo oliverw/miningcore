@@ -147,7 +147,7 @@ namespace MiningCore.Configuration
         public double Difficulty { get; set; }
 
         /// <summary>
-        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy
+        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy.
         /// </summary>
         public bool TcpProxyProtocol { get; set; }
 
