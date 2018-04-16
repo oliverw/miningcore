@@ -458,6 +458,12 @@ namespace MiningCore.Mining
                             }
                         }
 
+                        catch (ObjectDisposedException)
+                        {
+                            logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
+                            break;
+                        }
+
                         catch (Exception ex)
                         {
                             logger.Error(ex);
@@ -493,11 +499,8 @@ namespace MiningCore.Mining
         {
             logger.Info(() => "Stopping ..");
 
-            queueSub?.Dispose();
-            queueSub = null;
-
-            queue?.Dispose();
-            queue = null;
+            queueSub.Dispose();
+            queue.Dispose();
 
             logger.Info(() => "Stopped");
         }
