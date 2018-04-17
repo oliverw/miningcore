@@ -273,7 +273,9 @@ namespace MiningCore.Blockchain.Bitcoin
             // build merkle-root
             var merkleRoot = mt.WithFirst(coinbaseHash);
 
+            #pragma warning disable 618
             var blockHeader = new BlockHeader
+            #pragma warning restore 618
             {
                 Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
