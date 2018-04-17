@@ -57,13 +57,15 @@ namespace MiningCore.Blockchain.Flo
             base.Configure(poolConfig, clusterConfig);
         }
 
-        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null)
+        protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
         {
             logger.LogInvoke(LogCat);
 
             try
             {
-                var response = await GetBlockTemplateAsync();
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)

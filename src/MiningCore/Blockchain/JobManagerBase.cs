@@ -20,15 +20,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Globalization;
+using System.IO;
+using System.IO.Compression;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Util;
+using NetMQ;
+using NetMQ.Sockets;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -53,6 +59,7 @@ namespace MiningCore.Blockchain
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
         protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
+        protected TimeSpan btStreamReceiveTimeout = TimeSpan.FromSeconds(60 * 10);
 
         protected virtual string LogCat { get; } = "Job Manager";
 
@@ -86,6 +93,88 @@ namespace MiningCore.Blockchain
                 return value.ToString(format);
 
             return value.ToStringHex8();
+        }
+
+        protected IObservable<string> BtStreamSubscribe(ZmqPubSubEndpointConfig config)
+        {
+            return Observable.Defer(() => Observable.Create<string>(obs =>
+            {
+                var tcs = new CancellationTokenSource();
+
+                Task.Factory.StartNew(() =>
+                {
+                    using(tcs)
+                    {
+                        while(!tcs.IsCancellationRequested)
+                        {
+                            try
+                            {
+                                using(var subSocket = new SubscriberSocket())
+                                {
+                                    //subSocket.Options.ReceiveHighWatermark = 1000;
+                                    subSocket.Connect(config.Url);
+                                    subSocket.Subscribe(config.Topic);
+
+                                    logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
+
+                                    while(!tcs.IsCancellationRequested)
+                                    {
+                                        var msg = (NetMQMessage) null;
+
+                                        if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 3))
+                                        {
+                                            logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
+                                            break;
+                                        }
+
+                                        // extract frames
+                                        var topic = msg.Pop().ConvertToString(Encoding.UTF8);
+                                        var flags = msg.Pop().ConvertToInt32();
+                                        var data = msg.Pop().ToByteArray();
+
+                                        // compressed
+                                        if ((flags & 1) == 1)
+                                        {
+                                            using(var stm = new MemoryStream(data))
+                                            {
+                                                using(var stmOut = new MemoryStream())
+                                                {
+                                                    using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
+                                                    {
+                                                        ds.CopyTo(stmOut);
+                                                    }
+
+                                                    data = stmOut.ToArray();
+                                                }
+                                            }
+                                        }
+
+                                        // convert
+                                        var json = Encoding.UTF8.GetString(data);
+
+                                        obs.OnNext(json);
+                                    }
+                                }
+                            }
+
+                            catch(Exception ex)
+                            {
+                                logger.Error(ex);
+                            }
+
+                            // do not consume all CPU cycles in case of a long lasting error condition
+                            Thread.Sleep(1000);
+                        }
+                    }
+                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+                return Disposable.Create(() =>
+                {
+                    tcs.Cancel();
+                });
+            }))
+            .Publish()
+            .RefCount();
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();
