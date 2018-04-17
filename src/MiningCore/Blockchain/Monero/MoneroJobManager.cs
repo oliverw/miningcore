@@ -545,7 +545,7 @@ namespace MiningCore.Blockchain.Monero
                 blockSubmission.Select(x => ("Block-submission", (string) null))
             };
 
-            if (extraPoolConfig.BtStream == null)
+            if (extraPoolConfig?.BtStream == null)
             {
                 // collect ports
                 var zmq = poolConfig.Daemons
