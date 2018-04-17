@@ -140,17 +140,30 @@ namespace MiningCore.Configuration
         public string Database { get; set; }
     }
 
+    public class TcpProxyProtocolConfig
+    {
+        /// <summary>
+        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy.
+        /// </summary>
+        public bool Enable { get; set; }
+
+        /// <summary>
+        /// Terminate connections that are not beginning with a proxy-protocol header
+        /// </summary>
+        public bool Mandatory { get; set; }
+
+        /// <summary>
+        /// List of IP addresses of valid proxy addresses. If absent, localhost is used
+        /// </summary>
+        public string[] ProxyAddresses { get; set; }
+    }
+
     public class PoolEndpoint
     {
         public string ListenAddress { get; set; }
         public string Name { get; set; }
         public double Difficulty { get; set; }
-
-        /// <summary>
-        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy.
-        /// </summary>
-        public bool TcpProxyProtocol { get; set; }
-
+        public TcpProxyProtocolConfig TcpProxyProtocol { get; set; }
         public VarDiffConfig VarDiff { get; set; }
     }
 

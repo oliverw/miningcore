@@ -64,7 +64,7 @@ namespace MiningCore.Stratum
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(string id, params (IPEndPoint IPEndPoint, bool TcpProxyProtocol)[] stratumPorts)
+        public void StartListeners(string id, params (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
@@ -137,7 +137,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, bool TcpProxyProtocol) endpointConfig, Loop loop)
+        private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, Loop loop)
         {
             try
             {
