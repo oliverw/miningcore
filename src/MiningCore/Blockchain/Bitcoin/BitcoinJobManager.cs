@@ -654,14 +654,24 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!isPoS)
             {
                 // bitcoincashd returns a different address than what was passed in
-                if(!validateAddressResponse.Address.StartsWith("bitcoincash:"))
+                if (!validateAddressResponse.Address.StartsWith("bitcoincash:"))
                     poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
                 else
                     poolAddressDestination = AddressToDestination(poolConfig.Address);
             }
 
             else
+            {
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
+
+                getBlockTemplateParams = new object[]
+                {
+                    new
+                    {
+                        mode = "template"
+                    }
+                };
+            }
 
             // chain detection
             if (!hasLegacyDaemon)
