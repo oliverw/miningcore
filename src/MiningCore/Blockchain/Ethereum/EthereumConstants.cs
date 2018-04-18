@@ -20,7 +20,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const string BlockTypeUncle = "uncle";
 
 #if !DEBUG
-        public const int MinPayoutPeerCount = 1;
+        public const int MinPayoutPeerCount = 3;
 #else
         public const int MinPayoutPeerCount = 1;
 #endif
