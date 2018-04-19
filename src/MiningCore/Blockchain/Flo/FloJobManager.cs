@@ -63,6 +63,9 @@ namespace MiningCore.Blockchain.Flo
 
             try
             {
+                if (forceUpdate)
+                    lastJobRebroadcast = clock.Now;
+
                 var response = string.IsNullOrEmpty(json) ?
                     await GetBlockTemplateAsync() :
                     GetBlockTemplateFromJson(json);
