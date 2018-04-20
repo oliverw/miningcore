@@ -84,6 +84,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
         protected readonly IHashAlgorithm sha256s = new Sha256S();
         protected readonly List<TJob> validJobs = new List<TJob>();
+        protected DateTime? lastJobRebroadcast;
         protected IHashAlgorithm blockHasher;
         protected IHashAlgorithm coinbaseHasher;
         protected bool hasSubmitBlockMethod;
@@ -188,11 +189,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     var interval = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout - 0.1d));
 
-                    triggers.Add(Observable.Zip(
-                            btStream.Timestamp(),
-                            btStream.Skip(1).Timestamp(),
-                            (a, b) => (Delta: b.Timestamp - a.Timestamp, Json: b.Value))
-                        .Select(x => (x.Delta >= interval, "BT-Stream", x.Json))
+                    triggers.Add(btStream
+                        .Select(json => (!lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval), "BT-Stream", json))
                         .Publish()
                         .RefCount());
                 }
@@ -781,6 +779,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
             try
             {
+                if (forceUpdate)
+                    lastJobRebroadcast = clock.Now;
+
                 var response = string.IsNullOrEmpty(json) ?
                     await GetBlockTemplateAsync() :
                     GetBlockTemplateFromJson(json);
