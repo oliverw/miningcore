@@ -364,7 +364,10 @@ namespace MiningCore.Blockchain.Bitcoin
                 (poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "lyra"))
                 result *= 4;
 
-          return result;
+            if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
+                result *= 2.55;
+
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
