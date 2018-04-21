@@ -44,13 +44,12 @@ namespace MiningCore.Blockchain.BitcoinGold
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 
             // pool reward (t-addr)
-            var amount = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-            tx.AddOutput(amount, poolAddressDestination);
+            tx.AddOutput(rewardToPool, poolAddressDestination);
 
             return tx;
         }
@@ -64,7 +63,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             var blockHeader = new ZCashBlockHeader
             {
-                Version = (int) BlockTemplate.Version,
+                Version = (int)BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -98,9 +97,12 @@ namespace MiningCore.Blockchain.BitcoinGold
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
 
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
+            Difficulty = (double)new BigRational(coinbaseTxConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;

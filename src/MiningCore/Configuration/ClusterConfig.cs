@@ -57,6 +57,12 @@ namespace MiningCore.Configuration
         GBX,  // GoByte
         CRC,  // CrowdCoin
         BTCP, // Bitcoin Private
+        CLO,  // Callisto
+        FLO, // Flo
+        PAK, // PAKcoin
+        CANN, // CannabisCoin
+        RVN,  // Ravencoin
+        PGN,  // Pigeoncoin 
     }
 
     public class CoinConfig
@@ -72,7 +78,8 @@ namespace MiningCore.Configuration
     public enum PayoutScheme
     {
         // ReSharper disable once InconsistentNaming
-        PPLNS = 1
+        PPLNS = 1,
+        Solo
     }
 
     public partial class ClusterLoggingConfig
@@ -99,7 +106,30 @@ namespace MiningCore.Configuration
 
     public class DaemonEndpointConfig : AuthenticatedNetworkEndpointConfig
     {
+        /// <summary>
+        /// Use SSL to for RPC requests
+        /// </summary>
+        public bool Ssl { get; set; }
+
+        /// <summary>
+        /// Use HTTP2 protocol for RPC requests (don't use this unless your daemon(s) live behind a HTTP reverse proxy)
+        /// </summary>
+        public bool Http2 { get; set; }
+
+        /// <summary>
+        /// Validate SSL certificate (if SSL option is set to true)
+        /// </summary>
+        public bool ValidateCert { get; set; }
+
+        /// <summary>
+        /// Optional endpoint category
+        /// </summary>
         public string Category { get; set; }
+
+        /// <summary>
+        /// Optional request path for RPC requests
+        /// </summary>
+        public string HttpPath { get; set; }
 
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
@@ -110,11 +140,30 @@ namespace MiningCore.Configuration
         public string Database { get; set; }
     }
 
+    public class TcpProxyProtocolConfig
+    {
+        /// <summary>
+        /// Enable for client IP addresses to be detected when using a load balancer with TCP proxy protocol enabled, such as HAProxy.
+        /// </summary>
+        public bool Enable { get; set; }
+
+        /// <summary>
+        /// Terminate connections that are not beginning with a proxy-protocol header
+        /// </summary>
+        public bool Mandatory { get; set; }
+
+        /// <summary>
+        /// List of IP addresses of valid proxy addresses. If absent, localhost is used
+        /// </summary>
+        public string[] ProxyAddresses { get; set; }
+    }
+
     public class PoolEndpoint
     {
         public string ListenAddress { get; set; }
         public string Name { get; set; }
         public double Difficulty { get; set; }
+        public TcpProxyProtocolConfig TcpProxyProtocol { get; set; }
         public VarDiffConfig VarDiff { get; set; }
     }
 
@@ -208,6 +257,11 @@ namespace MiningCore.Configuration
     {
         public string Address { get; set; }
         public decimal Percentage { get; set; }
+
+        /// <summary>
+        /// Optional recipient type
+        /// </summary>
+        public string Type { get; set; }
     }
 
     public partial class EmailSenderConfig : AuthenticatedNetworkEndpointConfig
@@ -273,6 +327,22 @@ namespace MiningCore.Configuration
         public int Port { get; set; }
     }
 
+    public partial class ZmqPubSubEndpointConfig
+    {
+        public string Url { get; set; }
+        public string Topic { get; set; }
+    }
+
+    public partial class ShareRelayConfig
+    {
+        public string PublishUrl { get; set; }
+
+        /// <summary>
+        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it 
+        /// </summary>
+        public bool Connect { get; set; }
+    }
+
     public partial class PoolConfig
     {
         public string Id { get; set; }
@@ -290,9 +360,15 @@ namespace MiningCore.Configuration
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
 
-        public bool ExternalStratum { get; set; }
-        public string ExternalStratumZmqSocket { get; set; }
-        public string ExternalStratumZmqTopic { get; set; }
+        /// <summary>
+        /// If true, internal stratum ports are not initialized
+        /// </summary>
+        public bool? EnableInternalStratum { get; set; }
+
+        /// <summary>
+        /// External stratums (ZMQ based share publishers)
+        /// </summary>
+        public ZmqPubSubEndpointConfig[] ExternalStratums { get; set; }
 
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
@@ -307,7 +383,13 @@ namespace MiningCore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
-        public decimal? DevDonation { get; set; }
+
+        /// <summary>
+        /// If this is enabled, shares are not written to the database
+        /// but published on the specified ZeroMQ Url and using the
+        /// poolid as topic
+        /// </summary>
+        public ShareRelayConfig ShareRelay { get; set; }
 
         /// <summary>
         /// Maximum parallelism of Equihash solver

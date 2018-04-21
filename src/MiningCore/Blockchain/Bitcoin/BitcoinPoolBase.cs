@@ -23,6 +23,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -40,7 +41,7 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase<BitcoinShare>
+    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase
         where TBlockTemplate : BlockTemplate
         where TJob : BitcoinJob<TBlockTemplate>, new()
     {
@@ -280,19 +281,19 @@ namespace MiningCore.Blockchain.Bitcoin
                 new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = CreateJobManager();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
-            if (!poolConfig.ExternalStratum)
+            if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
-		        await manager.Jobs.Take(1).ToTask();
+		        await manager.Jobs.Take(1).ToTask(ct);
 	        }
         }
 
@@ -340,6 +341,10 @@ namespace MiningCore.Blockchain.Bitcoin
                     // ignored
                     break;
 
+                case BitcoinStratumMethods.MiningMultiVersion:
+                    // ignored
+                    break;
+                
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
@@ -359,7 +364,10 @@ namespace MiningCore.Blockchain.Bitcoin
                 (poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "lyra"))
                 result *= 4;
 
-          return result;
+            if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
+                result *= 2.55;
+
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

@@ -34,10 +34,11 @@ namespace MiningCore
             //////////////////////
             // outgoing mappings
 
-            CreateMap<IShare, Share>();
+            CreateMap<Blockchain.Share, Persistence.Model.Share>();
 
-            CreateMap<IShare, Block>()
+            CreateMap<Blockchain.Share, Block>()
                 .ForMember(dest => dest.Reward, opt => opt.MapFrom(src => src.BlockReward))
+                .ForMember(dest => dest.Hash, opt => opt.MapFrom(src => src.BlockHash))
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             CreateMap<BlockStatus, string>().ConvertUsing(e => e.ToString().ToLower());
@@ -68,7 +69,7 @@ namespace MiningCore
             CreateMap<WorkerPerformanceStatsContainer, Api.Responses.WorkerPerformanceStatsContainer>();
 
             // PostgreSQL
-            CreateMap<Share, Persistence.Postgres.Entities.Share>();
+            CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();
             CreateMap<Block, Persistence.Postgres.Entities.Block>();
             CreateMap<Balance, Persistence.Postgres.Entities.Balance>();
             CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
@@ -81,7 +82,7 @@ namespace MiningCore
             // incoming mappings
 
             // PostgreSQL
-            CreateMap<Persistence.Postgres.Entities.Share, Share>();
+            CreateMap<Persistence.Postgres.Entities.Share, Persistence.Model.Share>();
             CreateMap<Persistence.Postgres.Entities.Block, Block>();
             CreateMap<Persistence.Postgres.Entities.Balance, Balance>();
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();

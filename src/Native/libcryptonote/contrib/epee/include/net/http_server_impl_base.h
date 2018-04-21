@@ -55,15 +55,21 @@ namespace epee
         : m_net_server(external_io_service)
     {}
 
-    bool init(const std::string& bind_port = "0", const std::string& bind_ip = "0.0.0.0",
+    bool init(std::function<void(size_t, uint8_t*)> rng, const std::string& bind_port = "0", const std::string& bind_ip = "0.0.0.0",
+      std::vector<std::string> access_control_origins = std::vector<std::string>(),
       boost::optional<net_utils::http::login> user = boost::none)
     {
 
       //set self as callback handler
       m_net_server.get_config_object().m_phandler = static_cast<t_child_class*>(this);
+      m_net_server.get_config_object().rng = std::move(rng);
 
       //here set folder for hosting reqests
       m_net_server.get_config_object().m_folder = "";
+
+      //set access control allow origins if configured
+      std::sort(access_control_origins.begin(), access_control_origins.end());
+      m_net_server.get_config_object().m_access_control_origins = std::move(access_control_origins);
 
       m_net_server.get_config_object().m_user = std::move(user);
 
@@ -110,6 +116,11 @@ namespace epee
     int get_binded_port()
     {
       return m_net_server.get_binded_port();
+    }
+
+    long get_connections_count() const
+    {
+      return m_net_server.get_connections_count();
     }
 
   protected: 

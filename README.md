@@ -6,7 +6,7 @@
 
 ## Miningcore
 
-Miningcore is the multi-currency stratum-engine powering [coinfoundry.org](https://coinfoundry.org).
+Miningcore a the multi-currency stratum-engine.
 
 Even though the pool engine can be used to run a production-pool, doing so currently requires to
 develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
@@ -46,12 +46,12 @@ Globaltoken | Yes | Yes | | [GLT Daemon](https://globaltoken.org/#downloads)
 Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Groestlcoin | Yes | Yes | |
 Dogecoin | Yes | No | |
-DigiByte | Yes | No | |
+DigiByte | Yes | Yes | |
 Namecoin | Yes | No | |
 Viacoin | Yes | No | |
 Peercoin | Yes | No | |
 Straks | Yes | Yes | |
-Electroneum | Yes | No | |
+Electroneum | Yes | Yes | |
 MoonCoin | Yes | Yes | |
 #### Ethereum
 
@@ -69,7 +69,7 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 
 ### Donations
 
-This software comes with a built-in donation of 0.15% per block-reward to support the ongoing development of this project. If you do not want to support the project, you can remove or alter the donation by adding <code>devDonation = 0.0</code> to the configuration file. You can also send donations directly to the following accounts:
+This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
 
 * BTC:  17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm
 * LTC:  LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC

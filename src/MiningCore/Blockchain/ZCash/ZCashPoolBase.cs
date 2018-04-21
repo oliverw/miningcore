@@ -23,11 +23,13 @@ using System.Buffers;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
+using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Notifications;
@@ -55,11 +57,31 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
+        private ZCashCoinbaseTxConfig coinbaseTxConfig;
+        private double hashrateDivisor;
+
         protected override BitcoinJobManager<TJob, ZCashBlockTemplate> CreateJobManager()
         {
             return ctx.Resolve<ZCashJobManager<TJob>>(
                 new TypedParameter(typeof(IExtraNonceProvider), new ZCashExtraNonceProvider()));
         }
+
+        #region Overrides of BitcoinPoolBase<TJob,ZCashBlockTemplate>
+
+        /// <param name="ct"></param>
+        /// <inheritdoc />
+        protected override async Task SetupJobManager(CancellationToken ct)
+        {
+            await base.SetupJobManager(ct);
+
+            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(manager.NetworkType, out coinbaseTxConfig);
+
+            hashrateDivisor = (double)new BigRational(coinbaseTxConfig.Diff1b,
+                ZCashConstants.CoinbaseTxConfig[CoinType.ZEC][manager.NetworkType].Diff1b);
+        }
+
+        #endregion
 
         protected override void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
@@ -120,7 +142,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 if (System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
-                    var newDiff = (double) new BigRational(ZCashConstants.Diff1b, targetBig);
+                    var newDiff = (double) new BigRational(coinbaseTxConfig.Diff1b, targetBig);
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                     if (newDiff >= poolEndpoint.Difficulty)
@@ -215,6 +237,8 @@ namespace MiningCore.Blockchain.ZCash
         {
             var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
             var result = shares * multiplier / interval / 1000000 * 2;
+
+            result /= hashrateDivisor;
             return result;
         }
 
@@ -237,7 +261,7 @@ namespace MiningCore.Blockchain.ZCash
         private string EncodeTarget(double difficulty)
         {
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
-            var quotient = ZCashConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+            var quotient = coinbaseTxConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
             var padded = ArrayPool<byte>.Shared.Rent(ZCashConstants.TargetPaddingLength);
 

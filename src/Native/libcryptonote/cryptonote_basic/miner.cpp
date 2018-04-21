@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 //
 // All rights reserved.
 //
@@ -32,14 +32,17 @@
 #include <numeric>
 #include <boost/utility/value_init.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/limits.hpp>
-#include "misc_language.h"
 #include "include_base_utils.h"
+#include "misc_language.h"
+#include "syncobj.h"
 #include "cryptonote_basic_impl.h"
 #include "cryptonote_format_utils.h"
 #include "file_io_utils.h"
 #include "common/command_line.h"
 #include "string_coding.h"
+#include "string_tools.h"
 #include "storages/portable_storage_template_helper.h"
 #include "boost/logic/tribool.hpp"
 
@@ -51,6 +54,19 @@
   #include <mach/mach_host.h>
   #include <AvailabilityMacros.h>
   #include <TargetConditionals.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <devstat.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <machine/apm_bios.h>
+#include <stdio.h>
+#include <sys/resource.h>
+#include <sys/sysctl.h>
+#include <sys/times.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
@@ -182,7 +198,8 @@ namespace cryptonote
       {
         uint64_t total_hr = std::accumulate(m_last_hash_rates.begin(), m_last_hash_rates.end(), 0);
         float hr = static_cast<float>(total_hr)/static_cast<float>(m_last_hash_rates.size());
-        std::cout << "hashrate: " << std::setprecision(4) << std::fixed << hr << ENDL;
+        const auto precision = std::cout.precision();
+        std::cout << "hashrate: " << std::setprecision(4) << std::fixed << hr << precision << ENDL;
       }
     }
     m_last_hr_merge_time = misc_utils::get_tick_count();
@@ -201,7 +218,7 @@ namespace cryptonote
     command_line::add_arg(desc, arg_bg_mining_miner_target_percentage);
   }
   //-----------------------------------------------------------------------------------------------------
-  bool miner::init(const boost::program_options::variables_map& vm, bool testnet)
+  bool miner::init(const boost::program_options::variables_map& vm, network_type nettype)
   {
     if(command_line::has_arg(vm, arg_extra_messages))
     {
@@ -228,11 +245,13 @@ namespace cryptonote
 
     if(command_line::has_arg(vm, arg_start_mining))
     {
-      if(!cryptonote::get_account_address_from_str(m_mine_address, testnet, command_line::get_arg(vm, arg_start_mining)))
+      address_parse_info info;
+      if(!cryptonote::get_account_address_from_str(info, nettype, command_line::get_arg(vm, arg_start_mining)) || info.is_subaddress)
       {
         LOG_ERROR("Target account address " << command_line::get_arg(vm, arg_start_mining) << " has wrong format, starting daemon canceled");
         return false;
       }
+      m_mine_address = info.address;
       m_threads_total = 1;
       m_do_mining = true;
       if(command_line::has_arg(vm, arg_mining_threads))
@@ -289,8 +308,7 @@ namespace cryptonote
       return false;
     }
 
-    if(!m_template_no)
-      request_block_template();//lets update block template
+    request_block_template();//lets update block template
 
     boost::interprocess::ipcdetail::atomic_write32(&m_stop, 0);
     boost::interprocess::ipcdetail::atomic_write32(&m_thread_index, 0);
@@ -584,7 +602,7 @@ namespace cryptonote
         // this should take care of the case where mining is started with bg-enabled, 
         // and then the user decides to un-check background mining, and just do
         // regular full-speed mining. I might just be over-doing it and thinking up 
-        // non-existant use-cases, so if the concensus is to simplify, we can remove all this fluff.
+        // non-existant use-cases, so if the consensus is to simplify, we can remove all this fluff.
         /*
         while( !m_is_background_mining_enabled )
         {
@@ -606,20 +624,14 @@ namespace cryptonote
         continue; // if interrupted because stop called, loop should end ..
       }
 
-      boost::tribool battery_powered(on_battery_power());
-      bool on_ac_power = false;
-      if(indeterminate( battery_powered ))
+      bool on_ac_power = m_ignore_battery;
+      if(!m_ignore_battery)
       {
-        // name could be better, only ignores battery requirement if we failed
-        // to get the status of the system
-        if( m_ignore_battery )
+        boost::tribool battery_powered(on_battery_power());
+        if(!indeterminate( battery_powered ))
         {
-          on_ac_power = true;
+          on_ac_power = !battery_powered;
         }
-      }
-      else
-      {
-        on_ac_power = !battery_powered;
       }
 
       if( m_is_background_mining_started )
@@ -734,8 +746,6 @@ namespace cryptonote
 
     #elif defined(__linux__)
 
-      const std::string STR_CPU("cpu");
-      const std::size_t STR_CPU_LEN = STR_CPU.size();
       const std::string STAT_FILE_PATH = "/proc/stat";
 
       if( !epee::file_io_utils::is_file_exist(STAT_FILE_PATH) )
@@ -784,9 +794,36 @@ namespace cryptonote
       
       return true;
 
+    #elif defined(__FreeBSD__)
+
+      struct statinfo s;
+      size_t n = sizeof(s.cp_time);
+      if( sysctlbyname("kern.cp_time", s.cp_time, &n, NULL, 0) == -1 )
+      {
+        LOG_ERROR("sysctlbyname(\"kern.cp_time\"): " << strerror(errno));
+        return false;
+      }
+      if( n != sizeof(s.cp_time) )
+      {
+        LOG_ERROR("sysctlbyname(\"kern.cp_time\") output is unexpectedly "
+          << n << " bytes instead of the expected " << sizeof(s.cp_time)
+          << " bytes.");
+        return false;
+      }
+
+      idle_time = s.cp_time[CP_IDLE];
+      total_time =
+        s.cp_time[CP_USER] +
+        s.cp_time[CP_NICE] +
+        s.cp_time[CP_SYS] +
+        s.cp_time[CP_INTR] +
+        s.cp_time[CP_IDLE];
+
+      return true;
+
     #endif
 
-    return false; // unsupported systemm..
+    return false; // unsupported system
   }
   //-----------------------------------------------------------------------------------------------------
   bool miner::get_process_time(uint64_t& total_time)
@@ -806,7 +843,7 @@ namespace cryptonote
         return true;
       }
 
-    #elif (defined(__linux__) && defined(_SC_CLK_TCK)) || defined(__APPLE__)
+    #elif (defined(__linux__) && defined(_SC_CLK_TCK)) || defined(__APPLE__) || defined(__FreeBSD__)
 
       struct tms tms;
       if ( times(&tms) != (clock_t)-1 )
@@ -817,7 +854,7 @@ namespace cryptonote
 
     #endif
 
-    return false; // unsupported system..
+    return false; // unsupported system
   }
   //-----------------------------------------------------------------------------------------------------  
   uint8_t miner::get_percent_of_total(uint64_t other, uint64_t total)
@@ -858,19 +895,6 @@ namespace cryptonote
           const boost::filesystem::path& power_supply_path = iter->path();
           if (boost::filesystem::is_directory(power_supply_path))
           {
-            std::ifstream power_supply_present_stream((power_supply_path / "present").string());
-            if (power_supply_present_stream.fail())
-            {
-              LOG_PRINT_L0("Unable to read from " << power_supply_path << " to check if power supply present");
-              continue;
-            }
-
-            if (power_supply_present_stream.get() != '1')
-            {
-              LOG_PRINT_L4("Power supply not present at " << power_supply_path);
-              continue;
-            }
-
             boost::filesystem::path power_supply_type_path = power_supply_path / "type";
             if (boost::filesystem::is_regular_file(power_supply_type_path))
             {
@@ -941,6 +965,70 @@ namespace cryptonote
       }
       return on_battery;
 
+    #elif defined(__FreeBSD__)
+      int ac;
+      size_t n = sizeof(ac);
+      if( sysctlbyname("hw.acpi.acline", &ac, &n, NULL, 0) == -1 )
+      {
+        if( errno != ENOENT )
+        {
+          LOG_ERROR("Cannot query battery status: "
+            << "sysctlbyname(\"hw.acpi.acline\"): " << strerror(errno));
+          return boost::logic::tribool(boost::logic::indeterminate);
+        }
+
+        // If sysctl fails with ENOENT, then try querying /dev/apm.
+
+        static const char* dev_apm = "/dev/apm";
+        const int fd = open(dev_apm, O_RDONLY);
+        if( fd == -1 ) {
+          LOG_ERROR("Cannot query battery status: "
+            << "open(): " << dev_apm << ": " << strerror(errno));
+          return boost::logic::tribool(boost::logic::indeterminate);
+        }
+
+        apm_info info;
+        if( ioctl(fd, APMIO_GETINFO, &info) == -1 ) {
+          close(fd);
+          LOG_ERROR("Cannot query battery status: "
+            << "ioctl(" << dev_apm << ", APMIO_GETINFO): " << strerror(errno));
+          return boost::logic::tribool(boost::logic::indeterminate);
+        }
+
+        close(fd);
+
+        // See apm(8).
+        switch( info.ai_acline )
+        {
+        case 0: // off-line
+        case 2: // backup power
+          return boost::logic::tribool(true);
+        case 1: // on-line
+          return boost::logic::tribool(false);
+        }
+        switch( info.ai_batt_stat )
+        {
+        case 0: // high
+        case 1: // low
+        case 2: // critical
+          return boost::logic::tribool(true);
+        case 3: // charging
+          return boost::logic::tribool(false);
+        }
+
+        LOG_ERROR("Cannot query battery status: "
+          << "sysctl hw.acpi.acline is not available and /dev/apm returns "
+          << "unexpected ac-line status (" << info.ai_acline << ") and "
+          << "battery status (" << info.ai_batt_stat << ").");
+        return boost::logic::tribool(boost::logic::indeterminate);
+      }
+      if( n != sizeof(ac) )
+      {
+        LOG_ERROR("sysctlbyname(\"hw.acpi.acline\") output is unexpectedly "
+          << n << " bytes instead of the expected " << sizeof(ac) << " bytes.");
+        return boost::logic::tribool(boost::logic::indeterminate);
+      }
+      return boost::logic::tribool(ac == 0);
     #endif
     
     LOG_ERROR("couldn't query power status");

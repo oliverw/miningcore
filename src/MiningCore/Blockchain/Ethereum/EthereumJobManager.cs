@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -120,7 +121,7 @@ namespace MiningCore.Blockchain.Ethereum
                     var jobId = NextJobId("x8");
 
                     // update template
-                    job = new EthereumJob(jobId, blockTemplate);
+                    job = new EthereumJob(jobId, blockTemplate, logger);
 
                     lock (jobLock)
                     {
@@ -189,7 +190,7 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
         {
             // only parity returns the 4th element (block height)
-            if (work.Length < 3)
+            if (work.Length < 4)
             {
                 logger.Error(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
                 return null;
@@ -264,41 +265,45 @@ namespace MiningCore.Blockchain.Ethereum
         {
             logger.LogInvoke(LogCat);
 
-            var commands = new[]
+            try
             {
-                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true }),
-                new DaemonCmd(EC.GetPeerCount),
-            };
+                var commands = new[]
+                {
+                    new DaemonCmd(EC.GetPeerCount),
+                };
 
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
+                var results = await daemon.ExecuteBatchAnyAsync(commands);
 
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null)
-                    .ToArray();
+                if (results.Any(x => x.Error != null))
+                {
+                    var errors = results.Where(x => x.Error != null)
+                        .ToArray();
 
-                if (errors.Any())
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
+                    if (errors.Any())
+                        logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
+                }
+
+                // extract results
+                var peerCount = results[0].Response.ToObject<string>().IntegralFromHex<int>();
+
+                BlockchainStats.NetworkHashrate = 0; // TODO
+                BlockchainStats.ConnectedPeers = peerCount;
             }
 
-            // extract results
-            var block = results[0].Response.ToObject<Block>();
-            var peerCount = results[1].Response.ToObject<string>().IntegralFromHex<int>();
-
-            BlockchainStats.BlockHeight = block.Height.HasValue ? (long)block.Height.Value : -1;
-            BlockchainStats.NetworkDifficulty = block.Difficulty.IntegralFromHex<ulong>();
-            BlockchainStats.NetworkHashrate = 0; // TODO
-            BlockchainStats.ConnectedPeers = peerCount;
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
 
-        private async Task<bool> SubmitBlockAsync(EthereumShare share)
+        private async Task<bool> SubmitBlockAsync(Share share, string fullNonceHex, string headerHash, string mixHash)
         {
             // submit work
             var response = await daemon.ExecuteCmdAnyAsync<object>(EC.SubmitWork, new[]
             {
-                share.FullNonceHex,
-                share.HeaderHash,
-                share.MixHash
+                fullNonceHex,
+                headerHash,
+                mixHash
             });
 
             if (response.Error != null || (bool?) response.Response == false)
@@ -306,7 +311,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Block {share.BlockHeight} submission failed with: {error}");
+                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
 
                 return false;
             }
@@ -364,16 +369,19 @@ namespace MiningCore.Blockchain.Ethereum
 
             base.Configure(poolConfig, clusterConfig);
 
-            // ensure dag location is configured
-            var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
-                Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
-                Dag.GetDefaultDagDirectory();
+            if (poolConfig.EnableInternalStratum == true)
+            { 
+                // ensure dag location is configured
+                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ?
+                    Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) :
+                    Dag.GetDefaultDagDirectory();
 
-            // create it if necessary
-            Directory.CreateDirectory(dagDir);
+                // create it if necessary
+                Directory.CreateDirectory(dagDir);
 
-            // setup ethash
-            ethash = new EthashFull(3, dagDir);
+                // setup ethash
+                ethash = new EthashFull(3, dagDir);
+            }
         }
 
         public bool ValidateAddress(string address)
@@ -393,7 +401,7 @@ namespace MiningCore.Blockchain.Ethereum
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<EthereumShare> SubmitShareAsync(StratumClient worker,
+        public async Task<Share> SubmitShareAsync(StratumClient worker,
             string[] request, double stratumDifficulty, double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -415,25 +423,26 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // validate & process
-            var share = await job.ProcessShareAsync(worker, nonce, ethash);
+            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash);
+
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
+            share.Source = clusterConfig.ClusterName;
+            share.Created = clock.Now;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
                 logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight}");
 
-                share.IsBlockCandidate = await SubmitBlockAsync(share);
+                share.IsBlockCandidate = await SubmitBlockAsync(share, fullNonceHex, headerHash, mixHash);
 
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
                 }
             }
-
-            // enrich share with common data
-            share.PoolId = poolConfig.Id;
-            share.NetworkDifficulty = BlockchainStats.NetworkDifficulty;
-            share.Created = clock.Now;
 
             return share;
         }
@@ -473,7 +482,7 @@ namespace MiningCore.Blockchain.Ethereum
             return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
         }
 
-        protected override async Task EnsureDaemonsSynchedAsync()
+        protected override async Task EnsureDaemonsSynchedAsync(CancellationToken ct)
         {
             var syncPendingNotificationShown = false;
 
@@ -499,11 +508,11 @@ namespace MiningCore.Blockchain.Ethereum
                 await ShowDaemonSyncProgressAsync();
 
                 // delay retry by 5s
-                await Task.Delay(5000);
+                await Task.Delay(5000, ct);
             }
         }
 
-        protected override async Task PostStartInitAsync()
+        protected override async Task PostStartInitAsync(CancellationToken ct)
         {
             var commands = new[]
             {
@@ -536,70 +545,71 @@ namespace MiningCore.Blockchain.Ethereum
             var parityChain = results[4].Response.ToObject<string>();
 
             // ensure pool owns wallet
-            if (!accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
-                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            //if (clusterConfig.PaymentProcessing?.Enabled == true && !accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
+            //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
-            ConfigureRewards();
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+                ConfigureRewards();
 
             // update stats
             BlockchainStats.RewardType = "POW";
-            BlockchainStats.NetworkType = $"{chainType}";
+            BlockchainStats.NetworkType = $"{chainType}-{networkType}";
 
             await UpdateNetworkStatsAsync();
 
-            // make sure we have a current DAG
-            while(true)
+            // Periodically update network stats
+            Observable.Interval(TimeSpan.FromMinutes(10))
+                .Select(via => Observable.FromAsync(UpdateNetworkStatsAsync))
+                .Concat()
+                .Subscribe();
+
+            if (poolConfig.EnableInternalStratum == true)
             {
-                var blockTemplate = await GetBlockTemplateAsync();
-
-                if (blockTemplate == null)
+                // make sure we have a current DAG
+                while (true)
                 {
-                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    var blockTemplate = await GetBlockTemplateAsync();
 
-                    await Task.Delay(TimeSpan.FromSeconds(5));
-                    continue;
+                    if (blockTemplate != null)
+                    {
+                        logger.Info(() => $"[{LogCat}] Loading current DAG ...");
+
+                        await ethash.GetDagAsync(blockTemplate.Height, logger);
+
+                        logger.Info(() => $"[{LogCat}] Loaded current DAG");
+                        break;
+                    }
+
+                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
 
-                await ethash.GetDagAsync(blockTemplate.Height);
-                break;
+                SetupJobUpdates();
             }
-
-            SetupJobUpdates();
         }
 
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
-            var devDonation = clusterConfig.DevDonation ?? 0.15m;
-
-            if (devDonation > 0)
+            if (chainType == ParityChainType.Mainnet &&
+                DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
-                string address = null;
-
-                if (chainType == ParityChainType.Mainnet && networkType == EthereumNetworkType.Main)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.ETH];
-                else if (chainType == ParityChainType.Classic && networkType == EthereumNetworkType.Main)
-                    address = KnownAddresses.DevFeeAddresses[CoinType.ETC];
-
-                if (!string.IsNullOrEmpty(address))
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
                 {
-                    poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                    new RewardRecipient
                     {
-                        new RewardRecipient
-                        {
-                            Address = address,
-                            Percentage = devDonation,
-                        }
-                    }).ToArray();
-                }
+                        Address = address,
+                        Percentage = DevDonation.Percent
+                    }
+                }).ToArray();
             }
         }
 
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.ExternalStratum)
+	        if (poolConfig.EnableInternalStratum == false)
 		        return;
 
 			var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
@@ -616,7 +626,12 @@ namespace MiningCore.Blockchain.Ethereum
                 // collect ports
                 var wsDaemons = poolConfig.Daemons
                     .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
-                    .ToDictionary(x => x, x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>().PortWs.Value);
+                    .ToDictionary(x => x, x =>
+                    {
+                        var extra = x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>();
+
+                        return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
+                    });
 
                 logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
 

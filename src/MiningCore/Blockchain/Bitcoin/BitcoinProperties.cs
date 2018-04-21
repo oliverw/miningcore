@@ -37,6 +37,8 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm x11 = new X11();
         private static readonly IHashAlgorithm blake2s = new Blake2s();
         private static readonly IHashAlgorithm x17 = new X17();
+        private static readonly IHashAlgorithm x16r = new X16R();
+        private static readonly IHashAlgorithm x16s = new X16S();
         private static readonly IHashAlgorithm groestl = new Groestl();
         private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
         private static readonly IHashAlgorithm scrypt_1024_1 = new Scrypt(1024, 1);
@@ -44,6 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm qubit = new Qubit();
         private static readonly IHashAlgorithm groestlMyriad = new GroestlMyriad();
         private static readonly IHashAlgorithm neoScryptProfile1 = new NeoScrypt(0x80000620);
+        private static readonly IHashAlgorithm vergeBlockHasher = new DigestReverser(scrypt_1024_1);
 
         private static readonly BitcoinCoinProperties sha256Coin =
             new BitcoinCoinProperties(1, sha256D, sha256D, sha256DReverse, "Sha256");
@@ -79,16 +82,25 @@ namespace MiningCore.Blockchain.Bitcoin
             new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, neoScryptProfile1, new DigestReverser(neoScryptProfile1), "Neoscrypt");
 
         private static readonly BitcoinCoinProperties vergeLyraCoin =
-            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(scrypt_1024_1), "Lyra2re2");
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, vergeBlockHasher, "Lyra2re2");
 
         private static readonly BitcoinCoinProperties vergeBlake2sCoin =
-            new BitcoinCoinProperties(1, sha256D, blake2s, new DigestReverser(scrypt_1024_1), "Blake2s");
+            new BitcoinCoinProperties(1, sha256D, blake2s, vergeBlockHasher, "Blake2s");
 
         private static readonly BitcoinCoinProperties vergeX17Coin =
-            new BitcoinCoinProperties(1, x17, blake2s, new DigestReverser(scrypt_1024_1), "X17");
+            new BitcoinCoinProperties(1, sha256D, x17, vergeBlockHasher, "X17");
+
+        private static readonly BitcoinCoinProperties vergeScryptCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 16), sha256D, scrypt_1024_1, vergeBlockHasher, "Scrypt");
 
         private static readonly BitcoinCoinProperties vergeGroestlCoin =
-            new BitcoinCoinProperties(1, groestlMyriad, blake2s, new DigestReverser(scrypt_1024_1), "Groestl-Myriad");
+            new BitcoinCoinProperties(1, sha256D, groestlMyriad, vergeBlockHasher, "Groestl-Myriad");
+
+        private static readonly BitcoinCoinProperties x16rCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16r, new DigestReverser(x16r), "X16-R");
+
+        private static readonly BitcoinCoinProperties x16sCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, x16s, new DigestReverser(x16s), "X16-S");
 
         private static readonly Dictionary<CoinType, BitcoinCoinProperties> coinProperties = new Dictionary<CoinType, BitcoinCoinProperties>
         {
@@ -97,13 +109,15 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.BCH, sha256Coin },
             { CoinType.NMC, sha256Coin },
             { CoinType.PPC, sha256Coin },
-			{ CoinType.GLT, sha256Coin },
+            { CoinType.GLT, sha256Coin },
 
             // Scrypt
             { CoinType.LTC, scryptCoin },
             { CoinType.DOGE, scryptCoin },
             { CoinType.VIA, scryptCoin },
             { CoinType.MOON, scryptCoin },
+            { CoinType.FLO, scryptCoin },
+            { CoinType.PAK, scryptCoin },
 
             // Groestl
             { CoinType.GRS, groestlCoin },
@@ -117,6 +131,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // X11
             { CoinType.DASH, x11Coin },
+            { CoinType.CANN, x11Coin },
 
             // Equihash
             { CoinType.ZEC, equihashCoin },
@@ -128,6 +143,10 @@ namespace MiningCore.Blockchain.Bitcoin
             // Neoscrypt
             { CoinType.GBX, neoScryptCoin },
             { CoinType.CRC, neoScryptCoin },
+
+            // X16
+            { CoinType.RVN, x16rCoin },
+            { CoinType.PGN, x16sCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
@@ -145,9 +164,10 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch(algorithm.ToLower())
+            switch (algorithm.ToLower())
             {
                 case "sha256d":
+                case "sha256":
                     return sha256Coin;
 
                 case "skein":
@@ -184,7 +204,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     return vergeBlake2sCoin;
 
                 default: // scrypt
-                    return scryptCoin;
+                    return vergeScryptCoin;
             }
         }
 

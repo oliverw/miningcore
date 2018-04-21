@@ -35,15 +35,15 @@ using NLog;
 using Polly;
 using Contract = MiningCore.Contracts.Contract;
 
-namespace MiningCore.Payments.PayoutSchemes
+namespace MiningCore.Payments.PaymentSchemes
 {
     /// <summary>
     /// PPLNS payout scheme implementation
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public class PPLNS : IPayoutScheme
+    public class PPLNSPaymentScheme : IPayoutScheme
     {
-        public PPLNS(IConnectionFactory cf,
+        public PPLNSPaymentScheme(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo)
@@ -65,7 +65,7 @@ namespace MiningCore.Payments.PayoutSchemes
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetLogger("PPLNS Payment", typeof(PPLNSPaymentScheme));
 
         private const int RetryCount = 4;
         private Policy shareReadFaultPolicy;

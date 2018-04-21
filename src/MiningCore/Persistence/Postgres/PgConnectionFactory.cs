@@ -18,24 +18,29 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
+using System.Data;
+using Npgsql;
 
-namespace MiningCore.Blockchain
+namespace MiningCore.Persistence.Postgres
 {
-    public class ShareBase : IShare
+    public class PgConnectionFactory : IConnectionFactory
     {
-        public string PoolId { get; set; }
-        public string Miner { get; set; }
-        public string Worker { get; set; }
-        public string PayoutInfo { get; set; }
-        public string UserAgent { get; set; }
-        public string IpAddress { get; set; }
-        public double Difficulty { get; set; }
-        public double NetworkDifficulty { get; set; }
-        public long BlockHeight { get; set; }
-        public decimal BlockReward { get; set; }
-        public bool IsBlockCandidate { get; set; }
-        public string TransactionConfirmationData { get; set; }
-        public DateTime Created { get; set; }
+        public PgConnectionFactory(string connectionString)
+        {
+            this.connectionString = connectionString;
+        }
+
+        private readonly string connectionString;
+
+        /// <summary>
+        /// This implementation ensures that Glimpse.ADO is able to collect data
+        /// </summary>
+        /// <returns></returns>
+        public IDbConnection OpenConnection()
+        {
+            var con = new NpgsqlConnection(connectionString);
+            con.Open();
+            return con;
+        }
     }
 }

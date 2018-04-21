@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -106,7 +107,7 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        public override async Task<BitcoinShare> SubmitShareAsync(StratumClient worker, object submission,
+        public override async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -148,14 +149,14 @@ namespace MiningCore.Blockchain.ZCash
             var workerName = split.Length > 1 ? split[1] : null;
 
             // validate & process
-            var share = job.ProcessShare(worker, extraNonce2, nTime, solution);
+            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, solution);
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
                 logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
-                var acceptResponse = await SubmitBlockAsync(share);
+                var acceptResponse = await SubmitBlockAsync(share, blockHex);
 
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;
@@ -163,6 +164,8 @@ namespace MiningCore.Blockchain.ZCash
                 if (share.IsBlockCandidate)
                 {
                     logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+
+                    blockSubmissionSubject.OnNext(Unit.Default);
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block
@@ -182,6 +185,7 @@ namespace MiningCore.Blockchain.ZCash
             share.Miner = minerName;
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty / ShareMultiplier;
             share.Created = clock.Now;

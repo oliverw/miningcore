@@ -18,11 +18,28 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace MiningCore.Blockchain.Bitcoin
+using MiningCore.Contracts;
+using MiningCore.Native;
+
+namespace MiningCore.Crypto.Hashing.Algorithms
 {
-    public class BitcoinShare : ShareBase
+    public unsafe class X16S : IHashAlgorithm
     {
-        public string BlockHex { get; set; }
-        public string BlockHash { get; set; }
+        public byte[] Digest(byte[] data, params object[] extra)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+
+            var result = new byte[32];
+
+            fixed(byte* input = data)
+            {
+                fixed(byte* output = result)
+                {
+                    LibMultihash.x16s(input, output, (uint) data.Length);
+                }
+            }
+
+            return result;
+        }
     }
 }

@@ -31,6 +31,7 @@ using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Dash
@@ -99,14 +100,24 @@ namespace MiningCore.Blockchain.Dash
                 };
             }
 
+            var didUnlockWallet = false;
+
             // send command
+            tryTransfer:
             var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
-                var txId = result.Response;
+                if (didUnlockWallet)
+                {
+                    // lock wallet
+                    logger.Info(() => $"[{LogCategory}] Locking wallet");
+                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                }
 
                 // check result
+                var txId = result.Response;
+
                 if (string.IsNullOrEmpty(txId))
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
@@ -119,9 +130,38 @@ namespace MiningCore.Blockchain.Dash
 
             else
             {
-                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+                if (result.Error.Code == (int)BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                {
+                    if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
+                    {
+                        logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
+                        {
+                            (object) extraPoolPaymentProcessingConfig.WalletPassword,
+                            (object) 5  // unlock for N seconds
+                        });
+
+                        if (unlockResult.Error == null)
+                        {
+                            didUnlockWallet = true;
+                            goto tryTransfer;
+                        }
+
+                        else
+                            logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
+                    }
+
+                    else
+                        logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
+                }
+
+                else
+                {
+                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                }
             }
         }
 

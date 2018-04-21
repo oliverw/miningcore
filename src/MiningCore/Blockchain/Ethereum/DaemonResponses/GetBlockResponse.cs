@@ -66,7 +66,7 @@ namespace MiningCore.Blockchain.Ethereum.DaemonResponses
         public string To { get; set; }
 
         /// <summary>
-        /// value transferred in Wei
+        /// Value transferred in Wei
         /// </summary>
         [JsonConverter(typeof(HexToIntegralTypeJsonConverter<BigInteger>))]
         public BigInteger Value { get; set; }

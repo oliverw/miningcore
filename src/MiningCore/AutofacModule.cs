@@ -29,6 +29,7 @@ using MiningCore.Blockchain.BitcoinGold;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
+using MiningCore.Blockchain.Flo;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.Straks;
 using MiningCore.Blockchain.Straks.DaemonResponses;
@@ -38,7 +39,7 @@ using MiningCore.Configuration;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Payments;
-using MiningCore.Payments.PayoutSchemes;
+using MiningCore.Payments.PaymentSchemes;
 using MiningCore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -79,6 +80,9 @@ namespace MiningCore
             builder.RegisterType<ShareRecorder>()
                 .SingleInstance();
 
+            builder.RegisterType<ShareRelay>()
+                .SingleInstance();
+
             builder.RegisterType<ApiServer>()
                 .SingleInstance();
 
@@ -100,8 +104,12 @@ namespace MiningCore
             //////////////////////
             // Payment Schemes
 
-            builder.RegisterType<PPLNS>()
+            builder.RegisterType<PPLNSPaymentScheme>()
                 .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
+                .SingleInstance();
+
+            builder.RegisterType<SoloPaymentScheme>()
+                .Keyed<IPayoutScheme>(PayoutScheme.Solo)
                 .SingleInstance();
 
             //////////////////////
@@ -117,6 +125,15 @@ namespace MiningCore
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<FloJob, BlockTemplate>>()
+                .AsSelf();
+
+            //////////////////////
+            // Flo
+            
+            builder.RegisterType<FloJobManager>()
                 .AsSelf();
 
             //////////////////////

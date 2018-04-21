@@ -22,10 +22,13 @@ using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reactive.Disposables;
+using System.Text;
 using Autofac;
 using MiningCore.Buffers;
+using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Time;
@@ -51,6 +54,7 @@ namespace MiningCore.Stratum
         private IDisposable subscription;
         private bool isAlive = true;
         private WorkerContextBase context;
+        private bool expectingProxyProtocolHeader = false;
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -60,12 +64,14 @@ namespace MiningCore.Stratum
         #region API-Surface
 
         public void Init(Loop loop, Tcp tcp, IComponentContext ctx, IMasterClock clock,
-            IPEndPoint endpointConfig, string connectionId,
+            (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, string connectionId,
             Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
-            PoolEndpoint = endpointConfig;
+            PoolEndpoint = endpointConfig.IPEndPoint;
             ConnectionId = connectionId;
             RemoteEndpoint = tcp.GetPeerEndPoint();
+
+            expectingProxyProtocolHeader = endpointConfig.ProxyProtocol?.Enable == true;
 
             // initialize send queue
             sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
@@ -95,7 +101,7 @@ namespace MiningCore.Stratum
             subscription = Disposable.Create(() => { disposer.Send(); });
 
             // go
-            Receive(tcp, clock, onNext, onCompleted, onError);
+            Receive(tcp, endpointConfig.ProxyProtocol, clock, onNext, onCompleted, onError);
         }
 
         public string ConnectionId { get; private set; }
@@ -235,7 +241,7 @@ namespace MiningCore.Stratum
 
         #endregion // API-Surface
 
-        private void Receive(Tcp tcp, IMasterClock clock, 
+        private void Receive(Tcp tcp, TcpProxyProtocolConfig proxyProtocol, IMasterClock clock,
             Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
         {
             tcp.OnRead((handle, buffer) =>
@@ -248,9 +254,67 @@ namespace MiningCore.Stratum
 
                     LastReceive = clock.Now;
 
+                    var onLineReceived = !expectingProxyProtocolHeader ?
+                        onNext :
+                        (lineData) =>
+                        {
+                            // are we expecting the Tcp-Proxy-Protocol header?
+                            if (expectingProxyProtocolHeader)
+                            {
+                                expectingProxyProtocolHeader = false;
+                                var peerAddress = tcp.GetPeerEndPoint().Address;
+
+                                // peek into line data
+                                var line = Encoding.ASCII.GetString(lineData.Array, lineData.Offset, lineData.Size);
+
+                                if (line.StartsWith("PROXY "))
+                                {
+                                    using(lineData)
+                                    {
+                                        var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                                        if (proxyAddresses == null || !proxyAddresses.Any())
+                                            proxyAddresses = new[] { IPAddress.Loopback };
+
+                                        if (proxyAddresses.Any(x=> x.Equals(peerAddress)))
+                                        {
+                                            logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
+
+                                            // split header parts
+                                            var parts = line.Split(" ");
+                                            var remoteAddress = parts[2];
+                                            var remotePort = parts[4];
+
+                                            // Update client
+                                            RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
+                                            logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                                        }
+
+                                        else
+                                        {
+                                            logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                                            Disconnect();
+                                        }
+                                    }
+
+                                    return;
+                                }
+
+                                else if (proxyProtocol.Mandatory)
+                                {
+                                    logger.Error(() => $"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
+                                    lineData.Dispose();
+                                    Disconnect();
+                                    return;
+                                }
+                            }
+
+                            // forward
+                            onNext(lineData);
+                        };
+
                     plb.Receive(buffer, buffer.Count,
                         (src, dst, count) => src.ReadBytes(dst, count),
-                        onNext,
+                        onLineReceived,
                         onError);
                 }
             }, (handle, ex) =>
