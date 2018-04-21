@@ -98,7 +98,7 @@ createdb miningcore
 psql (enter the password for postgressql)
 ```
 ```sql
-alter user miningcore with encrypted password 'some-secure-password';
+alter user miningcore encrypted password 'some-secure-password';
 grant all privileges on database miningcore to miningcore;
 ```
 
