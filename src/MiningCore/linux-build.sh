@@ -20,8 +20,3 @@ cp ../Native/libcryptonote/libcryptonote.so $BUILDIR
 (cd ../Native/libmultihash && make)
 cp ../Native/libmultihash/libmultihash.so $BUILDIR
 (cd ../Native/libmultihash && make clean)
-
-# build libequihashverifynew
-(cd ../Native/libequihashverifynew && make)
-cp ../Native/libequihashverifynew/libequihashverifynew.so $BUILDIR
-(cd ../Native/libequihashverifynew && make clean)

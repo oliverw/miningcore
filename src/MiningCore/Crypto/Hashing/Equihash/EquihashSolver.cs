@@ -80,15 +80,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
                 {
                     fixed(byte *s = solution)
                     {
-                        bool old_verified = LibMultihash.equihash_verify_old(h, s);
-                        bool new_verified = LibEquihashVerifyNew.equihash_verify_new(h, h.length, s, s.length);
-
-                        if(old_verified != new_verified) {
-                            // TODO make this more verbose
-                            logger.Info("Equihash Mismatch: old=%d new=%d");
-                        }
-
-                        return old_verified && new_verified;
+                        return LibMultihash.equihash_verify(h, s);
                     }
                 }
             }
