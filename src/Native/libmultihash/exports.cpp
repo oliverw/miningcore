@@ -44,7 +44,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
-#include "equi/equi.h"
+#include "equi/equihashverify.h"
 #include "libethash/sha3.h"
 #include "libethash/internal.h"
 #include "libethash/ethash.h"
@@ -199,9 +199,15 @@ extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t
     x16s_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API bool equihash_verify_export(const char* header, const char* solution)
+extern "C" MODULE_API bool equihash_verify_export(const char* header, int header_length, const char* solution, int solution_length)
 {
-	return verifyEH(header, solution);
+    if (header_length != 140 || solution_length != 1344) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH(header, vecSolution);
 }
 
 extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)
