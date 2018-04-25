@@ -121,7 +121,7 @@ namespace MiningCore.Blockchain
                                     {
                                         var msg = (NetMQMessage) null;
 
-                                        if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 3))
+                                        if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 4))
                                         {
                                             logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
                                             break;
@@ -131,6 +131,7 @@ namespace MiningCore.Blockchain
                                         var topic = msg.Pop().ConvertToString(Encoding.UTF8);
                                         var flags = msg.Pop().ConvertToInt32();
                                         var data = msg.Pop().ToByteArray();
+                                        var timestamp = msg.Pop().ConvertToInt64();
 
                                         // compressed
                                         if ((flags & 1) == 1)
