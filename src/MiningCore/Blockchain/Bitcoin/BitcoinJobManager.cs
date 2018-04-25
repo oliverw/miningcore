@@ -705,17 +705,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             else
-            {
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
-
-                getBlockTemplateParams = new object[]
-                {
-                    new
-                    {
-                        mode = "template"
-                    }
-                };
-            }
 
             // chain detection
             if (!hasLegacyDaemon)
