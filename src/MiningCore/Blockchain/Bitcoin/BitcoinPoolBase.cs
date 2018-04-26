@@ -122,8 +122,21 @@ namespace MiningCore.Blockchain.Bitcoin
             // respond
             client.Respond(context.IsAuthorized, request.Id);
 
-            // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+            if (context.IsAuthorized)
+            {
+                // log association
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+            }
+
+            else
+            {
+                // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning unauthorized worker for 60 sec");
+
+                banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+
+                DisconnectClient(client);
+            }
         }
 
         protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
