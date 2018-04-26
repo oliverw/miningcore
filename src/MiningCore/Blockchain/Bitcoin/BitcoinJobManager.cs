@@ -210,7 +210,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             Jobs = Observable.Merge(triggers)
-                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via)))
+                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
                 .Concat()
                 .Where(x=> x.IsNew || x.Force)
                 .Do(x =>
