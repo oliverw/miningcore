@@ -39,7 +39,9 @@ using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Mining;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -60,7 +62,8 @@ namespace MiningCore.Api
             IBlockRepository blocksRepo,
             IPaymentRepository paymentsRepo,
             IStatsRepository statsRepo,
-            IMasterClock clock)
+            IMasterClock clock,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
@@ -68,6 +71,7 @@ namespace MiningCore.Api
             Contract.RequiresNonNull(paymentsRepo, nameof(paymentsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.statsRepo = statsRepo;
@@ -75,6 +79,8 @@ namespace MiningCore.Api
             this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
             this.clock = clock;
+
+            messageBus.Listen<BlockNotification>().Subscribe(OnBlockNotification);
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
@@ -155,6 +161,10 @@ namespace MiningCore.Api
                     await writer.FlushAsync();
                 }
             }
+        }
+
+        private void OnBlockNotification(BlockNotification notification)
+        {
         }
 
         #region API

@@ -32,7 +32,9 @@ using System.Threading;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -61,6 +63,7 @@ namespace MiningCore.Mining
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -69,12 +72,14 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.clock = clock;
+            this.messageBus = messageBus;
             this.notificationService = notificationService;
 
             this.shareRepo = shareRepo;
@@ -88,6 +93,7 @@ namespace MiningCore.Mining
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
+        private readonly IMessageBus messageBus;
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
@@ -142,7 +148,7 @@ namespace MiningCore.Mining
                         blockEntity.Status = BlockStatus.Pending;
                         blockRepo.Insert(con, tx, blockEntity);
 
-                        notificationService.NotifyBlock(share.PoolId, share.BlockHeight);
+                        messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
                     }
                 }
             });
