@@ -85,6 +85,9 @@ namespace MiningCore
             builder.RegisterType<ShareRecorder>()
                 .SingleInstance();
 
+            builder.RegisterType<ShareReceiver>()
+                .SingleInstance();
+
             builder.RegisterType<ShareRelay>()
                 .SingleInstance();
 

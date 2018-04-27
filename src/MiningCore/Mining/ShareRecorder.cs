@@ -344,7 +344,7 @@ namespace MiningCore.Mining
 
         private void InitializeQueue()
         {
-            messageBus.Listen<ClientShare>().Subscribe(x => { queue.Add(x.Share); });
+            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
 
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)

@@ -52,7 +52,7 @@ namespace MiningCore.Mining
         {
             this.clusterConfig = clusterConfig;
 
-            messageBus.Listen<ClientShare>().Subscribe(x => { queue.Add(x.Share); });
+            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
 
             pubSocket = new PublisherSocket();
 
