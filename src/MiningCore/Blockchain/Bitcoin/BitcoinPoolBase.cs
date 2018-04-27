@@ -107,7 +107,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var context = client.GetContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
-            //var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var passParts = password?.Split(PasswordControlVarsSeparator);
 
             // extract worker/miner
             var split = workerValue?.Split('.');
@@ -119,17 +120,32 @@ namespace MiningCore.Blockchain.Bitcoin
             context.MinerName = minerName;
             context.WorkerName = workerName;
 
-            // respond
-            client.Respond(context.IsAuthorized, request.Id);
-
             if (context.IsAuthorized)
             {
+                // respond
+                client.Respond(context.IsAuthorized, request.Id);
+
                 // log association
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+
+                // extract control vars from password
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
+                if (staticDiff.HasValue &&
+                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                {
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
+
+                    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                }
             }
 
             else
             {
+                // respond
+                client.RespondError(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
+
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning unauthorized worker for 60 sec");
 
