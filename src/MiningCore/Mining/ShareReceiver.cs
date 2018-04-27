@@ -21,7 +21,7 @@ using ProtoBuf;
 namespace MiningCore.Mining
 {
     /// <summary>
-    /// Received external shares from relay and re-publishes for consumption
+    /// Receives external shares from relays and re-publishes for consumption
     /// </summary>
     public class ShareReceiver
     {

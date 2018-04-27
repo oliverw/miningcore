@@ -39,7 +39,9 @@ using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -56,22 +58,20 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) :
-            base(ctx)
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-            this.notificationService = notificationService;
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
         }
 
-        protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
         protected readonly IExtraNonceProvider extraNonceProvider;
@@ -326,7 +326,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}"));
                 return (false, null);
             }
 
@@ -338,7 +338,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!accepted)
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
-                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                messageBus.SendMessage(new AdminNotification($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission"));
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());

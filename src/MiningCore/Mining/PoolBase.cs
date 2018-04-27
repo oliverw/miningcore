@@ -58,8 +58,7 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) : base(ctx, clock)
+            IMessageBus messageBus) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -68,19 +67,16 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
             this.messageBus = messageBus;
-            this.notificationService = notificationService;
         }
 
         protected PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-        protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;

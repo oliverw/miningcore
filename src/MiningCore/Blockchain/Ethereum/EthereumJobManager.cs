@@ -37,7 +37,9 @@ using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -54,17 +56,16 @@ namespace MiningCore.Blockchain.Ethereum
     {
         public EthereumJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             JsonSerializerSettings serializerSettings) :
-            base(ctx)
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clock = clock;
-            this.notificationService = notificationService;
 
             serializer = new JsonSerializer
             {
@@ -77,7 +78,6 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
         private EthashFull ethash;
-        private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
@@ -311,7 +311,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
 
                 return false;
             }

@@ -19,17 +19,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reactive;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -38,18 +33,16 @@ using MiningCore.Blockchain.Monero.Configuration;
 using MiningCore.Blockchain.Monero.DaemonRequests;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Blockchain.Monero.StratumRequests;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Native;
-using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
@@ -62,15 +55,14 @@ namespace MiningCore.Blockchain.Monero
     {
         public MoneroJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
-            IMasterClock clock) :
-            base(ctx)
+            IMasterClock clock,
+            IMessageBus messageBus) :
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
-            this.notificationService = notificationService;
             this.clock = clock;
 
             using(var rng = RandomNumberGenerator.Create())
@@ -84,7 +76,6 @@ namespace MiningCore.Blockchain.Monero
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
-        private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private MoneroNetworkType networkType;
         private MoneroPoolConfigExtra extraPoolConfig;
@@ -215,7 +206,7 @@ namespace MiningCore.Blockchain.Monero
                 var error = response.Error?.Message ?? response.Response?.Status;
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
                 return false;
             }
 
