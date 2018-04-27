@@ -92,22 +92,7 @@ namespace MiningCore.Mining
         private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
-        private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
-
-        class PoolContext
-        {
-            public PoolContext(IMiningPool pool, ILogger logger)
-            {
-                Pool = pool;
-                Logger = logger;
-            }
-
-            public readonly IMiningPool Pool;
-            public readonly ILogger Logger;
-            public DateTime? LastBlock;
-            public long BlockHeight;
-        }
 
         private readonly int QueueSizeWarningThreshold = 1024;
         private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
@@ -314,11 +299,6 @@ namespace MiningCore.Mining
         }
 
         #region API-Surface
-
-        public void AttachPool(IMiningPool pool)
-        {
-            pools[pool.Config.Id] = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
-        }
 
         public void Start(ClusterConfig clusterConfig)
         {

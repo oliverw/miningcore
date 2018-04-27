@@ -65,7 +65,8 @@ namespace MiningCore.Mining
                 {
                     var tmp = x.Url.Trim();
                     return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
-                }, x => x.Topic.Trim());
+                }, x => x.Topic.Trim())
+                .ToArray();
 
             var serializer = new JsonSerializer
             {
@@ -174,13 +175,12 @@ namespace MiningCore.Mining
                                     share.Created = clock.Now;
                                     messageBus.SendMessage(new ClientShare(null, share));
 
-                                    // misc
+                                    // update poolstats from shares
                                     if (pools.TryGetValue(topic, out var poolContext))
                                     {
                                         var pool = poolContext.Pool;
                                         poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
 
-                                        // update pool stats
                                         if (pool.NetworkStats != null)
                                         {
                                             pool.NetworkStats.BlockHeight = share.BlockHeight;
@@ -216,6 +216,9 @@ namespace MiningCore.Mining
 
                 thread.Start(item);
             }
+
+            if(stratumsByUrl.Any())
+                logger.Info(() => "Online");
         }
 
         #region API-Surface
@@ -230,8 +233,6 @@ namespace MiningCore.Mining
             this.clusterConfig = clusterConfig;
 
             StartListeners();
-
-            logger.Info(() => "Online");
         }
 
         public void Stop()
