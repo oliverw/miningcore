@@ -619,7 +619,6 @@ namespace MiningCore
 
                 // pre-start attachments
                 shareRecorder?.AttachPool(pool);
-                shareRelay?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
 
                 await pool.StartAsync(cts.Token);

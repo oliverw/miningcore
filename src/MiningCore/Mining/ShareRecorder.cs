@@ -486,8 +486,6 @@ namespace MiningCore.Mining
         public void AttachPool(IMiningPool pool)
         {
             pools[pool.Config.Id] = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
-
-            pool.Shares.Subscribe(x => { queue.Add(x.Share); });
         }
 
         public void Start(ClusterConfig clusterConfig)
@@ -515,6 +513,8 @@ namespace MiningCore.Mining
 
         private void InitializeQueue()
         {
+            messageBus.Listen<ClientShare>().Subscribe(x => { queue.Add(x.Share); });
+
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)
                 .Do(_ => CheckQueueBacklog())

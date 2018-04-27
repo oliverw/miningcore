@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -51,8 +52,9 @@ namespace MiningCore.Blockchain.Ethereum
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
         {
         }
 
@@ -186,7 +188,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // success
                 client.Respond(true, request.Id);
-				shareSubject.OnNext(new ClientShare(client, share));
+				messageBus.SendMessage(new ClientShare(client, share));
 
 				EnsureInitialWorkSent(client);
 

@@ -74,7 +74,7 @@ namespace MiningCore.Messaging
         /// </returns>
         public IObservable<T> Listen<T>(string contract = null)
         {
-            logger.Info("Listening to {0}:{1}", typeof(T), contract);
+            logger.Debug("Listening to {0}:{1}", typeof(T), contract);
 
             return setupSubjectIfNecessary<T>(contract).Skip(1);
         }
@@ -95,7 +95,7 @@ namespace MiningCore.Messaging
         /// </returns>
         public IObservable<T> ListenIncludeLatest<T>(string contract = null)
         {
-            logger.Info("Listening to {0}:{1}", typeof(T), contract);
+            logger.Debug("Listening to {0}:{1}", typeof(T), contract);
 
             return setupSubjectIfNecessary<T>(contract);
         }

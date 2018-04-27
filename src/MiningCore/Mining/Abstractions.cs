@@ -41,7 +41,6 @@ namespace MiningCore.Mining
 
 	public interface IMiningPool
     {
-        IObservable<ClientShare> Shares { get; }
         PoolConfig Config { get; }
         PoolStats PoolStats { get; }
         BlockchainStats NetworkStats { get; }
