@@ -197,6 +197,9 @@ namespace MiningCore.Mining
                                                 pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
                                         }
                                     }
+
+                                    else
+                                        logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
                                 }
                             }
                         }
