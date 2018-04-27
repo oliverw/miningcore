@@ -325,6 +325,11 @@ namespace MiningCore.Configuration
         public bool Enabled { get; set; }
         public string ListenAddress { get; set; }
         public int Port { get; set; }
+
+        /// <summary>
+        /// Port for admin-apis
+        /// </summary>
+        public int AdminPort { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
