@@ -170,7 +170,7 @@ namespace MiningCore
 
         private static void LogRuntimeInfo()
         {
-            logger.Info(() => $"Running on {RuntimeInformation.FrameworkDescription} under {RuntimeInformation.OSDescription} [{RuntimeInformation.OSArchitecture} - {RuntimeInformation.ProcessArchitecture}]");
+            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
