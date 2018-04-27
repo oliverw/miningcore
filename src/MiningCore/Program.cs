@@ -21,10 +21,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -41,11 +39,6 @@ using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Api.Responses;
-using MiningCore.Blockchain;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
-using MiningCore.Blockchain.Ethereum;
-using MiningCore.Blockchain.Ethereum.DaemonRequests;
-using MiningCore.Blockchain.ZCash;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -57,7 +50,6 @@ using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
-using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -78,6 +70,7 @@ namespace MiningCore
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
+        private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
@@ -94,6 +87,7 @@ namespace MiningCore
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                Console.CancelKeyPress += OnCancelKeyPress;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -116,9 +110,8 @@ namespace MiningCore
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    Console.CancelKeyPress += OnCancelKeyPress;
-                    Start().Wait(cts.Token);
-                    Shutdown();
+                    if(!cts.IsCancellationRequested)
+                        Start().Wait(cts.Token);
                 }
 
                 else
@@ -162,11 +155,15 @@ namespace MiningCore
 
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
+
+            Shutdown();
+            Process.GetCurrentProcess().CloseMainWindow();
+            Process.GetCurrentProcess().Close();
         }
 
         private static void LogRuntimeInfo()
         {
-            logger.Info(() => $"Running on {RuntimeInformation.FrameworkDescription} under {RuntimeInformation.OSDescription} [{RuntimeInformation.OSArchitecture} - {RuntimeInformation.ProcessArchitecture}]");
+            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
@@ -565,6 +562,10 @@ namespace MiningCore
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
                 shareRecorder.Start(clusterConfig);
+
+                // start share receiver (for external shares)
+                shareReceiver = container.Resolve<ShareReceiver>();
+                shareReceiver.Start(clusterConfig);
             }
 
             else
@@ -614,15 +615,14 @@ namespace MiningCore
                 pool.Configure(poolConfig, clusterConfig);
 
                 // pre-start attachments
-                shareRecorder?.AttachPool(pool);
-                shareRelay?.AttachPool(pool);
+                shareReceiver?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
 
-                await pool.StartAsync();
+                await pool.StartAsync(cts.Token);
             }));
 
             // keep running
-            await Observable.Never<Unit>().ToTask();
+            await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
         private static void RecoverShares(string recoveryFilename)
@@ -644,27 +644,38 @@ namespace MiningCore
 
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            logger.Info(() => "SIGINT received. Exiting.");
+            logger?.Info(() => "SIGINT received. Exiting.");
+            Console.WriteLine("SIGINT received. Exiting.");
 
-            cts.Cancel();
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
+
+            e.Cancel = true;
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
-            logger.Info(() => "SIGTERM received. Exiting.");
+            logger?.Info(() => "SIGTERM received. Exiting.");
+            Console.WriteLine("SIGTERM received. Exiting.");
 
-            cts.Cancel();
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
         }
 
         private static void Shutdown()
         {
             logger.Info(() => "Shutdown ...");
+            Console.WriteLine("Shutdown...");
 
-            shareRelay.Stop();
-            shareRecorder.Stop();
-            statsRecorder.Stop();
-
-            Process.GetCurrentProcess().Close();
+            shareRelay?.Stop();
+            shareRecorder?.Stop();
+            statsRecorder?.Stop();
         }
 
         private static void TouchNativeLibs()

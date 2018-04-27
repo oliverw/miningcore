@@ -14,6 +14,8 @@ using MailKit.Security;
 using MimeKit;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Notifications.Slack;
 using Newtonsoft.Json;
 using NLog;
@@ -24,9 +26,11 @@ namespace MiningCore.Notifications
     {
         public NotificationService(
             ClusterConfig clusterConfig,
-            JsonSerializerSettings serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus)); 
 
             this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
@@ -45,6 +49,18 @@ namespace MiningCore.Notifications
                     .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
                     .Concat()
                     .Subscribe();
+
+                messageBus.Listen<BlockNotification>()
+                    .Subscribe(x =>
+                    {
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.Block,
+                            PoolId = x.PoolId,
+                            Subject = "Block Notification",
+                            Msg = $"Pool {x.PoolId} found block candidate {x.BlockHeight}"
+                        });
+                    });
             }
         }
 
@@ -80,17 +96,6 @@ namespace MiningCore.Notifications
         }
 
         #region API-Surface
-
-        public void NotifyBlock(string poolId, long blockHeight)
-        {
-            queue?.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.Block,
-                PoolId = poolId,
-                Subject = "Block Notification",
-                Msg = $"Pool {poolId} found block candidate {blockHeight}"
-            });
-        }
 
         public void NotifyPaymentSuccess(string poolId, decimal amount, int recpientsCount, string txInfo, decimal? txFee)
         {

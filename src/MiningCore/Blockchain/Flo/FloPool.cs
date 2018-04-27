@@ -25,6 +25,7 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.Flo.Configuration;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -44,8 +45,9 @@ namespace MiningCore.Blockchain.Flo
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
         {
         }
 

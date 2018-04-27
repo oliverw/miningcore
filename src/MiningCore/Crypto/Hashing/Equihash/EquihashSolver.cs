@@ -80,7 +80,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
                 {
                     fixed(byte *s = solution)
                     {
-                        return LibMultihash.equihash_verify(h, s);
+                        return LibMultihash.equihash_verify(h, header.Length, s, solution.Length);
                     }
                 }
             }
