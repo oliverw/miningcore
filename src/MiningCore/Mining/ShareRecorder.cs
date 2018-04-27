@@ -89,6 +89,7 @@ namespace MiningCore.Mining
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IShareRepository shareRepo;
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
@@ -116,7 +117,6 @@ namespace MiningCore.Mining
 
         private readonly int QueueSizeWarningThreshold = 1024;
         private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
-        private readonly IShareRepository shareRepo;
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
         private bool hasWarnedAboutBacklogSize;
@@ -319,168 +319,6 @@ namespace MiningCore.Mining
             }
         }
 
-        private void StartExternalStratumPublisherListeners()
-        {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
-                .SelectMany(x => x.ExternalStratums)
-                .Where(x => x.Url != null && x.Topic != null)
-                .GroupBy(x =>
-                {
-                    var tmp = x.Url.Trim();
-                    return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
-                }, x=> x.Topic.Trim());
-
-            var serializer = new JsonSerializer
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
-
-            foreach (var item in stratumsByUrl)
-            {
-                var thread = new Thread(arg =>
-                {
-                    var urlAndTopic = (IGrouping<string, string>) arg;
-                    var url = urlAndTopic.Key;
-                    var topics = new HashSet<string>(urlAndTopic.Distinct());
-                    var receivedOnce = false;
-
-                    while (true)
-                    {
-                        try
-                        {
-                            using (var subSocket = new SubscriberSocket())
-                            {
-                                subSocket.Connect(url);
-
-                                // subscribe to all topics
-                                foreach (var topic in topics)
-                                    subSocket.Subscribe(topic);
-
-                                logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
-
-                                while (true)
-                                {
-                                    // receive
-                                    var msg = (NetMQMessage)null;
-
-                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
-                                    {
-                                        if (receivedOnce)
-                                        {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
-                                        }
-
-                                        // retry
-                                        continue;
-                                    }
-
-                                    // extract frames
-                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ToByteArray();
-                                    receivedOnce = true;
-
-                                    // validate
-                                    if (!topics.Contains(topic))
-                                    {
-                                        logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
-                                        continue;
-                                    }
-
-                                    if (data?.Length == 0)
-                                    {
-                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
-                                        continue;
-                                    }
-
-                                    // deserialize
-                                    var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
-                                    Share share = null;
-
-                                    switch (wireFormat)
-                                    {
-                                        case ShareRelay.WireFormat.Json:
-                                            using (var stream = new MemoryStream(data))
-                                            {
-                                                using (var reader = new StreamReader(stream, Encoding.UTF8))
-                                                {
-                                                    using (var jreader = new JsonTextReader(reader))
-                                                    {
-                                                        share = serializer.Deserialize<Share>(jreader);
-                                                    }
-                                                }
-                                            }
-                                            break;
-
-                                        case ShareRelay.WireFormat.ProtocolBuffers:
-                                            using (var stream = new MemoryStream(data))
-                                            {
-                                                share = Serializer.Deserialize<Share>(stream);
-                                                share.BlockReward = (decimal) share.BlockRewardDouble;
-                                            }
-                                            break;
-
-                                        default:
-                                            logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
-                                            break;
-                                    }
-
-                                    if (share == null)
-                                    {
-                                        logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
-                                        continue;
-                                    }
-
-                                    // store
-                                    share.PoolId = topic;
-                                    share.Created = clock.Now;
-                                    queue.Add(share);
-
-                                    // misc
-                                    if (pools.TryGetValue(topic, out var poolContext))
-                                    {
-                                        var pool = poolContext.Pool;
-                                        poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                                        // update pool stats
-                                        if (pool.NetworkStats != null)
-                                        {
-                                            pool.NetworkStats.BlockHeight = share.BlockHeight;
-                                            pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
-
-                                            if (poolContext.BlockHeight != share.BlockHeight)
-                                            {
-                                                pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                                poolContext.BlockHeight = share.BlockHeight;
-                                                poolContext.LastBlock = clock.Now;
-                                            }
-
-                                            else
-                                                pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        catch (ObjectDisposedException)
-                        {
-                            logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
-                            break;
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
-                    }
-                });
-
-                thread.Start(item);
-            }
-        }
-
         #region API-Surface
 
         public void AttachPool(IMiningPool pool)
@@ -494,7 +332,6 @@ namespace MiningCore.Mining
 
             ConfigureRecovery();
             InitializeQueue();
-            StartExternalStratumPublisherListeners();
 
             logger.Info(() => "Online");
         }
