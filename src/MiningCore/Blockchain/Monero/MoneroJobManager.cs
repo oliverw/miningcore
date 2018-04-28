@@ -365,13 +365,13 @@ namespace MiningCore.Blockchain.Monero
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // also setup wallet daemon
-                walletDaemon = new DaemonClient(jsonSerializerSettings);
+                walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
                 walletDaemon.Configure(walletDaemonEndpoints);
             }
         }

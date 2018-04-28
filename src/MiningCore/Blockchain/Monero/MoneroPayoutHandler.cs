@@ -274,7 +274,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             // configure wallet daemon
@@ -289,7 +289,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            walletDaemon = new DaemonClient(jsonSerializerSettings);
+            walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network

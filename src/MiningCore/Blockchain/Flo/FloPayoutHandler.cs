@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Flo
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(poolConfig.Daemons);
 
             return Task.FromResult(true);

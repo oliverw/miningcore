@@ -459,7 +459,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
         }
 

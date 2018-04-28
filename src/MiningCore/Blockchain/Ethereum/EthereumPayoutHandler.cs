@@ -96,7 +96,7 @@ namespace MiningCore.Blockchain.Ethereum
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             await DetectChainAsync();
