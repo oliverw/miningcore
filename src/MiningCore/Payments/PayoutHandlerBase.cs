@@ -26,7 +26,6 @@ using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;

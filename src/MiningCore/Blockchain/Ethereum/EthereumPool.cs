@@ -33,6 +33,7 @@ using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Mining;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -184,13 +185,16 @@ namespace MiningCore.Blockchain.Ethereum
                 var share = await manager.SubmitShareAsync(client, submitRequest, context.Difficulty,
                     poolEndpoint.Difficulty);
 
-                // success
                 client.Respond(true, request.Id);
-				messageBus.SendMessage(new ClientShare(client, share));
 
-				EnsureInitialWorkSent(client);
+                // publish
+                messageBus.SendMessage(new ClientShare(client, share));
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+                EnsureInitialWorkSent(client);
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -204,6 +208,9 @@ namespace MiningCore.Blockchain.Ethereum
             catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
 
                 // update client stats
                 context.Stats.InvalidShares++;

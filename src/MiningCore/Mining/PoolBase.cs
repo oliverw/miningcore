@@ -37,6 +37,7 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -152,6 +153,11 @@ namespace MiningCore.Mining
                         DisconnectClient(client);
                     }
                 });
+        }
+
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
         }
 
         #region VarDiff

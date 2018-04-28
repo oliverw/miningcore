@@ -33,6 +33,7 @@ using Autofac;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Util;
 using NetMQ;
 using NetMQ.Sockets;
@@ -157,7 +158,12 @@ namespace MiningCore.Blockchain
                                         // convert
                                         var json = Encoding.UTF8.GetString(data);
 
+                                        // publish
                                         obs.OnNext(json);
+
+                                        // telemetry
+                                        messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
+                                            TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                     }
                                 }
                             }
