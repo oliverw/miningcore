@@ -310,6 +310,7 @@ namespace MiningCore.DaemonInterface
                 // check success
                 if (!response.IsSuccessStatusCode)
                 {
+                    // telemetry
                     sw.Stop();
                     PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, false, response.StatusCode.ToString());
 
@@ -325,6 +326,7 @@ namespace MiningCore.DaemonInterface
                         {
                             var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
+                            // telemetry
                             sw.Stop();
                             PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, true);
 
@@ -376,6 +378,7 @@ namespace MiningCore.DaemonInterface
                     // check success
                     if (!response.IsSuccessStatusCode)
                     {
+                        // telemetry
                         sw.Stop();
                         PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x=> x.Method)), false, response.StatusCode.ToString());
 
@@ -391,6 +394,7 @@ namespace MiningCore.DaemonInterface
                             {
                                 var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
+                                // telemetry
                                 sw.Stop();
                                 PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
 
