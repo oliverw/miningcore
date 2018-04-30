@@ -306,16 +306,6 @@ namespace MiningCore.DaemonInterface
             // send request
             using(var response = await httpClients[endPoint].SendAsync(request))
             {
-                // check success
-                if (!response.IsSuccessStatusCode)
-                {
-                    // telemetry
-                    sw.Stop();
-                    PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, false, response.StatusCode.ToString());
-
-                    throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
-                }
-
                 // deserialize response
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 {
@@ -327,7 +317,7 @@ namespace MiningCore.DaemonInterface
 
                             // telemetry
                             sw.Stop();
-                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, true);
+                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
 
                             return result;
                         }
