@@ -61,7 +61,6 @@ namespace MiningCore.DaemonInterface
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(server), $"{nameof(poolId)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
             this.serializerSettings = serializerSettings;
