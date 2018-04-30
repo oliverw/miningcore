@@ -45,6 +45,7 @@ using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
@@ -75,7 +76,8 @@ namespace MiningCore
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
-        private static Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private static NotificationService notificationService;
+        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
 
@@ -558,6 +560,8 @@ namespace MiningCore
 
         private static async Task Start()
         {
+            notificationService = container.Resolve<NotificationService>();
+
             if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
