@@ -69,7 +69,7 @@ namespace MiningCore.Stratum
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
-            // every port gets serviced by a dedicated loop thread
+            // all ports get serviced by a single loop thread, actual work is dispatched to taskpool threads
             var thread = new Thread(_ =>
             {
                 var loop = new Loop();
