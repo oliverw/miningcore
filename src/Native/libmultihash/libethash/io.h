@@ -71,6 +71,16 @@ enum ethash_io_rc {
 #define ETHASH_CRITICAL(...)          
 #endif
 
+ /**
+ * An fseek wrapper for crossplatform 64-bit seek.
+ *
+ * @param f            The file stream whose fd to get
+ * @param offset       Number of bytes from @a origin
+ * @param origin       Initial position
+ * @return             Current offset or -1 to indicate an error
+ */
+int ethash_fseek(FILE* f, size_t offset, int origin);
+
 /**
  * Prepares io for ethash
  *
