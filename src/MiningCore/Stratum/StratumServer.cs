@@ -56,11 +56,12 @@ namespace MiningCore.Stratum
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
-        protected readonly Dictionary<int, Async> ports = new Dictionary<int, Async>();
+        protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
         protected ILogger logger;
+        private Async disposer;
 
         protected abstract string LogCat { get; }
 
@@ -69,15 +70,22 @@ namespace MiningCore.Stratum
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             // every port gets serviced by a dedicated loop thread
-            foreach(var endpoint in stratumPorts)
+            var thread = new Thread(_ =>
             {
-                var thread = new Thread(_ =>
-                {
-                    var loop = new Loop();
+                var loop = new Loop();
 
-                    try
+                disposer = loop.CreateAsync((handle) =>
+                {
+                    loop.Stop();
+
+                    handle.Dispose();
+                });
+
+                try
+                {
+                    foreach (var endpoint in stratumPorts)
                     {
-                        loop.CreateTcp()
+                        var tcp = loop.CreateTcp()
                             .NoDelay(true)
                             .SimultaneousAccepts(false)
                             .Listen(endpoint.IPEndPoint, (con, ex) =>
@@ -88,55 +96,35 @@ namespace MiningCore.Stratum
                                     logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
                             });
 
-                        var disposer = loop.CreateAsync((handle) =>
-                        {
-                            loop.Stop();
-
-                            handle.Dispose();
-                        });
-
                         lock (ports)
                         {
-                            ports[endpoint.IPEndPoint.Port] = disposer;
+                            ports[endpoint.IPEndPoint.Port] = tcp;
                         }
+
+                        logger.Info(() => $"[{LogCat}] Stratum ports {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port} online");
                     }
 
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex, $"[{LogCat}] {ex}");
-                        throw;
-                    }
+                    // Go
+                    loop.RunDefault();
 
-                    logger.Info(() => $"[{LogCat}] Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port} online");
+                    // Done
+                    loop.Dispose();
 
-                    try
-                    {
-                        loop.RunDefault();
-                        logger.Info(() => $"[{LogCat}] Stopped Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port}");
+                    logger.Info(() => $"[{LogCat}] Stratum stopped");
+                }
 
-                        loop.Dispose();
-                        logger.Info(() => $"[{LogCat}] Closed Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port}");
-                    }
+                catch(Exception ex)
+                {
+                    logger.Error(ex, $"[{LogCat}] {ex}");
+                }
+            }) { Name = $"UvLoopThread [{id.ToUpper()}]" };
 
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex, $"[{LogCat}] {ex}");
-                    }
-                }) { Name = $"UvLoopThread {id}:{endpoint.IPEndPoint.Port}" };
-
-                thread.Start();
-            }
+            thread.Start();
         }
 
         public void StopListeners()
         {
-            lock(ports)
-            {
-                var entries = ports.Values.ToArray();
-
-                foreach (var signal in entries)
-                    signal.Send();
-            }
+            disposer.Send();
         }
 
         private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, Loop loop)
