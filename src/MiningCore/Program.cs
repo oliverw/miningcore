@@ -75,6 +75,7 @@ namespace MiningCore
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
+        private static Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
 
@@ -157,8 +158,8 @@ namespace MiningCore
             }
 
             Shutdown();
-            Process.GetCurrentProcess().CloseMainWindow();
-            Process.GetCurrentProcess().Close();
+
+            Process.GetCurrentProcess().Kill();
         }
 
         private static void LogRuntimeInfo()
@@ -613,6 +614,7 @@ namespace MiningCore
                 // create and configure
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
 
                 // pre-start attachments
                 shareReceiver?.AttachPool(pool);
@@ -672,6 +674,9 @@ namespace MiningCore
         {
             logger.Info(() => "Shutdown ...");
             Console.WriteLine("Shutdown...");
+
+            foreach (var pool in pools.Values)
+                pool.Stop();
 
             shareRelay?.Stop();
             shareRecorder?.Stop();

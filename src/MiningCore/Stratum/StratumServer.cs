@@ -56,7 +56,7 @@ namespace MiningCore.Stratum
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
-        protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
+        protected readonly Dictionary<int, Async> ports = new Dictionary<int, Async>();
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
@@ -77,8 +77,7 @@ namespace MiningCore.Stratum
 
                     try
                     {
-                        var listener = loop
-                            .CreateTcp()
+                        loop.CreateTcp()
                             .NoDelay(true)
                             .SimultaneousAccepts(false)
                             .Listen(endpoint.IPEndPoint, (con, ex) =>
@@ -89,9 +88,16 @@ namespace MiningCore.Stratum
                                     logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
                             });
 
+                        var disposer = loop.CreateAsync((handle) =>
+                        {
+                            loop.Stop();
+
+                            handle.Dispose();
+                        });
+
                         lock (ports)
                         {
-                            ports[endpoint.IPEndPoint.Port] = listener;
+                            ports[endpoint.IPEndPoint.Port] = disposer;
                         }
                     }
 
@@ -106,9 +112,13 @@ namespace MiningCore.Stratum
                     try
                     {
                         loop.RunDefault();
+                        logger.Info(() => $"[{LogCat}] Stopped Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port}");
+
+                        loop.Dispose();
+                        logger.Info(() => $"[{LogCat}] Closed Stratum port {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port}");
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex, $"[{LogCat}] {ex}");
                     }
@@ -122,18 +132,10 @@ namespace MiningCore.Stratum
         {
             lock(ports)
             {
-                var portValues = ports.Values.ToArray();
+                var entries = ports.Values.ToArray();
 
-                for(int i = 0; i < portValues.Length; i++)
-                {
-                    var listener = portValues[i];
-
-                    listener.Shutdown((tcp, ex) =>
-                    {
-                        if (tcp?.IsValid == true)
-                            tcp.Dispose();
-                    });
-                }
+                foreach (var signal in entries)
+                    signal.Send();
             }
         }
 

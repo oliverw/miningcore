@@ -47,5 +47,6 @@ namespace MiningCore.Mining
         void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
         double HashrateFromShares(double shares, double interval);
         Task StartAsync(CancellationToken ctsToken);
+        void Stop();
     }
 }

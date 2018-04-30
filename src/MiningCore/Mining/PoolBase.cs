@@ -385,6 +385,11 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             }
         }
 
-	    #endregion // API-Surface
+        public void Stop()
+        {
+            StopListeners();
+        }
+
+        #endregion // API-Surface
     }
 }
