@@ -45,8 +45,8 @@ namespace MiningCore.Stratum
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private const int MaxInboundRequestLength = 8192;
-        private const int MaxOutboundRequestLength = 0x4000;
+        private const int MaxInboundRequestLength = 0x8000;
+        private const int MaxOutboundRequestLength = 0x8000;
 
         private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
         private Async sendQueueDrainer;

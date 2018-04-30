@@ -28,25 +28,21 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
-using System.Threading;
 using AutoMapper;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using NLog;
-using Org.BouncyCastle.Utilities.Collections;
 using Polly;
 using Polly.CircuitBreaker;
-using ProtoBuf;
 using Contract = MiningCore.Contracts.Contract;
 using Share = MiningCore.Blockchain.Share;
 
@@ -61,7 +57,7 @@ namespace MiningCore.Mining
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
             IMasterClock clock,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -69,13 +65,13 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
             Contract.RequiresNonNull(clock, nameof(clock));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.clock = clock;
-            this.notificationService = notificationService;
+            this.messageBus = messageBus;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
@@ -84,33 +80,17 @@ namespace MiningCore.Mining
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IShareRepository shareRepo;
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
-        private readonly NotificationService notificationService;
+        private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
-        private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
-        private BlockingCollection<Share> queue = new BlockingCollection<Share>();
-
-        class PoolContext
-        {
-            public PoolContext(IMiningPool pool, ILogger logger)
-            {
-                Pool = pool;
-                Logger = logger;
-            }
-
-            public readonly IMiningPool Pool;
-            public readonly ILogger Logger;
-            public DateTime? LastBlock;
-            public long BlockHeight;
-        }
+        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
-        private readonly IShareRepository shareRepo;
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
         private bool hasWarnedAboutBacklogSize;
@@ -142,7 +122,7 @@ namespace MiningCore.Mining
                         blockEntity.Status = BlockStatus.Pending;
                         blockRepo.Insert(con, tx, blockEntity);
 
-                        notificationService.NotifyBlock(share.PoolId, share.BlockHeight);
+                        messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
                     }
                 }
             });
@@ -307,182 +287,12 @@ namespace MiningCore.Mining
             {
                 notifiedAdminOnPolicyFallback = true;
 
-                notificationService.NotifyAdmin(
-                    "Share Recorder Policy Fallback",
-                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
-            }
-        }
-
-        private void StartExternalStratumPublisherListeners()
-        {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
-                .SelectMany(x => x.ExternalStratums)
-                .Where(x => x.Url != null && x.Topic != null)
-                .GroupBy(x =>
-                {
-                    var tmp = x.Url.Trim();
-                    return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
-                }, x=> x.Topic.Trim());
-
-            var serializer = new JsonSerializer
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
-
-            foreach (var item in stratumsByUrl)
-            {
-                var thread = new Thread(arg =>
-                {
-                    var urlAndTopic = (IGrouping<string, string>) arg;
-                    var url = urlAndTopic.Key;
-                    var topics = new HashSet<string>(urlAndTopic.Distinct());
-                    var receivedOnce = false;
-
-                    while (true)
-                    {
-                        try
-                        {
-                            using (var subSocket = new SubscriberSocket())
-                            {
-                                subSocket.Connect(url);
-
-                                // subscribe to all topics
-                                foreach (var topic in topics)
-                                    subSocket.Subscribe(topic);
-
-                                logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
-
-                                while (true)
-                                {
-                                    // receive
-                                    var msg = (NetMQMessage)null;
-
-                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
-                                    {
-                                        if (receivedOnce)
-                                        {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
-                                        }
-
-                                        // retry
-                                        continue;
-                                    }
-
-                                    // extract frames
-                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ToByteArray();
-                                    receivedOnce = true;
-
-                                    // validate
-                                    if (!topics.Contains(topic))
-                                    {
-                                        logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
-                                        continue;
-                                    }
-
-                                    if (data?.Length == 0)
-                                    {
-                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
-                                        continue;
-                                    }
-
-                                    // deserialize
-                                    var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
-                                    Share share = null;
-
-                                    switch (wireFormat)
-                                    {
-                                        case ShareRelay.WireFormat.Json:
-                                            using (var stream = new MemoryStream(data))
-                                            {
-                                                using (var reader = new StreamReader(stream, Encoding.UTF8))
-                                                {
-                                                    using (var jreader = new JsonTextReader(reader))
-                                                    {
-                                                        share = serializer.Deserialize<Share>(jreader);
-                                                    }
-                                                }
-                                            }
-                                            break;
-
-                                        case ShareRelay.WireFormat.ProtocolBuffers:
-                                            using (var stream = new MemoryStream(data))
-                                            {
-                                                share = Serializer.Deserialize<Share>(stream);
-                                                share.BlockReward = (decimal) share.BlockRewardDouble;
-                                            }
-                                            break;
-
-                                        default:
-                                            logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
-                                            break;
-                                    }
-
-                                    if (share == null)
-                                    {
-                                        logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
-                                        continue;
-                                    }
-
-                                    // store
-                                    share.PoolId = topic;
-                                    share.Created = clock.Now;
-                                    queue.Add(share);
-
-                                    // misc
-                                    if (pools.TryGetValue(topic, out var poolContext))
-                                    {
-                                        var pool = poolContext.Pool;
-                                        poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                                        // update pool stats
-                                        if (pool.NetworkStats != null)
-                                        {
-                                            pool.NetworkStats.BlockHeight = share.BlockHeight;
-                                            pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
-
-                                            if (poolContext.BlockHeight != share.BlockHeight)
-                                            {
-                                                pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                                poolContext.BlockHeight = share.BlockHeight;
-                                                poolContext.LastBlock = clock.Now;
-                                            }
-
-                                            else
-                                                pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        catch (ObjectDisposedException)
-                        {
-                            logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
-                            break;
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
-                    }
-                });
-
-                thread.Start(item);
+                messageBus.SendMessage(new AdminNotification("Share Recorder Policy Fallback",
+                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}."));
             }
         }
 
         #region API-Surface
-
-        public void AttachPool(IMiningPool pool)
-        {
-            pools[pool.Config.Id] = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
-
-            pool.Shares.Subscribe(x => { queue.Add(x.Share); });
-        }
 
         public void Start(ClusterConfig clusterConfig)
         {
@@ -490,7 +300,6 @@ namespace MiningCore.Mining
 
             ConfigureRecovery();
             InitializeQueue();
-            StartExternalStratumPublisherListeners();
 
             logger.Info(() => "Online");
         }
@@ -509,6 +318,8 @@ namespace MiningCore.Mining
 
         private void InitializeQueue()
         {
+            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
+
             queueSub = queue.GetConsumingEnumerable()
                 .ToObservable(TaskPoolScheduler.Default)
                 .Do(_ => CheckQueueBacklog())

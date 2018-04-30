@@ -32,8 +32,10 @@ using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -51,8 +53,8 @@ namespace MiningCore.Blockchain.Monero
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
@@ -243,11 +245,15 @@ namespace MiningCore.Blockchain.Monero
 
                 var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty);
 
-                // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-				shareSubject.OnNext(new ClientShare(client, share));
 
-				logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                // publish
+                messageBus.SendMessage(new ClientShare(client, share));
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
+
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -261,6 +267,9 @@ namespace MiningCore.Blockchain.Monero
             catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
 
                 // update client stats
                 context.Stats.InvalidShares++;

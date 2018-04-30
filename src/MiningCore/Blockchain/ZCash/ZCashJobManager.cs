@@ -12,6 +12,7 @@ using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
@@ -25,9 +26,9 @@ namespace MiningCore.Blockchain.ZCash
     {
         public ZCashJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
-            IExtraNonceProvider extraNonceProvider) : base(ctx, notificationService, clock, extraNonceProvider)
+            IMessageBus messageBus,
+            IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
             getBlockTemplateParams = new object[]
             {

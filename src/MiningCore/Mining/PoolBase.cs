@@ -35,7 +35,9 @@ using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -57,37 +59,34 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            NotificationService notificationService) : base(ctx, clock)
+            IMessageBus messageBus) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.notificationService = notificationService;
-
-            Shares = shareSubject
-                .Synchronize();
+            this.messageBus = messageBus;
         }
 
         protected PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-        protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
+        protected readonly IMessageBus messageBus;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 32;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
-        protected readonly Subject<ClientShare> shareSubject = new Subject<ClientShare>();
         protected static readonly Regex regexStaticDiff = new Regex(@"d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
@@ -156,6 +155,11 @@ namespace MiningCore.Mining
                 });
         }
 
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
+        }
+
         #region VarDiff
 
         protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
@@ -206,10 +210,11 @@ namespace MiningCore.Mining
             // Diff may not be changed , only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
             var interval = poolEndpoint.VarDiff.TargetTime;
+            var shareReceivedFromClient = messageBus.Listen<ClientShare>().Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
 
             Observable
                 .Timer(TimeSpan.FromSeconds(interval))
-                .TakeUntil(Shares.Where(x=> x.Client == client))
+                .TakeUntil(shareReceivedFromClient)
                 .Take(1)
                 .Where(x=> client.IsAlive)
                 .Subscribe(_ => UpdateVarDiff(client, true));
@@ -320,7 +325,6 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         #region API-Surface
 
-        public IObservable<ClientShare> Shares { get; }
         public PoolConfig Config => poolConfig;
         public PoolStats PoolStats => poolStats;
         public BlockchainStats NetworkStats => blockchainStats;
@@ -381,6 +385,11 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             }
         }
 
-	    #endregion // API-Surface
+        public void Stop()
+        {
+            StopListeners();
+        }
+
+        #endregion // API-Surface
     }
 }

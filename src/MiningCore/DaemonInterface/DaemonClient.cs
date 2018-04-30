@@ -39,6 +39,8 @@ using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Util;
 using NetMQ;
@@ -55,11 +57,16 @@ namespace MiningCore.DaemonInterface
     /// </summary>
     public class DaemonClient
     {
-        public DaemonClient(JsonSerializerSettings serializerSettings)
+        public DaemonClient(JsonSerializerSettings serializerSettings, IMessageBus messageBus, string server, string poolId)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(poolId), $"{nameof(poolId)} must not be empty");
 
             this.serializerSettings = serializerSettings;
+            this.messageBus = messageBus;
+            this.server = server;
+            this.poolId = poolId;
 
             serializer = new JsonSerializer
             {
@@ -73,6 +80,16 @@ namespace MiningCore.DaemonInterface
         protected DaemonEndpointConfig[] endPoints;
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
         private readonly JsonSerializer serializer;
+
+        // Telemetry
+        private readonly IMessageBus messageBus;
+        private readonly string server;
+        private readonly string poolId;
+
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, string info, bool? success = null, string error = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(server, poolId, cat, info, elapsed, success));
+        }
 
         #region API-Surface
 
@@ -255,6 +272,10 @@ namespace MiningCore.DaemonInterface
         {
             var rpcRequestId = GetRequestId();
 
+            // telemetry
+            var sw = new Stopwatch();
+            sw.Start();
+
             // build rpc request
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
@@ -293,6 +314,11 @@ namespace MiningCore.DaemonInterface
                         using (var jreader = new JsonTextReader(reader))
                         {
                             var result = serializer.Deserialize<JsonRpcResponse>(jreader);
+
+                            // telemetry
+                            sw.Stop();
+                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
+
                             return result;
                         }
                     }
@@ -303,6 +329,10 @@ namespace MiningCore.DaemonInterface
 
         private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(DaemonEndpointConfig endPoint, DaemonCmd[] batch)
         {
+            // telemetry
+            var sw = new Stopwatch();
+            sw.Start();
+
             // build rpc request
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
@@ -336,7 +366,13 @@ namespace MiningCore.DaemonInterface
                 {
                     // check success
                     if (!response.IsSuccessStatusCode)
+                    {
+                        // telemetry
+                        sw.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x=> x.Method)), false, response.StatusCode.ToString());
+
                         throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
+                    }
 
                     // deserialize response
                     using(var stream = await response.Content.ReadAsStreamAsync())
@@ -346,6 +382,11 @@ namespace MiningCore.DaemonInterface
                             using(var jreader = new JsonTextReader(reader))
                             {
                                 var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
+
+                                // telemetry
+                                sw.Stop();
+                                PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+
                                 return result;
                             }
                         }

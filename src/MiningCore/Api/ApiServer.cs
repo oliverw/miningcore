@@ -39,7 +39,9 @@ using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Mining;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -60,7 +62,8 @@ namespace MiningCore.Api
             IBlockRepository blocksRepo,
             IPaymentRepository paymentsRepo,
             IStatsRepository statsRepo,
-            IMasterClock clock)
+            IMasterClock clock,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
@@ -68,6 +71,7 @@ namespace MiningCore.Api
             Contract.RequiresNonNull(paymentsRepo, nameof(paymentsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.statsRepo = statsRepo;
@@ -75,6 +79,8 @@ namespace MiningCore.Api
             this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
             this.clock = clock;
+
+            messageBus.Listen<BlockNotification>().Subscribe(OnBlockNotification);
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
@@ -88,8 +94,10 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
+            };
 
-                // admin api
+            requestMapAdmin = new Dictionary<Regex, Func<HttpContext, Match, Task>>
+            {
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
                 { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
             };
@@ -104,6 +112,7 @@ namespace MiningCore.Api
 
         private ClusterConfig clusterConfig;
         private IWebHost webHost;
+        private IWebHost webHostAdmin;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly Encoding encoding = new UTF8Encoding(false);
 
@@ -115,6 +124,7 @@ namespace MiningCore.Api
         };
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
+        private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMapAdmin;
 
         private PoolConfig GetPool(HttpContext context, Match m)
         {
@@ -152,6 +162,12 @@ namespace MiningCore.Api
                 }
             }
         }
+
+        private void OnBlockNotification(BlockNotification notification)
+        {
+        }
+
+        #region API
 
         private async Task HandleRequest(HttpContext context)
         {
@@ -565,15 +581,8 @@ namespace MiningCore.Api
             await SendJsonAsync(context, Program.gcStats);
         }
 
-#region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
+        private void StartApi(ClusterConfig clusterConfig)
         {
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-            this.clusterConfig = clusterConfig;
-
-            logger.Info(() => $"Launching ...");
-
             var address = clusterConfig.Api?.ListenAddress != null
                 ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
                 : IPAddress.Parse("127.0.0.1");
@@ -587,10 +596,76 @@ namespace MiningCore.Api
 
             webHost.Start();
 
-            logger.Info(() => $"Online @ {address}:{port}");
+            logger.Info(() => $"API Online @ {address}:{port}");
         }
 
-#endregion // API-Surface
+        #endregion // API
+
+        #region Admin API
+
+        private async Task HandleRequestAdmin(HttpContext context)
+        {
+            var request = context.Request;
+
+            try
+            {
+                logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
+
+                foreach (var path in requestMapAdmin.Keys)
+                {
+                    var m = path.Match(request.Path);
+
+                    if (m.Success)
+                    {
+                        var handler = requestMapAdmin[path];
+                        await handler(context, m);
+                        return;
+                    }
+                }
+
+                context.Response.StatusCode = 404;
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+        }
+
+        private void StartAdminApi(ClusterConfig clusterConfig)
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.AdminPort ?? 4001;
+
+            webHostAdmin = new WebHostBuilder()
+                .Configure(app => { app.Run(HandleRequestAdmin); })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHostAdmin.Start();
+
+            logger.Info(() => $"Admin API Online @ {address}:{port}");
+        }
+
+        #endregion // Admin API
+
+        #region API-Surface
+
+        public void Start(ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            this.clusterConfig = clusterConfig;
+
+            logger.Info(() => $"Launching ...");
+            StartApi(clusterConfig);
+            StartAdminApi(clusterConfig);
+        }
+
+        #endregion // API-Surface
 
     }
 }

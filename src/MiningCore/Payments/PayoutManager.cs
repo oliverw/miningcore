@@ -27,7 +27,9 @@ using Autofac;
 using Autofac.Features.Metadata;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -46,21 +48,21 @@ namespace MiningCore.Payments
             IBlockRepository blockRepo,
             IShareRepository shareRepo,
             IBalanceRepository balanceRepo,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.ctx = ctx;
             this.cf = cf;
             this.blockRepo = blockRepo;
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
-            this.notificationService = notificationService;
+            this.messageBus = messageBus;
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -68,7 +70,7 @@ namespace MiningCore.Payments
         private readonly IConnectionFactory cf;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly NotificationService notificationService;
+        private readonly IMessageBus messageBus;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private ClusterConfig clusterConfig;
         private Thread thread;
@@ -180,7 +182,7 @@ namespace MiningCore.Payments
 
         private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
         {
-            notificationService.NotifyPaymentFailure(pool.Id, balances.Sum(x => x.Amount), ex.Message);
+            messageBus.SendMessage(new PaymentNotification(pool.Id, ex.Message, balances.Sum(x => x.Amount)));
 
             return Task.FromResult(true);
         }

@@ -21,10 +21,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -41,23 +39,18 @@ using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Api.Responses;
-using MiningCore.Blockchain;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
-using MiningCore.Blockchain.Ethereum;
-using MiningCore.Blockchain.Ethereum.DaemonRequests;
-using MiningCore.Blockchain.ZCash;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
-using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -78,10 +71,13 @@ namespace MiningCore
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
+        private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
+        private static NotificationService notificationService;
+        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
 
@@ -165,13 +161,13 @@ namespace MiningCore
             }
 
             Shutdown();
-            Process.GetCurrentProcess().CloseMainWindow();
-            Process.GetCurrentProcess().Close();
+
+            Process.GetCurrentProcess().Kill();
         }
 
         private static void LogRuntimeInfo()
         {
-            logger.Info(() => $"Running on {RuntimeInformation.FrameworkDescription} under {RuntimeInformation.OSDescription} [{RuntimeInformation.OSArchitecture} - {RuntimeInformation.ProcessArchitecture}]");
+            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
@@ -565,11 +561,17 @@ namespace MiningCore
 
         private static async Task Start()
         {
+            notificationService = container.Resolve<NotificationService>();
+
             if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
                 shareRecorder.Start(clusterConfig);
+
+                // start share receiver (for external shares)
+                shareReceiver = container.Resolve<ShareReceiver>();
+                shareReceiver.Start(clusterConfig);
             }
 
             else
@@ -617,10 +619,10 @@ namespace MiningCore
                 // create and configure
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
 
                 // pre-start attachments
-                shareRecorder?.AttachPool(pool);
-                shareRelay?.AttachPool(pool);
+                shareReceiver?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
 
                 await pool.StartAsync(cts.Token);
@@ -677,6 +679,9 @@ namespace MiningCore
         {
             logger.Info(() => "Shutdown ...");
             Console.WriteLine("Shutdown...");
+
+            foreach (var pool in pools.Values)
+                pool.Stop();
 
             shareRelay?.Stop();
             shareRecorder?.Stop();

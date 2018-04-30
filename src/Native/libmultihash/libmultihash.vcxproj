@@ -73,21 +73,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)windows\include\libsodium;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)windows\include\libsodium;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)windows\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(ProjectDir)windows\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)windows\include\libsodium;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)windows\include\libsodium;$(ProjectDir)windows\include\libsodium;$(IncludePath)</IncludePath>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)windows\include\libsodium;$(ProjectDir)windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,6 +100,7 @@
       <PreprocessorDefinitions>SODIUM_STATIC</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -114,6 +117,7 @@
       <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,6 +136,7 @@
       <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,6 +157,7 @@
       <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -168,8 +174,23 @@
     <ClInclude Include="boolberry.h" />
     <ClInclude Include="c11.h" />
     <ClInclude Include="dcrypt.h" />
-    <ClInclude Include="equi\endian.h" />
-    <ClInclude Include="equi\equi.h" />
+    <ClInclude Include="equi\arith_uint256.h" />
+    <ClInclude Include="equi\crypto\common.h" />
+    <ClInclude Include="equi\crypto\equihash.h" />
+    <ClInclude Include="equi\crypto\hmac_sha256.h" />
+    <ClInclude Include="equi\crypto\hmac_sha512.h" />
+    <ClInclude Include="equi\crypto\ripemd160.h" />
+    <ClInclude Include="equi\crypto\sha1.h" />
+    <ClInclude Include="equi\crypto\sha256.h" />
+    <ClInclude Include="equi\crypto\sha512.h" />
+    <ClInclude Include="equi\equihashverify.h" />
+    <ClInclude Include="equi\random.h" />
+    <ClInclude Include="equi\serialize.h" />
+    <ClInclude Include="equi\support\cleanse.h" />
+    <ClInclude Include="equi\tinyformat.h" />
+    <ClInclude Include="equi\uint256.h" />
+    <ClInclude Include="equi\util.h" />
+    <ClInclude Include="equi\utilstrencodings.h" />
     <ClInclude Include="fresh.h" />
     <ClInclude Include="fugue.h" />
     <ClInclude Include="groestl.h" />
@@ -190,6 +211,7 @@
     <ClInclude Include="Lyra2RE.h" />
     <ClInclude Include="neoscrypt.h" />
     <ClInclude Include="nist5.h" />
+    <ClInclude Include="portable_endian.h" />
     <ClInclude Include="quark.h" />
     <ClInclude Include="qubit.h" />
     <ClInclude Include="s3.h" />
@@ -237,8 +259,20 @@
     <ClCompile Include="c11.c" />
     <ClCompile Include="dcrypt.c" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="equi\endian.c" />
-    <ClCompile Include="equi\equi.c" />
+    <ClCompile Include="equi\arith_uint256.cpp" />
+    <ClCompile Include="equi\crypto\equihash.cpp" />
+    <ClCompile Include="equi\crypto\hmac_sha256.cpp" />
+    <ClCompile Include="equi\crypto\hmac_sha512.cpp" />
+    <ClCompile Include="equi\crypto\ripemd160.cpp" />
+    <ClCompile Include="equi\crypto\sha1.cpp" />
+    <ClCompile Include="equi\crypto\sha256.cpp" />
+    <ClCompile Include="equi\crypto\sha512.cpp" />
+    <ClCompile Include="equi\equihashverify.cc" />
+    <ClCompile Include="equi\random.cpp" />
+    <ClCompile Include="equi\support\cleanse.cpp" />
+    <ClCompile Include="equi\uint256.cpp" />
+    <ClCompile Include="equi\util.cpp" />
+    <ClCompile Include="equi\utilstrencodings.cpp" />
     <ClCompile Include="fresh.c" />
     <ClCompile Include="fugue.c" />
     <ClCompile Include="groestl.c" />
@@ -294,6 +328,7 @@
     <ClCompile Include="x17.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="equi\crypto\equihash.tcc" />
     <None Include="Makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

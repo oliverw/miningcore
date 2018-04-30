@@ -30,8 +30,9 @@ using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
-using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -51,8 +52,8 @@ namespace MiningCore.Blockchain.Bitcoin
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
@@ -107,7 +108,8 @@ namespace MiningCore.Blockchain.Bitcoin
             var context = client.GetContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
-            //var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var passParts = password?.Split(PasswordControlVarsSeparator);
 
             // extract worker/miner
             var split = workerValue?.Split('.');
@@ -119,11 +121,39 @@ namespace MiningCore.Blockchain.Bitcoin
             context.MinerName = minerName;
             context.WorkerName = workerName;
 
-            // respond
-            client.Respond(context.IsAuthorized, request.Id);
+            if (context.IsAuthorized)
+            {
+                // respond
+                client.Respond(context.IsAuthorized, request.Id);
 
-            // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+                // log association
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+
+                // extract control vars from password
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
+                if (staticDiff.HasValue &&
+                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                {
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
+
+                    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                }
+            }
+
+            else
+            {
+                // respond
+                client.RespondError(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
+
+                // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning unauthorized worker for 60 sec");
+
+                banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+
+                DisconnectClient(client);
+            }
         }
 
         protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -160,9 +190,13 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty);
 
-                // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(new ClientShare(client, share));
+
+                // publish
+                messageBus.SendMessage(new ClientShare(client, share));
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -178,6 +212,9 @@ namespace MiningCore.Blockchain.Bitcoin
             catch (StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
 
                 // update client stats
                 context.Stats.InvalidShares++;

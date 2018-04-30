@@ -73,7 +73,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 }
 
                 // If we used up the future cache, or need a refresh, regenerate
-                if (future == null || future.Epoch <= epoch)
+                else if (future == null || future.Epoch <= epoch)
                 {
                     logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
                     future = new Dag(epoch + 1);

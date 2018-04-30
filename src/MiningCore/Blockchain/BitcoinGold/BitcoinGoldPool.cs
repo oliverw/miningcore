@@ -24,7 +24,7 @@ using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
@@ -41,8 +41,8 @@ namespace MiningCore.Blockchain.BitcoinGold
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 

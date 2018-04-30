@@ -14,6 +14,8 @@ using MailKit.Security;
 using MimeKit;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Notifications.Slack;
 using Newtonsoft.Json;
 using NLog;
@@ -24,9 +26,11 @@ namespace MiningCore.Notifications
     {
         public NotificationService(
             ClusterConfig clusterConfig,
-            JsonSerializerSettings serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
@@ -45,6 +49,55 @@ namespace MiningCore.Notifications
                     .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
                     .Concat()
                     .Subscribe();
+
+                messageBus.Listen<AdminNotification>()
+                    .Subscribe(x =>
+                    {
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.Admin,
+                            Subject = x.Subject,
+                            Msg = x.Message
+                        });
+                    });
+
+                messageBus.Listen<BlockNotification>()
+                    .Subscribe(x =>
+                    {
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.Block,
+                            PoolId = x.PoolId,
+                            Subject = "Block Notification",
+                            Msg = $"Pool {x.PoolId} found block candidate {x.BlockHeight}"
+                        });
+                    });
+
+                messageBus.Listen<PaymentNotification>()
+                    .Subscribe(x =>
+                    {
+                        if (string.IsNullOrEmpty(x.Error))
+                        {
+                            queue?.Add(new QueuedNotification
+                            {
+                                Category = NotificationCategory.PaymentSuccess,
+                                PoolId = x.PoolId,
+                                Subject = "Payout Success Notification",
+                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {x.TxInfo}."
+                            });
+                        }
+
+                        else
+                        {
+                            queue?.Add(new QueuedNotification
+                            {
+                                Category = NotificationCategory.PaymentFailure,
+                                PoolId = x.PoolId,
+                                Subject = "Payout Failure Notification",
+                                Msg = $"Failed to pay out {x.Amount} {poolConfigs[x.PoolId].Coin.Type} from pool {x.PoolId}: {x.Error}"
+                            });
+                        }
+                    });
             }
         }
 
@@ -78,53 +131,6 @@ namespace MiningCore.Notifications
             public string Subject;
             public string Msg;
         }
-
-        #region API-Surface
-
-        public void NotifyBlock(string poolId, long blockHeight)
-        {
-            queue?.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.Block,
-                PoolId = poolId,
-                Subject = "Block Notification",
-                Msg = $"Pool {poolId} found block candidate {blockHeight}"
-            });
-        }
-
-        public void NotifyPaymentSuccess(string poolId, decimal amount, int recpientsCount, string txInfo, decimal? txFee)
-        {
-            queue?.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.PaymentSuccess,
-                PoolId = poolId,
-                Subject = "Payout Success Notification",
-                Msg = $"Paid {FormatAmount(amount, poolId)} from pool {poolId} to {recpientsCount} recipients in Transaction(s) {txInfo}."
-            });
-        }
-
-        public void NotifyPaymentFailure(string poolId, decimal amount, string message)
-        {
-            queue?.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.PaymentFailure,
-                PoolId = poolId,
-                Subject = "Payout Failure Notification",
-                Msg = $"Failed to pay out {amount} {poolConfigs[poolId].Coin.Type} from pool {poolId}: {message}"
-            });
-        }
-
-        public void NotifyAdmin(string subject, string message)
-        {
-            queue?.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.Admin,
-                Subject = subject,
-                Msg = message
-            });
-        }
-
-        #endregion // API-Surface
 
         public string FormatAmount(decimal amount, string poolId)
         {
