@@ -61,7 +61,7 @@ namespace MiningCore.Stratum
         protected IBanManager banManager;
         protected bool disableConnectionLogging = false;
         protected ILogger logger;
-        private Async disposer;
+        private Async loopStop;
 
         protected abstract string LogCat { get; }
 
@@ -74,7 +74,8 @@ namespace MiningCore.Stratum
             {
                 var loop = new Loop();
 
-                disposer = loop.CreateAsync((handle) =>
+                // loop thread must be terminated from within
+                loopStop = loop.CreateAsync((handle) =>
                 {
                     loop.Stop();
 
@@ -124,7 +125,7 @@ namespace MiningCore.Stratum
 
         public void StopListeners()
         {
-            disposer.Send();
+            loopStop.Send();
         }
 
         private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, Loop loop)
