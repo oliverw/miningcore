@@ -689,8 +689,8 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
-            if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
-                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            //if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
+            //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
