@@ -59,7 +59,7 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } }},
             { CoinType.FLO, new Dictionary<string, string> { { string.Empty, "https://florincoin.info/block/{0}" } }},
             { CoinType.CANN, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/cann/block.dws?{BlockHeightPH}.htm" }}},
-            { CoinType.RVN, new Dictionary<string, string> { { string.Empty, $"http://explorer.threeeyed.info/block/{BlockHashPH}" }}},
+            { CoinType.RVN, new Dictionary<string, string> { { string.Empty, $"https://exp.virtopia.ca/block/{BlockHashPH}" }}},
             { CoinType.PGN, new Dictionary<string, string> { { string.Empty, $"http://explorer.pigeoncoin.org/block/{BlockHashPH}" }}},
         };
 
@@ -98,7 +98,7 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/tx/{0}" },
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm" },
-            { CoinType.RVN, "http://explorer.threeeyed.info/tx/{0}" },
+            { CoinType.RVN, "https://exp.virtopia.ca/tx/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/tx/{0}" },
         };
 
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/address.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/address/{0}" },
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/address.dws?{0}.htm" },
-            { CoinType.RVN, "http://explorer.threeeyed.info/address/{0}" },
+            { CoinType.RVN, "https://exp.virtopia.ca/address/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/address/{0}" },
         };
 
