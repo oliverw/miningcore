@@ -54,6 +54,7 @@ Peercoin | Yes | No | |
 Straks | Yes | Yes | |
 Electroneum | Yes | Yes | |
 MoonCoin | Yes | Yes | |
+WeyCoin | Yes | Yes | |
 
 #### Ethereum
 
