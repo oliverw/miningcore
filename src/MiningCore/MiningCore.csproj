@@ -92,6 +92,7 @@
 
   <ItemGroup>
     <Folder Include="Maintenance\Jobs\" />
+    <Folder Include="SignalR\" />
   </ItemGroup>
 
 </Project>
