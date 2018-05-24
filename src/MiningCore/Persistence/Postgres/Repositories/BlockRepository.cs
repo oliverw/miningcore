@@ -23,9 +23,11 @@ using System.Data;
 using System.Linq;
 using AutoMapper;
 using Dapper;
+using EventHandler;
 using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Socket_Services.Models;
 using MiningCore.Util;
 using NLog;
 
@@ -33,8 +35,10 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class BlockRepository : IBlockRepository
     {
-        public BlockRepository(IMapper mapper)
+        SocketEventHandler _socket;
+        public BlockRepository(IMapper mapper, SocketEventHandler socket)
         {
+            _socket = socket;
             this.mapper = mapper;
         }
 
@@ -44,6 +48,8 @@ namespace MiningCore.Persistence.Postgres.Repositories
         public void Insert(IDbConnection con, IDbTransaction tx, Block block)
         {
             logger.LogInvoke();
+
+            _socket.Publish(new PipePackage() { Name = "Block", Data = block});
 
             var mapped = mapper.Map<Entities.Block>(block);
 
