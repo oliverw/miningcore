@@ -29,6 +29,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutoMapper;
+using EventHandler;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -45,11 +46,14 @@ using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Socket_Services;
+using MiningCore.Socket_Services.Models;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
+using WebSocketManager;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Api
@@ -63,7 +67,8 @@ namespace MiningCore.Api
             IPaymentRepository paymentsRepo,
             IStatsRepository statsRepo,
             IMasterClock clock,
-            IMessageBus messageBus)
+            IMessageBus messageBus,
+            SocketEventHandler socket)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
@@ -79,9 +84,8 @@ namespace MiningCore.Api
             this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
             this.clock = clock;
-
+            this.socket = socket;
             messageBus.Listen<BlockNotification>().Subscribe(OnBlockNotification);
-
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
                 { new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync },
@@ -109,7 +113,7 @@ namespace MiningCore.Api
         private readonly IPaymentRepository paymentsRepo;
         private readonly IMapper mapper;
         private readonly IMasterClock clock;
-
+        private readonly SocketEventHandler socket;
         private ClusterConfig clusterConfig;
         private IWebHost webHost;
         private IWebHost webHostAdmin;
@@ -655,15 +659,36 @@ namespace MiningCore.Api
 
         #region API-Surface
 
-        public void Start(ClusterConfig clusterConfig)
+        public void Start(ClusterConfig clusterConfig, SocketPipelineService pipeline)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
             this.clusterConfig = clusterConfig;
 
             logger.Info(() => $"Launching ...");
+            StartWebSockets(clusterConfig, pipeline);
             StartApi(clusterConfig);
             StartAdminApi(clusterConfig);
         }
+
+        private void StartWebSockets(ClusterConfig clusterConfig, SocketPipelineService pipeline)
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.AdminPort ?? 6666;
+
+            webHostAdmin = new WebHostBuilder()
+                .Configure((app) => { app.UseWebSockets(); app.MapWebSocketManager("/pipeline", pipeline); })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHostAdmin.Start();
+
+            logger.Info(() => $"Websocket Server Online @ {address}:{port}");
+        }
+
+
 
         #endregion // API-Surface
 
