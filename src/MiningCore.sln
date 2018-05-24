@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningCore", "MiningCore\Mi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningCore.Tests", "MiningCore.Tests\MiningCore.Tests.csproj", "{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventHandler", "EventHandler\EventHandler.csproj", "{1F08F7E6-D011-4C8B-8DDC-D71203E7C4AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F08F7E6-D011-4C8B-8DDC-D71203E7C4AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F08F7E6-D011-4C8B-8DDC-D71203E7C4AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F08F7E6-D011-4C8B-8DDC-D71203E7C4AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F08F7E6-D011-4C8B-8DDC-D71203E7C4AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

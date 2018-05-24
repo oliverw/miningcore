@@ -26,10 +26,13 @@
   <ItemGroup>
     <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
     <Compile Remove="DataAccess\**" />
+    <Compile Remove="SignalR\**" />
     <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
     <EmbeddedResource Remove="DataAccess\**" />
+    <EmbeddedResource Remove="SignalR\**" />
     <None Remove="Blockchain\Bitcoin\Transactions\**" />
     <None Remove="DataAccess\**" />
+    <None Remove="SignalR\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,8 +65,12 @@
     <PackageReference Include="Npgsql" Version="3.2.7" />
     <PackageReference Include="Polly" Version="5.9.0" />
     <PackageReference Include="protobuf-net" Version="2.3.7" />
+    <PackageReference Include="Red.CommonMarkRenderer" Version="1.0.0" />
+    <PackageReference Include="RHttpServer" Version="3.1.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
+    <PackageReference Include="WebSocketManager" Version="1.0.1" />
+    <PackageReference Include="WebSocketManager.Common" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,6 +99,10 @@
 
   <ItemGroup>
     <Folder Include="Maintenance\Jobs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EventHandler\EventHandler.csproj" />
   </ItemGroup>
 
 </Project>

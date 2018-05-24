@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
+using EventHandler;
 using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
@@ -49,6 +50,8 @@ using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
+using MiningCore.Socket_Services;
+using MiningCore.Socket_Services.Models;
 using MiningCore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -579,21 +582,22 @@ namespace MiningCore
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
                 apiServer = container.Resolve<ApiServer>();
-                apiServer.Start(clusterConfig);
+                apiServer.Start(clusterConfig,container.Resolve<SocketPipelineService>());
+                container.Resolve<SocketEventHandler>().Publish(new PipePackage());
             }
 
             // start payment processor
-            if (clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-            {
-                payoutManager = container.Resolve<PayoutManager>();
-                payoutManager.Configure(clusterConfig);
+            //if (clusterConfig.PaymentProcessing?.Enabled == true &&
+            //    clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+            //{
+            //    payoutManager = container.Resolve<PayoutManager>();
+            //    payoutManager.Configure(clusterConfig);
 
-                payoutManager.Start();
-            }
+            //    payoutManager.Start();
+            //}
 
-            else
-                logger.Info("Payment processing is not enabled");
+            //else
+            //    logger.Info("Payment processing is not enabled");
 
             if (clusterConfig.ShareRelay == null)
             {

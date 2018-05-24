@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System.Linq;
 using System.Reflection;
 using Autofac;
+using EventHandler;
 using MiningCore.Api;
 using MiningCore.Banning;
 using MiningCore.Blockchain.Bitcoin;
@@ -41,9 +42,11 @@ using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Payments.PaymentSchemes;
+using MiningCore.Socket_Services;
 using MiningCore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using WebSocketManager;
 using Module = Autofac.Module;
 
 namespace MiningCore
@@ -167,6 +170,20 @@ namespace MiningCore
 
             builder.RegisterType<BitcoinGoldJobManager>()
                 .AsSelf();
+
+
+
+            //////////////////////
+            //WebSockets
+            builder.RegisterType<SocketEventHandler>()
+                .SingleInstance();
+
+            builder.RegisterType<WebSocketConnectionManager>()
+                .SingleInstance();
+
+            builder.RegisterType<SocketPipelineService>()
+                .SingleInstance();
+
 
             base.Load(builder);
         }
