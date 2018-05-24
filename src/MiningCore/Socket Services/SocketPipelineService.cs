@@ -1,6 +1,7 @@
 ﻿using EventHandler;
 using MiningCore.Socket_Services.Models;
 using Newtonsoft.Json;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
@@ -13,6 +14,7 @@ namespace MiningCore.Socket_Services
     public class SocketPipelineService : WebSocketHandler
     {
         private readonly SocketEventHandler socketEventHandler;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public SocketPipelineService(WebSocketConnectionManager webSocketConnectionManager, SocketEventHandler socketEventHandler) : base(webSocketConnectionManager)
         {
@@ -28,7 +30,8 @@ namespace MiningCore.Socket_Services
 
         public override Task OnConnected(WebSocket socket)
         {
-            Console.WriteLine("Socket connection established!");
+            logger.Info("Socket connection established!");
+
             return base.OnConnected(socket);
         }
 
@@ -39,7 +42,8 @@ namespace MiningCore.Socket_Services
 
         public async Task SendMessage(PipePackage message)
         {
-            Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>> " + JsonConvert.SerializeObject(message));
+            logger.Info(">>>>>>>>>>>>>>>>>>>>>>>>> " + JsonConvert.SerializeObject(message));
+
             await InvokeClientMethodToAllAsync("pipeline", message);
         }
 

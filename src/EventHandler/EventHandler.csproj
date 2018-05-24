@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Easy.MessageHub" Version="3.3.0" />
+    <PackageReference Include="NLog" Version="5.0.0-beta09" />
   </ItemGroup>
 
 </Project>
