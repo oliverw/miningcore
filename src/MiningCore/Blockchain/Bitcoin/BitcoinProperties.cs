@@ -110,6 +110,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.NMC, sha256Coin },
             { CoinType.PPC, sha256Coin },
             { CoinType.GLT, sha256Coin },
+            { CoinType.UNIT, sha256Coin },
 
             // Scrypt
             { CoinType.LTC, scryptCoin },
