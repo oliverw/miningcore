@@ -160,10 +160,16 @@ namespace MiningCore.Mining
                         var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
 
                         // update
-                        pool.PoolStats.ConnectedMiners = byMiner.Length;
                         pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
                     }
+                    pool.PoolStats.ConnectedMiners = byMiner.Length;
+                }
+                else
+                {
+                    pool.PoolStats.ConnectedMiners = 0;
+                    pool.PoolStats.PoolHashrate = 0;
+                    pool.PoolStats.SharesPerSecond = 0;
                 }
 
                 // persist
