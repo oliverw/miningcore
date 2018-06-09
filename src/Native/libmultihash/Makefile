@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -c -fPIC -O2 -g -Wno-pointer-sign -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable
 CXXFLAGS = -Wall -fPIC -fpermissive -O2 -g -Wno-unused-function -Wno-strict-aliasing -Wno-sign-compare -std=c++11
 LDFLAGS = -shared
-LDLIBS = -lsodium
+LDLIBS = -lsodium -lcrypto
 TARGET  = libmultihash.so
 
 OBJECTS = bcrypt.o blake.o blake2s.o c11.o dcrypt.o fresh.o \
@@ -13,7 +13,7 @@ OBJECTS = bcrypt.o blake.o blake2s.o c11.o dcrypt.o fresh.o \
     sha3/sph_haval.o sha3/sph_sha2.o sha3/sph_sha2big.o sha3/sph_blake2s.o \
 	shavite3.o skein.o x11.o x15.o x17.o x16r.o x16s.o \
 	Lyra2.o Lyra2RE.o Sponge.o  \
-    equi/util.o equi/support/cleanse.o equi/random.o \
+    equi/util.o equi/utilstrencodings.o equi/support/cleanse.o equi/random.o \
 	equi/uint256.o equi/arith_uint256.o equi/crypto/hmac_sha512.o \
 	equi/crypto/sha1.o equi/crypto/sha512.o equi/crypto/sha256.o \
 	equi/crypto/hmac_sha256.o equi/crypto/equihash.o equi/crypto/ripemd160.o \
