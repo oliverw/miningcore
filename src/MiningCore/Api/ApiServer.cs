@@ -252,6 +252,7 @@ namespace MiningCore.Api
 
                     // enrich
                     result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
+                    result.TotalPending = cf.Run(con => statsRepo.GetTotalPoolBalances(con, config.Id));
 #if DEBUG
                     var from = new DateTime(2018, 1, 6, 16, 0, 0);
 #else
