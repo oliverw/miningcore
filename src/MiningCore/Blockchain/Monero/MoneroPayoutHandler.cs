@@ -211,8 +211,7 @@ namespace MiningCore.Blockchain.Monero
         {
             ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
 
-            if (string.IsNullOrEmpty(paymentId))
-                throw new InvalidOperationException("invalid paymentid");
+            var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
 
             // build request
             var request = new TransferRequest
@@ -229,7 +228,13 @@ namespace MiningCore.Blockchain.Monero
                 GetTxKey = true
             };
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} with paymentId {paymentId}");
+            if (!isIntegratedAddress)
+                request.PaymentId = paymentId;
+
+            if(!isIntegratedAddress)
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
+            else
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
@@ -500,8 +505,8 @@ namespace MiningCore.Blockchain.Monero
                 }
             }
 #endif
-                // balances with paymentIds
-                var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
+            // balances with paymentIds
+            var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
                 .Where(x => x.Amount >= minimumPaymentToPaymentId)
