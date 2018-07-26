@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -31,9 +31,13 @@
 #pragma once
 
 #include <stddef.h>
+#include <iostream>
+#include <boost/utility/value_init.hpp>
 
 #include "common/pod-class.h"
 #include "generic-ops.h"
+#include "hex.h"
+#include "span.h"
 
 namespace crypto {
 
@@ -61,20 +65,41 @@ namespace crypto {
     cn_fast_hash(data, length, reinterpret_cast<char *>(&hash));
   }
 
+  inline void cn_fast_hash_old_sig(const void *data, std::size_t length, char *hash) {
+      cn_fast_hash(data, length, hash);
+  }
+
   inline hash cn_fast_hash(const void *data, std::size_t length) {
     hash h;
     cn_fast_hash(data, length, reinterpret_cast<char *>(&h));
     return h;
   }
 
-  inline void cn_slow_hash(const void *data, std::size_t length, hash &hash) {
-    cn_slow_hash(data, length, reinterpret_cast<char *>(&hash));
+  inline void cn_slow_hash(const void *data, std::size_t length, hash &hash, int variant = 0) {
+    cn_slow_hash(data, length, reinterpret_cast<char *>(&hash), variant, 0/*prehashed*/);
+  }
+
+  inline void cn_slow_hash_old_sig(const void *data, std::size_t length, char *hash, int variant = 0) {
+      cn_slow_hash(data, length, hash, variant, 0/*prehashed*/);
+  }
+
+  inline void cn_slow_hash_prehashed(const void *data, std::size_t length, hash &hash, int variant = 0) {
+    cn_slow_hash(data, length, reinterpret_cast<char *>(&hash), variant, 1/*prehashed*/);
   }
 
   inline void tree_hash(const hash *hashes, std::size_t count, hash &root_hash) {
     tree_hash(reinterpret_cast<const char (*)[HASH_SIZE]>(hashes), count, reinterpret_cast<char *>(&root_hash));
   }
 
+  inline std::ostream &operator <<(std::ostream &o, const crypto::hash &v) {
+    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
+  }
+  inline std::ostream &operator <<(std::ostream &o, const crypto::hash8 &v) {
+    epee::to_hex::formatted(o, epee::as_byte_span(v)); return o;
+  }
+
+  const static crypto::hash null_hash = boost::value_initialized<crypto::hash>();
+  const static crypto::hash8 null_hash8 = boost::value_initialized<crypto::hash8>();
 }
 
 CRYPTO_MAKE_HASHABLE(hash)

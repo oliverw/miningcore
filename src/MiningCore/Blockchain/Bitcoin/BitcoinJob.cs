@@ -46,6 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IMasterClock clock;
         protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
+        protected decimal blockRewardMultiplier;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
@@ -98,15 +99,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual void BuildCoinbase()
         {
-            var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
-
             // generate script parts
             var sigScriptInitial = GenerateScriptSigInitial();
             var sigScriptInitialBytes = sigScriptInitial.ToBytes();
 
             var sigScriptLength = (uint) (
                 sigScriptInitial.Length +
-                1 + // for extranonce-placeholder length after sigScriptInitial
                 extraNoncePlaceHolderLength +
                 scriptSigFinalBytes.Length);
 
@@ -136,9 +134,6 @@ namespace MiningCore.Blockchain.Bitcoin
                 // signature script initial part
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
-
-                // emit a simulated OP_PUSH(n) just without the payload (which is filled in by the miner: extranonce1 and extranonce2)
-                bs.ReadWrite(ref extraNoncePlaceHolderLengthByte);
 
                 // done
                 coinbaseInitial = stream.ToArray();
@@ -234,12 +229,15 @@ namespace MiningCore.Blockchain.Bitcoin
             // push timestamp
             ops.Add(Op.GetPushOp(now));
 
+            // push placeholder
+            ops.Add(Op.GetPushOp((uint) 0));
+
             return new Script(ops);
         }
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
 
@@ -275,7 +273,9 @@ namespace MiningCore.Blockchain.Bitcoin
             // build merkle-root
             var merkleRoot = mt.WithFirst(coinbaseHash);
 
+            #pragma warning disable 618
             var blockHeader = new BlockHeader
+            #pragma warning restore 618
             {
                 Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
@@ -288,7 +288,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
             var context = worker.GetContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
@@ -329,24 +329,26 @@ namespace MiningCore.Blockchain.Bitcoin
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            var result = new BitcoinShare
+            var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC),
                 NetworkDifficulty = Difficulty * shareMultiplier,
                 Difficulty = stratumDifficulty,
             };
 
-            var blockBytes = SerializeBlock(headerBytes, coinbase);
-
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-                result.BlockHex = blockBytes.ToHexString();
+                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
                 result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+
+                var blockBytes = SerializeBlock(headerBytes, coinbase);
+                var blockHex = blockBytes.ToHexString();
+
+                return (result, blockHex);
             }
 
-            return result;
+            return (result, null);
         }
 
         protected virtual byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
@@ -381,7 +383,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // POS coins require a zero byte appended to block which the daemon replaces with the signature
                 if (isPoS)
-                    bs.ReadWrite((byte) 0);
+                    bs.ReadWrite((byte)0);
 
                 return stream.ToArray();
             }
@@ -411,7 +413,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier,
+            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -436,6 +438,7 @@ namespace MiningCore.Blockchain.Bitcoin
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
+            this.blockRewardMultiplier = blockrewardMultiplier;
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;
@@ -477,7 +480,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual BitcoinShare ProcessShare(StratumClient worker,
+        public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
             string extraNonce2, string nTime, string nonce)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

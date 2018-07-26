@@ -1,26 +1,23 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Autofac.Features.Metadata;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
-using MiningCore.JsonRpc;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Notifications.Slack;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using NLog;
 
 namespace MiningCore.Notifications
@@ -29,9 +26,11 @@ namespace MiningCore.Notifications
     {
         public NotificationService(
             ClusterConfig clusterConfig,
-            JsonSerializerSettings serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus)); 
 
             this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
@@ -41,11 +40,28 @@ namespace MiningCore.Notifications
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
             //adminPhone = null;
 
-            queueSub = queue.GetConsumingEnumerable()
-                .ToObservable(TaskPoolScheduler.Default)
-                .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
-                .Concat()
-                .Subscribe();
+            if (clusterConfig.Notifications?.Enabled == true)
+            {
+                queue = new BlockingCollection<QueuedNotification>();
+
+                queueSub = queue.GetConsumingEnumerable()
+                    .ToObservable(TaskPoolScheduler.Default)
+                    .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
+                    .Concat()
+                    .Subscribe();
+
+                messageBus.Listen<BlockNotification>()
+                    .Subscribe(x =>
+                    {
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.Block,
+                            PoolId = x.PoolId,
+                            Subject = "Block Notification",
+                            Msg = $"Pool {x.PoolId} found block candidate {x.BlockHeight}"
+                        });
+                    });
+            }
         }
 
         private readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -54,7 +70,7 @@ namespace MiningCore.Notifications
         private readonly Dictionary<string, PoolConfig> poolConfigs;
         private readonly string adminEmail;
         //private readonly string adminPhone;
-        private readonly BlockingCollection<QueuedNotification> queue = new BlockingCollection<QueuedNotification>();
+        private readonly BlockingCollection<QueuedNotification> queue;
         private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
 
@@ -81,20 +97,9 @@ namespace MiningCore.Notifications
 
         #region API-Surface
 
-        public void NotifyBlock(string poolId, long blockHeight)
-        {
-            queue.Add(new QueuedNotification
-            {
-                Category = NotificationCategory.Block,
-                PoolId = poolId,
-                Subject = "Block Notification",
-                Msg = $"Pool {poolId} found block candidate {blockHeight}"
-            });
-        }
-
         public void NotifyPaymentSuccess(string poolId, decimal amount, int recpientsCount, string txInfo, decimal? txFee)
         {
-            queue.Add(new QueuedNotification
+            queue?.Add(new QueuedNotification
             {
                 Category = NotificationCategory.PaymentSuccess,
                 PoolId = poolId,
@@ -105,7 +110,7 @@ namespace MiningCore.Notifications
 
         public void NotifyPaymentFailure(string poolId, decimal amount, string message)
         {
-            queue.Add(new QueuedNotification
+            queue?.Add(new QueuedNotification
             {
                 Category = NotificationCategory.PaymentFailure,
                 PoolId = poolId,
@@ -116,7 +121,7 @@ namespace MiningCore.Notifications
 
         public void NotifyAdmin(string subject, string message)
         {
-            queue.Add(new QueuedNotification
+            queue?.Add(new QueuedNotification
             {
                 Category = NotificationCategory.Admin,
                 Subject = subject,

@@ -24,7 +24,6 @@ namespace MiningCore.Persistence.Postgres.Entities
 {
     public class Share
     {
-        public long Id { get; set; }
         public string PoolId { get; set; }
         public long BlockHeight { get; set; }
         public string PayoutInfo { get; set; }
@@ -34,6 +33,7 @@ namespace MiningCore.Persistence.Postgres.Entities
         public double Difficulty { get; set; }
         public double NetworkDifficulty { get; set; }
         public string IpAddress { get; set; }
+        public string Source { get; set; }
         public DateTime Created { get; set; }
     }
 }

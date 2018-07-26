@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Configuration;
@@ -52,11 +52,12 @@ namespace MiningCore.Mining
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
-        private readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
         private const int HashrateCalculationWindow = 1200;  // seconds
         private const int MinHashrateCalculationWindow = 300;  // seconds
+        private const double HashrateBoostFactor = 1.07d;
         private ClusterConfig clusterConfig;
-        private Thread thread;
+        private Thread thread1;
         private const int RetryCount = 4;
         private Policy readFaultPolicy;
 
@@ -76,12 +77,12 @@ namespace MiningCore.Mining
 
         public void Start()
         {
-            thread = new Thread(async () =>
-            {
-                logger.Info(() => "Online");
+            logger.Info(() => "Online");
 
+            thread1 = new Thread(() =>
+            {
                 // warm-up delay
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                Thread.Sleep(TimeSpan.FromSeconds(10));
 
                 var interval = TimeSpan.FromMinutes(5);
 
@@ -89,7 +90,7 @@ namespace MiningCore.Mining
                 {
                     try
                     {
-                        await UpdatePoolsAsync();
+                        UpdatePoolHashrates();
                     }
 
                     catch (Exception ex)
@@ -105,8 +106,8 @@ namespace MiningCore.Mining
                 }
             });
 
-            thread.Name = "StatsRecorder";
-            thread.Start();
+            thread1.Name = "StatsRecorder";
+            thread1.Start();
         }
 
         public void Stop()
@@ -114,21 +115,14 @@ namespace MiningCore.Mining
             logger.Info(() => "Stopping ..");
 
             stopEvent.Set();
-            thread.Join();
+            thread1.Join();
 
             logger.Info(() => "Stopped");
         }
 
         #endregion // API-Surface
 
-        private Task UpdatePoolsAsync()
-        {
-            UpdateHashrates();
-
-            return Task.FromResult(true);
-        }
-
-        private void UpdateHashrates()
+        private void UpdatePoolHashrates()
         {
             var start = clock.Now;
             var target = start.AddSeconds(-HashrateCalculationWindow);
@@ -138,7 +132,9 @@ namespace MiningCore.Mining
                 Created = start
             };
 
-            foreach (var poolId in pools.Keys)
+            var poolIds = pools.Keys;
+
+            foreach (var poolId in poolIds)
             {
                 stats.PoolId = poolId;
 
@@ -161,12 +157,12 @@ namespace MiningCore.Mining
                     {
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
-                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual);
+                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
 
                         // update
                         pool.PoolStats.ConnectedMiners = byMiner.Length;
-                        pool.PoolStats.PoolHashRate = (ulong) Math.Ceiling(poolHashrate);
-                        pool.PoolStats.ValidSharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+                        pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
+                        pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
                     }
                 }
 
@@ -202,7 +198,7 @@ namespace MiningCore.Mining
 
                             if (windowActual >= MinHashrateCalculationWindow)
                             {
-                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual);
+                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
 
                                 // update
                                 stats.Hashrate = hashrate;

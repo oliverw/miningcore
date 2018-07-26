@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
@@ -28,24 +29,23 @@ namespace MiningCore.Mining
 {
 	public struct ClientShare
 	{
-		public ClientShare(StratumClient client, IShare share)
+		public ClientShare(StratumClient client, Share share)
 		{
 			Client = client;
 			Share = share;
 		}
 
 		public StratumClient Client;
-		public IShare Share;
+		public Share Share;
 	}
 
 	public interface IMiningPool
     {
-        IObservable<ClientShare> Shares { get; }
         PoolConfig Config { get; }
         PoolStats PoolStats { get; }
         BlockchainStats NetworkStats { get; }
         void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
         double HashrateFromShares(double shares, double interval);
-        Task StartAsync();
+        Task StartAsync(CancellationToken ctsToken);
     }
 }

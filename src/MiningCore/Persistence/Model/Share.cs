@@ -24,7 +24,6 @@ namespace MiningCore.Persistence.Model
 {
     public class Share
     {
-        public long Id { get; set; }
         public string PoolId { get; set; }
         public ulong BlockHeight { get; set; }
         public string PayoutInfo { get; set; }
@@ -34,6 +33,7 @@ namespace MiningCore.Persistence.Model
         public double Difficulty { get; set; }
         public double NetworkDifficulty { get; set; }
         public string IpAddress { get; set; }
+        public string Source { get; set; }
         public DateTime Created { get; set; }
     }
 }

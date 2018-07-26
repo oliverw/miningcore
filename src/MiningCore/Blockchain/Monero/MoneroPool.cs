@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -43,7 +44,7 @@ using Newtonsoft.Json;
 namespace MiningCore.Blockchain.Monero
 {
     [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN)]
-    public class MoneroPool : PoolBase<MoneroShare>
+    public class MoneroPool : PoolBase
     {
         public MoneroPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
@@ -51,8 +52,9 @@ namespace MiningCore.Blockchain.Monero
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
         {
         }
 
@@ -81,16 +83,17 @@ namespace MiningCore.Blockchain.Monero
 
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
-            context.MinerName = split[0];
-            context.WorkerName = split.Length > 1 ? split[1] : null;
-            context.UserAgent = loginRequest.UserAgent;
+            context.MinerName = split[0].Trim();
+            context.WorkerName = split.Length > 1 ? split[1].Trim() : null;
+            context.UserAgent = loginRequest.UserAgent?.Trim();
+            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
 
             // extract paymentid
             var index = context.MinerName.IndexOf('#');
             if (index != -1)
             {
-                context.PaymentId = context.MinerName.Substring(index + 1);
-                context.MinerName = context.MinerName.Substring(0, index);
+                context.PaymentId = context.MinerName.Substring(index + 1).Trim();
+                context.MinerName = context.MinerName.Substring(0, index).Trim();
             }
 
             // validate login
@@ -103,6 +106,23 @@ namespace MiningCore.Blockchain.Monero
             {
                 client.RespondError(StratumError.MinusOne, "invalid login", request.Id);
                 return;
+            }
+
+            // validate payment Id
+            if (!string.IsNullOrEmpty(context.PaymentId) && context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
+            {
+                client.RespondError(StratumError.MinusOne, "invalid payment id", request.Id);
+                return;
+            }
+
+            // extract control vars from password
+            var staticDiff = GetStaticDiffFromPassparts(passParts);
+            if (staticDiff.HasValue &&
+                (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            {
+                context.VarDiff = null; // disable vardiff
+                context.SetDifficulty(staticDiff.Value);
             }
 
             // respond
@@ -227,7 +247,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-				shareSubject.OnNext(new ClientShare(client, share));
+                messageBus.SendMessage(new ClientShare(client, share));
 
 				logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -249,8 +269,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -289,19 +308,19 @@ namespace MiningCore.Blockchain.Monero
 
         #region Overrides
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<MoneroJobManager>();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
-            if (!poolConfig.ExternalStratum)
+            if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
 		        // we need work before opening the gates
-		        await manager.Blocks.Take(1).ToTask();
+		        await manager.Blocks.Take(1).ToTask(ct);
 	        }
         }
 

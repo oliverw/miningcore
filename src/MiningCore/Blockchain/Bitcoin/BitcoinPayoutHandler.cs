@@ -38,6 +38,7 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
@@ -46,9 +47,10 @@ namespace MiningCore.Blockchain.Bitcoin
     [CoinMetadata(
         CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG, 
-        CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG, 
-        CoinType.GBX, CoinType.CRC, CoinType.XZC, CoinType.TLR)]
+        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG,
+        CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG,
+        CoinType.PAK, CoinType.CANN, CoinType.RVN, CoinType.PGN,
+        CoinType.XZC, CoinType.TLR)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -190,9 +192,9 @@ namespace MiningCore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
@@ -213,7 +215,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
@@ -260,14 +262,24 @@ namespace MiningCore.Blockchain.Bitcoin
                 };
             }
 
+            var didUnlockWallet = false;
+
             // send command
+            tryTransfer:
             var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
-                var txId = result.Response;
+                if (didUnlockWallet)
+                {
+                    // lock wallet
+                    logger.Info(() => $"[{LogCategory}] Locking wallet");
+                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                }
 
                 // check result
+                var txId = result.Response;
+
                 if (string.IsNullOrEmpty(txId))
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
@@ -280,9 +292,38 @@ namespace MiningCore.Blockchain.Bitcoin
 
             else
             {
-                logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+                if (result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                {
+                    if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
+                    {
+                        logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new []
+                        {
+                            (object) extraPoolPaymentProcessingConfig.WalletPassword,
+                            (object) 5  // unlock for N seconds
+                        });
+
+                        if (unlockResult.Error == null)
+                        {
+                            didUnlockWallet = true;
+                            goto tryTransfer;
+                        }
+
+                        else
+                            logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
+                    }
+
+                    else
+                        logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
+                }
+
+                else
+                {
+                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
+
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                }
             }
         }
 

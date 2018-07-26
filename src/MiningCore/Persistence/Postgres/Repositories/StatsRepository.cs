@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using AutoMapper;
@@ -27,6 +28,8 @@ using MiningCore.Extensions;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Model.Projections;
 using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
+using NBitcoin;
 using NLog;
 using MinerStats = MiningCore.Persistence.Model.Projections.MinerStats;
 
@@ -34,13 +37,16 @@ namespace MiningCore.Persistence.Postgres.Repositories
 {
     public class StatsRepository : IStatsRepository
     {
-        public StatsRepository(IMapper mapper)
+        public StatsRepository(IMapper mapper, IMasterClock clock)
         {
             this.mapper = mapper;
+            this.clock = clock;
         }
 
         private readonly IMapper mapper;
+        private readonly IMasterClock clock;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(20);
 
         public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
@@ -49,9 +55,9 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
             var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
-                        "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, created) " +
+                        "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
                         "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
-                        "@lastnetworkblocktime, @blockheight, @connectedpeers, @created)";
+                        "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
             con.Execute(query, mapped, tx);
         }
@@ -115,10 +121,15 @@ namespace MiningCore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId, miner });
 
+#if true
             var query = "SELECT (SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
-                "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
-                "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
-
+                        "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                        "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
+#else
+            var query = "SELECT (SELECT SUM(sharesaccumulated) FROM minerstats_pre_agg WHERE poolid = @poolId AND miner = @miner) AS pendingshares, " +
+                        "(SELECT amount FROM balances WHERE poolid = @poolId AND address = @miner) AS pendingbalance, " +
+                        "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid";
+#endif
             var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner }, tx);
 
             if (result != null)
@@ -133,6 +144,10 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     " ORDER BY created DESC LIMIT 1";
 
                 var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
+
+                // ignore stale minerstats
+                if (lastUpdate.HasValue && (clock.Now - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
+                    lastUpdate = null;
 
                 if (lastUpdate.HasValue)
                 {
@@ -194,7 +209,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             var entitiesByDate = entities
                 .GroupBy(x=> x.Created);
 
-            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
                 Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
@@ -203,10 +218,24 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .OrderBy(x=> x.Created)
             .ToArray();
+            //.ToDictionary(x=> x.Created.ToUniversalTime().ToUnixTimestamp(), x=> x);
 
-            return result;
+            //// fill in blanks
+            //var result = new List<WorkerPerformanceStatsContainer>();
+
+            //for (var i = 0; i < 24; i++)
+            //{
+            //    if(tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
+            //        result.Insert(0, item);
+            //    else
+            //        result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
+
+            //    end = end.AddHours(-1);
+            //}
+
+            //return result.ToArray();
+            return tmp;
         }
 
         public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
@@ -223,7 +252,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 .ToArray()
                 .GroupBy(x => x.Created);
 
-            var result = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
                 Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
@@ -232,10 +261,24 @@ namespace MiningCore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-            .OrderBy(x => x.Created)
             .ToArray();
+            //.ToDictionary(x => x.Created.ToUniversalTime().ToUnixTimestamp(), x => x);
 
-            return result;
+            //// fill in blanks
+            //var result = new List<WorkerPerformanceStatsContainer>();
+
+            //for (var i = 0; i < 30; i++)
+            //{
+            //    if (tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
+            //        result.Insert(0, item);
+            //    else
+            //        result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
+
+            //    end = end.AddDays(-1);
+            //}
+
+            //return result.ToArray();
+            return tmp;
         }
 
         public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)

@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -45,7 +46,7 @@ using EC = MiningCore.Blockchain.Ethereum.EthCommands;
 
 namespace MiningCore.Blockchain.Ethereum
 {
-    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA)]
+    [CoinMetadata(CoinType.ETH, CoinType.ETC, CoinType.EXP, CoinType.ELLA, CoinType.CLO)]
     public class EthereumPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {
@@ -79,7 +80,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region IPayoutHandler
 
-        public Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
@@ -97,15 +98,13 @@ namespace MiningCore.Blockchain.Ethereum
             daemon = new DaemonClient(jsonSerializerSettings);
             daemon.Configure(daemonEndpoints);
 
-            return Task.FromResult(true);
+            await DetectChainAsync();
         }
 
         public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
-
-            await DetectChainAsync();
 
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
@@ -154,7 +153,7 @@ namespace MiningCore.Blockchain.Ethereum
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
-                            block.Reward = GetBaseBlockReward(block.BlockHeight); // base reward
+                            block.Reward = GetBaseBlockReward(chainType, block.BlockHeight); // base reward
 
                             if (extraConfig?.KeepUncles == false)
                                 block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
@@ -206,7 +205,7 @@ namespace MiningCore.Blockchain.Ethereum
                                 {
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
-                                    block.Reward = GetUncleReward(uncle.Height.Value, blockInfo2.Height.Value);
+                                    block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
                                     block.BlockHeight = uncle.Height.Value;
                                     block.Type = EthereumConstants.BlockTypeUncle;
 
@@ -233,9 +232,9 @@ namespace MiningCore.Blockchain.Ethereum
             return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(Block block, ulong accumulatedBlockShareDiff)
+        public Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = (double) accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
@@ -256,7 +255,7 @@ namespace MiningCore.Blockchain.Ethereum
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount);
+                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Coin.Type, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
@@ -270,8 +269,10 @@ namespace MiningCore.Blockchain.Ethereum
         {
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(EC.GetPeerCount);
-            if (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
-                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount)
+
+            if (networkType == EthereumNetworkType.Main &&
+                (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
+                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
@@ -329,7 +330,7 @@ namespace MiningCore.Blockchain.Ethereum
             return blockHeights.Select(x => blockCache[x]).ToArray();
         }
 
-        private decimal GetBaseBlockReward(ulong height)
+        internal static decimal GetBaseBlockReward(ParityChainType chainType, ulong height)
         {
             switch(chainType)
             {
@@ -340,7 +341,10 @@ namespace MiningCore.Blockchain.Ethereum
                     return EthereumConstants.HomesteadBlockReward;
 
                 case ParityChainType.Classic:
-                    return EthereumConstants.HomesteadBlockReward;
+                {
+                    var era = Math.Floor(((double) height + 1) / EthereumClassicConstants.BlockPerEra);
+                    return (decimal) Math.Pow((double) EthereumClassicConstants.BasePercent, era) * EthereumClassicConstants.BaseRewardInitial;
+                }
 
                 case ParityChainType.Expanse:
                     return EthereumConstants.ExpanseBlockReward;
@@ -350,6 +354,10 @@ namespace MiningCore.Blockchain.Ethereum
 
                 case ParityChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
+
+                case ParityChainType.CallistoTestnet:
+                case ParityChainType.Callisto:
+                    return CallistoConstants.BaseRewardInitial * (1.0m - CallistoConstants.TreasuryPercent);
 
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");
@@ -377,13 +385,23 @@ namespace MiningCore.Blockchain.Ethereum
             return result;
         }
 
-        private decimal GetUncleReward(ulong uheight, ulong height)
+        internal static decimal GetUncleReward(ParityChainType chainType, ulong uheight, ulong height)
         {
-            var reward = GetBaseBlockReward(height);
+            var reward = GetBaseBlockReward(chainType, height);
 
-            // https://ethereum.stackexchange.com/a/27195/18000
-            reward *= uheight + 8 - height;
-            reward /= 8m;
+            switch (chainType)
+            {
+                case ParityChainType.Classic:
+                    reward *= EthereumClassicConstants.UnclePercent;
+                    break;
+
+                default:
+                    // https://ethereum.stackexchange.com/a/27195/18000
+                    reward *= uheight + 8 - height;
+                    reward /= 8m;
+                    break;
+            }
+
             return reward;
         }
 
@@ -436,7 +454,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 From = poolConfig.Address,
                 To = balance.Address,
-                Value = (ulong) Math.Floor((double) balance.Amount * (double) EthereumConstants.Wei),
+                Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
             var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });

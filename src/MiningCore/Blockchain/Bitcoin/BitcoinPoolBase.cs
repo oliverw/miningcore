@@ -23,12 +23,14 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -40,7 +42,7 @@ using NLog;
 
 namespace MiningCore.Blockchain.Bitcoin
 {
-    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase<BitcoinShare>
+    public class BitcoinPoolBase<TJob, TBlockTemplate> : PoolBase
         where TBlockTemplate : BlockTemplate
         where TJob : BitcoinJob<TBlockTemplate>, new()
     {
@@ -50,8 +52,9 @@ namespace MiningCore.Blockchain.Bitcoin
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
         {
         }
 
@@ -106,11 +109,12 @@ namespace MiningCore.Blockchain.Bitcoin
             var context = client.GetContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
-            //var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var passParts = password?.Split(PasswordControlVarsSeparator);
 
             // extract worker/miner
             var split = workerValue?.Split('.');
-            var minerName = split?.FirstOrDefault();
+            var minerName = split?.FirstOrDefault()?.Trim();
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
@@ -118,11 +122,39 @@ namespace MiningCore.Blockchain.Bitcoin
             context.MinerName = minerName;
             context.WorkerName = workerName;
 
-            // respond
-            client.Respond(context.IsAuthorized, request.Id);
+            if (context.IsAuthorized)
+            {
+                // respond
+                client.Respond(context.IsAuthorized, request.Id);
 
-            // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+                // log association
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+
+                // extract control vars from password
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
+                if (staticDiff.HasValue &&
+                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                {
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
+
+                    client.Notify(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                }
+            }
+
+            else
+            {
+                // respond
+                client.RespondError(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
+
+                // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning unauthorized worker for 60 sec");
+
+                banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+
+                DisconnectClient(client);
+            }
         }
 
         protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -161,7 +193,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // success
                 client.Respond(true, request.Id);
-                shareSubject.OnNext(new ClientShare(client, share));
+                messageBus.SendMessage(new ClientShare(client, share));
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -183,8 +215,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
-                if (poolConfig.Banning?.Enabled == true && clusterConfig.Banning?.BanOnInvalidShares == true)
-                    ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(client, context, poolConfig.Banning);
             }
         }
 
@@ -281,19 +312,19 @@ namespace MiningCore.Blockchain.Bitcoin
                 new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
         }
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = CreateJobManager();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
-            if (!poolConfig.ExternalStratum)
+            if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
 		        // we need work before opening the gates
-		        await manager.Jobs.Take(1).ToTask();
+		        await manager.Jobs.Take(1).ToTask(ct);
 	        }
         }
 
@@ -333,13 +364,18 @@ namespace MiningCore.Blockchain.Bitcoin
                     break;
 
                 case BitcoinStratumMethods.GetTransactions:
-                    OnGetTransactions(client, tsRequest);
+                    //OnGetTransactions(client, tsRequest);
+                    // ignored
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
                     // ignored
                     break;
 
+                case BitcoinStratumMethods.MiningMultiVersion:
+                    // ignored
+                    break;
+                
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
@@ -354,10 +390,15 @@ namespace MiningCore.Blockchain.Bitcoin
             var result = shares * multiplier / interval;
 
             // OW: tmp hotfix
-            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC || poolConfig.Coin.Type == CoinType.STAK)
+            if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC ||
+                poolConfig.Coin.Type == CoinType.STAK ||
+                (poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "lyra"))
                 result *= 4;
 
-          return result;
+            if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
+                result *= 2.55;
+
+            return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)

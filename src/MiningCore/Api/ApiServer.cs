@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -38,7 +39,9 @@ using MiningCore.Api.Responses;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Mining;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -59,7 +62,8 @@ namespace MiningCore.Api
             IBlockRepository blocksRepo,
             IPaymentRepository paymentsRepo,
             IStatsRepository statsRepo,
-            IMasterClock clock)
+            IMasterClock clock,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
@@ -67,6 +71,7 @@ namespace MiningCore.Api
             Contract.RequiresNonNull(paymentsRepo, nameof(paymentsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.statsRepo = statsRepo;
@@ -74,6 +79,8 @@ namespace MiningCore.Api
             this.paymentsRepo = paymentsRepo;
             this.mapper = mapper;
             this.clock = clock;
+
+            messageBus.Listen<BlockNotification>().Subscribe(OnBlockNotification);
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
@@ -84,10 +91,13 @@ namespace MiningCore.Api
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
                 { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
+            };
 
-                // admin api
+            requestMapAdmin = new Dictionary<Regex, Func<HttpContext, Match, Task>>
+            {
                 { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
                 { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
             };
@@ -102,6 +112,7 @@ namespace MiningCore.Api
 
         private ClusterConfig clusterConfig;
         private IWebHost webHost;
+        private IWebHost webHostAdmin;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly Encoding encoding = new UTF8Encoding(false);
 
@@ -113,6 +124,7 @@ namespace MiningCore.Api
         };
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
+        private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMapAdmin;
 
         private PoolConfig GetPool(HttpContext context, Match m)
         {
@@ -130,7 +142,7 @@ namespace MiningCore.Api
             return null;
         }
 
-        private async Task SendJson(HttpContext context, object response)
+        private async Task SendJsonAsync(HttpContext context, object response)
         {
             context.Response.ContentType = "application/json";
 
@@ -150,6 +162,12 @@ namespace MiningCore.Api
                 }
             }
         }
+
+        private void OnBlockNotification(BlockNotification notification)
+        {
+        }
+
+        #region API
 
         private async Task HandleRequest(HttpContext context)
         {
@@ -184,15 +202,17 @@ namespace MiningCore.Api
         private WorkerPerformanceStatsContainer[] GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
         {
             Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats;
+            var end = clock.Now;
 
             if (mode == "day" || mode != "month")
             {
                 // set range
-#if DEBUG
-                var end = new DateTime(2018, 1, 7, 16, 0, 0);
-#else
-                var end = clock.Now; // new DateTime(2018, 1, 7, 16, 0, 0);
-#endif
+                if(end.Minute < 30)
+                    end = end.AddHours(-1);
+
+                end = end.AddMinutes(-end.Minute);
+                end = end.AddSeconds(-end.Second);
+
                 var start = end.AddDays(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
@@ -201,8 +221,12 @@ namespace MiningCore.Api
 
             else
             {
+                if(end.Hour < 12)
+                    end = end.AddDays(-1);
+
+                end = end.Date;
+
                 // set range
-                var end = clock.Now;
                 var start = end.AddMonths(-1);
 
                 stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenDaily(
@@ -242,7 +266,7 @@ namespace MiningCore.Api
                 }).ToArray()
             };
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task GetPoolInfoAsync(HttpContext context, Match m)
@@ -272,7 +296,7 @@ namespace MiningCore.Api
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task GetPoolPerformanceAsync(HttpContext context, Match m)
@@ -293,7 +317,7 @@ namespace MiningCore.Api
                 Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
             };
 
-            await SendJson(context, response);
+            await SendJsonAsync(context, response);
         }
 
         private async Task PagePoolMinersAsync(HttpContext context, Match m)
@@ -320,7 +344,7 @@ namespace MiningCore.Api
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
-            await SendJson(context, miners);
+            await SendJsonAsync(context, miners);
         }
 
         private async Task PagePoolBlocksPagedAsync(HttpContext context, Match m)
@@ -354,11 +378,16 @@ namespace MiningCore.Api
                     blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : string.Empty, out var blockInfobaseUrl);
 
                     if (!string.IsNullOrEmpty(blockInfobaseUrl))
-                        block.InfoLink = string.Format(blockInfobaseUrl, block.BlockHeight);
+                    {
+                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                    }
                 }
             }
 
-            await SendJson(context, blocks);
+            await SendJsonAsync(context, blocks);
         }
 
         private async Task PagePoolPaymentsAsync(HttpContext context, Match m)
@@ -396,7 +425,7 @@ namespace MiningCore.Api
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
-            await SendJson(context, payments);
+            await SendJsonAsync(context, payments);
         }
 
         private async Task GetMinerInfoAsync(HttpContext context, Match m)
@@ -411,6 +440,8 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
                 return;
             }
+
+            var perfMode = context.GetQueryParameter<string>("perfMode", "day");
 
             var statsResult = cf.RunTx((con, tx) =>
                 statsRepo.GetMinerStats(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
@@ -432,10 +463,10 @@ namespace MiningCore.Api
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
-                stats.Performance24H = GetMinerPerformanceInternal("day", pool, address);
+                stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
-            await SendJson(context, stats);
+            await SendJsonAsync(context, stats);
         }
 
         private async Task PageMinerPaymentsAsync(HttpContext context, Match m)
@@ -480,7 +511,37 @@ namespace MiningCore.Api
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
-            await SendJson(context, payments);
+            await SendJsonAsync(context, payments);
+        }
+
+        private async Task PageMinerBalanceChangesAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var balanceChanges = cf.Run(con => paymentsRepo.PageBalanceChanges(
+                    con, pool.Id, address, page, pageSize))
+                .Select(mapper.Map<Responses.BalanceChange>)
+                .ToArray();
+
+            await SendJsonAsync(context, balanceChanges);
         }
 
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)
@@ -499,14 +560,14 @@ namespace MiningCore.Api
             var mode = context.GetQueryParameter<string>("mode", "day").ToLower(); // "day" or "month"
             var result = GetMinerPerformanceInternal(mode, pool, address);
 
-            await SendJson(context, result);
+            await SendJsonAsync(context, result);
         }
 
         private async Task HandleForceGcAsync(HttpContext context, Match m)
         {
             GC.Collect(2, GCCollectionMode.Forced);
 
-            await SendJson(context, true);
+            await SendJsonAsync(context, true);
         }
 
         private async Task HandleGcStatsAsync(HttpContext context, Match m)
@@ -517,18 +578,11 @@ namespace MiningCore.Api
             Program.gcStats.GcGen2 = GC.CollectionCount(2);
             Program.gcStats.MemAllocated = FormatUtil.FormatCapacity(GC.GetTotalMemory(false));
 
-            await SendJson(context, Program.gcStats);
+            await SendJsonAsync(context, Program.gcStats);
         }
 
-#region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
+        private void StartApi(ClusterConfig clusterConfig)
         {
-            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-            this.clusterConfig = clusterConfig;
-
-            logger.Info(() => $"Launching ...");
-
             var address = clusterConfig.Api?.ListenAddress != null
                 ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
                 : IPAddress.Parse("127.0.0.1");
@@ -542,10 +596,76 @@ namespace MiningCore.Api
 
             webHost.Start();
 
-            logger.Info(() => $"Online @ {address}:{port}");
+            logger.Info(() => $"API Online @ {address}:{port}");
         }
 
-#endregion // API-Surface
+        #endregion // API
+
+        #region Admin API
+
+        private async Task HandleRequestAdmin(HttpContext context)
+        {
+            var request = context.Request;
+
+            try
+            {
+                logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
+
+                foreach (var path in requestMapAdmin.Keys)
+                {
+                    var m = path.Match(request.Path);
+
+                    if (m.Success)
+                    {
+                        var handler = requestMapAdmin[path];
+                        await handler(context, m);
+                        return;
+                    }
+                }
+
+                context.Response.StatusCode = 404;
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+        }
+
+        private void StartAdminApi(ClusterConfig clusterConfig)
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.AdminPort ?? 4001;
+
+            webHostAdmin = new WebHostBuilder()
+                .Configure(app => { app.Run(HandleRequestAdmin); })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHostAdmin.Start();
+
+            logger.Info(() => $"Admin API Online @ {address}:{port}");
+        }
+
+        #endregion // Admin API
+
+        #region API-Surface
+
+        public void Start(ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            this.clusterConfig = clusterConfig;
+
+            logger.Info(() => $"Launching ...");
+            StartApi(clusterConfig);
+            StartAdminApi(clusterConfig);
+        }
+
+        #endregion // API-Surface
 
     }
 }

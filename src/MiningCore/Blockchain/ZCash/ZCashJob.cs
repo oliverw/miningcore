@@ -20,11 +20,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -142,7 +140,7 @@ namespace MiningCore.Blockchain.ZCash
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier,
+            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -166,7 +164,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(ZCashConstants.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
+            Difficulty = (double) new BigRational(coinbaseTxConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
@@ -227,7 +225,7 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        public override BitcoinShare ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
+        public override (Share Share, string BlockHex) ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
@@ -295,7 +293,7 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected virtual BitcoinShare ProcessShareInternal(StratumClient worker, string nonce,
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.GetContextAs<BitcoinWorkerContext>();
@@ -315,7 +313,7 @@ namespace MiningCore.Blockchain.ZCash
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double) new BigRational(ZCashConstants.Diff1b, headerHash.ToBigInteger()) * shareMultiplier;
+            var shareDiff = (double) new BigRational(coinbaseTxConfig.Diff1b, headerHash.ToBigInteger()) * shareMultiplier;
             var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -341,22 +339,26 @@ namespace MiningCore.Blockchain.ZCash
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            var result = new BitcoinShare
+            var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate,
-                Difficulty = stratumDifficulty
+                NetworkDifficulty = Difficulty,
+                Difficulty = stratumDifficulty,
             };
 
             if (isBlockCandidate)
             {
-                var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
-                result.BlockHex = blockBytes.ToHexString();
-                result.BlockHash = headerHashReversed.ToHexString();
+                result.IsBlockCandidate = true;
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
+                result.BlockHash = headerHashReversed.ToHexString();
+
+                var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
+                var blockHex = blockBytes.ToHexString();
+
+                return (result, blockHex);
             }
 
-            return result;
+            return (result, null);
         }
 
         protected bool RegisterSubmit(string nonce, string solution)
@@ -388,7 +390,7 @@ namespace MiningCore.Blockchain.ZCash
             var index = (int) Math.Floor((BlockTemplate.Height - coinbaseTxConfig.TreasuryRewardStartBlockHeight) /
                 coinbaseTxConfig.TreasuryRewardAddressChangeInterval % coinbaseTxConfig.TreasuryRewardAddresses.Length);
 
-            var address = coinbaseTxConfig.FoundersRewardAddresses[index];
+            var address = coinbaseTxConfig.TreasuryRewardAddresses[index];
             return address;
         }
 

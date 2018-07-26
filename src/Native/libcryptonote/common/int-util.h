@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -35,12 +35,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#if !defined(_MSC_VER)
+#ifndef _MSC_VER
 #include <sys/param.h>
 #endif
 
 #if defined(__ANDROID__)
 #include <byteswap.h>
+#endif
+
+#if defined(__sun) && defined(__SVR4)
+#include <endian.h>
 #endif
 
 #if defined(_MSC_VER)
@@ -205,13 +209,14 @@ static inline void memcpy_swap64(void *dst, const void *src, size_t n) {
   }
 }
 
-#if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN) || !defined(BIG_ENDIAN)
-#if !defined(_MSC_VER)
-static_assert(false, "BYTE_ORDER is undefined. Perhaps, GNU extensions are not enabled");
-#else
-#define LITTLE_ENDIAN 1234
-#define BYTE_ORDER LITTLE_ENDIAN
+#ifdef _MSC_VER
+# define LITTLE_ENDIAN	1234
+# define BIG_ENDIAN	4321
+# define BYTE_ORDER	LITTLE_ENDIAN
 #endif
+
+#if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN) || !defined(BIG_ENDIAN)
+static_assert(false, "BYTE_ORDER is undefined. Perhaps, GNU extensions are not enabled");
 #endif
 
 #if BYTE_ORDER == LITTLE_ENDIAN

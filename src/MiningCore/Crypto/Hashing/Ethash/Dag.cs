@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Contracts;
@@ -19,10 +20,8 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public ulong Epoch { get; set; }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private IntPtr handle = IntPtr.Zero;
-        private bool isGenerated = false;
-        private readonly object genLock = new object();
+        private static readonly Semaphore sem = new Semaphore(1, 1);
 
         public DateTime LastUsed { get; set; }
 
@@ -57,16 +56,22 @@ namespace MiningCore.Crypto.Hashing.Ethash
             }
         }
 
-        public async Task GenerateAsync(string dagDir)
+        public async Task GenerateAsync(string dagDir, ILogger logger)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
-            await Task.Run(() =>
+            if (handle == IntPtr.Zero)
             {
-                lock(genLock)
+                await Task.Run(() =>
                 {
-                    if (!isGenerated)
+                    try
                     {
+                        sem.WaitOne();
+
+                        // re-check after obtaining lock
+                        if (handle != IntPtr.Zero)
+                            return;
+
                         logger.Info(() => $"Generating DAG for epoch {Epoch}");
 
                         var started = DateTime.Now;
@@ -80,7 +85,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                             // Generate the actual DAG
                             handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
                             {
-                                logger.Info(() => $"Generating DAG: {progress}%");
+                                logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
                                 return 0;
                             });
 
@@ -88,7 +93,6 @@ namespace MiningCore.Crypto.Hashing.Ethash
                                 throw new OutOfMemoryException("ethash_full_new IO or memory error");
 
                             logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
-                            isGenerated = true;
                         }
 
                         finally
@@ -97,11 +101,16 @@ namespace MiningCore.Crypto.Hashing.Ethash
                                 LibMultihash.ethash_light_delete(light);
                         }
                     }
-                }
-            });
+
+                    finally
+                    {
+                        sem.Release();
+                    }
+                });
+            }
         }
 
-        public unsafe bool Compute(byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
+        public unsafe bool Compute(ILogger logger, byte[] hash, ulong nonce, out byte[] mixDigest, out byte[] result)
         {
             Contract.RequiresNonNull(hash, nameof(hash));
 

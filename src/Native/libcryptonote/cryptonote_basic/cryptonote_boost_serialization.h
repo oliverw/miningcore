@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Monero Project
+// Copyright (c) 2014-2018, The Monero Project
 // 
 // All rights reserved.
 // 
@@ -82,6 +82,11 @@ namespace boost
   inline void serialize(Archive &a, crypto::hash &x, const boost::serialization::version_type ver)
   {
     a & reinterpret_cast<char (&)[sizeof(crypto::hash)]>(x);
+  }
+  template <class Archive>
+  inline void serialize(Archive &a, crypto::hash8 &x, const boost::serialization::version_type ver)
+  {
+    a & reinterpret_cast<char (&)[sizeof(crypto::hash8)]>(x);
   }
 
   template <class Archive>
@@ -207,6 +212,23 @@ namespace boost
   }
 
   template <class Archive>
+  inline void serialize(Archive &a, rct::Bulletproof &x, const boost::serialization::version_type ver)
+  {
+    a & x.V;
+    a & x.A;
+    a & x.S;
+    a & x.T1;
+    a & x.T2;
+    a & x.taux;
+    a & x.mu;
+    a & x.L;
+    a & x.R;
+    a & x.a;
+    a & x.b;
+    a & x.t;
+  }
+
+  template <class Archive>
   inline void serialize(Archive &a, rct::boroSig &x, const boost::serialization::version_type ver)
   {
     a & x.s0;
@@ -228,6 +250,21 @@ namespace boost
     a & x.mask;
     a & x.amount;
     // a & x.senderPk; // not serialized, as we do not use it in monero currently
+  }
+
+  template <class Archive>
+  inline void serialize(Archive &a, rct::multisig_kLRki &x, const boost::serialization::version_type ver)
+  {
+    a & x.k;
+    a & x.L;
+    a & x.R;
+    a & x.ki;
+  }
+
+  template <class Archive>
+  inline void serialize(Archive &a, rct::multisig_out &x, const boost::serialization::version_type ver)
+  {
+    a & x.c;
   }
 
   template <class Archive>
@@ -258,11 +295,11 @@ namespace boost
     a & x.type;
     if (x.type == rct::RCTTypeNull)
       return;
-    if (x.type != rct::RCTTypeFull && x.type != rct::RCTTypeSimple)
+    if (x.type != rct::RCTTypeFull && x.type != rct::RCTTypeFullBulletproof && x.type != rct::RCTTypeSimple && x.type != rct::RCTTypeSimpleBulletproof)
       throw boost::archive::archive_exception(boost::archive::archive_exception::other_exception, "Unsupported rct type");
     // a & x.message; message is not serialized, as it can be reconstructed from the tx data
     // a & x.mixRing; mixRing is not serialized, as it can be reconstructed from the offsets
-    if (x.type == rct::RCTTypeSimple)
+    if (x.type == rct::RCTTypeSimple) // moved to prunable with bulletproofs
       a & x.pseudoOuts;
     a & x.ecdhInfo;
     serializeOutPk(a, x.outPk, ver);
@@ -273,7 +310,11 @@ namespace boost
   inline void serialize(Archive &a, rct::rctSigPrunable &x, const boost::serialization::version_type ver)
   {
     a & x.rangeSigs;
+    if (x.rangeSigs.empty())
+      a & x.bulletproofs;
     a & x.MGs;
+    if (x.rangeSigs.empty())
+      a & x.pseudoOuts;
   }
 
   template <class Archive>
@@ -282,7 +323,7 @@ namespace boost
     a & x.type;
     if (x.type == rct::RCTTypeNull)
       return;
-    if (x.type != rct::RCTTypeFull && x.type != rct::RCTTypeSimple)
+    if (x.type != rct::RCTTypeFull && x.type != rct::RCTTypeFullBulletproof && x.type != rct::RCTTypeSimple && x.type != rct::RCTTypeSimpleBulletproof)
       throw boost::archive::archive_exception(boost::archive::archive_exception::other_exception, "Unsupported rct type");
     // a & x.message; message is not serialized, as it can be reconstructed from the tx data
     // a & x.mixRing; mixRing is not serialized, as it can be reconstructed from the offsets
@@ -293,7 +334,11 @@ namespace boost
     a & x.txnFee;
     //--------------
     a & x.p.rangeSigs;
+    if (x.p.rangeSigs.empty())
+      a & x.p.bulletproofs;
     a & x.p.MGs;
+    if (x.type == rct::RCTTypeSimpleBulletproof)
+      a & x.p.pseudoOuts;
   }
 }
 }

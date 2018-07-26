@@ -46,6 +46,7 @@ using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
 using MiningCore.Payments;
+using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
 using MiningCore.Persistence.Postgres.Repositories;
 using MiningCore.Util;
@@ -68,6 +69,8 @@ namespace MiningCore
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
+        private static ShareRelay shareRelay;
+        private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
@@ -83,6 +86,8 @@ namespace MiningCore
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                Console.CancelKeyPress += OnCancelKeyPress;
 #if DEBUG
                 PreloadNativeLibs();
 #endif
@@ -101,11 +106,12 @@ namespace MiningCore
 
                 ValidateConfig();
                 Bootstrap();
+                LogRuntimeInfo();
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    Console.CancelKeyPress += OnCancelKeyPress;
-                    Start().Wait(cts.Token);
+                    if(!cts.IsCancellationRequested)
+                        Start().Wait(cts.Token);
                 }
 
                 else
@@ -149,10 +155,26 @@ namespace MiningCore
 
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
+
+            Shutdown();
+            Process.GetCurrentProcess().CloseMainWindow();
+            Process.GetCurrentProcess().Close();
+        }
+
+        private static void LogRuntimeInfo()
+        {
+            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
         {
+            // set some defaults
+            foreach (var config in clusterConfig.Pools)
+            {
+                if (!config.EnableInternalStratum.HasValue)
+                    config.EnableInternalStratum = config.ExternalStratums == null || config.ExternalStratums.Length == 0;
+            }
+
             try
             {
                 clusterConfig.Validate();
@@ -163,14 +185,6 @@ namespace MiningCore
                 Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
             }
-        }
-
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            logger.Info(() => "SIGINT received. Exiting.");
-
-            cts.Cancel();
-            Process.GetCurrentProcess().Close();
         }
 
         private static void DumpParsedConfig(ClusterConfig config)
@@ -360,10 +374,14 @@ namespace MiningCore
 ");
             Console.WriteLine($" https://github.com/coinfoundry/miningcore\n");
             Console.WriteLine($" Please contribute to the development of the project by donating:\n");
-            Console.WriteLine($" BTC - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
-            Console.WriteLine($" ETH - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
-            Console.WriteLine($" LTC - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
-            Console.WriteLine($" XMR - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+            Console.WriteLine($" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
+            Console.WriteLine($" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
+            Console.WriteLine($" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
+            Console.WriteLine($" ZEC  - t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7");
+            Console.WriteLine($" ZCL  - t1MFU1vD3YKgsK6Uh8hW7UTY8mKAV2xVqBr");
+            Console.WriteLine($" ETH  - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
+            Console.WriteLine($" ETC  - 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0");
+            Console.WriteLine($" XMR  - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
             Console.WriteLine();
         }
 
@@ -482,11 +500,15 @@ namespace MiningCore
 
         private static void ConfigurePersistence(ContainerBuilder builder)
         {
-            if (clusterConfig.Persistence == null)
+            if (clusterConfig.Persistence == null &&
+                clusterConfig.PaymentProcessing?.Enabled == true &&
+                clusterConfig.ShareRelay == null)
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-            if (clusterConfig.Persistence.Postgres != null)
+            if (clusterConfig.Persistence?.Postgres != null)
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
+            else
+                ConfigureDummyPersistence(builder);
         }
 
         private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
@@ -505,10 +527,24 @@ namespace MiningCore
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
             // build connection string
-            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=300;";
+            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
 
             // register connection factory
-            builder.RegisterInstance(new ConnectionFactory(connectionString))
+            builder.RegisterInstance(new PgConnectionFactory(connectionString))
+                .AsImplementedInterfaces();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t =>
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
+
+        private static void ConfigureDummyPersistence(ContainerBuilder builder)
+        {
+            // register connection factory
+            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
                 .AsImplementedInterfaces();
 
             // register repositories
@@ -521,9 +557,23 @@ namespace MiningCore
 
         private static async Task Start()
         {
-            // start share recorder
-            shareRecorder = container.Resolve<ShareRecorder>();
-            shareRecorder.Start(clusterConfig);
+            if (clusterConfig.ShareRelay == null)
+            {
+                // start share recorder
+                shareRecorder = container.Resolve<ShareRecorder>();
+                shareRecorder.Start(clusterConfig);
+
+                // start share receiver (for external shares)
+                shareReceiver = container.Resolve<ShareReceiver>();
+                shareReceiver.Start(clusterConfig);
+            }
+
+            else
+            {
+                // start share relay
+                shareRelay = container.Resolve<ShareRelay>();
+                shareRelay.Start(clusterConfig);
+            }
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
@@ -545,10 +595,13 @@ namespace MiningCore
             else
                 logger.Info("Payment processing is not enabled");
 
-            // start pool stats updater
-            statsRecorder = container.Resolve<StatsRecorder>();
-            statsRecorder.Configure(clusterConfig);
-            statsRecorder.Start();
+            if (clusterConfig.ShareRelay == null)
+            {
+                // start pool stats updater
+                statsRecorder = container.Resolve<StatsRecorder>();
+                statsRecorder.Configure(clusterConfig);
+                statsRecorder.Start();
+            }
 
             // start pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
@@ -562,14 +615,14 @@ namespace MiningCore
                 pool.Configure(poolConfig, clusterConfig);
 
                 // pre-start attachments
-                shareRecorder.AttachPool(pool);
-                statsRecorder.AttachPool(pool);
+                shareReceiver?.AttachPool(pool);
+                statsRecorder?.AttachPool(pool);
 
-                await pool.StartAsync();
+                await pool.StartAsync(cts.Token);
             }));
 
             // keep running
-            await Observable.Never<Unit>().ToTask();
+            await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
         private static void RecoverShares(string recoveryFilename)
@@ -589,9 +642,45 @@ namespace MiningCore
             Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
 
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            logger?.Info(() => "SIGINT received. Exiting.");
+            Console.WriteLine("SIGINT received. Exiting.");
+
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
+
+            e.Cancel = true;
+        }
+
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            logger?.Info(() => "SIGTERM received. Exiting.");
+            Console.WriteLine("SIGTERM received. Exiting.");
+
+            try
+            {
+                cts?.Cancel();
+            }
+            catch { }
+        }
+
+        private static void Shutdown()
+        {
+            logger.Info(() => "Shutdown ...");
+            Console.WriteLine("Shutdown...");
+
+            shareRelay?.Stop();
+            shareRecorder?.Stop();
+            statsRecorder?.Stop();
+        }
+
         private static void TouchNativeLibs()
         {
-            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test")).ToHexString());
+            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
             Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
             Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
         }

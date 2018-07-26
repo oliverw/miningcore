@@ -41,6 +41,19 @@ namespace MiningCore.Blockchain.Ethereum
         public const int MinConfimations = 16;
     }
 
+    public class EthereumClassicConstants
+    {
+        public const decimal BaseRewardInitial = 5;
+        public const decimal BasePercent = 0.8m;
+        public const int BlockPerEra = 5000000;
+        public const decimal UnclePercent = 0.03125m;
+    }
+
+    public class CallistoConstants
+    {
+        public const decimal BaseRewardInitial = 600;
+        public const decimal TreasuryPercent = 0.3m;
+    }
     public enum EthereumNetworkType
     {
         Main = 1,
@@ -48,6 +61,7 @@ namespace MiningCore.Blockchain.Ethereum
         Ropsten = 3,
         Rinkeby = 4,
         Kovan = 42,
+        Galilei = 7919, // Callisto v3 Testnet
 
         Unknown = -1,
     }
@@ -64,6 +78,8 @@ namespace MiningCore.Blockchain.Ethereum
         Classic,
         Expanse,
         Ellaism,
+        CallistoTestnet,    // Callisto (CLO) v3 Testnet
+        Callisto,    // Callisto (CLO) v3 Testnet
 
         Unknown = -1,
     }

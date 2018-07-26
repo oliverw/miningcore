@@ -146,12 +146,6 @@
     <ClInclude Include="sha3\sph_whirlpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="equi\equi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="equi\endian.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="libethash\compiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -188,6 +182,9 @@
     <ClInclude Include="Lyra2RE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+	<ClInclude Include="Lyra2Z.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Sponge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -200,7 +197,70 @@
     <ClInclude Include="sha3\sph_sha2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Lyra2Z.h">
+    <ClInclude Include="sha3\sph_blake2s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x16r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x16s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\equihashverify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\serialize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\tinyformat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\uint256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\utilstrencodings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\equihash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\hmac_sha256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\hmac_sha512.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\ripemd160.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\sha1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\sha256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\crypto\sha512.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\support\cleanse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="equi\arith_uint256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="portable_endian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -331,12 +391,6 @@
     <ClCompile Include="exports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="equi\equi.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="equi\endian.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="libethash\internal.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -361,6 +415,9 @@
     <ClCompile Include="Lyra2RE.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+	<ClCompile Include="Lyra2Z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Sponge.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -376,11 +433,63 @@
     <ClCompile Include="sha3\sph_sha2big.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lyra2Z.c">
+    <ClCompile Include="sha3\sph_blake2s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\arith_uint256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\equihashverify.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\uint256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\utilstrencodings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\equihash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\hmac_sha256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\hmac_sha512.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\ripemd160.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\sha1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\sha256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\crypto\sha512.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equi\support\cleanse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="equi\crypto\equihash.tcc" />
   </ItemGroup>
 </Project>
