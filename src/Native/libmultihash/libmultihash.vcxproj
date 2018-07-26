@@ -209,6 +209,7 @@
     <ClInclude Include="libethash\util.h" />
     <ClInclude Include="Lyra2.h" />
     <ClInclude Include="Lyra2RE.h" />
+    <ClInclude Include="Lyra2Z.h" />
     <ClInclude Include="neoscrypt.h" />
     <ClInclude Include="nist5.h" />
     <ClInclude Include="portable_endian.h" />
@@ -287,6 +288,7 @@
     <ClCompile Include="libethash\util_win32.c" />
     <ClCompile Include="Lyra2.c" />
     <ClCompile Include="Lyra2RE.c" />
+    <ClCompile Include="Lyra2Z.c" />
     <ClCompile Include="neoscrypt.c" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="nist5.c" />

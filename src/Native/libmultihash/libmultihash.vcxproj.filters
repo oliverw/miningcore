@@ -182,6 +182,9 @@
     <ClInclude Include="Lyra2RE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+	<ClInclude Include="Lyra2Z.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Sponge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -410,6 +413,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Lyra2RE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+	<ClCompile Include="Lyra2Z.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sponge.c">

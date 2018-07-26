@@ -41,6 +41,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm x16s = new X16S();
         private static readonly IHashAlgorithm groestl = new Groestl();
         private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
+        private static readonly IHashAlgorithm lyra2z = new Lyra2Z();
         private static readonly IHashAlgorithm scrypt_1024_1 = new Scrypt(1024, 1);
         private static readonly IHashAlgorithm skein = new Skein();
         private static readonly IHashAlgorithm qubit = new Qubit();
@@ -57,6 +58,9 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly BitcoinCoinProperties groestlCoin =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256S, groestl, new DigestReverser(groestl), "Groestl");
 
+        private static readonly BitcoinCoinProperties lyra2zCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2z, sha256DReverse, "Lyra2Z");
+			
         private static readonly BitcoinCoinProperties lyra2Rev2CoinVariantA =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, sha256DReverse, "Lyra2re2");
 
@@ -143,6 +147,10 @@ namespace MiningCore.Blockchain.Bitcoin
             // Neoscrypt
             { CoinType.GBX, neoScryptCoin },
             { CoinType.CRC, neoScryptCoin },
+			
+			// Lyra2Z
+            { CoinType.TLR, lyra2zCoin },
+            { CoinType.XZC, lyra2zCoin },
 
             // X16
             { CoinType.RVN, x16rCoin },
