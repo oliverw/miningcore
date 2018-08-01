@@ -54,6 +54,10 @@ Peercoin | Yes | No | |
 Straks | Yes | Yes | |
 Electroneum | Yes | Yes | |
 MoonCoin | Yes | Yes | |
+Ravencoin | Yes | Yes | |
+Pigeoncoin | Yes | No | |
+Actinium | Yes | Yes | |
+CrowdCoin | Yes | No | |
 
 #### Ethereum
 
