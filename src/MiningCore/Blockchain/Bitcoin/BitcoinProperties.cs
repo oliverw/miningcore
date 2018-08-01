@@ -41,6 +41,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm x16s = new X16S();
         private static readonly IHashAlgorithm groestl = new Groestl();
         private static readonly IHashAlgorithm lyra2Rev2 = new Lyra2Rev2();
+        private static readonly IHashAlgorithm lyra2z = new Lyra2Z();
         private static readonly IHashAlgorithm scrypt_1024_1 = new Scrypt(1024, 1);
         private static readonly IHashAlgorithm skein = new Skein();
         private static readonly IHashAlgorithm qubit = new Qubit();
@@ -62,6 +63,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private static readonly BitcoinCoinProperties lyra2Rev2CoinVariantB =
             new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2Rev2, new DigestReverser(lyra2Rev2), "Lyra2re2");
+        
+        private static readonly BitcoinCoinProperties lyra2zCoin =
+            new BitcoinCoinProperties(Math.Pow(2, 8), sha256D, lyra2z, sha256DReverse, "Lyra2Z");
 
         private static readonly BitcoinCoinProperties x11Coin =
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11), "X11");
@@ -147,6 +151,10 @@ namespace MiningCore.Blockchain.Bitcoin
             // X16
             { CoinType.RVN, x16rCoin },
             { CoinType.PGN, x16sCoin },
+
+            // Lyra2Z
+			{ CoinType.TLR, lyra2zCoin },
+            { CoinType.XZC, lyra2zCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
