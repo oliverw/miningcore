@@ -41,6 +41,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "jh.h"
 #include "c11.h"
 #include "Lyra2RE.h"
+#include "Lyra2Z.h"
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
@@ -187,6 +188,11 @@ extern "C" MODULE_API void lyra2re_export(const char* input, char* output)
 extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
 {
 	lyra2re2_hash(input, output);
+}
+
+extern "C" MODULE_API void lyra2z_export(const char* input, char* output)
+{
+	lyra2z_hash(input, output);
 }
 
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
