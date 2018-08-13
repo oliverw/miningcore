@@ -58,7 +58,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override Transaction CreateOutputTransaction()
         {
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
 
             if (coinbaseTxConfig.PayFoundersReward &&
                 (coinbaseTxConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||

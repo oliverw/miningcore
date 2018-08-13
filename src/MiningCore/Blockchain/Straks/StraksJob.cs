@@ -35,7 +35,7 @@ namespace MiningCore.Blockchain.Straks
             var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
             rewardToPool = CreateStraksOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool

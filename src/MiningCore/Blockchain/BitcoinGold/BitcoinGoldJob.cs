@@ -46,7 +46,7 @@ namespace MiningCore.Blockchain.BitcoinGold
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
 
             // pool reward (t-addr)
             tx.AddOutput(rewardToPool, poolAddressDestination);

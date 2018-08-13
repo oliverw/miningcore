@@ -63,6 +63,25 @@ namespace MiningCore.Blockchain.Bitcoin
         protected string[] merkleBranchesHex;
         protected MerkleTree mt;
 
+        protected Network NBitcoinNetworkType
+        {
+            get
+            {
+                switch (networkType)
+                {
+                    case BitcoinNetworkType.Main:
+                        return Network.Main;
+                    case BitcoinNetworkType.Test:
+                        return Network.TestNet;
+                    case BitcoinNetworkType.RegTest:
+                        return Network.RegTest;
+
+                    default:
+                        throw new NotSupportedException("unsupported network type");
+                }
+            }
+        }
+
         ///////////////////////////////////////////
         // GetJobParams related properties
 
@@ -239,7 +258,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
 
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
             {

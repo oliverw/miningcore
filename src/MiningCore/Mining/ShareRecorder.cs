@@ -104,7 +104,7 @@ namespace MiningCore.Mining
         {
             var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
-            faultPolicy.Execute(() => { PersistShares(shares); }, context);
+            faultPolicy.Execute(ctx => PersistShares((IList<Share>)ctx[PolicyContextKeyShares]), context);
         }
 
         private void PersistShares(IList<Share> shares)
