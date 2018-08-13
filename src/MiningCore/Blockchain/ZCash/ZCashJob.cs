@@ -36,7 +36,6 @@ using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Zcash;
 
 namespace MiningCore.Blockchain.ZCash
 {
@@ -59,7 +58,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override Transaction CreateOutputTransaction()
         {
-            var tx = coinbaseTxConfig.CoinbaseTxFactory();
+            var tx = coinbaseTxConfig.CreateCoinbaseTx();
 
             if (coinbaseTxConfig.PayFoundersReward &&
                 (coinbaseTxConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||

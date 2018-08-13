@@ -33,7 +33,7 @@ namespace MiningCore.Blockchain.ZCash
     {
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
-        public Func<Transaction> CoinbaseTxFactory { get; set; }
+        public Func<Transaction> CreateCoinbaseTx { get; set; }
 
         public bool PayFoundersReward { get; set; }
         public decimal PercentFoundersReward { get; set; }
@@ -73,7 +73,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(ZCashNetworkMain),
+                    CreateCoinbaseTx = ()=> Transaction.Create(ZCashNetworkMain),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
@@ -106,7 +106,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(ZCashNetworkTest),
+                    CreateCoinbaseTx = ()=> Transaction.Create(ZCashNetworkTest),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
@@ -135,7 +135,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(ZCashNetworkReg),
+                    CreateCoinbaseTx = ()=> Transaction.Create(ZCashNetworkReg),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 20,
@@ -157,7 +157,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.Main),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -175,7 +175,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.TestNet),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.RegTest),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -215,7 +215,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.Main),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 8.5m,
@@ -258,7 +258,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.TestNet),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 8.5m,
@@ -300,7 +300,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.RegTest),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
 
                     PayFoundersReward = true,
                     PercentFoundersReward = 8.5m,
@@ -331,7 +331,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.Main),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -349,7 +349,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.TestNet),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -367,7 +367,7 @@ namespace MiningCore.Blockchain.ZCash
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
-                    CoinbaseTxFactory = ()=> Transaction.Create(Network.RegTest),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
