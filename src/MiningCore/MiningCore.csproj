@@ -55,6 +55,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
     <PackageReference Include="NBitcoin" Version="4.1.1.44" />
+    <PackageReference Include="NBitcoin.Zcash" Version="2.0.0" />
     <PackageReference Include="NetMQ" Version="4.0.0.1" />
     <PackageReference Include="NetUV.Core" Version="0.1.140" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
