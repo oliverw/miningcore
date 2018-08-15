@@ -52,7 +52,7 @@ namespace MiningCore.Blockchain.ZCash
         protected byte[] merkleRoot;
         protected byte[] merkleRootReversed;
         protected string merkleRootReversedHex;
-        protected EquihashSolver equihash = EquihashSolver.Instance.Value;
+        protected EquihashSolver equihash;
 
         #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
@@ -171,6 +171,7 @@ namespace MiningCore.Blockchain.ZCash
 
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
+            this.equihash = coinbaseTxConfig.CreateSolver();
 
             if (!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);

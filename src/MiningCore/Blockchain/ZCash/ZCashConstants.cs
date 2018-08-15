@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
+using MiningCore.Crypto.Hashing.Equihash;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Zcash;
@@ -34,6 +35,7 @@ namespace MiningCore.Blockchain.ZCash
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
         public Func<Transaction> CreateCoinbaseTx { get; set; }
+        public virtual Func<EquihashSolver> CreateSolver { get; set; } = () => new EquihashSolver_200_9();
 
         public bool PayFoundersReward { get; set; }
         public decimal PercentFoundersReward { get; set; }
@@ -194,6 +196,67 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
+
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+        };
+
+        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> BTGCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        {
+            {
+                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                {
+                    Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
+                    Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
+                    CreateSolver = ()=> new EquihashSolver_144_5(),
+
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                {
+                    Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
+                    Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
+                    CreateSolver = ()=> new EquihashSolver_144_5(),
+
+                    PayFoundersReward = false,
+                    PercentFoundersReward = 0,
+                    FoundersRewardSubsidyHalvingInterval = 0,
+                    FoundersRewardSubsidySlowStartInterval = 0,
+
+                    FoundersRewardAddresses = new[]
+                    {
+                        ""
+                    }
+                }
+            },
+            {
+                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                {
+                    Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
+                    Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
+                    CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
+                    CreateSolver = ()=> new EquihashSolver_144_5(),
 
                     PayFoundersReward = false,
                     PercentFoundersReward = 0,
@@ -388,7 +451,7 @@ namespace MiningCore.Blockchain.ZCash
                 { CoinType.ZEC, ZCashCoinbaseTxConfig },
                 { CoinType.ZCL, ZCLCoinbaseTxConfig },
                 { CoinType.ZEN, ZencashCoinbaseTxConfig },
-                { CoinType.BTG, ZCLCoinbaseTxConfig },
+                { CoinType.BTG, BTGCoinbaseTxConfig },
                 { CoinType.BTCP, BTCPCoinbaseTxConfig },
             };
     }
