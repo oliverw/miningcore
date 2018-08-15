@@ -179,6 +179,12 @@ namespace MiningCore.Blockchain.Ethereum
                 }
             }
 
+            else if (results.Any(x => x.Response == null))
+            {
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {commands[results.ToList().IndexOf(results.First(x=> x.Response == null))].Method} returned null response");
+                return null;
+            }
+
             // extract results
             var block = results[0].Response.ToObject<Block>();
             var work = results[1].Response.ToObject<string[]>();
