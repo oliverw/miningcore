@@ -35,9 +35,10 @@ namespace MiningCore.Blockchain.ZCash
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
         public Func<Transaction> CreateCoinbaseTx { get; set; }
-        public virtual Func<EquihashSolver> CreateSolver { get; set; } = () => new EquihashSolver_200_9();
+        public Func<EquihashSolver> CreateSolver { get; set; } = () => new EquihashSolver_200_9();
+	    public int SolutionPreambleSize { get; set; } = 3;
 
-        public bool PayFoundersReward { get; set; }
+		public bool PayFoundersReward { get; set; }
         public decimal PercentFoundersReward { get; set; }
         public string[] FoundersRewardAddresses { get; set; }
         public ulong FoundersRewardSubsidySlowStartInterval { get; set; }
@@ -219,8 +220,9 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
                     CreateSolver = ()=> new EquihashSolver_144_5(),
+	                SolutionPreambleSize = 1,
 
-                    PayFoundersReward = false,
+					PayFoundersReward = false,
                     PercentFoundersReward = 0,
                     FoundersRewardSubsidyHalvingInterval = 0,
                     FoundersRewardSubsidySlowStartInterval = 0,
@@ -238,8 +240,9 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
                     CreateSolver = ()=> new EquihashSolver_144_5(),
+	                SolutionPreambleSize = 1,
 
-                    PayFoundersReward = false,
+					PayFoundersReward = false,
                     PercentFoundersReward = 0,
                     FoundersRewardSubsidyHalvingInterval = 0,
                     FoundersRewardSubsidySlowStartInterval = 0,
@@ -257,8 +260,9 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
                     CreateSolver = ()=> new EquihashSolver_144_5(),
+	                SolutionPreambleSize = 1,
 
-                    PayFoundersReward = false,
+					PayFoundersReward = false,
                     PercentFoundersReward = 0,
                     FoundersRewardSubsidyHalvingInterval = 0,
                     FoundersRewardSubsidySlowStartInterval = 0,

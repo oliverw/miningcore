@@ -97,7 +97,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
             Contract.RequiresNonNull(header, nameof(header));
             Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
             Contract.RequiresNonNull(solution, nameof(solution));
-            Contract.Requires<ArgumentException>(solution.Length == 1344, $"{nameof(solution)} must be exactly 1344 bytes");
+            Contract.Requires<ArgumentException>(solution.Length == 100, $"{nameof(solution)} must be exactly 100 bytes");
 
             logger.LogInvoke();
 
