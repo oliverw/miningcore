@@ -199,19 +199,13 @@ namespace MiningCore.Blockchain.Ethereum
             // make sure block matches work
             var height = work[3].IntegralFromHex<ulong>();
 
-            if (height != block.Height)
-            {
-                logger.Debug(() => $"[{LogCat}] Discarding block template update as getWork result is not related to pending block");
-                return null;
-            }
-
             var result = new EthereumBlockTemplate
             {
                 Header = work[0],
                 Seed = work[1],
                 Target = work[2],
                 Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
-                Height = block.Height.Value,
+                Height = height,
                 ParentHash = block.ParentHash,
             };
 
