@@ -250,7 +250,7 @@ namespace MiningCore.Blockchain.ZCash
                 throw new StratumException(StratumError.Other, "incorrect size of extraNonce2");
 
             // validate solution
-            if (solution.Length != 2694)
+            if (solution.Length != (coinbaseTxConfig.SolutionSize + coinbaseTxConfig.SolutionPreambleSize) * 2)
                 throw new StratumException(StratumError.Other, "incorrect size of solution");
 
             // dupe check

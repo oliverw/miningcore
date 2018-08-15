@@ -35,8 +35,10 @@ namespace MiningCore.Blockchain.ZCash
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
         public Func<Transaction> CreateCoinbaseTx { get; set; }
-        public Func<EquihashSolver> Solver { get; set; } = () => ZCashConstants.EquihashSolver_200_9;
+
+	    public int SolutionSize { get; set; } = 1344;
 	    public int SolutionPreambleSize { get; set; } = 3;
+		public Func<EquihashSolver> Solver { get; set; } = () => ZCashConstants.EquihashSolver_200_9;
 
 		public bool PayFoundersReward { get; set; }
         public decimal PercentFoundersReward { get; set; }
@@ -223,6 +225,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
                     Solver = ()=> EquihashSolver_144_5,
+	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,
@@ -243,6 +246,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
                     Solver = ()=> EquihashSolver_144_5,
+	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,
@@ -263,6 +267,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
                     Solver = ()=> EquihashSolver_144_5,
+	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,

@@ -109,8 +109,9 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
+	        this.equihash = coinbaseTxConfig.Solver();
 
-            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+			if (!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {

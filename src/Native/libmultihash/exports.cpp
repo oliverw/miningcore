@@ -210,7 +210,7 @@ extern "C" MODULE_API bool equihash_verify_export(const char* header, int header
     return verifyEH(header, vecSolution);
 }
 
-extern "C" MODULE_API bool equihash_144_5_verify_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int header_length, const char* solution, int solution_length)
 {
     if (header_length != 140 || solution_length != 100) {
         return false;
