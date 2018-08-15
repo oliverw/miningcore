@@ -35,7 +35,7 @@ namespace MiningCore.Blockchain.ZCash
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
         public Func<Transaction> CreateCoinbaseTx { get; set; }
-        public Func<EquihashSolver> CreateSolver { get; set; } = () => new EquihashSolver_200_9();
+        public Func<EquihashSolver> Solver { get; set; } = () => ZCashConstants.EquihashSolver_200_9;
 	    public int SolutionPreambleSize { get; set; } = 3;
 
 		public bool PayFoundersReward { get; set; }
@@ -60,7 +60,10 @@ namespace MiningCore.Blockchain.ZCash
         private static readonly Network ZCashNetworkTest;
         private static readonly Network ZCashNetworkReg;
 
-        static ZCashConstants()
+	    internal static readonly EquihashSolver EquihashSolver_200_9 = new EquihashSolver_200_9();
+	    internal static readonly EquihashSolver EquihashSolver_144_5 = new EquihashSolver_144_5();
+
+		static ZCashConstants()
         {
             ZcashNetworks.Instance.EnsureRegistered();
 
@@ -219,7 +222,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
-                    CreateSolver = ()=> new EquihashSolver_144_5(),
+                    Solver = ()=> EquihashSolver_144_5,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,
@@ -239,7 +242,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
-                    CreateSolver = ()=> new EquihashSolver_144_5(),
+                    Solver = ()=> EquihashSolver_144_5,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,
@@ -259,7 +262,7 @@ namespace MiningCore.Blockchain.ZCash
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
-                    CreateSolver = ()=> new EquihashSolver_144_5(),
+                    Solver = ()=> EquihashSolver_144_5,
 	                SolutionPreambleSize = 1,
 
 					PayFoundersReward = false,
