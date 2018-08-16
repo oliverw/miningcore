@@ -27,6 +27,28 @@ This is going to change in the future.
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
+### Algoritms
+
+Algo | Implemented | Tested | Notes
+:--- | :---: | :---: | :---:
+sha256S  | Yes | Yes |
+sha256D | Yes | Yes |
+sha256DReverse | Yes | Yes |
+x11 | Yes | Yes |
+blake2s | Yes | Yes |
+x17 | Yes | Yes |
+x16r | Yes | Yes |
+x16s | Yes | Yes |
+groestl | Yes | Yes |
+lyra2Rev2 | Yes | Yes |
+lyra2z | Yes | Yes |
+scrypt | Yes | Yes |
+skein | Yes | Yes |
+qubit | Yes | Yes |
+groestlMyriad | Yes | Yes |
+NeoScrypt | Yes | Yes |
+DigestReverser(vergeblockhasher) | Yes | Yes |
+
 ### Coins
 
 Coin | Implemented | Tested | Planned | Notes
