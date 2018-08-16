@@ -57,7 +57,7 @@ namespace MiningCore.Blockchain.ZCash
         {
         }
 
-        private ZCashCoinbaseTxConfig coinbaseTxConfig;
+        private ZCashChainConfig chainConfig;
         private double hashrateDivisor;
 
         protected override BitcoinJobManager<TJob, ZCashBlockTemplate> CreateJobManager()
@@ -74,11 +74,11 @@ namespace MiningCore.Blockchain.ZCash
         {
             await base.SetupJobManager(ct);
 
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(manager.NetworkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(manager.NetworkType, out chainConfig);
 
-            hashrateDivisor = (double)new BigRational(coinbaseTxConfig.Diff1b,
-                ZCashConstants.CoinbaseTxConfig[CoinType.ZEC][manager.NetworkType].Diff1b);
+            hashrateDivisor = (double)new BigRational(chainConfig.Diff1b,
+                ZCashConstants.Chains[CoinType.ZEC][manager.NetworkType].Diff1b);
         }
 
         #endregion
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 if (System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
-                    var newDiff = (double) new BigRational(coinbaseTxConfig.Diff1b, targetBig);
+                    var newDiff = (double) new BigRational(chainConfig.Diff1b, targetBig);
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                     if (newDiff >= poolEndpoint.Difficulty)
@@ -261,7 +261,7 @@ namespace MiningCore.Blockchain.ZCash
         private string EncodeTarget(double difficulty)
         {
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
-            var quotient = coinbaseTxConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+            var quotient = chainConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
             var padded = ArrayPool<byte>.Shared.Rent(ZCashConstants.TargetPaddingLength);
 

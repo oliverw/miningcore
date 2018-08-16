@@ -30,11 +30,12 @@ using NBitcoin.Zcash;
 
 namespace MiningCore.Blockchain.ZCash
 {
-    public class ZCashCoinbaseTxConfig
+    public class ZCashChainConfig
     {
         public BigInteger Diff1 { get; set; }
         public System.Numerics.BigInteger Diff1b { get; set; }
         public Func<Transaction> CreateCoinbaseTx { get; set; }
+	    public bool UsesZCashAddressFormat { get; set; } = true;
 
 	    public int SolutionSize { get; set; } = 1344;
 	    public int SolutionPreambleSize { get; set; } = 3;
@@ -74,10 +75,10 @@ namespace MiningCore.Blockchain.ZCash
             ZCashNetworkReg = Network.GetNetwork("zcash-reg");
         }
 
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        private static readonly Dictionary<BitcoinNetworkType, ZCashChainConfig> ZCashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashChainConfig>
         {
             {
-                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Main, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -110,7 +111,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Test, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -139,7 +140,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.RegTest, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -158,10 +159,10 @@ namespace MiningCore.Blockchain.ZCash
             },
         };
 
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZCLCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        private static readonly Dictionary<BitcoinNetworkType, ZCashChainConfig> ZCLCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashChainConfig>
         {
             {
-                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Main, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -179,7 +180,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Test, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -197,7 +198,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.RegTest, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -216,15 +217,16 @@ namespace MiningCore.Blockchain.ZCash
             },
         };
 
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> BTGCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        private static readonly Dictionary<BitcoinNetworkType, ZCashChainConfig> BTGCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashChainConfig>
         {
             {
-                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Main, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.Main),
-                    Solver = ()=> EquihashSolver_144_5,
+	                UsesZCashAddressFormat = false,
+					Solver = ()=> EquihashSolver_144_5,
 	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
 
@@ -240,11 +242,12 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Test, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.TestNet),
+	                UsesZCashAddressFormat = false,
                     Solver = ()=> EquihashSolver_144_5,
 	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
@@ -261,11 +264,12 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.RegTest, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
                     CreateCoinbaseTx = ()=> Transaction.Create(Network.RegTest),
+	                UsesZCashAddressFormat = false,
                     Solver = ()=> EquihashSolver_144_5,
 	                SolutionSize = 100,
 	                SolutionPreambleSize = 1,
@@ -283,10 +287,10 @@ namespace MiningCore.Blockchain.ZCash
             },
         };
 
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> ZencashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        private static readonly Dictionary<BitcoinNetworkType, ZCashChainConfig> ZencashCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashChainConfig>
         {
             {
-                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Main, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -329,7 +333,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Test, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -371,7 +375,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.RegTest, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -399,10 +403,10 @@ namespace MiningCore.Blockchain.ZCash
             },
         };
 
-        private static readonly Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig> BTCPCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>
+        private static readonly Dictionary<BitcoinNetworkType, ZCashChainConfig> BTCPCoinbaseTxConfig = new Dictionary<BitcoinNetworkType, ZCashChainConfig>
         {
             {
-                BitcoinNetworkType.Main, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Main, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -420,7 +424,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.Test, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.Test, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -438,7 +442,7 @@ namespace MiningCore.Blockchain.ZCash
                 }
             },
             {
-                BitcoinNetworkType.RegTest, new ZCashCoinbaseTxConfig
+                BitcoinNetworkType.RegTest, new ZCashChainConfig
                 {
                     Diff1 = new BigInteger("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
                     Diff1b = System.Numerics.BigInteger.Parse("007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber),
@@ -457,8 +461,8 @@ namespace MiningCore.Blockchain.ZCash
             },
         };
 
-        public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>> CoinbaseTxConfig =
-            new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashCoinbaseTxConfig>>
+        public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>> Chains =
+            new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>>
             {
                 { CoinType.ZEC, ZCashCoinbaseTxConfig },
                 { CoinType.ZCL, ZCLCoinbaseTxConfig },

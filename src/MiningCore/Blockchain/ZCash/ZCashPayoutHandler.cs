@@ -60,7 +60,7 @@ namespace MiningCore.Blockchain.ZCash
         protected ZCashPoolConfigExtra poolExtraConfig;
         protected bool supportsNativeShielding;
         protected BitcoinNetworkType networkType;
-        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
+        protected ZCashChainConfig chainConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
         protected const int ZMinConfirmations = 8;
@@ -84,8 +84,8 @@ namespace MiningCore.Blockchain.ZCash
                 networkType = BitcoinNetworkType.Main;
 
             // lookup config
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out chainConfig);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);

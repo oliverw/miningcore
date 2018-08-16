@@ -18,6 +18,7 @@ using MiningCore.Stratum;
 using MiningCore.Time;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.OpenAsset;
 
 namespace MiningCore.Blockchain.ZCash
 {
@@ -39,6 +40,7 @@ namespace MiningCore.Blockchain.ZCash
             };
         }
 
+	    protected ZCashChainConfig chainConfig;
         private ZCashPoolConfigExtra zcashExtraPoolConfig;
 
         #region Overrides of JobManagerBase<TJob>
@@ -47,12 +49,24 @@ namespace MiningCore.Blockchain.ZCash
         {
             zcashExtraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
-            base.Configure(poolConfig, clusterConfig);
+			base.Configure(poolConfig, clusterConfig);
         }
 
         #endregion
 
-        public override async Task<bool> ValidateAddressAsync(string address)
+	    #region Overrides of BitcoinJobManager<TJob,ZCashBlockTemplate>
+
+	    protected override void PostChainIdentifyConfigure()
+	    {
+		    if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+			    coinbaseTx.TryGetValue(networkType, out chainConfig);
+
+			base.PostChainIdentifyConfigure();
+	    }
+
+	    #endregion
+
+	    public override async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -102,6 +116,9 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override IDestination AddressToDestination(string address)
         {
+	        if (!chainConfig.UsesZCashAddressFormat)
+		        return base.AddressToDestination(address);
+
             var decoded = Encoders.Base58.DecodeData(address);
             var hash = decoded.Skip(2).Take(20).ToArray();
             var result = new KeyId(hash);

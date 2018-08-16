@@ -593,7 +593,11 @@ namespace MiningCore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        protected override void ConfigureDaemons()
+	    protected virtual void PostChainIdentifyConfigure()
+	    {
+	    }
+
+		protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
@@ -685,8 +689,24 @@ namespace MiningCore.Blockchain.Bitcoin
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
             var difficultyResponse = results[3].Response.ToObject<JToken>();
 
-            // ensure pool owns wallet
-            if (!validateAddressResponse.IsValid)
+	        // chain detection
+	        if (!hasLegacyDaemon)
+	        {
+		        if (blockchainInfoResponse.Chain.ToLower() == "test")
+			        networkType = BitcoinNetworkType.Test;
+		        else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
+			        networkType = BitcoinNetworkType.RegTest;
+		        else
+			        networkType = BitcoinNetworkType.Main;
+	        }
+
+	        else
+		        networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
+
+	        PostChainIdentifyConfigure();
+
+			// ensure pool owns wallet
+			if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
             //if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
@@ -706,20 +726,6 @@ namespace MiningCore.Blockchain.Bitcoin
 
             else
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
-
-            // chain detection
-            if (!hasLegacyDaemon)
-            {
-                if (blockchainInfoResponse.Chain.ToLower() == "test")
-                    networkType = BitcoinNetworkType.Test;
-                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
-                    networkType = BitcoinNetworkType.RegTest;
-                else
-                    networkType = BitcoinNetworkType.Main;
-            }
-
-            else
-                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
                 ConfigureRewards();
@@ -751,7 +757,7 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupJobUpdates();
         }
 
-        protected virtual IDestination AddressToDestination(string address)
+	    protected virtual IDestination AddressToDestination(string address)
         {
             return BitcoinUtils.AddressToDestination(address);
         }
