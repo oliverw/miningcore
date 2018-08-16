@@ -125,9 +125,9 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
-### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+### [Configuration](https://github.com/calebcall/miningcore/wiki/Configuration)
 
-### [API](https://github.com/coinfoundry/miningcore/wiki/API)
+### [API](https://github.com/coinfoundry/calebcall/wiki/API) 
 
 ### Docker
 
