@@ -27,7 +27,7 @@ using NLog;
 
 namespace MiningCore.Crypto.Hashing.Equihash
 {
-    public abstract class EquihashSolver
+    public abstract class EquihashSolverBase
     {
         private static int maxThreads = 1;
 
@@ -55,7 +55,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
         public abstract bool Verify(byte[] header, byte[] solution);
     }
 
-    public unsafe class EquihashSolver_200_9 : EquihashSolver
+    public unsafe class EquihashSolver_ZCash : EquihashSolverBase
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -88,7 +88,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
         }
     }
 
-    public unsafe class EquihashSolver_144_5 : EquihashSolver
+    public unsafe class EquihashSolver_Btg : EquihashSolverBase
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -109,7 +109,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
                 {
                     fixed (byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length);
+                        return LibMultihash.equihash_verify_btg(h, header.Length, s, solution.Length);
                     }
                 }
             }

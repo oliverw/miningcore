@@ -52,7 +52,7 @@ namespace MiningCore.Blockchain.ZCash
         protected byte[] merkleRoot;
         protected byte[] merkleRootReversed;
         protected string merkleRootReversedHex;
-        protected EquihashSolver equihash;
+        protected EquihashSolverBase equihash;
 
         #region Overrides of BitcoinJob<ZCashBlockTemplate>
 

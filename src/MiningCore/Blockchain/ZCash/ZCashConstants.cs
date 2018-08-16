@@ -39,7 +39,7 @@ namespace MiningCore.Blockchain.ZCash
 
 	    public int SolutionSize { get; set; } = 1344;
 	    public int SolutionPreambleSize { get; set; } = 3;
-		public Func<EquihashSolver> Solver { get; set; } = () => ZCashConstants.EquihashSolver_200_9;
+		public Func<EquihashSolverBase> Solver { get; set; } = () => ZCashConstants.EquihashSolver_200_9;
 
 		public bool PayFoundersReward { get; set; }
         public decimal PercentFoundersReward { get; set; }
@@ -63,8 +63,8 @@ namespace MiningCore.Blockchain.ZCash
         private static readonly Network ZCashNetworkTest;
         private static readonly Network ZCashNetworkReg;
 
-	    internal static readonly EquihashSolver EquihashSolver_200_9 = new EquihashSolver_200_9();
-	    internal static readonly EquihashSolver EquihashSolver_144_5 = new EquihashSolver_144_5();
+	    internal static readonly EquihashSolverBase EquihashSolver_200_9 = new EquihashSolver_ZCash();
+	    internal static readonly EquihashSolverBase EquihashSolver_144_5 = new EquihashSolver_Btg();
 
 		static ZCashConstants()
         {
