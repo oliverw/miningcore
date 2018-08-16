@@ -134,10 +134,10 @@ $ psql -d miningcore -U miningcore -f createdb.sql
 The [miningcore docker image](https://hub.docker.com/r/calebcall/miningcore-docker/) expects a valid pool configuration file as volume argument:
 
 ```console
-$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro calebcall/miningcore-docker
+$ docker run -d -p 3032:3032 -p 80:80 -v /path/to/config.json:/config.json:ro calebcall/miningcore-docker
 ```
 
-You also need to expose all stratum ports specified in your configuration file.
+You also need to expose all stratum ports specified in your configuration file.  The swagger api documentation will be available on port 80.
 
 ### Building from Source (Shell)
 
