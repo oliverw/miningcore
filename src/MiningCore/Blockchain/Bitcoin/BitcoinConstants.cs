@@ -163,6 +163,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.RVN, "RQPJF65UoodQ2aZUkfnXoeX6gib3GNwm9u"},
             {CoinType.PGN, "PRm3ThUGfmU157NwcKzKBqWbgA2DPuFje1"},
             {CoinType.ACM, "NU4DoRM3iJMLi3F7JUBjhjJAQTbDtBWUPm"},
+            {CoinType.HTH, "HGATpK37jfZMRfrh8K3NDvmhhpHdtLbQun"},
         };
     }
 

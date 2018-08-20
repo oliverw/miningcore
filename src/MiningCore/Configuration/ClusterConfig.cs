@@ -64,6 +64,7 @@ namespace MiningCore.Configuration
         RVN,  // Ravencoin
         PGN,  // Pigeoncoin 
         ACM,  //Actinium
+        HTH,  //Help The Homeless
     }
 
     public class CoinConfig
