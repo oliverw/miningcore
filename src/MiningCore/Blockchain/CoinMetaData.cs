@@ -63,6 +63,7 @@ namespace MiningCore.Blockchain
             { CoinType.PGN, new Dictionary<string, string> { { string.Empty, $"http://explorer.pigeoncoin.org/block/{BlockHashPH}" }}},
             { CoinType.ACM, new Dictionary<string, string> { { string.Empty, $"https://explorer2.actinium.org/block/{BlockHashPH}" }}},
             { CoinType.HTH, new Dictionary<string, string> { { string.Empty, $"https://explorer.hthcoin.world/block/{BlockHashPH}" }}},
+            { CoinType.GIN, new Dictionary<string, string> { { string.Empty, $"https://explorer.gincoin.io/block/{BlockHashPH}" }}},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -104,6 +105,7 @@ namespace MiningCore.Blockchain
             { CoinType.PGN, "http://explorer.pigeoncoin.org/tx/{0}" },
             { CoinType.ACM, "http://explorer2.actinium.org/tx/{0}" },
             { CoinType.HTH, "http://explorer.hthcoin.world/tx/{0}" },
+            { CoinType.GIN, "http://explorer.gincoin.io/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -142,6 +144,7 @@ namespace MiningCore.Blockchain
             { CoinType.PGN, "http://explorer.pigeoncoin.org/address/{0}" },
             { CoinType.ACM, "http://explorer2.actinium.org/address/{0}" },
             { CoinType.HTH, "http://explorer.hthcoin.world/address/{0}" },
+            { CoinType.GIN, "http://explorer.gincoin.io/address/{0}" },
         };
 
         private const string Ethash = "Ethash";
@@ -187,6 +190,7 @@ namespace MiningCore.Blockchain
             { CoinType.PGN, BitcoinProperties.GetAlgorithm },
             { CoinType.ACM, BitcoinProperties.GetAlgorithm },
             { CoinType.HTH, BitcoinProperties.GetAlgorithm },
+            { CoinType.GIN, BitcoinProperties.GetAlgorithm },
         };
     }
 }

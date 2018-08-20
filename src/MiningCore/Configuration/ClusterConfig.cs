@@ -65,6 +65,7 @@ namespace MiningCore.Configuration
         PGN,  // Pigeoncoin 
         ACM,  //Actinium
         HTH,  //Help The Homeless
+        GIN,  //GINCOIN
     }
 
     public class CoinConfig
