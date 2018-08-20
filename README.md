@@ -80,6 +80,8 @@ Pigeoncoin | Yes | No | |
 Actinium | Yes | Yes | |
 CrowdCoin | Yes | No | |
 Help The Homeless | Yes | Yes | |
+Gincoin | Yes | Yes | |
+Glorium | Yes | Yes | |
 
 #### Ethereum
 

@@ -156,6 +156,7 @@ namespace MiningCore.Blockchain.Bitcoin
             // Lyra2Z
             { CoinType.ACM, lyra2zCoin },
             { CoinType.GIN, lyra2zCoin },
+            { CoinType.GLO, lyra2zCoin },
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)

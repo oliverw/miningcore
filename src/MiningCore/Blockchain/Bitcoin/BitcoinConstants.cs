@@ -165,6 +165,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {CoinType.ACM, "NU4DoRM3iJMLi3F7JUBjhjJAQTbDtBWUPm"},
             {CoinType.HTH, "HGATpK37jfZMRfrh8K3NDvmhhpHdtLbQun"},
             {CoinType.GIN, "NA"},
+            {CoinType.GLO, "NA"},
         };
     }
 

@@ -66,6 +66,7 @@ namespace MiningCore.Configuration
         ACM,  //Actinium
         HTH,  //Help The Homeless
         GIN,  //GINCOIN
+        GLO, //Glorium
     }
 
     public class CoinConfig
