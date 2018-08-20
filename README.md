@@ -1,9 +1,8 @@
 
-[![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
-[![Docker Build Statu](https://img.shields.io/docker/build/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
-[![Docker Stars](https://img.shields.io/docker/stars/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+[![Docker Build Statu](https://img.shields.io/docker/build/calebcall/miningcore-docker.svg)](https://hub.docker.com/r/calebcall/miningcore-docker/)
+[![Docker Stars](https://img.shields.io/docker/stars/calebcall/miningcore-docker.svg)](https://hub.docker.com/r/calebcall/miningcore-docker/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/calebcall/miningcore-docker.svg)]()
+
 
 ## Miningcore
 
@@ -26,6 +25,28 @@ This is going to change in the future.
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
+
+### Algorithms
+
+Algo | Implemented | Tested | Notes
+:--- | :---: | :---: | :---:
+sha256S  | Yes | Yes |
+sha256D | Yes | Yes |
+sha256DReverse | Yes | Yes |
+x11 | Yes | Yes |
+blake2s | Yes | Yes |
+x17 | Yes | Yes |
+x16r | Yes | Yes |
+x16s | Yes | Yes |
+groestl | Yes | Yes |
+lyra2Rev2 | Yes | Yes |
+lyra2z | Yes | Yes |
+scrypt | Yes | Yes |
+skein | Yes | Yes |
+qubit | Yes | Yes |
+groestlMyriad | Yes | Yes |
+NeoScrypt | Yes | Yes |
+DigestReverser(vergeblockhasher) | Yes | Yes |
 
 ### Coins
 
@@ -74,20 +95,6 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 - Miners may use both t-addresses and z-addresses when connecting to the pool
 
-### Donations
-
-This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
-
-* BTC:  `17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm`
-* LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
-* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
-* ETH:  `0xcb55abBfe361B12323eb952110cE33d5F28BeeE1`
-* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
-* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
-* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
-* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
-* XMR: `475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH`
-
 ### Runtime Requirements
 
 - [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
@@ -118,19 +125,19 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
-### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+### [Configuration](https://github.com/calebcall/miningcore/wiki/Configuration)
 
-### [API](https://github.com/coinfoundry/miningcore/wiki/API)
+### [API](https://github.com/coinfoundry/calebcall/wiki/API) 
 
 ### Docker
 
-The official [miningcore docker image](https://hub.docker.com/r/coinfoundry/miningcore-docker/) expects a valid pool configuration file as volume argument:
+The [miningcore docker image](https://hub.docker.com/r/calebcall/miningcore-docker/) expects a valid pool configuration file as volume argument:
 
 ```console
-$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro coinfoundry/miningcore-docker
+$ docker run -d -p 3032:3032 -p 80:80 -v /path/to/config.json:/config.json:ro calebcall/miningcore-docker
 ```
 
-You also need to expose all stratum ports specified in your configuration file.
+You also need to expose all stratum ports specified in your configuration file.  The swagger api documentation will be available on port 80.
 
 ### Building from Source (Shell)
 
@@ -141,7 +148,7 @@ Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for
 ```console
 $ apt-get update -y 
 $ apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
-$ git clone https://github.com/coinfoundry/miningcore
+$ git clone https://github.com/calebcall/miningcore
 $ cd miningcore/src/MiningCore
 $ ./linux-build.sh
 ```
@@ -149,7 +156,7 @@ $ ./linux-build.sh
 #### Windows
 
 ```dosbatch
-> git clone https://github.com/coinfoundry/miningcore
+> git clone https://github.com/calebcall/miningcore
 > cd miningcore/src/MiningCore
 > windows-build.bat
 ```
