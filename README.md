@@ -54,41 +54,44 @@ Coin | Implemented | Algorithm | Notes | Website
 :--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | sha256 | | https://bitcoin.org
 Litecoin | Yes | Scrypt | | https://litecoin.com
-Zcash | Yes | Equihash | | https://z.cash
-Monero | Yes | Cryptonight | | https://getmonero.org
 Ethereum | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://www.ethereum.org
+Actinium | Yes | lyra2z | | https://actinium.io
+AEON | Yes | CryptoNight-Light | | http://www.aeon.cash
+Bitcoin Cash | Yes | sha256 | | https://www.bitcoincash.org
+Bitcoin Gold | Yes | Equihash | | https://bitcoingold.org
+Bitcoin Private | Yes | Equihash | | https://btcprvate.org
+Callisto network | Yes | Ethash | | https://callisto.network
+CannabisCoin | Yes | X11 | | http://cannabiscoin.net
+CrowdCoin | Yes | Neoscrypt | | https://crowdcoin.site
+DASH | Yes | X11 | | https://www.dash.org
+DigiByte | Yes | Groestl, Scrypt, skein, sha256, qubit | | http://www.digibyte.io
+Dogecoin | Yes | Scrypt | | http://dogecoin.com
+Electroneum | Yes | CryptoNight | | https://electroneum.com
+Ellaism | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ellaism.org
 Ethereum Classic | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ethereumclassic.org
 Expanse | Yes | Ethash | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases) | http://www.expanse.tech
-DASH | Yes | X11 | | https://www.dash.org
-Bitcoin Gold | Yes | Equihash | | https://bitcoingold.org
-Bitcoin Cash | Yes | sha256 | | https://www.bitcoincash.org
-Vertcoin | Yes | Lyra2Rev2 | | http://vertcoin.org
-Monacoin | Yes | Lyra2Rev2 | | http://monacoin.org
-Globaltoken | Yes | sha256 | Requires [GLT Daemon](https://globaltoken.org/#downloads) | http://globaltoken.org
-Ellaism | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ellaism.org
-Groestlcoin | Yes | Groestl | | http://www.groestlcoin.org
-Dogecoin | Yes | Scrypt | | http://dogecoin.com
-DigiByte | Yes | Groestl, Scrypt, skein, sha256, qubit | | http://www.digibyte.io
-GoByte | Yes | Neoscrypt | | https://gobyte.network
-Bitcoin Private | Yes | Equihash | | https://btcprvate.org/
-Horizen | Yes | Equihash | | https://horizen.global
-ZClassic | Yes | Equihash | | http://zclassic.org
-CannabisCoin | Yes | X11 | | http://cannabiscoin.net
-Pakcoin | Yes | Scrypt | | https://www.pakcoin.io
 Flocoin | Yes | Scrypt | | https://www.flo.cash
-Namecoin | Yes | sha256 | | https://namecoin.org
-Viacoin | Yes | Scrypt | | https://viacoin.org
-Peercoin | Yes | sha256 | | https://peercoin.net
-Straks | Yes | Lyra2Rev2 | | https://straks.tech
-Electroneum | Yes | Cryptonight | | https://electroneum.com
-MoonCoin | Yes | Scrypt | | http://mooncoin.com
-Ravencoin | Yes | X16r | | https://ravencoin.org 
-Pigeoncoin | Yes | X16s | | https://pigeoncoin.org
-Actinium | Yes | lyra2z | | https://actinium.io
-CrowdCoin | Yes | Neoscrypt | | https://crowdcoin.site
-Help The Homeless | Yes | X16r | | https://hthcoin.world
 Gincoin | Yes | lyra2z | | https://gincoin.io
+Globaltoken | Yes | sha256 | Requires [GLT Daemon](https://globaltoken.org/#downloads) | http://globaltoken.org
+GoByte | Yes | Neoscrypt | | https://gobyte.network
+Groestlcoin | Yes | Groestl | | http://www.groestlcoin.org
+Help The Homeless | Yes | X16r | | https://hthcoin.world
+Horizen | Yes | Equihash | | https://horizen.global
+Monacoin | Yes | Lyra2Rev2 | | http://monacoin.org
+Monero | Yes | Cryptonight | | https://getmonero.org
+MoonCoin | Yes | Scrypt | | http://mooncoin.com
+Namecoin | Yes | sha256 | | https://namecoin.org
+Pakcoin | Yes | Scrypt | | https://www.pakcoin.io
+Peercoin | Yes | sha256 | | https://peercoin.net
+Pigeoncoin | Yes | X16s | | https://pigeoncoin.org
+Ravencoin | Yes | X16r | | https://ravencoin.org 
 REDEN | Yes | X16s | | https://www.reden.io
+Straks | Yes | Lyra2Rev2 | | https://straks.tech
+Vertcoin | Yes | Lyra2Rev2 | | http://vertcoin.org
+Viacoin | Yes | Scrypt | | https://viacoin.org
+Zcash | Yes | Equihash | | https://z.cash
+ZClassic | Yes | Equihash | | http://zclassic.org
+
 
 #### Ethereum
 
