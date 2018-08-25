@@ -50,38 +50,38 @@ DigestReverser(vergeblockhasher) | Yes | Yes |
 
 ### Coins
 
-Coin | Implemented | Tested | Planned | Notes
-:--- | :---: | :---: | :---: | :---:
-Bitcoin | Yes | Yes | |
-Litecoin | Yes | Yes | |
-Zcash | Yes | Yes | |
-Monero | Yes | Yes | |
-Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Expanse | Yes | Yes | | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases)
-DASH | Yes | Yes | |
-Bitcoin Gold | Yes | Yes | |
-Bitcoin Cash | Yes | Yes | |
-Vertcoin | Yes | Yes | |
-Monacoin | Yes | Yes | |
-Globaltoken | Yes | Yes | | Requires [GLT Daemon](https://globaltoken.org/#downloads)
-Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Groestlcoin | Yes | Yes | |
-Dogecoin | Yes | No | |
-DigiByte | Yes | Yes | |
-Namecoin | Yes | No | |
-Viacoin | Yes | No | |
-Peercoin | Yes | No | |
-Straks | Yes | Yes | |
-Electroneum | Yes | Yes | |
-MoonCoin | Yes | Yes | |
-Ravencoin | Yes | Yes | |
-Pigeoncoin | Yes | No | |
-Actinium | Yes | Yes | |
-CrowdCoin | Yes | No | |
-Help The Homeless | Yes | Yes | |
-Gincoin | Yes | Yes | |
-Glorium | Yes | Yes | |
+Coin | Implemented | Tested | Planned | Notes | Website
+:--- | :---: | :---: | :---: | :---: | :---:
+Bitcoin | Yes | Yes | | |
+Litecoin | Yes | Yes | | |
+Zcash | Yes | Yes | | |
+Monero | Yes | Yes | | |
+Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
+Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
+Expanse | Yes | Yes | | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases) |
+DASH | Yes | Yes | | |
+Bitcoin Gold | Yes | Yes | | |
+Bitcoin Cash | Yes | Yes | | |
+Vertcoin | Yes | Yes | | |
+Monacoin | Yes | Yes | | |
+Globaltoken | Yes | Yes | | Requires [GLT Daemon](https://globaltoken.org/#downloads) |
+Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
+Groestlcoin | Yes | Yes | | | 
+Dogecoin | Yes | No | | |
+DigiByte | Yes | Yes | | |
+Namecoin | Yes | No | | |
+Viacoin | Yes | No | | |
+Peercoin | Yes | No | | |
+Straks | Yes | Yes | | |
+Electroneum | Yes | Yes | | |
+MoonCoin | Yes | Yes | | |
+Ravencoin | Yes | Yes | | | https://ravencoin.org 
+Pigeoncoin | Yes | No | | |
+Actinium | Yes | Yes | | |
+CrowdCoin | Yes | No | | |
+Help The Homeless | Yes | Yes | | |
+Gincoin | Yes | Yes | | |
+REDEN | Yes | Yes | | | https://www.reden.io
 
 #### Ethereum
 
