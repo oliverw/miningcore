@@ -152,11 +152,11 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.RVN, x16rCoin },
             { CoinType.PGN, x16sCoin },
             { CoinType.HTH, x16rCoin },
+            { CoinType.REDN, x16sCoin },
 
             // Lyra2Z
             { CoinType.ACM, lyra2zCoin },
-            { CoinType.GIN, lyra2zCoin },
-            { CoinType.GLO, lyra2zCoin },
+            { CoinType.GIN, lyra2zCoin },            
         };
 
         public static BitcoinCoinProperties GetCoinProperties(CoinType coin, string algorithm = null)
