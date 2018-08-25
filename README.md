@@ -88,6 +88,7 @@ Ravencoin | Yes | X16r | | https://ravencoin.org
 REDEN | Yes | X16s | | https://www.reden.io
 Straks | Yes | Lyra2Rev2 | | https://straks.tech
 Vertcoin | Yes | Lyra2Rev2 | | http://vertcoin.org
+Verge | Yes | X17, Blake2s, Lyra2Rev2, Myriad-Groestl, Scrypt | | https://vergecurrency.com
 Viacoin | Yes | Scrypt | | https://viacoin.org
 Zcash | Yes | Equihash | | https://z.cash
 ZClassic | Yes | Equihash | | http://zclassic.org
