@@ -50,38 +50,45 @@ DigestReverser(vergeblockhasher) | Yes | Yes |
 
 ### Coins
 
-Coin | Implemented | Tested | Planned | Notes | Website
+Coin | Implemented | Algorithm | Notes | Website
 :--- | :---: | :---: | :---: | :---: | :---:
-Bitcoin | Yes | Yes | | |
-Litecoin | Yes | Yes | | |
-Zcash | Yes | Yes | | |
-Monero | Yes | Yes | | |
-Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
-Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
-Expanse | Yes | Yes | | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases) |
-DASH | Yes | Yes | | |
-Bitcoin Gold | Yes | Yes | | |
-Bitcoin Cash | Yes | Yes | | |
-Vertcoin | Yes | Yes | | |
-Monacoin | Yes | Yes | | |
-Globaltoken | Yes | Yes | | Requires [GLT Daemon](https://globaltoken.org/#downloads) |
-Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases) |
-Groestlcoin | Yes | Yes | | | 
-Dogecoin | Yes | No | | |
-DigiByte | Yes | Yes | | |
-Namecoin | Yes | No | | |
-Viacoin | Yes | No | | |
-Peercoin | Yes | No | | |
-Straks | Yes | Yes | | |
-Electroneum | Yes | Yes | | |
-MoonCoin | Yes | Yes | | |
-Ravencoin | Yes | Yes | | | https://ravencoin.org 
-Pigeoncoin | Yes | No | | |
-Actinium | Yes | Yes | | |
-CrowdCoin | Yes | No | | |
-Help The Homeless | Yes | Yes | | |
-Gincoin | Yes | Yes | | |
-REDEN | Yes | Yes | | | https://www.reden.io
+Bitcoin | Yes | sha256 | | https://bitcoin.org
+Litecoin | Yes | Scrypt | | https://litecoin.com
+Zcash | Yes | Equihash | | https://z.cash
+Monero | Yes | Cryptonight | | https://getmonero.org
+Ethereum | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://www.ethereum.org
+Ethereum Classic | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ethereumclassic.org
+Expanse | Yes | Ethash | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases) | http://www.expanse.tech
+DASH | Yes | X11 | | https://www.dash.org
+Bitcoin Gold | Yes | Equihash | | https://bitcoingold.org
+Bitcoin Cash | Yes | sha256 | | https://www.bitcoincash.org
+Vertcoin | Yes | Lyra2Rev2 | | http://vertcoin.org
+Monacoin | Yes | Lyra2Rev2 | | http://monacoin.org
+Globaltoken | Yes | sha256 | Requires [GLT Daemon](https://globaltoken.org/#downloads) | http://globaltoken.org
+Ellaism | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ellaism.org
+Groestlcoin | Yes | Groestl | | http://www.groestlcoin.org
+Dogecoin | Yes | Scrypt | | http://dogecoin.com
+DigiByte | Yes | Groestl, Scrypt, skein, sha256, qubit | | http://www.digibyte.io
+GoByte | Yes | Neoscrypt | | https://gobyte.network
+Bitcoin Private | Yes | Equihash | | https://btcprvate.org/
+Horizen | Yes | Equihash | | https://horizen.global
+ZClassic | Yes | Equihash | | http://zclassic.org
+CannabisCoin | Yes | X11 | | http://cannabiscoin.net
+Pakcoin | Yes | Scrypt | | https://www.pakcoin.io
+Flocoin | Yes | Scrypt | | https://www.flo.cash
+Namecoin | Yes | sha256 | | https://namecoin.org
+Viacoin | Yes | Scrypt | | https://viacoin.org
+Peercoin | Yes | sha256 | | https://peercoin.net
+Straks | Yes | Lyra2Rev2 | | https://straks.tech
+Electroneum | Yes | Cryptonight | | https://electroneum.com
+MoonCoin | Yes | Scrypt | | http://mooncoin.com
+Ravencoin | Yes | X16r | | https://ravencoin.org 
+Pigeoncoin | Yes | X16s | | https://pigeoncoin.org
+Actinium | Yes | lyra2z | | https://actinium.io
+CrowdCoin | Yes | Neoscrypt | | https://crowdcoin.site
+Help The Homeless | Yes | X16r | | https://hthcoin.world
+Gincoin | Yes | lyra2z | | https://gincoin.io
+REDEN | Yes | X16s | | https://www.reden.io
 
 #### Ethereum
 
