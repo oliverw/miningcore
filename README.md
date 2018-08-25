@@ -51,7 +51,7 @@ DigestReverser(vergeblockhasher) | Yes | Yes |
 ### Coins
 
 Coin | Implemented | Algorithm | Notes | Website
-:--- | :---: | :---: | :---: | :---: | :---:
+:--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | sha256 | | https://bitcoin.org
 Litecoin | Yes | Scrypt | | https://litecoin.com
 Zcash | Yes | Equihash | | https://z.cash
