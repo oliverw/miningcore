@@ -19,24 +19,23 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.HelptheHomeless.DaemonResponses;
+using MiningCore.Configuration;
 using NBitcoin;
-using NBitcoin.DataEncoders;
-using Newtonsoft.Json.Linq;
 
-namespace MiningCore.Blockchain.HelptheHomeless
+namespace MiningCore.Blockchain.HelpTheHomeless
 {
-    public class HelptheHomelessJob : BitcoinJob<HelptheHomelessBlockTemplate>
+    public class HelpTheHomelessJob : BitcoinJob<DaemonResponses.HelpTheHomelessBlockTemplate>
     {
         protected override Transaction CreateOutputTransaction()
         {
-            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            var blockReward = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = new Transaction();
-            rewardToPool = CreateHelptheHomelessOutputs(tx, blockReward);
+            rewardToPool = CreateHelpTheHomelessOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
@@ -46,29 +45,41 @@ namespace MiningCore.Blockchain.HelptheHomeless
 
             return tx;
         }
-        private bool ShouldHandleMasternodePayment()
-        {
-            return BlockTemplate.MasternodePaymentsStarted &&
-            BlockTemplate.MasternodePaymentsEnforced &&
-            !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
-        }
 
-        private Money CreateHelptheHomelessOutputs(Transaction tx, Money reward)
+        private Money CreateHelpTheHomelessOutputs(Transaction tx, Money reward)
         {
-            var treasuryRewardAddress = GetTreasuryRewardAddress();
-
-            if (reward > 0 && treasuryRewardAddress != null)
+            if (BlockTemplate.Masternode != null && BlockTemplate.SuperBlocks != null)
             {
-                var destination = TreasuryAddressToScriptDestination(treasuryRewardAddress);
-                var treasuryReward = new Money(BlockTemplate.CoinbaseTx.TreasuryReward, MoneyUnit.Satoshi);
-                tx.AddOutput(treasuryReward, destination);
-                reward -= treasuryReward;
+                if (!string.IsNullOrEmpty(BlockTemplate.Masternode.Payee))
+                {
+                    var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Masternode.Payee);
+                    var payeeReward = BlockTemplate.Masternode.Amount;
+
+                    reward -= payeeReward;
+                    rewardToPool -= payeeReward;
+
+                    tx.AddOutput(payeeReward, payeeAddress);
+                }
+
+                else if (BlockTemplate.SuperBlocks.Length > 0)
+                {
+                    foreach(var superBlock in BlockTemplate.SuperBlocks)
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
+                        var payeeReward = superBlock.Amount;
+
+                        reward -= payeeReward;
+                        rewardToPool -= payeeReward;
+
+                        tx.AddOutput(payeeReward, payeeAddress);
+                    }
+                }
             }
 
-            if (ShouldHandleMasternodePayment())
+            if (!string.IsNullOrEmpty(BlockTemplate.Payee))
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(BlockTemplate.Payee);
-                var payeeReward = BlockTemplate.PayeeAmount.Value;
+                var payeeReward = BlockTemplate.PayeeAmount ?? (reward / 5);
 
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
@@ -77,28 +88,6 @@ namespace MiningCore.Blockchain.HelptheHomeless
             }
 
             return reward;
-        }
-
-        public string GetTreasuryRewardAddress()
-        {
-            if (poolConfig.Extra != null && poolConfig.Extra.ContainsKey("treasuryAddresses"))
-            {
-                var addresses = poolConfig.Extra["treasuryAddresses"] as JArray;
-                if (addresses.Count > 0)
-                {
-                    var index = Convert.ToInt32(BlockTemplate.Height % addresses.Count);
-                    return addresses[index].ToObject<string>();
-                }
-            }
-            return null;
-        }
-
-        public static IDestination TreasuryAddressToScriptDestination(string address)
-        {
-            var decoded = Encoders.Base58.DecodeData(address);
-            var hash = decoded.Skip(1).Take(20).ToArray();
-            var result = new ScriptId(hash);
-            return result;
         }
     }
 }

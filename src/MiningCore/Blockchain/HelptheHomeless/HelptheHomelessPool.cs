@@ -21,7 +21,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.HelptheHomeless.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Messaging;
 using MiningCore.Notifications;
@@ -30,12 +29,12 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.HelptheHomeless
+namespace MiningCore.Blockchain.HelpTheHomeless
 {
     [CoinMetadata(CoinType.HTH)]
-    public class HelptheHomelessPool : BitcoinPoolBase<HelptheHomelessJob, HelptheHomelessBlockTemplate>
+    public class HelpTheHomelessPool : BitcoinPoolBase<HelpTheHomelessJob, DaemonResponses.HelpTheHomelessBlockTemplate>
     {
-        public HelptheHomelessPool(IComponentContext ctx,
+        public HelpTheHomelessPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,

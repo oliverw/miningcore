@@ -33,8 +33,8 @@ using MiningCore.Blockchain.Flo;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.Straks;
 using MiningCore.Blockchain.Straks.DaemonResponses;
-using MiningCore.Blockchain.HelptheHomeless;
-using MiningCore.Blockchain.HelptheHomeless.DaemonResponses;
+using MiningCore.Blockchain.HelpTheHomeless;
+using MiningCore.Blockchain.HelpTheHomeless.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -134,7 +134,7 @@ namespace MiningCore
             builder.RegisterType<BitcoinJobManager<StraksJob, StraksBlockTemplate>>()
                 .AsSelf();
 
-            builder.RegisterType<BitcoinJobManager<HelptheHomelessJob, HelptheHomelessBlockTemplate>>()
+            builder.RegisterType<BitcoinJobManager<HelpTheHomelessJob, HelpTheHomelessBlockTemplate>>()
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()
