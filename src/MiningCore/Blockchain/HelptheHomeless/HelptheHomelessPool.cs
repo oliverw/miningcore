@@ -31,7 +31,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.HelpTheHomeless
 {
-    [CoinMetadata(CoinType.HTH)]
+    [CoinMetadata(CoinType.HTH, CoinType.REDN)]
     public class HelpTheHomelessPool : BitcoinPoolBase<HelpTheHomelessJob, DaemonResponses.HelpTheHomelessBlockTemplate>
     {
         public HelpTheHomelessPool(IComponentContext ctx,

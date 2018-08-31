@@ -36,7 +36,7 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.HelpTheHomeless
 {
-    [CoinMetadata(CoinType.HTH)]
+    [CoinMetadata(CoinType.HTH, CoinType.REDN)]
     public class HelpTheHomelessPayoutHandler : BitcoinPayoutHandler
     {
         public HelpTheHomelessPayoutHandler(
