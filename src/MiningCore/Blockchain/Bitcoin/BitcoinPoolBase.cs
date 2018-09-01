@@ -404,7 +404,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
                 result *= 2.55;
 
-	        if ((poolConfig.Coin.Algorithm.ToLower() == "scrypt"))
+	        if (poolConfig?.Coin?.Algorithm?.ToLower() == "scrypt")
 		        result *= 1.5;
 
 			return result;
