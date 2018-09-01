@@ -20,9 +20,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -159,41 +161,28 @@ namespace MiningCore.Blockchain.Ethereum
         {
             logger.LogInvoke(LogCat);
 
-            var commands = new[]
+	        var response = await daemon.ExecuteCmdAnyAsync<JToken>(EC.GetWork);
+
+			if (response.Error != null)
             {
-                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
-                new DaemonCmd(EC.GetWork),
-            };
-
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
-
-            if (results.Any(x => x.Error != null))
-            {
-                var errors = results.Where(x => x.Error != null)
-                    .ToArray();
-
-                if (errors.Any())
-                {
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {string.Join(", ", errors.Select(y => y.Error.Message))})");
-                    return null;
-                }
+	            logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {response.Error})");
+	            return null;
             }
 
-            else if (results.Any(x => x.Response == null))
+            if (response.Response == null)
             {
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {commands[results.ToList().IndexOf(results.First(x=> x.Response == null))].Method} returned null response");
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {EC.GetWork} returned null response");
                 return null;
             }
 
             // extract results
-            var block = results[0].Response.ToObject<Block>();
-            var work = results[1].Response.ToObject<string[]>();
-            var result = AssembleBlockTemplate(block, work);
+            var work = response.Response.ToObject<string[]>();
+            var result = AssembleBlockTemplate(work);
 
             return result;
         }
 
-        private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
+        private EthereumBlockTemplate AssembleBlockTemplate(string[] work)
         {
             // only parity returns the 4th element (block height)
             if (work.Length < 4)
@@ -202,17 +191,18 @@ namespace MiningCore.Blockchain.Ethereum
                 return null;
             }
 
-            // make sure block matches work
+            // extract values
             var height = work[3].IntegralFromHex<ulong>();
+	        var targetString = work[2];
+	        var target = BigInteger.Parse(targetString.Substring(2), NumberStyles.HexNumber);
 
-            var result = new EthereumBlockTemplate
+			var result = new EthereumBlockTemplate
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = work[2],
-                Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
+                Target = targetString,
+                Difficulty = (ulong) BigInteger.Divide(EthereumConstants.BigMaxValue, target),
                 Height = height,
-                ParentHash = block.ParentHash,
             };
 
             return result;
@@ -635,24 +625,6 @@ namespace MiningCore.Blockchain.Ethereum
 
                 logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
 
-                // stream pending blocks
-                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object)true } })
-                    .Select(data =>
-                    {
-                        try
-                        {
-                            var psp = DeserializeRequest(data).ParamsAs<PubSubParams<Block>>();
-                            return psp?.Result;
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
-                        }
-
-                        return null;
-                    });
-
                 // stream work updates
                 var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
@@ -671,10 +643,8 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                Jobs = Observable.CombineLatest(
-                        pendingBlockObs.Where(x => x != null),
-                        getWorkObs.Where(x => x != null),
-                        AssembleBlockTemplate)
+                Jobs = getWorkObs.Where(x => x != null)
+					.Select(AssembleBlockTemplate)
                     .Select(UpdateJob)
                     .Do(isNew =>
                     {

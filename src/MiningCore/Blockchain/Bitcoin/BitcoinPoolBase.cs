@@ -381,7 +381,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 case BitcoinStratumMethods.MiningMultiVersion:
                     // ignored
                     break;
-                
+
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 

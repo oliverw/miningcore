@@ -112,7 +112,7 @@ namespace MiningCore.Blockchain.Ethereum
                 UserAgent = context.UserAgent,
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
-                BlockHash = mixDigest.ToHexString(true)     // OW: is this correct?
+                BlockHash = mixDigest.ToHexString(true)
             };
 
             if (share.IsBlockCandidate)
