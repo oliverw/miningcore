@@ -125,7 +125,7 @@ namespace MiningCore.Stratum
 
         public void StopListeners()
         {
-            loopStop.Send();
+            loopStop?.Send();
         }
 
         private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, Loop loop)

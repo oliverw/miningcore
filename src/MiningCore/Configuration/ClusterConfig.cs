@@ -63,6 +63,7 @@ namespace MiningCore.Configuration
         CANN, // CannabisCoin
         RVN,  // Ravencoin
         PGN,  // Pigeoncoin 
+        UNIT, // Universal Currency
     }
 
     public class CoinConfig

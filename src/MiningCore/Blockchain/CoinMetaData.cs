@@ -56,11 +56,12 @@ namespace MiningCore.Blockchain
             { CoinType.STAK, new Dictionary<string, string> { { string.Empty, $"https://straks.info/block/{BlockHeightPH}" }}},
             { CoinType.MOON, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/moon/block.dws?{BlockHeightPH}.htm" }}},
             { CoinType.XVG, new Dictionary<string, string> { { string.Empty, $"https://verge-blockchain.info/block/{BlockHashPH}" } }},
-            { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } }},
-            { CoinType.FLO, new Dictionary<string, string> { { string.Empty, "https://florincoin.info/block/{0}" } }},
+            { CoinType.PAK, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } }},
+            { CoinType.FLO, new Dictionary<string, string> { { string.Empty, $"https://florincoin.info/block/{0}" } }},
             { CoinType.CANN, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/cann/block.dws?{BlockHeightPH}.htm" }}},
             { CoinType.RVN, new Dictionary<string, string> { { string.Empty, $"http://explorer.threeeyed.info/block/{BlockHashPH}" }}},
             { CoinType.PGN, new Dictionary<string, string> { { string.Empty, $"http://explorer.pigeoncoin.org/block/{BlockHashPH}" }}},
+            { CoinType.UNIT, new Dictionary<string, string> { { string.Empty, $"https://explorer.u-currency.com/block/{BlockHashPH}" }}},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -100,6 +101,7 @@ namespace MiningCore.Blockchain
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm" },
             { CoinType.RVN, "http://explorer.threeeyed.info/tx/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/tx/{0}" },
+            { CoinType.UNIT, "https://explorer.u-currency.com/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -136,6 +138,7 @@ namespace MiningCore.Blockchain
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/address.dws?{0}.htm" },
             { CoinType.RVN, "http://explorer.threeeyed.info/address/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/address/{0}" },
+            { CoinType.UNIT, "https://explorer.u-currency.com/addr/{0}" },
         };
 
         private const string Ethash = "Ethash";
@@ -179,6 +182,7 @@ namespace MiningCore.Blockchain
             { CoinType.CANN, BitcoinProperties.GetAlgorithm },
             { CoinType.RVN, BitcoinProperties.GetAlgorithm },
             { CoinType.PGN, BitcoinProperties.GetAlgorithm },
+            { CoinType.UNIT, BitcoinProperties.GetAlgorithm },
         };
     }
 }

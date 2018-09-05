@@ -58,7 +58,7 @@ namespace MiningCore.Mining
 
         private void StartListeners()
         {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
+            var stratumsByUrl = clusterConfig.Pools.Where(x => x.Enabled && x.ExternalStratums?.Any() == true)
                 .SelectMany(x => x.ExternalStratums)
                 .Where(x => x.Url != null && x.Topic != null)
                 .GroupBy(x =>
