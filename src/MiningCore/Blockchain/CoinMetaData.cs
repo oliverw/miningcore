@@ -64,7 +64,7 @@ namespace MiningCore.Blockchain
             { CoinType.ACM, new Dictionary<string, string> { { string.Empty, $"https://explorer2.actinium.org/block/{BlockHashPH}" }}},
             { CoinType.HTH, new Dictionary<string, string> { { string.Empty, $"https://explorer.hthcoin.world/block/{BlockHashPH}" }}},
             { CoinType.GIN, new Dictionary<string, string> { { string.Empty, $"https://explorer.gincoin.io/block/{BlockHashPH}" }}},
-            { CoinType.REDN, new Dictionary<string, string> { { string.Empty, $"https://explorer.redenio/block/{BlockHashPH}" }}},
+            { CoinType.REDN, new Dictionary<string, string> { { string.Empty, $"http://explorer.reden.io/block/{BlockHashPH}" }}},
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
