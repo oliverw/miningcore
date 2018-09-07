@@ -190,7 +190,7 @@ namespace MiningCore.Mining
 
                     if (newDiff != null)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
+                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
 
                         OnVarDiffUpdate(client, newDiff.Value);
                     }
