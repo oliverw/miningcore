@@ -393,7 +393,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (poolConfig.Coin.Type == CoinType.MONA || poolConfig.Coin.Type == CoinType.VTC ||
                 poolConfig.Coin.Type == CoinType.STAK ||
                 (poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "lyra"))
-                result *= 4;
+                result *= 2;
 
             if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
                 result *= 2.55;
