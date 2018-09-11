@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Monero.StratumRequests;
 using MiningCore.Blockchain.Monero.StratumResponses;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
@@ -51,8 +52,9 @@ namespace MiningCore.Blockchain.Monero
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, notificationService)
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
         {
         }
 
@@ -245,7 +247,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // success
                 client.Respond(new MoneroResponseBase(), request.Id);
-				shareSubject.OnNext(new ClientShare(client, share));
+                messageBus.SendMessage(new ClientShare(client, share));
 
 				logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -306,19 +308,19 @@ namespace MiningCore.Blockchain.Monero
 
         #region Overrides
 
-        protected override async Task SetupJobManager()
+        protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<MoneroJobManager>();
             manager.Configure(poolConfig, clusterConfig);
 
-            await manager.StartAsync();
+            await manager.StartAsync(ct);
 
             if (poolConfig.EnableInternalStratum == true)
 	        {
 		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
 		        // we need work before opening the gates
-		        await manager.Blocks.Take(1).ToTask();
+		        await manager.Blocks.Take(1).ToTask(ct);
 	        }
         }
 

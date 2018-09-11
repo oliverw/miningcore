@@ -63,7 +63,9 @@ namespace MiningCore.Blockchain.Ethereum
             // assemble full-nonce
             var context = worker.GetContextAs<EthereumWorkerContext>();
             var fullNonceHex = context.ExtraNonce1 + nonce;
-            var fullNonce = ulong.Parse(fullNonceHex, NumberStyles.HexNumber);
+
+            if (!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
+                throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
             // get dag for block
             var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger);

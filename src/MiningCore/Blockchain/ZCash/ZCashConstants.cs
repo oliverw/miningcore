@@ -266,7 +266,7 @@ namespace MiningCore.Blockchain.ZCash
 
                     TreasuryRewardAddresses = new[]
                     {
-                        "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1"
+                        "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1", "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1", "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1", "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1"
                     }
                 }
             },

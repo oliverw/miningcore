@@ -36,6 +36,7 @@ using MiningCore.Blockchain.Straks.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Messaging;
 using MiningCore.Mining;
 using MiningCore.Notifications;
 using MiningCore.Payments;
@@ -65,6 +66,10 @@ namespace MiningCore
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
+            builder.RegisterType<MessageBus>()
+                .AsImplementedInterfaces()
+                .SingleInstance();
+
             builder.RegisterType<PayoutManager>()
                 .AsSelf()
                 .SingleInstance();
@@ -78,6 +83,9 @@ namespace MiningCore
                 .SingleInstance();
 
             builder.RegisterType<ShareRecorder>()
+                .SingleInstance();
+
+            builder.RegisterType<ShareReceiver>()
                 .SingleInstance();
 
             builder.RegisterType<ShareRelay>()

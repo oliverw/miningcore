@@ -27,6 +27,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -34,6 +35,7 @@ using MiningCore.Banning;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -56,6 +58,7 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
+            IMessageBus messageBus,
             NotificationService notificationService) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -63,16 +66,16 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
             Contract.RequiresNonNull(mapper, nameof(mapper));
+            Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
+            this.messageBus = messageBus;
             this.notificationService = notificationService;
-
-            Shares = shareSubject
-                .Synchronize();
         }
 
         protected PoolStats poolStats = new PoolStats();
@@ -81,12 +84,12 @@ namespace MiningCore.Mining
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
+        protected readonly IMessageBus messageBus;
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
         protected const int VarDiffSampleCount = 32;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
-        protected readonly Subject<ClientShare> shareSubject = new Subject<ClientShare>();
         protected static readonly Regex regexStaticDiff = new Regex(@"d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
@@ -95,7 +98,7 @@ namespace MiningCore.Mining
 
         protected override string LogCat => "Pool";
 
-        protected abstract Task SetupJobManager();
+        protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
 
         protected double? GetStaticDiffFromPassparts(string[] parts)
@@ -205,10 +208,11 @@ namespace MiningCore.Mining
             // Diff may not be changed , only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
             var interval = poolEndpoint.VarDiff.TargetTime;
+            var shareReceivedFromClient = messageBus.Listen<ClientShare>().Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
 
             Observable
                 .Timer(TimeSpan.FromSeconds(interval))
-                .TakeUntil(Shares.Where(x=> x.Client == client))
+                .TakeUntil(shareReceivedFromClient)
                 .Take(1)
                 .Where(x=> client.IsAlive)
                 .Subscribe(_ => UpdateVarDiff(client, true));
@@ -289,13 +293,13 @@ namespace MiningCore.Mining
             }
         }
 
-        private IPEndPoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
+        private (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
         {
             var listenAddress = IPAddress.Parse("127.0.0.1");
             if (!string.IsNullOrEmpty(pep.ListenAddress))
                 listenAddress = pep.ListenAddress != "*" ? IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
 
-            return new IPEndPoint(listenAddress, port);
+            return (new IPEndPoint(listenAddress, port), pep.TcpProxyProtocol);
         }
 
         private void OutputPoolInfo()
@@ -319,7 +323,6 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         #region API-Surface
 
-        public IObservable<ClientShare> Shares { get; }
         public PoolConfig Config => poolConfig;
         public PoolStats PoolStats => poolStats;
         public BlockchainStats NetworkStats => blockchainStats;
@@ -336,7 +339,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         public abstract double HashrateFromShares(double shares, double interval);
 
-        public virtual async Task StartAsync()
+        public virtual async Task StartAsync(CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -345,7 +348,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             try
             {
 	            SetupBanning(clusterConfig);
-	            await SetupJobManager();
+	            await SetupJobManager(ct);
                 InitStats();
 
                 if (poolConfig.EnableInternalStratum == true)
@@ -367,7 +370,13 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 throw;
             }
 
-            catch(Exception ex)
+            catch (TaskCanceledException)
+            {
+                // just forward these
+                throw;
+            }
+
+            catch (Exception ex)
             {
                 logger.Error(ex);
                 throw;
