@@ -176,8 +176,8 @@ namespace MiningCore.Configuration
                 })
                 .WithMessage("Pool: Invalid stratum port number {port}");
 
-            RuleFor(j => j.Ports.Values)
-                .SetCollectionValidator(x => new PoolEndpointValidator())
+            RuleForEach(j => j.Ports.Values)
+                .SetValidator(x => new PoolEndpointValidator())
                 .When(x => x.Ports != null);
 
             RuleFor(j => j.Address)
@@ -190,8 +190,8 @@ namespace MiningCore.Configuration
                 .NotEmpty()
                 .WithMessage("Pool: Daemons missing or empty");
 
-            RuleFor(j => j.Daemons)
-                .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
+	        RuleForEach(j => j.Daemons)
+                .SetValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
         }
     }
 
@@ -248,8 +248,8 @@ namespace MiningCore.Configuration
                 })
                 .WithMessage("Stratum port {port} assigned multiple times");
 
-            RuleFor(j => j.Pools)
-                .SetCollectionValidator(new PoolConfigValidator());
+            RuleForEach(j => j.Pools)
+                .SetValidator(new PoolConfigValidator());
         }
     }
 
