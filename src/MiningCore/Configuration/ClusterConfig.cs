@@ -67,6 +67,7 @@ namespace MiningCore.Configuration
         HTH,  //Help The Homeless
         GIN,  //GINCOIN
         REDN, //REDEN 
+        XMN,  //Motion
     }
 
     public class CoinConfig

@@ -153,6 +153,7 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.PGN, x16sCoin },
             { CoinType.HTH, x16rCoin },
             { CoinType.REDN, x16sCoin },
+            { CoinType.XMN, x16rCoin },
 
             // Lyra2Z
             { CoinType.ACM, lyra2zCoin },

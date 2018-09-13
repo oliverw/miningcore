@@ -79,6 +79,7 @@ Help The Homeless | Yes | X16r | | https://hthcoin.world
 Horizen | Yes | Equihash | | https://horizen.global
 Monacoin | Yes | Lyra2Rev2 | | http://monacoin.org
 Monero | Yes | Cryptonight | | https://getmonero.org
+Motion | Yes | X16r | | https://motionproject.org
 MoonCoin | Yes | Scrypt | | http://mooncoin.com
 Namecoin | Yes | sha256 | | https://namecoin.org
 Pakcoin | Yes | Scrypt | | https://www.pakcoin.io
