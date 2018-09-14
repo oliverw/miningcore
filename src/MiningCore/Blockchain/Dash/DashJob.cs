@@ -35,7 +35,9 @@ namespace MiningCore.Blockchain.Dash
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(NBitcoinNetworkType);
-            rewardToPool = CreateDashOutputs(tx, blockReward);
+
+			// outputs
+			rewardToPool = CreateDashOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
