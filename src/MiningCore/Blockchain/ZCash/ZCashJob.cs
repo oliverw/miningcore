@@ -73,14 +73,14 @@ namespace MiningCore.Blockchain.ZCash
         {
             var tx = chainConfig.CreateCoinbaseTx();
 
-	        if (tx.GetType() == typeof(ZcashTransaction))
-		        overwinterField.SetValue(tx, true);
-
 			// set versions
 	        tx.Version = txVersion;
 
-            if (tx.GetType() == typeof(ZcashTransaction))
+            if (isOverwinterActive)
+            {
                 overwinterField.SetValue(tx, true);
+                versionGroupField.SetValue(tx, txVersionGroupId);
+            }
 
             // calculate outputs
             if (chainConfig.PayFoundersReward &&
@@ -186,7 +186,7 @@ namespace MiningCore.Blockchain.ZCash
             if (isSaplingActive)
             {
                 txVersion = 4;
-                txVersionGroupId = 0x892F2085;
+                txVersionGroupId = 0x892f2085;
             }
 
             else if(isOverwinterActive)
