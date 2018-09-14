@@ -241,7 +241,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // misc
             var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
-                blockTemplate.FinalSaplingRootHash :
+                blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() :
                 sha256Empty.ToHexString();
 
             jobParams = new object[]
@@ -306,7 +306,7 @@ namespace MiningCore.Blockchain.ZCash
             };
 
 	        if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
-		        blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray();
+		        blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray();
 
             return blockHeader.ToBytes();
         }
