@@ -53,8 +53,8 @@ namespace MiningCore.Mining
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-        private const int HashrateCalculationWindow = 1200;  // seconds
-        private const int MinHashrateCalculationWindow = 300;  // seconds
+        private const int HashrateCalculationWindow = 1200; // seconds
+        private const int MinHashrateCalculationWindow = 300; // seconds
         private const double HashrateBoostFactor = 1.07d;
         private ClusterConfig clusterConfig;
         private Thread thread1;

@@ -114,11 +114,11 @@ namespace MiningCore.Stratum
                     logger.Info(() => $"[{LogCat}] Stratum stopped");
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex, $"[{LogCat}] {ex}");
                 }
-            }) { Name = $"UvLoopThread [{id.ToUpper()}]" };
+            }) {Name = $"UvLoopThread [{id.ToUpper()}]"};
 
             thread.Start();
         }
@@ -152,12 +152,12 @@ namespace MiningCore.Stratum
                 var client = new StratumClient();
 
                 client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
-                    data => Task.Run(()=> OnReceive(client, data)),
+                    data => Task.Run(() => OnReceive(client, data)),
                     () => OnReceiveComplete(client),
                     ex => OnReceiveError(client, ex));
 
                 // register client
-                lock(clients)
+                lock (clients)
                 {
                     clients[connectionId] = client;
                 }
@@ -165,7 +165,7 @@ namespace MiningCore.Stratum
                 OnConnect(client);
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => nameof(OnClientConnected));
             }
@@ -262,7 +262,7 @@ namespace MiningCore.Stratum
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 // unregister client
-                lock(clients)
+                lock (clients)
                 {
                     clients.Remove(subscriptionId);
                 }
@@ -275,19 +275,19 @@ namespace MiningCore.Stratum
         {
             StratumClient[] tmp;
 
-            lock(clients)
+            lock (clients)
             {
                 tmp = clients.Values.ToArray();
             }
 
-            foreach(var client in tmp)
+            foreach (var client in tmp)
             {
                 try
                 {
                     action(client);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex);
                 }

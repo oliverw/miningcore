@@ -32,198 +32,198 @@ using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.Monero
 {
-	public class MoneroJob
-	{
-		public MoneroJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-			PoolConfig poolConfig, ClusterConfig clusterConfig)
-		{
-			Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
-			Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
-			Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
-			Contract.RequiresNonNull(instanceId, nameof(instanceId));
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
+    public class MoneroJob
+    {
+        public MoneroJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
+            PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
+            Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+            Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
+            Contract.RequiresNonNull(instanceId, nameof(instanceId));
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-			switch (poolConfig.Coin.Type)
-			{
-				case CoinType.AEON:
-					hashSlow = LibCryptonote.CryptonightHashSlowLite;
-					break;
+            switch (poolConfig.Coin.Type)
+            {
+                case CoinType.AEON:
+                    hashSlow = LibCryptonote.CryptonightHashSlowLite;
+                    break;
 
-			    case CoinType.XMR:
-                    hashSlow = buf=>
+                case CoinType.XMR:
+                    hashSlow = buf =>
                     {
                         // PoW variant
                         var variant = buf[0] >= 7 ? buf[0] - 6 : 0;
 
                         return LibCryptonote.CryptonightHashSlow(buf, variant);
                     };
-			        break;
+                    break;
 
                 default:
-					hashSlow = buf => LibCryptonote.CryptonightHashSlow(buf, 0);
-					break;
-			}
+                    hashSlow = buf => LibCryptonote.CryptonightHashSlow(buf, 0);
+                    break;
+            }
 
-			BlockTemplate = blockTemplate;
-			PrepareBlobTemplate(instanceId);
-		}
+            BlockTemplate = blockTemplate;
+            PrepareBlobTemplate(instanceId);
+        }
 
-		private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
+        private readonly Func<byte[], PooledArraySegment<byte>> hashSlow;
 
-		private byte[] blobTemplate;
-		private uint extraNonce;
+        private byte[] blobTemplate;
+        private uint extraNonce;
 
-		private void PrepareBlobTemplate(byte[] instanceId)
-		{
-			blobTemplate = BlockTemplate.Blob.HexToByteArray();
+        private void PrepareBlobTemplate(byte[] instanceId)
+        {
+            blobTemplate = BlockTemplate.Blob.HexToByteArray();
 
-			// inject instanceId at the end of the reserved area of the blob
-			var destOffset = (int)BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
-			Buffer.BlockCopy(instanceId, 0, blobTemplate, destOffset, 3);
-		}
+            // inject instanceId at the end of the reserved area of the blob
+            var destOffset = (int) BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
+            Buffer.BlockCopy(instanceId, 0, blobTemplate, destOffset, 3);
+        }
 
-		private string EncodeBlob(uint workerExtraNonce)
-		{
-			// clone template
-			using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
-			{
-				Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
+        private string EncodeBlob(uint workerExtraNonce)
+        {
+            // clone template
+            using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
+            {
+                Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
 
-				// inject extranonce (big-endian at the beginning of the reserved area of the blob)
-				var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-				Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int)BlockTemplate.ReservedOffset, extraNonceBytes.Length);
+                // inject extranonce (big-endian at the beginning of the reserved area of the blob)
+                var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
+                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int) BlockTemplate.ReservedOffset, extraNonceBytes.Length);
 
-				var result = LibCryptonote.ConvertBlob(blob.Array, blobTemplate.Length).ToHexString();
-				return result;
-			}
-		}
+                var result = LibCryptonote.ConvertBlob(blob.Array, blobTemplate.Length).ToHexString();
+                return result;
+            }
+        }
 
-		private string EncodeTarget(double difficulty)
-		{
-			var diff = BigInteger.ValueOf((long)(difficulty * 255d));
-			var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
-			var bytes = quotient.ToByteArray();
-			var padded = Enumerable.Repeat((byte)0, 32).ToArray();
+        private string EncodeTarget(double difficulty)
+        {
+            var diff = BigInteger.ValueOf((long) (difficulty * 255d));
+            var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+            var bytes = quotient.ToByteArray();
+            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
 
-			if (padded.Length - bytes.Length > 0)
-				Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+            if (padded.Length - bytes.Length > 0)
+                Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
 
-			var result = new ArraySegment<byte>(padded, 0, 4)
-				.Reverse()
-				.ToHexString();
+            var result = new ArraySegment<byte>(padded, 0, 4)
+                .Reverse()
+                .ToHexString();
 
-			return result;
-		}
+            return result;
+        }
 
-		private PooledArraySegment<byte> ComputeBlockHash(byte[] blobConverted)
-		{
-			// blockhash is computed from the converted blob data prefixed with its length
-			var bytes = new[] { (byte)blobConverted.Length }
-				.Concat(blobConverted)
-				.ToArray();
+        private PooledArraySegment<byte> ComputeBlockHash(byte[] blobConverted)
+        {
+            // blockhash is computed from the converted blob data prefixed with its length
+            var bytes = new[] {(byte) blobConverted.Length}
+                .Concat(blobConverted)
+                .ToArray();
 
-			return LibCryptonote.CryptonightHashFast(bytes);
-		}
+            return LibCryptonote.CryptonightHashFast(bytes);
+        }
 
-		#region API-Surface
+        #region API-Surface
 
-		public GetBlockTemplateResponse BlockTemplate { get; }
+        public GetBlockTemplateResponse BlockTemplate { get; }
 
-		public void Init()
-		{
-		}
+        public void Init()
+        {
+        }
 
-		public void PrepareWorkerJob(MoneroWorkerJob workerJob, out string blob, out string target)
-		{
-			workerJob.Height = BlockTemplate.Height;
-			workerJob.ExtraNonce = ++extraNonce;
+        public void PrepareWorkerJob(MoneroWorkerJob workerJob, out string blob, out string target)
+        {
+            workerJob.Height = BlockTemplate.Height;
+            workerJob.ExtraNonce = ++extraNonce;
 
-			blob = EncodeBlob(workerJob.ExtraNonce);
-			target = EncodeTarget(workerJob.Difficulty);
-		}
+            blob = EncodeBlob(workerJob.ExtraNonce);
+            target = EncodeTarget(workerJob.Difficulty);
+        }
 
-		public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
-		{
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
-			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
-			Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
+        public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
+            Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
 
-			var context = worker.ContextAs<MoneroWorkerContext>();
+            var context = worker.ContextAs<MoneroWorkerContext>();
 
-			// validate nonce
-			if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))
-				throw new StratumException(StratumError.MinusOne, "malformed nonce");
+            // validate nonce
+            if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))
+                throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
-			// clone template
-			using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
-			{
-				Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
+            // clone template
+            using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
+            {
+                Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
 
-				// inject extranonce
-				var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-				Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int)BlockTemplate.ReservedOffset, extraNonceBytes.Length);
+                // inject extranonce
+                var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
+                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int) BlockTemplate.ReservedOffset, extraNonceBytes.Length);
 
-				// inject nonce
-				var nonceBytes = nonce.HexToByteArray();
-				Buffer.BlockCopy(nonceBytes, 0, blob.Array, MoneroConstants.BlobNonceOffset, nonceBytes.Length);
+                // inject nonce
+                var nonceBytes = nonce.HexToByteArray();
+                Buffer.BlockCopy(nonceBytes, 0, blob.Array, MoneroConstants.BlobNonceOffset, nonceBytes.Length);
 
-				// convert
-				var blobConverted = LibCryptonote.ConvertBlob(blob.Array, blobTemplate.Length);
-				if (blobConverted == null)
-					throw new StratumException(StratumError.MinusOne, "malformed blob");
+                // convert
+                var blobConverted = LibCryptonote.ConvertBlob(blob.Array, blobTemplate.Length);
+                if (blobConverted == null)
+                    throw new StratumException(StratumError.MinusOne, "malformed blob");
 
                 // hash it
                 using (var hashSeg = hashSlow(blobConverted))
-				{
-					var hash = hashSeg.ToHexString();
-					if (hash != workerHash)
-						throw new StratumException(StratumError.MinusOne, "bad hash");
+                {
+                    var hash = hashSeg.ToHexString();
+                    if (hash != workerHash)
+                        throw new StratumException(StratumError.MinusOne, "bad hash");
 
-					// check difficulty
-					var headerValue = hashSeg.ToBigInteger();
-					var shareDiff = (double)new BigRational(MoneroConstants.Diff1b, headerValue);
-					var stratumDifficulty = context.Difficulty;
-					var ratio = shareDiff / stratumDifficulty;
-					var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
+                    // check difficulty
+                    var headerValue = hashSeg.ToBigInteger();
+                    var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
+                    var stratumDifficulty = context.Difficulty;
+                    var ratio = shareDiff / stratumDifficulty;
+                    var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
 
-					// test if share meets at least workers current difficulty
-					if (!isBlockCandidate && ratio < 0.99)
-					{
-						// check if share matched the previous difficulty from before a vardiff retarget
-						if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
-						{
-							ratio = shareDiff / context.PreviousDifficulty.Value;
+                    // test if share meets at least workers current difficulty
+                    if (!isBlockCandidate && ratio < 0.99)
+                    {
+                        // check if share matched the previous difficulty from before a vardiff retarget
+                        if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                        {
+                            ratio = shareDiff / context.PreviousDifficulty.Value;
 
-							if (ratio < 0.99)
-								throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                            if (ratio < 0.99)
+                                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
-							// use previous difficulty
-							stratumDifficulty = context.PreviousDifficulty.Value;
-						}
+                            // use previous difficulty
+                            stratumDifficulty = context.PreviousDifficulty.Value;
+                        }
 
-						else
-							throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
-					}
+                        else
+                            throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                    }
 
-					using (var blockHash = ComputeBlockHash(blobConverted))
-					{
-						var result = new Share
-						{
-							BlockHeight = BlockTemplate.Height,
-							IsBlockCandidate = isBlockCandidate,
+                    using (var blockHash = ComputeBlockHash(blobConverted))
+                    {
+                        var result = new Share
+                        {
+                            BlockHeight = BlockTemplate.Height,
+                            IsBlockCandidate = isBlockCandidate,
                             BlockHash = blockHash.ToHexString(),
                             Difficulty = stratumDifficulty,
-						};
+                        };
 
-					    var blobHex = blob.ToHexString();
-					    var blobHash = blockHash.ToHexString();
+                        var blobHex = blob.ToHexString();
+                        var blobHash = blockHash.ToHexString();
 
                         return (result, blobHex, blobHash);
-					}
-				}
-			}
-		}
+                    }
+                }
+            }
+        }
 
-		#endregion // API-Surface
-	}
+        #endregion // API-Surface
+    }
 }

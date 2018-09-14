@@ -131,7 +131,7 @@ namespace MiningCore.Blockchain.Bitcoin
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -160,7 +160,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             // build coinbase final
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -185,19 +185,19 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] SerializeOutputTransaction(Transaction tx)
         {
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
-	            // serialize outputs
-	            var vout = tx.Outputs;
-				bs.ReadWrite<TxOutList, TxOut>(ref vout);
+                // serialize outputs
+                var vout = tx.Outputs;
+                bs.ReadWrite<TxOutList, TxOut>(ref vout);
 
-				// serialize witness (segwit)
-				if (!string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment))
+                // serialize witness (segwit)
+                if (!string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment))
                 {
-	                var witScript = new WitScript(BlockTemplate.DefaultWitnessCommitment);
-	                var raw = witScript.ToBytes();
+                    var witScript = new WitScript(BlockTemplate.DefaultWitnessCommitment);
+                    var raw = witScript.ToBytes();
                     bs.ReadWrite(ref raw);
                 }
 
@@ -246,9 +246,9 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var key = new StringBuilder()
                 .Append(extraNonce1)
-                .Append(extraNonce2.ToLower())  // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(extraNonce2.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .Append(nTime)
-                .Append(nonce.ToLower())        // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
             lock (submissions)
@@ -266,9 +266,9 @@ namespace MiningCore.Blockchain.Bitcoin
             // build merkle-root
             var merkleRoot = mt.WithFirst(coinbaseHash);
 
-            #pragma warning disable 618
+#pragma warning disable 618
             var blockHeader = new BlockHeader
-            #pragma warning restore 618
+#pragma warning restore 618
             {
                 Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
@@ -349,7 +349,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var extraNonce1Bytes = extraNonce1.HexToByteArray();
             var extraNonce2Bytes = extraNonce2.HexToByteArray();
 
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 stream.Write(coinbaseInitial);
                 stream.Write(extraNonce1Bytes);
@@ -365,7 +365,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -376,7 +376,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // POS coins require a zero byte appended to block which the daemon replaces with the signature
                 if (isPoS)
-                    bs.ReadWrite((byte)0);
+                    bs.ReadWrite((byte) 0);
 
                 return stream.ToArray();
             }
@@ -384,9 +384,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] BuildRawTransactionBuffer()
         {
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
-                foreach(var tx in BlockTemplate.Transactions)
+                foreach (var tx in BlockTemplate.Transactions)
                 {
                     var txRaw = tx.Data.HexToByteArray();
                     stream.Write(txRaw);
@@ -437,7 +437,7 @@ namespace MiningCore.Blockchain.Bitcoin
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
 
-            if(!string.IsNullOrEmpty(BlockTemplate.Target))
+            if (!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {

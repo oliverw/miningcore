@@ -81,14 +81,14 @@ namespace MiningCore.Blockchain.Dash
 
                 args = new object[]
                 {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
-                    1,                      // only spend funds covered by this many confirmations
-                    false,                  // Whether to add confirmations to transactions locked via InstantSend
-                    comment,                // tx comment
-                    subtractFeesFrom,       // distribute transaction fee equally over all recipients
-                    false,                  // use_is: Send this transaction as InstantSend
-                    false,                  // Use anonymized funds only
+                    string.Empty, // default account
+                    amounts, // addresses and associated amounts
+                    1, // only spend funds covered by this many confirmations
+                    false, // Whether to add confirmations to transactions locked via InstantSend
+                    comment, // tx comment
+                    subtractFeesFrom, // distribute transaction fee equally over all recipients
+                    false, // use_is: Send this transaction as InstantSend
+                    false, // Use anonymized funds only
                 };
             }
 
@@ -96,8 +96,8 @@ namespace MiningCore.Blockchain.Dash
             {
                 args = new object[]
                 {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
+                    string.Empty, // default account
+                    amounts, // addresses and associated amounts
                 };
             }
 
@@ -126,12 +126,12 @@ namespace MiningCore.Blockchain.Dash
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
             }
 
             else
             {
-                if (result.Error.Code == (int)BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                if (result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
                 {
                     if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                     {
@@ -140,7 +140,7 @@ namespace MiningCore.Blockchain.Dash
                         var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
-                            (object) 5  // unlock for N seconds
+                            (object) 5 // unlock for N seconds
                         });
 
                         if (unlockResult.Error == null)

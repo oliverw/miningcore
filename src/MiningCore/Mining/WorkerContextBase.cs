@@ -68,7 +68,7 @@ namespace MiningCore.Mining
             Stats = new ShareStats();
 
             if (varDiffConfig != null)
-                VarDiff = new VarDiffContext { Config = varDiffConfig };
+                VarDiff = new VarDiffContext {Config = varDiffConfig};
         }
 
         public void EnqueueNewDifficulty(double difficulty)

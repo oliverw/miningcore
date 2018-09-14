@@ -21,8 +21,8 @@ namespace MiningCore.Blockchain.BitcoinGold
             {
                 new
                 {
-                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
-                    rules = new[] { "segwit" }
+                    capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
+                    rules = new[] {"segwit"}
                 }
             };
         }

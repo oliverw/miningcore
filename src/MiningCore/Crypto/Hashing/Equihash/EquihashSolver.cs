@@ -36,7 +36,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
             get => maxThreads;
             set
             {
-                if(sem.IsValueCreated)
+                if (sem.IsValueCreated)
                     throw new InvalidOperationException("Too late: semaphore already created");
 
                 maxThreads = value;

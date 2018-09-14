@@ -33,9 +33,10 @@ namespace MiningCore.Blockchain.Flo
     public class FloJob : BitcoinJob<BlockTemplate>
     {
         protected new static uint txVersion = 2u;
-        protected byte[] txFloDataBytes = {};
+        protected byte[] txFloDataBytes = { };
 
         protected string _txFloData;
+
         public string txFloData
         {
             get => _txFloData;
@@ -47,8 +48,8 @@ namespace MiningCore.Blockchain.Flo
         }
 
         protected override void BuildCoinbase()
-        {            
-             var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
+        {
+            var extraNoncePlaceHolderLengthByte = (byte) extraNoncePlaceHolderLength;
 
             // generate script parts
             var sigScriptInitial = GenerateScriptSigInitial();
@@ -64,7 +65,7 @@ namespace MiningCore.Blockchain.Flo
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -96,7 +97,7 @@ namespace MiningCore.Blockchain.Flo
             }
 
             // build coinbase final
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -123,7 +124,7 @@ namespace MiningCore.Blockchain.Flo
                 coinbaseFinalHex = coinbaseFinal.ToHexString();
             }
         }
-        
+
         public virtual void Init(BlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,

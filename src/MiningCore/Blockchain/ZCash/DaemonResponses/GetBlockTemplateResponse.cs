@@ -49,7 +49,7 @@ namespace MiningCore.Blockchain.ZCash.DaemonResponses
 
         public ZCashBlockSubsidy Subsidy { get; set; }
 
-	    [JsonProperty("finalsaplingroothash")]
-		public string FinalSaplingRootHash { get; set; }
-	}
+        [JsonProperty("finalsaplingroothash")]
+        public string FinalSaplingRootHash { get; set; }
+    }
 }

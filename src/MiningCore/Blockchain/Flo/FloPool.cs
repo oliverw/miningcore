@@ -58,7 +58,6 @@ namespace MiningCore.Blockchain.Flo
 
             if (string.IsNullOrEmpty(extraConfig?.FloData))
                 logger.ThrowLogPoolStartupException("Pool coinbase FloData is not configured", LogCat);
-
         }
 
         protected override BitcoinJobManager<FloJob, BlockTemplate> CreateJobManager()

@@ -25,13 +25,16 @@ namespace MiningCore.Blockchain.Straks.DaemonResponses
     public class StraksCoinbaseTransaction
     {
         public string Data { get; set; }
+
         public string Hash { get; set; }
+
         //public string Txid { get; set; }
         public decimal Fee { get; set; }
         public int SigOps { get; set; }
 
         [JsonProperty("treasuryreward")]
         public ulong TreasuryReward { get; set; }
+
         public bool Required { get; set; }
 
         // "depends":[ ],
@@ -39,8 +42,6 @@ namespace MiningCore.Blockchain.Straks.DaemonResponses
 
     public class StraksBlockTemplate : Bitcoin.DaemonResponses.BlockTemplate
     {
-
-
         [JsonProperty("coinbasetxn")]
         public StraksCoinbaseTransaction CoinbaseTx { get; set; }
 
@@ -54,6 +55,5 @@ namespace MiningCore.Blockchain.Straks.DaemonResponses
 
         [JsonProperty("enforce_masternode_payments")]
         public bool MasternodePaymentsEnforced { get; set; }
-
     }
 }
