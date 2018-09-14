@@ -305,6 +305,9 @@ namespace MiningCore.Blockchain.ZCash
                 Nonce = nonce
             };
 
+	        if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
+		        blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray();
+
             return blockHeader.ToBytes();
         }
 
