@@ -77,7 +77,7 @@ namespace MiningCore.Blockchain.ZCash
             if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
                 coinbaseTx.TryGetValue(manager.NetworkType, out chainConfig);
 
-            hashrateDivisor = (double)new BigRational(chainConfig.Diff1b,
+            hashrateDivisor = (double) new BigRational(chainConfig.Diff1b,
                 ZCashConstants.Chains[CoinType.ZEC][manager.NetworkType].Diff1b);
         }
 
@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.ZCash
             if (context.IsAuthorized)
             {
                 // send intial update
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
@@ -150,7 +150,7 @@ namespace MiningCore.Blockchain.ZCash
                         context.EnqueueNewDifficulty(newDiff);
                         context.ApplyPendingDifficulty();
 
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
                     }
 
                     else
@@ -170,7 +170,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -225,7 +225,7 @@ namespace MiningCore.Blockchain.ZCash
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (context.ApplyPendingDifficulty())
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
 
                     // send job
                     client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
@@ -253,7 +253,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 context.ApplyPendingDifficulty();
 
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }

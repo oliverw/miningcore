@@ -74,10 +74,10 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new[] {poolId});
 
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
-                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+                        "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return con.Query<Entities.Block>(query, new
                 {
@@ -92,21 +92,21 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
         public Block[] GetPendingBlocksForPool(IDbConnection con, string poolId)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new[] {poolId});
 
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
-            return con.Query<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid = poolId })
+            return con.Query<Entities.Block>(query, new {status = BlockStatus.Pending.ToString().ToLower(), poolid = poolId})
                 .Select(mapper.Map<Block>)
                 .ToArray();
         }
 
         public Block GetBlockBefore(IDbConnection con, string poolId, BlockStatus[] status, DateTime before)
         {
-            logger.LogInvoke(new[] { poolId });
+            logger.LogInvoke(new[] {poolId});
 
             var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
-                "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
+                        "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
 
             return con.Query<Entities.Block>(query, new
                 {

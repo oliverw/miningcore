@@ -63,27 +63,27 @@ namespace MiningCore.Blockchain.ZCash
         protected bool isOverwinterActive = false;
         protected bool isSaplingActive = false;
 
-	    // temporary reflection hack to force overwinter
-		protected static FieldInfo overwinterField = typeof(ZcashTransaction).GetField("fOverwintered", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-	    protected static FieldInfo versionGroupField = typeof(ZcashTransaction).GetField("nVersionGroupId", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+        // temporary reflection hack to force overwinter
+        protected static FieldInfo overwinterField = typeof(ZcashTransaction).GetField("fOverwintered", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+        protected static FieldInfo versionGroupField = typeof(ZcashTransaction).GetField("nVersionGroupId", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 
-		#region Overrides of BitcoinJob<ZCashBlockTemplate>
+        #region Overrides of BitcoinJob<ZCashBlockTemplate>
 
-		protected override Transaction CreateOutputTransaction()
+        protected override Transaction CreateOutputTransaction()
         {
             var tx = chainConfig.CreateCoinbaseTx();
 
-	        if (isOverwinterActive)
-		        overwinterField.SetValue(tx, true);
+            if (isOverwinterActive)
+                overwinterField.SetValue(tx, true);
 
-			// set versions
-	        tx.Version = txVersion;
-	        versionGroupField.SetValue(tx, txVersionGroupId);
+            // set versions
+            tx.Version = txVersion;
+            versionGroupField.SetValue(tx, txVersionGroupId);
 
-			// calculate outputs
-			if (chainConfig.PayFoundersReward &&
+            // calculate outputs
+            if (chainConfig.PayFoundersReward &&
                 (chainConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
-                    chainConfig.TreasuryRewardStartBlockHeight > 0))
+                 chainConfig.TreasuryRewardStartBlockHeight > 0))
             {
                 // founders or treasury reward?
                 if (chainConfig.TreasuryRewardStartBlockHeight > 0 &&
@@ -127,9 +127,9 @@ namespace MiningCore.Blockchain.ZCash
         {
             // output transaction
             txOut = CreateOutputTransaction();
-	        txOut.AddInput(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+            txOut.AddInput(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new ZcashStream(stream, true);
                 bs.ReadWrite(ref txOut);
@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-		public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
+        public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
             bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
@@ -173,13 +173,13 @@ namespace MiningCore.Blockchain.ZCash
 
             // ZCash Sapling & Overwinter support
             isSaplingActive = chainConfig.SaplingActivationHeight.HasValue &&
-                chainConfig.SaplingActivationHeight.Value > 0 &&
-                blockTemplate.Height >= chainConfig.SaplingActivationHeight.Value;
+                              chainConfig.SaplingActivationHeight.Value > 0 &&
+                              blockTemplate.Height >= chainConfig.SaplingActivationHeight.Value;
 
             isOverwinterActive = isSaplingActive ||
-                chainConfig.OverwinterActivationHeight.HasValue &&
-                chainConfig.OverwinterActivationHeight.Value > 0 &&
-                blockTemplate.Height >= chainConfig.OverwinterActivationHeight.Value;
+                                 chainConfig.OverwinterActivationHeight.HasValue &&
+                                 chainConfig.OverwinterActivationHeight.Value > 0 &&
+                                 blockTemplate.Height >= chainConfig.OverwinterActivationHeight.Value;
 
             if (isSaplingActive)
             {
@@ -187,7 +187,7 @@ namespace MiningCore.Blockchain.ZCash
                 txVersionGroupId = 0x892F2085;
             }
 
-            else if(isOverwinterActive)
+            else if (isOverwinterActive)
             {
                 txVersion = 3;
                 txVersionGroupId = 0x03C48270;
@@ -231,7 +231,7 @@ namespace MiningCore.Blockchain.ZCash
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            var txHashes = new List<uint256> {new uint256(coinbaseInitialHash)};
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
 
             // build merkle root
@@ -240,9 +240,7 @@ namespace MiningCore.Blockchain.ZCash
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             // misc
-            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
-                blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() :
-                sha256Empty.ToHexString();
+            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ? blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() : sha256Empty.ToHexString();
 
             jobParams = new object[]
             {
@@ -305,8 +303,8 @@ namespace MiningCore.Blockchain.ZCash
                 Nonce = nonce
             };
 
-	        if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
-		        blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray();
+            if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
+                blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray();
 
             return blockHeader.ToBytes();
         }
@@ -316,7 +314,7 @@ namespace MiningCore.Blockchain.ZCash
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -400,7 +398,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected bool RegisterSubmit(string nonce, string solution)
         {
-            lock(submissions)
+            lock (submissions)
             {
                 var key = nonce.ToLower() + solution.ToLower();
                 if (submissions.Contains(key))
@@ -425,7 +423,7 @@ namespace MiningCore.Blockchain.ZCash
         protected string GetTreasuryRewardAddress()
         {
             var index = (int) Math.Floor((BlockTemplate.Height - chainConfig.TreasuryRewardStartBlockHeight) /
-                chainConfig.TreasuryRewardAddressChangeInterval % chainConfig.TreasuryRewardAddresses.Length);
+                                         chainConfig.TreasuryRewardAddressChangeInterval % chainConfig.TreasuryRewardAddresses.Length);
 
             var address = chainConfig.TreasuryRewardAddresses[index];
             return address;

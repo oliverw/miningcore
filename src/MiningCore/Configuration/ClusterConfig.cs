@@ -53,16 +53,16 @@ namespace MiningCore.Configuration
         STAK, // Straks
         ETN, // Electroneum
         MOON, // MoonCoin
-        XVG,  // Verge
-        GBX,  // GoByte
-        CRC,  // CrowdCoin
+        XVG, // Verge
+        GBX, // GoByte
+        CRC, // CrowdCoin
         BTCP, // Bitcoin Private
-        CLO,  // Callisto
+        CLO, // Callisto
         FLO, // Flo
         PAK, // PAKcoin
         CANN, // CannabisCoin
-        RVN,  // Ravencoin
-        PGN,  // Pigeoncoin 
+        RVN, // Ravencoin
+        PGN, // Pigeoncoin 
     }
 
     public class CoinConfig

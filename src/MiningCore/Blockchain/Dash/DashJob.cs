@@ -36,8 +36,8 @@ namespace MiningCore.Blockchain.Dash
 
             var tx = Transaction.Create(NBitcoinNetworkType);
 
-			// outputs
-			rewardToPool = CreateDashOutputs(tx, blockReward);
+            // outputs
+            rewardToPool = CreateDashOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Dash
 
                 else if (BlockTemplate.SuperBlocks.Length > 0)
                 {
-                    foreach(var superBlock in BlockTemplate.SuperBlocks)
+                    foreach (var superBlock in BlockTemplate.SuperBlocks)
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
                         var payeeReward = superBlock.Amount;

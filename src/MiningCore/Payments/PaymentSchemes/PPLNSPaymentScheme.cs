@@ -91,7 +91,7 @@ namespace MiningCore.Payments.PaymentSchemes
             var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
 
             // update balances
-            foreach(var address in rewards.Keys)
+            foreach (var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
@@ -144,7 +144,7 @@ namespace MiningCore.Payments.PaymentSchemes
 
                 currentPage++;
 
-                for (var i = 0;i < page.Length; i++)
+                for (var i = 0; i < page.Length; i++)
                 {
                     var share = page[i];
 

@@ -44,7 +44,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.neoscrypt(input, output, (uint)data.Length, profile);
+                    LibMultihash.neoscrypt(input, output, (uint) data.Length, profile);
                 }
             }
 

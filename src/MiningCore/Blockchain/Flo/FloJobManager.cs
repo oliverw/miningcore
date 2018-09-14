@@ -44,7 +44,7 @@ namespace MiningCore.Blockchain.Flo
         }
 
         protected FloPoolConfigExtra extraFloPoolConfig;
-        
+
         #region Overrides
 
         protected override string LogCat => "Flo Job Manager";
@@ -65,9 +65,7 @@ namespace MiningCore.Blockchain.Flo
                 if (forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
-                    GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
@@ -80,9 +78,9 @@ namespace MiningCore.Blockchain.Flo
 
                 var job = currentJob;
                 var isNew = job == null ||
-                    (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                            (blockTemplate != null &&
+                             job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                             blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {

@@ -64,7 +64,7 @@ namespace MiningCore.VarDiff
                 }
 
                 var minDiff = options.MinDiff;
-                var maxDiff = options.MaxDiff ?? Math.Max(minDiff, double.MaxValue);  // for regtest
+                var maxDiff = options.MaxDiff ?? Math.Max(minDiff, double.MaxValue); // for regtest
                 var sinceLast = ts - ctx.LastTs.Value;
 
                 // Always calculate the time until now even there is no share submitted.

@@ -46,11 +46,12 @@ namespace MiningCore.Blockchain.Straks
 
             return tx;
         }
+
         private bool ShouldHandleMasternodePayment()
         {
             return BlockTemplate.MasternodePaymentsStarted &&
-            BlockTemplate.MasternodePaymentsEnforced &&
-            !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
+                   BlockTemplate.MasternodePaymentsEnforced &&
+                   !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
         }
 
         private Money CreateStraksOutputs(Transaction tx, Money reward)
@@ -90,6 +91,7 @@ namespace MiningCore.Blockchain.Straks
                     return addresses[index].ToObject<string>();
                 }
             }
+
             return null;
         }
 

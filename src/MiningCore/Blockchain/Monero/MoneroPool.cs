@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.Monero
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -182,7 +182,7 @@ namespace MiningCore.Blockchain.Monero
             };
 
             // update context
-            lock(context)
+            lock (context)
             {
                 context.AddJob(job);
             }
@@ -221,7 +221,7 @@ namespace MiningCore.Blockchain.Monero
 
                 MoneroWorkerJob job;
 
-                lock(context)
+                lock (context)
                 {
                     var jobId = submitRequest?.JobId;
 
@@ -233,7 +233,7 @@ namespace MiningCore.Blockchain.Monero
                 // dupe check
                 var nonceLower = submitRequest.Nonce.ToLower();
 
-                lock(job)
+                lock (job)
                 {
                     if (job.Submissions.Contains(nonceLower))
                         throw new StratumException(StratumError.MinusOne, "duplicate share");
@@ -323,12 +323,12 @@ namespace MiningCore.Blockchain.Monero
             await manager.StartAsync(ct);
 
             if (poolConfig.EnableInternalStratum == true)
-	        {
-		        disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
+            {
+                disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
 
-		        // we need work before opening the gates
-		        await manager.Blocks.Take(1).ToTask(ct);
-	        }
+                // we need work before opening the gates
+                await manager.Blocks.Take(1).ToTask(ct);
+            }
         }
 
         protected override void InitStats()

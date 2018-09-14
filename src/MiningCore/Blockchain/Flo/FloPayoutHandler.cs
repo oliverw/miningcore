@@ -89,7 +89,7 @@ namespace MiningCore.Blockchain.Flo
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -148,7 +148,7 @@ namespace MiningCore.Blockchain.Flo
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
             }
 
             else

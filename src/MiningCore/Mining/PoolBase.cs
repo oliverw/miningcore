@@ -103,7 +103,7 @@ namespace MiningCore.Mining
             if (parts == null || parts.Length == 0)
                 return null;
 
-            foreach(var part in parts)
+            foreach (var part in parts)
             {
                 var m = regexStaticDiff.Match(part);
 
@@ -216,7 +216,7 @@ namespace MiningCore.Mining
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Where(x=> client.IsAlive)
+                .Where(x => client.IsAlive)
                 .Subscribe(_ => UpdateVarDiff(client, true));
         }
 
@@ -239,7 +239,7 @@ namespace MiningCore.Mining
 
         protected virtual void InitStats()
         {
-            if(clusterConfig.ShareRelay == null)
+            if (clusterConfig.ShareRelay == null)
                 LoadStats();
         }
 
@@ -316,7 +316,7 @@ Current Block Height:   {blockchainStats.BlockHeight}
 Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
 Network Hash Rate:      {FormatUtil.FormatHashrate(blockchainStats.NetworkHashrate)}
-Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty )}
+Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty)}
 Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0)}%
 ";
 
@@ -349,24 +349,24 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
             try
             {
-	            SetupBanning(clusterConfig);
-	            await SetupJobManager(ct);
+                SetupBanning(clusterConfig);
+                await SetupJobManager(ct);
                 InitStats();
 
                 if (poolConfig.EnableInternalStratum == true)
-	            {
-		            var ipEndpoints = poolConfig.Ports.Keys
-			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-			            .ToArray();
+                {
+                    var ipEndpoints = poolConfig.Ports.Keys
+                        .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+                        .ToArray();
 
-		            StartListeners(poolConfig.Id, ipEndpoints);
-	            }
+                    StartListeners(poolConfig.Id, ipEndpoints);
+                }
 
                 logger.Info(() => $"[{LogCat}] Online");
                 OutputPoolInfo();
             }
 
-            catch(PoolStartupAbortException)
+            catch (PoolStartupAbortException)
             {
                 // just forward these
                 throw;
