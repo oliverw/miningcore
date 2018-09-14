@@ -12,6 +12,7 @@ using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
@@ -92,6 +93,8 @@ namespace MiningCore.Blockchain.ZCash
 
             if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
+			else
+				result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
 
             return result;
         }
