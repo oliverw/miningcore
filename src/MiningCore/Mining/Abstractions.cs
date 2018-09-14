@@ -27,19 +27,19 @@ using MiningCore.Stratum;
 
 namespace MiningCore.Mining
 {
-	public struct ClientShare
-	{
-		public ClientShare(StratumClient client, Share share)
-		{
-			Client = client;
-			Share = share;
-		}
+    public struct ClientShare
+    {
+        public ClientShare(StratumClient client, Share share)
+        {
+            Client = client;
+            Share = share;
+        }
 
-		public StratumClient Client;
-		public Share Share;
-	}
+        public StratumClient Client;
+        public Share Share;
+    }
 
-	public interface IMiningPool
+    public interface IMiningPool
     {
         PoolConfig Config { get; }
         PoolStats PoolStats { get; }

@@ -79,11 +79,11 @@ namespace MiningCore.Blockchain.ZCash
 			// set versions
 	        tx.Version = txVersion;
 
-            if(isOverwinterActive)
-	            versionGroupField.SetValue(tx, txVersionGroupId);
+            if (tx.GetType() == typeof(ZcashTransaction))
+                overwinterField.SetValue(tx, true);
 
-			// calculate outputs
-			if (chainConfig.PayFoundersReward &&
+            // calculate outputs
+            if (chainConfig.PayFoundersReward &&
                 (chainConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
                     chainConfig.TreasuryRewardStartBlockHeight > 0))
             {

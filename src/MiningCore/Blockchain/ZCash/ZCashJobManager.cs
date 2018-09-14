@@ -36,12 +36,12 @@ namespace MiningCore.Blockchain.ZCash
             {
                 new
                 {
-                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
+                    capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
                 }
             };
         }
 
-	    protected ZCashChainConfig chainConfig;
+        protected ZCashChainConfig chainConfig;
         private ZCashPoolConfigExtra zcashExtraPoolConfig;
 
         #region Overrides of JobManagerBase<TJob>
@@ -50,24 +50,24 @@ namespace MiningCore.Blockchain.ZCash
         {
             zcashExtraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
-			base.Configure(poolConfig, clusterConfig);
+            base.Configure(poolConfig, clusterConfig);
         }
 
         #endregion
 
-	    #region Overrides of BitcoinJobManager<TJob,ZCashBlockTemplate>
+        #region Overrides of BitcoinJobManager<TJob,ZCashBlockTemplate>
 
-	    protected override void PostChainIdentifyConfigure()
-	    {
-		    if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-			    coinbaseTx.TryGetValue(networkType, out chainConfig);
+        protected override void PostChainIdentifyConfigure()
+        {
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out chainConfig);
 
-			base.PostChainIdentifyConfigure();
-	    }
+            base.PostChainIdentifyConfigure();
+        }
 
-	    #endregion
+        #endregion
 
-	    public override async Task<bool> ValidateAddressAsync(string address)
+        public override async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -77,7 +77,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // handle z-addr
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
-                ZCashCommands.ZValidateAddress, new[] { address });
+                ZCashCommands.ZValidateAddress, new[] {address});
 
             return result.Response != null && result.Response.IsValid;
         }
@@ -93,8 +93,8 @@ namespace MiningCore.Blockchain.ZCash
 
             if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
-			else
-				result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
+            else
+                result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
 
             return result;
         }
@@ -119,8 +119,8 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override IDestination AddressToDestination(string address)
         {
-	        if (!chainConfig.UsesZCashAddressFormat)
-		        return base.AddressToDestination(address);
+            if (!chainConfig.UsesZCashAddressFormat)
+                return base.AddressToDestination(address);
 
             var decoded = Encoders.Base58.DecodeData(address);
             var hash = decoded.Skip(2).Take(20).ToArray();
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.ZCash
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
-            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            logger.LogInvoke(LogCat, new[] {worker.ConnectionId});
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
@@ -156,7 +156,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ZCashJob job;
 
-            lock(jobLock)
+            lock (jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }

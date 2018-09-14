@@ -77,7 +77,7 @@ namespace MiningCore.Mining
             {
                 var thread = new Thread(arg =>
                 {
-                    var urlAndTopic = (IGrouping<string, string>)arg;
+                    var urlAndTopic = (IGrouping<string, string>) arg;
                     var url = urlAndTopic.Key;
                     var topics = new HashSet<string>(urlAndTopic.Distinct());
                     var receivedOnce = false;
@@ -99,7 +99,7 @@ namespace MiningCore.Mining
                                 while (true)
                                 {
                                     // receive
-                                    var msg = (NetMQMessage)null;
+                                    var msg = (NetMQMessage) null;
 
                                     if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
                                     {
@@ -133,7 +133,7 @@ namespace MiningCore.Mining
                                     }
 
                                     // deserialize
-                                    var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
+                                    var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
                                     Share share = null;
 
                                     switch (wireFormat)
@@ -149,14 +149,16 @@ namespace MiningCore.Mining
                                                     }
                                                 }
                                             }
+
                                             break;
 
                                         case ShareRelay.WireFormat.ProtocolBuffers:
                                             using (var stream = new MemoryStream(data))
                                             {
                                                 share = Serializer.Deserialize<Share>(stream);
-                                                share.BlockReward = (decimal)share.BlockRewardDouble;
+                                                share.BlockReward = (decimal) share.BlockRewardDouble;
                                             }
+
                                             break;
 
                                         default:
@@ -220,7 +222,7 @@ namespace MiningCore.Mining
                 thread.Start(item);
             }
 
-            if(stratumsByUrl.Any())
+            if (stratumsByUrl.Any())
                 logger.Info(() => "Online");
         }
 
