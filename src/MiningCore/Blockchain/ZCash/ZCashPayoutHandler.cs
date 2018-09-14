@@ -30,14 +30,12 @@ using MiningCore.Blockchain.ZCash.DaemonRequests;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
-using MiningCore.Util;
 using Newtonsoft.Json.Linq;
-using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -54,15 +52,15 @@ namespace MiningCore.Blockchain.ZCash
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
         }
 
         protected ZCashPoolConfigExtra poolExtraConfig;
         protected bool supportsNativeShielding;
         protected BitcoinNetworkType networkType;
-        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
+        protected ZCashChainConfig chainConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
         protected const int ZMinConfirmations = 8;
@@ -86,8 +84,8 @@ namespace MiningCore.Blockchain.ZCash
                 networkType = BitcoinNetworkType.Main;
 
             // lookup config
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out chainConfig);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);

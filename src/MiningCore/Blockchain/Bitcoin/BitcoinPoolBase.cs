@@ -32,7 +32,7 @@ using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Mining;
-using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -52,9 +52,8 @@ namespace MiningCore.Blockchain.Bitcoin
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
@@ -71,7 +70,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
             }
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
 
             var data = new object[]
@@ -106,7 +105,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
             }
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
@@ -160,7 +159,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             try
             {
@@ -191,9 +190,13 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty);
 
-                // success
                 client.Respond(true, request.Id);
+
+                // publish
                 messageBus.SendMessage(new ClientShare(client, share));
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
@@ -210,6 +213,9 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
+
                 // update client stats
                 context.Stats.InvalidShares++;
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
@@ -222,7 +228,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private void OnSuggestDifficulty(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             // acknowledge
             client.Respond(true, request.Id);
@@ -279,7 +285,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<BitcoinWorkerContext>();
+                var context = client.ContextAs<BitcoinWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
@@ -375,7 +381,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 case BitcoinStratumMethods.MiningMultiVersion:
                     // ignored
                     break;
-                
+
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
@@ -398,12 +404,15 @@ namespace MiningCore.Blockchain.Bitcoin
             if ((poolConfig.Coin.Type == CoinType.XVG && poolConfig.Coin.Algorithm.ToLower() == "x17"))
                 result *= 2.55;
 
-            return result;
+	        if (poolConfig?.Coin?.Algorithm?.ToLower() == "scrypt")
+		        result *= 1.5;
+
+			return result;
         }
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client

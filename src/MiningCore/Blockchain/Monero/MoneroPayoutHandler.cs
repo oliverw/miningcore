@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Payments;
@@ -59,8 +60,8 @@ namespace MiningCore.Blockchain.Monero
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -210,8 +211,7 @@ namespace MiningCore.Blockchain.Monero
         {
             ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
 
-            if (string.IsNullOrEmpty(paymentId))
-                throw new InvalidOperationException("invalid paymentid");
+            var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
 
             // build request
             var request = new TransferRequest
@@ -228,7 +228,13 @@ namespace MiningCore.Blockchain.Monero
                 GetTxKey = true
             };
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} with paymentId {paymentId}");
+            if (!isIntegratedAddress)
+                request.PaymentId = paymentId;
+
+            if(!isIntegratedAddress)
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
+            else
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
@@ -273,7 +279,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             // configure wallet daemon
@@ -288,7 +294,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            walletDaemon = new DaemonClient(jsonSerializerSettings);
+            walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network
@@ -499,8 +505,8 @@ namespace MiningCore.Blockchain.Monero
                 }
             }
 #endif
-                // balances with paymentIds
-                var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
+            // balances with paymentIds
+            var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
                 .Where(x => x.Amount >= minimumPaymentToPaymentId)

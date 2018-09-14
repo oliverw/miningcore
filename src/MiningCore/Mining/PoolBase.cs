@@ -37,6 +37,7 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -58,8 +59,7 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) : base(ctx, clock)
+            IMessageBus messageBus) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -68,19 +68,16 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
             this.messageBus = messageBus;
-            this.notificationService = notificationService;
         }
 
         protected PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-        protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
@@ -158,11 +155,16 @@ namespace MiningCore.Mining
                 });
         }
 
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
+        }
+
         #region VarDiff
 
         protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
 
             if (context.VarDiff != null)
             {
@@ -220,7 +222,7 @@ namespace MiningCore.Mining
 
         protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
         }
 
@@ -383,6 +385,11 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             }
         }
 
-	    #endregion // API-Surface
+        public void Stop()
+        {
+            StopListeners();
+        }
+
+        #endregion // API-Surface
     }
 }

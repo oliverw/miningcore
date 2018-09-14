@@ -148,7 +148,7 @@ namespace MiningCore.Blockchain.Monero
 			Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
 			Contract.Requires<ArgumentException>(workerExtraNonce != 0, $"{nameof(workerExtraNonce)} must not be empty");
 
-			var context = worker.GetContextAs<MoneroWorkerContext>();
+			var context = worker.ContextAs<MoneroWorkerContext>();
 
 			// validate nonce
 			if (!MoneroConstants.RegexValidNonce.IsMatch(nonce))

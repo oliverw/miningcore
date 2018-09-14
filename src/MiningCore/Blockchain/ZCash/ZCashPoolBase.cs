@@ -33,7 +33,6 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -53,13 +52,12 @@ namespace MiningCore.Blockchain.ZCash
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
-        private ZCashCoinbaseTxConfig coinbaseTxConfig;
+        private ZCashChainConfig chainConfig;
         private double hashrateDivisor;
 
         protected override BitcoinJobManager<TJob, ZCashBlockTemplate> CreateJobManager()
@@ -76,11 +74,11 @@ namespace MiningCore.Blockchain.ZCash
         {
             await base.SetupJobManager(ct);
 
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(manager.NetworkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(manager.NetworkType, out chainConfig);
 
-            hashrateDivisor = (double)new BigRational(coinbaseTxConfig.Diff1b,
-                ZCashConstants.CoinbaseTxConfig[CoinType.ZEC][manager.NetworkType].Diff1b);
+            hashrateDivisor = (double)new BigRational(chainConfig.Diff1b,
+                ZCashConstants.Chains[CoinType.ZEC][manager.NetworkType].Diff1b);
         }
 
         #endregion
@@ -88,7 +86,7 @@ namespace MiningCore.Blockchain.ZCash
         protected override void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
@@ -116,7 +114,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             await base.OnAuthorizeAsync(client, tsRequest);
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (context.IsAuthorized)
             {
@@ -129,7 +127,7 @@ namespace MiningCore.Blockchain.ZCash
         private void OnSuggestTarget(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
@@ -144,7 +142,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 if (System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
-                    var newDiff = (double) new BigRational(coinbaseTxConfig.Diff1b, targetBig);
+                    var newDiff = (double) new BigRational(chainConfig.Diff1b, targetBig);
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                     if (newDiff >= poolEndpoint.Difficulty)
@@ -210,7 +208,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<BitcoinWorkerContext>();
+                var context = client.ContextAs<BitcoinWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
@@ -246,7 +244,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             context.EnqueueNewDifficulty(newDiff);
 
@@ -263,7 +261,7 @@ namespace MiningCore.Blockchain.ZCash
         private string EncodeTarget(double difficulty)
         {
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
-            var quotient = coinbaseTxConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
+            var quotient = chainConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
             var padded = ArrayPool<byte>.Shared.Rent(ZCashConstants.TargetPaddingLength);
 

@@ -39,7 +39,9 @@ using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -56,22 +58,20 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) :
-            base(ctx)
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-            this.notificationService = notificationService;
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
         }
 
-        protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
         protected readonly IExtraNonceProvider extraNonceProvider;
@@ -326,7 +326,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}"));
                 return (false, null);
             }
 
@@ -338,7 +338,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!accepted)
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
-                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                messageBus.SendMessage(new AdminNotification($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission"));
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());
@@ -451,7 +451,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // assign unique ExtraNonce1 to worker (miner)
             context.ExtraNonce1 = extraNonceProvider.Next();
@@ -501,7 +501,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();
@@ -593,11 +593,15 @@ namespace MiningCore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        protected override void ConfigureDaemons()
+	    protected virtual void PostChainIdentifyConfigure()
+	    {
+	    }
+
+		protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(poolConfig.Daemons);
         }
 
@@ -685,12 +689,28 @@ namespace MiningCore.Blockchain.Bitcoin
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
             var difficultyResponse = results[3].Response.ToObject<JToken>();
 
-            // ensure pool owns wallet
-            if (!validateAddressResponse.IsValid)
+	        // chain detection
+	        if (!hasLegacyDaemon)
+	        {
+		        if (blockchainInfoResponse.Chain.ToLower() == "test")
+			        networkType = BitcoinNetworkType.Test;
+		        else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
+			        networkType = BitcoinNetworkType.RegTest;
+		        else
+			        networkType = BitcoinNetworkType.Main;
+	        }
+
+	        else
+		        networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
+
+	        PostChainIdentifyConfigure();
+
+			// ensure pool owns wallet
+			if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
-            if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
-                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            //if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
+            //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
@@ -706,20 +726,6 @@ namespace MiningCore.Blockchain.Bitcoin
 
             else
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
-
-            // chain detection
-            if (!hasLegacyDaemon)
-            {
-                if (blockchainInfoResponse.Chain.ToLower() == "test")
-                    networkType = BitcoinNetworkType.Test;
-                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
-                    networkType = BitcoinNetworkType.RegTest;
-                else
-                    networkType = BitcoinNetworkType.Main;
-            }
-
-            else
-                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
                 ConfigureRewards();
@@ -751,7 +757,7 @@ namespace MiningCore.Blockchain.Bitcoin
             SetupJobUpdates();
         }
 
-        protected virtual IDestination AddressToDestination(string address)
+	    protected virtual IDestination AddressToDestination(string address)
         {
             return BitcoinUtils.AddressToDestination(address);
         }

@@ -20,9 +20,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
@@ -37,7 +39,9 @@ using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -54,17 +58,16 @@ namespace MiningCore.Blockchain.Ethereum
     {
         public EthereumJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             JsonSerializerSettings serializerSettings) :
-            base(ctx)
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clock = clock;
-            this.notificationService = notificationService;
 
             serializer = new JsonSerializer
             {
@@ -77,7 +80,6 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
         private EthashFull ethash;
-        private readonly NotificationService notificationService;
         private readonly IMasterClock clock;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
 
@@ -159,35 +161,28 @@ namespace MiningCore.Blockchain.Ethereum
         {
             logger.LogInvoke(LogCat);
 
-            var commands = new[]
+	        var response = await daemon.ExecuteCmdAnyAsync<JToken>(EC.GetWork);
+
+			if (response.Error != null)
             {
-                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "pending", true }),
-                new DaemonCmd(EC.GetWork),
-            };
+	            logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {response.Error})");
+	            return null;
+            }
 
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
-
-            if (results.Any(x => x.Error != null))
+            if (response.Response == null)
             {
-                var errors = results.Where(x => x.Error != null)
-                    .ToArray();
-
-                if (errors.Any())
-                {
-                    logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {string.Join(", ", errors.Select(y => y.Error.Message))})");
-                    return null;
-                }
+                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {EC.GetWork} returned null response");
+                return null;
             }
 
             // extract results
-            var block = results[0].Response.ToObject<Block>();
-            var work = results[1].Response.ToObject<string[]>();
-            var result = AssembleBlockTemplate(block, work);
+            var work = response.Response.ToObject<string[]>();
+            var result = AssembleBlockTemplate(work);
 
             return result;
         }
 
-        private EthereumBlockTemplate AssembleBlockTemplate(Block block, string[] work)
+        private EthereumBlockTemplate AssembleBlockTemplate(string[] work)
         {
             // only parity returns the 4th element (block height)
             if (work.Length < 4)
@@ -196,23 +191,18 @@ namespace MiningCore.Blockchain.Ethereum
                 return null;
             }
 
-            // make sure block matches work
+            // extract values
             var height = work[3].IntegralFromHex<ulong>();
+	        var targetString = work[2];
+	        var target = BigInteger.Parse(targetString.Substring(2), NumberStyles.HexNumber);
 
-            if (height != block.Height)
-            {
-                logger.Debug(() => $"[{LogCat}] Discarding block template update as getWork result is not related to pending block");
-                return null;
-            }
-
-            var result = new EthereumBlockTemplate
+			var result = new EthereumBlockTemplate
             {
                 Header = work[0],
                 Seed = work[1],
-                Target = work[2],
-                Difficulty = block.Difficulty.IntegralFromHex<ulong>(),
-                Height = block.Height.Value,
-                ParentHash = block.ParentHash,
+                Target = targetString,
+                Difficulty = (ulong) BigInteger.Divide(EthereumConstants.BigMaxValue, target),
+                Height = height,
             };
 
             return result;
@@ -311,7 +301,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
 
                 return false;
             }
@@ -397,7 +387,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         public void PrepareWorker(StratumClient client)
         {
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
@@ -408,7 +398,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(request, nameof(request));
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
-            var context = worker.GetContextAs<EthereumWorkerContext>();
+            var context = worker.ContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
             var jobId = request[1];
@@ -459,7 +449,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
         }
 
@@ -635,24 +625,6 @@ namespace MiningCore.Blockchain.Ethereum
 
                 logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x=> x.Host).Distinct())}");
 
-                // stream pending blocks
-                var pendingBlockObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetBlockByNumber, new[] { "pending", (object)true } })
-                    .Select(data =>
-                    {
-                        try
-                        {
-                            var psp = DeserializeRequest(data).ParamsAs<PubSubParams<Block>>();
-                            return psp?.Result;
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
-                        }
-
-                        return null;
-                    });
-
                 // stream work updates
                 var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
@@ -671,10 +643,8 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                Jobs = Observable.CombineLatest(
-                        pendingBlockObs.Where(x => x != null),
-                        getWorkObs.Where(x => x != null),
-                        AssembleBlockTemplate)
+                Jobs = getWorkObs.Where(x => x != null)
+					.Select(AssembleBlockTemplate)
                     .Select(UpdateJob)
                     .Do(isNew =>
                     {

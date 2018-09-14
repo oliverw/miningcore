@@ -45,6 +45,7 @@ using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
@@ -75,6 +76,8 @@ namespace MiningCore
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
+        private static NotificationService notificationService;
+        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
 
@@ -157,8 +160,8 @@ namespace MiningCore
             }
 
             Shutdown();
-            Process.GetCurrentProcess().CloseMainWindow();
-            Process.GetCurrentProcess().Close();
+
+            Process.GetCurrentProcess().Kill();
         }
 
         private static void LogRuntimeInfo()
@@ -495,7 +498,7 @@ namespace MiningCore
         {
             // Configure Equihash
             if (clusterConfig.EquihashMaxThreads.HasValue)
-                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+                EquihashSolverBase.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)
@@ -557,6 +560,8 @@ namespace MiningCore
 
         private static async Task Start()
         {
+            notificationService = container.Resolve<NotificationService>();
+
             if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
@@ -613,6 +618,7 @@ namespace MiningCore
                 // create and configure
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
 
                 // pre-start attachments
                 shareReceiver?.AttachPool(pool);
@@ -672,6 +678,9 @@ namespace MiningCore
         {
             logger.Info(() => "Shutdown ...");
             Console.WriteLine("Shutdown...");
+
+            foreach (var pool in pools.Values)
+                pool.Stop();
 
             shareRelay?.Stop();
             shareRecorder?.Stop();

@@ -27,20 +27,8 @@ using NLog;
 
 namespace MiningCore.Crypto.Hashing.Equihash
 {
-    public unsafe class EquihashSolver
+    public abstract class EquihashSolverBase
     {
-        private EquihashSolver(int maxConcurrency)
-        {
-            // we need to limit concurrency here due to the enormous memory
-            // requirements of the equihash algorithm (up 1GB per thread)
-            sem = new Semaphore(maxConcurrency, maxConcurrency);
-        }
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        public static Lazy<EquihashSolver> Instance { get; } = new Lazy<EquihashSolver>(() =>
-            new EquihashSolver(maxThreads));
-
         private static int maxThreads = 1;
 
         public static int MaxThreads
@@ -48,14 +36,15 @@ namespace MiningCore.Crypto.Hashing.Equihash
             get => maxThreads;
             set
             {
-                if(Instance.IsValueCreated)
-                    throw new InvalidOperationException("Too late: singleton value already created");
+                if(sem.IsValueCreated)
+                    throw new InvalidOperationException("Too late: semaphore already created");
 
                 maxThreads = value;
             }
         }
 
-        private readonly Semaphore sem;
+        protected static readonly Lazy<Semaphore> sem = new Lazy<Semaphore>(() =>
+            new Semaphore(maxThreads, maxThreads));
 
         /// <summary>
         /// Verify an Equihash solution
@@ -63,7 +52,14 @@ namespace MiningCore.Crypto.Hashing.Equihash
         /// <param name="header">header including nonce (140 bytes)</param>
         /// <param name="solution">equihash solution (excluding 3 bytes with size, so 1344 bytes length) - Do not include byte size preamble "fd4005"</param>
         /// <returns></returns>
-        public bool Verify(byte[] header, byte[] solution)
+        public abstract bool Verify(byte[] header, byte[] solution);
+    }
+
+    public unsafe class EquihashSolver_ZCash : EquihashSolverBase
+    {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        public override bool Verify(byte[] header, byte[] solution)
         {
             Contract.RequiresNonNull(header, nameof(header));
             Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
@@ -74,11 +70,11 @@ namespace MiningCore.Crypto.Hashing.Equihash
 
             try
             {
-                sem.WaitOne();
+                sem.Value.WaitOne();
 
-                fixed(byte *h = header)
+                fixed (byte* h = header)
                 {
-                    fixed(byte *s = solution)
+                    fixed (byte* s = solution)
                     {
                         return LibMultihash.equihash_verify(h, header.Length, s, solution.Length);
                     }
@@ -87,7 +83,40 @@ namespace MiningCore.Crypto.Hashing.Equihash
 
             finally
             {
-                sem.Release();
+                sem.Value.Release();
+            }
+        }
+    }
+
+    public unsafe class EquihashSolver_Btg : EquihashSolverBase
+    {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        public override bool Verify(byte[] header, byte[] solution)
+        {
+            Contract.RequiresNonNull(header, nameof(header));
+            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
+            Contract.RequiresNonNull(solution, nameof(solution));
+            Contract.Requires<ArgumentException>(solution.Length == 100, $"{nameof(solution)} must be exactly 100 bytes");
+
+            logger.LogInvoke();
+
+            try
+            {
+                sem.Value.WaitOne();
+
+                fixed (byte* h = header)
+                {
+                    fixed (byte* s = solution)
+                    {
+                        return LibMultihash.equihash_verify_btg(h, header.Length, s, solution.Length);
+                    }
+                }
+            }
+
+            finally
+            {
+                sem.Value.Release();
             }
         }
     }

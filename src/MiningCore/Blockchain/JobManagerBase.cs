@@ -32,6 +32,8 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Util;
 using NetMQ;
 using NetMQ.Sockets;
@@ -42,14 +44,17 @@ namespace MiningCore.Blockchain
 {
     public abstract class JobManagerBase<TJob>
     {
-        protected JobManagerBase(IComponentContext ctx)
+        protected JobManagerBase(IComponentContext ctx, IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.ctx = ctx;
+            this.messageBus = messageBus;
         }
 
         protected readonly IComponentContext ctx;
+        protected readonly IMessageBus messageBus;
         protected ClusterConfig clusterConfig;
 
         protected TJob currentJob;
@@ -153,7 +158,12 @@ namespace MiningCore.Blockchain
                                         // convert
                                         var json = Encoding.UTF8.GetString(data);
 
+                                        // publish
                                         obs.OnNext(json);
+
+                                        // telemetry
+                                        messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
+                                            TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                     }
                                 }
                             }

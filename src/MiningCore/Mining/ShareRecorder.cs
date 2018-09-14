@@ -57,8 +57,7 @@ namespace MiningCore.Mining
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -67,14 +66,12 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.clock = clock;
             this.messageBus = messageBus;
-            this.notificationService = notificationService;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
@@ -89,13 +86,11 @@ namespace MiningCore.Mining
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
-        private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
         private bool hasWarnedAboutBacklogSize;
@@ -109,7 +104,7 @@ namespace MiningCore.Mining
         {
             var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
-            faultPolicy.Execute(() => { PersistShares(shares); }, context);
+            faultPolicy.Execute(ctx => PersistShares((IList<Share>)ctx[PolicyContextKeyShares]), context);
         }
 
         private void PersistShares(IList<Share> shares)
@@ -292,9 +287,8 @@ namespace MiningCore.Mining
             {
                 notifiedAdminOnPolicyFallback = true;
 
-                notificationService.NotifyAdmin(
-                    "Share Recorder Policy Fallback",
-                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
+                messageBus.SendMessage(new AdminNotification("Share Recorder Policy Fallback",
+                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}."));
             }
         }
 

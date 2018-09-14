@@ -63,6 +63,25 @@ namespace MiningCore.Blockchain.Bitcoin
         protected string[] merkleBranchesHex;
         protected MerkleTree mt;
 
+        protected Network NBitcoinNetworkType
+        {
+            get
+            {
+                switch (networkType)
+                {
+                    case BitcoinNetworkType.Main:
+                        return Network.Main;
+                    case BitcoinNetworkType.Test:
+                        return Network.TestNet;
+                    case BitcoinNetworkType.RegTest:
+                        return Network.RegTest;
+
+                    default:
+                        throw new NotSupportedException("unsupported network type");
+                }
+            }
+        }
+
         ///////////////////////////////////////////
         // GetJobParams related properties
 
@@ -75,7 +94,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
 
         protected static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
-        protected static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+        protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
 
         protected static uint txInputCount = 1u;
         protected static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
@@ -135,7 +154,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
 
-                // done
+                // done	
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
             }
@@ -166,45 +185,19 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] SerializeOutputTransaction(Transaction tx)
         {
-            var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
-
-            var outputCount = (uint) tx.Outputs.Count;
-            if (withDefaultWitnessCommitment)
-                outputCount++;
-
             using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
-                // write output count
-                bs.ReadWriteAsVarInt(ref outputCount);
+	            // serialize outputs
+	            var vout = tx.Outputs;
+				bs.ReadWrite<TxOutList, TxOut>(ref vout);
 
-                long amount;
-                byte[] raw;
-                uint rawLength;
-
-                // serialize witness (segwit)
-                if (withDefaultWitnessCommitment)
+				// serialize witness (segwit)
+				if (!string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment))
                 {
-                    amount = 0;
-                    raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
-                    rawLength = (uint)raw.Length;
-
-                    bs.ReadWrite(ref amount);
-                    bs.ReadWriteAsVarInt(ref rawLength);
-                    bs.ReadWrite(ref raw);
-                }
-
-                // serialize outputs
-                foreach (var output in tx.Outputs)
-                {
-                    amount = output.Value.Satoshi;
-                    var outScript = output.ScriptPubKey;
-                    raw = outScript.ToBytes(true);
-                    rawLength = (uint) raw.Length;
-
-                    bs.ReadWrite(ref amount);
-                    bs.ReadWriteAsVarInt(ref rawLength);
+	                var witScript = new WitScript(BlockTemplate.DefaultWitnessCommitment);
+	                var raw = witScript.ToBytes();
                     bs.ReadWrite(ref raw);
                 }
 
@@ -239,7 +232,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
 
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
             {
@@ -290,7 +283,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
 
             // build coinbase
@@ -488,7 +481,7 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // validate nTime
             if (nTime.Length != 8)

@@ -22,12 +22,11 @@ using System;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.Configuration;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.Flo.Configuration;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
 using MiningCore.Time;
 using NLog;
 
@@ -37,10 +36,10 @@ namespace MiningCore.Blockchain.Flo
     {
         public FloJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) :
-            base(ctx, notificationService, clock, extraNonceProvider)
+            base(ctx, clock, messageBus, extraNonceProvider)
         {
         }
 

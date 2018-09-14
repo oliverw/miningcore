@@ -21,9 +21,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -40,13 +42,18 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-        #region Overrides of ZCashJob
+	    public BitcoinGoldJob()
+	    {
+		    txVersion = 1u;
+	    }
 
-        protected override Transaction CreateOutputTransaction()
+		#region Overrides of ZCashJob
+
+		protected override Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
-            var tx = new Transaction();
+            var tx = Transaction.Create(NBitcoinNetworkType);
 
             // pool reward (t-addr)
             tx.AddOutput(rewardToPool, poolAddressDestination);
@@ -97,20 +104,21 @@ namespace MiningCore.Blockchain.BitcoinGold
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;
 
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out chainConfig);
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(coinbaseTxConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ToBigInteger());
+            Difficulty = (double)new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
+	        this.equihash = chainConfig.Solver();
 
-            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+			if (!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {

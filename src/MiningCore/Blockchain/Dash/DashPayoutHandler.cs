@@ -25,6 +25,7 @@ using Autofac;
 using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
@@ -48,8 +49,8 @@ namespace MiningCore.Blockchain.Dash
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
         }
 

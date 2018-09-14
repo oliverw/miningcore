@@ -12,11 +12,14 @@ using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.OpenAsset;
 
 namespace MiningCore.Blockchain.ZCash
 {
@@ -25,9 +28,9 @@ namespace MiningCore.Blockchain.ZCash
     {
         public ZCashJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
-            IExtraNonceProvider extraNonceProvider) : base(ctx, notificationService, clock, extraNonceProvider)
+            IMessageBus messageBus,
+            IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
             getBlockTemplateParams = new object[]
             {
@@ -38,6 +41,7 @@ namespace MiningCore.Blockchain.ZCash
             };
         }
 
+	    protected ZCashChainConfig chainConfig;
         private ZCashPoolConfigExtra zcashExtraPoolConfig;
 
         #region Overrides of JobManagerBase<TJob>
@@ -46,12 +50,24 @@ namespace MiningCore.Blockchain.ZCash
         {
             zcashExtraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
-            base.Configure(poolConfig, clusterConfig);
+			base.Configure(poolConfig, clusterConfig);
         }
 
         #endregion
 
-        public override async Task<bool> ValidateAddressAsync(string address)
+	    #region Overrides of BitcoinJobManager<TJob,ZCashBlockTemplate>
+
+	    protected override void PostChainIdentifyConfigure()
+	    {
+		    if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+			    coinbaseTx.TryGetValue(networkType, out chainConfig);
+
+			base.PostChainIdentifyConfigure();
+	    }
+
+	    #endregion
+
+	    public override async Task<bool> ValidateAddressAsync(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -77,6 +93,8 @@ namespace MiningCore.Blockchain.ZCash
 
             if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
+			else
+				result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
 
             return result;
         }
@@ -85,7 +103,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // assign unique ExtraNonce1 to worker (miner)
             context.ExtraNonce1 = extraNonceProvider.Next();
@@ -101,6 +119,9 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override IDestination AddressToDestination(string address)
         {
+	        if (!chainConfig.UsesZCashAddressFormat)
+		        return base.AddressToDestination(address);
+
             var decoded = Encoders.Base58.DecodeData(address);
             var hash = decoded.Skip(2).Take(20).ToArray();
             var result = new KeyId(hash);
@@ -118,7 +139,7 @@ namespace MiningCore.Blockchain.ZCash
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();
