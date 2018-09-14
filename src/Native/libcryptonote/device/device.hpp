@@ -86,7 +86,7 @@ namespace hw {
         device(const device &hwdev) {}
         virtual ~device()   {}
 
-        explicit virtual operator bool() const = 0;
+        virtual operator bool() const = 0;
 
         static const int SIGNATURE_REAL = 0;
         static const int SIGNATURE_FAKE = 1;

@@ -92,7 +92,8 @@ namespace MiningCore
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
                 Console.CancelKeyPress += OnCancelKeyPress;
 #if DEBUG
-                PreloadNativeLibs();
+                //PreloadNativeLibs();
+                PreloadDebuggableNativeLibs();
 #endif
                 //TouchNativeLibs();
                 if (!HandleCommandLineOptions(args, out var configFile))
@@ -705,6 +706,7 @@ namespace MiningCore
 
         /// <summary>
         /// work-around for libmultihash.dll not being found when running in dev-environment
+        /// If you want to debug c++ projects while running MiningCore project use <see cref="PreloadDebuggableNativeLibs"/>
         /// </summary>
         public static void PreloadNativeLibs()
         {
@@ -725,6 +727,45 @@ namespace MiningCore
 
                 if (result == IntPtr.Zero)
                     Console.WriteLine($"Unable to load {path}");
+            }
+        }
+
+        /// <summary>
+        ///  if you want to debug c++ projects  while running MiningCore project use this function instead of <see cref="PreloadNativeLibs"/>
+        /// </summary>
+        /// <remarks>
+        ///  "nativeDebugging": true line must be added to launchSettings.json
+        /// </remarks>
+        public static void PreloadDebuggableNativeLibs()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
+                return;
+            }
+
+           
+           // obtain runtime
+            var runtime = Environment.Is64BitProcess ? "x64" : "x86";
+
+            var appRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            //vs puts c++ dlls under the src folder , so we need to point correct folder for dll files and pdb files so we can debug c++ code
+            DirectoryInfo parent1 = Directory.GetParent(appRoot);
+            string src_folder = parent1.Parent.Parent.Parent.Parent.FullName;
+            string native_libs_path = Path.Combine(src_folder, runtime, "Debug");
+#if !DEBUG
+            native_libs_path = Path.Combine(src_folder, runtime, "Release");
+#endif
+            // get only dll files ps: pdb files has to stay 
+            string[] NativeLibs = Directory.GetFiles(native_libs_path, "*.dll");
+
+
+            foreach (var nativeLib in NativeLibs)
+            {
+                var result = LoadLibraryEx(nativeLib, IntPtr.Zero, 0);
+                if (result == IntPtr.Zero)
+                    Console.WriteLine($"Unable to load {nativeLib}");
             }
         }
     }
