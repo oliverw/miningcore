@@ -73,7 +73,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             var tx = chainConfig.CreateCoinbaseTx();
 
-	        if (isOverwinterActive)
+	        if (tx.GetType() == typeof(ZcashTransaction))
 		        overwinterField.SetValue(tx, true);
 
 			// set versions
