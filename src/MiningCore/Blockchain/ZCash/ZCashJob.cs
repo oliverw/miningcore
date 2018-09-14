@@ -337,8 +337,8 @@ namespace MiningCore.Blockchain.ZCash
             var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
 
             // verify solution
-	        //if (!equihash.Verify(headerBytes, solutionBytes.Skip(chainConfig.SolutionPreambleSize).ToArray())) // skip preamble (3 bytes)
-	        //    throw new StratumException(StratumError.Other, "invalid solution");
+            if (!equihash.Verify(headerBytes, solutionBytes.Skip(chainConfig.SolutionPreambleSize).ToArray())) // skip preamble (3 bytes)
+                throw new StratumException(StratumError.Other, "invalid solution");
 
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
