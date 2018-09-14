@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -36,6 +37,7 @@ using MiningCore.Time;
 using MiningCore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Zcash;
 
 namespace MiningCore.Blockchain.ZCash
 {
@@ -66,6 +68,13 @@ namespace MiningCore.Blockchain.ZCash
         protected override Transaction CreateOutputTransaction()
         {
             var tx = chainConfig.CreateCoinbaseTx();
+
+	        if (isOverwinterActive)
+	        {
+				// reflection hack to force overwinter
+		        var field = typeof(ZcashTransaction).GetField("fOverwintered", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+		        field.SetValue(tx, true);
+			}
 
             if (chainConfig.PayFoundersReward &&
                 (chainConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
@@ -111,43 +120,14 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override void BuildCoinbase()
         {
-            var script = TxIn.CreateCoinbase((int) BlockTemplate.Height).ScriptSig;
-
             // output transaction
             txOut = CreateOutputTransaction();
+	        txOut.AddInput(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
             using(var stream = new MemoryStream())
             {
-                var bs = new BitcoinStream(stream, true);
-
-                // version
-                bs.ReadWrite(ref txVersion);
-
-                if (isOverwinterActive)
-                {
-                    // version group id
-                    bs.ReadWrite(ref txVersionGroupId);
-                }
-
-                // serialize (simulated) input transaction
-                bs.ReadWriteAsVarInt(ref txInputCount);
-                bs.ReadWrite(ref sha256Empty);
-                bs.ReadWrite(ref coinbaseIndex);
-                bs.ReadWrite(ref script);
-                bs.ReadWrite(ref coinbaseSequence);
-
-                // serialize output transaction
-                var txOutBytes = SerializeOutputTransaction(txOut);
-                bs.ReadWrite(ref txOutBytes);
-
-                // misc
-                bs.ReadWrite(ref txLockTime);
-
-                if (isOverwinterActive)
-                {
-                    bs.ReadWrite(ref txExpiryHeight);
-                    bs.ReadWriteAsVarInt(ref txNJoinSplits);
-                }
+                var bs = new ZcashStream(stream, true);
+                bs.ReadWrite(ref txOut);
 
                 // done
                 coinbaseInitial = stream.ToArray();
@@ -156,7 +136,7 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
+		public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
             bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
@@ -198,13 +178,13 @@ namespace MiningCore.Blockchain.ZCash
 
             if (isSaplingActive)
             {
-                txVersion = 0x80000004u;
+                txVersion = 4;
                 txVersionGroupId = 0x892F2085;
             }
 
             else if(isOverwinterActive)
             {
-                txVersion = 0x80000003u;
+                txVersion = 3;
                 txVersionGroupId = 0x03C48270;
             }
 
