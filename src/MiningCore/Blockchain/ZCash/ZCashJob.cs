@@ -240,7 +240,9 @@ namespace MiningCore.Blockchain.ZCash
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             // misc
-            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ? blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() : sha256Empty.ToHexString();
+            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ? 
+                blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() : 
+                sha256Empty.ToHexString();
 
             jobParams = new object[]
             {
