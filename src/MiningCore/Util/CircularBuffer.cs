@@ -141,7 +141,7 @@ namespace MiningCore.Util
 
         public IEnumerator<T> GetEnumerator()
         {
-            var segments = new ArraySegment<T>[2] { ArrayOne(), ArrayTwo() };
+            var segments = new ArraySegment<T>[2] {ArrayOne(), ArrayTwo()};
             foreach (var segment in segments)
                 for (var i = 0; i < segment.Count; i++)
                     yield return segment.Array[segment.Offset + i];
@@ -258,12 +258,13 @@ namespace MiningCore.Util
         {
             var newArray = new T[Size];
             var newArrayOffset = 0;
-            var segments = new ArraySegment<T>[2] { ArrayOne(), ArrayTwo() };
+            var segments = new ArraySegment<T>[2] {ArrayOne(), ArrayTwo()};
             foreach (var segment in segments)
             {
                 Array.Copy(segment.Array, segment.Offset, newArray, newArrayOffset, segment.Count);
                 newArrayOffset += segment.Count;
             }
+
             return newArray;
         }
 

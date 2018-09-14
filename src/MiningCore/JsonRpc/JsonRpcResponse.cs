@@ -79,9 +79,9 @@ namespace MiningCore.JsonRpc
         public TParam ResultAs<TParam>() where TParam : class
         {
             if (Result is JToken)
-                return ((JToken)Result)?.ToObject<TParam>();
+                return ((JToken) Result)?.ToObject<TParam>();
 
-            return (TParam)Result;
+            return (TParam) Result;
         }
     }
 }

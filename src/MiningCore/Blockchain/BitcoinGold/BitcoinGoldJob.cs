@@ -42,14 +42,14 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-	    public BitcoinGoldJob()
-	    {
-		    txVersion = 1u;
-	    }
+        public BitcoinGoldJob()
+        {
+            txVersion = 1u;
+        }
 
-		#region Overrides of ZCashJob
+        #region Overrides of ZCashJob
 
-		protected override Transaction CreateOutputTransaction()
+        protected override Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 
@@ -65,12 +65,12 @@ namespace MiningCore.Blockchain.BitcoinGold
         {
             // BTG requires the blockheight to be encoded in the first 4 bytes of the hashReserved field
             var heightAndReserved = BitConverter.GetBytes(BlockTemplate.Height)
-                .Concat(Enumerable.Repeat((byte)0, 28))
+                .Concat(Enumerable.Repeat((byte) 0, 28))
                 .ToArray();
 
             var blockHeader = new ZCashBlockHeader
             {
-                Version = (int)BlockTemplate.Version,
+                Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -109,16 +109,16 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
             this.headerHasher = headerHasher;
             this.blockHasher = blockHasher;
-	        this.equihash = chainConfig.Solver();
+            this.equihash = chainConfig.Solver();
 
-			if (!string.IsNullOrEmpty(BlockTemplate.Target))
+            if (!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.BitcoinGold
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            var txHashes = new List<uint256> {new uint256(coinbaseInitialHash)};
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
 
             // build merkle root

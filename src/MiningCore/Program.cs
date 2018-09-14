@@ -113,7 +113,7 @@ namespace MiningCore
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    if(!cts.IsCancellationRequested)
+                    if (!cts.IsCancellationRequested)
                         Start().Wait(cts.Token);
                 }
 
@@ -657,7 +657,9 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch { }
+            catch
+            {
+            }
 
             e.Cancel = true;
         }
@@ -671,7 +673,9 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         private static void Shutdown()

@@ -105,7 +105,9 @@ namespace MiningCore.Notifications
         private readonly ClusterConfig clusterConfig;
         private readonly JsonSerializerSettings serializerSettings;
         private readonly Dictionary<string, PoolConfig> poolConfigs;
+
         private readonly string adminEmail;
+
         //private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue;
         private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
@@ -211,7 +213,7 @@ namespace MiningCore.Notifications
             message.From.Add(new MailboxAddress(emailSenderConfig.FromName, emailSenderConfig.FromAddress));
             message.To.Add(new MailboxAddress("", recipient));
             message.Subject = subject;
-            message.Body = new TextPart("html") { Text = body };
+            message.Body = new TextPart("html") {Text = body};
 
             using (var client = new SmtpClient())
             {

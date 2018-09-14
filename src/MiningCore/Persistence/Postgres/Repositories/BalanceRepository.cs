@@ -50,7 +50,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             // record balance change
             var query = "INSERT INTO balance_changes(poolid, coin, address, amount, usage, created) " +
-                    "VALUES(@poolid, @coin, @address, @amount, @usage, @created)";
+                        "VALUES(@poolid, @coin, @address, @amount, @usage, @created)";
 
             var balanceChange = new Entities.BalanceChange
             {
@@ -67,7 +67,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             // update balance
             query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
-            var balance = con.Query<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx)
+            var balance = con.Query<Entities.Balance>(query, new {poolId, coin = coin.ToString(), address}, tx)
                 .FirstOrDefault();
 
             if (balance == null)
@@ -83,7 +83,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
                 };
 
                 query = "INSERT INTO balances(poolid, coin, address, amount, created, updated) " +
-                    "VALUES(@poolid, @coin, @address, @amount, @created, @updated)";
+                        "VALUES(@poolid, @coin, @address, @amount, @created, @updated)";
 
                 con.Execute(query, balance, tx);
             }
@@ -91,7 +91,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
             else
             {
                 query = "UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc' " +
-                    "WHERE poolid = @poolId AND coin = @coin AND address = @address";
+                        "WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
                 con.Execute(query, new
                 {
@@ -109,7 +109,7 @@ namespace MiningCore.Persistence.Postgres.Repositories
 
             var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
 
-            return con.Query<Entities.Balance>(query, new { poolId, minimum })
+            return con.Query<Entities.Balance>(query, new {poolId, minimum})
                 .Select(mapper.Map<Balance>)
                 .ToArray();
         }

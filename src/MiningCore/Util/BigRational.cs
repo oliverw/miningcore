@@ -82,9 +82,11 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DoubleUlong
         {
-            [FieldOffset(0)] public double dbl;
+            [FieldOffset(0)]
+            public double dbl;
 
-            [FieldOffset(0)] public ulong uu;
+            [FieldOffset(0)]
+            public ulong uu;
         }
 
         private const int DoubleMaxScale = 308;
@@ -95,9 +97,11 @@ namespace MiningCore.Util
         [StructLayout(LayoutKind.Explicit)]
         internal struct DecimalUInt32
         {
-            [FieldOffset(0)] public decimal dec;
+            [FieldOffset(0)]
+            public decimal dec;
 
-            [FieldOffset(0)] public int flags;
+            [FieldOffset(0)]
+            public int flags;
         }
 
         private const int DecimalScaleMask = 0x00FF0000;
@@ -296,6 +300,7 @@ namespace MiningCore.Util
                 m_numerator = numerator;
                 Denominator = denominator;
             }
+
             Simplify();
         }
 
@@ -318,6 +323,7 @@ namespace MiningCore.Util
                 Denominator = denominator;
                 m_numerator = whole * denominator + numerator;
             }
+
             Simplify();
         }
 
@@ -395,7 +401,7 @@ namespace MiningCore.Util
             }
 
             var result = baseValue;
-            while(exponent > BigInteger.One)
+            while (exponent > BigInteger.One)
             {
                 result = result * baseValue;
                 exponent--;
@@ -596,7 +602,7 @@ namespace MiningCore.Util
             var isDouble = false;
             var scale = DoubleMaxScale;
 
-            while(scale > 0)
+            while (scale > 0)
             {
                 if (!isDouble)
                     if (SafeCastToDouble(denormalized))
@@ -608,6 +614,7 @@ namespace MiningCore.Util
                     {
                         denormalized = denormalized / 10;
                     }
+
                 result = result / 10;
                 scale--;
             }
@@ -629,7 +636,7 @@ namespace MiningCore.Util
             var denormalized = value.m_numerator * s_bnDecimalPrecision / value.Denominator;
             if (denormalized.IsZero)
                 return decimal.Zero; // underflow - fraction is too small to fit in a decimal
-            for(var scale = DecimalMaxScale; scale >= 0; scale--)
+            for (var scale = DecimalMaxScale; scale >= 0; scale--)
                 if (!SafeCastToDecimal(denormalized))
                 {
                     denormalized = denormalized / 10;
@@ -641,6 +648,7 @@ namespace MiningCore.Util
                     dec.flags = (dec.flags & ~DecimalScaleMask) | (scale << 16);
                     return dec.dec;
                 }
+
             throw new OverflowException("Value was either too large or too small for a Decimal.");
         }
 
@@ -737,9 +745,10 @@ namespace MiningCore.Util
                     m_numerator = BigInteger.Negate(m_numerator);
                     Denominator = BigInteger.Negate(Denominator);
                 }
+
                 Simplify();
             }
-            catch(ArgumentException e)
+            catch (ArgumentException e)
             {
                 throw new SerializationException("invalid serialization data", e);
             }
@@ -899,21 +908,25 @@ namespace MiningCore.Util
                 cbit += 16;
                 u <<= 16;
             }
+
             if ((u & 0xFF000000) == 0)
             {
                 cbit += 8;
                 u <<= 8;
             }
+
             if ((u & 0xF0000000) == 0)
             {
                 cbit += 4;
                 u <<= 4;
             }
+
             if ((u & 0xC0000000) == 0)
             {
                 cbit += 2;
                 u <<= 2;
             }
+
             if ((u & 0x80000000) == 0)
                 cbit += 1;
             return cbit;

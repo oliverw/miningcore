@@ -75,7 +75,7 @@ namespace MiningCore.Payments.PaymentSchemes
             var shareCutOffDate = CalculateRewards(poolConfig, block, blockReward, rewards);
 
             // update balances
-            foreach(var address in rewards.Keys)
+            foreach (var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
@@ -109,7 +109,7 @@ namespace MiningCore.Payments.PaymentSchemes
         {
             var recipients = poolConfig.RewardRecipients
                 .Where(x => x.Type?.ToLower() == "solo")
-                .Select(x=> x.Address)
+                .Select(x => x.Address)
                 .ToArray();
 
             if (recipients.Length == 0)

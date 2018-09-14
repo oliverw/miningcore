@@ -84,22 +84,22 @@ namespace MiningCore.Api
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                { new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/performance$", RegexOptions.Compiled), GetPoolPerformanceAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), PagePoolMinersAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), PagePoolBlocksPagedAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
-                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
+                {new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/performance$", RegexOptions.Compiled), GetPoolPerformanceAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), PagePoolMinersAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), PagePoolBlocksPagedAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync},
             };
 
             requestMapAdmin = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
-                { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
+                {new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync},
+                {new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync},
             };
         }
 
@@ -192,7 +192,7 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex);
                 throw;
@@ -207,7 +207,7 @@ namespace MiningCore.Api
             if (mode == "day" || mode != "month")
             {
                 // set range
-                if(end.Minute < 30)
+                if (end.Minute < 30)
                     end = end.AddHours(-1);
 
                 end = end.AddMinutes(-end.Minute);
@@ -221,7 +221,7 @@ namespace MiningCore.Api
 
             else
             {
-                if(end.Hour < 12)
+                if (end.Hour < 12)
                     end = end.AddDays(-1);
 
                 end = end.Date;
@@ -242,7 +242,7 @@ namespace MiningCore.Api
         {
             var response = new GetPoolsResponse
             {
-                Pools = clusterConfig.Pools.Where(x=> x.Enabled).Select(config =>
+                Pools = clusterConfig.Pools.Where(x => x.Enabled).Select(config =>
                 {
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
@@ -363,14 +363,14 @@ namespace MiningCore.Api
             }
 
             var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Id,
-                    new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned }, page, pageSize))
+                    new[] {BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned}, page, pageSize))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
             // enrich blocks
             CoinMetaData.BlockInfoLinks.TryGetValue(pool.Coin.Type, out var blockInfobaseDict);
 
-            foreach(var block in blocks)
+            foreach (var block in blocks)
             {
                 // compute infoLink
                 if (blockInfobaseDict != null)
@@ -379,9 +379,9 @@ namespace MiningCore.Api
 
                     if (!string.IsNullOrEmpty(blockInfobaseUrl))
                     {
-                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                        if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
                             block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                        else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
                             block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
                     }
                 }
@@ -666,6 +666,5 @@ namespace MiningCore.Api
         }
 
         #endregion // API-Surface
-
     }
 }

@@ -44,7 +44,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.scrypt(input, output, n, r, (uint)data.Length);
+                    LibMultihash.scrypt(input, output, n, r, (uint) data.Length);
                 }
             }
 
