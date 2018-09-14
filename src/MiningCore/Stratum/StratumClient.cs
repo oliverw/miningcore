@@ -115,7 +115,7 @@ namespace MiningCore.Stratum
             context = value;
         }
 
-        public T GetContextAs<T>() where T: WorkerContextBase
+        public T ContextAs<T>() where T: WorkerContextBase
         {
             return (T) context;
         }

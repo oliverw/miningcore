@@ -63,7 +63,7 @@ namespace MiningCore.Blockchain.Ethereum
         private void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
             {
@@ -103,7 +103,7 @@ namespace MiningCore.Blockchain.Ethereum
         private void OnAuthorize(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
             {
@@ -148,7 +148,7 @@ namespace MiningCore.Blockchain.Ethereum
         private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             try
             {
@@ -223,7 +223,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void EnsureInitialWorkSent(StratumClient client)
         {
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             lock (context)
             {
@@ -246,7 +246,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<EthereumWorkerContext>();
+                var context = client.ContextAs<EthereumWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                 {
@@ -343,7 +343,7 @@ namespace MiningCore.Blockchain.Ethereum
             base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (context.HasPendingDifficulty)
             {

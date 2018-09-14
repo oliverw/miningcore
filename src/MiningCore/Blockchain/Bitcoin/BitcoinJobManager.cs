@@ -451,7 +451,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // assign unique ExtraNonce1 to worker (miner)
             context.ExtraNonce1 = extraNonceProvider.Next();
@@ -501,7 +501,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();

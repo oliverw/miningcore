@@ -164,7 +164,7 @@ namespace MiningCore.Mining
 
         protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
 
             if (context.VarDiff != null)
             {
@@ -222,7 +222,7 @@ namespace MiningCore.Mining
 
         protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
         }
 

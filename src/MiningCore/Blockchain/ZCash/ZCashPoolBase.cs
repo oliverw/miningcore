@@ -86,7 +86,7 @@ namespace MiningCore.Blockchain.ZCash
         protected override void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
@@ -114,7 +114,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             await base.OnAuthorizeAsync(client, tsRequest);
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (context.IsAuthorized)
             {
@@ -127,7 +127,7 @@ namespace MiningCore.Blockchain.ZCash
         private void OnSuggestTarget(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
@@ -208,7 +208,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<BitcoinWorkerContext>();
+                var context = client.ContextAs<BitcoinWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
@@ -244,7 +244,7 @@ namespace MiningCore.Blockchain.ZCash
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             context.EnqueueNewDifficulty(newDiff);
 

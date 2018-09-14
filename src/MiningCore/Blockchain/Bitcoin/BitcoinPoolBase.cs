@@ -70,7 +70,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
             }
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
 
             var data = new object[]
@@ -105,7 +105,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 return;
             }
 
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
@@ -159,7 +159,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             try
             {
@@ -228,7 +228,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private void OnSuggestDifficulty(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
 
             // acknowledge
             client.Respond(true, request.Id);
@@ -285,7 +285,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<BitcoinWorkerContext>();
+                var context = client.ContextAs<BitcoinWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
@@ -412,7 +412,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<BitcoinWorkerContext>();
+            var context = client.ContextAs<BitcoinWorkerContext>();
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client

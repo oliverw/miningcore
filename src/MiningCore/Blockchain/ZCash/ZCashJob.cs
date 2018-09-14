@@ -47,16 +47,23 @@ namespace MiningCore.Blockchain.ZCash
 
         protected uint coinbaseIndex = 4294967295u;
         protected uint coinbaseSequence = 4294967295u;
-        protected readonly IHashAlgorithm sha256D = new Sha256D();
+	    protected uint txVersionGroupId;
+	    protected uint txExpiryHeight = 20;
+	    protected uint txNJoinSplits = 0;
+		protected readonly IHashAlgorithm sha256D = new Sha256D();
         protected byte[] coinbaseInitialHash;
         protected byte[] merkleRoot;
         protected byte[] merkleRootReversed;
         protected string merkleRootReversedHex;
         protected EquihashSolverBase equihash;
 
-        #region Overrides of BitcoinJob<ZCashBlockTemplate>
+	    // ZCash Sapling & Overwinter support
+	    protected bool isOverwinterActive = false;
+	    protected bool isSaplingActive = false;
 
-        protected override Transaction CreateOutputTransaction()
+		#region Overrides of BitcoinJob<ZCashBlockTemplate>
+
+		protected override Transaction CreateOutputTransaction()
         {
             var tx = chainConfig.CreateCoinbaseTx();
 
@@ -116,8 +123,14 @@ namespace MiningCore.Blockchain.ZCash
                 // version
                 bs.ReadWrite(ref txVersion);
 
-                // serialize (simulated) input transaction
-                bs.ReadWriteAsVarInt(ref txInputCount);
+	            if (isOverwinterActive)
+	            {
+		            // version group id
+		            bs.ReadWrite(ref txVersionGroupId);
+	            }
+
+	            // serialize (simulated) input transaction
+				bs.ReadWriteAsVarInt(ref txInputCount);
                 bs.ReadWrite(ref sha256Empty);
                 bs.ReadWrite(ref coinbaseIndex);
                 bs.ReadWrite(ref script);
@@ -130,8 +143,14 @@ namespace MiningCore.Blockchain.ZCash
                 // misc
                 bs.ReadWrite(ref txLockTime);
 
-                // done
-                coinbaseInitial = stream.ToArray();
+	            if (isOverwinterActive)
+	            {
+		            bs.ReadWrite(ref txExpiryHeight);
+		            bs.ReadWriteAsVarInt(ref txNJoinSplits);
+	            }
+
+	            // done
+				coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
                 coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
             }
@@ -165,8 +184,32 @@ namespace MiningCore.Blockchain.ZCash
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+	        txExpiryHeight = blockTemplate.Height + 100;
 
-            this.isPoS = isPoS;
+			// ZCash Sapling & Overwinter support
+	        isSaplingActive = chainConfig.SaplingActivationHeight.HasValue &&
+		        chainConfig.SaplingActivationHeight.Value > 0 &&
+		        blockTemplate.Height >= chainConfig.SaplingActivationHeight.Value;
+
+			isOverwinterActive = isSaplingActive ||
+				chainConfig.OverwinterActivationHeight.HasValue &&
+				chainConfig.OverwinterActivationHeight.Value > 0 &&
+				blockTemplate.Height >= chainConfig.OverwinterActivationHeight.Value;
+
+	        if (isSaplingActive)
+	        {
+		        txVersion = 0x80000004u;
+				txVersionGroupId = 0x892F2085;
+	        }
+
+			else if(isOverwinterActive)
+	        {
+		        txVersion = 0x80000003u;
+		        txVersionGroupId = 0x03C48270;
+	        }
+
+			// Misc
+			this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
             this.headerHasher = headerHasher;
@@ -211,13 +254,18 @@ namespace MiningCore.Blockchain.ZCash
             merkleRootReversed = merkleRoot.ReverseArray();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
-            jobParams = new object[]
+			// misc
+	        var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
+				blockTemplate.FinalSaplingRootHash :
+				sha256Empty.ToHexString();
+
+			jobParams = new object[]
             {
                 JobId,
                 BlockTemplate.Version.ReverseByteOrder().ToStringHex8(),
                 previousBlockHashReversedHex,
                 merkleRootReversedHex,
-                sha256Empty.ToHexString(), // hashReserved
+                hashReserved,
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
                 BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
                 false
@@ -233,7 +281,7 @@ namespace MiningCore.Blockchain.ZCash
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(solution), $"{nameof(solution)} must not be empty");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // validate nTime
             if (nTime.Length != 8)
@@ -297,7 +345,7 @@ namespace MiningCore.Blockchain.ZCash
         protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
             var solutionBytes = solution.HexToByteArray();
 
             // serialize block-header

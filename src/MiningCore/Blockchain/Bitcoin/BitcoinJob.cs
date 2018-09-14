@@ -94,7 +94,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
 
         protected static byte[] sha256Empty = Enumerable.Repeat((byte) 0, 32).ToArray();
-        protected static uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
+        protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
 
         protected static uint txInputCount = 1u;
         protected static uint txInPrevOutIndex = (uint) (Math.Pow(2, 32) - 1);
@@ -309,7 +309,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
 
             // build coinbase
@@ -507,7 +507,7 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // validate nTime
             if (nTime.Length != 8)

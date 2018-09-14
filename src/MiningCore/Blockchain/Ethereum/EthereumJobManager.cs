@@ -387,7 +387,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         public void PrepareWorker(StratumClient client)
         {
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
@@ -398,7 +398,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(request, nameof(request));
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
-            var context = worker.GetContextAs<EthereumWorkerContext>();
+            var context = worker.ContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
             var jobId = request[1];

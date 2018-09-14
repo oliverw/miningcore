@@ -61,7 +61,7 @@ namespace MiningCore.Blockchain.Ethereum
             }
 
             // assemble full-nonce
-            var context = worker.GetContextAs<EthereumWorkerContext>();
+            var context = worker.ContextAs<EthereumWorkerContext>();
             var fullNonceHex = context.ExtraNonce1 + nonce;
 
             if (!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
@@ -74,9 +74,8 @@ namespace MiningCore.Blockchain.Ethereum
             if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
-            resultBytes.ReverseArray();
-
-            // test if share meets at least workers current difficulty
+			// test if share meets at least workers current difficulty
+			resultBytes.ReverseArray();
             var resultValue = new uint256(resultBytes);
             var resultValueBig = resultBytes.ToBigInteger();
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;

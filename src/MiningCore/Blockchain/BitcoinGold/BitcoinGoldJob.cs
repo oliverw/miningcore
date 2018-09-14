@@ -21,9 +21,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -40,9 +42,14 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-        #region Overrides of ZCashJob
+	    public BitcoinGoldJob()
+	    {
+		    txVersion = 1u;
+	    }
 
-        protected override Transaction CreateOutputTransaction()
+		#region Overrides of ZCashJob
+
+		protected override Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * blockRewardMultiplier, MoneyUnit.Satoshi);
 

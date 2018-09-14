@@ -310,7 +310,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(request, nameof(request));
 
             logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
-            var context = worker.GetContextAs<MoneroWorkerContext>();
+            var context = worker.ContextAs<MoneroWorkerContext>();
 
             var job = currentJob;
             if (workerJob.Height != job?.BlockTemplate.Height)

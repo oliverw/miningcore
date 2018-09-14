@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Monero
         private void OnLogin(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
@@ -141,7 +141,7 @@ namespace MiningCore.Blockchain.Monero
         private void OnGetJob(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
@@ -165,7 +165,7 @@ namespace MiningCore.Blockchain.Monero
 
         private MoneroJobParams CreateWorkerJob(StratumClient client)
         {
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
             var job = new MoneroWorkerJob(NextJobId(), context.Difficulty);
 
             manager.PrepareWorkerJob(job, out var blob, out var target);
@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.Monero
         private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
 
             try
             {
@@ -291,7 +291,7 @@ namespace MiningCore.Blockchain.Monero
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<MoneroWorkerContext>();
+                var context = client.ContextAs<MoneroWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
@@ -347,7 +347,7 @@ namespace MiningCore.Blockchain.Monero
             Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
 
             switch (request.Method)
             {
@@ -387,7 +387,7 @@ namespace MiningCore.Blockchain.Monero
             base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
-            var context = client.GetContextAs<MoneroWorkerContext>();
+            var context = client.ContextAs<MoneroWorkerContext>();
 
             if (context.HasPendingDifficulty)
             {
