@@ -372,7 +372,7 @@ namespace MiningCore
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-            Console.WriteLine($" https://github.com/calebcall/miningcore\n")           
+            Console.WriteLine($" https://github.com/calebcall/miningcore\n");           
             Console.WriteLine();
         }
 
