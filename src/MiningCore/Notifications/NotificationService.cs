@@ -113,7 +113,7 @@ namespace MiningCore.Notifications
         private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
 
-        private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler
+        private readonly HttpClient httpClient = new HttpClient(new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
         });

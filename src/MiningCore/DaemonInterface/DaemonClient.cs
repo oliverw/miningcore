@@ -27,6 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Net.WebSockets;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -103,17 +104,19 @@ namespace MiningCore.DaemonInterface
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
             {
-                var handler = new HttpClientHandler
+                var handler = new SocketsHttpHandler
                 {
                     Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
                     PreAuthenticate = true,
-                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
                 };
 
                 if (endpoint.Ssl && !endpoint.ValidateCert)
                 {
-                    handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-                    handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true;
+                    handler.SslOptions = new SslClientAuthenticationOptions
+                    {
+                        RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
+                    };
                 }
 
                 return new HttpClient(handler);
