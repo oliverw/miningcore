@@ -85,9 +85,10 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 
 ### Runtime Requirements
 
-- [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
+- [.Net Core 2.1 Runtime](https://www.microsoft.com/net/download/core#/runtime)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
+- To build and run on Linux refer to the section below
 
 ### PostgreSQL Database setup
 
@@ -131,11 +132,15 @@ You also need to expose all stratum ports specified in your configuration file.
 
 Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
 
-#### Linux (Ubuntu example)
+#### Linux (Ubuntu 16.04 example)
 
 ```console
-$ apt-get update -y 
-$ apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
+$ wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+$ sudo dpkg -i packages-microsoft-prod.deb
+$ sudo apt-get update -y
+$ sudo apt-get install apt-transport-https -y
+$ sudo apt-get update -y
+$ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
 $ git clone https://github.com/coinfoundry/miningcore
 $ cd miningcore/src/MiningCore
 $ ./linux-build.sh
