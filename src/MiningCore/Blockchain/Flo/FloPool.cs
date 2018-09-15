@@ -26,12 +26,10 @@ using MiningCore.Blockchain.Flo.Configuration;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using MiningCore.Util;
-using MiningCore.Mining;
 using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Flo
@@ -45,9 +43,8 @@ namespace MiningCore.Blockchain.Flo
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
@@ -61,7 +58,6 @@ namespace MiningCore.Blockchain.Flo
 
             if (string.IsNullOrEmpty(extraConfig?.FloData))
                 logger.ThrowLogPoolStartupException("Pool coinbase FloData is not configured", LogCat);
-            
         }
 
         protected override BitcoinJobManager<FloJob, BlockTemplate> CreateJobManager()

@@ -37,6 +37,7 @@ using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -58,8 +59,7 @@ namespace MiningCore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) : base(ctx, clock)
+            IMessageBus messageBus) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -68,19 +68,16 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
             this.messageBus = messageBus;
-            this.notificationService = notificationService;
         }
 
         protected PoolStats poolStats = new PoolStats();
         protected readonly JsonSerializerSettings serializerSettings;
-        protected readonly NotificationService notificationService;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
@@ -106,7 +103,7 @@ namespace MiningCore.Mining
             if (parts == null || parts.Length == 0)
                 return null;
 
-            foreach(var part in parts)
+            foreach (var part in parts)
             {
                 var m = regexStaticDiff.Match(part);
 
@@ -158,11 +155,16 @@ namespace MiningCore.Mining
                 });
         }
 
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
+        }
+
         #region VarDiff
 
         protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
 
             if (context.VarDiff != null)
             {
@@ -214,13 +216,13 @@ namespace MiningCore.Mining
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Where(x=> client.IsAlive)
+                .Where(x => client.IsAlive)
                 .Subscribe(_ => UpdateVarDiff(client, true));
         }
 
         protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
-            var context = client.GetContextAs<WorkerContextBase>();
+            var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
         }
 
@@ -237,7 +239,7 @@ namespace MiningCore.Mining
 
         protected virtual void InitStats()
         {
-            if(clusterConfig.ShareRelay == null)
+            if (clusterConfig.ShareRelay == null)
                 LoadStats();
         }
 
@@ -314,7 +316,7 @@ Current Block Height:   {blockchainStats.BlockHeight}
 Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
 Network Hash Rate:      {FormatUtil.FormatHashrate(blockchainStats.NetworkHashrate)}
-Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty )}
+Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty)}
 Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0)}%
 ";
 
@@ -347,24 +349,24 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
             try
             {
-	            SetupBanning(clusterConfig);
-	            await SetupJobManager(ct);
+                SetupBanning(clusterConfig);
+                await SetupJobManager(ct);
                 InitStats();
 
                 if (poolConfig.EnableInternalStratum == true)
-	            {
-		            var ipEndpoints = poolConfig.Ports.Keys
-			            .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
-			            .ToArray();
+                {
+                    var ipEndpoints = poolConfig.Ports.Keys
+                        .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
+                        .ToArray();
 
-		            StartListeners(poolConfig.Id, ipEndpoints);
-	            }
+                    StartListeners(poolConfig.Id, ipEndpoints);
+                }
 
                 logger.Info(() => $"[{LogCat}] Online");
                 OutputPoolInfo();
             }
 
-            catch(PoolStartupAbortException)
+            catch (PoolStartupAbortException)
             {
                 // just forward these
                 throw;
@@ -383,6 +385,11 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             }
         }
 
-	    #endregion // API-Surface
+        public void Stop()
+        {
+            StopListeners();
+        }
+
+        #endregion // API-Surface
     }
 }

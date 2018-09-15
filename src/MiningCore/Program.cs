@@ -45,6 +45,7 @@ using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
 using MiningCore.Native;
+using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
 using MiningCore.Persistence.Postgres;
@@ -75,6 +76,8 @@ namespace MiningCore
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static ApiServer apiServer;
+        private static NotificationService notificationService;
+        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
 
@@ -110,7 +113,7 @@ namespace MiningCore
 
                 if (!shareRecoveryOption.HasValue())
                 {
-                    if(!cts.IsCancellationRequested)
+                    if (!cts.IsCancellationRequested)
                         Start().Wait(cts.Token);
                 }
 
@@ -157,8 +160,8 @@ namespace MiningCore
             }
 
             Shutdown();
-            Process.GetCurrentProcess().CloseMainWindow();
-            Process.GetCurrentProcess().Close();
+
+            Process.GetCurrentProcess().Kill();
         }
 
         private static void LogRuntimeInfo()
@@ -548,6 +551,8 @@ namespace MiningCore
 
         private static async Task Start()
         {
+            notificationService = container.Resolve<NotificationService>();
+
             if (clusterConfig.ShareRelay == null)
             {
                 // start share recorder
@@ -604,6 +609,7 @@ namespace MiningCore
                 // create and configure
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
 
                 // pre-start attachments
                 shareReceiver?.AttachPool(pool);
@@ -642,7 +648,9 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch { }
+            catch 
+            {               
+            }
 
             e.Cancel = true;
         }
@@ -656,13 +664,18 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch { }
+            catch 
+            {
+            }
         }
 
         private static void Shutdown()
         {
             logger.Info(() => "Shutdown ...");
             Console.WriteLine("Shutdown...");
+
+            foreach (var pool in pools.Values)
+                pool.Stop();
 
             shareRelay?.Stop();
             shareRecorder?.Stop();

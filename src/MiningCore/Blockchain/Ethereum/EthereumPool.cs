@@ -33,7 +33,7 @@ using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Mining;
-using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Stratum;
@@ -52,9 +52,8 @@ namespace MiningCore.Blockchain.Ethereum
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
 
@@ -64,7 +63,7 @@ namespace MiningCore.Blockchain.Ethereum
         private void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
             {
@@ -104,7 +103,7 @@ namespace MiningCore.Blockchain.Ethereum
         private void OnAuthorize(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
             {
@@ -134,7 +133,7 @@ namespace MiningCore.Blockchain.Ethereum
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -149,7 +148,7 @@ namespace MiningCore.Blockchain.Ethereum
         private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             try
             {
@@ -186,13 +185,16 @@ namespace MiningCore.Blockchain.Ethereum
                 var share = await manager.SubmitShareAsync(client, submitRequest, context.Difficulty,
                     poolEndpoint.Difficulty);
 
-                // success
                 client.Respond(true, request.Id);
-				messageBus.SendMessage(new ClientShare(client, share));
 
-				EnsureInitialWorkSent(client);
+                // publish
+                messageBus.SendMessage(new ClientShare(client, share));
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+                EnsureInitialWorkSent(client);
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -207,6 +209,9 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
+
                 // update client stats
                 context.Stats.InvalidShares++;
                 logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
@@ -218,7 +223,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private void EnsureInitialWorkSent(StratumClient client)
         {
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             lock (context)
             {
@@ -241,7 +246,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             ForEachClient(client =>
             {
-                var context = client.GetContextAs<EthereumWorkerContext>();
+                var context = client.ContextAs<EthereumWorkerContext>();
 
                 if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                 {
@@ -258,7 +263,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (context.ApplyPendingDifficulty())
-                        client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                        client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
 
                     // send job
                     client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
@@ -276,12 +281,12 @@ namespace MiningCore.Blockchain.Ethereum
             await manager.StartAsync(ct);
 
             if (poolConfig.EnableInternalStratum == true)
-	        {
-		        disposables.Add(manager.Jobs.Subscribe(OnNewJob));
+            {
+                disposables.Add(manager.Jobs.Subscribe(OnNewJob));
 
-		        // we need work before opening the gates
-		        await manager.Jobs.Take(1).ToTask(ct);
-	        }
+                // we need work before opening the gates
+                await manager.Jobs.Take(1).ToTask(ct);
+            }
         }
 
         protected override void InitStats()
@@ -301,7 +306,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            switch (request.Method)
             {
                 case EthereumStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -338,14 +343,14 @@ namespace MiningCore.Blockchain.Ethereum
             base.OnVarDiffUpdate(client, newDiff);
 
             // apply immediately and notify client
-            var context = client.GetContextAs<EthereumWorkerContext>();
+            var context = client.ContextAs<EthereumWorkerContext>();
 
             if (context.HasPendingDifficulty)
             {
                 context.ApplyPendingDifficulty();
 
                 // send job
-                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
                 client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }

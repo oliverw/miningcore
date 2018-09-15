@@ -30,6 +30,7 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;

@@ -29,11 +29,6 @@ namespace MiningCore.Blockchain.Ethereum
         public string Target { get; set; }
 
         /// <summary>
-        /// hash of the parent block.
-        /// </summary>
-        public string ParentHash { get; set; }
-
-        /// <summary>
         /// integer of the difficulty for this block
         /// </summary>
         public ulong Difficulty { get; set; }

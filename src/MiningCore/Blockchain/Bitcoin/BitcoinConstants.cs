@@ -81,10 +81,12 @@ namespace MiningCore.Blockchain.Bitcoin
         // RPC_INVALID_REQUEST is internally mapped to HTTP_BAD_REQUEST (400).
         // It should not be used for application-layer errors.
         RPC_INVALID_REQUEST = -32600,
+
         // RPC_METHOD_NOT_FOUND is internally mapped to HTTP_NOT_FOUND (404).
         // It should not be used for application-layer errors.
         RPC_METHOD_NOT_FOUND = -32601,
         RPC_INVALID_PARAMS = -32602,
+        
         // RPC_INTERNAL_ERROR should only be used for genuine errors in bitcoind
         // (for example datadir corruption).
         RPC_INTERNAL_ERROR = -32603,

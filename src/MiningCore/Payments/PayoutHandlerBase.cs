@@ -25,7 +25,8 @@ using AutoMapper;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -39,13 +40,15 @@ namespace MiningCore.Payments
 {
     public abstract class PayoutHandlerBase
     {
-        protected PayoutHandlerBase(IConnectionFactory cf, IMapper mapper,
+        protected PayoutHandlerBase(
+            IConnectionFactory cf,
+            IMapper mapper,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -54,7 +57,7 @@ namespace MiningCore.Payments
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
             Contract.RequiresNonNull(clock, nameof(clock));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.mapper = mapper;
@@ -63,7 +66,7 @@ namespace MiningCore.Payments
             this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
             this.paymentRepo = paymentRepo;
-            this.notificationService = notificationService;
+            this.messageBus = messageBus;
 
             BuildFaultHandlingPolicy();
         }
@@ -75,7 +78,7 @@ namespace MiningCore.Payments
         protected readonly IPaymentRepository paymentRepo;
         protected readonly IShareRepository shareRepo;
         protected readonly IMasterClock clock;
-        protected readonly NotificationService notificationService;
+        protected readonly IMessageBus messageBus;
         protected ClusterConfig clusterConfig;
         private Policy faultPolicy;
 
@@ -108,10 +111,10 @@ namespace MiningCore.Payments
                 {
                     cf.RunTx((con, tx) =>
                     {
-                        foreach(var balance in balances)
+                        foreach (var balance in balances)
                         {
                             if (!string.IsNullOrEmpty(transactionConfirmation) &&
-                                !poolConfig.RewardRecipients.Any(x=> x.Address == balance.Address))
+                                !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
                             {
                                 // record payment
                                 var payment = new Payment
@@ -135,10 +138,10 @@ namespace MiningCore.Payments
                 });
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
-                    $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
+                                       $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
             }
         }
@@ -160,13 +163,13 @@ namespace MiningCore.Payments
                 if (CoinMetaData.TxInfoLinks.TryGetValue(poolConfig.Coin.Type, out var baseUrl))
                     txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
 
-                notificationService.NotifyPaymentSuccess(poolId, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee);
+                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee));
             }
         }
 
         protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
         {
-            notificationService.NotifyPaymentFailure(poolId, balances.Sum(x => x.Amount), error ?? ex?.Message);
+            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount)));
         }
     }
 }
