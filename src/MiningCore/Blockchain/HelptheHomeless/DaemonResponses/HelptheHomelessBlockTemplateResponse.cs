@@ -20,29 +20,29 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.Dash.DaemonResponses
+namespace MiningCore.Blockchain.HelpTheHomeless.DaemonResponses
 {
-    public class DashMasternode
+    public class HelpTheHomelessMasternode
     {
         public string Payee { get; set; }
         public string Script { get; set; }
         public long Amount { get; set; }
     }
 
-    public class DashSuperBlock
+    public class HelpTheHomelessSuperBlock
     {
         public string Payee { get; set; }
         public long Amount { get; set; }
     }
 
-    public class DashBlockTemplate : Bitcoin.DaemonResponses.BlockTemplate
+    public class HelpTheHomelessBlockTemplate : Bitcoin.DaemonResponses.BlockTemplate
     {
         public string Payee { get; set; }
 
         [JsonProperty("payee_amount")]
         public long? PayeeAmount { get; set; }
 
-        public DashMasternode Masternode { get; set; }
+        public HelpTheHomelessMasternode Masternode { get; set; }
 
         [JsonProperty("masternode_payments_started")]
         public bool MasternodePaymentsStarted { get; set; }
@@ -51,7 +51,7 @@ namespace MiningCore.Blockchain.Dash.DaemonResponses
         public bool MasternodePaymentsEnforced { get; set; }
 
         [JsonProperty("superblock")]
-        public DashSuperBlock[] SuperBlocks { get; set; }
+        public HelpTheHomelessSuperBlock[] SuperBlocks { get; set; }
 
         [JsonProperty("superblocks_started")]
         public bool SuperblocksStarted { get; set; }
