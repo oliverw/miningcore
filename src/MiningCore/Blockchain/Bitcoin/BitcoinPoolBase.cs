@@ -52,7 +52,7 @@ namespace MiningCore.Blockchain.Bitcoin
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus,            
+            IMessageBus messageBus) :
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
@@ -424,5 +424,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
+
+        #endregion // Overrides
     }
 }

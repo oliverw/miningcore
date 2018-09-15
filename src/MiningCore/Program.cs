@@ -1,16 +1,13 @@
 ﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -375,7 +372,7 @@ namespace MiningCore
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-            Console.WriteLine($" https://github.com/calebcall/miningcore\n");
+            Console.WriteLine($" https://github.com/calebcall/miningcore\n")           
             Console.WriteLine();
         }
 
@@ -489,346 +486,7 @@ namespace MiningCore
         {
             // Configure Equihash
             if (clusterConfig.EquihashMaxThreads.HasValue)
-                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
-        }
-
-        private static void ConfigurePersistence(ContainerBuilder builder)
-        {
-            if (clusterConfig.Persistence == null &&
-                clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.ShareRelay == null)
-                logger.ThrowLogPoolStartupException("Persistence is not configured!");
-
-            if (clusterConfig.Persistence?.Postgres != null)
-                ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
-            else
-                ConfigureDummyPersistence(builder);
-        }
-
-        private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
-        {
-            // validate config
-            if (string.IsNullOrEmpty(pgConfig.Host))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
-
-            if (pgConfig.Port == 0)
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
-
-            if (string.IsNullOrEmpty(pgConfig.Database))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
-
-            if (string.IsNullOrEmpty(pgConfig.User))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
-
-            // build connection string
-            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
-
-            // register connection factory
-            builder.RegisterInstance(new PgConnectionFactory(connectionString))
-                .AsImplementedInterfaces();
-
-            // register repositories
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
-                .AsImplementedInterfaces()
-                .SingleInstance();
-        }
-
-        private static void ConfigureDummyPersistence(ContainerBuilder builder)
-        {
-            // register connection factory
-            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
-                .AsImplementedInterfaces();
-
-            // register repositories
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
-                .AsImplementedInterfaces()
-                .SingleInstance();
-        }
-
-        private static async Task Start()
-        {
-            if (clusterConfig.ShareRelay == null)
-            {
-                // start share recorder
-                shareRecorder = container.Resolve<ShareRecorder>();
-                shareRecorder.Start(clusterConfig);
-
-                // start share receiver (for external shares)
-                shareReceiver = container.Resolve<ShareReceiver>();
-                shareReceiver.Start(clusterConfig);
-            }
-
-            else
-            {
-                // start share relay
-                shareRelay = container.Resolve<ShareRelay>();
-                shareRelay.Start(clusterConfig);
-            }
-
-            // start API
-            if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
-            {
-                apiServer = container.Resolve<ApiServer>();
-                apiServer.Start(clusterConfig);
-            }
-
-            // start payment processor
-            if (clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-            {
-                payoutManager = container.Resolve<PayoutManager>();
-                payoutManager.Configure(clusterConfig);
-
-                payoutManager.Start();
-            }
-
-            else
-                logger.Info("Payment processing is not enabled");
-
-            if (clusterConfig.ShareRelay == null)
-            {
-                // start pool stats updater
-                statsRecorder = container.Resolve<StatsRecorder>();
-                statsRecorder.Configure(clusterConfig);
-                statsRecorder.Start();
-            }
-
-            // start pools
-            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
-            {
-                // resolve pool implementation
-                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
-                    .First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
-
-                // create and configure
-                var pool = poolImpl.Value;
-                pool.Configure(poolConfig, clusterConfig);
-
-                // pre-start attachments
-                shareReceiver?.AttachPool(pool);
-                statsRecorder?.AttachPool(pool);
-
-                await pool.StartAsync(cts.Token);
-            }));
-
-            // keep running
-            await Observable.Never<Unit>().ToTask(cts.Token);
-        }
-
-        private static void RecoverShares(string recoveryFilename)
-        {
-            shareRecorder = container.Resolve<ShareRecorder>();
-            shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
-        }
-
-        private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            if (logger != null)
-            {
-                logger.Error(e.ExceptionObject);
-                LogManager.Flush(TimeSpan.Zero);
-            }
-
-            Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
-        }
-
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            logger?.Info(() => "SIGINT received. Exiting.");
-            Console.WriteLine("SIGINT received. Exiting.");
-
-            try
-            {
-                cts?.Cancel();
-            }
-            catch { }
-
-            e.Cancel = true;
-        }
-
-        private static void OnProcessExit(object sender, EventArgs e)
-        {
-            logger?.Info(() => "SIGTERM received. Exiting.");
-            Console.WriteLine("SIGTERM received. Exiting.");
-
-            try
-            {
-                cts?.Cancel();
-            }
-            catch { }
-        }
-
-        private static void Shutdown()
-        {
-            logger.Info(() => "Shutdown ...");
-            Console.WriteLine("Shutdown...");
-
-            shareRelay?.Stop();
-            shareRecorder?.Stop();
-            statsRecorder?.Stop();
-        }
-
-        private static void TouchNativeLibs()
-        {
-            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
-            Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
-            Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
-
-        private static readonly string[] NativeLibs =
-        {
-            "libmultihash.dll",
-            "libcryptonote.dll"
-        };
-
-        /// <summary>
-        /// work-around for libmultihash.dll not being found when running in dev-environment
-        /// </summary>
-        public static void PreloadNativeLibs()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
-                return;
-            }
-
-            // load it
-            var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
-            var appRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            foreach (var nativeLib in NativeLibs)
-            {
-                var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
-                var result = LoadLibraryEx(path, IntPtr.Zero, 0);
-
-                if (result == IntPtr.Zero)
-                    Console.WriteLine($"Unable to load {path}");
-            }
-        }
-    }
-");
-            Console.WriteLine($" https://github.com/calebcall/miningcore\n");
-            Console.WriteLine();
-        }
-
-        private static void ConfigureLogging()
-        {
-            var config = clusterConfig.Logging;
-            var loggingConfig = new LoggingConfiguration();
-
-            if (config != null)
-            {
-                // parse level
-                var level = !string.IsNullOrEmpty(config.Level)
-                    ? LogLevel.FromString(config.Level)
-                    : LogLevel.Info;
-
-                var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
-
-                if (config.EnableConsoleLog)
-                {
-                    if (config.EnableConsoleColors)
-                    {
-                        var target = new ColoredConsoleTarget("console")
-                        {
-                            Layout = layout
-                        };
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Trace"),
-                            ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                            ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Info"),
-                            ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Warn"),
-                            ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Error"),
-                            ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-                            ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                    }
-
-                    else
-                    {
-                        var target = new ConsoleTarget("console")
-                        {
-                            Layout = layout
-                        };
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(config.LogFile))
-                {
-                    var target = new FileTarget("file")
-                    {
-                        FileName = GetLogPath(config, config.LogFile),
-                        FileNameKind = FilePathKind.Unknown,
-                        Layout = layout
-                    };
-
-                    loggingConfig.AddTarget(target);
-                    loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                }
-
-                if (config.PerPoolLogFile)
-                {
-                    foreach (var poolConfig in clusterConfig.Pools)
-                    {
-                        var target = new FileTarget(poolConfig.Id)
-                        {
-                            FileName = GetLogPath(config, poolConfig.Id + ".log"),
-                            FileNameKind = FilePathKind.Unknown,
-                            Layout = layout
-                        };
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
-                    }
-                }
-            }
-
-            LogManager.Configuration = loggingConfig;
-
-            logger = LogManager.GetCurrentClassLogger();
-        }
-
-        private static Layout GetLogPath(ClusterLoggingConfig config, string name)
-        {
-            if (string.IsNullOrEmpty(config.LogBaseDirectory))
-                return name;
-
-            return Path.Combine(config.LogBaseDirectory, name);
-        }
-
-        private static void ConfigureMisc()
-        {
-            // Configure Equihash
-            if (clusterConfig.EquihashMaxThreads.HasValue)
-                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+                EquihashSolverBase.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)
@@ -987,8 +645,8 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch 
-            {               
+            catch
+            {
             }
 
             e.Cancel = true;
@@ -1003,7 +661,7 @@ namespace MiningCore
             {
                 cts?.Cancel();
             }
-            catch 
+            catch
             {
             }
         }
