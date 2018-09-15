@@ -175,24 +175,28 @@ namespace MiningCore.Blockchain.ZCash
 
             // ZCash Sapling & Overwinter support
             isSaplingActive = chainConfig.SaplingActivationHeight.HasValue &&
+                chainConfig.SaplingTxVersion.HasValue &&
+                chainConfig.SaplingTxVersionGroupId.HasValue &&
                 chainConfig.SaplingActivationHeight.Value > 0 &&
                 blockTemplate.Height >= chainConfig.SaplingActivationHeight.Value;
 
             isOverwinterActive = isSaplingActive ||
+                chainConfig.OverwinterTxVersion.HasValue &&
+                chainConfig.OverwinterTxVersionGroupId.HasValue &&
                 chainConfig.OverwinterActivationHeight.HasValue &&
                 chainConfig.OverwinterActivationHeight.Value > 0 &&
                 blockTemplate.Height >= chainConfig.OverwinterActivationHeight.Value;
 
             if (isSaplingActive)
             {
-                txVersion = 4;
-                txVersionGroupId = 0x892f2085;
+                txVersion = chainConfig.SaplingTxVersion.Value;
+                txVersionGroupId = chainConfig.SaplingTxVersionGroupId.Value;
             }
 
             else if(isOverwinterActive)
             {
-                txVersion = 3;
-                txVersionGroupId = 0x03C48270;
+                txVersion = chainConfig.OverwinterTxVersion.Value;
+                txVersionGroupId = chainConfig.OverwinterTxVersionGroupId.Value;
             }
 
             // Misc
