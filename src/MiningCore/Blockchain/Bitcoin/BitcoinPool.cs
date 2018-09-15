@@ -44,10 +44,9 @@ namespace MiningCore.Blockchain.Bitcoin
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, notificationService)
+            IMasterClock clock,            
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {
         }
     }
