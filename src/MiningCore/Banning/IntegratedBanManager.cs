@@ -36,8 +36,6 @@ namespace MiningCore.Banning
 
         public bool IsBanned(IPAddress address)
         {
-            Contract.RequiresNonNull(address, nameof(address));
-
             var result = cache.Get(address.ToString());
             return result != null;
         }

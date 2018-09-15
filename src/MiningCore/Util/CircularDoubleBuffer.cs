@@ -50,6 +50,5 @@ namespace MiningCore.Util
 
             return sum;
         }
-
     }
 }

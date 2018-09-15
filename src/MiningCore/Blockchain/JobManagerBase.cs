@@ -32,6 +32,8 @@ using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
+using MiningCore.Notifications.Messages;
 using MiningCore.Util;
 using NetMQ;
 using NetMQ.Sockets;
@@ -42,14 +44,17 @@ namespace MiningCore.Blockchain
 {
     public abstract class JobManagerBase<TJob>
     {
-        protected JobManagerBase(IComponentContext ctx)
+        protected JobManagerBase(IComponentContext ctx, IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.ctx = ctx;
+            this.messageBus = messageBus;
         }
 
         protected readonly IComponentContext ctx;
+        protected readonly IMessageBus messageBus;
         protected ClusterConfig clusterConfig;
 
         protected TJob currentJob;
@@ -67,7 +72,7 @@ namespace MiningCore.Blockchain
 
         protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
-            while(!await AreDaemonsHealthyAsync())
+            while (!await AreDaemonsHealthyAsync())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
 
@@ -76,7 +81,7 @@ namespace MiningCore.Blockchain
 
             logger.Info(() => $"[{LogCat}] All daemons online");
 
-            while(!await AreDaemonsConnectedAsync())
+            while (!await AreDaemonsConnectedAsync())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
 
@@ -98,84 +103,86 @@ namespace MiningCore.Blockchain
         protected IObservable<string> BtStreamSubscribe(ZmqPubSubEndpointConfig config)
         {
             return Observable.Defer(() => Observable.Create<string>(obs =>
-            {
-                var tcs = new CancellationTokenSource();
-
-                Task.Factory.StartNew(() =>
                 {
-                    using(tcs)
+                    var tcs = new CancellationTokenSource();
+
+                    Task.Factory.StartNew(() =>
                     {
-                        while(!tcs.IsCancellationRequested)
+                        using (tcs)
                         {
-                            try
+                            while (!tcs.IsCancellationRequested)
                             {
-                                using(var subSocket = new SubscriberSocket())
+                                try
                                 {
-                                    //subSocket.Options.ReceiveHighWatermark = 1000;
-                                    subSocket.Connect(config.Url);
-                                    subSocket.Subscribe(config.Topic);
-
-                                    logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
-
-                                    while(!tcs.IsCancellationRequested)
+                                    using (var subSocket = new SubscriberSocket())
                                     {
-                                        var msg = (NetMQMessage) null;
+                                        //subSocket.Options.ReceiveHighWatermark = 1000;
+                                        subSocket.Connect(config.Url);
+                                        subSocket.Subscribe(config.Topic);
 
-                                        if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 4))
+                                        logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
+
+                                        while (!tcs.IsCancellationRequested)
                                         {
-                                            logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
-                                            break;
-                                        }
+                                            var msg = (NetMQMessage) null;
 
-                                        // extract frames
-                                        var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                        var flags = msg.Pop().ConvertToInt32();
-                                        var data = msg.Pop().ToByteArray();
-                                        var timestamp = msg.Pop().ConvertToInt64();
-
-                                        // compressed
-                                        if ((flags & 1) == 1)
-                                        {
-                                            using(var stm = new MemoryStream(data))
+                                            if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 4))
                                             {
-                                                using(var stmOut = new MemoryStream())
-                                                {
-                                                    using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
-                                                    {
-                                                        ds.CopyTo(stmOut);
-                                                    }
+                                                logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
+                                                break;
+                                            }
 
-                                                    data = stmOut.ToArray();
+                                            // extract frames
+                                            var topic = msg.Pop().ConvertToString(Encoding.UTF8);
+                                            var flags = msg.Pop().ConvertToInt32();
+                                            var data = msg.Pop().ToByteArray();
+                                            var timestamp = msg.Pop().ConvertToInt64();
+
+                                            // compressed
+                                            if ((flags & 1) == 1)
+                                            {
+                                                using (var stm = new MemoryStream(data))
+                                                {
+                                                    using (var stmOut = new MemoryStream())
+                                                    {
+                                                        using (var ds = new DeflateStream(stm, CompressionMode.Decompress))
+                                                        {
+                                                            ds.CopyTo(stmOut);
+                                                        }
+
+                                                        data = stmOut.ToArray();
+                                                    }
                                                 }
                                             }
+
+                                            // convert
+                                            var json = Encoding.UTF8.GetString(data);
+
+                                            // publish
+                                            obs.OnNext(json);
+
+                                            // telemetry
+                                            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
+                                                TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                         }
-
-                                        // convert
-                                        var json = Encoding.UTF8.GetString(data);
-
-                                        obs.OnNext(json);
                                     }
                                 }
-                            }
 
-                            catch(Exception ex)
-                            {
-                                logger.Error(ex);
-                            }
+                                catch (Exception ex)
+                                {
+                                    logger.Error(ex);
+                                }
 
-                            // do not consume all CPU cycles in case of a long lasting error condition
-                            Thread.Sleep(1000);
+                                // do not consume all CPU cycles in case of a long lasting error condition
+                                Thread.Sleep(1000);
+                            }
                         }
-                    }
-                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-                return Disposable.Create(() =>
-                {
-                    tcs.Cancel();
-                });
-            }))
-            .Publish()
-            .RefCount();
+                    return Disposable.Create(() => { tcs.Cancel(); });
+                }))
+                .Publish()
+                .RefCount();
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

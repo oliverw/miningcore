@@ -115,7 +115,7 @@ namespace MiningCore.Stratum
             context = value;
         }
 
-        public T GetContextAs<T>() where T: WorkerContextBase
+        public T ContextAs<T>() where T : WorkerContextBase
         {
             return (T) context;
         }
@@ -178,7 +178,7 @@ namespace MiningCore.Stratum
 
                             // append newline
                             stream.WriteByte(0xa);
-                            size = (int)stream.Position;
+                            size = (int) stream.Position;
                         }
 
                         logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf, 0, size)}");
@@ -254,9 +254,9 @@ namespace MiningCore.Stratum
 
                     LastReceive = clock.Now;
 
-                    var onLineReceived = !expectingProxyProtocolHeader ?
-                        onNext :
-                        (lineData) =>
+                    var onLineReceived = !expectingProxyProtocolHeader
+                        ? onNext
+                        : (lineData) =>
                         {
                             // are we expecting the Tcp-Proxy-Protocol header?
                             if (expectingProxyProtocolHeader)
@@ -269,13 +269,13 @@ namespace MiningCore.Stratum
 
                                 if (line.StartsWith("PROXY "))
                                 {
-                                    using(lineData)
+                                    using (lineData)
                                     {
                                         var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
                                         if (proxyAddresses == null || !proxyAddresses.Any())
-                                            proxyAddresses = new[] { IPAddress.Loopback };
+                                            proxyAddresses = new[] {IPAddress.Loopback};
 
-                                        if (proxyAddresses.Any(x=> x.Equals(peerAddress)))
+                                        if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                                         {
                                             logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
 
@@ -359,7 +359,7 @@ namespace MiningCore.Stratum
         {
             try
             {
-                var tcp = (Tcp)handle.UserToken;
+                var tcp = (Tcp) handle.UserToken;
 
                 if (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable && sendQueue != null)
                 {

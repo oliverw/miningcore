@@ -52,7 +52,7 @@ namespace MiningCore.Native
             Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 // provide reasonable large output buffer
                 var outputBuffer = ArrayPool<byte>.Shared.Rent(0x100);
@@ -106,7 +106,7 @@ namespace MiningCore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 return decode_address(input, data.Length);
             }
@@ -132,7 +132,7 @@ namespace MiningCore.Native
 
             fixed (byte* input = data)
             {
-                fixed(byte* output = result.Array)
+                fixed (byte* output = result.Array)
                 {
                     cn_slow_hash(input, output, (uint) data.Length, variant);
                 }
@@ -151,7 +151,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cn_slow_hash_lite(input, output, (uint)data.Length);
+                    cn_slow_hash_lite(input, output, (uint) data.Length);
                 }
             }
 
@@ -166,7 +166,7 @@ namespace MiningCore.Native
 
             fixed (byte* input = data)
             {
-                fixed(byte* output = result.Array)
+                fixed (byte* output = result.Array)
                 {
                     cn_fast_hash(input, output, (uint) data.Length);
                 }

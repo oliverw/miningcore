@@ -39,7 +39,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (!workerNonces.TryGetValue(worker, out var nonces))
             {
-                nonces = new HashSet<string>(new[] { nonceLower });
+                nonces = new HashSet<string>(new[] {nonceLower});
                 workerNonces[worker] = nonces;
             }
 
@@ -55,13 +55,13 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
         {
             // duplicate nonce?
-            lock(workerNonces)
+            lock (workerNonces)
             {
                 RegisterNonce(worker, nonce);
             }
 
             // assemble full-nonce
-            var context = worker.GetContextAs<EthereumWorkerContext>();
+            var context = worker.ContextAs<EthereumWorkerContext>();
             var fullNonceHex = context.ExtraNonce1 + nonce;
 
             if (!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
@@ -74,9 +74,8 @@ namespace MiningCore.Blockchain.Ethereum
             if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
-            resultBytes.ReverseArray();
-
             // test if share meets at least workers current difficulty
+            resultBytes.ReverseArray();
             var resultValue = new uint256(resultBytes);
             var resultValueBig = resultBytes.ToBigInteger();
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;
@@ -112,7 +111,7 @@ namespace MiningCore.Blockchain.Ethereum
                 UserAgent = context.UserAgent,
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
-                BlockHash = mixDigest.ToHexString(true)     // OW: is this correct?
+                BlockHash = mixDigest.ToHexString(true)
             };
 
             if (share.IsBlockCandidate)

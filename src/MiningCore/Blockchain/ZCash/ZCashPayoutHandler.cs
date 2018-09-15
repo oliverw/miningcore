@@ -30,14 +30,12 @@ using MiningCore.Blockchain.ZCash.DaemonRequests;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
-using MiningCore.Util;
 using Newtonsoft.Json.Linq;
-using Block = MiningCore.Persistence.Model.Block;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain.ZCash
@@ -54,15 +52,15 @@ namespace MiningCore.Blockchain.ZCash
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(ctx, cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
         }
 
         protected ZCashPoolConfigExtra poolExtraConfig;
         protected bool supportsNativeShielding;
         protected BitcoinNetworkType networkType;
-        protected ZCashCoinbaseTxConfig coinbaseTxConfig;
+        protected ZCashChainConfig chainConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
         protected const int ZMinConfirmations = 8;
@@ -86,8 +84,8 @@ namespace MiningCore.Blockchain.ZCash
                 networkType = BitcoinNetworkType.Main;
 
             // lookup config
-            if (ZCashConstants.CoinbaseTxConfig.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
-                coinbaseTx.TryGetValue(networkType, out coinbaseTxConfig);
+            if (ZCashConstants.Chains.TryGetValue(poolConfig.Coin.Type, out var coinbaseTx))
+                coinbaseTx.TryGetValue(networkType, out chainConfig);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);
@@ -108,7 +106,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // send in batches with no more than 50 recipients to avoid running into tx size limits
             var pageSize = 50;
-            var pageCount = (int)Math.Ceiling(balances.Length / (double)pageSize);
+            var pageCount = (int) Math.Ceiling(balances.Length / (double) pageSize);
 
             for (var i = 0; i < pageCount; i++)
             {
@@ -123,7 +121,7 @@ namespace MiningCore.Blockchain.ZCash
                 // build args
                 var amounts = page
                     .Where(x => x.Amount > 0)
-                    .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
+                    .Select(x => new ZSendManyRecipient {Address = x.Address, Amount = Math.Round(x.Amount, 8)})
                     .ToList();
 
                 if (amounts.Count == 0)
@@ -134,8 +132,8 @@ namespace MiningCore.Blockchain.ZCash
                 // check shielded balance
                 var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(ZCashCommands.ZGetBalance, new object[]
                 {
-                    poolExtraConfig.ZAddress,   // default account
-                    ZMinConfirmations,          // only spend funds covered by this many confirmations
+                    poolExtraConfig.ZAddress, // default account
+                    ZMinConfirmations, // only spend funds covered by this many confirmations
                 });
 
                 if (balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
@@ -148,9 +146,9 @@ namespace MiningCore.Blockchain.ZCash
 
                 var args = new object[]
                 {
-                    poolExtraConfig.ZAddress,   // default account
-                    amounts,                    // addresses and associated amounts
-                    ZMinConfirmations,          // only spend funds covered by this many confirmations
+                    poolExtraConfig.ZAddress, // default account
+                    amounts, // addresses and associated amounts
+                    ZMinConfirmations, // only spend funds covered by this many confirmations
                     TransferFee
                 };
 
@@ -171,10 +169,10 @@ namespace MiningCore.Blockchain.ZCash
 
                         var continueWaiting = true;
 
-                        while(continueWaiting)
+                        while (continueWaiting)
                         {
                             var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                                ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId }});
+                                ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
 
                             if (operationResultResponse.Error == null &&
                                 operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -217,7 +215,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 else
                 {
-                    if (result.Error.Code == (int)BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                    if (result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
                     {
                         if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                         {
@@ -278,15 +276,15 @@ namespace MiningCore.Blockchain.ZCash
 
             var args = new object[]
             {
-                poolConfig.Address,         // source: pool's t-addr receiving coinbase rewards
-                poolExtraConfig.ZAddress,   // dest:   pool's z-addr
+                poolConfig.Address, // source: pool's t-addr receiving coinbase rewards
+                poolExtraConfig.ZAddress, // dest:   pool's z-addr
             };
 
             var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(ZCashCommands.ZShieldCoinbase, args);
 
             if (result.Error != null)
             {
-                if(result.Error.Code == -6)
+                if (result.Error.Code == -6)
                     logger.Info(() => $"[{LogCategory}] No funds to shield");
                 else
                     logger.Error(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
@@ -303,7 +301,7 @@ namespace MiningCore.Blockchain.ZCash
             while (continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+                    ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
 
                 if (operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -352,8 +350,8 @@ namespace MiningCore.Blockchain.ZCash
             }
 
             var balance = unspentResult.Response
-                .Where(x=> x.Spendable && x.Address == poolConfig.Address)
-                .Sum(x=> x.Amount);
+                .Where(x => x.Spendable && x.Address == poolConfig.Address)
+                .Sum(x => x.Amount);
 
             // make sure there's enough balance to shield after reserves
             if (balance - TransferFee <= TransferFee)
@@ -400,7 +398,7 @@ namespace MiningCore.Blockchain.ZCash
             while (continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
+                    ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
 
                 if (operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)

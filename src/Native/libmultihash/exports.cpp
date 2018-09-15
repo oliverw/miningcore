@@ -207,6 +207,7 @@ extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t
 
 extern "C" MODULE_API bool equihash_verify_export(const char* header, int header_length, const char* solution, int solution_length)
 {
+<<<<<<< HEAD
     if (header_length != 140 || solution_length != 1344) {
         return false;
     }
@@ -214,6 +215,26 @@ extern "C" MODULE_API bool equihash_verify_export(const char* header, int header
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH(header, vecSolution);
+=======
+    if (header_length != 140) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH_200_9(header, vecSolution, NULL);
+}
+
+extern "C" MODULE_API bool equihash_verify_btg_export(const char* header, int header_length, const char* solution, int solution_length)
+{
+    if (header_length != 140) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH_144_5(header, vecSolution, "BgoldPoW");
+>>>>>>> upstream/master
 }
 
 extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)

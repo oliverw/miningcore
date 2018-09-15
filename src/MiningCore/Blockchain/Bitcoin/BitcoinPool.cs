@@ -16,6 +16,7 @@ LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE A
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<<<<<<< HEAD
 */
 
 using Autofac;
@@ -51,4 +52,40 @@ namespace MiningCore.Blockchain.Bitcoin
         {
         }
     }
+=======
+*/
+
+using Autofac;
+using AutoMapper;
+using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Configuration;
+using MiningCore.Messaging;
+using MiningCore.Notifications;
+using MiningCore.Persistence;
+using MiningCore.Persistence.Repositories;
+using MiningCore.Time;
+using Newtonsoft.Json;
+
+namespace MiningCore.Blockchain.Bitcoin
+{
+    [CoinMetadata(
+        CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
+        CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
+        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
+        CoinType.MOON, CoinType.XVG, CoinType.PAK, CoinType.CANN,
+        CoinType.RVN, CoinType.PGN)]
+    public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
+    {
+        public BitcoinPool(IComponentContext ctx,
+            JsonSerializerSettings serializerSettings,
+            IConnectionFactory cf,
+            IStatsRepository statsRepo,
+            IMapper mapper,
+            IMasterClock clock,
+            IMessageBus messageBus) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
+        {
+        }
+    }
+>>>>>>> upstream/master
 }

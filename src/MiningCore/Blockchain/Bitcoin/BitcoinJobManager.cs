@@ -39,7 +39,9 @@ using MiningCore.Crypto.Hashing.Special;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -56,22 +58,20 @@ namespace MiningCore.Blockchain.Bitcoin
     {
         public BitcoinJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) :
-            base(ctx)
+            base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
-            this.notificationService = notificationService;
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
         }
 
-        protected readonly NotificationService notificationService;
         protected readonly IMasterClock clock;
         protected DaemonClient daemon;
         protected readonly IExtraNonceProvider extraNonceProvider;
@@ -98,15 +98,15 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             new
             {
-                capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
-                rules = new[] { "segwit" }
+                capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
+                rules = new[] {"segwit"}
             }
         };
 
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.EnableInternalStratum == false)
-		        return;
+            if (poolConfig.EnableInternalStratum == false)
+                return;
 
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
             var blockSubmission = blockSubmissionSubject.Synchronize();
@@ -114,7 +114,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
             {
-                blockSubmission.Select(x=> (false, "Block-submission", (string) null))
+                blockSubmission.Select(x => (false, "Block-submission", (string) null))
             };
 
             if (extraPoolConfig?.BtStream == null)
@@ -205,20 +205,20 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // get initial blocktemplate
                 triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => (false, "Initial template", (string)null))
+                    .Select(_ => (false, "Initial template", (string) null))
                     .TakeWhile(_ => !hasInitialBlockTemplate));
             }
 
             Jobs = Observable.Merge(triggers)
                 .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
                 .Concat()
-                .Where(x=> x.IsNew || x.Force)
+                .Where(x => x.IsNew || x.Force)
                 .Do(x =>
                 {
-                    if(x.IsNew)
+                    if (x.IsNew)
                         hasInitialBlockTemplate = true;
                 })
-                .Select(x=> GetJobParamsForStratum(x.IsNew))
+                .Select(x => GetJobParamsForStratum(x.IsNew))
                 .Publish()
                 .RefCount();
         }
@@ -313,20 +313,20 @@ namespace MiningCore.Blockchain.Bitcoin
             // execute command batch
             var results = await daemon.ExecuteBatchAnyAsync(
                 hasSubmitBlockMethod
-                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] { blockHex })
-                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new { mode = "submit", data = blockHex }),
-                new DaemonCmd(BitcoinCommands.GetBlock, new[] { share.BlockHash }));
+                    ? new DaemonCmd(BitcoinCommands.SubmitBlock, new[] {blockHex})
+                    : new DaemonCmd(BitcoinCommands.GetBlockTemplate, new {mode = "submit", data = blockHex}),
+                new DaemonCmd(BitcoinCommands.GetBlock, new[] {share.BlockHash}));
 
             // did submission succeed?
             var submitResult = results[0];
             var submitError = submitResult.Error?.Message ??
-                submitResult.Error?.Code.ToString(CultureInfo.InvariantCulture) ??
-                submitResult.Response?.ToString();
+                              submitResult.Error?.Code.ToString(CultureInfo.InvariantCulture) ??
+                              submitResult.Response?.ToString();
 
             if (!string.IsNullOrEmpty(submitError))
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {submitError}");
-                notificationService.NotifyAdmin("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {submitError}"));
                 return (false, null);
             }
 
@@ -338,7 +338,7 @@ namespace MiningCore.Blockchain.Bitcoin
             if (!accepted)
             {
                 logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
-                notificationService.NotifyAdmin($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission");
+                messageBus.SendMessage(new AdminNotification($"[{share.PoolId.ToUpper()}]-[{share.Source}] Block submission failed", $"[{share.PoolId.ToUpper()}]-[{share.Source}] Block {share.BlockHeight} submission failed for pool {poolConfig.Id} because block was not found after submission"));
             }
 
             return (accepted, block?.Transactions.FirstOrDefault());
@@ -362,7 +362,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var responses = await daemon.ExecuteCmdAllAsync<DaemonInfo>(BitcoinCommands.GetInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
@@ -394,7 +394,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     if (peers != null && peers.Length > 0)
                     {
                         var totalBlocks = peers.Max(x => x.StartingHeight);
-                        var percent = totalBlocks > 0 ? (double)blockCount / totalBlocks * 100 : 0;
+                        var percent = totalBlocks > 0 ? (double) blockCount / totalBlocks * 100 : 0;
                         logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peers.Length} peers");
                     }
                 }
@@ -422,7 +422,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 var connectionCountResponse = results[0].Response.ToObject<object>();
 
                 //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
-                BlockchainStats.ConnectedPeers = (int)(long)connectionCountResponse;
+                BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
             }
 
             catch (Exception e)
@@ -442,7 +442,7 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
-                BitcoinCommands.ValidateAddress, new[] { address });
+                BitcoinCommands.ValidateAddress, new[] {address});
 
             return result.Response != null && result.Response.IsValid;
         }
@@ -451,7 +451,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // assign unique ExtraNonce1 to worker (miner)
             context.ExtraNonce1 = extraNonceProvider.Next();
@@ -479,7 +479,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             TJob job;
 
-            lock(jobLock)
+            lock (jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
@@ -496,12 +496,12 @@ namespace MiningCore.Blockchain.Bitcoin
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
-            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
+            logger.LogInvoke(LogCat, new[] {worker.ConnectionId});
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
-            var context = worker.GetContextAs<BitcoinWorkerContext>();
+            var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // extract params
             var workerValue = (submitParams[0] as string)?.Trim();
@@ -515,7 +515,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             TJob job;
 
-            lock(jobLock)
+            lock (jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
@@ -593,11 +593,15 @@ namespace MiningCore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
+        protected virtual void PostChainIdentifyConfigure()
+        {
+        }
+
         protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(poolConfig.Daemons);
         }
 
@@ -609,7 +613,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var responses = await daemon.ExecuteCmdAllAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
-                .Select(x => (DaemonClientException)x.Error.InnerException)
+                .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
 
@@ -630,7 +634,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var syncPendingNotificationShown = false;
 
-            while(true)
+            while (true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(
                     BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
@@ -660,7 +664,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var commands = new[]
             {
-                new DaemonCmd(BitcoinCommands.ValidateAddress, new[] { poolConfig.Address }),
+                new DaemonCmd(BitcoinCommands.ValidateAddress, new[] {poolConfig.Address}),
                 new DaemonCmd(BitcoinCommands.SubmitBlock),
                 new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo),
                 new DaemonCmd(BitcoinCommands.GetDifficulty),
@@ -685,12 +689,28 @@ namespace MiningCore.Blockchain.Bitcoin
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
             var difficultyResponse = results[3].Response.ToObject<JToken>();
 
+            // chain detection
+            if (!hasLegacyDaemon)
+            {
+                if (blockchainInfoResponse.Chain.ToLower() == "test")
+                    networkType = BitcoinNetworkType.Test;
+                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
+                    networkType = BitcoinNetworkType.RegTest;
+                else
+                    networkType = BitcoinNetworkType.Main;
+            }
+
+            else
+                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
+
+            PostChainIdentifyConfigure();
+
             // ensure pool owns wallet
             if (!validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid", LogCat);
 
-            if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
-                logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            //if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
+            //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
@@ -707,21 +727,7 @@ namespace MiningCore.Blockchain.Bitcoin
             else
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
 
-            // chain detection
-            if (!hasLegacyDaemon)
-            {
-                if (blockchainInfoResponse.Chain.ToLower() == "test")
-                    networkType = BitcoinNetworkType.Test;
-                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
-                    networkType = BitcoinNetworkType.RegTest;
-                else
-                    networkType = BitcoinNetworkType.Main;
-            }
-
-            else
-                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
-
-            if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
                 ConfigureRewards();
 
             // update stats
@@ -736,14 +742,14 @@ namespace MiningCore.Blockchain.Bitcoin
             else
                 logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method", LogCat);
 
-            if(!hasLegacyDaemon)
+            if (!hasLegacyDaemon)
                 await UpdateNetworkStatsAsync();
             else
                 await UpdateNetworkStatsLegacyAsync();
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
-                .Select(via => Observable.FromAsync(()=> !hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync()))
+                .Select(via => Observable.FromAsync(() => !hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync()))
                 .Concat()
                 .Subscribe();
 
@@ -782,9 +788,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
-                    GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
@@ -797,9 +801,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 var job = currentJob;
                 var isNew = job == null ||
-                    (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                            (blockTemplate != null &&
+                             job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                             blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {
@@ -814,8 +818,8 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         if (isNew)
                         {
-                            if(via != null)
-                                logger.Info(()=> $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                            if (via != null)
+                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
                             else
                                 logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
 
@@ -830,7 +834,7 @@ namespace MiningCore.Blockchain.Bitcoin
                         else
                         {
                             // trim active jobs
-                            while(validJobs.Count > maxActiveJobs - 1)
+                            while (validJobs.Count > maxActiveJobs - 1)
                                 validJobs.RemoveAt(0);
                         }
 
@@ -843,7 +847,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 return (isNew, forceUpdate);
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }

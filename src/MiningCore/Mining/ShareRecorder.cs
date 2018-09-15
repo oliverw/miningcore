@@ -57,8 +57,7 @@ namespace MiningCore.Mining
             JsonSerializerSettings jsonSerializerSettings,
             IShareRepository shareRepo, IBlockRepository blockRepo,
             IMasterClock clock,
-            IMessageBus messageBus,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(mapper, nameof(mapper));
@@ -67,14 +66,12 @@ namespace MiningCore.Mining
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.clock = clock;
             this.messageBus = messageBus;
-            this.notificationService = notificationService;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
@@ -89,13 +86,11 @@ namespace MiningCore.Mining
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
-        private readonly NotificationService notificationService;
         private ClusterConfig clusterConfig;
         private readonly IMapper mapper;
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
         private Policy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
         private bool hasWarnedAboutBacklogSize;
@@ -107,16 +102,16 @@ namespace MiningCore.Mining
 
         private void PersistSharesFaulTolerant(IList<Share> shares)
         {
-            var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
+            var context = new Dictionary<string, object> {{PolicyContextKeyShares, shares}};
 
-            faultPolicy.Execute(() => { PersistShares(shares); }, context);
+            faultPolicy.Execute(ctx => PersistShares((IList<Share>) ctx[PolicyContextKeyShares]), context);
         }
 
         private void PersistShares(IList<Share> shares)
         {
             cf.RunTx((con, tx) =>
             {
-                foreach(var share in shares)
+                foreach (var share in shares)
                 {
                     var shareEntity = mapper.Map<Persistence.Model.Share>(share);
                     shareRepo.Insert(con, tx, shareEntity);
@@ -149,14 +144,14 @@ namespace MiningCore.Mining
 
             try
             {
-                using(var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
+                using (var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
                 {
-                    using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                    using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                     {
                         if (stream.Length == 0)
                             WriteRecoveryFileheader(writer);
 
-                        foreach(var share in shares)
+                        foreach (var share in shares)
                         {
                             var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
                             writer.WriteLine(json);
@@ -167,7 +162,7 @@ namespace MiningCore.Mining
                 NotifyAdminOnPolicyFallback();
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 if (!hasLoggedPolicyFallbackFailure)
                 {
@@ -194,14 +189,14 @@ namespace MiningCore.Mining
                 var failCount = 0;
                 const int bufferSize = 20;
 
-                using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
+                using (var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
                 {
-                    using(var reader = new StreamReader(stream, new UTF8Encoding(false)))
+                    using (var reader = new StreamReader(stream, new UTF8Encoding(false)))
                     {
                         var shares = new List<Share>();
                         var lastProgressUpdate = DateTime.UtcNow;
 
-                        while(!reader.EndOfStream)
+                        while (!reader.EndOfStream)
                         {
                             var line = reader.ReadLine().Trim();
 
@@ -220,7 +215,7 @@ namespace MiningCore.Mining
                                 shares.Add(share);
                             }
 
-                            catch(JsonException ex)
+                            catch (JsonException ex)
                             {
                                 logger.Error(ex, () => $"Unable to parse share record: {line}");
                                 failCount++;
@@ -238,7 +233,7 @@ namespace MiningCore.Mining
                                 }
                             }
 
-                            catch(Exception ex)
+                            catch (Exception ex)
                             {
                                 logger.Error(ex, () => $"Unable to import shares");
                                 failCount++;
@@ -264,7 +259,7 @@ namespace MiningCore.Mining
                             }
                         }
 
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             logger.Error(ex, () => $"Unable to import shares");
                             failCount++;
@@ -278,7 +273,7 @@ namespace MiningCore.Mining
                     logger.Warn(() => $"Successfully {successCount} shares with {failCount} failures");
             }
 
-            catch(FileNotFoundException)
+            catch (FileNotFoundException)
             {
                 logger.Error(() => $"Recovery file {recoveryFilename} was not found");
             }
@@ -292,9 +287,8 @@ namespace MiningCore.Mining
             {
                 notifiedAdminOnPolicyFallback = true;
 
-                notificationService.NotifyAdmin(
-                    "Share Recorder Policy Fallback",
-                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}.");
+                messageBus.SendMessage(new AdminNotification("Share Recorder Policy Fallback",
+                    $"The Share Recorder's Policy Fallback has been engaged. Check share recovery file {recoveryFilename}."));
             }
         }
 
@@ -338,7 +332,7 @@ namespace MiningCore.Mining
                         PersistSharesFaulTolerant(shares);
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                     }

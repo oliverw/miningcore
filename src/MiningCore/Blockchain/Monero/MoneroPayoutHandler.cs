@@ -31,6 +31,7 @@ using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Payments;
@@ -59,8 +60,8 @@ namespace MiningCore.Blockchain.Monero
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -88,7 +89,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 PersistPayments(balances, txHash);
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txHash}, txFee);
                 return true;
             }
 
@@ -210,8 +211,7 @@ namespace MiningCore.Blockchain.Monero
         {
             ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
 
-            if (string.IsNullOrEmpty(paymentId))
-                throw new InvalidOperationException("invalid paymentid");
+            var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
 
             // build request
             var request = new TransferRequest
@@ -228,7 +228,13 @@ namespace MiningCore.Blockchain.Monero
                 GetTxKey = true
             };
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} with paymentId {paymentId}");
+            if (!isIntegratedAddress)
+                request.PaymentId = paymentId;
+
+            if (!isIntegratedAddress)
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
+            else
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
@@ -273,7 +279,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             // configure wallet daemon
@@ -288,7 +294,7 @@ namespace MiningCore.Blockchain.Monero
                 })
                 .ToArray();
 
-            walletDaemon = new DaemonClient(jsonSerializerSettings);
+            walletDaemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network
@@ -308,7 +314,7 @@ namespace MiningCore.Blockchain.Monero
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            for(var i = 0; i < pageCount; i++)
+            for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -317,7 +323,7 @@ namespace MiningCore.Blockchain.Monero
                     .ToArray();
 
                 // NOTE: monerod does not support batch-requests
-                for(var j = 0; j < page.Length; j++)
+                for (var j = 0; j < page.Length; j++)
                 {
                     var block = page[j];
 
@@ -381,7 +387,7 @@ namespace MiningCore.Blockchain.Monero
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -407,7 +413,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(balances, nameof(balances));
 
 #if !DEBUG
-            // ensure we have peers
+// ensure we have peers
             var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
@@ -435,6 +441,7 @@ namespace MiningCore.Blockchain.Monero
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
                                 return false;
                             }
+
                             break;
 
                         case MoneroNetworkType.Test:
@@ -444,6 +451,7 @@ namespace MiningCore.Blockchain.Monero
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
                                 return false;
                             }
+
                             break;
                     }
 
@@ -487,7 +495,7 @@ namespace MiningCore.Blockchain.Monero
                 var pageSize = maxBatchSize;
                 var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
 
-                for(var i = 0; i < pageCount; i++)
+                for (var i = 0; i < pageCount; i++)
                 {
                     var page = simpleBalances
                         .Skip(i * pageSize)
@@ -499,17 +507,17 @@ namespace MiningCore.Blockchain.Monero
                 }
             }
 #endif
-                // balances with paymentIds
-                var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
+            // balances with paymentIds
+            var minimumPaymentToPaymentId = extraConfig?.MinimumPaymentToPaymentId ?? poolConfig.PaymentProcessing.MinimumPayment;
 
             var paymentIdBalances = balances.Except(simpleBalances)
                 .Where(x => x.Amount >= minimumPaymentToPaymentId)
                 .ToArray();
 
-            foreach(var balance in paymentIdBalances)
+            foreach (var balance in paymentIdBalances)
                 await PayoutToPaymentId(balance);
         }
 
-#endregion // IPayoutHandler
+        #endregion // IPayoutHandler
     }
 }

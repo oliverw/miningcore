@@ -27,7 +27,9 @@ using Autofac;
 using Autofac.Features.Metadata;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
+using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Model;
 using MiningCore.Persistence.Repositories;
@@ -46,21 +48,21 @@ namespace MiningCore.Payments
             IBlockRepository blockRepo,
             IShareRepository shareRepo,
             IBalanceRepository balanceRepo,
-            NotificationService notificationService)
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
-            Contract.RequiresNonNull(notificationService, nameof(notificationService));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.ctx = ctx;
             this.cf = cf;
             this.blockRepo = blockRepo;
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
-            this.notificationService = notificationService;
+            this.messageBus = messageBus;
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -68,7 +70,7 @@ namespace MiningCore.Payments
         private readonly IConnectionFactory cf;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly NotificationService notificationService;
+        private readonly IMessageBus messageBus;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private ClusterConfig clusterConfig;
         private Thread thread;
@@ -76,7 +78,7 @@ namespace MiningCore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in clusterConfig.Pools.Where(x=> x.Enabled && x.PaymentProcessing.Enabled))
+            foreach (var pool in clusterConfig.Pools.Where(x => x.Enabled && x.PaymentProcessing.Enabled))
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
@@ -98,10 +100,10 @@ namespace MiningCore.Payments
 
                 catch (InvalidOperationException ex)
                 {
-	                logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
+                    logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
                 }
 
-				catch (Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
@@ -118,7 +120,7 @@ namespace MiningCore.Payments
 
             if (updatedBlocks.Any())
             {
-                foreach(var block in updatedBlocks.OrderBy(x => x.Created))
+                foreach (var block in updatedBlocks.OrderBy(x => x.Created))
                 {
                     logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
 
@@ -167,7 +169,7 @@ namespace MiningCore.Payments
                     await handler.PayoutAsync(poolBalancesOverMinimum);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     await NotifyPayoutFailureAsync(poolBalancesOverMinimum, pool, ex);
                     throw;
@@ -180,7 +182,7 @@ namespace MiningCore.Payments
 
         private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
         {
-            notificationService.NotifyPaymentFailure(pool.Id, balances.Sum(x => x.Amount), ex.Message);
+            messageBus.SendMessage(new PaymentNotification(pool.Id, ex.Message, balances.Sum(x => x.Amount)));
 
             return Task.FromResult(true);
         }
@@ -227,32 +229,32 @@ namespace MiningCore.Payments
                 var interval = TimeSpan.FromSeconds(
                     clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
-                while(true)
+                while (true)
                 {
                     try
                     {
                         await ProcessPoolsAsync();
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                     }
 
-			        var waitResult = stopEvent.WaitOne(interval);
+                    var waitResult = stopEvent.WaitOne(interval);
 
-			        // check if stop was signalled
-			        if (waitResult)
-				        break;
-		        }
-	        });
+                    // check if stop was signalled
+                    if (waitResult)
+                        break;
+                }
+            });
 
-	        thread.Priority = ThreadPriority.Highest;
-	        thread.Name = "Payment Processing";
-	        thread.Start();
+            thread.Priority = ThreadPriority.Highest;
+            thread.Name = "Payment Processing";
+            thread.Start();
         }
 
-		public void Stop()
+        public void Stop()
         {
             logger.Info(() => "Stopping ..");
 

@@ -33,7 +33,7 @@ namespace MiningCore.Blockchain
 
             uint instanceId;
 
-            using(var rng = RandomNumberGenerator.Create())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 var bytes = new byte[4];
                 rng.GetNonZeroBytes(bytes);
@@ -54,7 +54,7 @@ namespace MiningCore.Blockchain
 
         public string Next()
         {
-            lock(counterLock)
+            lock (counterLock)
             {
                 counter++;
                 if (counter > nonceMax)
