@@ -25,6 +25,8 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.BitcoinGold;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
+using MiningCore.Blockchain.HelpTheHomeless;
+using MiningCore.Blockchain.HelpTheHomeless.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Blockchain.Flo;
 using MiningCore.Blockchain.Monero;
