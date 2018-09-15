@@ -1,16 +1,13 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -86,19 +83,19 @@ namespace MiningCore.Blockchain.Bitcoin
         // It should not be used for application-layer errors.
         RPC_METHOD_NOT_FOUND = -32601,
         RPC_INVALID_PARAMS = -32602,
-        
+
         // RPC_INTERNAL_ERROR should only be used for genuine errors in bitcoind
         // (for example datadir corruption).
         RPC_INTERNAL_ERROR = -32603,
         RPC_PARSE_ERROR = -32700,
 
         //! General application defined errors
-        RPC_MISC_ERROR = -1,  //!< std::exception thrown in command handling
-        RPC_FORBIDDEN_BY_SAFE_MODE = -2,  //!< Server is in safe mode, and command is not allowed in safe mode
-        RPC_TYPE_ERROR = -3,  //!< Unexpected type was passed as parameter
-        RPC_INVALID_ADDRESS_OR_KEY = -5,  //!< Invalid address or key
-        RPC_OUT_OF_MEMORY = -7,  //!< Ran out of memory during operation
-        RPC_INVALID_PARAMETER = -8,  //!< Invalid, missing or duplicate parameter
+        RPC_MISC_ERROR = -1, //!< std::exception thrown in command handling
+        RPC_FORBIDDEN_BY_SAFE_MODE = -2, //!< Server is in safe mode, and command is not allowed in safe mode
+        RPC_TYPE_ERROR = -3, //!< Unexpected type was passed as parameter
+        RPC_INVALID_ADDRESS_OR_KEY = -5, //!< Invalid address or key
+        RPC_OUT_OF_MEMORY = -7, //!< Ran out of memory during operation
+        RPC_INVALID_PARAMETER = -8, //!< Invalid, missing or duplicate parameter
         RPC_DATABASE_ERROR = -20, //!< Database error
         RPC_DESERIALIZATION_ERROR = -22, //!< Error parsing or validating structure in raw format
         RPC_VERIFY_ERROR = -25, //!< General error during transaction or block submission
@@ -113,7 +110,7 @@ namespace MiningCore.Blockchain.Bitcoin
         RPC_TRANSACTION_ALREADY_IN_CHAIN = RPC_VERIFY_ALREADY_IN_CHAIN,
 
         //! P2P client errors
-        RPC_CLIENT_NOT_CONNECTED = -9,  //!< Bitcoin is not connected
+        RPC_CLIENT_NOT_CONNECTED = -9, //!< Bitcoin is not connected
         RPC_CLIENT_IN_INITIAL_DOWNLOAD = -10, //!< Still downloading initial blocks
         RPC_CLIENT_NODE_ALREADY_ADDED = -23, //!< Node is already added
         RPC_CLIENT_NODE_NOT_ADDED = -24, //!< Node has not been added before
@@ -122,8 +119,8 @@ namespace MiningCore.Blockchain.Bitcoin
         RPC_CLIENT_P2P_DISABLED = -31, //!< No valid connection manager instance found
 
         //! Wallet errors
-        RPC_WALLET_ERROR = -4,  //!< Unspecified problem with wallet (key not found etc.)
-        RPC_WALLET_INSUFFICIENT_FUNDS = -6,  //!< Not enough funds in wallet or account
+        RPC_WALLET_ERROR = -4, //!< Unspecified problem with wallet (key not found etc.)
+        RPC_WALLET_INSUFFICIENT_FUNDS = -6, //!< Not enough funds in wallet or account
         RPC_WALLET_INVALID_ACCOUNT_NAME = -11, //!< Invalid account name
         RPC_WALLET_KEYPOOL_RAN_OUT = -12, //!< Keypool ran out, call keypoolrefill first
         RPC_WALLET_UNLOCK_NEEDED = -13, //!< Enter the wallet passphrase with walletpassphrase first
@@ -141,7 +138,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public static readonly Dictionary<CoinType, string> Addresses = new Dictionary<CoinType, string>
         {
-            {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},           
+            {CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm"},
         };
     }
 

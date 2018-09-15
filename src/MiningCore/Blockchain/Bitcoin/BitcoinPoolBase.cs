@@ -425,3 +425,4 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
     }
+}
