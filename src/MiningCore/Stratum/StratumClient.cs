@@ -339,7 +339,7 @@ namespace MiningCore.Stratum
                 if (proxyAddresses == null || !proxyAddresses.Any())
                     proxyAddresses = new[] { IPAddress.Loopback };
 
-                if (proxyAddresses.Any(x => x.Equals(peerAddress)))
+                //if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                 {
                     logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
 
@@ -353,11 +353,11 @@ namespace MiningCore.Stratum
                     logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
                 }
 
-                else
-                {
-                    logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
-                    Disconnect();
-                }
+                //else
+                //{
+                //    logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                //    Disconnect();
+                //}
             }
 
             else if (proxyProtocol.Mandatory)
