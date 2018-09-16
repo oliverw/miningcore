@@ -185,19 +185,45 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] SerializeOutputTransaction(Transaction tx)
         {
+            var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
+
+            var outputCount = (uint)tx.Outputs.Count;
+            if (withDefaultWitnessCommitment)
+                outputCount++;
+
             using (var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
-                // serialize outputs
-                var vout = tx.Outputs;
-                bs.ReadWrite<TxOutList, TxOut>(ref vout);
+                // write output count
+                bs.ReadWriteAsVarInt(ref outputCount);
+
+                long amount;
+                byte[] raw;
+                uint rawLength;
 
                 // serialize witness (segwit)
-                if (!string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment))
+                if (withDefaultWitnessCommitment)
                 {
-                    var witScript = new WitScript(BlockTemplate.DefaultWitnessCommitment);
-                    var raw = witScript.ToBytes();
+                    amount = 0;
+                    raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
+                    rawLength = (uint)raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
+                    bs.ReadWrite(ref raw);
+                }
+
+                // serialize outputs
+                foreach (var output in tx.Outputs)
+                {
+                    amount = output.Value.Satoshi;
+                    var outScript = output.ScriptPubKey;
+                    raw = outScript.ToBytes(true);
+                    rawLength = (uint)raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
                     bs.ReadWrite(ref raw);
                 }
 
