@@ -320,6 +320,9 @@ namespace MiningCore.Stratum
                 // deserialize request
                 var request = DeserializeRequest(line);
 
+                if (request == null)
+                    throw new JsonException("Unable to deserialize request");
+
                 // forward
                 await onNext(this, request);
             }
