@@ -20,20 +20,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
-using System.Reactive.Disposables;
-using System.Text;
-using Autofac;
-using MiningCore.Buffers;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Time;
-using MiningCore.Util;
-using NetUV.Core.Handles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -43,15 +39,30 @@ namespace MiningCore.Stratum
 {
     public class StratumClient
     {
+        public StratumClient(Socket socket, IMasterClock clock, IPEndPoint endpointConfig, string connectionId)
+        {
+            this.socket = socket;
+            pipe = new Pipe(PipeOptions.Default);
+
+            this.clock = clock;
+            PoolEndpoint = endpointConfig;
+            ConnectionId = connectionId;
+        }
+
+        public StratumClient()
+        {
+            // For unit testing only
+        }
+
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly IMasterClock clock;
 
         private const int MaxInboundRequestLength = 0x8000;
         private const int MaxOutboundRequestLength = 0x8000;
 
-        private ConcurrentQueue<PooledArraySegment<byte>> sendQueue;
-        private Async sendQueueDrainer;
-        private readonly PooledLineBuffer plb = new PooledLineBuffer(logger, MaxInboundRequestLength);
-        private IDisposable subscription;
+        private readonly Socket socket;
+        private readonly Pipe pipe;
+
         private bool isAlive = true;
         private WorkerContextBase context;
         private bool expectingProxyProtocolHeader = false;
@@ -63,48 +74,38 @@ namespace MiningCore.Stratum
 
         #region API-Surface
 
-        public void Init(Loop loop, Tcp tcp, IComponentContext ctx, IMasterClock clock,
-            (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, string connectionId,
-            Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
+        public void Run((IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig,
+            Func<StratumClient, JsonRpcRequest, Task> onNext, Action<StratumClient> onCompleted, Action<StratumClient, Exception> onError)
         {
             PoolEndpoint = endpointConfig.IPEndPoint;
-            ConnectionId = connectionId;
-            RemoteEndpoint = tcp.GetPeerEndPoint();
+            RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
             expectingProxyProtocolHeader = endpointConfig.ProxyProtocol?.Enable == true;
 
-            // initialize send queue
-            sendQueue = new ConcurrentQueue<PooledArraySegment<byte>>();
-            sendQueueDrainer = loop.CreateAsync(DrainSendQueue);
-            sendQueueDrainer.UserToken = tcp;
-
-            // cleanup preparation
-            var sub = Disposable.Create(() =>
+            Task.Run(async () =>
             {
-                if (tcp.IsValid)
+                try
                 {
-                    logger.Debug(() => $"[{ConnectionId}] Last subscriber disconnected from receiver stream");
+                    using(socket)
+                    {
+                        await Task.WhenAll(
+                            FillPipeAsync(),
+                            ProcessPipeAsync(endpointConfig.ProxyProtocol, onNext));
 
+                        isAlive = false;
+                        onCompleted(this);
+                    }
+                }
+
+                catch(Exception ex)
+                {
                     isAlive = false;
-                    tcp.Shutdown();
+                    onError(this, ex);
                 }
             });
-
-            // ensure subscription is disposed on loop thread
-            var disposer = loop.CreateAsync((handle) =>
-            {
-                sub.Dispose();
-
-                handle.Dispose();
-            });
-
-            subscription = Disposable.Create(() => { disposer.Send(); });
-
-            // go
-            Receive(tcp, endpointConfig.ProxyProtocol, clock, onNext, onCompleted, onError);
         }
 
-        public string ConnectionId { get; private set; }
+        public string ConnectionId { get; }
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
@@ -166,12 +167,12 @@ namespace MiningCore.Stratum
 
                 try
                 {
-                    using (var stream = new MemoryStream(buf, true))
+                    using(var stream = new MemoryStream(buf, true))
                     {
                         stream.SetLength(0);
                         int size;
 
-                        using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                        using(var writer = new StreamWriter(stream, StratumConstants.Encoding))
                         {
                             serializer.Serialize(writer, payload);
                             writer.Flush();
@@ -183,22 +184,25 @@ namespace MiningCore.Stratum
 
                         logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf, 0, size)}");
 
-                        SendInternal(new PooledArraySegment<byte>(buf, 0, size));
+                        socket.Send(buf, size, SocketFlags.None);
                     }
                 }
 
-                catch (Exception)
+                catch(ObjectDisposedException)
+                {
+                    // ignored
+                }
+
+                finally
                 {
                     ArrayPool<byte>.Shared.Return(buf);
-                    throw;
                 }
             }
         }
 
         public void Disconnect()
         {
-            subscription?.Dispose();
-            subscription = null;
+            socket.Close();
 
             IsAlive = false;
         }
@@ -225,161 +229,141 @@ namespace MiningCore.Stratum
             RespondError(id, 24, "Unauthorized worker");
         }
 
-        public JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        public JsonRpcRequest DeserializeRequest(string json)
         {
-            using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+            using (var jreader = new JsonTextReader(new StringReader(json)))
             {
-                using (var reader = new StreamReader(stream, StratumConstants.Encoding))
-                {
-                    using (var jreader = new JsonTextReader(reader))
-                    {
-                        return serializer.Deserialize<JsonRpcRequest>(jreader);
-                    }
-                }
+                return serializer.Deserialize<JsonRpcRequest>(jreader);
             }
         }
 
         #endregion // API-Surface
 
-        private void Receive(Tcp tcp, TcpProxyProtocolConfig proxyProtocol, IMasterClock clock,
-            Action<PooledArraySegment<byte>> onNext, Action onCompleted, Action<Exception> onError)
+        private async Task FillPipeAsync()
         {
-            tcp.OnRead((handle, buffer) =>
+            while (true)
             {
-                // onAccept
-                using (buffer)
+                var memory = pipe.Writer.GetMemory(MaxInboundRequestLength + 1);
+
+                try
                 {
-                    if (buffer.Count == 0 || !isAlive)
-                        return;
+
+                    var cb = await socket.ReceiveAsync(memory, SocketFlags.None);
+
+                    if (cb == 0)
+                        break;  // EOF
+
+                    if (cb > MaxInboundRequestLength)
+                        throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
 
                     LastReceive = clock.Now;
 
-                    var onLineReceived = !expectingProxyProtocolHeader
-                        ? onNext
-                        : (lineData) =>
-                        {
-                            // are we expecting the Tcp-Proxy-Protocol header?
-                            if (expectingProxyProtocolHeader)
-                            {
-                                expectingProxyProtocolHeader = false;
-                                var peerAddress = tcp.GetPeerEndPoint().Address;
-
-                                // peek into line data
-                                var line = Encoding.ASCII.GetString(lineData.Array, lineData.Offset, lineData.Size);
-
-                                if (line.StartsWith("PROXY "))
-                                {
-                                    using (lineData)
-                                    {
-                                        var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
-                                        if (proxyAddresses == null || !proxyAddresses.Any())
-                                            proxyAddresses = new[] {IPAddress.Loopback};
-
-                                        if (proxyAddresses.Any(x => x.Equals(peerAddress)))
-                                        {
-                                            logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
-
-                                            // split header parts
-                                            var parts = line.Split(" ");
-                                            var remoteAddress = parts[2];
-                                            var remotePort = parts[4];
-
-                                            // Update client
-                                            RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
-                                            logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
-                                        }
-
-                                        else
-                                        {
-                                            logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
-                                            Disconnect();
-                                        }
-                                    }
-
-                                    return;
-                                }
-
-                                else if (proxyProtocol.Mandatory)
-                                {
-                                    logger.Error(() => $"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
-                                    lineData.Dispose();
-                                    Disconnect();
-                                    return;
-                                }
-                            }
-
-                            // forward
-                            onNext(lineData);
-                        };
-
-                    plb.Receive(buffer, buffer.Count,
-                        (src, dst, count) => src.ReadBytes(dst, count),
-                        onLineReceived,
-                        onError);
+                    pipe.Writer.Advance(cb);
                 }
-            }, (handle, ex) =>
-            {
-                // onError
-                onError(ex);
-            }, handle =>
-            {
-                // onCompleted
-                isAlive = false;
-                onCompleted();
 
-                // release handles
-                sendQueueDrainer.UserToken = null;
-                sendQueueDrainer.Dispose();
-
-                // empty queues
-                while (sendQueue.TryDequeue(out var fragment))
-                    fragment.Dispose();
-
-                plb.Dispose();
-
-                handle.CloseHandle();
-            });
-        }
-
-        private void SendInternal(PooledArraySegment<byte> buffer)
-        {
-            try
-            {
-                sendQueue.Enqueue(buffer);
-                sendQueueDrainer.Send();
-            }
-
-            catch (ObjectDisposedException)
-            {
-                buffer.Dispose();
-            }
-        }
-
-        private void DrainSendQueue(Async handle)
-        {
-            try
-            {
-                var tcp = (Tcp) handle.UserToken;
-
-                if (tcp?.IsValid == true && !tcp.IsClosing && tcp.IsWritable && sendQueue != null)
+                catch (Exception)
                 {
-                    var queueSize = sendQueue.Count;
-                    if (queueSize >= 256)
-                        logger.Warn(() => $"[{ConnectionId}] Send queue backlog now at {queueSize}");
+                    // Ensure that ProcessPipeAsync completes as well
+                    pipe.Writer.Complete();
 
-                    while (sendQueue.TryDequeue(out var segment))
+                    throw;
+                }
+
+                var result = await pipe.Writer.FlushAsync();
+
+                if (result.IsCompleted)
+                    break;
+            }
+
+            pipe.Writer.Complete();
+        }
+
+        private async Task ProcessPipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
+        {
+            while(true)
+            {
+                var result = await pipe.Reader.ReadAsync();
+
+                var buffer = result.Buffer;
+                SequencePosition? position = null;
+
+                do
+                {
+                    // Look for a EOL in the buffer
+                    position = buffer.PositionOf((byte) '\n');
+
+                    if (position != null)
                     {
-                        using (segment)
-                        {
-                            tcp.QueueWrite(segment.Array, 0, segment.Size);
-                        }
+                        // Process line
+                        var slice = buffer.Slice(0, position.Value);
+                        var line = StratumConstants.Encoding.GetString(slice.ToArray());
+                        await ProcessLineAsync(line, proxyProtocol, onNext);
+
+                        // Skip the line + the \n character (basically position)
+                        buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
                     }
+                } while(position != null);
+
+                pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+
+                if (result.IsCompleted)
+                    break;
+            }
+        }
+
+        private async Task ProcessLineAsync(string line, TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
+        {
+            if (!expectingProxyProtocolHeader)
+            {
+                logger.Trace(() => $"[{ConnectionId}] Received request data: {line}");
+
+                // deserialize request
+                var request = DeserializeRequest(line);
+
+                // forward
+                await onNext(this, request);
+            }
+
+            else
+                ProcessProxyHeader(line, proxyProtocol);
+        }
+
+        private void ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
+        {
+            expectingProxyProtocolHeader = false;
+            var peerAddress = RemoteEndpoint.Address;
+
+            if (line.StartsWith("PROXY "))
+            {
+                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                if (proxyAddresses == null || !proxyAddresses.Any())
+                    proxyAddresses = new[] { IPAddress.Loopback };
+
+                if (proxyAddresses.Any(x => x.Equals(peerAddress)))
+                {
+                    logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
+
+                    // split header parts
+                    var parts = line.Split(" ");
+                    var remoteAddress = parts[2];
+                    var remotePort = parts[4];
+
+                    // Update client
+                    RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
+                    logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+                }
+
+                else
+                {
+                    logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                    Disconnect();
                 }
             }
 
-            catch (Exception ex)
+            else if (proxyProtocol.Mandatory)
             {
-                logger.Error(ex);
+                logger.Error(() => $"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
+                Disconnect();
             }
         }
     }
