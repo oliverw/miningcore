@@ -91,6 +91,7 @@ namespace MiningCore.Stratum
 
                             var remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
                             var connectionId = CorrelationIdGenerator.GetNextId();
+
                             logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
 
                             // get rid of banned clients as early as possible
@@ -114,10 +115,7 @@ namespace MiningCore.Stratum
 
                             OnConnect(client);
 
-                            client.Run(port,
-                                OnRequestAsync,
-                                OnReceiveComplete,
-                                OnReceiveError);
+                            client.Run(port, OnRequestAsync, OnReceiveComplete, OnReceiveError);
                         }
 
                         catch (Exception ex)

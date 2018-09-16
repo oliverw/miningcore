@@ -7,7 +7,7 @@ using Xunit;
 
 namespace MiningCore.Tests.Blockchain.Monero
 {
-    public class BitcoinJobTests : TestBase
+    public class MoneroJobTests : TestBase
     {
         readonly PoolConfig poolConfig = new PoolConfig { Coin = new CoinConfig {Type = CoinType.XMR}};
         readonly ClusterConfig clusterConfig = new ClusterConfig();

@@ -294,10 +294,34 @@ namespace MiningCore.Stratum
 
                     if (position != null)
                     {
-                        // Process line
                         var slice = buffer.Slice(0, position.Value);
                         var line = StratumConstants.Encoding.GetString(slice.ToArray());
-                        await ProcessLineAsync(line, proxyProtocol, onNext);
+
+                        logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
+
+                        if (!expectingProxyProtocolHeader)
+                        {
+                            // Process line
+                            var request = DeserializeRequest(line);
+
+                            if (request == null)
+                            {
+                                Disconnect();
+                                throw new JsonException("Unable to deserialize request");
+                            }
+
+                            await onNext(this, request);
+                        }
+
+                        else
+                        {
+                            // Handle proxy header
+                            if (!ProcessProxyHeader(line, proxyProtocol))
+                            {
+                                Disconnect();
+                                break;
+                            }
+                        }
 
                         // Skip the line + the \n character (basically position)
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
@@ -311,36 +335,16 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessLineAsync(string line, TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
-        {
-            if (!expectingProxyProtocolHeader)
-            {
-                logger.Trace(() => $"[{ConnectionId}] Received request data: {line}");
-
-                // deserialize request
-                var request = DeserializeRequest(line);
-
-                if (request == null)
-                    throw new JsonException("Unable to deserialize request");
-
-                // forward
-                await onNext(this, request);
-            }
-
-            else
-                ProcessProxyHeader(line, proxyProtocol);
-        }
-
-        private void ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
+        private bool ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
         {
             expectingProxyProtocolHeader = false;
             var peerAddress = RemoteEndpoint.Address;
 
             if (line.StartsWith("PROXY "))
             {
-                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
-                if (proxyAddresses == null || !proxyAddresses.Any())
-                    proxyAddresses = new[] { IPAddress.Loopback };
+                //var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                //if (proxyAddresses == null || !proxyAddresses.Any())
+                //    proxyAddresses = new[] { IPAddress.Loopback };
 
                 //if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                 {
@@ -354,20 +358,23 @@ namespace MiningCore.Stratum
                     // Update client
                     RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
                     logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
+
+                    return true;
                 }
 
                 //else
                 //{
                 //    logger.Error(() => $"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
-                //    Disconnect();
+                //    return false;
                 //}
             }
 
-            else if (proxyProtocol.Mandatory)
+            if (proxyProtocol.Mandatory)
             {
                 logger.Error(() => $"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
-                Disconnect();
             }
+
+            return false;
         }
     }
 }
