@@ -253,9 +253,6 @@ namespace MiningCore.Stratum
                     if (cb == 0)
                         break;  // EOF
 
-                    if (cb > MaxInboundRequestLength)
-                        throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
-
                     LastReceive = clock.Now;
 
                     pipe.Writer.Advance(cb);
@@ -287,6 +284,12 @@ namespace MiningCore.Stratum
                 var buffer = result.Buffer;
                 SequencePosition? position = null;
 
+                if (buffer.Length > MaxInboundRequestLength)
+                {
+                    Disconnect();
+                    throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
+                }
+
                 do
                 {
                     // Look for a EOL in the buffer
@@ -299,9 +302,9 @@ namespace MiningCore.Stratum
 
                         logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
 
+                        // Process Input
                         if (!expectingProxyProtocolHeader)
                         {
-                            // Process line
                             var request = DeserializeRequest(line);
 
                             if (request == null)
