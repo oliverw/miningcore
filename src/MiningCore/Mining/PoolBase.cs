@@ -359,7 +359,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
                         .ToArray();
 
-                    StartListeners(poolConfig.Id, ipEndpoints);
+                    StartListeners(ipEndpoints);
                 }
 
                 logger.Info(() => $"[{LogCat}] Online");

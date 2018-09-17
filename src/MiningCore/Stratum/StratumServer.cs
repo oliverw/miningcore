@@ -27,6 +27,7 @@ using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Microsoft.EntityFrameworkCore.Internal;
 using MiningCore.Banning;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
@@ -57,18 +58,18 @@ namespace MiningCore.Stratum
         protected readonly Dictionary<int, Socket> ports = new Dictionary<int, Socket>();
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
-        protected bool disableConnectionLogging = false;
         protected ILogger logger;
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(string id, params (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol)[] stratumPorts)
+        public void StartListeners(params (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
-            foreach (var port in stratumPorts)
+            Task.Run(async () =>
             {
-                Task.Run(async () =>
+                // Setup sockets
+                var sockets = stratumPorts.Select(port =>
                 {
                     // Setup socket
                     var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -83,48 +84,75 @@ namespace MiningCore.Stratum
 
                     logger.Info(() => $"[{LogCat}] Stratum port {port.IPEndPoint.Address}:{port.IPEndPoint.Port} online");
 
-                    while (true)
+                    return server;
+                }).ToArray();
+
+                // Setup accept tasks
+                var tasks = sockets.Select(s => s.AcceptAsync()).ToArray();
+
+                while (true)
+                {
+                    try
                     {
-                        try
+                        // Wait incoming connection on any of the monitored sockets
+                        await Task.WhenAny(tasks);
+
+                        // check tasks
+                        for (var i = 0; i < tasks.Length; i++)
                         {
-                            var socket = await server.AcceptAsync();
+                            var task = tasks[i];
+                            var port = stratumPorts[i];
 
-                            var remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
-                            var connectionId = CorrelationIdGenerator.GetNextId();
-
-                            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
-
-                            // get rid of banned clients as early as possible
-                            if (banManager?.IsBanned(remoteEndpoint.Address) == true)
-                            {
-                                logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndpoint.Address}");
-                                socket.Close();
+                            // skip running tasks
+                            if (!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
                                 continue;
-                            }
 
-                            // prepare socket
-                            socket.NoDelay = true;
+                            // accept connection if successful
+                            if (task.IsCompletedSuccessfully)
+                                AcceptConnection(task.Result, port);
 
-                            // setup client
-                            var client = new StratumClient(socket, clock, port.IPEndPoint, connectionId);
-
-                            lock (clients)
-                            {
-                                clients[connectionId] = client;
-                            }
-
-                            OnConnect(client);
-
-                            client.Run(port, OnRequestAsync, OnReceiveComplete, OnReceiveError);
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex, () => Thread.CurrentThread.Name);
+                            // Create accept task replacement
+                            tasks[i] = sockets[i].AcceptAsync();
                         }
                     }
-                });
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }
+            });
+        }
+
+        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) port)
+        {
+            var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+            var connectionId = CorrelationIdGenerator.GetNextId();
+
+            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
+
+            // get rid of banned clients as early as possible
+            if (banManager?.IsBanned(remoteEndpoint.Address) == true)
+            {
+                logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndpoint.Address}");
+                socket.Close();
+                return;
             }
+
+            // prepare socket
+            socket.NoDelay = true;
+
+            // setup client
+            var client = new StratumClient(socket, clock, port.IPEndPoint, connectionId);
+
+            lock (clients)
+            {
+                clients[connectionId] = client;
+            }
+
+            OnConnect(client);
+
+            client.Run(port, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
         public void StopListeners()
