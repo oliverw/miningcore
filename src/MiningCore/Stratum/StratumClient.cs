@@ -42,7 +42,8 @@ namespace MiningCore.Stratum
         public StratumClient(Socket socket, IMasterClock clock, IPEndPoint endpointConfig, string connectionId)
         {
             this.socket = socket;
-            pipe = new Pipe(PipeOptions.Default);
+
+            receivePipe = new Pipe(PipeOptions.Default);
 
             this.clock = clock;
             PoolEndpoint = endpointConfig;
@@ -61,7 +62,7 @@ namespace MiningCore.Stratum
         private const int MaxOutboundRequestLength = 0x8000;
 
         private readonly Socket socket;
-        private readonly Pipe pipe;
+        private readonly Pipe receivePipe;
 
         private bool isAlive = true;
         private WorkerContextBase context;
@@ -89,8 +90,8 @@ namespace MiningCore.Stratum
                     using(socket)
                     {
                         await Task.WhenAll(
-                            FillPipeAsync(),
-                            ProcessPipeAsync(endpointConfig.ProxyProtocol, onNext));
+                            FillReceivePipeAsync(),
+                            ProcessReceivePipeAsync(endpointConfig.ProxyProtocol, onNext));
 
                         isAlive = false;
                         onCompleted(this);
@@ -121,57 +122,52 @@ namespace MiningCore.Stratum
             return (T) context;
         }
 
-        public void Respond<T>(T payload, object id)
+        public Task RespondAsync<T>(T payload, object id)
         {
             Contract.RequiresNonNull(payload, nameof(payload));
             Contract.RequiresNonNull(id, nameof(id));
 
-            Respond(new JsonRpcResponse<T>(payload, id));
+            return RespondAsync(new JsonRpcResponse<T>(payload, id));
         }
 
-        public void RespondError(StratumError code, string message, object id, object result = null, object data = null)
+        public Task RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
         {
             Contract.RequiresNonNull(message, nameof(message));
 
-            Respond(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
+            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
         }
 
-        public void Respond<T>(JsonRpcResponse<T> response)
+        public Task RespondAsync<T>(JsonRpcResponse<T> response)
         {
             Contract.RequiresNonNull(response, nameof(response));
 
-            Send(response);
+            return SendAsync(response);
         }
 
-        public void Notify<T>(string method, T payload)
+        public Task NotifyAsync<T>(string method, T payload)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            Notify(new JsonRpcRequest<T>(method, payload, null));
+            return NotifyAsync(new JsonRpcRequest<T>(method, payload, null));
         }
 
-        public void Notify<T>(JsonRpcRequest<T> request)
+        public Task NotifyAsync<T>(JsonRpcRequest<T> request)
         {
             Contract.RequiresNonNull(request, nameof(request));
 
-            Send(request);
+            return SendAsync(request);
         }
 
-        public void Send<T>(T payload)
+        public async Task SendAsync<T>(T payload)
         {
             Contract.RequiresNonNull(payload, nameof(payload));
 
             if (isAlive)
             {
-                var buf = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
-
                 try
                 {
-                    using(var stream = new MemoryStream(buf, true))
+                    using(var stream = new MemoryStream())
                     {
-                        stream.SetLength(0);
-                        int size;
-
                         using(var writer = new StreamWriter(stream, StratumConstants.Encoding))
                         {
                             serializer.Serialize(writer, payload);
@@ -179,23 +175,18 @@ namespace MiningCore.Stratum
 
                             // append newline
                             stream.WriteByte(0xa);
-                            size = (int) stream.Position;
                         }
 
-                        logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf, 0, size)}");
+                        var buf = stream.ToArray();
+                        logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf)}");
 
-                        socket.Send(buf, size, SocketFlags.None);
+                        await socket.SendAsync(buf, SocketFlags.None);
                     }
                 }
 
                 catch(ObjectDisposedException)
                 {
                     // ignored
-                }
-
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buf);
                 }
             }
         }
@@ -207,26 +198,26 @@ namespace MiningCore.Stratum
             IsAlive = false;
         }
 
-        public void RespondError(object id, int code, string message)
+        public void RespondErrorAsync(object id, int code, string message)
         {
             Contract.RequiresNonNull(id, nameof(id));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
 
-            Respond(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
+            RespondAsync(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
         public void RespondUnsupportedMethod(object id)
         {
             Contract.RequiresNonNull(id, nameof(id));
 
-            RespondError(id, 20, "Unsupported method");
+            RespondErrorAsync(id, 20, "Unsupported method");
         }
 
         public void RespondUnauthorized(object id)
         {
             Contract.RequiresNonNull(id, nameof(id));
 
-            RespondError(id, 24, "Unauthorized worker");
+            RespondErrorAsync(id, 24, "Unauthorized worker");
         }
 
         public JsonRpcRequest DeserializeRequest(string json)
@@ -239,11 +230,11 @@ namespace MiningCore.Stratum
 
         #endregion // API-Surface
 
-        private async Task FillPipeAsync()
+        private async Task FillReceivePipeAsync()
         {
             while (true)
             {
-                var memory = pipe.Writer.GetMemory(MaxInboundRequestLength + 1);
+                var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
                 try
                 {
@@ -255,31 +246,31 @@ namespace MiningCore.Stratum
 
                     LastReceive = clock.Now;
 
-                    pipe.Writer.Advance(cb);
+                    receivePipe.Writer.Advance(cb);
                 }
 
                 catch (Exception)
                 {
                     // Ensure that ProcessPipeAsync completes as well
-                    pipe.Writer.Complete();
+                    receivePipe.Writer.Complete();
 
                     throw;
                 }
 
-                var result = await pipe.Writer.FlushAsync();
+                var result = await receivePipe.Writer.FlushAsync();
 
                 if (result.IsCompleted)
                     break;
             }
 
-            pipe.Writer.Complete();
+            receivePipe.Writer.Complete();
         }
 
-        private async Task ProcessPipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
+        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
         {
             while(true)
             {
-                var result = await pipe.Reader.ReadAsync();
+                var result = await receivePipe.Reader.ReadAsync();
 
                 var buffer = result.Buffer;
                 SequencePosition? position = null;
@@ -331,7 +322,7 @@ namespace MiningCore.Stratum
                     }
                 } while(position != null);
 
-                pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+                receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 
                 if (result.IsCompleted)
                     break;
