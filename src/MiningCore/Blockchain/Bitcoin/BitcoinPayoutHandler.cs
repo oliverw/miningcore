@@ -30,6 +30,7 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
@@ -62,8 +63,8 @@ namespace MiningCore.Blockchain.Bitcoin
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -96,7 +97,7 @@ namespace MiningCore.Blockchain.Bitcoin
             logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
 
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(poolConfig.Daemons);
 
             return Task.FromResult(true);
@@ -111,7 +112,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            for(var i = 0; i < pageCount; i++)
+            for (var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -121,12 +122,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
                 var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
-                    new[] { block.TransactionConfirmationData })).ToArray();
+                    new[] {block.TransactionConfirmationData})).ToArray();
 
                 // execute batch
                 var results = await daemon.ExecuteBatchAnyAsync(batch);
 
-                for(var j = 0; j < results.Length; j++)
+                for (var j = 0; j < results.Length; j++)
                 {
                     var cmdResult = results[j];
 
@@ -158,7 +159,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     else
                     {
-                        switch(transactionInfo.Details[0].Category)
+                        switch (transactionInfo.Details[0].Category)
                         {
                             case "immature":
                                 // update progress
@@ -171,15 +172,15 @@ namespace MiningCore.Blockchain.Bitcoin
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
                                 block.ConfirmationProgress = 1;
-								result.Add(block);
+                                result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                                 break;
 
                             default:
-	                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
+                                logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
 
-								block.Status = BlockStatus.Orphaned;
+                                block.Status = BlockStatus.Orphaned;
                                 block.Reward = 0;
                                 result.Add(block);
                                 break;
@@ -203,7 +204,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -244,11 +245,11 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 args = new object[]
                 {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
-                    1,                      // only spend funds covered by this many confirmations
-                    comment,                // tx comment
-                    subtractFeesFrom        // distribute transaction fee equally over all recipients
+                    string.Empty, // default account
+                    amounts, // addresses and associated amounts
+                    1, // only spend funds covered by this many confirmations
+                    comment, // tx comment
+                    subtractFeesFrom // distribute transaction fee equally over all recipients
                 };
             }
 
@@ -256,8 +257,8 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 args = new object[]
                 {
-                    string.Empty,           // default account
-                    amounts,                // addresses and associated amounts
+                    string.Empty, // default account
+                    amounts, // addresses and associated amounts
                 };
             }
 
@@ -286,7 +287,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
             }
 
             else
@@ -297,10 +298,10 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new []
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
-                            (object) 5  // unlock for N seconds
+                            (object) 5 // unlock for N seconds
                         });
 
                         if (unlockResult.Error == null)

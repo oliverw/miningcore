@@ -4,6 +4,7 @@ using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.DaemonInterface;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Time;
 
@@ -12,16 +13,16 @@ namespace MiningCore.Blockchain.BitcoinGold
     public class BitcoinGoldJobManager : ZCashJobManager<BitcoinGoldJob>
     {
         public BitcoinGoldJobManager(IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
-            IExtraNonceProvider extraNonceProvider) : base(ctx, notificationService, clock, extraNonceProvider)
+            IMessageBus messageBus,
+            IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
             getBlockTemplateParams = new object[]
             {
                 new
                 {
-                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
-                    rules = new[] { "segwit" }
+                    capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
+                    rules = new[] {"segwit"}
                 }
             };
         }

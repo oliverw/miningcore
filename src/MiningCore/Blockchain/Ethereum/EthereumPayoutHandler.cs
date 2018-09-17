@@ -32,6 +32,7 @@ using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
+using MiningCore.Messaging;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence;
@@ -59,8 +60,8 @@ namespace MiningCore.Blockchain.Ethereum
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
             IMasterClock clock,
-            NotificationService notificationService) :
-            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, notificationService)
+            IMessageBus messageBus) :
+            base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
@@ -95,7 +96,7 @@ namespace MiningCore.Blockchain.Ethereum
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .ToArray();
 
-            daemon = new DaemonClient(jsonSerializerSettings);
+            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
             daemon.Configure(daemonEndpoints);
 
             await DetectChainAsync();
@@ -120,13 +121,13 @@ namespace MiningCore.Blockchain.Ethereum
                     .ToArray();
 
                 // get latest block
-                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] { (object) "latest", true });
+                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] {(object) "latest", true});
                 var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
 
                 // execute batch
-                var blockInfos = await FetchBlocks(blockCache, page.Select(block=> (long) block.BlockHeight).ToArray());
+                var blockInfos = await FetchBlocks(blockCache, page.Select(block => (long) block.BlockHeight).ToArray());
 
-                for(var j = 0; j < blockInfos.Length; j++)
+                for (var j = 0; j < blockInfos.Length; j++)
                 {
                     var blockInfo = blockInfos[j];
                     var block = page[j];
@@ -146,7 +147,7 @@ namespace MiningCore.Blockchain.Ethereum
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
                         var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) &&
-                            blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
+                                    blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
 
                         // mature?
                         if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
@@ -172,20 +173,20 @@ namespace MiningCore.Blockchain.Ethereum
                     var heightMax = Math.Min(block.BlockHeight + BlockSearchOffset, latestBlockHeight);
                     var range = new List<long>();
 
-                    for(var k = heightMin; k < heightMax; k++)
+                    for (var k = heightMin; k < heightMax; k++)
                         range.Add((long) k);
 
                     // execute batch
                     var blockInfo2s = await FetchBlocks(blockCache, range.ToArray());
 
-                    foreach(var blockInfo2 in blockInfo2s)
+                    foreach (var blockInfo2 in blockInfo2s)
                     {
                         // don't give up yet, there might be an uncle
                         if (blockInfo2.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
                             var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
-                                    new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
+                                    new[] {blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix()}))
                                 .ToArray();
 
                             logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
@@ -244,7 +245,7 @@ namespace MiningCore.Blockchain.Ethereum
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -272,7 +273,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (networkType == EthereumNetworkType.Main &&
                 (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
-                infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
+                 infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
@@ -280,7 +281,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             var txHashes = new List<string>();
 
-            foreach(var balance in balances)
+            foreach (var balance in balances)
             {
                 try
                 {
@@ -288,11 +289,11 @@ namespace MiningCore.Blockchain.Ethereum
                     txHashes.Add(txHash);
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.Error(ex);
 
-                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
+                    NotifyPayoutFailure(poolConfig.Id, new[] {balance}, ex.Message, null);
                 }
             }
 
@@ -323,7 +324,7 @@ namespace MiningCore.Blockchain.Ethereum
                     .Where(x => x != null)
                     .ToArray();
 
-                foreach(var block in transformed)
+                foreach (var block in transformed)
                     blockCache[(long) block.Height.Value] = block;
             }
 
@@ -332,7 +333,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         internal static decimal GetBaseBlockReward(ParityChainType chainType, ulong height)
         {
-            switch(chainType)
+            switch (chainType)
             {
                 case ParityChainType.Mainnet:
                     if (height >= EthereumConstants.ByzantiumHardForkHeight)
@@ -367,7 +368,7 @@ namespace MiningCore.Blockchain.Ethereum
         private async Task<decimal> GetTxRewardAsync(DaemonResponses.Block blockInfo)
         {
             // fetch all tx receipts in a single RPC batch request
-            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] { tx.Hash }))
+            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] {tx.Hash}))
                 .ToArray();
 
             var results = await daemon.ExecuteBatchAnyAsync(batch);
@@ -457,7 +458,7 @@ namespace MiningCore.Blockchain.Ethereum
                 Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
-            var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });
+            var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] {request});
 
             if (response.Error != null)
                 throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");
@@ -469,7 +470,7 @@ namespace MiningCore.Blockchain.Ethereum
             logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");
 
             // update db
-            PersistPayments(new[] { balance }, txHash);
+            PersistPayments(new[] {balance}, txHash);
 
             // done
             return txHash;

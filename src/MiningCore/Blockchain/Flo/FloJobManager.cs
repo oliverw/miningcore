@@ -22,12 +22,11 @@ using System;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.Configuration;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.Flo.Configuration;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
-using MiningCore.Notifications;
+using MiningCore.Messaging;
 using MiningCore.Time;
 using NLog;
 
@@ -37,15 +36,15 @@ namespace MiningCore.Blockchain.Flo
     {
         public FloJobManager(
             IComponentContext ctx,
-            NotificationService notificationService,
             IMasterClock clock,
+            IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) :
-            base(ctx, notificationService, clock, extraNonceProvider)
+            base(ctx, clock, messageBus, extraNonceProvider)
         {
         }
 
         protected FloPoolConfigExtra extraFloPoolConfig;
-        
+
         #region Overrides
 
         protected override string LogCat => "Flo Job Manager";
@@ -66,9 +65,7 @@ namespace MiningCore.Blockchain.Flo
                 if (forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
-                    GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
@@ -81,9 +78,9 @@ namespace MiningCore.Blockchain.Flo
 
                 var job = currentJob;
                 var isNew = job == null ||
-                    (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                            (blockTemplate != null &&
+                             job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                             blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {

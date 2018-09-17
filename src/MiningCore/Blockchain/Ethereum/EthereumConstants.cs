@@ -20,7 +20,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const string BlockTypeUncle = "uncle";
 
 #if !DEBUG
-        public const int MinPayoutPeerCount = 3;
+        public const int MinPayoutPeerCount = 1;
 #else
         public const int MinPayoutPeerCount = 1;
 #endif
@@ -54,6 +54,7 @@ namespace MiningCore.Blockchain.Ethereum
         public const decimal BaseRewardInitial = 600;
         public const decimal TreasuryPercent = 0.3m;
     }
+
     public enum EthereumNetworkType
     {
         Main = 1,
@@ -78,8 +79,8 @@ namespace MiningCore.Blockchain.Ethereum
         Classic,
         Expanse,
         Ellaism,
-        CallistoTestnet,    // Callisto (CLO) v3 Testnet
-        Callisto,    // Callisto (CLO) v3 Testnet
+        CallistoTestnet, // Callisto (CLO) v3 Testnet
+        Callisto, // Callisto (CLO) v3 Testnet
 
         Unknown = -1,
     }

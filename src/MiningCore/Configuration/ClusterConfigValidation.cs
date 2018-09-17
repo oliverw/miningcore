@@ -160,7 +160,7 @@ namespace MiningCore.Configuration
             RuleFor(j => j.Ports)
                 .NotNull()
                 .NotEmpty()
-                .When(j=> j.EnableInternalStratum == true)
+                .When(j => j.EnableInternalStratum == true)
                 .WithMessage("Pool: Stratum port config missing or empty");
 
             RuleFor(j => j.Ports)
@@ -176,8 +176,8 @@ namespace MiningCore.Configuration
                 })
                 .WithMessage("Pool: Invalid stratum port number {port}");
 
-            RuleFor(j => j.Ports.Values)
-                .SetCollectionValidator(x => new PoolEndpointValidator())
+            RuleForEach(j => j.Ports.Values)
+                .SetValidator(x => new PoolEndpointValidator())
                 .When(x => x.Ports != null);
 
             RuleFor(j => j.Address)
@@ -190,8 +190,8 @@ namespace MiningCore.Configuration
                 .NotEmpty()
                 .WithMessage("Pool: Daemons missing or empty");
 
-            RuleFor(j => j.Daemons)
-                .SetCollectionValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
+            RuleForEach(j => j.Daemons)
+                .SetValidator(new AuthenticatedNetworkEndpointConfigValidator<DaemonEndpointConfig>());
         }
     }
 
@@ -231,11 +231,11 @@ namespace MiningCore.Configuration
             RuleFor(j => j.Pools)
                 .Must((pc, pools, ctx) =>
                 {
-                    var ports = pools.Where(x=> x.Ports?.Any() == true).SelectMany(x => x.Ports.Select(y => y.Key))
+                    var ports = pools.Where(x => x.Ports?.Any() == true).SelectMany(x => x.Ports.Select(y => y.Key))
                         .GroupBy(x => x)
                         .ToArray();
 
-                    foreach(var port in ports)
+                    foreach (var port in ports)
                     {
                         if (port.Count() > 1)
                         {
@@ -248,8 +248,8 @@ namespace MiningCore.Configuration
                 })
                 .WithMessage("Stratum port {port} assigned multiple times");
 
-            RuleFor(j => j.Pools)
-                .SetCollectionValidator(new PoolConfigValidator());
+            RuleForEach(j => j.Pools)
+                .SetValidator(new PoolConfigValidator());
         }
     }
 

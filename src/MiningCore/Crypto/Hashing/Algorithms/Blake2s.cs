@@ -29,12 +29,12 @@ namespace MiningCore.Crypto.Hashing.Algorithms
         public byte[] Digest(byte[] data, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
-    
+
             var result = new byte[32];
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
                     LibMultihash.blake2s(input, output, (uint) data.Length);
                 }

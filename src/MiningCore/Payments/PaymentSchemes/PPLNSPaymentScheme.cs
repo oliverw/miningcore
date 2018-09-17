@@ -228,7 +228,7 @@ namespace MiningCore.Payments.PaymentSchemes
                         done = true;
                     }
 
-                    // calulate reward
+                    // calculate reward
                     var reward = score * blockReward / window;
                     accumulatedScore += score;
                     blockRewardRemaining -= reward;
