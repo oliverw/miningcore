@@ -322,7 +322,7 @@ namespace MiningCore.Stratum
                             if (!ProcessProxyHeader(line, proxyProtocol))
                             {
                                 Disconnect();
-                                break;
+                                throw new InvalidDataException($"Expected proxy header. Got something else.");
                             }
                         }
 
