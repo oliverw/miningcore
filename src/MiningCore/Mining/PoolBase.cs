@@ -117,12 +117,12 @@ namespace MiningCore.Mining
             return null;
         }
 
-        protected override void OnConnect(StratumClient client)
+        protected override void OnConnect(StratumClient client, IPEndPoint ipEndPoint)
         {
             // client setup
             var context = CreateClientContext();
 
-            var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+            var poolEndpoint = poolConfig.Ports[ipEndPoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
             client.SetContext(context);
 

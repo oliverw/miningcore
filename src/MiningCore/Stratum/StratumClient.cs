@@ -20,9 +20,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
@@ -37,14 +42,11 @@ namespace MiningCore.Stratum
 {
     public class StratumClient
     {
-        public StratumClient(Stream stream, IMasterClock clock, IPEndPoint endpointConfig, string connectionId)
+        public StratumClient(IMasterClock clock, string connectionId)
         {
-            this.stream = stream;
-
             receivePipe = new Pipe(PipeOptions.Default);
 
             this.clock = clock;
-            PoolEndpoint = endpointConfig;
             ConnectionId = connectionId;
         }
 
@@ -59,7 +61,7 @@ namespace MiningCore.Stratum
         private const int MaxInboundRequestLength = 0x8000;
         private const int MaxOutboundRequestLength = 0x8000;
 
-        private readonly Stream stream;
+        private Stream stream;
         private readonly Pipe receivePipe;
 
         private bool isAlive = true;
@@ -73,24 +75,44 @@ namespace MiningCore.Stratum
 
         #region API-Surface
 
-        public void Run((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpointConfig,
-            IPEndPoint remotEndPoint,
+        public void Run(Socket socket,
+            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port,
+            ConcurrentDictionary<string, X509Certificate2> certs,
             Func<StratumClient, JsonRpcRequest, Task> onNext, Action<StratumClient> onCompleted, Action<StratumClient, Exception> onError)
         {
-            PoolEndpoint = endpointConfig.IPEndPoint;
-            RemoteEndpoint = remotEndPoint;
+            PoolEndpoint = port.IPEndPoint;
+            RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
-            expectingProxyHeader = endpointConfig.PoolEndpoint.TcpProxyProtocol?.Enable == true;
+            expectingProxyHeader = port.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
             Task.Run(async () =>
             {
                 try
                 {
-                    using(stream)
+                    // prepare socket
+                    socket.NoDelay = true;
+
+                    // create stream
+                    stream = new NetworkStream(socket, true);
+
+                    // TLS handshake
+                    if (port.PoolEndpoint.Tls)
+                    {
+                        SslStream sslStream = null;
+
+                        var tlsCert = certs[port.PoolEndpoint.TlsPfxFile];
+                        sslStream = new SslStream(stream, false);
+
+                        await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                        stream = sslStream;
+                    }
+
+                    // Go
+                    using (stream)
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(endpointConfig.PoolEndpoint.TcpProxyProtocol, onNext));
+                            ProcessReceivePipeAsync(port.PoolEndpoint.TcpProxyProtocol, onNext));
 
                         isAlive = false;
                         onCompleted(this);

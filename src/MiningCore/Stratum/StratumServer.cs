@@ -30,13 +30,9 @@ using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Policy;
-using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using Microsoft.EntityFrameworkCore.Internal;
 using MiningCore.Banning;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Time;
@@ -107,11 +103,9 @@ namespace MiningCore.Stratum
                 var sockets = stratumPorts.Select(port =>
                 {
                     // TLS cert loading
-                    X509Certificate2 tlsCert = null;
-
                     if (port.PoolEndpoint.Tls)
                     {
-                        if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out tlsCert))
+                        if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var tlsCert))
                         {
                             tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
                             certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
@@ -156,7 +150,7 @@ namespace MiningCore.Stratum
 
                             // accept connection if successful
                             if (task.IsCompletedSuccessfully)
-                                await AcceptConnectionAsync(task.Result, port);
+                                AcceptConnection(task.Result, port);
 
                             // Refresh task
                             tasks[i] = sockets[i].AcceptAsync();
@@ -171,7 +165,7 @@ namespace MiningCore.Stratum
             });
         }
 
-        private async Task AcceptConnectionAsync(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
             var connectionId = CorrelationIdGenerator.GetNextId();
@@ -186,45 +180,17 @@ namespace MiningCore.Stratum
                 return;
             }
 
-            // prepare socket
-            socket.NoDelay = true;
-
-            // create stream
-            var stream = (Stream) new NetworkStream(socket, true);
-
-            // TLS handshake
-            if (port.PoolEndpoint.Tls)
-            {
-                SslStream sslStream = null;
-
-                try
-                {
-                    var tlsCert = certs[port.PoolEndpoint.TlsPfxFile];
-                    sslStream = new SslStream(stream, false);
-
-                    await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
-                }
-
-                catch(Exception ex)
-                {
-                    logger.Error(() => $"[{LogCat}] TLS init failed: {ex.Message}: {ex.InnerException.ToString() ?? string.Empty}");
-                    (sslStream ?? stream).Close();
-                    return;
-                }
-
-                stream = sslStream;
-            }
             // setup client
-            var client = new StratumClient(stream, clock, port.IPEndPoint, connectionId);
+            var client = new StratumClient(clock, connectionId);
 
             lock(clients)
             {
                 clients[connectionId] = client;
             }
 
-            OnConnect(client);
+            OnConnect(client, port.IPEndPoint);
 
-            client.Run(port, (IPEndPoint) socket.RemoteEndPoint, OnRequestAsync, OnReceiveComplete, OnReceiveError);
+            client.Run(socket, port, certs, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
         public void StopListeners()
@@ -242,7 +208,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected abstract void OnConnect(StratumClient client);
+        protected abstract void OnConnect(StratumClient client, IPEndPoint portItem1);
 
         protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request)
         {
