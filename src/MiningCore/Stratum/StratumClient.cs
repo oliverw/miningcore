@@ -306,15 +306,9 @@ namespace MiningCore.Stratum
                 {
                     using (var segment = await receiveBuffer.ReceiveAsync())
                     {
-                        // write to pipe
-                        var cb = segment.Size;
-                        var memory = receivePipe.Writer.GetMemory(cb);
-                        segment.Array.CopyTo(memory);
-
-                        receivePipe.Writer.Advance(cb);
+                        await receivePipe.Writer.WriteAsync(segment.ToArray());
+                        await receivePipe.Writer.FlushAsync();
                     }
-
-                    await receivePipe.Writer.FlushAsync();
                 }
 
                 catch (Exception)
@@ -362,7 +356,7 @@ namespace MiningCore.Stratum
                     if (position != null)
                     {
                         var slice = buffer.Slice(0, position.Value);
-                        var line = StratumConstants.Encoding.GetString(slice.ToArray());
+                        var line = StratumConstants.Encoding.GetString(slice.ToArray()).Trim();
 
                         logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
 
