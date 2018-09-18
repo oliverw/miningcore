@@ -21,7 +21,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Net;
 using Microsoft.Extensions.Caching.Memory;
-using NBitcoin;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Banning
@@ -45,10 +44,6 @@ namespace MiningCore.Banning
         {
             Contract.RequiresNonNull(address, nameof(address));
             Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
-
-            // don't ban 127.0.0.1
-            if (address.Equals(IPAddress.Loopback) || address.Equals(IPAddress.IPv6Loopback))
-                return;
 
             cache.Set(address.ToString(), string.Empty, duration);
         }
