@@ -212,7 +212,7 @@ namespace MiningCore.Stratum
                         sockEx.ErrorCode != (int) SocketError.ConnectionAborted &&
                         sockEx.ErrorCode != (int) SocketError.OperationAborted)
                     {
-                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
                     }
                     break;
 
@@ -228,7 +228,7 @@ namespace MiningCore.Stratum
                     break;
 
                 default:
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
                     break;
             }
 
