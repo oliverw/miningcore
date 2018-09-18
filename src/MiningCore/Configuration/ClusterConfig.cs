@@ -62,7 +62,7 @@ namespace MiningCore.Configuration
         PAK, // PAKcoin
         CANN, // CannabisCoin
         RVN, // Ravencoin
-        PGN, // Pigeoncoin 
+        PGN, // Pigeoncoin
     }
 
     public class CoinConfig
@@ -341,7 +341,7 @@ namespace MiningCore.Configuration
         /// <summary>
         /// Port for admin-apis
         /// </summary>
-        public int AdminPort { get; set; }
+        public int? AdminPort { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
@@ -355,7 +355,7 @@ namespace MiningCore.Configuration
         public string PublishUrl { get; set; }
 
         /// <summary>
-        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it 
+        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it
         /// </summary>
         public bool Connect { get; set; }
     }
