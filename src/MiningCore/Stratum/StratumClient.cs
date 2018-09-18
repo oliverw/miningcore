@@ -98,7 +98,13 @@ namespace MiningCore.Stratum
                     }
                 }
 
-                catch(Exception ex)
+                catch (ObjectDisposedException)
+                {
+                    isAlive = false;
+                    onCompleted(this);
+                }
+
+                catch (Exception ex)
                 {
                     isAlive = false;
                     onError(this, ex);
