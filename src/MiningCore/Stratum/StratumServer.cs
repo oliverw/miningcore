@@ -24,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive;
+using System.Runtime.InteropServices;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -51,6 +53,31 @@ namespace MiningCore.Stratum
             this.clock = clock;
         }
 
+        static StratumServer()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                ignoredSocketErrors = new HashSet<int>
+                {
+                    (int) SocketError.ConnectionReset,
+                    (int) SocketError.ConnectionAborted,
+                    (int) SocketError.OperationAborted
+                };
+            }
+
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // see: http://www.virtsync.com/c-error-codes-include-errno
+                ignoredSocketErrors = new HashSet<int>
+                {
+                    104,    // ECONNRESET
+                    125,    // ECANCELED
+                    103,    // ECONNABORTED
+                    110,    // ETIMEDOUT
+                };
+            }
+        }
+
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
 
         protected readonly IComponentContext ctx;
@@ -59,6 +86,8 @@ namespace MiningCore.Stratum
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected ILogger logger;
+
+        protected static readonly HashSet<int> ignoredSocketErrors;
 
         protected abstract string LogCat { get; }
 
@@ -208,9 +237,7 @@ namespace MiningCore.Stratum
             {
                 case SocketException sockEx:
                     // log everything but ECONNRESET which just indicates the client disconnecting
-                    if (sockEx.ErrorCode != (int) SocketError.ConnectionReset &&
-                        sockEx.ErrorCode != (int) SocketError.ConnectionAborted &&
-                        sockEx.ErrorCode != (int) SocketError.OperationAborted)
+                    if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
                     {
                         logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
                     }
