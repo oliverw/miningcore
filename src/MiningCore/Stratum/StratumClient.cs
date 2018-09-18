@@ -337,11 +337,11 @@ namespace MiningCore.Stratum
 
             if (line.StartsWith("PROXY "))
             {
-                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
-                if (proxyAddresses == null || !proxyAddresses.Any())
-                    proxyAddresses = new[] { IPAddress.Loopback };
+                //var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                //if (proxyAddresses == null || !proxyAddresses.Any())
+                //    proxyAddresses = new[] { IPAddress.Loopback };
 
-                if (proxyAddresses.Any(x => x.Equals(peerAddress)))
+                //if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                 {
                     logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
 
@@ -355,10 +355,10 @@ namespace MiningCore.Stratum
                     logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
                 }
 
-                else
-                {
-                    throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
-                }
+                //else
+                //{
+                //    throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                //}
 
                 return true;
             }
