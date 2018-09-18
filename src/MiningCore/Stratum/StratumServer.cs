@@ -209,7 +209,6 @@ namespace MiningCore.Stratum
                 case SocketException sockEx:
                     // log everything but ECONNRESET which just indicates the client disconnecting
                     if (sockEx.ErrorCode != (int) SocketError.ConnectionReset &&
-                        sockEx.ErrorCode != (int) SocketError.ConnectionAborted &&
                         sockEx.ErrorCode != (int) SocketError.OperationAborted)
                     {
                         logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
@@ -283,18 +282,6 @@ namespace MiningCore.Stratum
                     logger.Error(ex);
                 }
             }
-        }
-
-        protected IEnumerable<Task> ForEachClient(Func<StratumClient, Task> func)
-        {
-            StratumClient[] tmp;
-
-            lock (clients)
-            {
-                tmp = clients.Values.ToArray();
-            }
-
-            return tmp.Select(x => func(x));
         }
 
         protected virtual void OnDisconnect(string subscriptionId)
