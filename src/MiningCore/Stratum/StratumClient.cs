@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -257,7 +257,7 @@ namespace MiningCore.Stratum
             receivePipe.Writer.Complete();
         }
 
-        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, 
+        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
             Func<StratumClient, JsonRpcRequest, Task> onNext)
         {
             while(true)

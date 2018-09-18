@@ -1,4 +1,4 @@
-﻿using MiningCore.Blockchain.Monero;
+using MiningCore.Blockchain.Monero;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Stratum;

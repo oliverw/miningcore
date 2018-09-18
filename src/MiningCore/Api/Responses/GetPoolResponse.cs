@@ -1,4 +1,4 @@
-﻿namespace MiningCore.Api.Responses
+namespace MiningCore.Api.Responses
 {
     public class GetPoolResponse
     {

@@ -1,4 +1,4 @@
-﻿namespace MiningCore.Blockchain.Ethereum.DaemonResponses
+namespace MiningCore.Blockchain.Ethereum.DaemonResponses
 {
     public class PubSubParams<T>
     {

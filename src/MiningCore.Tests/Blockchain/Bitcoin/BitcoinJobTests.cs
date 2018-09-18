@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Crypto;

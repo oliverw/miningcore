@@ -1,4 +1,4 @@
-﻿using MiningCore.Crypto;
+using MiningCore.Crypto;
 using MiningCore.Extensions;
 using System;
 using System.Collections.Generic;
