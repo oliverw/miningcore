@@ -327,18 +327,15 @@ namespace MiningCore.Blockchain.Ethereum
             return new object[0];
         }
 
-        private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        private JsonRpcRequest DeserializeRequest(byte[] data)
         {
-            using(data)
+            using(var stream = new MemoryStream(data))
             {
-                using(var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                using(var reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    using(var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var jreader = new JsonTextReader(reader))
                     {
-                        using(var jreader = new JsonTextReader(reader))
-                        {
-                            return serializer.Deserialize<JsonRpcRequest>(jreader);
-                        }
+                        return serializer.Deserialize<JsonRpcRequest>(jreader);
                     }
                 }
             }

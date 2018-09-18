@@ -28,10 +28,13 @@
   <ItemGroup>
     <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
     <Compile Remove="DataAccess\**" />
+    <Compile Remove="Maintenance\**" />
     <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
     <EmbeddedResource Remove="DataAccess\**" />
+    <EmbeddedResource Remove="Maintenance\**" />
     <None Remove="Blockchain\Bitcoin\Transactions\**" />
     <None Remove="DataAccess\**" />
+    <None Remove="Maintenance\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,10 +94,6 @@
     <None Update="runtimes\win7-x86\native\multihash-native.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Maintenance\Jobs\" />
   </ItemGroup>
 
 </Project>
