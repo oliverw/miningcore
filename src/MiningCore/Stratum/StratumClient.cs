@@ -257,7 +257,8 @@ namespace MiningCore.Stratum
             receivePipe.Writer.Complete();
         }
 
-        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
+        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, 
+            Func<StratumClient, JsonRpcRequest, Task> onNext)
         {
             while(true)
             {
