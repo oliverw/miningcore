@@ -202,20 +202,6 @@ namespace MiningCore.Stratum
             RespondAsync(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
-        public void RespondUnsupportedMethod(object id)
-        {
-            Contract.RequiresNonNull(id, nameof(id));
-
-            RespondErrorAsync(id, 20, "Unsupported method");
-        }
-
-        public void RespondUnauthorized(object id)
-        {
-            Contract.RequiresNonNull(id, nameof(id));
-
-            RespondErrorAsync(id, 24, "Unauthorized worker");
-        }
-
         public byte[] Serialize(object payload)
         {
             using (var stream = new MemoryStream())
