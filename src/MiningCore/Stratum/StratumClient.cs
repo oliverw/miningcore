@@ -359,8 +359,6 @@ namespace MiningCore.Stratum
                     // Update client
                     RemoteEndpoint = new IPEndPoint(IPAddress.Parse(remoteAddress), int.Parse(remotePort));
                     logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
-
-                    return true;
                 }
 
                 //else
@@ -370,12 +368,13 @@ namespace MiningCore.Stratum
                 //}
             }
 
-            if (proxyProtocol.Mandatory)
+            else if (proxyProtocol.Mandatory)
             {
                 logger.Error(() => $"[{ConnectionId}] Missing mandatory Proxy-Protocol header from {peerAddress}. Closing connection.");
+                return false;
             }
 
-            return false;
+            return true;
         }
     }
 }
