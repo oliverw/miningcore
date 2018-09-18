@@ -21,13 +21,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Autofac;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
@@ -39,17 +42,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
-using Pipe = System.IO.Pipelines.Pipe;
 
 namespace MiningCore.Stratum
 {
     public class StratumClient
     {
-        public StratumClient()
-        {
-            receiveDataflowBlock = receiveBuffer;
-        }
-
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private const int MaxInboundRequestLength = 0x8000;
@@ -59,15 +56,8 @@ namespace MiningCore.Stratum
         private Async sendQueueDrainer;
         private IDisposable subscription;
 
-        private readonly BufferBlock<PooledArraySegment<byte>> receiveBuffer = new BufferBlock<PooledArraySegment<byte>>(new DataflowBlockOptions
-        {
-            BoundedCapacity = 64,
-            EnsureOrdered = true
-        });
-
-        private readonly IDataflowBlock receiveDataflowBlock;
-
-        private readonly Pipe receivePipe = new Pipe(new PipeOptions(pauseWriterThreshold: MaxInboundRequestLength * 2));
+        private readonly System.IO.Pipelines.Pipe receivePipe = new System.IO.Pipelines.Pipe(
+            new PipeOptions(pauseWriterThreshold: MaxInboundRequestLength * 2));
 
         private bool isAlive = true;
         private WorkerContextBase context;
@@ -214,6 +204,44 @@ namespace MiningCore.Stratum
             RespondError(id, 20, "Unsupported method");
         }
 
+        public void RespondUnauthorized(object id)
+        {
+            Contract.RequiresNonNull(id, nameof(id));
+
+            RespondError(id, 24, "Unauthorized worker");
+        }
+
+        public JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        {
+            using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+            {
+                using (var reader = new StreamReader(stream, StratumConstants.Encoding))
+                {
+                    using (var jreader = new JsonTextReader(reader))
+                    {
+                        return serializer.Deserialize<JsonRpcRequest>(jreader);
+                    }
+                }
+            }
+        }
+
+        public byte[] Serialize(object payload)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                {
+                    serializer.Serialize(writer, payload);
+                    writer.Flush();
+
+                    // append newline
+                    stream.WriteByte(0xa);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
         public T Deserialize<T>(string json)
         {
             using (var jreader = new JsonTextReader(new StringReader(json)))
@@ -251,142 +279,123 @@ namespace MiningCore.Stratum
 
             subscription = Disposable.Create(() => { disposer.Send(); });
 
-            tcp.OnRead((handle, buffer) =>
+            var tcpBufferStream = Observable.Create<PooledArraySegment<byte>>(obs =>
             {
-                if (buffer.Count == 0 || !isAlive)
-                    return;
+                tcp.OnRead((handle, readableBuffer) =>
+                {
+                    if (readableBuffer.Count == 0 || !isAlive)
+                        return;
 
-                // Copy buffer
-                var segment = new PooledArraySegment<byte>(buffer.Count);
-                buffer.ReadBytes(segment.Array, buffer.Count);
+                    // Copy buffer
+                    var segment = new PooledArraySegment<byte>(readableBuffer.Count);
+                    readableBuffer.ReadBytes(segment.Array, readableBuffer.Count);
 
-                // Forward
-                LastReceive = clock.Now;
-                receiveBuffer.Post(segment);
-            }, (handle, ex) =>
-            {
-                // onError
-                receiveDataflowBlock.Fault(ex);
-            }, handle =>
-            {
-                // release handles
-                sendQueueDrainer.UserToken = null;
-                sendQueueDrainer.Dispose();
+                    LastReceive = clock.Now;
 
-                handle.CloseHandle();
+                    obs.OnNext(segment);
+                }, (handle, ex) =>
+                {
+                    // onError
+                    obs.OnError(ex);
+                }, handle =>
+                {
+                    // release handles
+                    sendQueueDrainer.UserToken = null;
+                    sendQueueDrainer.Dispose();
 
-                receiveBuffer.Complete();
+                    handle.CloseHandle();
+
+                    obs.OnCompleted();
+                });
+
+                return subscription;
             });
 
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.WhenAll(
-                        FillReceivePipeAsync(),
-                        ProcessReceivePipeAsync(endpointConfig.ProxyProtocol, onRequestAsync));
-
-                    isAlive = false;
-                    onCompleted(this);
-                }
-
-                catch (Exception ex)
-                {
-                    isAlive = false;
-                    onError(this, ex);
-                }
-            });
+            tcpBufferStream
+                .ObserveOn(TaskPoolScheduler.Default)
+                .Select(segment => Observable.FromAsync(() => FillPipeAsync(segment)))
+                .Concat()
+                .Select(_ => Observable.FromAsync(ReadLinesAsync))
+                .Concat()
+                .SelectMany(x => x)
+                .Select(line => HandleProxyHeader(endpointConfig, line))
+                .Where(line => !string.IsNullOrEmpty(line))
+                .Select(DeserializeRequest)
+                .Select(request => Observable.FromAsync(() => onRequestAsync(this, request)))
+                .Concat()
+                .Subscribe(_ => { }, ex => onError(this, ex), () => onCompleted(this));
         }
 
-        private async Task FillReceivePipeAsync()
+        private async Task FillPipeAsync(PooledArraySegment<byte> segment)
         {
-            while (true)
+            using (segment)
             {
-                try
-                {
-                    using (var segment = await receiveBuffer.ReceiveAsync())
-                    {
-                        await receivePipe.Writer.WriteAsync(segment.ToArray());
-                        await receivePipe.Writer.FlushAsync();
-                    }
-                }
+                var buf = new Memory<byte>(segment.Array, 0, segment.Size);
 
-                catch (Exception)
-                {
-                    // Ensure that ProcessPipeAsync completes as well
-                    receivePipe.Writer.Complete();
+                await receivePipe.Writer.WriteAsync(buf, CancellationToken.None);
+                await receivePipe.Writer.FlushAsync();
+            }
+        }
 
-                    // Unwrap real cause
-                    if (receiveDataflowBlock.Completion.IsFaulted)
-                        throw receiveDataflowBlock.Completion.Exception.InnerException;
+        private async Task<List<string>> ReadLinesAsync()
+        {
+            var readResult = await receivePipe.Reader.ReadAsync();
 
-                    // rethrow if cause could not be determined
-                    throw;
-                }
+            var buffer = readResult.Buffer;
+            SequencePosition? position = null;
 
-                var result = await receivePipe.Writer.FlushAsync();
-
-                if (result.IsCompleted)
-                    break;
+            if (buffer.Length > MaxInboundRequestLength)
+            {
+                Disconnect();
+                throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
             }
 
-            receivePipe.Writer.Complete();
+            var result = new List<string>();
+
+            do
+            {
+                // Look for a EOL in the buffer
+                position = buffer.PositionOf((byte)'\n');
+
+                if (position != null)
+                {
+                    var slice = buffer.Slice(0, position.Value);
+                    var line = StratumConstants.Encoding.GetString(slice.ToArray());
+
+                    result.Add(line);
+
+                    logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
+
+                    // Skip the line + the \n character (basically position)
+                    buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+                }
+            } while (position != null);
+
+            receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+
+            return result;
         }
 
-        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, Task> onNext)
+        private string HandleProxyHeader((IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, string line)
         {
-            while (true)
+            if (expectingProxyProtocolHeader)
             {
-                var result = await receivePipe.Reader.ReadAsync();
-
-                var buffer = result.Buffer;
-                SequencePosition? position = null;
-
-                if (buffer.Length > MaxInboundRequestLength)
+                // Handle proxy header
+                if (!ProcessProxyHeader(line, endpointConfig.ProxyProtocol))
                 {
                     Disconnect();
-                    throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
+                    throw new InvalidDataException($"Expected proxy header. Got something else.");
                 }
 
-                do
-                {
-                    // Look for a EOL in the buffer
-                    position = buffer.PositionOf((byte)'\n');
-
-                    if (position != null)
-                    {
-                        var slice = buffer.Slice(0, position.Value);
-                        var line = StratumConstants.Encoding.GetString(slice.ToArray()).Trim();
-
-                        logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
-
-                        if (!expectingProxyProtocolHeader)
-                            await ProcessRequestAsync(onNext, line);
-                        else
-                        {
-                            // Handle proxy header
-                            if (!ProcessProxyHeader(line, proxyProtocol))
-                            {
-                                Disconnect();
-                                throw new InvalidDataException($"Expected proxy header. Got something else.");
-                            }
-                        }
-
-                        // Skip the line + the \n character (basically position)
-                        buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
-                    }
-                } while (position != null);
-
-                receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
-
-                if (result.IsCompleted)
-                    break;
+                return null;
             }
+
+            return line;
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onNext, string json)
+        private JsonRpcRequest DeserializeRequest(string line)
         {
-            var request = Deserialize<JsonRpcRequest>(json);
+            var request = Deserialize<JsonRpcRequest>(line);
 
             if (request == null)
             {
@@ -394,7 +403,7 @@ namespace MiningCore.Stratum
                 throw new JsonException("Unable to deserialize request");
             }
 
-            await onNext(this, request);
+            return request;
         }
 
         private bool ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
