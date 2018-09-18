@@ -162,7 +162,7 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
+        protected async Task UpdateVarDiffAsync(StratumClient client, bool isIdleUpdate = false)
         {
             var context = client.ContextAs<WorkerContextBase>();
 
@@ -183,19 +183,21 @@ namespace MiningCore.Mining
                     }
                 }
 
+                double? newDiff = null;
+
                 lock (context.VarDiff)
                 {
                     StartVarDiffIdleUpdate(client, poolEndpoint);
 
                     // update it
-                    var newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, isIdleUpdate);
+                    newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, isIdleUpdate);
+                }
 
-                    if (newDiff != null)
-                    {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
+                if (newDiff != null)
+                {
+                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
-                        OnVarDiffUpdate(client, newDiff.Value);
-                    }
+                    await OnVarDiffUpdateAsync(client, newDiff.Value);
                 }
             }
         }
@@ -217,13 +219,17 @@ namespace MiningCore.Mining
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
                 .Where(x => client.IsAlive)
-                .Subscribe(_ => UpdateVarDiff(client, true));
+                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
+                .Concat()
+                .Subscribe();
         }
 
-        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
+        protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
+
+            return Task.FromResult(true);
         }
 
         #endregion // VarDiff
@@ -359,7 +365,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
                         .ToArray();
 
-                    StartListeners(poolConfig.Id, ipEndpoints);
+                    StartListeners(ipEndpoints);
                 }
 
                 logger.Info(() => $"[{LogCat}] Online");
