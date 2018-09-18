@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Flo
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -97,7 +97,7 @@ namespace MiningCore.Blockchain.Flo
             }
 
             // build coinbase final
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 

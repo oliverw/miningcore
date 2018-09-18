@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -52,7 +52,7 @@ namespace MiningCore.Native
             Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
                 // provide reasonable large output buffer
                 var outputBuffer = ArrayPool<byte>.Shared.Rent(0x100);
@@ -62,7 +62,7 @@ namespace MiningCore.Native
                     var outputBufferLength = outputBuffer.Length;
 
                     var success = false;
-                    fixed (byte* output = outputBuffer)
+                    fixed(byte* output = outputBuffer)
                     {
                         success = convert_blob(input, size, output, ref outputBufferLength);
                     }
@@ -77,7 +77,7 @@ namespace MiningCore.Native
                         ArrayPool<byte>.Shared.Return(outputBuffer);
                         outputBuffer = ArrayPool<byte>.Shared.Rent(outputBufferLength);
 
-                        fixed (byte* output = outputBuffer)
+                        fixed(byte* output = outputBuffer)
                         {
                             success = convert_blob(input, size, output, ref outputBufferLength);
                         }
@@ -106,7 +106,7 @@ namespace MiningCore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
                 return decode_address(input, data.Length);
             }
@@ -118,7 +118,7 @@ namespace MiningCore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
                 return decode_integrated_address(input, data.Length);
             }
@@ -130,9 +130,9 @@ namespace MiningCore.Native
 
             var result = new PooledArraySegment<byte>(32);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed(byte* output = result.Array)
                 {
                     cn_slow_hash(input, output, (uint) data.Length, variant);
                 }
@@ -147,9 +147,9 @@ namespace MiningCore.Native
 
             var result = new PooledArraySegment<byte>(32);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed(byte* output = result.Array)
                 {
                     cn_slow_hash_lite(input, output, (uint) data.Length);
                 }
@@ -164,9 +164,9 @@ namespace MiningCore.Native
 
             var result = new PooledArraySegment<byte>(32);
 
-            fixed (byte* input = data)
+            fixed(byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed(byte* output = result.Array)
                 {
                     cn_fast_hash(input, output, (uint) data.Length);
                 }

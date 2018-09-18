@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -83,14 +83,14 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        protected override void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        protected override async Task OnSubscribeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.Other, "missing request id", request.Id);
+                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
                 return;
             }
 
@@ -103,7 +103,7 @@ namespace MiningCore.Blockchain.ZCash
                 .Concat(manager.GetSubscriberData(client))
                 .ToArray();
 
-            client.Respond(data, request.Id);
+            await client.RespondAsync(data, request.Id);
 
             // setup worker context
             context.IsSubscribed = true;
@@ -119,19 +119,19 @@ namespace MiningCore.Blockchain.ZCash
             if (context.IsAuthorized)
             {
                 // send intial update
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
-                client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
 
-        private void OnSuggestTarget(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSuggestTargetAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.Other, "missing request id", request.Id);
+                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
                 return;
             }
 
@@ -150,19 +150,19 @@ namespace MiningCore.Blockchain.ZCash
                         context.EnqueueNewDifficulty(newDiff);
                         context.ApplyPendingDifficulty();
 
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
+                        await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
                     }
 
                     else
-                        client.RespondError(StratumError.Other, "suggested difficulty too low", request.Id);
+                        await client.RespondErrorAsync(StratumError.Other, "suggested difficulty too low", request.Id);
                 }
 
                 else
-                    client.RespondError(StratumError.Other, "invalid target", request.Id);
+                    await client.RespondErrorAsync(StratumError.Other, "invalid target", request.Id);
             }
 
             else
-                client.RespondError(StratumError.Other, "invalid target", request.Id);
+                await client.RespondErrorAsync(StratumError.Other, "invalid target", request.Id);
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
@@ -170,10 +170,10 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
-                    OnSubscribe(client, tsRequest);
+                    await OnSubscribeAsync(client, tsRequest);
                     break;
 
                 case BitcoinStratumMethods.Authorize:
@@ -185,7 +185,7 @@ namespace MiningCore.Blockchain.ZCash
                     break;
 
                 case ZCashStratumMethods.SuggestTarget:
-                    OnSuggestTarget(client, tsRequest);
+                    await OnSuggestTargetAsync(client, tsRequest);
                     break;
 
                 case BitcoinStratumMethods.ExtraNonceSubscribe:
@@ -195,18 +195,18 @@ namespace MiningCore.Blockchain.ZCash
                 default:
                     logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
             }
         }
 
-        protected override void OnNewJob(object jobParams)
+        protected override Task OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => $"[{LogCat}] Broadcasting job");
 
-            ForEachClient(client =>
+            var tasks = ForEachClient(async client =>
             {
                 var context = client.ContextAs<BitcoinWorkerContext>();
 
@@ -225,12 +225,14 @@ namespace MiningCore.Blockchain.ZCash
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (context.ApplyPendingDifficulty())
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
+                        await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
 
                     // send job
-                    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
             });
+
+            return Task.WhenAll(tasks);
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -242,7 +244,7 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
+        protected override async Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<BitcoinWorkerContext>();
 
@@ -253,8 +255,8 @@ namespace MiningCore.Blockchain.ZCash
             {
                 context.ApplyPendingDifficulty();
 
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
-                client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using MiningCore.JsonRpc;
+using MiningCore.JsonRpc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

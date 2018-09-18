@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MiningCore.Time;
 
 namespace MiningCore.Tests.Util

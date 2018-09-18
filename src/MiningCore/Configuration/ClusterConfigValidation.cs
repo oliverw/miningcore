@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -18,8 +18,10 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.IO;
 using FluentValidation;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using FluentValidation.Attributes;
 
 namespace MiningCore.Configuration
@@ -100,6 +102,32 @@ namespace MiningCore.Configuration
                 .GreaterThan(0)
                 .WithMessage("Pool Endpoint: Difficulty missing or invalid");
 
+            RuleFor(j => j.TlsPfxFile)
+                .NotNull()
+                .NotEmpty()
+                .When(j => j.Tls)
+                .WithMessage("Pool Endpoint: Tls enabled but neither TlsPemFile nor TlsPfxFile specified");
+
+            RuleFor(j => j.TlsPfxFile)
+                .Must(File.Exists)
+                .When(j => j.Tls)
+                .WithMessage(j => $"Pool Endpoint: {j.TlsPfxFile} does not exist");
+
+            RuleFor(j => j.TlsPfxFile)
+                .Must(j =>
+                {
+                    try
+                    {
+                        var tlsCert = new X509Certificate2(j);
+                        return tlsCert.HasPrivateKey;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                })
+                .When(j => j.Tls)
+                .WithMessage(j => $"Pool Endpoint: {j.TlsPfxFile} is not valid or does not include the private key and cannot be used");
             RuleFor(j => j.VarDiff)
                 .SetValidator(new VarDiffConfigValidator())
                 .When(x => x.VarDiff != null);
@@ -235,7 +263,7 @@ namespace MiningCore.Configuration
                         .GroupBy(x => x)
                         .ToArray();
 
-                    foreach (var port in ports)
+                    foreach(var port in ports)
                     {
                         if (port.Count() > 1)
                         {

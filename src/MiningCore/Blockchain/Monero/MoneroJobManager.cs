@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -95,9 +95,7 @@ namespace MiningCore.Blockchain.Monero
 
             try
             {
-                var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
-                    GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
@@ -194,11 +192,11 @@ namespace MiningCore.Blockchain.Monero
 
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-                BlockchainStats.NetworkHashrate = info.Target > 0 ? (double)info.Difficulty / info.Target : 0;
+                BlockchainStats.NetworkHashrate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
                 BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
             }
 
-            catch (Exception e)
+            catch(Exception e)
             {
                 logger.Error(e);
             }
@@ -274,7 +272,7 @@ namespace MiningCore.Blockchain.Monero
             var addressPrefix = LibCryptonote.DecodeAddress(address);
             var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
 
-            switch (networkType)
+            switch(networkType)
             {
                 case MoneroNetworkType.Main:
                     if (addressPrefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type] &&
@@ -485,7 +483,7 @@ namespace MiningCore.Blockchain.Monero
             switch(networkType)
             {
                 case MoneroNetworkType.Main:
-                    if(poolAddressBase58Prefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type])
+                    if (poolAddressBase58Prefix != MoneroConstants.AddressPrefix[poolConfig.Coin.Type])
                         logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {MoneroConstants.AddressPrefix[poolConfig.Coin.Type]}, got {poolAddressBase58Prefix}", LogCat);
                     break;
 
@@ -532,8 +530,8 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-	        if (poolConfig.EnableInternalStratum == false)
-		        return;
+            if (poolConfig.EnableInternalStratum == false)
+                return;
 
             var blockSubmission = blockSubmissionSubject.Synchronize();
             var pollTimerRestart = blockSubmissionSubject.Synchronize();
@@ -596,7 +594,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     // get initial blocktemplate
                     triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                        .Select(_ => ("Initial template", (string)null))
+                        .Select(_ => ("Initial template", (string) null))
                         .TakeWhile(_ => !hasInitialBlockTemplate));
                 }
             }
@@ -610,18 +608,18 @@ namespace MiningCore.Blockchain.Monero
 
                 // get initial blocktemplate
                 triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => ("Initial template", (string)null))
+                    .Select(_ => ("Initial template", (string) null))
                     .TakeWhile(_ => !hasInitialBlockTemplate));
             }
 
             Blocks = Observable.Merge(triggers)
-            .Select(x => Observable.FromAsync(() => UpdateJob(x.Via, x.Data)))
-            .Concat()
-            .Where(isNew => isNew)
-            .Do(_ => hasInitialBlockTemplate = true)
-            .Select(_ => Unit.Default)
-            .Publish()
-            .RefCount();
+                .Select(x => Observable.FromAsync(() => UpdateJob(x.Via, x.Data)))
+                .Concat()
+                .Where(isNew => isNew)
+                .Do(_ => hasInitialBlockTemplate = true)
+                .Select(_ => Unit.Default)
+                .Publish()
+                .RefCount();
         }
 
         #endregion // Overrides

@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash;
@@ -21,8 +21,8 @@ namespace MiningCore.Blockchain.BitcoinGold
             {
                 new
                 {
-                    capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
-                    rules = new[] {"segwit"}
+                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
+                    rules = new[] { "segwit" }
                 }
             };
         }
