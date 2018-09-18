@@ -164,24 +164,14 @@ namespace MiningCore.Stratum
 
             if (isAlive)
             {
+                var buf = Serialize(payload);
+
+                logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf)}");
+
                 try
                 {
-                    using(var stream = new MemoryStream())
-                    {
-                        using(var writer = new StreamWriter(stream, StratumConstants.Encoding))
-                        {
-                            serializer.Serialize(writer, payload);
-                            writer.Flush();
 
-                            // append newline
-                            stream.WriteByte(0xa);
-                        }
-
-                        var buf = stream.ToArray();
-                        logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf)}");
-
-                        await socket.SendAsync(buf, SocketFlags.None);
-                    }
+                    await socket.SendAsync(buf, SocketFlags.None);
                 }
 
                 catch(ObjectDisposedException)
@@ -220,11 +210,28 @@ namespace MiningCore.Stratum
             RespondErrorAsync(id, 24, "Unauthorized worker");
         }
 
-        public JsonRpcRequest DeserializeRequest(string json)
+        public byte[] Serialize(object payload)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                {
+                    serializer.Serialize(writer, payload);
+                    writer.Flush();
+
+                    // append newline
+                    stream.WriteByte(0xa);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        public T Deserialize<T>(string json)
         {
             using (var jreader = new JsonTextReader(new StringReader(json)))
             {
-                return serializer.Deserialize<JsonRpcRequest>(jreader);
+                return serializer.Deserialize<T>(jreader);
             }
         }
 
@@ -296,7 +303,7 @@ namespace MiningCore.Stratum
                         // Process Input
                         if (!expectingProxyProtocolHeader)
                         {
-                            var request = DeserializeRequest(line);
+                            var request = Deserialize<JsonRpcRequest>(line);
 
                             if (request == null)
                             {
