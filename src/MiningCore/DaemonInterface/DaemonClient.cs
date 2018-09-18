@@ -146,7 +146,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\""+ method + "\"" });
 
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
@@ -186,7 +186,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
@@ -218,7 +218,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(endPoints.First(), method, payload, payloadJsonSerializerSettings);
             await task;
@@ -235,7 +235,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.RequiresNonNull(batch, nameof(batch));
 
-            logger.LogInvoke(batch.Select(x => x.Method).ToArray());
+            logger.LogInvoke(batch.Select(x => "\"" + x.Method + "\"").ToArray());
 
             var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(endPoint, batch)).ToArray();
 
