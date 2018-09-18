@@ -20,11 +20,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Reactive;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,15 +95,21 @@ namespace MiningCore.Stratum
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(params (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol)[] stratumPorts)
+        public void StartListeners(params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
             Task.Run(async () =>
             {
                 // Setup sockets
-                var sockets = stratumPorts.Select(port =>
+                (Socket Socket, X509Certificate2 Cert)[] si = stratumPorts.Select(port =>
                 {
+                    // TLS cert loading
+                    X509Certificate2 tlsCert = null;
+
+                    if (port.PoolEndpoint.Tls)
+                        tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
+
                     // Setup socket
                     var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                     server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -113,11 +123,11 @@ namespace MiningCore.Stratum
 
                     logger.Info(() => $"[{LogCat}] Stratum port {port.IPEndPoint.Address}:{port.IPEndPoint.Port} online");
 
-                    return server;
+                    return (server, tlsCert);
                 }).ToArray();
 
                 // Setup accept tasks
-                var tasks = sockets.Select(s => s.AcceptAsync()).ToArray();
+                var tasks = si.Select(x => x.Socket.AcceptAsync()).ToArray();
 
                 while (true)
                 {
@@ -138,10 +148,10 @@ namespace MiningCore.Stratum
 
                             // accept connection if successful
                             if (task.IsCompletedSuccessfully)
-                                AcceptConnection(task.Result, port);
+                                await AcceptConnectionAsync(task.Result, port, si[i].Cert);
 
                             // Refresh task
-                            tasks[i] = sockets[i].AcceptAsync();
+                            tasks[i] = si[i].Socket.AcceptAsync();
                         }
                     }
 
@@ -153,7 +163,7 @@ namespace MiningCore.Stratum
             });
         }
 
-        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) port)
+        private async Task AcceptConnectionAsync(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port, X509Certificate2 tlsCert)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
             var connectionId = CorrelationIdGenerator.GetNextId();
@@ -171,8 +181,31 @@ namespace MiningCore.Stratum
             // prepare socket
             socket.NoDelay = true;
 
+            // create stream
+            var stream = (Stream)new NetworkStream(socket, true);
+
+            // TLS handshake
+            if (port.PoolEndpoint.Tls)
+            {
+                SslStream sslStream = null;
+
+                try
+                {
+                    sslStream = new SslStream(stream, false);
+                    await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(() => $"[{LogCat}] TLS init failed: {ex.Message}: {ex.InnerException.ToString() ?? string.Empty}");
+                    (sslStream ?? stream).Close();
+                    return;
+                }
+
+                stream = sslStream;
+            }
             // setup client
-            var client = new StratumClient(socket, clock, port.IPEndPoint, connectionId);
+            var client = new StratumClient(stream, clock, port.IPEndPoint, connectionId);
 
             lock (clients)
             {
@@ -181,7 +214,7 @@ namespace MiningCore.Stratum
 
             OnConnect(client);
 
-            client.Run(port, OnRequestAsync, OnReceiveComplete, OnReceiveError);
+            client.Run(port, (IPEndPoint) socket.RemoteEndPoint, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
         public void StopListeners()
@@ -233,6 +266,9 @@ namespace MiningCore.Stratum
 
         protected virtual void OnReceiveError(StratumClient client, Exception ex)
         {
+            if (ex.InnerException is SocketException)
+                ex = ex.InnerException;
+
             switch (ex)
             {
                 case SocketException sockEx:

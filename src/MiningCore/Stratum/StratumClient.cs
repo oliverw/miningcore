@@ -39,9 +39,9 @@ namespace MiningCore.Stratum
 {
     public class StratumClient
     {
-        public StratumClient(Socket socket, IMasterClock clock, IPEndPoint endpointConfig, string connectionId)
+        public StratumClient(Stream stream, IMasterClock clock, IPEndPoint endpointConfig, string connectionId)
         {
-            this.socket = socket;
+            this.stream = stream;
 
             receivePipe = new Pipe(PipeOptions.Default);
 
@@ -61,7 +61,7 @@ namespace MiningCore.Stratum
         private const int MaxInboundRequestLength = 0x8000;
         private const int MaxOutboundRequestLength = 0x8000;
 
-        private readonly Socket socket;
+        private readonly Stream stream;
         private readonly Pipe receivePipe;
 
         private bool isAlive = true;
@@ -75,23 +75,24 @@ namespace MiningCore.Stratum
 
         #region API-Surface
 
-        public void Run((IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig,
+        public void Run((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpointConfig,
+            IPEndPoint remotEndPoint,
             Func<StratumClient, JsonRpcRequest, Task> onNext, Action<StratumClient> onCompleted, Action<StratumClient, Exception> onError)
         {
             PoolEndpoint = endpointConfig.IPEndPoint;
-            RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+            RemoteEndpoint = remotEndPoint;
 
-            expectingProxyHeader = endpointConfig.ProxyProtocol?.Enable == true;
+            expectingProxyHeader = endpointConfig.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
             Task.Run(async () =>
             {
                 try
                 {
-                    using(socket)
+                    using(stream)
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(endpointConfig.ProxyProtocol, onNext));
+                            ProcessReceivePipeAsync(endpointConfig.PoolEndpoint.TcpProxyProtocol, onNext));
 
                         isAlive = false;
                         onCompleted(this);
@@ -177,7 +178,7 @@ namespace MiningCore.Stratum
                 try
                 {
 
-                    await socket.SendAsync(buf, SocketFlags.None);
+                    await stream.WriteAsync(buf);
                 }
 
                 catch(ObjectDisposedException)
@@ -189,17 +190,9 @@ namespace MiningCore.Stratum
 
         public void Disconnect()
         {
-            socket.Close();
+            stream.Close();
 
             IsAlive = false;
-        }
-
-        public void RespondErrorAsync(object id, int code, string message)
-        {
-            Contract.RequiresNonNull(id, nameof(id));
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(message), $"{nameof(message)} must not be empty");
-
-            RespondAsync(new JsonRpcResponse(new JsonRpcException(code, message, null), id));
         }
 
         public byte[] Serialize(object payload)
@@ -238,7 +231,7 @@ namespace MiningCore.Stratum
                 try
                 {
 
-                    var cb = await socket.ReceiveAsync(memory, SocketFlags.None);
+                    var cb = await stream.ReadAsync(memory);
                     if (cb == 0)
                         break;  // EOF
 

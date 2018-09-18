@@ -85,7 +85,6 @@ namespace MiningCore.Mining
         protected readonly CompositeDisposable disposables = new CompositeDisposable();
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
-        protected const int VarDiffSampleCount = 32;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
         protected static readonly Regex regexStaticDiff = new Regex(@"d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
@@ -301,13 +300,13 @@ namespace MiningCore.Mining
             }
         }
 
-        private (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
+        private (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
         {
             var listenAddress = IPAddress.Parse("127.0.0.1");
             if (!string.IsNullOrEmpty(pep.ListenAddress))
                 listenAddress = pep.ListenAddress != "*" ? IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
 
-            return (new IPEndPoint(listenAddress, port), pep.TcpProxyProtocol);
+            return (new IPEndPoint(listenAddress, port), pep);
         }
 
         private void OutputPoolInfo()
