@@ -97,7 +97,7 @@ namespace MiningCore.Blockchain.Ethereum
                 return UpdateJob(await GetBlockTemplateAsync());
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJobAsync)}");
             }
@@ -125,7 +125,7 @@ namespace MiningCore.Blockchain.Ethereum
                     // update template
                     job = new EthereumJob(jobId, blockTemplate, logger);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
                         // add jobs
                         validJobs[jobId] = job;
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.Ethereum
                         var obsoleteKeys = validJobs.Keys
                             .Where(key => validJobs[key].BlockTemplate.Height < job.BlockTemplate.Height - MaxBlockBacklog).ToArray();
 
-                        foreach (var key in obsoleteKeys)
+                        foreach(var key in obsoleteKeys)
                             validJobs.Remove(key);
                     }
 
@@ -149,7 +149,7 @@ namespace MiningCore.Blockchain.Ethereum
                 return isNew;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }
@@ -280,7 +280,7 @@ namespace MiningCore.Blockchain.Ethereum
                 BlockchainStats.ConnectedPeers = peerCount;
             }
 
-            catch (Exception e)
+            catch(Exception e)
             {
                 logger.Error(e);
             }
@@ -329,13 +329,13 @@ namespace MiningCore.Blockchain.Ethereum
 
         private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
         {
-            using (data)
+            using(data)
             {
-                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                using(var stream = new MemoryStream(data.Array, data.Offset, data.Size))
                 {
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var reader = new StreamReader(stream, Encoding.UTF8))
                     {
-                        using (var jreader = new JsonTextReader(reader))
+                        using(var jreader = new JsonTextReader(reader))
                         {
                             return serializer.Deserialize<JsonRpcRequest>(jreader);
                         }
@@ -395,7 +395,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
 
-            logger.LogInvoke(LogCat, new[] {worker.ConnectionId});
+            logger.LogInvoke(LogCat, new[] { worker.ConnectionId });
             var context = worker.ContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
@@ -404,7 +404,7 @@ namespace MiningCore.Blockchain.Ethereum
             EthereumJob job;
 
             // stale?
-            lock (jobLock)
+            lock(jobLock)
             {
                 if (!validJobs.TryGetValue(jobId, out job))
                     throw new StratumException(StratumError.MinusOne, "stale share");
@@ -453,7 +453,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] {(object) "pending", true});
+            var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -474,12 +474,12 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var syncPendingNotificationShown = false;
 
-            while (true)
+            while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
 
                 var isSynched = responses.All(x => x.Error == null &&
-                                                   x.Response is bool && (bool) x.Response == false);
+                    x.Response is bool && (bool) x.Response == false);
 
                 if (isSynched)
                 {
@@ -556,7 +556,7 @@ namespace MiningCore.Blockchain.Ethereum
             if (poolConfig.EnableInternalStratum == true)
             {
                 // make sure we have a current DAG
-                while (true)
+                while(true)
                 {
                     var blockTemplate = await GetBlockTemplateAsync();
 
@@ -603,7 +603,7 @@ namespace MiningCore.Blockchain.Ethereum
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
             if (enableStreaming && !poolConfig.Daemons.Any(x =>
-                    x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
+                x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
             {
                 logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
                 enableStreaming = false;
@@ -624,7 +624,7 @@ namespace MiningCore.Blockchain.Ethereum
                 logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
 
                 // stream work updates
-                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] {(object) EC.GetWork})
+                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
                     {
                         try
@@ -633,7 +633,7 @@ namespace MiningCore.Blockchain.Ethereum
                             return psp?.Result;
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
                         }

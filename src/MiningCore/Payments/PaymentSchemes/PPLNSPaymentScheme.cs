@@ -135,7 +135,7 @@ namespace MiningCore.Payments.PaymentSchemes
             var currentPage = 0;
             var shares = new Dictionary<string, double>();
 
-            while (true)
+            while(true)
             {
                 logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
@@ -144,7 +144,7 @@ namespace MiningCore.Payments.PaymentSchemes
 
                 currentPage++;
 
-                for (var i = 0;i < page.Length; i++)
+                for(var i = 0; i < page.Length; i++)
                 {
                     var share = page[i];
 
@@ -173,7 +173,7 @@ namespace MiningCore.Payments.PaymentSchemes
 
                 logger.Info(() => $"{FormatUtil.FormatQuantity(shares.Values.Sum())} ({shares.Values.Sum()}) total discarded shares, block {block.BlockHeight}");
 
-                foreach (var address in addressesByShares)
+                foreach(var address in addressesByShares)
                     logger.Info(() => $"{address} = {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) discarded shares, block {block.BlockHeight}");
             }
         }
@@ -193,7 +193,7 @@ namespace MiningCore.Payments.PaymentSchemes
             DateTime? shareCutOffDate = null;
             //var sw = new Stopwatch();
 
-            while (!done)
+            while(!done)
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
@@ -203,7 +203,7 @@ namespace MiningCore.Payments.PaymentSchemes
                 inclusive = false;
                 currentPage++;
 
-                for (var i = 0; !done && i < page.Length; i++)
+                for(var i = 0; !done && i < page.Length; i++)
                 {
                     var share = page[i];
 

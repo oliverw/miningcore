@@ -9,7 +9,7 @@ namespace MiningCore.Extensions
     {
         public static void Dispose<T>(this IEnumerable<PooledArraySegment<T>> col)
         {
-            foreach (var seg in col)
+            foreach(var seg in col)
                 seg.Dispose();
         }
     }

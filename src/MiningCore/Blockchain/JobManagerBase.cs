@@ -72,7 +72,7 @@ namespace MiningCore.Blockchain
 
         protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
-            while (!await AreDaemonsHealthyAsync())
+            while(!await AreDaemonsHealthyAsync())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
 
@@ -81,7 +81,7 @@ namespace MiningCore.Blockchain
 
             logger.Info(() => $"[{LogCat}] All daemons online");
 
-            while (!await AreDaemonsConnectedAsync())
+            while(!await AreDaemonsConnectedAsync())
             {
                 logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
 
@@ -108,13 +108,13 @@ namespace MiningCore.Blockchain
 
                     Task.Factory.StartNew(() =>
                     {
-                        using (tcs)
+                        using(tcs)
                         {
-                            while (!tcs.IsCancellationRequested)
+                            while(!tcs.IsCancellationRequested)
                             {
                                 try
                                 {
-                                    using (var subSocket = new SubscriberSocket())
+                                    using(var subSocket = new SubscriberSocket())
                                     {
                                         //subSocket.Options.ReceiveHighWatermark = 1000;
                                         subSocket.Connect(config.Url);
@@ -122,7 +122,7 @@ namespace MiningCore.Blockchain
 
                                         logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
 
-                                        while (!tcs.IsCancellationRequested)
+                                        while(!tcs.IsCancellationRequested)
                                         {
                                             var msg = (NetMQMessage) null;
 
@@ -141,11 +141,11 @@ namespace MiningCore.Blockchain
                                             // compressed
                                             if ((flags & 1) == 1)
                                             {
-                                                using (var stm = new MemoryStream(data))
+                                                using(var stm = new MemoryStream(data))
                                                 {
-                                                    using (var stmOut = new MemoryStream())
+                                                    using(var stmOut = new MemoryStream())
                                                     {
-                                                        using (var ds = new DeflateStream(stm, CompressionMode.Decompress))
+                                                        using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
                                                         {
                                                             ds.CopyTo(stmOut);
                                                         }
@@ -168,7 +168,7 @@ namespace MiningCore.Blockchain
                                     }
                                 }
 
-                                catch (Exception ex)
+                                catch(Exception ex)
                                 {
                                     logger.Error(ex);
                                 }

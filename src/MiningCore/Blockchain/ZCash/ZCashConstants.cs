@@ -56,11 +56,13 @@ namespace MiningCore.Blockchain.ZCash
 
         // ZCash "Overwinter"
         public uint? OverwinterActivationHeight { get; set; }
+
         public uint? OverwinterTxVersion { get; set; }
         public uint? OverwinterTxVersionGroupId { get; set; }
 
         // ZCash "Sapling"
         public uint? SaplingActivationHeight { get; set; }
+
         public uint? SaplingTxVersion { get; set; }
         public uint? SaplingTxVersionGroupId { get; set; }
     }
@@ -107,7 +109,7 @@ namespace MiningCore.Blockchain.ZCash
                     // ZCash "Sapling"
                     SaplingActivationHeight = 419200,
                     SaplingTxVersion = 4,
-                    SaplingTxVersionGroupId= 0x892f2085,
+                    SaplingTxVersionGroupId = 0x892f2085,
 
                     FoundersRewardAddresses = new[]
                     {
@@ -150,7 +152,7 @@ namespace MiningCore.Blockchain.ZCash
                     // ZCash "Sapling"
                     SaplingActivationHeight = 280000,
                     SaplingTxVersion = 4,
-                    SaplingTxVersionGroupId= 0x892f2085,
+                    SaplingTxVersionGroupId = 0x892f2085,
 
                     FoundersRewardAddresses = new[]
                     {
@@ -494,11 +496,11 @@ namespace MiningCore.Blockchain.ZCash
         public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>> Chains =
             new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>>
             {
-                {CoinType.ZEC, ZCashCoinbaseTxConfig},
-                {CoinType.ZCL, ZCLCoinbaseTxConfig},
-                {CoinType.ZEN, ZencashCoinbaseTxConfig},
-                {CoinType.BTG, BTGCoinbaseTxConfig},
-                {CoinType.BTCP, BTCPCoinbaseTxConfig},
+                { CoinType.ZEC, ZCashCoinbaseTxConfig },
+                { CoinType.ZCL, ZCLCoinbaseTxConfig },
+                { CoinType.ZEN, ZencashCoinbaseTxConfig },
+                { CoinType.BTG, BTGCoinbaseTxConfig },
+                { CoinType.BTCP, BTCPCoinbaseTxConfig },
             };
     }
 

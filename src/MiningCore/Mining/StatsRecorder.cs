@@ -86,14 +86,14 @@ namespace MiningCore.Mining
 
                 var interval = TimeSpan.FromMinutes(5);
 
-                while (true)
+                while(true)
                 {
                     try
                     {
                         UpdatePoolHashrates();
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
@@ -134,7 +134,7 @@ namespace MiningCore.Mining
 
             var poolIds = pools.Keys;
 
-            foreach (var poolId in poolIds)
+            foreach(var poolId in poolIds)
             {
                 stats.PoolId = poolId;
 
@@ -185,13 +185,13 @@ namespace MiningCore.Mining
                     continue;
 
                 // calculate & update miner, worker hashrates
-                foreach (var minerHashes in byMiner)
+                foreach(var minerHashes in byMiner)
                 {
                     cf.RunTx((con, tx) =>
                     {
                         stats.Miner = minerHashes.Key;
 
-                        foreach (var item in minerHashes)
+                        foreach(var item in minerHashes)
                         {
                             // calculate miner/worker stats
                             var windowActual = (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds;

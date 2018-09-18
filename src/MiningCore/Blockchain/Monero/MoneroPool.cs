@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.Monero
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -182,7 +182,7 @@ namespace MiningCore.Blockchain.Monero
             };
 
             // update context
-            lock (context)
+            lock(context)
             {
                 context.AddJob(job);
             }
@@ -221,7 +221,7 @@ namespace MiningCore.Blockchain.Monero
 
                 MoneroWorkerJob job;
 
-                lock (context)
+                lock(context)
                 {
                     var jobId = submitRequest?.JobId;
 
@@ -233,7 +233,7 @@ namespace MiningCore.Blockchain.Monero
                 // dupe check
                 var nonceLower = submitRequest.Nonce.ToLower();
 
-                lock (job)
+                lock(job)
                 {
                     if (job.Submissions.Contains(nonceLower))
                         throw new StratumException(StratumError.MinusOne, "duplicate share");
@@ -264,7 +264,7 @@ namespace MiningCore.Blockchain.Monero
                 await UpdateVarDiffAsync(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
 
@@ -354,7 +354,7 @@ namespace MiningCore.Blockchain.Monero
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case MoneroStratumMethods.Login:
                     await OnLoginAsync(client, tsRequest);

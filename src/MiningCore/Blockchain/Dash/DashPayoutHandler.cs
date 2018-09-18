@@ -126,7 +126,7 @@ namespace MiningCore.Blockchain.Dash
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
             }
 
             else

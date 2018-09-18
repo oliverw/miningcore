@@ -39,44 +39,44 @@ namespace MiningCore.Blockchain.Monero
 
         public static readonly Dictionary<CoinType, UInt64> AddressLength = new Dictionary<CoinType, UInt64>
         {
-            {CoinType.XMR, 95},
-            {CoinType.ETN, 98},
-            {CoinType.AEON, 97},
+            { CoinType.XMR, 95 },
+            { CoinType.ETN, 98 },
+            { CoinType.AEON, 97 },
         };
 
         public static readonly Dictionary<CoinType, UInt64> AddressPrefix = new Dictionary<CoinType, UInt64>
         {
-            {CoinType.XMR, 18},
-            {CoinType.ETN, 18018},
-            {CoinType.AEON, 178},
+            { CoinType.XMR, 18 },
+            { CoinType.ETN, 18018 },
+            { CoinType.AEON, 178 },
         };
 
         public static readonly Dictionary<CoinType, UInt64> AddressPrefixTestnet = new Dictionary<CoinType, UInt64>
         {
-            {CoinType.XMR, 53},
-            {CoinType.ETN, 53},
-            {CoinType.AEON, 178},
+            { CoinType.XMR, 53 },
+            { CoinType.ETN, 53 },
+            { CoinType.AEON, 178 },
         };
 
         public static readonly Dictionary<CoinType, UInt64> AddressPrefixIntegrated = new Dictionary<CoinType, UInt64>
         {
-            {CoinType.XMR, 19},
-            {CoinType.ETN, 18019},
-            {CoinType.AEON, 178},
+            { CoinType.XMR, 19 },
+            { CoinType.ETN, 18019 },
+            { CoinType.AEON, 178 },
         };
 
         public static readonly Dictionary<CoinType, UInt64> AddressPrefixIntegratedTestnet = new Dictionary<CoinType, UInt64>
         {
-            {CoinType.XMR, 54},
-            {CoinType.ETN, 54},
-            {CoinType.AEON, 178},
+            { CoinType.XMR, 54 },
+            { CoinType.ETN, 54 },
+            { CoinType.AEON, 178 },
         };
 
         public static readonly Dictionary<CoinType, decimal> SmallestUnit = new Dictionary<CoinType, decimal>
         {
-            {CoinType.XMR, Piconero},
-            {CoinType.ETN, 100m}, // BUG: https://github.com/electroneum/electroneum/issues/77
-            {CoinType.AEON, Piconero},
+            { CoinType.XMR, Piconero },
+            { CoinType.ETN, 100m }, // BUG: https://github.com/electroneum/electroneum/issues/77
+            { CoinType.AEON, Piconero },
         };
 
         public const string DaemonRpcLocation = "json_rpc";

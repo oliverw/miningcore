@@ -75,7 +75,7 @@ namespace MiningCore.Payments.PaymentSchemes
             var shareCutOffDate = CalculateRewards(poolConfig, block, blockReward, rewards);
 
             // update balances
-            foreach (var address in rewards.Keys)
+            foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
@@ -116,7 +116,7 @@ namespace MiningCore.Payments.PaymentSchemes
                 throw new Exception("No reward-recipients of type = 'solo' configured");
 
             // split reward evenly between configured solo-recipients
-            foreach (var address in recipients)
+            foreach(var address in recipients)
             {
                 var reward = blockReward / recipients.Length;
                 rewards[address] = reward;

@@ -102,7 +102,7 @@ namespace MiningCore.Mining
                         var flags = (int) WireFormat.ProtocolBuffers;
                         var msg = new NetMQMessage(2);
 
-                        using (var stream = new MemoryStream())
+                        using(var stream = new MemoryStream())
                         {
                             Serializer.Serialize(stream, share);
                             msg.Push(stream.ToArray());
@@ -113,7 +113,7 @@ namespace MiningCore.Mining
                         pubSocket.SendMultipartMessage(msg);
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }

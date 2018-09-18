@@ -28,7 +28,7 @@ namespace MiningCore.Util
 
         public void Dispose()
         {
-            while (recvQueue.TryDequeue(out var fragment))
+            while(recvQueue.TryDequeue(out var fragment))
                 fragment.Dispose();
         }
 
@@ -67,7 +67,7 @@ namespace MiningCore.Util
                 // diagnostics
                 logger.Trace(() => $"recv: {Encoding.GetString(buf, 0, bufferSize)}");
 
-                while (remaining > 0)
+                while(remaining > 0)
                 {
                     // check if we got a newline
                     var index = buf.IndexOf(0xa, prevIndex, buf.Length - prevIndex);
@@ -96,9 +96,9 @@ namespace MiningCore.Util
                         var line = ArrayPool<byte>.Shared.Rent(lineLength);
                         var offset = 0;
 
-                        while (recvQueue.TryDequeue(out var segment))
+                        while(recvQueue.TryDequeue(out var segment))
                         {
-                            using (segment)
+                            using(segment)
                             {
                                 Array.Copy(segment.Array, 0, line, offset, segment.Size);
                                 offset += segment.Size;

@@ -102,7 +102,7 @@ namespace MiningCore.Mining
             if (parts == null || parts.Length == 0)
                 return null;
 
-            foreach (var part in parts)
+            foreach(var part in parts)
             {
                 var m = regexStaticDiff.Match(part);
 
@@ -129,7 +129,7 @@ namespace MiningCore.Mining
             // varDiff setup
             if (context.VarDiff != null)
             {
-                lock (context.VarDiff)
+                lock(context.VarDiff)
                 {
                     StartVarDiffIdleUpdate(client, poolEndpoint);
                 }
@@ -173,7 +173,7 @@ namespace MiningCore.Mining
                 VarDiffManager varDiffManager;
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                lock (varDiffManagers)
+                lock(varDiffManagers)
                 {
                     if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
                     {
@@ -184,7 +184,7 @@ namespace MiningCore.Mining
 
                 double? newDiff = null;
 
-                lock (context.VarDiff)
+                lock(context.VarDiff)
                 {
                     StartVarDiffIdleUpdate(client, poolEndpoint);
 
@@ -263,7 +263,7 @@ namespace MiningCore.Mining
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Warn(ex, () => $"[{LogCat}] Unable to load pool stats");
             }
@@ -288,7 +288,7 @@ namespace MiningCore.Mining
                 {
                     if (poolConfig.Banning?.Enabled == true &&
                         (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
-                         clusterConfig.Banning?.BanOnInvalidShares == true))
+                            clusterConfig.Banning?.BanOnInvalidShares == true))
                     {
                         logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
@@ -371,19 +371,19 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 OutputPoolInfo();
             }
 
-            catch (PoolStartupAbortException)
+            catch(PoolStartupAbortException)
             {
                 // just forward these
                 throw;
             }
 
-            catch (TaskCanceledException)
+            catch(TaskCanceledException)
             {
                 // just forward these
                 throw;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
                 throw;

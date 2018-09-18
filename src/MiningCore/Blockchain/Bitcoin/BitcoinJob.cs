@@ -67,7 +67,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             get
             {
-                switch (networkType)
+                switch(networkType)
                 {
                     case BitcoinNetworkType.Main:
                         return Network.Main;
@@ -131,7 +131,7 @@ namespace MiningCore.Blockchain.Bitcoin
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -160,7 +160,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
 
             // build coinbase final
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -187,11 +187,11 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
 
-            var outputCount = (uint)tx.Outputs.Count;
+            var outputCount = (uint) tx.Outputs.Count;
             if (withDefaultWitnessCommitment)
                 outputCount++;
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -207,7 +207,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     amount = 0;
                     raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
-                    rawLength = (uint)raw.Length;
+                    rawLength = (uint) raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
@@ -215,12 +215,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 }
 
                 // serialize outputs
-                foreach (var output in tx.Outputs)
+                foreach(var output in tx.Outputs)
                 {
                     amount = output.Value.Satoshi;
                     var outScript = output.ScriptPubKey;
                     raw = outScript.ToBytes(true);
-                    rawLength = (uint)raw.Length;
+                    rawLength = (uint) raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
@@ -277,7 +277,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
-            lock (submissions)
+            lock(submissions)
             {
                 if (submissions.Contains(key))
                     return false;
@@ -375,7 +375,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var extraNonce1Bytes = extraNonce1.HexToByteArray();
             var extraNonce2Bytes = extraNonce2.HexToByteArray();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 stream.Write(coinbaseInitial);
                 stream.Write(extraNonce1Bytes);
@@ -391,7 +391,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -410,9 +410,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] BuildRawTransactionBuffer()
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                foreach (var tx in BlockTemplate.Transactions)
+                foreach(var tx in BlockTemplate.Transactions)
                 {
                     var txRaw = tx.Data.HexToByteArray();
                     stream.Write(txRaw);

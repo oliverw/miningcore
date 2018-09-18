@@ -84,22 +84,22 @@ namespace MiningCore.Api
 
             requestMap = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                {new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/performance$", RegexOptions.Compiled), GetPoolPerformanceAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), PagePoolMinersAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), PagePoolBlocksPagedAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync},
-                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync},
+                { new Regex("^/api/pools$", RegexOptions.Compiled), GetPoolInfosAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/performance$", RegexOptions.Compiled), GetPoolPerformanceAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners$", RegexOptions.Compiled), PagePoolMinersAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/blocks$", RegexOptions.Compiled), PagePoolBlocksPagedAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/payments$", RegexOptions.Compiled), PagePoolPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync },
+                { new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync },
             };
 
             requestMapAdmin = new Dictionary<Regex, Func<HttpContext, Match, Task>>
             {
-                {new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync},
-                {new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync},
+                { new Regex("^/api/admin/forcegc$", RegexOptions.Compiled), HandleForceGcAsync },
+                { new Regex("^/api/admin/stats/gc$", RegexOptions.Compiled), HandleGcStatsAsync },
             };
         }
 
@@ -150,9 +150,9 @@ namespace MiningCore.Api
             context.Response.Headers.Add("Access-Control-Allow-Origin", new StringValues("*"));
             context.Response.Headers.Add("Access-Control-Allow-Methods", new StringValues("GET, POST, DELETE, PUT, OPTIONS, HEAD"));
 
-            using (var stream = context.Response.Body)
+            using(var stream = context.Response.Body)
             {
-                using (var writer = new StreamWriter(stream, encoding))
+                using(var writer = new StreamWriter(stream, encoding))
                 {
                     serializer.Serialize(writer, response);
 
@@ -177,7 +177,7 @@ namespace MiningCore.Api
             {
                 logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
 
-                foreach (var path in requestMap.Keys)
+                foreach(var path in requestMap.Keys)
                 {
                     var m = path.Match(request.Path);
 
@@ -192,7 +192,7 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
                 throw;
@@ -363,14 +363,14 @@ namespace MiningCore.Api
             }
 
             var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Id,
-                    new[] {BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned}, page, pageSize))
+                    new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned }, page, pageSize))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
             // enrich blocks
             CoinMetaData.BlockInfoLinks.TryGetValue(pool.Coin.Type, out var blockInfobaseDict);
 
-            foreach (var block in blocks)
+            foreach(var block in blocks)
             {
                 // compute infoLink
                 if (blockInfobaseDict != null)
@@ -414,7 +414,7 @@ namespace MiningCore.Api
             CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
                 if (!string.IsNullOrEmpty(txInfobaseUrl))
@@ -500,7 +500,7 @@ namespace MiningCore.Api
             CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
                 if (!string.IsNullOrEmpty(txInfobaseUrl))
@@ -611,7 +611,7 @@ namespace MiningCore.Api
             {
                 logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
 
-                foreach (var path in requestMapAdmin.Keys)
+                foreach(var path in requestMapAdmin.Keys)
                 {
                     var m = path.Match(request.Path);
 
@@ -626,7 +626,7 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
                 throw;

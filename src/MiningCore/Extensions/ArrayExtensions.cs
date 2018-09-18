@@ -107,7 +107,7 @@ namespace MiningCore.Extensions
 
                 var start = off ?? 0;
 
-                for (var i = start; i < length; i++)
+                for(var i = start; i < length; i++)
                 {
                     var hex = HexStringTable[value[i]];
                     buffer[offset + i * 2 + 0] = hex[0];
@@ -129,11 +129,11 @@ namespace MiningCore.Extensions
         /// </summary>
         public static byte[] ReverseByteOrder(this byte[] bytes)
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                using (var writer = new BinaryWriter(stream))
+                using(var writer = new BinaryWriter(stream))
                 {
-                    for (var i = 0; i < 8; i++)
+                    for(var i = 0; i < 8; i++)
                     {
                         var value = BitConverter.ToUInt32(bytes, i * 4).ToBigEndian();
                         writer.Write(value);
@@ -162,7 +162,7 @@ namespace MiningCore.Extensions
         {
             Contract.Requires<ArgumentOutOfRangeException>(start >= 0 && start < arr.Length - 1 && start + count <= arr.Length);
 
-            for (var i = start; i < start + count; i++)
+            for(var i = start; i < start + count; i++)
             {
                 if (arr[i] == val)
                     return i;

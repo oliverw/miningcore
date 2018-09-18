@@ -133,7 +133,7 @@ namespace MiningCore.Blockchain.Ethereum
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Ethereum
                 await UpdateVarDiffAsync(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
 
@@ -226,7 +226,7 @@ namespace MiningCore.Blockchain.Ethereum
             var context = client.ContextAs<EthereumWorkerContext>();
             var sendInitialWork = false;
 
-            lock (context)
+            lock(context)
             {
                 if (context.IsAuthorized && context.IsAuthorized && !context.IsInitialWorkSent)
                 {
@@ -268,7 +268,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                        await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
                     // send job
                     await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
@@ -316,7 +316,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case EthereumStratumMethods.Subscribe:
                     await OnSubscribeAsync(client, tsRequest);
@@ -360,7 +360,7 @@ namespace MiningCore.Blockchain.Ethereum
                 context.ApplyPendingDifficulty();
 
                 // send job
-                await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }

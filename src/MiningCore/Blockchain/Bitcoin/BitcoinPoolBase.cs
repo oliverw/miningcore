@@ -77,8 +77,8 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     new object[]
                     {
-                        new object[] {BitcoinStratumMethods.SetDifficulty, client.ConnectionId},
-                        new object[] {BitcoinStratumMethods.MiningNotify, client.ConnectionId}
+                        new object[] { BitcoinStratumMethods.SetDifficulty, client.ConnectionId },
+                        new object[] { BitcoinStratumMethods.MiningNotify, client.ConnectionId }
                     }
                 }
                 .Concat(manager.GetSubscriberData(client))
@@ -91,7 +91,7 @@ namespace MiningCore.Blockchain.Bitcoin
             context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
 
             // send intial update
-            await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+            await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
             await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
@@ -133,12 +133,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
                 if (staticDiff.HasValue &&
                     (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                     context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
                     context.VarDiff = null; // disable vardiff
                     context.SetDifficulty(staticDiff.Value);
 
-                    await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                    await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 }
             }
 
@@ -209,7 +209,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 await UpdateVarDiffAsync(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
 
@@ -243,13 +243,13 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (requestedDiff > poolEndpoint.Difficulty)
                 {
                     context.SetDifficulty(requestedDiff);
-                    await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                    await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
                     logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner");
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
             }
@@ -266,12 +266,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 await client.RespondAsync(transactions, request.Id);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
             }
@@ -302,7 +302,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if (context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                        await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
                     // send job
                     await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
@@ -356,7 +356,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     await OnSubscribeAsync(client, tsRequest);
@@ -425,7 +425,7 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 context.ApplyPendingDifficulty();
 
-                await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }

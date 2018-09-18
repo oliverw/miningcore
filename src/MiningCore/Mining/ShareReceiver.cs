@@ -73,7 +73,7 @@ namespace MiningCore.Mining
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            foreach (var item in stratumsByUrl)
+            foreach(var item in stratumsByUrl)
             {
                 var thread = new Thread(arg =>
                 {
@@ -82,21 +82,21 @@ namespace MiningCore.Mining
                     var topics = new HashSet<string>(urlAndTopic.Distinct());
                     var receivedOnce = false;
 
-                    while (true)
+                    while(true)
                     {
                         try
                         {
-                            using (var subSocket = new SubscriberSocket())
+                            using(var subSocket = new SubscriberSocket())
                             {
                                 subSocket.Connect(url);
 
                                 // subscribe to all topics
-                                foreach (var topic in topics)
+                                foreach(var topic in topics)
                                     subSocket.Subscribe(topic);
 
                                 logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
 
-                                while (true)
+                                while(true)
                                 {
                                     // receive
                                     var msg = (NetMQMessage) null;
@@ -136,14 +136,14 @@ namespace MiningCore.Mining
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
                                     Share share = null;
 
-                                    switch (wireFormat)
+                                    switch(wireFormat)
                                     {
                                         case ShareRelay.WireFormat.Json:
-                                            using (var stream = new MemoryStream(data))
+                                            using(var stream = new MemoryStream(data))
                                             {
-                                                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                                                using(var reader = new StreamReader(stream, Encoding.UTF8))
                                                 {
-                                                    using (var jreader = new JsonTextReader(reader))
+                                                    using(var jreader = new JsonTextReader(reader))
                                                     {
                                                         share = serializer.Deserialize<Share>(jreader);
                                                     }
@@ -153,7 +153,7 @@ namespace MiningCore.Mining
                                             break;
 
                                         case ShareRelay.WireFormat.ProtocolBuffers:
-                                            using (var stream = new MemoryStream(data))
+                                            using(var stream = new MemoryStream(data))
                                             {
                                                 share = Serializer.Deserialize<Share>(stream);
                                                 share.BlockReward = (decimal) share.BlockRewardDouble;
@@ -206,13 +206,13 @@ namespace MiningCore.Mining
                             }
                         }
 
-                        catch (ObjectDisposedException)
+                        catch(ObjectDisposedException)
                         {
                             logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
                             break;
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Error(ex);
                         }

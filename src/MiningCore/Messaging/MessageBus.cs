@@ -182,11 +182,12 @@ namespace MiningCore.Messaging
             Action<Dictionary<Tuple<Type, string>, NotAWeakReference>,
                 Tuple<Type, string>> block)
         {
-            lock (messageBus)
+            lock(messageBus)
             {
                 var tuple = new Tuple<Type, string>(type, contract);
                 block(messageBus, tuple);
-                if (messageBus.ContainsKey(tuple) && !messageBus[tuple].IsAlive) messageBus.Remove(tuple);
+                if (messageBus.ContainsKey(tuple) && !messageBus[tuple].IsAlive)
+                    messageBus.Remove(tuple);
             }
         }
 

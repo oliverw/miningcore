@@ -50,8 +50,8 @@ namespace MiningCore.Blockchain.Straks
         private bool ShouldHandleMasternodePayment()
         {
             return BlockTemplate.MasternodePaymentsStarted &&
-                   BlockTemplate.MasternodePaymentsEnforced &&
-                   !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
+                BlockTemplate.MasternodePaymentsEnforced &&
+                !string.IsNullOrEmpty(BlockTemplate.Payee) && BlockTemplate.PayeeAmount.HasValue;
         }
 
         private Money CreateStraksOutputs(Transaction tx, Money reward)

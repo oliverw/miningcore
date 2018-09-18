@@ -84,6 +84,7 @@ namespace MiningCore.DaemonInterface
 
         // Telemetry
         private readonly IMessageBus messageBus;
+
         private readonly string server;
         private readonly string poolId;
 
@@ -146,7 +147,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] { "\""+ method + "\"" });
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
@@ -155,7 +156,7 @@ namespace MiningCore.DaemonInterface
                 await Task.WhenAll(tasks);
             }
 
-            catch (Exception)
+            catch(Exception)
             {
                 // ignored
             }
@@ -250,7 +251,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { method });
 
             return Observable.Merge(portMap.Keys
                     .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
@@ -307,14 +308,14 @@ namespace MiningCore.DaemonInterface
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
             // send request
-            using (var response = await httpClients[endPoint].SendAsync(request))
+            using(var response = await httpClients[endPoint].SendAsync(request))
             {
                 // deserialize response
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using(var stream = await response.Content.ReadAsStreamAsync())
                 {
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var reader = new StreamReader(stream, Encoding.UTF8))
                     {
-                        using (var jreader = new JsonTextReader(reader))
+                        using(var jreader = new JsonTextReader(reader))
                         {
                             var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -345,7 +346,7 @@ namespace MiningCore.DaemonInterface
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
-            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
+            using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -364,7 +365,7 @@ namespace MiningCore.DaemonInterface
                 logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
                 // send request
-                using (var response = await httpClients[endPoint].SendAsync(request))
+                using(var response = await httpClients[endPoint].SendAsync(request))
                 {
                     // check success
                     if (!response.IsSuccessStatusCode)
@@ -377,11 +378,11 @@ namespace MiningCore.DaemonInterface
                     }
 
                     // deserialize response
-                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using(var stream = await response.Content.ReadAsStreamAsync())
                     {
-                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        using(var reader = new StreamReader(stream, Encoding.UTF8))
                         {
-                            using (var jreader = new JsonTextReader(reader))
+                            using(var jreader = new JsonTextReader(reader))
                             {
                                 var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
@@ -475,15 +476,15 @@ namespace MiningCore.DaemonInterface
 
                 var thread = new Thread(async (_) =>
                 {
-                    using (cts)
+                    using(cts)
                     {
-                        while (!cts.IsCancellationRequested)
+                        while(!cts.IsCancellationRequested)
                         {
                             try
                             {
-                                using (var plb = new PooledLineBuffer(logger))
+                                using(var plb = new PooledLineBuffer(logger))
                                 {
-                                    using (var client = new ClientWebSocket())
+                                    using(var client = new ClientWebSocket())
                                     {
                                         // connect
                                         var protocol = conf.Ssl ? "wss" : "ws";
@@ -508,7 +509,7 @@ namespace MiningCore.DaemonInterface
                                             // stream response
                                             segment = new ArraySegment<byte>(buf);
 
-                                            while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                            while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                             {
                                                 var response = await client.ReceiveAsync(buf, cts.Token);
 
@@ -529,7 +530,7 @@ namespace MiningCore.DaemonInterface
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(() => $"{ex.GetType().Name} '{ex.Message}' while streaming websocket responses. Reconnecting in 5s");
                             }
@@ -553,13 +554,13 @@ namespace MiningCore.DaemonInterface
 
                 Task.Factory.StartNew(() =>
                 {
-                    using (tcs)
+                    using(tcs)
                     {
-                        while (!tcs.IsCancellationRequested)
+                        while(!tcs.IsCancellationRequested)
                         {
                             try
                             {
-                                using (var subSocket = new SubscriberSocket())
+                                using(var subSocket = new SubscriberSocket())
                                 {
                                     //subSocket.Options.ReceiveHighWatermark = 1000;
                                     subSocket.Connect(url);
@@ -567,7 +568,7 @@ namespace MiningCore.DaemonInterface
 
                                     logger.Debug($"Subscribed to {url}/{topic}");
 
-                                    while (!tcs.IsCancellationRequested)
+                                    while(!tcs.IsCancellationRequested)
                                     {
                                         var msg = subSocket.ReceiveMultipartMessage(numMsgSegments);
 
@@ -584,7 +585,7 @@ namespace MiningCore.DaemonInterface
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(ex);
                             }

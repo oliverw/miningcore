@@ -110,6 +110,7 @@ namespace MiningCore.Notifications
 
         //private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue;
+
         private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
 
@@ -147,7 +148,7 @@ namespace MiningCore.Notifications
             {
                 var poolConfig = !string.IsNullOrEmpty(notification.PoolId) ? poolConfigs[notification.PoolId] : null;
 
-                switch (notification.Category)
+                switch(notification.Category)
                 {
                     case NotificationCategory.Admin:
                         if (clusterConfig.Notifications?.Admin?.Enabled == true)
@@ -197,7 +198,7 @@ namespace MiningCore.Notifications
                 }
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, $"Error sending notification");
             }
@@ -213,9 +214,9 @@ namespace MiningCore.Notifications
             message.From.Add(new MailboxAddress(emailSenderConfig.FromName, emailSenderConfig.FromAddress));
             message.To.Add(new MailboxAddress("", recipient));
             message.Subject = subject;
-            message.Body = new TextPart("html") {Text = body};
+            message.Body = new TextPart("html") { Text = body };
 
-            using (var client = new SmtpClient())
+            using(var client = new SmtpClient())
             {
                 await client.ConnectAsync(emailSenderConfig.Host, emailSenderConfig.Port, SecureSocketOptions.StartTls);
                 await client.AuthenticateAsync(emailSenderConfig.User, emailSenderConfig.Password);

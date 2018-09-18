@@ -126,8 +126,7 @@ namespace MiningCore.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct ethash_h256_t
         {
-            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.U8, SizeConst = 32)]
-            public byte[] value;
+            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.U8, SizeConst = 32)] public byte[] value;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -136,8 +135,7 @@ namespace MiningCore.Native
             public ethash_h256_t result;
             public ethash_h256_t mix_hash;
 
-            [MarshalAs(UnmanagedType.U1)]
-            public bool success;
+            [MarshalAs(UnmanagedType.U1)] public bool success;
         }
 
         public delegate int ethash_callback_t(uint progress);

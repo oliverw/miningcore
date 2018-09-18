@@ -65,7 +65,7 @@ namespace MiningCore.Blockchain.Dash
 
                 else if (BlockTemplate.SuperBlocks.Length > 0)
                 {
-                    foreach (var superBlock in BlockTemplate.SuperBlocks)
+                    foreach(var superBlock in BlockTemplate.SuperBlocks)
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
                         var payeeReward = superBlock.Amount;

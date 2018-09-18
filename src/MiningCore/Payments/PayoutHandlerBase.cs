@@ -111,7 +111,7 @@ namespace MiningCore.Payments
                 {
                     cf.RunTx((con, tx) =>
                     {
-                        foreach (var balance in balances)
+                        foreach(var balance in balances)
                         {
                             if (!string.IsNullOrEmpty(transactionConfirmation) &&
                                 !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
@@ -138,10 +138,10 @@ namespace MiningCore.Payments
                 });
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCategory}] Failed to persist the following payments: " +
-                                       $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
+                    $"{JsonConvert.SerializeObject(balances.Where(x => x.Amount > 0).ToDictionary(x => x.Address, x => x.Amount))}");
                 throw;
             }
         }

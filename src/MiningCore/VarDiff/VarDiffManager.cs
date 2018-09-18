@@ -49,7 +49,7 @@ namespace MiningCore.VarDiff
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
 
-            lock (ctx)
+            lock(ctx)
             {
                 // Get Current Time
                 var ts = DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000.0;

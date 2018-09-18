@@ -22,9 +22,7 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.IO.Pipelines;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
@@ -99,13 +97,13 @@ namespace MiningCore.Stratum
                     }
                 }
 
-                catch (ObjectDisposedException)
+                catch(ObjectDisposedException)
                 {
                     isAlive = false;
                     onCompleted(this);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     isAlive = false;
                     onError(this, ex);
@@ -177,7 +175,6 @@ namespace MiningCore.Stratum
 
                 try
                 {
-
                     await stream.WriteAsync(buf);
                 }
 
@@ -197,9 +194,9 @@ namespace MiningCore.Stratum
 
         public byte[] Serialize(object payload)
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                using(var writer = new StreamWriter(stream, StratumConstants.Encoding))
                 {
                     serializer.Serialize(writer, payload);
                     writer.Flush();
@@ -214,7 +211,7 @@ namespace MiningCore.Stratum
 
         public T Deserialize<T>(string json)
         {
-            using (var jreader = new JsonTextReader(new StringReader(json)))
+            using(var jreader = new JsonTextReader(new StringReader(json)))
             {
                 return serializer.Deserialize<T>(jreader);
             }
@@ -224,23 +221,22 @@ namespace MiningCore.Stratum
 
         private async Task FillReceivePipeAsync()
         {
-            while (true)
+            while(true)
             {
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
                 try
                 {
-
                     var cb = await stream.ReadAsync(memory);
                     if (cb == 0)
-                        break;  // EOF
+                        break; // EOF
 
                     LastReceive = clock.Now;
 
                     receivePipe.Writer.Advance(cb);
                 }
 
-                catch (Exception)
+                catch(Exception)
                 {
                     // Ensure that ProcessPipeAsync completes as well
                     receivePipe.Writer.Complete();

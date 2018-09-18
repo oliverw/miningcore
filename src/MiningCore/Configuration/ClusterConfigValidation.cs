@@ -263,7 +263,7 @@ namespace MiningCore.Configuration
                         .GroupBy(x => x)
                         .ToArray();
 
-                    foreach (var port in ports)
+                    foreach(var port in ports)
                     {
                         if (port.Count() > 1)
                         {

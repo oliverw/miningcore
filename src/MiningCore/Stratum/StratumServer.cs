@@ -75,10 +75,10 @@ namespace MiningCore.Stratum
                 // see: http://www.virtsync.com/c-error-codes-include-errno
                 ignoredSocketErrors = new HashSet<int>
                 {
-                    104,    // ECONNRESET
-                    125,    // ECANCELED
-                    103,    // ECONNABORTED
-                    110,    // ETIMEDOUT
+                    104, // ECONNRESET
+                    125, // ECANCELED
+                    103, // ECONNABORTED
+                    110, // ETIMEDOUT
                 };
             }
         }
@@ -124,7 +124,7 @@ namespace MiningCore.Stratum
                     server.Bind(port.IPEndPoint);
                     server.Listen(512);
 
-                    lock (ports)
+                    lock(ports)
                     {
                         ports[port.IPEndPoint.Port] = server;
                     }
@@ -137,7 +137,7 @@ namespace MiningCore.Stratum
                 // Setup accept tasks
                 var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
 
-                while (true)
+                while(true)
                 {
                     try
                     {
@@ -145,7 +145,7 @@ namespace MiningCore.Stratum
                         await Task.WhenAny(tasks);
 
                         // check tasks
-                        for (var i = 0; i < tasks.Length; i++)
+                        for(var i = 0; i < tasks.Length; i++)
                         {
                             var task = tasks[i];
                             var port = stratumPorts[i];
@@ -163,7 +163,7 @@ namespace MiningCore.Stratum
                         }
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
@@ -190,7 +190,7 @@ namespace MiningCore.Stratum
             socket.NoDelay = true;
 
             // create stream
-            var stream = (Stream)new NetworkStream(socket, true);
+            var stream = (Stream) new NetworkStream(socket, true);
 
             // TLS handshake
             if (port.PoolEndpoint.Tls)
@@ -205,7 +205,7 @@ namespace MiningCore.Stratum
                     await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(() => $"[{LogCat}] TLS init failed: {ex.Message}: {ex.InnerException.ToString() ?? string.Empty}");
                     (sslStream ?? stream).Close();
@@ -217,7 +217,7 @@ namespace MiningCore.Stratum
             // setup client
             var client = new StratumClient(stream, clock, port.IPEndPoint, connectionId);
 
-            lock (clients)
+            lock(clients)
             {
                 clients[connectionId] = client;
             }
@@ -261,7 +261,7 @@ namespace MiningCore.Stratum
                 await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 var innerEx = ex.InnerException != null ? ": " + ex : "";
 
@@ -279,7 +279,7 @@ namespace MiningCore.Stratum
             if (ex.InnerException is SocketException)
                 ex = ex.InnerException;
 
-            switch (ex)
+            switch(ex)
             {
                 case SocketException sockEx:
                     if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
@@ -323,7 +323,7 @@ namespace MiningCore.Stratum
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 // unregister client
-                lock (clients)
+                lock(clients)
                 {
                     clients.Remove(subscriptionId);
                 }
@@ -336,19 +336,19 @@ namespace MiningCore.Stratum
         {
             StratumClient[] tmp;
 
-            lock (clients)
+            lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }
 
-            foreach (var client in tmp)
+            foreach(var client in tmp)
             {
                 try
                 {
                     action(client);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(ex);
                 }
@@ -359,7 +359,7 @@ namespace MiningCore.Stratum
         {
             StratumClient[] tmp;
 
-            lock (clients)
+            lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }
