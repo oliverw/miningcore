@@ -140,7 +140,7 @@ namespace MiningCore.Stratum
                             if (task.IsCompletedSuccessfully)
                                 AcceptConnection(task.Result, port);
 
-                            // Create accept task replacement
+                            // Refresh task
                             tasks[i] = sockets[i].AcceptAsync();
                         }
                     }
@@ -236,15 +236,12 @@ namespace MiningCore.Stratum
             switch (ex)
             {
                 case SocketException sockEx:
-                    // log everything but ECONNRESET which just indicates the client disconnecting
                     if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
-                    {
                         logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
-                    }
                     break;
 
                 case JsonException jsonEx:
-                    // junk received (no valid json)
+                    // junk received (invalid json)
                     logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
@@ -321,7 +318,7 @@ namespace MiningCore.Stratum
                 tmp = clients.Values.ToArray();
             }
 
-            return tmp.Select(x => func(x));
+            return tmp.Select(func);
         }
 
         protected virtual void OnDisconnect(string subscriptionId)
