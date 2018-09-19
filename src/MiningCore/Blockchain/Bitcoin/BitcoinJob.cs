@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
 
-                // done	
+                // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
             }
