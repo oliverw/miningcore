@@ -219,21 +219,30 @@ namespace MiningCore.Stratum
         {
             var buf = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
 
-            using (var stream = new MemoryStream(buf, true))
+            try
             {
-                stream.SetLength(0);
-
-                using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                using (var stream = new MemoryStream(buf, true))
                 {
-                    serializer.Serialize(writer, payload);
-                    writer.Flush();
+                    stream.SetLength(0);
 
-                    // append newline
-                    stream.WriteByte(0xa);
+                    using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                    {
+                        serializer.Serialize(writer, payload);
+                        writer.Flush();
 
-                    // return buffer
-                    return new PooledArraySegment<byte>(buf, 0, (int)stream.Position);
+                        // append newline
+                        stream.WriteByte(0xa);
+
+                        // return buffer
+                        return new PooledArraySegment<byte>(buf, 0, (int)stream.Length);
+                    }
                 }
+            }
+
+            catch (Exception)
+            {
+                ArrayPool<byte>.Shared.Return(buf);
+                throw;
             }
         }
 
