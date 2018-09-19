@@ -61,7 +61,7 @@ namespace MiningCore.Stratum
         private const int MaxInboundRequestLength = 0x8000;
         private const int MaxOutboundRequestLength = 0x8000;
 
-        private Stream stream;
+        private Stream networkStream;
         private readonly Pipe receivePipe;
 
         private bool isAlive = true;
@@ -93,19 +93,19 @@ namespace MiningCore.Stratum
                     socket.NoDelay = true;
 
                     // create stream
-                    stream = new NetworkStream(socket, true);
+                    networkStream = new NetworkStream(socket, true);
 
                     // TLS handshake
                     if (port.PoolEndpoint.Tls)
                     {
-                        var sslStream = new SslStream(stream, false);
+                        var sslStream = new SslStream(networkStream, false);
                         await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
-                        stream = sslStream;
+                        networkStream = sslStream;
                     }
 
                     // Go
-                    using (stream)
+                    using (networkStream)
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
@@ -194,7 +194,7 @@ namespace MiningCore.Stratum
 
                 try
                 {
-                    await stream.WriteAsync(buf);
+                    await networkStream.WriteAsync(buf);
                 }
 
                 catch(ObjectDisposedException)
@@ -206,7 +206,7 @@ namespace MiningCore.Stratum
 
         public void Disconnect()
         {
-            stream.Close();
+            networkStream.Close();
 
             IsAlive = false;
         }
@@ -246,7 +246,7 @@ namespace MiningCore.Stratum
 
                 try
                 {
-                    var cb = await stream.ReadAsync(memory);
+                    var cb = await networkStream.ReadAsync(memory);
                     if (cb == 0)
                         break; // EOF
 
