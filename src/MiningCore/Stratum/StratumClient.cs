@@ -29,6 +29,7 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
@@ -78,7 +79,9 @@ namespace MiningCore.Stratum
         public void Run(Socket socket,
             (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port,
             X509Certificate2 tlsCert,
-            Func<StratumClient, JsonRpcRequest, Task> onNext, Action<StratumClient> onCompleted, Action<StratumClient, Exception> onError)
+            Func<StratumClient, JsonRpcRequest, Task> onRequestAsync,
+            Action<StratumClient> onCompleted,
+            Action<StratumClient, Exception> onError)
         {
             PoolEndpoint = port.IPEndPoint;
             RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
@@ -109,7 +112,7 @@ namespace MiningCore.Stratum
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(port.PoolEndpoint.TcpProxyProtocol, onNext));
+                            ProcessReceivePipeAsync(port.PoolEndpoint.TcpProxyProtocol, onRequestAsync));
 
                         isAlive = false;
                         onCompleted(this);
@@ -188,18 +191,19 @@ namespace MiningCore.Stratum
 
             if (isAlive)
             {
-                var buf = Serialize(payload);
-
-                logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf)}");
-
-                try
+                using(var buf = Serialize(payload))
                 {
-                    await networkStream.WriteAsync(buf);
-                }
+                    logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf.Array, 0, buf.Size)}");
 
-                catch(ObjectDisposedException)
-                {
-                    // ignored
+                    try
+                    {
+                        await networkStream.WriteAsync(buf.Array, 0, buf.Size);
+                    }
+
+                    catch(ObjectDisposedException)
+                    {
+                        // ignored
+                    }
                 }
             }
         }
@@ -211,20 +215,25 @@ namespace MiningCore.Stratum
             IsAlive = false;
         }
 
-        public byte[] Serialize(object payload)
+        public PooledArraySegment<byte> Serialize(object payload)
         {
-            using(var stream = new MemoryStream())
+            var buf = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
+
+            using (var stream = new MemoryStream(buf, true))
             {
-                using(var writer = new StreamWriter(stream, StratumConstants.Encoding))
+                stream.SetLength(0);
+
+                using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
                 {
                     serializer.Serialize(writer, payload);
                     writer.Flush();
 
                     // append newline
                     stream.WriteByte(0xa);
-                }
 
-                return stream.ToArray();
+                    // return buffer
+                    return new PooledArraySegment<byte>(buf, 0, (int)stream.Position);
+                }
             }
         }
 
@@ -256,7 +265,7 @@ namespace MiningCore.Stratum
 
                 catch(Exception)
                 {
-                    // Ensure that ProcessPipeAsync completes as well
+                    // Ensure that ProcessReceivePipeAsync completes as well
                     receivePipe.Writer.Complete();
                     throw;
                 }
@@ -271,7 +280,7 @@ namespace MiningCore.Stratum
         }
 
         private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
-            Func<StratumClient, JsonRpcRequest, Task> onNext)
+            Func<StratumClient, JsonRpcRequest, Task> onRequestAsync)
         {
             while(true)
             {
@@ -299,7 +308,7 @@ namespace MiningCore.Stratum
                         logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
 
                         if (!expectingProxyHeader || !HandleProxyHeader(line, proxyProtocol))
-                            await ProcessRequestAsync(onNext, line);
+                            await ProcessRequestAsync(onRequestAsync, line);
 
                         // Skip the line + the \n character (basically position)
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
@@ -313,7 +322,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onNext, string json)
+        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync, string json)
         {
             var request = Deserialize<JsonRpcRequest>(json);
 
@@ -323,7 +332,7 @@ namespace MiningCore.Stratum
                 throw new JsonException("Unable to deserialize request");
             }
 
-            await onNext(this, request);
+            await onRequestAsync(this, request);
         }
 
         /// <summary>
