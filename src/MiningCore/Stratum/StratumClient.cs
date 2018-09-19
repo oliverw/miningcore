@@ -251,7 +251,6 @@ namespace MiningCore.Stratum
                         break; // EOF
 
                     LastReceive = clock.Now;
-
                     receivePipe.Writer.Advance(cb);
                 }
 
@@ -259,7 +258,6 @@ namespace MiningCore.Stratum
                 {
                     // Ensure that ProcessPipeAsync completes as well
                     receivePipe.Writer.Complete();
-
                     throw;
                 }
 
