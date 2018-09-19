@@ -112,7 +112,7 @@ namespace MiningCore.Stratum
                     }
 
                     else
-                        logger.Info(() => $"Accepted unsecure connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
+                        logger.Info(() => $"Accepted connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
 
                     // Go
                     using (networkStream)
