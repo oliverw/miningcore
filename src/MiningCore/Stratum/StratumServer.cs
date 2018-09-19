@@ -115,20 +115,20 @@ namespace MiningCore.Stratum
                     server.Bind(port.IPEndPoint);
                     server.Listen(512);
 
-                    lock(ports)
+                    lock (ports)
                     {
                         ports[port.IPEndPoint.Port] = server;
                     }
 
-                    logger.Info(() => $"[{LogCat}] Stratum port {port.IPEndPoint.Address}:{port.IPEndPoint.Port} online");
-
                     return server;
                 }).ToArray();
+
+                logger.Info(() => $"[{LogCat}] Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
 
                 // Setup accept tasks
                 var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
 
-                while(true)
+                while (true)
                 {
                     try
                     {
@@ -168,8 +168,6 @@ namespace MiningCore.Stratum
             var connectionId = CorrelationIdGenerator.GetNextId();
             var tlsCert = port.PoolEndpoint.Tls ? certs[port.PoolEndpoint.TlsPfxFile] : null;
 
-            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
-
             // get rid of banned clients as early as possible
             if (banManager?.IsBanned(remoteEndpoint.Address) == true)
             {
@@ -177,6 +175,8 @@ namespace MiningCore.Stratum
                 socket.Close();
                 return;
             }
+
+            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
 
             // setup client
             var client = new StratumClient(clock, connectionId);
@@ -186,8 +186,10 @@ namespace MiningCore.Stratum
                 clients[connectionId] = client;
             }
 
+            // setup client
             OnConnect(client, port.IPEndPoint);
 
+            // run async I/O loop
             client.Run(socket, port, tlsCert, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
