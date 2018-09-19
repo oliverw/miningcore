@@ -23,6 +23,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -68,6 +69,8 @@ namespace MiningCore.Stratum
         private bool isAlive = true;
         private WorkerContextBase context;
         private bool expectingProxyHeader = false;
+
+        private static IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -354,11 +357,11 @@ namespace MiningCore.Stratum
 
             if (line.StartsWith("PROXY "))
             {
-                //var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
-                //if (proxyAddresses == null || !proxyAddresses.Any())
-                //    proxyAddresses = new[] { IPAddress.Loopback };
+                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                if (proxyAddresses == null || !proxyAddresses.Any())
+                    proxyAddresses = new[] { IPAddress.Loopback, IPv4LoopBackOnIPv6, IPAddress.IPv6Loopback };
 
-                //if (proxyAddresses.Any(x => x.Equals(peerAddress)))
+                if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                 {
                     logger.Debug(() => $"[{ConnectionId}] Received Proxy-Protocol header: {line}");
 
@@ -372,10 +375,10 @@ namespace MiningCore.Stratum
                     logger.Info(() => $"[{ConnectionId}] Real-IP via Proxy-Protocol: {RemoteEndpoint.Address}");
                 }
 
-                //else
-                //{
-                //    throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
-                //}
+                else
+                {
+                    throw new InvalidDataException($"[{ConnectionId}] Received spoofed Proxy-Protocol header from {peerAddress}");
+                }
 
                 return true;
             }
