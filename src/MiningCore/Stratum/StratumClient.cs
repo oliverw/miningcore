@@ -99,7 +99,7 @@ namespace MiningCore.Stratum
                     if (port.PoolEndpoint.Tls)
                     {
                         var sslStream = new SslStream(stream, false);
-                        await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                        await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                         stream = sslStream;
                     }
