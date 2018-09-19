@@ -102,13 +102,6 @@ namespace MiningCore.Stratum
                 // Setup sockets
                 var sockets = stratumPorts.Select(port =>
                 {
-                    // TLS cert loading
-                    if (port.PoolEndpoint.Tls)
-                    {
-                        if (!certs.ContainsKey(port.PoolEndpoint.TlsPfxFile))
-                            AddCert(port);
-                    }
-
                     // Setup socket
                     var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                     server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -166,7 +159,6 @@ namespace MiningCore.Stratum
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
             var connectionId = CorrelationIdGenerator.GetNextId();
-            var tlsCert = port.PoolEndpoint.Tls ? certs[port.PoolEndpoint.TlsPfxFile] : null;
 
             // get rid of banned clients as early as possible
             if (banManager?.IsBanned(remoteEndpoint.Address) == true)
@@ -176,7 +168,14 @@ namespace MiningCore.Stratum
                 return;
             }
 
-            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
+            // TLS cert loading
+            X509Certificate2 tlsCert = null;
+
+            if (port.PoolEndpoint.Tls)
+            {
+                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out tlsCert))
+                    tlsCert = AddCert(port);
+            }
 
             // setup client
             var client = new StratumClient(clock, connectionId);
@@ -186,7 +185,6 @@ namespace MiningCore.Stratum
                 clients[connectionId] = client;
             }
 
-            // setup client
             OnConnect(client, port.IPEndPoint);
 
             // run async I/O loop
@@ -298,12 +296,13 @@ namespace MiningCore.Stratum
             OnDisconnect(subscriptionId);
         }
 
-        private void AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        private X509Certificate2 AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
         {
             try
             {
                 var tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
                 certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
+                return tlsCert;
             }
 
             catch (Exception ex)
