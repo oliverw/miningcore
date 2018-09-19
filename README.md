@@ -130,7 +130,7 @@ You also need to expose all stratum ports specified in your configuration file.
 
 ### Building from Source (Shell)
 
-Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
+Install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core) for your platform
 
 #### Linux (Ubuntu 16.04 example)
 
