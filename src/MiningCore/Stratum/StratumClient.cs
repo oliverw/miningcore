@@ -70,7 +70,7 @@ namespace MiningCore.Stratum
         private WorkerContextBase context;
         private bool expectingProxyHeader = false;
 
-        private static IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
+        private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
