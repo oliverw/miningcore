@@ -81,6 +81,7 @@ namespace MiningCore.Stratum
 
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new ConcurrentDictionary<string, X509Certificate2>();
+        protected static readonly HashSet<int> ignoredSocketErrors;
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
@@ -88,8 +89,6 @@ namespace MiningCore.Stratum
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected ILogger logger;
-
-        protected static readonly HashSet<int> ignoredSocketErrors;
 
         protected abstract string LogCat { get; }
 
