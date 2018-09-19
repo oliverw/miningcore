@@ -80,16 +80,16 @@ namespace MiningCore.Stratum
         #region API-Surface
 
         public void Run(Socket socket,
-            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port,
+            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) poolEndpoint,
             X509Certificate2 tlsCert,
             Func<StratumClient, JsonRpcRequest, Task> onRequestAsync,
             Action<StratumClient> onCompleted,
             Action<StratumClient, Exception> onError)
         {
-            PoolEndpoint = port.IPEndPoint;
+            PoolEndpoint = poolEndpoint.IPEndPoint;
             RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
-            expectingProxyHeader = port.PoolEndpoint.TcpProxyProtocol?.Enable == true;
+            expectingProxyHeader = poolEndpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
             Task.Run(async () =>
             {
@@ -102,12 +102,19 @@ namespace MiningCore.Stratum
                     networkStream = new NetworkStream(socket, true);
 
                     // TLS handshake
-                    if (port.PoolEndpoint.Tls)
+                    if (poolEndpoint.PoolEndpoint.Tls)
                     {
                         var sslStream = new SslStream(networkStream, false);
                         await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                         networkStream = sslStream;
+
+                        logger.Info(() => $"Accepted {sslStream.SslProtocol.ToString().ToUpper()} ({sslStream.CipherAlgorithm.ToString().ToUpper()}) connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
+                    }
+
+                    else
+                    {
+                        logger.Info(() => $"Accepted unsecure connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
                     }
 
                     // Go
@@ -115,7 +122,7 @@ namespace MiningCore.Stratum
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(port.PoolEndpoint.TcpProxyProtocol, onRequestAsync));
+                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync));
 
                         isAlive = false;
                         onCompleted(this);
