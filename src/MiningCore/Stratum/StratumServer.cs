@@ -91,8 +91,6 @@ namespace MiningCore.Stratum
         protected IBanManager banManager;
         protected ILogger logger;
 
-        protected abstract string LogCat { get; }
-
         public void StartListeners(params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
@@ -116,7 +114,7 @@ namespace MiningCore.Stratum
                     return server;
                 }).ToArray();
 
-                logger.Info(() => $"[{LogCat}] Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
+                logger.Info(() => $"Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
 
                 // Setup accept tasks
                 var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
@@ -163,7 +161,7 @@ namespace MiningCore.Stratum
             // get rid of banned clients as early as possible
             if (banManager?.IsBanned(remoteEndpoint.Address) == true)
             {
-                logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndpoint.Address}");
+                logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
                 socket.Close();
                 return;
             }
@@ -178,7 +176,7 @@ namespace MiningCore.Stratum
             }
 
             // setup client
-            var client = new StratumClient(clock, connectionId);
+            var client = new StratumClient(logger, clock, connectionId);
 
             lock(clients)
             {
@@ -213,14 +211,14 @@ namespace MiningCore.Stratum
             // boot pre-connected clients
             if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
             {
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
+                logger.Info(() => $"[{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
                 DisconnectClient(client);
                 return;
             }
 
             try
             {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+                logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
                 await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
             }
@@ -230,9 +228,9 @@ namespace MiningCore.Stratum
                 var innerEx = ex.InnerException != null ? ": " + ex : "";
 
                 if (request != null)
-                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
+                    logger.Error(ex, () => $"[{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
                 else
-                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request{innerEx}");
+                    logger.Error(ex, () => $"[{client.ConnectionId}] Error processing request{innerEx}");
 
                 throw;
             }
@@ -247,22 +245,22 @@ namespace MiningCore.Stratum
             {
                 case SocketException sockEx:
                     if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
-                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
+                        logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;
 
                 case JsonException jsonEx:
                     // junk received (invalid json)
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
+                        logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
                         banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     }
                     break;
 
                 default:
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;
             }
 
@@ -271,7 +269,7 @@ namespace MiningCore.Stratum
 
         protected virtual void OnReceiveComplete(StratumClient client)
         {
-            logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
 
             DisconnectClient(client);
         }
@@ -307,7 +305,7 @@ namespace MiningCore.Stratum
 
             catch (Exception ex)
             {
-                logger.Info(() => $"[{LogCat}] Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
+                logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
                 throw;
             }
         }

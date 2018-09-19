@@ -135,7 +135,7 @@ namespace MiningCore.Blockchain.Monero
             await client.RespondAsync(loginResponse, request.Id);
 
             // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {loginRequest.Login} = {client.RemoteEndpoint.Address}");
+            logger.Info(() => $"[{client.ConnectionId}] Authorized worker {loginRequest.Login}");
         }
 
         private async Task OnGetJob(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                     return;
                 }
 
@@ -253,7 +253,7 @@ namespace MiningCore.Blockchain.Monero
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -273,7 +273,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Monero
 
         private Task OnNewJob()
         {
-            logger.Info(() => $"[{LogCat}] Broadcasting job");
+            logger.Info(() => $"Broadcasting job");
 
             var tasks = ForEachClient(async client =>
             {
@@ -301,7 +301,7 @@ namespace MiningCore.Blockchain.Monero
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
                         DisconnectClient(client);
                         return;
                     }
@@ -374,7 +374,7 @@ namespace MiningCore.Blockchain.Monero
                     break;
 
                 default:
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                     await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;

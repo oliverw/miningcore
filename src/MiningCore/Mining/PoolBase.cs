@@ -92,8 +92,6 @@ namespace MiningCore.Mining
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        protected override string LogCat => "Pool";
-
         protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
 
@@ -147,7 +145,7 @@ namespace MiningCore.Mining
                 {
                     if (!client.LastReceive.HasValue)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
                         DisconnectClient(client);
                     }
@@ -167,7 +165,7 @@ namespace MiningCore.Mining
 
             if (context.VarDiff != null)
             {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
+                logger.Debug(() => $"[{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
 
                 // get or create manager
                 VarDiffManager varDiffManager;
@@ -194,7 +192,7 @@ namespace MiningCore.Mining
 
                 if (newDiff != null)
                 {
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
+                    logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
                     await OnVarDiffUpdateAsync(client, newDiff.Value);
                 }
@@ -252,7 +250,7 @@ namespace MiningCore.Mining
         {
             try
             {
-                logger.Debug(() => $"[{LogCat}] Loading pool stats");
+                logger.Debug(() => $"Loading pool stats");
 
                 var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
 
@@ -265,7 +263,7 @@ namespace MiningCore.Mining
 
             catch(Exception ex)
             {
-                logger.Warn(ex, () => $"[{LogCat}] Unable to load pool stats");
+                logger.Warn(ex, () => $"Unable to load pool stats");
             }
         }
 
@@ -290,7 +288,7 @@ namespace MiningCore.Mining
                         (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
                             clusterConfig.Banning?.BanOnInvalidShares == true))
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                        logger.Info(() => $"[{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
                         banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
@@ -350,7 +348,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"[{LogCat}] Launching ...");
+            logger.Info(() => $"Starting Pool ...");
 
             try
             {
@@ -367,7 +365,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                     StartListeners(ipEndpoints);
                 }
 
-                logger.Info(() => $"[{LogCat}] Online");
+                logger.Info(() => $"Pool Online");
                 OutputPoolInfo();
             }
 

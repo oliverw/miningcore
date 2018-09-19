@@ -44,8 +44,9 @@ namespace MiningCore.Stratum
 {
     public class StratumClient
     {
-        public StratumClient(IMasterClock clock, string connectionId)
+        public StratumClient(ILogger logger, IMasterClock clock, string connectionId)
         {
+            this.logger = logger;
             receivePipe = new Pipe(PipeOptions.Default);
 
             this.clock = clock;
@@ -57,7 +58,7 @@ namespace MiningCore.Stratum
             // For unit testing only
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger logger;
         private readonly IMasterClock clock;
 
         private const int MaxInboundRequestLength = 0x8000;
@@ -108,11 +109,11 @@ namespace MiningCore.Stratum
                         await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                         networkStream = sslStream;
-                        logger.Info(() => $"[{ConnectionId}] Accepted {sslStream.SslProtocol.ToString().ToUpper()} ({sslStream.CipherAlgorithm.ToString().ToUpper()}) connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
+                        logger.Info(() => $"Accepted {sslStream.SslProtocol.ToString().ToUpper()} ({sslStream.CipherAlgorithm.ToString().ToUpper()}) connection {ConnectionId} on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
                     }
 
                     else
-                        logger.Info(() => $"[{ConnectionId}] Accepted connection on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
+                        logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
                     // Go
                     using (networkStream)

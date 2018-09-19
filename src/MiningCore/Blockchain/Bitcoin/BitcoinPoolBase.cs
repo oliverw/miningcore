@@ -127,7 +127,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 await client.RespondAsync(context.IsAuthorized, request.Id);
 
                 // log association
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+                logger.Info(() => $"[{client.ConnectionId}] Authorized worker {workerValue}");
 
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
@@ -148,7 +148,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 await client.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning unauthorized worker for 60 sec");
+                logger.Info(() => $"[{client.ConnectionId}] Banning unauthorized worker for 60 sec");
 
                 banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
 
@@ -171,7 +171,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                     return;
                 }
 
@@ -198,7 +198,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -218,7 +218,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
@@ -245,13 +245,13 @@ namespace MiningCore.Blockchain.Bitcoin
                     context.SetDifficulty(requestedDiff);
                     await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner");
+                    logger.Info(() => $"[{client.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner");
                 }
             }
 
             catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
+                logger.Error(ex, () => $"Unable to convert suggested difficulty {request.Params}");
             }
         }
 
@@ -273,7 +273,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Unable to convert suggested difficulty {request.Params}");
+                logger.Error(ex, () => $"Unable to convert suggested difficulty {request.Params}");
             }
         }
 
@@ -281,7 +281,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"[{LogCat}] Broadcasting job");
+            logger.Info(() => $"Broadcasting job");
 
             var tasks = ForEachClient(async client =>
             {
@@ -295,7 +295,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
                         DisconnectClient(client);
                         return;
                     }
@@ -388,7 +388,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     break;
 
                 default:
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                     await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;

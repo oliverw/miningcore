@@ -66,24 +66,22 @@ namespace MiningCore.Blockchain
         protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
         protected TimeSpan btStreamReceiveTimeout = TimeSpan.FromSeconds(60 * 10);
 
-        protected virtual string LogCat { get; } = "Job Manager";
-
         protected abstract void ConfigureDaemons();
 
         protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
             while(!await AreDaemonsHealthyAsync())
             {
-                logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
+                logger.Info(() => $"Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
 
-            logger.Info(() => $"[{LogCat}] All daemons online");
+            logger.Info(() => $"All daemons online");
 
             while(!await AreDaemonsConnectedAsync())
             {
-                logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
+                logger.Info(() => $"Waiting for daemons to connect to peers ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
@@ -208,13 +206,13 @@ namespace MiningCore.Blockchain
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"[{LogCat}] Launching ...");
+            logger.Info(() => $"Starting Job Manager ...");
 
             await StartDaemonAsync(ct);
             await EnsureDaemonsSynchedAsync(ct);
             await PostStartInitAsync(ct);
 
-            logger.Info(() => $"[{LogCat}] Online");
+            logger.Info(() => $"Job Manager Online");
         }
 
         #endregion // API-Surface

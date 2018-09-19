@@ -5,7 +5,6 @@ using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.DaemonInterface;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Time;
 
 namespace MiningCore.Blockchain.BitcoinGold
