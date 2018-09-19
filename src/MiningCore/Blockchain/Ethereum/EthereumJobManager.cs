@@ -210,17 +210,17 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<JToken>(EC.GetSyncState);
-            var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
+            var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
+            var firstValidResponse = responses.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
             if (firstValidResponse != null)
             {
                 // eth_syncing returns false if not synching
-                if (firstValidResponse.Type == JTokenType.Boolean)
+                if (firstValidResponse is bool)
                     return;
 
-                var syncStates = infos.Where(x => x.Error == null && x.Response != null && firstValidResponse.Type == JTokenType.Object)
-                    .Select(x => x.Response.ToObject<SyncState>())
+                var syncStates = responses.Where(x => x.Error == null && x.Response != null && firstValidResponse is JObject)
+                    .Select(x => ((JObject) x.Response).ToObject<SyncState>())
                     .ToArray();
 
                 if (syncStates.Any())
