@@ -77,7 +77,7 @@ namespace MiningCore.Stratum
 
         public void Run(Socket socket,
             (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port,
-            ConcurrentDictionary<string, X509Certificate2> certs,
+            X509Certificate2 tlsCert,
             Func<StratumClient, JsonRpcRequest, Task> onNext, Action<StratumClient> onCompleted, Action<StratumClient, Exception> onError)
         {
             PoolEndpoint = port.IPEndPoint;
@@ -98,12 +98,9 @@ namespace MiningCore.Stratum
                     // TLS handshake
                     if (port.PoolEndpoint.Tls)
                     {
-                        SslStream sslStream = null;
-
-                        var tlsCert = certs[port.PoolEndpoint.TlsPfxFile];
-                        sslStream = new SslStream(stream, false);
-
+                        var sslStream = new SslStream(stream, false);
                         await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false);
+
                         stream = sslStream;
                     }
 

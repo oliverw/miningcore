@@ -105,11 +105,8 @@ namespace MiningCore.Stratum
                     // TLS cert loading
                     if (port.PoolEndpoint.Tls)
                     {
-                        if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var tlsCert))
-                        {
-                            tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
-                            certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
-                        }
+                        if (!certs.ContainsKey(port.PoolEndpoint.TlsPfxFile))
+                            AddCert(port);
                     }
 
                     // Setup socket
@@ -169,6 +166,7 @@ namespace MiningCore.Stratum
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
             var connectionId = CorrelationIdGenerator.GetNextId();
+            var tlsCert = port.PoolEndpoint.Tls ? certs[port.PoolEndpoint.TlsPfxFile] : null;
 
             logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
 
@@ -190,7 +188,7 @@ namespace MiningCore.Stratum
 
             OnConnect(client, port.IPEndPoint);
 
-            client.Run(socket, port, certs, OnRequestAsync, OnReceiveComplete, OnReceiveError);
+            client.Run(socket, port, tlsCert, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
         public void StopListeners()
@@ -296,6 +294,21 @@ namespace MiningCore.Stratum
             }
 
             OnDisconnect(subscriptionId);
+        }
+
+        private void AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        {
+            try
+            {
+                var tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
+                certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Info(() => $"[{LogCat}] Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
+                throw;
+            }
         }
 
         protected void ForEachClient(Action<StratumClient> action)
