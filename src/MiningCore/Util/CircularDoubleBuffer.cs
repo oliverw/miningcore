@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -40,9 +40,9 @@ namespace MiningCore.Util
         public double Sum()
         {
             double sum = 0;
-            using (var enumerator = GetEnumerator())
+            using(var enumerator = GetEnumerator())
             {
-                while (enumerator.MoveNext())
+                while(enumerator.MoveNext())
                 {
                     sum += enumerator.Current;
                 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Contracts;
@@ -36,7 +36,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
         {
             await Task.Run(() =>
             {
-                lock (genLock)
+                lock(genLock)
                 {
                     if (!isGenerated)
                     {
@@ -64,7 +64,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             var value = new LibMultihash.ethash_return_value();
 
-            fixed (byte* input = hash)
+            fixed(byte* input = hash)
             {
                 LibMultihash.ethash_light_compute(handle, input, nonce, ref value);
             }

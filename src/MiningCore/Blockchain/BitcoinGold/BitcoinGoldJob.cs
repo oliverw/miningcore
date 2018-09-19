@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.BitcoinGold
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> {new uint256(coinbaseInitialHash)};
+            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
 
             // build merkle root

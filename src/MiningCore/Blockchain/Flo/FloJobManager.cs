@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -78,9 +78,9 @@ namespace MiningCore.Blockchain.Flo
 
                 var job = currentJob;
                 var isNew = job == null ||
-                            (blockTemplate != null &&
-                             job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                             blockTemplate.Height > job.BlockTemplate?.Height);
+                (blockTemplate != null &&
+                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                    blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {
@@ -91,7 +91,7 @@ namespace MiningCore.Blockchain.Flo
                         ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher, extraFloPoolConfig.FloData);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
                         if (isNew)
                         {
@@ -111,7 +111,7 @@ namespace MiningCore.Blockchain.Flo
                         else
                         {
                             // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
+                            while(validJobs.Count > maxActiveJobs - 1)
                                 validJobs.RemoveAt(0);
                         }
 
@@ -124,7 +124,7 @@ namespace MiningCore.Blockchain.Flo
                 return (isNew, forceUpdate);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
             }

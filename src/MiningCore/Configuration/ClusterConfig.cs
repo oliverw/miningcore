@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -62,7 +62,7 @@ namespace MiningCore.Configuration
         PAK, // PAKcoin
         CANN, // CannabisCoin
         RVN, // Ravencoin
-        PGN, // Pigeoncoin 
+        PGN, // Pigeoncoin
     }
 
     public class CoinConfig
@@ -165,6 +165,18 @@ namespace MiningCore.Configuration
         public double Difficulty { get; set; }
         public TcpProxyProtocolConfig TcpProxyProtocol { get; set; }
         public VarDiffConfig VarDiff { get; set; }
+
+        /// <summary>
+        /// Enable Transport layer security (TLS)
+        /// If set to true, you must specify values for either TlsPemFile or TlsPfxFile
+        /// If TlsPemFile does not include the private key, TlsKeyFile is also required
+        /// </summary>
+        public bool Tls { get; set; }
+
+        /// <summary>
+        /// PKCS certificate file
+        /// </summary>
+        public string TlsPfxFile { get; set; }
     }
 
     public partial class VarDiffConfig
@@ -329,7 +341,7 @@ namespace MiningCore.Configuration
         /// <summary>
         /// Port for admin-apis
         /// </summary>
-        public int AdminPort { get; set; }
+        public int? AdminPort { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
@@ -343,7 +355,7 @@ namespace MiningCore.Configuration
         public string PublishUrl { get; set; }
 
         /// <summary>
-        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it 
+        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it
         /// </summary>
         public bool Connect { get; set; }
     }

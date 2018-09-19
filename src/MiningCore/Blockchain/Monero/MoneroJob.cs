@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -43,7 +43,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(instanceId, nameof(instanceId));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-            switch (poolConfig.Coin.Type)
+            switch(poolConfig.Coin.Type)
             {
                 case CoinType.AEON:
                     hashSlow = LibCryptonote.CryptonightHashSlowLite;
@@ -85,7 +85,7 @@ namespace MiningCore.Blockchain.Monero
         private string EncodeBlob(uint workerExtraNonce)
         {
             // clone template
-            using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
+            using(var blob = new PooledArraySegment<byte>(blobTemplate.Length))
             {
                 Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
 
@@ -118,7 +118,7 @@ namespace MiningCore.Blockchain.Monero
         private PooledArraySegment<byte> ComputeBlockHash(byte[] blobConverted)
         {
             // blockhash is computed from the converted blob data prefixed with its length
-            var bytes = new[] {(byte) blobConverted.Length}
+            var bytes = new[] { (byte) blobConverted.Length }
                 .Concat(blobConverted)
                 .ToArray();
 
@@ -155,7 +155,7 @@ namespace MiningCore.Blockchain.Monero
                 throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
             // clone template
-            using (var blob = new PooledArraySegment<byte>(blobTemplate.Length))
+            using(var blob = new PooledArraySegment<byte>(blobTemplate.Length))
             {
                 Buffer.BlockCopy(blobTemplate, 0, blob.Array, 0, blobTemplate.Length);
 
@@ -173,7 +173,7 @@ namespace MiningCore.Blockchain.Monero
                     throw new StratumException(StratumError.MinusOne, "malformed blob");
 
                 // hash it
-                using (var hashSeg = hashSlow(blobConverted))
+                using(var hashSeg = hashSlow(blobConverted))
                 {
                     var hash = hashSeg.ToHexString();
                     if (hash != workerHash)
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Monero
                             throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
                     }
 
-                    using (var blockHash = ComputeBlockHash(blobConverted))
+                    using(var blockHash = ComputeBlockHash(blobConverted))
                     {
                         var result = new Share
                         {

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -150,9 +150,9 @@ namespace MiningCore.Api
             context.Response.Headers.Add("Access-Control-Allow-Origin", new StringValues("*"));
             context.Response.Headers.Add("Access-Control-Allow-Methods", new StringValues("GET, POST, DELETE, PUT, OPTIONS, HEAD"));
 
-            using (var stream = context.Response.Body)
+            using(var stream = context.Response.Body)
             {
-                using (var writer = new StreamWriter(stream, encoding))
+                using(var writer = new StreamWriter(stream, encoding))
                 {
                     serializer.Serialize(writer, response);
 
@@ -177,7 +177,7 @@ namespace MiningCore.Api
             {
                 logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
 
-                foreach (var path in requestMap.Keys)
+                foreach(var path in requestMap.Keys)
                 {
                     var m = path.Match(request.Path);
 
@@ -414,7 +414,7 @@ namespace MiningCore.Api
             CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
                 if (!string.IsNullOrEmpty(txInfobaseUrl))
@@ -500,7 +500,7 @@ namespace MiningCore.Api
             CoinMetaData.TxInfoLinks.TryGetValue(pool.Coin.Type, out var txInfobaseUrl);
             CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
                 if (!string.IsNullOrEmpty(txInfobaseUrl))
@@ -611,7 +611,7 @@ namespace MiningCore.Api
             {
                 logger.Debug(() => $"Processing request {request.GetEncodedPathAndQuery()}");
 
-                foreach (var path in requestMapAdmin.Keys)
+                foreach(var path in requestMapAdmin.Keys)
                 {
                     var m = path.Match(request.Path);
 
@@ -626,7 +626,7 @@ namespace MiningCore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
                 throw;

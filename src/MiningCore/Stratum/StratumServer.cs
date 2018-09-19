@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -21,20 +21,22 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
 using System.Reactive;
-using System.Threading;
+using System.Runtime.InteropServices;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetUV.Core.Handles;
-using NetUV.Core.Native;
 using Newtonsoft.Json;
 using NLog;
 using Contract = MiningCore.Contracts.Contract;
@@ -52,159 +54,206 @@ namespace MiningCore.Stratum
             this.clock = clock;
         }
 
+        static StratumServer()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                ignoredSocketErrors = new HashSet<int>
+                {
+                    (int) SocketError.ConnectionReset,
+                    (int) SocketError.ConnectionAborted,
+                    (int) SocketError.OperationAborted
+                };
+            }
+
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // see: http://www.virtsync.com/c-error-codes-include-errno
+                ignoredSocketErrors = new HashSet<int>
+                {
+                    104, // ECONNRESET
+                    125, // ECANCELED
+                    103, // ECONNABORTED
+                    110, // ETIMEDOUT
+                };
+            }
+        }
+
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
+        protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new ConcurrentDictionary<string, X509Certificate2>();
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
-        protected readonly Dictionary<int, Tcp> ports = new Dictionary<int, Tcp>();
+        protected readonly Dictionary<int, Socket> ports = new Dictionary<int, Socket>();
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
-        protected bool disableConnectionLogging = false;
         protected ILogger logger;
-        private Async loopStop;
+
+        protected static readonly HashSet<int> ignoredSocketErrors;
 
         protected abstract string LogCat { get; }
 
-        public void StartListeners(string id, params (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol)[] stratumPorts)
+        public void StartListeners(params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
-            // all ports get serviced by a single loop thread, actual work is dispatched to taskpool threads
-            var thread = new Thread(_ =>
+            Task.Run(async () =>
             {
-                var loop = new Loop();
-
-                // loop thread must be terminated from within
-                loopStop = loop.CreateAsync((handle) =>
+                // Setup sockets
+                var sockets = stratumPorts.Select(port =>
                 {
-                    loop.Stop();
-
-                    handle.Dispose();
-                });
-
-                try
-                {
-                    foreach (var endpoint in stratumPorts)
+                    // TLS cert loading
+                    if (port.PoolEndpoint.Tls)
                     {
-                        var tcp = loop.CreateTcp()
-                            .NoDelay(true)
-                            .SimultaneousAccepts(false)
-                            .Listen(endpoint.IPEndPoint, (con, ex) =>
-                            {
-                                if (ex == null)
-                                    OnClientConnected(con, endpoint, loop);
-                                else
-                                    logger.Error(() => $"[{LogCat}] Connection error state: {ex.Message}");
-                            });
-
-                        lock (ports)
+                        if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var tlsCert))
                         {
-                            ports[endpoint.IPEndPoint.Port] = tcp;
+                            tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
+                            certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
                         }
-
-                        logger.Info(() => $"[{LogCat}] Stratum ports {endpoint.IPEndPoint.Address}:{endpoint.IPEndPoint.Port} online");
                     }
 
-                    // Go
-                    loop.RunDefault();
+                    // Setup socket
+                    var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                    server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                    server.Bind(port.IPEndPoint);
+                    server.Listen(512);
 
-                    // Done
-                    loop.Dispose();
+                    lock(ports)
+                    {
+                        ports[port.IPEndPoint.Port] = server;
+                    }
 
-                    logger.Info(() => $"[{LogCat}] Stratum stopped");
-                }
+                    logger.Info(() => $"[{LogCat}] Stratum port {port.IPEndPoint.Address}:{port.IPEndPoint.Port} online");
 
-                catch (Exception ex)
+                    return server;
+                }).ToArray();
+
+                // Setup accept tasks
+                var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
+
+                while(true)
                 {
-                    logger.Error(ex, $"[{LogCat}] {ex}");
-                }
-            }) {Name = $"UvLoopThread [{id.ToUpper()}]"};
+                    try
+                    {
+                        // Wait incoming connection on any of the monitored sockets
+                        await Task.WhenAny(tasks);
 
-            thread.Start();
+                        // check tasks
+                        for(var i = 0; i < tasks.Length; i++)
+                        {
+                            var task = tasks[i];
+                            var port = stratumPorts[i];
+
+                            // skip running tasks
+                            if (!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
+                                continue;
+
+                            // accept connection if successful
+                            if (task.IsCompletedSuccessfully)
+                                AcceptConnection(task.Result, port);
+
+                            // Refresh task
+                            tasks[i] = sockets[i].AcceptAsync();
+                        }
+                    }
+
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }
+            });
+        }
+
+        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        {
+            var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+            var connectionId = CorrelationIdGenerator.GetNextId();
+
+            logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndpoint.Address}:{remoteEndpoint.Port}");
+
+            // get rid of banned clients as early as possible
+            if (banManager?.IsBanned(remoteEndpoint.Address) == true)
+            {
+                logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndpoint.Address}");
+                socket.Close();
+                return;
+            }
+
+            // setup client
+            var client = new StratumClient(clock, connectionId);
+
+            lock(clients)
+            {
+                clients[connectionId] = client;
+            }
+
+            OnConnect(client, port.IPEndPoint);
+
+            client.Run(socket, port, certs, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
         public void StopListeners()
         {
-            loopStop.Send();
+            lock(ports)
+            {
+                var portValues = ports.Values.ToArray();
+
+                for(int i = 0; i < portValues.Length; i++)
+                {
+                    var socket = portValues[i];
+
+                    socket.Close();
+                }
+            }
         }
 
-        private void OnClientConnected(Tcp con, (IPEndPoint IPEndPoint, TcpProxyProtocolConfig ProxyProtocol) endpointConfig, Loop loop)
+        protected abstract void OnConnect(StratumClient client, IPEndPoint portItem1);
+
+        protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request)
         {
+            // boot pre-connected clients
+            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+            {
+                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
+                DisconnectClient(client);
+                return;
+            }
+
             try
             {
-                var remoteEndPoint = con.GetPeerEndPoint();
+                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-                // get rid of banned clients as early as possible
-                if (banManager?.IsBanned(remoteEndPoint.Address) == true)
-                {
-                    logger.Debug(() => $"[{LogCat}] Disconnecting banned ip {remoteEndPoint.Address}");
-                    con.Dispose();
-                    return;
-                }
-
-                var connectionId = CorrelationIdGenerator.GetNextId();
-                logger.Debug(() => $"[{LogCat}] Accepting connection [{connectionId}] from {remoteEndPoint.Address}:{remoteEndPoint.Port}");
-
-                // setup client connection
-                con.KeepAlive(true, 1);
-
-                // setup client
-                var client = new StratumClient();
-
-                client.Init(loop, con, ctx, clock, endpointConfig, connectionId,
-                    data => Task.Run(() => OnReceive(client, data)),
-                    () => OnReceiveComplete(client),
-                    ex => OnReceiveError(client, ex));
-
-                // register client
-                lock (clients)
-                {
-                    clients[connectionId] = client;
-                }
-
-                OnConnect(client);
+                await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                logger.Error(ex, () => nameof(OnClientConnected));
+                var innerEx = ex.InnerException != null ? ": " + ex : "";
+
+                if (request != null)
+                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
+                else
+                    logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request{innerEx}");
+
+                throw;
             }
         }
 
-        protected async void OnReceive(StratumClient client, PooledArraySegment<byte> data)
+        protected virtual void OnReceiveError(StratumClient client, Exception ex)
         {
-            using (data)
+            if (ex.InnerException is SocketException)
+                ex = ex.InnerException;
+
+            switch(ex)
             {
-                JsonRpcRequest request = null;
+                case SocketException sockEx:
+                    if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
+                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
+                    break;
 
-                try
-                {
-                    // boot pre-connected clients
-                    if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
-                    {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
-                        DisconnectClient(client);
-                        return;
-                    }
-
-                    // de-serialize
-                    logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Received request data: {StratumConstants.Encoding.GetString(data.Array, 0, data.Size)}");
-                    request = client.DeserializeRequest(data);
-
-                    // dispatch
-                    if (request != null)
-                    {
-                        logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
-                        await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
-                    }
-
-                    else
-                        logger.Trace(() => $"[{LogCat}] [{client.ConnectionId}] Unable to deserialize request");
-                }
-
-                catch (JsonReaderException jsonEx)
-                {
-                    // junk received (no valid json)
+                case JsonException jsonEx:
+                    // junk received (invalid json)
                     logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
@@ -212,32 +261,10 @@ namespace MiningCore.Stratum
                         logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning client for sending junk");
                         banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     }
-                }
-
-                catch (Exception ex)
-                {
-                    var innerEx = ex.InnerException != null ? ": " + ex : "";
-
-                    if (request != null)
-                        logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
-                    else
-                        logger.Error(ex, () => $"[{LogCat}] [{client.ConnectionId}] Error processing request{innerEx}");
-                }
-            }
-        }
-
-        protected virtual void OnReceiveError(StratumClient client, Exception ex)
-        {
-            switch (ex)
-            {
-                case OperationException opEx:
-                    // log everything but ECONNRESET which just indicates the client disconnecting
-                    if (opEx.ErrorCode != ErrorCode.ECONNRESET)
-                        logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
                     break;
 
                 default:
-                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex.Message}");
+                    logger.Error(() => $"[{LogCat}] [{client.ConnectionId}] Connection error state: {ex}");
                     break;
             }
 
@@ -262,7 +289,7 @@ namespace MiningCore.Stratum
             if (!string.IsNullOrEmpty(subscriptionId))
             {
                 // unregister client
-                lock (clients)
+                lock(clients)
                 {
                     clients.Remove(subscriptionId);
                 }
@@ -275,26 +302,36 @@ namespace MiningCore.Stratum
         {
             StratumClient[] tmp;
 
-            lock (clients)
+            lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }
 
-            foreach (var client in tmp)
+            foreach(var client in tmp)
             {
                 try
                 {
                     action(client);
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(ex);
                 }
             }
         }
 
-        protected abstract void OnConnect(StratumClient client);
+        protected IEnumerable<Task> ForEachClient(Func<StratumClient, Task> func)
+        {
+            StratumClient[] tmp;
+
+            lock(clients)
+            {
+                tmp = clients.Values.ToArray();
+            }
+
+            return tmp.Select(func);
+        }
 
         protected virtual void OnDisconnect(string subscriptionId)
         {

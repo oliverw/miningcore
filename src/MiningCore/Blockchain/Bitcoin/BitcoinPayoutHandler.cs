@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -112,7 +112,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
 
-            for (var i = 0; i < pageCount; i++)
+            for(var i = 0; i < pageCount; i++)
             {
                 // get a page full of blocks
                 var page = blocks
@@ -122,12 +122,12 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
                 var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
-                    new[] {block.TransactionConfirmationData})).ToArray();
+                    new[] { block.TransactionConfirmationData })).ToArray();
 
                 // execute batch
                 var results = await daemon.ExecuteBatchAnyAsync(batch);
 
-                for (var j = 0; j < results.Length; j++)
+                for(var j = 0; j < results.Length; j++)
                 {
                     var cmdResult = results[j];
 
@@ -159,7 +159,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                     else
                     {
-                        switch (transactionInfo.Details[0].Category)
+                        switch(transactionInfo.Details[0].Category)
                         {
                             case "immature":
                                 // update progress
@@ -204,7 +204,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -287,7 +287,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 PersistPayments(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
             }
 
             else

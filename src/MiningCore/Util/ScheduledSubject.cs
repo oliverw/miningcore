@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -15,7 +15,8 @@ namespace MiningCore.Util
             _defaultObserver = defaultObserver;
             _subject = defaultSubject ?? new Subject<T>();
 
-            if (defaultObserver != null) _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
+            if (defaultObserver != null)
+                _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
         }
 
         private readonly IObserver<T> _defaultObserver;
@@ -50,13 +51,15 @@ namespace MiningCore.Util
                 _subject.ObserveOn(_scheduler).Subscribe(observer),
                 Disposable.Create(() =>
                 {
-                    if (Interlocked.Decrement(ref _observerRefCount) <= 0 && _defaultObserver != null) _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
+                    if (Interlocked.Decrement(ref _observerRefCount) <= 0 && _defaultObserver != null)
+                        _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
                 }));
         }
 
         public void Dispose()
         {
-            if (_subject is IDisposable) ((IDisposable) _subject).Dispose();
+            if (_subject is IDisposable)
+                ((IDisposable) _subject).Dispose();
         }
     }
 }

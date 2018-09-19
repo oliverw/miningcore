@@ -1,4 +1,4 @@
-﻿/* 
+/* 
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -32,7 +32,7 @@ namespace MiningCore.Crypto.Hashing.Algorithms
         {
             Contract.RequiresNonNull(data, nameof(data));
 
-            using (var hasher = SHA256.Create())
+            using(var hasher = SHA256.Create())
             {
                 return hasher.ComputeHash(hasher.ComputeHash(data));
             }

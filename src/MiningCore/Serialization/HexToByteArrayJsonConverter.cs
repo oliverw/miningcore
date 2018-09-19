@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using MiningCore.Extensions;
 using Newtonsoft.Json;

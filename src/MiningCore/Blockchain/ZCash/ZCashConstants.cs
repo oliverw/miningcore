@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -54,9 +54,17 @@ namespace MiningCore.Blockchain.ZCash
         public string[] TreasuryRewardAddresses { get; set; }
         public double TreasuryRewardAddressChangeInterval { get; set; }
 
-        // ZCash Overwinter & Sapling
+        // ZCash "Overwinter"
         public uint? OverwinterActivationHeight { get; set; }
+
+        public uint? OverwinterTxVersion { get; set; }
+        public uint? OverwinterTxVersionGroupId { get; set; }
+
+        // ZCash "Sapling"
         public uint? SaplingActivationHeight { get; set; }
+
+        public uint? SaplingTxVersion { get; set; }
+        public uint? SaplingTxVersionGroupId { get; set; }
     }
 
     public class ZCashConstants
@@ -93,8 +101,15 @@ namespace MiningCore.Blockchain.ZCash
                     FoundersRewardSubsidyHalvingInterval = 840000,
                     FoundersRewardSubsidySlowStartInterval = 20000,
 
+                    // ZCash "Overwinter"
                     OverwinterActivationHeight = 347500,
+                    OverwinterTxVersion = 3,
+                    OverwinterTxVersionGroupId = 0x03C48270,
+
+                    // ZCash "Sapling"
                     SaplingActivationHeight = 419200,
+                    SaplingTxVersion = 4,
+                    SaplingTxVersionGroupId = 0x892f2085,
 
                     FoundersRewardAddresses = new[]
                     {
@@ -129,8 +144,15 @@ namespace MiningCore.Blockchain.ZCash
                     FoundersRewardSubsidyHalvingInterval = 840000,
                     FoundersRewardSubsidySlowStartInterval = 20000,
 
+                    // ZCash "Overwinter"
                     OverwinterActivationHeight = 207500,
+                    OverwinterTxVersion = 3,
+                    OverwinterTxVersionGroupId = 0x03C48270,
+
+                    // ZCash "Sapling"
                     SaplingActivationHeight = 280000,
+                    SaplingTxVersion = 4,
+                    SaplingTxVersionGroupId = 0x892f2085,
 
                     FoundersRewardAddresses = new[]
                     {
@@ -474,11 +496,11 @@ namespace MiningCore.Blockchain.ZCash
         public static Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>> Chains =
             new Dictionary<CoinType, Dictionary<BitcoinNetworkType, ZCashChainConfig>>
             {
-                {CoinType.ZEC, ZCashCoinbaseTxConfig},
-                {CoinType.ZCL, ZCLCoinbaseTxConfig},
-                {CoinType.ZEN, ZencashCoinbaseTxConfig},
-                {CoinType.BTG, BTGCoinbaseTxConfig},
-                {CoinType.BTCP, BTCPCoinbaseTxConfig},
+                { CoinType.ZEC, ZCashCoinbaseTxConfig },
+                { CoinType.ZCL, ZCLCoinbaseTxConfig },
+                { CoinType.ZEN, ZencashCoinbaseTxConfig },
+                { CoinType.BTG, BTGCoinbaseTxConfig },
+                { CoinType.BTCP, BTCPCoinbaseTxConfig },
             };
     }
 
