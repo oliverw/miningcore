@@ -75,6 +75,7 @@ namespace MiningCore.Stratum
                     125, // ECANCELED
                     103, // ECONNABORTED
                     110, // ETIMEDOUT
+                    32,  // EPIPE
                 };
             }
         }
