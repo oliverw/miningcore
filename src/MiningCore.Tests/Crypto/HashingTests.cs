@@ -198,9 +198,42 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void X11_Hash_Should_Throw_On_Null_Input()
         {
-            var hasher = new Sha256S();
+            var hasher = new X11();
             Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
         }
+
+        [Fact]
+        public void X13_Hash()
+        {
+            var hasher = new X13();
+            var result = hasher.Digest(testValue2).ToHexString();
+
+            Assert.Equal("55b2b7f940ffb87bdb138ebdb04b8f823aa55736852c06ea9de46124f85d70e9", result);
+        }
+
+        [Fact]
+        public void X13_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new X13();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
+        [Fact]
+        public void X13_BCD_Hash()
+        {
+            var hasher = new X13BCD();
+            var result = hasher.Digest(testValue2).ToHexString();
+
+            Assert.Equal("28c4e1abe8a009251c30031c566a652c84cff10056385496c21eb46cf88aeb7b", result);
+        }
+
+        [Fact]
+        public void X13_BCD_Hash_Should_Throw_On_Null_Input()
+        {
+            var hasher = new X13BCD();
+            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null));
+        }
+
 
         [Fact]
         public void X17_Hash()
