@@ -109,7 +109,7 @@ namespace MiningCore.Stratum
                         await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                         networkStream = sslStream;
-                        logger.Info(() => $"Accepted {sslStream.SslProtocol.ToString().ToUpper()} ({sslStream.CipherAlgorithm.ToString().ToUpper()}) connection {ConnectionId} on port {poolEndpoint.IPEndPoint.Port} from {RemoteEndpoint.Address}:{RemoteEndpoint.Port}");
+                        logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()} Connection ({sslStream.CipherAlgorithm.ToString().ToUpper()}) from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
                     }
 
                     else
