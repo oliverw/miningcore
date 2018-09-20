@@ -46,7 +46,7 @@ namespace MiningCore.Blockchain.Monero
             switch(poolConfig.Coin.Type)
             {
                 case CoinType.AEON:
-                    hashSlow = LibCryptonote.CryptonightHashSlowLite;
+                    hashSlow = (buf)=> LibCryptonight.CryptonightLight(buf, 0);
                     break;
 
                 case CoinType.XMR:
@@ -55,12 +55,12 @@ namespace MiningCore.Blockchain.Monero
                         // PoW variant
                         var variant = buf[0] >= 7 ? buf[0] - 6 : 0;
 
-                        return LibCryptonote.CryptonightHashSlow(buf, variant);
+                        return LibCryptonight.Cryptonight(buf, variant);
                     };
                     break;
 
                 default:
-                    hashSlow = buf => LibCryptonote.CryptonightHashSlow(buf, 0);
+                    hashSlow = buf => LibCryptonight.Cryptonight(buf, 0);
                     break;
             }
 
@@ -122,7 +122,7 @@ namespace MiningCore.Blockchain.Monero
                 .Concat(blobConverted)
                 .ToArray();
 
-            return LibCryptonote.CryptonightHashFast(bytes);
+            return LibCryptonight.CryptonightHashFast(bytes);
         }
 
         #region API-Surface
