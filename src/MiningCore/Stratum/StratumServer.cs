@@ -145,6 +145,12 @@ namespace MiningCore.Stratum
                         }
                     }
 
+                    catch(ObjectDisposedException)
+                    {
+                        // ignored
+                        break;
+                    }
+
                     catch(Exception ex)
                     {
                         logger.Error(ex);
