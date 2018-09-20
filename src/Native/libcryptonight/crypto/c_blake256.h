@@ -14,6 +14,10 @@ typedef struct {
   state outer;
 } hmac_state;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void blake256_init(state *);
 void blake224_init(state *);
 
@@ -39,5 +43,9 @@ void hmac_blake224_final(hmac_state *, uint8_t *);
 
 void hmac_blake256_hash(uint8_t *, const uint8_t *, uint64_t, const uint8_t *, uint64_t);
 void hmac_blake224_hash(uint8_t *, const uint8_t *, uint64_t, const uint8_t *, uint64_t);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLAKE256_H_ */

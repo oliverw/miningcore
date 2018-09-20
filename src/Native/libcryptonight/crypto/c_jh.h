@@ -16,4 +16,12 @@
 
 #include "hash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 HashReturn jh_hash(int hashbitlen, const BitSequence *data, DataLength databitlen, BitSequence *hashval);
+
+#ifdef __cplusplus
+}
+#endif

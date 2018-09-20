@@ -35,7 +35,7 @@ namespace MiningCore.Tests.Crypto
         public void Crytonote_Hash_Fast()
         {
             var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
-            var result = LibCryptonight.CryptonightHashFast(blobConverted).ToHexString();
+            var result = LibCryptonote.CryptonightHashFast(blobConverted).ToHexString();
 
             Assert.Equal("ddc0e3a33b605ce39fa2d16a98d7634e33399ab1e4b56b3bdd3414b655fe9a98", result);
         }
@@ -43,7 +43,7 @@ namespace MiningCore.Tests.Crypto
         [Fact]
         public void Cryptonote_FastHash_Should_Throw_On_Null_Argument()
         {
-            Assert.Throws<ArgumentNullException>(() => LibCryptonight.CryptonightHashFast(null));
+            Assert.Throws<ArgumentNullException>(() => LibCryptonote.CryptonightHashFast(null));
         }
 
         [Fact]

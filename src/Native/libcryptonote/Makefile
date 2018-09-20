@@ -17,7 +17,7 @@ OBJECTS = contrib/epee/src/hex.o \
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	g++ $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 .PHONY: clean
 

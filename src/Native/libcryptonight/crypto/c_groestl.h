@@ -4,10 +4,10 @@
 #include "crypto_uint8.h"
 #include "crypto_uint32.h"
 #include "crypto_uint64.h"
-#include "crypto_hash.h" 
+#include "crypto_hash.h"
 
-typedef crypto_uint8 uint8_t; 
-typedef crypto_uint32 uint32_t; 
+typedef crypto_uint8 uint8_t;
+typedef crypto_uint32 uint32_t;
 typedef crypto_uint64 uint64_t;
 */
 #include <stdint.h>
@@ -45,11 +45,19 @@ typedef struct {
 			       data buffer */
 } groestlHashState;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*void Init(hashState*);
 void Update(hashState*, const BitSequence*, DataLength);
 void Final(hashState*, BitSequence*); */
 void groestl(const BitSequence*, DataLength, BitSequence*);
 /* NIST API end   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
 int crypto_hash(unsigned char *out,

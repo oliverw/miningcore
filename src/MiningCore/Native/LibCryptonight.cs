@@ -29,9 +29,6 @@ namespace MiningCore.Native
 {
     public static unsafe class LibCryptonight
     {
-        [DllImport("libcryptonight", EntryPoint = "cryptonight_fast_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_fast(byte* input, byte* output, uint inputLength);
-
         [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight(byte* input, byte* output, uint inputLength, int variant);
 
@@ -86,23 +83,6 @@ namespace MiningCore.Native
                 fixed (byte* output = result.Array)
                 {
                     cryptonight_heavy(input, output, (uint)data.Length, variant);
-                }
-            }
-
-            return result;
-        }
-
-        public static PooledArraySegment<byte> CryptonightHashFast(byte[] data)
-        {
-            Contract.RequiresNonNull(data, nameof(data));
-
-            var result = new PooledArraySegment<byte>(32);
-
-            fixed (byte* input = data)
-            {
-                fixed (byte* output = result.Array)
-                {
-                    cryptonight_fast(input, output, (uint)data.Length);
                 }
             }
 

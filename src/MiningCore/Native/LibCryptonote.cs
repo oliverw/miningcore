@@ -38,6 +38,9 @@ namespace MiningCore.Native
         [DllImport("libcryptonote", EntryPoint = "decode_integrated_address_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern UInt64 decode_integrated_address(byte* input, int inputSize);
 
+        [DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
+
         public static byte[] ConvertBlob(byte[] data, int size)
         {
             Contract.RequiresNonNull(data, nameof(data));
@@ -113,6 +116,23 @@ namespace MiningCore.Native
             {
                 return decode_integrated_address(input, data.Length);
             }
+        }
+
+        public static PooledArraySegment<byte> CryptonightHashFast(byte[] data)
+        {
+            Contract.RequiresNonNull(data, nameof(data));
+
+            var result = new PooledArraySegment<byte>(32);
+
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result.Array)
+                {
+                    cn_fast_hash(input, output, (uint)data.Length);
+                }
+            }
+
+            return result;
         }
     }
 }

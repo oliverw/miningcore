@@ -122,7 +122,7 @@ namespace MiningCore.Blockchain.Monero
                 .Concat(blobConverted)
                 .ToArray();
 
-            return LibCryptonight.CryptonightHashFast(bytes);
+            return LibCryptonote.CryptonightHashFast(bytes);
         }
 
         #region API-Surface

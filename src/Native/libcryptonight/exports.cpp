@@ -30,18 +30,25 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #if (defined(__AES__) && (__AES__ == 1)) || (defined(__ARM_FEATURE_CRYPTO) && (__ARM_FEATURE_CRYPTO == 1))
 #define SOFT_AES false
 #else
-#warning Using software AES
+//#warning Using software AES
 #define SOFT_AES true
 #endif
 
-extern "C" MODULE_API void cryptonight_fast_export(const char* input, unsigned char *output, uint32_t inputSize)
-{
-    xmrig::keccak(input, inputSize, output);
+static cryptonight_ctx *alloc_ctx() {
+    cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
+    ctx->memory = static_cast<uint8_t *>(_mm_malloc(xmrig::CRYPTONIGHT_HEAVY_MEMORY, 4096));
+
+    return ctx;
+}
+
+static void free_ctx(cryptonight_ctx *ctx) {
+    _mm_free(ctx->memory);
+    _mm_free(ctx);
 }
 
 extern "C" MODULE_API void cryptonight_export(const char* input, unsigned char *output, uint32_t inputSize, uint32_t variant)
 {
-    cryptonight_ctx* ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));;
+    cryptonight_ctx* ctx = alloc_ctx();
 
     switch (variant) {
     case 0:  cryptonight_single_hash<xmrig::CRYPTONIGHT, SOFT_AES, xmrig::VARIANT_0>(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
@@ -61,12 +68,12 @@ extern "C" MODULE_API void cryptonight_export(const char* input, unsigned char *
     default: cryptonight_single_hash<xmrig::CRYPTONIGHT, SOFT_AES, xmrig::VARIANT_1>(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
     }
 
-    _mm_free(ctx);
+    free_ctx(ctx);
 }
 
 extern "C" MODULE_API void cryptonight_light_export(const char* input, unsigned char *output, uint32_t inputSize, uint32_t variant)
 {
-    cryptonight_ctx* ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));;
+    cryptonight_ctx* ctx = alloc_ctx();
 
     switch (variant) {
     case 0:  cryptonight_single_hash<xmrig::CRYPTONIGHT_LITE, SOFT_AES, xmrig::VARIANT_0>(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
@@ -76,13 +83,12 @@ extern "C" MODULE_API void cryptonight_light_export(const char* input, unsigned 
     default: cryptonight_single_hash<xmrig::CRYPTONIGHT_LITE, SOFT_AES, xmrig::VARIANT_1>(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
     }
 
-    _mm_free(ctx);
+    free_ctx(ctx);
 }
 
 extern "C" MODULE_API void cryptonight_heavy_export(const char* input, unsigned char *output, uint32_t inputSize, uint32_t variant)
 {
-    cryptonight_ctx* ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));;
-    ctx->memory = static_cast<uint8_t *>(_mm_malloc(xmrig::CRYPTONIGHT_HEAVY_MEMORY, 4096));
+    cryptonight_ctx* ctx = alloc_ctx();
 
     switch (variant) {
     case 0:  cryptonight_single_hash<xmrig::CRYPTONIGHT_HEAVY, SOFT_AES, xmrig::VARIANT_0   >(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
@@ -94,6 +100,5 @@ extern "C" MODULE_API void cryptonight_heavy_export(const char* input, unsigned 
     default: cryptonight_single_hash<xmrig::CRYPTONIGHT_HEAVY, SOFT_AES, xmrig::VARIANT_0   >(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
     }
 
-    _mm_free(ctx->memory);
-    _mm_free(ctx);
+    free_ctx(ctx);
 }
