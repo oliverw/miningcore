@@ -17,6 +17,15 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
+        public void Crytonote_Hash_Slow_Variant_1()
+        {
+            var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
+            var result = LibCryptonote.CryptonightHashSlow(blobConverted, 1).ToHexString();
+
+            Assert.Equal("c41ec6434df8b2307ff3105ae15206f3fbdf5a99b35879c0a27b8b85a8e2704f", result);
+        }
+
+        [Fact]
         public void Cryptonote_SlowHash_Should_Throw_On_Null_Argument()
         {
             Assert.Throws<ArgumentNullException>(() => LibCryptonote.CryptonightHashSlow(null, 0));
