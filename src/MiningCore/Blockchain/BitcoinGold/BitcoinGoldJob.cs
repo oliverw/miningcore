@@ -85,7 +85,7 @@ namespace MiningCore.Blockchain.BitcoinGold
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
+            bool isPoS, double shareMultiplier, decimal? blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
