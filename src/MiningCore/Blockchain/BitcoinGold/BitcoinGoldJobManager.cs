@@ -6,6 +6,7 @@ using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.DaemonInterface;
 using MiningCore.Messaging;
 using MiningCore.Time;
+using NBitcoin;
 
 namespace MiningCore.Blockchain.BitcoinGold
 {
@@ -34,6 +35,14 @@ namespace MiningCore.Blockchain.BitcoinGold
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
             return result;
+        }
+
+        /// <summary>
+        /// BTG needs the classic Bitcoin address parsing scheme
+        /// </summary>
+        protected override IDestination AddressToDestination(string address)
+        {
+            return BitcoinUtils.AddressToDestination(address);
         }
 
         #endregion
