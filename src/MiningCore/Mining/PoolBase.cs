@@ -215,7 +215,18 @@ namespace MiningCore.Mining
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
+                .Select(x => Observable.FromAsync(async () =>
+                {
+                    try
+                    {
+                        await UpdateVarDiffAsync(client, true);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }))
                 .Concat()
                 .Subscribe();
         }
