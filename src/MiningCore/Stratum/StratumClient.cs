@@ -66,8 +66,6 @@ namespace MiningCore.Stratum
 
         private Stream networkStream;
         private readonly Pipe receivePipe;
-
-        private bool isAlive = true;
         private WorkerContextBase context;
         private bool expectingProxyHeader = false;
 
@@ -122,20 +120,17 @@ namespace MiningCore.Stratum
                             FillReceivePipeAsync(),
                             ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync));
 
-                        isAlive = false;
                         onCompleted(this);
                     }
                 }
 
                 catch(ObjectDisposedException)
                 {
-                    isAlive = false;
                     onCompleted(this);
                 }
 
                 catch(Exception ex)
                 {
-                    isAlive = false;
                     onError(this, ex);
                 }
             });
@@ -145,7 +140,6 @@ namespace MiningCore.Stratum
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
-        public bool IsAlive { get; set; } = true;
 
         public void SetContext<T>(T value) where T : WorkerContextBase
         {
@@ -193,40 +187,9 @@ namespace MiningCore.Stratum
             return SendAsync(request);
         }
 
-        public async Task SendAsync<T>(T payload)
-        {
-            Contract.RequiresNonNull(payload, nameof(payload));
-
-            if (isAlive)
-            {
-                logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
-
-                try
-                {
-                    using (var writer = new StreamWriter(networkStream, 
-                        StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                    {
-                        serializer.Serialize(writer, payload);
-                    }
-
-                    // append newline
-                    networkStream.WriteByte(0xa);
-
-                    await networkStream.FlushAsync();
-                }
-
-                catch(ObjectDisposedException)
-                {
-                    // ignored
-                }
-            }
-        }
-
         public void Disconnect()
         {
             networkStream.Close();
-
-            IsAlive = false;
         }
 
         public T Deserialize<T>(string json)
@@ -238,6 +201,27 @@ namespace MiningCore.Stratum
         }
 
         #endregion // API-Surface
+
+        private async Task SendAsync<T>(T payload)
+        {
+            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+
+            try
+            {
+                using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                {
+                    serializer.Serialize(writer, payload);
+                }
+
+                networkStream.WriteByte(0xa);  // newline
+                await networkStream.FlushAsync();
+            }
+
+            catch (ObjectDisposedException)
+            {
+                // ignored
+            }
+        }
 
         private async Task FillReceivePipeAsync()
         {
