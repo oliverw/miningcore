@@ -273,7 +273,7 @@ namespace MiningCore.Stratum
 
                 do
                 {
-                    // Look for a EOL in the buffer
+                    // Scan buffer for line terminator (newline)
                     position = buffer.PositionOf((byte) '\n');
 
                     if (position != null)
@@ -286,7 +286,7 @@ namespace MiningCore.Stratum
                         if (!expectingProxyHeader || !HandleProxyHeader(line, proxyProtocol))
                             await ProcessRequestAsync(onRequestAsync, line);
 
-                        // Skip the line + the \n character (basically position)
+                        // Skip the line
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
                     }
                 } while(position != null);
