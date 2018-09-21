@@ -199,19 +199,24 @@ namespace MiningCore.Stratum
 
             if (isAlive)
             {
-                using(var buf = Serialize(payload))
+                logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+
+                try
                 {
-                    logger.Trace(() => $"[{ConnectionId}] Sending: {StratumConstants.Encoding.GetString(buf.Array, 0, buf.Size)}");
-
-                    try
+                    using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
-                        await networkStream.WriteAsync(buf.Array, 0, buf.Size);
+                        serializer.Serialize(writer, payload);
                     }
 
-                    catch(ObjectDisposedException)
-                    {
-                        // ignored
-                    }
+                    // append newline
+                    networkStream.WriteByte(0xa);
+
+                    await networkStream.FlushAsync();
+                }
+
+                catch(ObjectDisposedException)
+                {
+                    // ignored
                 }
             }
         }
@@ -221,37 +226,6 @@ namespace MiningCore.Stratum
             networkStream.Close();
 
             IsAlive = false;
-        }
-
-        public PooledArraySegment<byte> Serialize(object payload)
-        {
-            var buf = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
-
-            try
-            {
-                using (var stream = new MemoryStream(buf, true))
-                {
-                    stream.SetLength(0);
-
-                    using (var writer = new StreamWriter(stream, StratumConstants.Encoding))
-                    {
-                        serializer.Serialize(writer, payload);
-                        writer.Flush();
-
-                        // append newline
-                        stream.WriteByte(0xa);
-
-                        // return buffer
-                        return new PooledArraySegment<byte>(buf, 0, (int)stream.Length);
-                    }
-                }
-            }
-
-            catch (Exception)
-            {
-                ArrayPool<byte>.Shared.Return(buf);
-                throw;
-            }
         }
 
         public T Deserialize<T>(string json)
