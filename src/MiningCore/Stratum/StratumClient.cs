@@ -203,13 +203,14 @@ namespace MiningCore.Stratum
 
                 try
                 {
-                    using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    using (var writer = new StreamWriter(networkStream, 
+                        StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, payload);
-
-                        // append newline
-                        await writer.WriteAsync("\n");
                     }
+
+                    // append newline
+                    networkStream.WriteByte(0xa);
 
                     await networkStream.FlushAsync();
                 }

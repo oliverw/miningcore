@@ -47,11 +47,8 @@ namespace MiningCore.Blockchain.ZCash
         protected decimal blockReward;
         protected decimal rewardFees;
 
-        protected uint coinbaseIndex = 4294967295u;
-        protected uint coinbaseSequence = 4294967295u;
         protected uint txVersionGroupId;
         protected uint txExpiryHeight = 20;
-        protected uint txNJoinSplits = 0;
         protected readonly IHashAlgorithm sha256D = new Sha256D();
         protected byte[] coinbaseInitialHash;
         protected byte[] merkleRoot;

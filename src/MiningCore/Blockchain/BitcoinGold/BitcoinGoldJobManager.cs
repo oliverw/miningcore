@@ -37,14 +37,6 @@ namespace MiningCore.Blockchain.BitcoinGold
             return result;
         }
 
-        /// <summary>
-        /// BTG needs the classic Bitcoin address parsing scheme
-        /// </summary>
-        protected override IDestination AddressToDestination(string address)
-        {
-            return BitcoinUtils.AddressToDestination(address);
-        }
-
         #endregion
     }
 }

@@ -21,11 +21,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -42,10 +39,9 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-        public BitcoinGoldJob()
-        {
-            txVersion = 1u;
-        }
+        // see: https://github.com/BTCGPU/BTCGPU/blob/master/src/chainparams.cpp#L111
+        private static readonly System.Numerics.BigInteger Diff1Legacy = System.Numerics.BigInteger.Parse(
+            "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
 
         #region Overrides of ZCashJob
 
@@ -109,7 +105,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(Diff1Legacy, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
