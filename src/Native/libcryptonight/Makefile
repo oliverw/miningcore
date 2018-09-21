@@ -1,7 +1,7 @@
 CC = gcc
 INC_DIRS = -I.
-CFLAGS = -Wall -c -fPIC -maes -O2 -fpermissive -Wno-strict-aliasing -g $(INC_DIRS)
-CXXFLAGS = -Wall -maes -Wno-unused-function -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 -g $(INC_DIRS)
+CFLAGS = -Wall -c -fPIC -maes -O2 -fpermissive -Wno-strict-aliasing -Wno-sign-compare  -g $(INC_DIRS)
+CXXFLAGS = -Wall -maes -Wno-unused-function -fPIC -fpermissive -Wno-strict-aliasing -Wno-sign-compare -std=c++0x -fexceptions -frtti -O2 -g $(INC_DIRS)
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
 
