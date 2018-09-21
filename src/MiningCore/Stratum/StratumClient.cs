@@ -113,8 +113,7 @@ namespace MiningCore.Stratum
                     else
                         logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
-                    // Go
-                    using (networkStream)
+                    using(networkStream)
                     {
                         await Task.WhenAll(
                             FillReceivePipeAsync(),
@@ -132,6 +131,11 @@ namespace MiningCore.Stratum
                 catch(Exception ex)
                 {
                     onError(this, ex);
+                }
+
+                finally
+                {
+                    logger.Info(() => $"[{ConnectionId}] Connection closed");
                 }
             });
         }
@@ -213,7 +217,8 @@ namespace MiningCore.Stratum
                     serializer.Serialize(writer, payload);
                 }
 
-                networkStream.WriteByte(0xa);  // newline
+                networkStream.WriteByte(0xa);  // terminator
+
                 await networkStream.FlushAsync();
             }
 
@@ -266,14 +271,11 @@ namespace MiningCore.Stratum
                 SequencePosition? position = null;
 
                 if (buffer.Length > MaxInboundRequestLength)
-                {
-                    Disconnect();
                     throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
-                }
 
                 do
                 {
-                    // Scan buffer for line terminator (newline)
+                    // Scan buffer for line terminator
                     position = buffer.PositionOf((byte) '\n');
 
                     if (position != null)
@@ -283,10 +285,10 @@ namespace MiningCore.Stratum
 
                         logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
 
-                        if (!expectingProxyHeader || !HandleProxyHeader(line, proxyProtocol))
+                        if (!expectingProxyHeader || !ProcessProxyHeader(line, proxyProtocol))
                             await ProcessRequestAsync(onRequestAsync, line);
 
-                        // Skip the line
+                        // Skip consumed section
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
                     }
                 } while(position != null);
@@ -303,10 +305,7 @@ namespace MiningCore.Stratum
             var request = Deserialize<JsonRpcRequest>(json);
 
             if (request == null)
-            {
-                Disconnect();
                 throw new JsonException("Unable to deserialize request");
-            }
 
             await onRequestAsync(this, request);
         }
@@ -314,7 +313,7 @@ namespace MiningCore.Stratum
         /// <summary>
         /// Returns true if the line was consumed
         /// </summary>
-        private bool HandleProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
+        private bool ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
         {
             expectingProxyHeader = false;
             var peerAddress = RemoteEndpoint.Address;
