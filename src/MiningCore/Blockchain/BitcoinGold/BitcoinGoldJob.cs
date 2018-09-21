@@ -40,10 +40,6 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-        // see: https://github.com/BTCGPU/BTCGPU/blob/master/src/chainparams.cpp#L111
-        private static readonly System.Numerics.BigInteger Diff1Legacy = System.Numerics.BigInteger.Parse(
-            "00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
-
         protected uint coinbaseIndex = 4294967295u;
         protected uint coinbaseSequence = 4294967295u;
 
@@ -144,7 +140,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(Diff1Legacy, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
