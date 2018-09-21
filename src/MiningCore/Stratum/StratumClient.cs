@@ -206,10 +206,10 @@ namespace MiningCore.Stratum
                     using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, payload);
-                    }
 
-                    // append newline
-                    networkStream.WriteByte(0xa);
+                        // append newline
+                        await writer.WriteAsync("\n");
+                    }
 
                     await networkStream.FlushAsync();
                 }
