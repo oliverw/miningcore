@@ -25,7 +25,6 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +35,6 @@ using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -161,7 +159,7 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected async Task UpdateVarDiffAsync(StratumClient client, bool isIdleUpdate = false)
+        protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
         {
             var context = client.ContextAs<WorkerContextBase>();
 
@@ -196,7 +194,7 @@ namespace MiningCore.Mining
                 {
                     logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
-                    await OnVarDiffUpdateAsync(client, newDiff.Value);
+                    OnVarDiffUpdate(client, newDiff.Value);
                 }
             }
         }
@@ -219,20 +217,19 @@ namespace MiningCore.Mining
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
-                .Concat()
-                .Subscribe(_=> {}, ex =>
+                .Subscribe(_ =>
+                {
+                    UpdateVarDiff(client, true);
+                }, ex =>
                 {
                     logger.Debug(ex, nameof(StartVarDiffIdleUpdate));
                 });
         }
 
-        protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
+        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
-
-            return Task.FromResult(true);
         }
 
         #endregion // VarDiff
