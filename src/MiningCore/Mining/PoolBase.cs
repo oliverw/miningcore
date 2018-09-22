@@ -140,7 +140,6 @@ namespace MiningCore.Mining
         private void EnsureNoZombieClient(StratumClient client)
         {
             Observable.Timer(clock.Now.AddSeconds(10))
-                .Take(1)
                 .Subscribe(_ =>
                 {
                     if (!client.LastReceive.HasValue)
@@ -149,6 +148,9 @@ namespace MiningCore.Mining
 
                         DisconnectClient(client);
                     }
+                }, ex =>
+                {
+                    logger.Error(ex, nameof(EnsureNoZombieClient));
                 });
         }
 
@@ -206,10 +208,12 @@ namespace MiningCore.Mining
         private void StartVarDiffIdleUpdate(StratumClient client, PoolEndpoint poolEndpoint)
         {
             // Check Every Target Time as we adjust the diff to meet target
-            // Diff may not be changed , only be changed when avg is out of the range.
+            // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
             var interval = poolEndpoint.VarDiff.TargetTime;
-            var shareReceivedFromClient = messageBus.Listen<ClientShare>().Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
+
+            var shareReceivedFromClient = messageBus.Listen<ClientShare>()
+                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
 
             Observable
                 .Timer(TimeSpan.FromSeconds(interval))
@@ -219,7 +223,7 @@ namespace MiningCore.Mining
                 .Concat()
                 .Subscribe(_=> {}, ex =>
                 {
-                    logger.Error(ex, nameof(StartVarDiffIdleUpdate));
+                    logger.Debug(ex, nameof(StartVarDiffIdleUpdate));
                 });
         }
 

@@ -335,18 +335,7 @@ namespace MiningCore.Blockchain.Monero
             if (poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Blocks
-                    .Select(x => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJob();
-                        }
-
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
-                    }))
+                    .Select(x => Observable.FromAsync(() => OnNewJob()))
                     .Concat()
                     .Subscribe());
 

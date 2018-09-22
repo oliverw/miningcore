@@ -20,17 +20,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Reactive.Disposables;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
@@ -144,6 +143,7 @@ namespace MiningCore.Stratum
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
+        public CompositeDisposable Disposables { get; } = new CompositeDisposable();
 
         public void SetContext<T>(T value) where T : WorkerContextBase
         {
@@ -194,6 +194,8 @@ namespace MiningCore.Stratum
         public void Disconnect()
         {
             networkStream.Close();
+
+            Disposables.Dispose();
         }
 
         public T Deserialize<T>(string json)
@@ -225,6 +227,11 @@ namespace MiningCore.Stratum
             catch (ObjectDisposedException)
             {
                 // ignored
+            }
+
+            catch (ArgumentException)
+            {
+                // ignored: Stream was not writable raised by StreamWriter ctor if the stream is already closed
             }
         }
 
