@@ -702,7 +702,8 @@ namespace MiningCore
         {
             "libmultihash.dll",
             "libcryptonote.dll",
-            "libcryptonight.dll"
+            "libcryptonight.dll",
+            "libzmq.dll",
         };
 
         /// <summary>

@@ -277,6 +277,10 @@ namespace MiningCore.Stratum
                         logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;
 
+                case InvalidOperationException invOpEx:
+                    // The source completed without providing data to receive
+                    break;
+
                 default:
                     logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;

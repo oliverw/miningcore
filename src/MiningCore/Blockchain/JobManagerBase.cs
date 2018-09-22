@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Reactive;
@@ -35,9 +34,8 @@ using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Notifications.Messages;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using NLog;
+using ZeroMQ;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain
@@ -112,9 +110,10 @@ namespace MiningCore.Blockchain
                             {
                                 try
                                 {
-                                    using(var subSocket = new SubscriberSocket())
+                                    using(var subSocket = new ZSocket(ZSocketType.SUB))
                                     {
                                         //subSocket.Options.ReceiveHighWatermark = 1000;
+                                        subSocket.ReceiveTimeout = btStreamReceiveTimeout;
                                         subSocket.Connect(config.Url);
                                         subSocket.Subscribe(config.Topic);
 
@@ -122,19 +121,19 @@ namespace MiningCore.Blockchain
 
                                         while(!tcs.IsCancellationRequested)
                                         {
-                                            var msg = (NetMQMessage) null;
+                                            var msg = subSocket.ReceiveMessage(out var zerror);
 
-                                            if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 4))
+                                            if (zerror != null && !zerror.Equals(ZError.None))
                                             {
                                                 logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
                                                 break;
                                             }
 
                                             // extract frames
-                                            var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                            var flags = msg.Pop().ConvertToInt32();
-                                            var data = msg.Pop().ToByteArray();
-                                            var timestamp = msg.Pop().ConvertToInt64();
+                                            var topic = msg.Pop().ToString(Encoding.UTF8);
+                                            var flags = msg.Pop().ReadUInt32();
+                                            var data = msg.Pop().Read();
+                                            var timestamp = msg.Pop().ReadInt64();
 
                                             // compressed
                                             if ((flags & 1) == 1)

@@ -11,12 +11,11 @@ using MiningCore.Contracts;
 using MiningCore.Messaging;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
+using ZeroMQ;
 
 namespace MiningCore.Mining
 {
@@ -86,8 +85,9 @@ namespace MiningCore.Mining
                     {
                         try
                         {
-                            using(var subSocket = new SubscriberSocket())
+                            using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
+                                subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
 
                                 // subscribe to all topics
@@ -99,11 +99,11 @@ namespace MiningCore.Mining
                                 while(true)
                                 {
                                     // receive
-                                    var msg = (NetMQMessage) null;
+                                    var msg = subSocket.ReceiveMessage(out var zerror);
 
-                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
+                                    if (zerror != null && !zerror.Equals(ZError.None))
                                     {
-                                        if (receivedOnce)
+                                        if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
                                         {
                                             logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
                                             break;
@@ -114,9 +114,9 @@ namespace MiningCore.Mining
                                     }
 
                                     // extract frames
-                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ToByteArray();
+                                    var topic = msg.Pop().ToString(Encoding.UTF8);
+                                    var flags = msg.Pop().ReadUInt32();
+                                    var data = msg.Pop().Read();
                                     receivedOnce = true;
 
                                     // validate

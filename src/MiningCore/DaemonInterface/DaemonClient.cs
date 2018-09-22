@@ -29,26 +29,22 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Net.WebSockets;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Notifications.Messages;
-using MiningCore.Stratum;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using ZeroMQ;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
@@ -564,7 +560,7 @@ namespace MiningCore.DaemonInterface
                         {
                             try
                             {
-                                using(var subSocket = new SubscriberSocket())
+                                using(var subSocket = new ZSocket(ZSocketType.SUB))
                                 {
                                     //subSocket.Options.ReceiveHighWatermark = 1000;
                                     subSocket.Connect(url);
@@ -574,14 +570,14 @@ namespace MiningCore.DaemonInterface
 
                                     while(!tcs.IsCancellationRequested)
                                     {
-                                        var msg = subSocket.ReceiveMultipartMessage(numMsgSegments);
+                                        var msg = subSocket.ReceiveMessage();
 
                                         // Export all frame data as array of PooledArraySegments
                                         var result = msg.Select(x =>
                                         {
-                                            var buf = ArrayPool<byte>.Shared.Rent(x.BufferSize);
-                                            Array.Copy(x.ToByteArray(), buf, x.BufferSize);
-                                            return new PooledArraySegment<byte>(buf, 0, x.BufferSize);
+                                            var buf = new PooledArraySegment<byte>((int) x.Length);
+                                            x.Read(buf.Array, 0, (int) x.Length);
+                                            return buf;
                                         }).ToArray();
 
                                         obs.OnNext(result);

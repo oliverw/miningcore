@@ -136,12 +136,28 @@ namespace MiningCore.Stratum
 
                 catch(ObjectDisposedException)
                 {
-                    onCompleted(this);
+                    try
+                    {
+                        onCompleted(this);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
                 }
 
                 catch(Exception ex)
                 {
-                    onError(this, ex);
+                    try
+                    {
+                        onError(this, ex);
+                    }
+
+                    catch (Exception ex2)
+                    {
+                        logger.Error(ex2);
+                    }
                 }
 
                 finally
