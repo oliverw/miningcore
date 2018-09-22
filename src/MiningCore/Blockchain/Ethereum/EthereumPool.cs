@@ -243,39 +243,47 @@ namespace MiningCore.Blockchain.Ethereum
             }
         }
 
-        protected virtual Task OnNewJob(object jobParams)
+        protected virtual async Task OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => $"Broadcasting job");
 
-            var tasks = ForEachClient(async client =>
+            try
             {
-                var context = client.ContextAs<EthereumWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
+                var tasks = ForEachClient(async client =>
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<EthereumWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
+
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // varDiff: if the client has a pending difficulty change, apply it now
+                        if (context.ApplyPendingDifficulty())
+                            await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+
+                        // send job
+                        await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
                     }
+                });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if (context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                await Task.WhenAll(tasks);
+            }
 
-                    // send job
-                    await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
-                }
-            });
-
-            return Task.WhenAll(tasks);
+            catch(Exception ex)
+            {
+                logger.Error(ex, nameof(OnNewJob));
+            }
         }
 
         #region Overrides
@@ -290,7 +298,18 @@ namespace MiningCore.Blockchain.Ethereum
             if (poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(x => Observable.FromAsync(() => OnNewJob(x)))
+                    .Select(x => Observable.FromAsync(async () =>
+                    {
+                        try
+                        {
+                            await OnNewJob(x);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex);
+                        }
+                    }))
                     .Concat()
                     .Subscribe());
 

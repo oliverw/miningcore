@@ -495,7 +495,18 @@ namespace MiningCore.Blockchain.Monero
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(1))
-                .Select(via => Observable.FromAsync(UpdateNetworkStatsAsync))
+                .Select(via =>  Observable.FromAsync(async ()=>
+                {
+                    try
+                    {
+                        await UpdateNetworkStatsAsync();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }))
                 .Concat()
                 .Subscribe();
 

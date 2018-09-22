@@ -200,39 +200,47 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected override Task OnNewJob(object jobParams)
+        protected override async Task OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => $"Broadcasting job");
 
-            var tasks = ForEachClient(async client =>
+            try
             {
-                var context = client.ContextAs<BitcoinWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized)
+                var tasks = ForEachClient(async client =>
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<BitcoinWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
+
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // varDiff: if the client has a pending difficulty change, apply it now
+                        if (context.ApplyPendingDifficulty())
+                            await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+
+                        // send job
+                        await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                     }
+                });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if (context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                await Task.WhenAll(tasks);
+            }
 
-                    // send job
-                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-                }
-            });
-
-            return Task.WhenAll(tasks);
+            catch(Exception ex)
+            {
+                logger.Error(ex, nameof(OnNewJob));
+            }
         }
 
         public override double HashrateFromShares(double shares, double interval)

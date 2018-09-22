@@ -285,34 +285,42 @@ namespace MiningCore.Blockchain.Monero
             return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
         }
 
-        private Task OnNewJob()
+        private async Task OnNewJob()
         {
             logger.Info(() => $"Broadcasting job");
 
-            var tasks = ForEachClient(async client =>
+            try
             {
-                var context = client.ContextAs<MoneroWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized)
+                var tasks = ForEachClient(async client =>
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<MoneroWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
+
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // send job
+                        var job = CreateWorkerJob(client);
+                        await client.NotifyAsync(MoneroStratumMethods.JobNotify, job);
                     }
+                });
 
-                    // send job
-                    var job = CreateWorkerJob(client);
-                    await client.NotifyAsync(MoneroStratumMethods.JobNotify, job);
-                }
-            });
+                await Task.WhenAll(tasks);
+            }
 
-            return Task.WhenAll(tasks);
+            catch (Exception ex)
+            {
+                logger.Error(ex, nameof(OnNewJob));
+            }
         }
 
         #region Overrides
@@ -327,7 +335,18 @@ namespace MiningCore.Blockchain.Monero
             if (poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Blocks
-                    .Select(x => Observable.FromAsync(() => OnNewJob()))
+                    .Select(x => Observable.FromAsync(async () =>
+                    {
+                        try
+                        {
+                            await OnNewJob();
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex);
+                        }
+                    }))
                     .Concat()
                     .Subscribe());
 

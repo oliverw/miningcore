@@ -215,20 +215,12 @@ namespace MiningCore.Mining
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Select(x => Observable.FromAsync(async () =>
-                {
-                    try
-                    {
-                        await UpdateVarDiffAsync(client, true);
-                    }
-
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                }))
+                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
                 .Concat()
-                .Subscribe();
+                .Subscribe(_=> {}, ex =>
+                {
+                    logger.Error(ex, nameof(StartVarDiffIdleUpdate));
+                });
         }
 
         protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
