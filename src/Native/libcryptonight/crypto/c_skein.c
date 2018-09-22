@@ -47,9 +47,9 @@ typedef struct                               /*  512-bit Skein hash context stru
 } Skein_512_Ctxt_t;
 
 /*   Skein APIs for (incremental) "straight hashing" */
-static int  Skein_512_Init  (Skein_512_Ctxt_t *ctx, size_t hashBitLen);
-static int  Skein_512_Update(Skein_512_Ctxt_t *ctx, const u08b_t *msg, size_t msgByteCnt);
-static int  Skein_512_Final (Skein_512_Ctxt_t *ctx, u08b_t * hashVal);
+static SkeinHashReturn  Skein_512_Init  (Skein_512_Ctxt_t *ctx, size_t hashBitLen);
+static SkeinHashReturn  Skein_512_Update(Skein_512_Ctxt_t *ctx, const u08b_t *msg, size_t msgByteCnt);
+static SkeinHashReturn  Skein_512_Final (Skein_512_Ctxt_t *ctx, u08b_t * hashVal);
 
 #ifndef SKEIN_TREE_HASH
 #define SKEIN_TREE_HASH (1)
@@ -462,7 +462,7 @@ static void Skein_512_Process_Block(Skein_512_Ctxt_t *ctx,const u08b_t *blkPtr,s
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /* init the context for a straight hashing operation  */
-static SkeinHashReturn Skein_512_Init(Skein_512_Ctxt_t *ctx, size_t hashBitLen)
+static int Skein_512_Init(Skein_512_Ctxt_t *ctx, size_t hashBitLen)
     {
     union
         {
@@ -503,7 +503,7 @@ static SkeinHashReturn Skein_512_Init(Skein_512_Ctxt_t *ctx, size_t hashBitLen)
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /* process the input bytes */
-static SkeinHashReturn Skein_512_Update(Skein_512_Ctxt_t *ctx, const u08b_t *msg, size_t msgByteCnt)
+static int Skein_512_Update(Skein_512_Ctxt_t *ctx, const u08b_t *msg, size_t msgByteCnt)
     {
     size_t n;
 
@@ -551,7 +551,7 @@ static SkeinHashReturn Skein_512_Update(Skein_512_Ctxt_t *ctx, const u08b_t *msg
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /* finalize the hash computation and output the result */
-static SkeinHashReturn Skein_512_Final(Skein_512_Ctxt_t *ctx, u08b_t *hashVal)
+static int Skein_512_Final(Skein_512_Ctxt_t *ctx, u08b_t *hashVal)
     {
     size_t i,n,byteCnt;
     u64b_t X[SKEIN_512_STATE_WORDS];
