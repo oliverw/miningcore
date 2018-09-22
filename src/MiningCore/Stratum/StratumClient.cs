@@ -319,29 +319,14 @@ namespace MiningCore.Stratum
 
                 logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
 
-                try
+                using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                 {
-                    using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                    {
-                        serializer.Serialize(writer, payload);
-                    }
-
-                    networkStream.WriteByte(0xa);  // terminator
-
-                    await networkStream.FlushAsync();
+                    serializer.Serialize(writer, payload);
                 }
 
-                catch (ObjectDisposedException)
-                {
-                    // ignored
-                    break;
-                }
+                networkStream.WriteByte(0xa);  // terminator
 
-                catch (ArgumentException)
-                {
-                    // ignored: Stream was not writable raised by StreamWriter ctor if the stream is already closed
-                    break;
-                }
+                await networkStream.FlushAsync();
             }
         }
 

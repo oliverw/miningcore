@@ -27,9 +27,11 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Reactive;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
@@ -83,6 +85,7 @@ namespace MiningCore.Stratum
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new ConcurrentDictionary<string, X509Certificate2>();
         protected static readonly HashSet<int> ignoredSocketErrors;
+        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new []{ typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
@@ -263,6 +266,15 @@ namespace MiningCore.Stratum
                         logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
                         banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     }
+                    break;
+
+                case ObjectDisposedException odEx:
+                    // socket disposed
+                    break;
+
+                case ArgumentException argEx:
+                    if(argEx.TargetSite != StreamWriterCtor || argEx.ParamName != "stream")
+                        logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;
 
                 default:
