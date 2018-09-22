@@ -135,6 +135,10 @@ namespace MiningCore.Blockchain
                                             var data = msg.Pop().Read();
                                             var timestamp = msg.Pop().ReadInt64();
 
+                                            // TMP FIX
+                                            if (flags != 0 && (flags & 1)== 0)
+                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+
                                             // compressed
                                             if ((flags & 1) == 1)
                                             {
@@ -159,7 +163,6 @@ namespace MiningCore.Blockchain
                                             obs.OnNext(json);
 
                                             // telemetry
-
                                             //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
                                             //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                         }
