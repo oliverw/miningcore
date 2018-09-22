@@ -8,6 +8,7 @@ using System.Threading;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
 using MiningCore.Util;
@@ -132,8 +133,13 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
+                                    // TMP FIX
+                                    if ((flags & ShareRelay.WireFormatMask) == 0)
+                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+
                                     // deserialize
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
+
                                     Share share = null;
 
                                     switch(wireFormat)
