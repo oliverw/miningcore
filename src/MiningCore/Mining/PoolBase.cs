@@ -140,11 +140,19 @@ namespace MiningCore.Mining
             Observable.Timer(clock.Now.AddSeconds(10))
                 .Subscribe(_ =>
                 {
-                    if (!client.LastReceive.HasValue)
+                    try
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        if (client.LastReceive == null)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
-                        DisconnectClient(client);
+                            DisconnectClient(client);
+                        }
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
                     }
                 }, ex =>
                 {
