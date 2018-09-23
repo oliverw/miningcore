@@ -135,10 +135,10 @@ namespace MiningCore.Blockchain
                                                 }
 
                                                 // extract frames
-                                                topic = msg.Pop().ToString(Encoding.UTF8);
-                                                flags = msg.Pop().ReadUInt32();
-                                                data = msg.Pop().Read();
-                                                timestamp = msg.Pop().ReadInt64();
+                                                topic = msg[0].ToString(Encoding.UTF8);
+                                                flags = msg[1].ReadUInt32();
+                                                data = msg[2].Read();
+                                                timestamp = msg[3].ReadInt64();
                                             }
 
                                             // TMP FIX
