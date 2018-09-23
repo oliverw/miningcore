@@ -2,10 +2,8 @@ CC = gcc
 INC_DIRS = -I.
 
 # Temporarily disable optimizations to debug crashes
-#CFLAGS = -g -Wall -c -fPIC -maes -O2 -fpermissive -Wno-fpermissive -Wno-strict-aliasing -Wno-sign-compare $(INC_DIRS)
-#CXXFLAGS = -Wall -maes -Wno-unused-function -fPIC -fpermissive -Wno-strict-aliasing -Wno-sign-compare -std=c++0x -fexceptions -frtti -O2 -g $(INC_DIRS)
-CFLAGS = -g -Wall -c -fPIC -maes -fpermissive -Wno-fpermissive -Wno-strict-aliasing -Wno-sign-compare $(INC_DIRS)
-CXXFLAGS = -g -Wall -maes -Wno-unused-function -fPIC -fpermissive -Wno-strict-aliasing -Wno-sign-compare -std=c++0x -fexceptions -frtti $(INC_DIRS)
+CFLAGS = -g -Wall -c -fPIC -maes -O2 -fpermissive -Wno-fpermissive -Wno-strict-aliasing -Wno-sign-compare $(INC_DIRS)
+CXXFLAGS = -g -Wall -maes -O2 -Wno-unused-function -fPIC -fpermissive -Wno-strict-aliasing -Wno-sign-compare -std=c++0x -fexceptions -frtti $(INC_DIRS)
 
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
