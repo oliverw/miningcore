@@ -99,26 +99,31 @@ namespace MiningCore.Mining
 
                                 while(true)
                                 {
-                                    // receive
-                                    var msg = subSocket.ReceiveMessage(out var zerror);
+                                    string topic;
+                                    uint flags;
+                                    byte[] data;
 
-                                    if (zerror != null && !zerror.Equals(ZError.None))
+                                    // receive
+                                    using(var msg = subSocket.ReceiveMessage(out var zerror))
                                     {
-                                        if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
+                                        if (zerror != null && !zerror.Equals(ZError.None))
                                         {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
+                                            if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
+                                            {
+                                                logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                                break;
+                                            }
+
+                                            // retry
+                                            continue;
                                         }
 
-                                        // retry
-                                        continue;
+                                        // extract frames
+                                        topic = msg.Pop().ToString(Encoding.UTF8);
+                                        flags = msg.Pop().ReadUInt32();
+                                        data = msg.Pop().Read();
+                                        receivedOnce = true;
                                     }
-
-                                    // extract frames
-                                    var topic = msg.Pop().ToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ReadUInt32();
-                                    var data = msg.Pop().Read();
-                                    receivedOnce = true;
 
                                     // validate
                                     if (!topics.Contains(topic))

@@ -570,17 +570,18 @@ namespace MiningCore.DaemonInterface
 
                                     while(!tcs.IsCancellationRequested)
                                     {
-                                        var msg = subSocket.ReceiveMessage();
-
-                                        // Export all frame data as array of PooledArraySegments
-                                        var result = msg.Select(x =>
+                                        using(var msg = subSocket.ReceiveMessage())
                                         {
-                                            var buf = new PooledArraySegment<byte>((int) x.Length);
-                                            x.Read(buf.Array, 0, (int) x.Length);
-                                            return buf;
-                                        }).ToArray();
+                                            // Export all frame data as array of PooledArraySegments
+                                            var result = msg.Select(x =>
+                                            {
+                                                var buf = new PooledArraySegment<byte>((int) x.Length);
+                                                x.Read(buf.Array, 0, (int) x.Length);
+                                                return buf;
+                                            }).ToArray();
 
-                                        obs.OnNext(result);
+                                            obs.OnNext(result);
+                                        }
                                     }
                                 }
                             }

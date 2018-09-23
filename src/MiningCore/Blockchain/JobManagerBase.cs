@@ -121,19 +121,25 @@ namespace MiningCore.Blockchain
 
                                         while(!tcs.IsCancellationRequested)
                                         {
-                                            var msg = subSocket.ReceiveMessage(out var zerror);
+                                            string topic;
+                                            uint flags;
+                                            byte[] data;
+                                            long timestamp;
 
-                                            if (zerror != null && !zerror.Equals(ZError.None))
+                                            using(var msg = subSocket.ReceiveMessage(out var zerror))
                                             {
-                                                logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
-                                                break;
-                                            }
+                                                if (zerror != null && !zerror.Equals(ZError.None))
+                                                {
+                                                    logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
+                                                    break;
+                                                }
 
-                                            // extract frames
-                                            var topic = msg.Pop().ToString(Encoding.UTF8);
-                                            var flags = msg.Pop().ReadUInt32();
-                                            var data = msg.Pop().Read();
-                                            var timestamp = msg.Pop().ReadInt64();
+                                                // extract frames
+                                                topic = msg.Pop().ToString(Encoding.UTF8);
+                                                flags = msg.Pop().ReadUInt32();
+                                                data = msg.Pop().Read();
+                                                timestamp = msg.Pop().ReadInt64();
+                                            }
 
                                             // TMP FIX
                                             if (flags != 0 && (flags & 1)== 0)
