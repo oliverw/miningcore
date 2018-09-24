@@ -298,12 +298,17 @@ namespace MiningCore.Stratum
                     if (position != null)
                     {
                         var slice = buffer.Slice(0, position.Value);
-                        var line = StratumConstants.Encoding.GetString(slice.ToArray());
+                        var mem = SkipBOM(slice);
 
-                        logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
+                        if (mem.Length > 0)
+                        {
+                            var line = StratumConstants.Encoding.GetString(mem.Span);
 
-                        if (!expectingProxyHeader || !ProcessProxyHeader(line, proxyProtocol))
-                            await ProcessRequestAsync(onRequestAsync, line);
+                            logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
+
+                            if (!expectingProxyHeader || !ProcessProxyHeader(line, proxyProtocol))
+                                await ProcessRequestAsync(onRequestAsync, line);
+                        }
 
                         // Skip consumed section
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
@@ -344,6 +349,24 @@ namespace MiningCore.Stratum
 
                 await networkStream.FlushAsync();
             }
+        }
+
+        private ReadOnlyMemory<byte> SkipBOM(ReadOnlySequence<byte> slice)
+        {
+            var bytes = slice.ToArray();
+            var start = 0;
+
+            if (bytes.Length >= 3 &&
+                bytes[0] == 0xEF &&
+                bytes[1] == 0xBB &&
+                bytes[2] == 0xBF)
+            {
+                start = 3;
+
+                logger.Info(() => "Stripped BOM");
+            }
+
+            return new ReadOnlyMemory<byte>(bytes, start, bytes.Length - start);
         }
 
         /// <summary>
