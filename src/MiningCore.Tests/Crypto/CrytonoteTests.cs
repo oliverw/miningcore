@@ -11,8 +11,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight()
         {
             var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
-            var result = LibCryptonight.Cryptonight(blobConverted, 0).ToHexString();
 
+            var result = LibCryptonight.Cryptonight(blobConverted, 0).ToHexString();
+            Assert.Equal("a845ffbdf83ae9a8ffa504a1011efbd5ed2294bb9da591d3b583740568402c00", result);
+
+            result = LibCryptonight.Cryptonight(blobConverted, 0).ToHexString();
             Assert.Equal("a845ffbdf83ae9a8ffa504a1011efbd5ed2294bb9da591d3b583740568402c00", result);
         }
 
@@ -20,8 +23,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight_Variant_1()
         {
             var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
-            var result = LibCryptonight.Cryptonight(blobConverted, 1).ToHexString();
 
+            var result = LibCryptonight.Cryptonight(blobConverted, 1).ToHexString();
+            Assert.Equal("c41ec6434df8b2307ff3105ae15206f3fbdf5a99b35879c0a27b8b85a8e2704f", result);
+
+            result = LibCryptonight.Cryptonight(blobConverted, 1).ToHexString();
             Assert.Equal("c41ec6434df8b2307ff3105ae15206f3fbdf5a99b35879c0a27b8b85a8e2704f", result);
         }
 
@@ -50,8 +56,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight_Light()
         {
             var blobConverted = "0106f1adafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42597710c48c6d885e2622f40f82ecd9b9fd538f28df9b0557e07cd3237a31c76569ada98001".HexToByteArray();
-            var result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
 
+            var result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
+            Assert.Equal("0769caee428a232cffb76fa200f174ff962734f24e7b3bf8d1b0d4e8ba6ceebf", result);
+
+            result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
             Assert.Equal("0769caee428a232cffb76fa200f174ff962734f24e7b3bf8d1b0d4e8ba6ceebf", result);
         }
 
@@ -59,8 +68,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight_Light_Variant_1()
         {
             var blobConverted = "0106f1adafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42597710c48c6d885e2622f40f82ecd9b9fd538f28df9b0557e07cd3237a31c76569ada98001".HexToByteArray();
-            var result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
 
+            var result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
+            Assert.Equal("0769caee428a232cffb76fa200f174ff962734f24e7b3bf8d1b0d4e8ba6ceebf", result);
+
+            result = LibCryptonight.CryptonightLight(blobConverted, 0).ToHexString();
             Assert.Equal("0769caee428a232cffb76fa200f174ff962734f24e7b3bf8d1b0d4e8ba6ceebf", result);
         }
 
@@ -68,8 +80,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight_Heavy()
         {
             var blobConverted = "0106f1adafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42597710c48c6d885e2622f40f82ecd9b9fd538f28df9b0557e07cd3237a31c76569ada98001".HexToByteArray();
-            var result = LibCryptonight.CryptonightHeavy(blobConverted, 0).ToHexString();
 
+            var result = LibCryptonight.CryptonightHeavy(blobConverted, 0).ToHexString();
+            Assert.Equal("1559665f933c0aab5bf2b11db406b9db170a78d82d180ee5a7cf88f1c2041f9e", result);
+
+            result = LibCryptonight.CryptonightHeavy(blobConverted, 0).ToHexString();
             Assert.Equal("1559665f933c0aab5bf2b11db406b9db170a78d82d180ee5a7cf88f1c2041f9e", result);
         }
 
@@ -77,8 +92,11 @@ namespace MiningCore.Tests.Crypto
         public void Crytonight_Heavy_Variant_1()
         {
             var blobConverted = "0106f1adafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42597710c48c6d885e2622f40f82ecd9b9fd538f28df9b0557e07cd3237a31c76569ada98001".HexToByteArray();
-            var result = LibCryptonight.CryptonightHeavy(blobConverted, 1).ToHexString();
 
+            var result = LibCryptonight.CryptonightHeavy(blobConverted, 1).ToHexString();
+            Assert.Equal("342418ec4bf806aafb102b34d64fc33ab91d89ad40786b92d1b54ceeb4d50822", result);
+
+            result = LibCryptonight.CryptonightHeavy(blobConverted, 1).ToHexString();
             Assert.Equal("342418ec4bf806aafb102b34d64fc33ab91d89ad40786b92d1b54ceeb4d50822", result);
         }
 

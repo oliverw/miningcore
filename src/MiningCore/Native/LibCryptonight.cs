@@ -18,7 +18,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using MiningCore.Buffers;
 using MiningCore.Contracts;
 
@@ -26,14 +28,22 @@ namespace MiningCore.Native
 {
     public static unsafe class LibCryptonight
     {
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr cryptonight_alloc_context();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_free_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void cryptonight_free_context(IntPtr ptr);
+
         [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight(byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_light_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_light(byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight_light(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_heavy(byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
+
+        private static readonly ThreadLocal<IntPtr> ctx = new ThreadLocal<IntPtr>(cryptonight_alloc_context);
 
         public static PooledArraySegment<byte> Cryptonight(byte[] data, int variant)
         {
@@ -45,7 +55,7 @@ namespace MiningCore.Native
             {
                 fixed(byte* output = result.Array)
                 {
-                    cryptonight(input, output, (uint) data.Length, variant);
+                    cryptonight(ctx.Value, input, output, (uint) data.Length, variant);
                 }
             }
 
@@ -62,7 +72,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cryptonight_light(input, output, (uint)data.Length, variant);
+                    cryptonight_light(ctx.Value, input, output, (uint)data.Length, variant);
                 }
             }
 
@@ -79,7 +89,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cryptonight_heavy(input, output, (uint)data.Length, variant);
+                    cryptonight_heavy(ctx.Value, input, output, (uint)data.Length, variant);
                 }
             }
 
