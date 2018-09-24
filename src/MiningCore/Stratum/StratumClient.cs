@@ -319,7 +319,7 @@ namespace MiningCore.Stratum
 
         private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync, string json)
         {
-            var request = Deserialize<JsonRpcRequest>(json);
+            var request = Deserialize<JsonRpcRequest>(json.Trim());
 
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
