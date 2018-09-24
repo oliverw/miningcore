@@ -47,8 +47,6 @@ namespace MiningCore.Blockchain.Flo
 
         #region Overrides
 
-        protected override string LogCat => "Flo Job Manager";
-
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             extraFloPoolConfig = poolConfig.Extra.SafeExtensionDataAs<FloPoolConfigExtra>();
@@ -58,7 +56,7 @@ namespace MiningCore.Blockchain.Flo
 
         protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             try
             {
@@ -70,7 +68,7 @@ namespace MiningCore.Blockchain.Flo
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
                 {
-                    logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+                    logger.Warn(() => $"Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
                     return (false, forceUpdate);
                 }
 
@@ -96,9 +94,9 @@ namespace MiningCore.Blockchain.Flo
                         if (isNew)
                         {
                             if (via != null)
-                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
                             else
-                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                             validJobs.Clear();
 
@@ -126,7 +124,7 @@ namespace MiningCore.Blockchain.Flo
 
             catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+                logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
 
             return (false, forceUpdate);

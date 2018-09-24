@@ -23,7 +23,6 @@ using AutoMapper;
 using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
@@ -36,7 +35,7 @@ namespace MiningCore.Blockchain.Bitcoin
         CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
         CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
         CoinType.MOON, CoinType.XVG, CoinType.PAK, CoinType.CANN,
-        CoinType.RVN, CoinType.PGN)]
+        CoinType.RVN, CoinType.PGN, CoinType.BCD)]
     public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
     {
         public BitcoinPool(IComponentContext ctx,

@@ -25,7 +25,6 @@ using System.Linq;
 using System.Net;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +35,6 @@ using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
-using MiningCore.Notifications;
 using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -92,8 +90,6 @@ namespace MiningCore.Mining
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
             new Dictionary<PoolEndpoint, VarDiffManager>();
 
-        protected override string LogCat => "Pool";
-
         protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
 
@@ -142,15 +138,25 @@ namespace MiningCore.Mining
         private void EnsureNoZombieClient(StratumClient client)
         {
             Observable.Timer(clock.Now.AddSeconds(10))
-                .Take(1)
                 .Subscribe(_ =>
                 {
-                    if (!client.LastReceive.HasValue)
+                    try
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                        if (client.LastReceive == null)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
-                        DisconnectClient(client);
+                            DisconnectClient(client);
+                        }
                     }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }, ex =>
+                {
+                    logger.Error(ex, nameof(EnsureNoZombieClient));
                 });
         }
 
@@ -161,13 +167,13 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected async Task UpdateVarDiffAsync(StratumClient client, bool isIdleUpdate = false)
+        protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
         {
             var context = client.ContextAs<WorkerContextBase>();
 
             if (context.VarDiff != null)
             {
-                logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
+                logger.Debug(() => $"[{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
 
                 // get or create manager
                 VarDiffManager varDiffManager;
@@ -194,9 +200,9 @@ namespace MiningCore.Mining
 
                 if (newDiff != null)
                 {
-                    logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
+                    logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
-                    await OnVarDiffUpdateAsync(client, newDiff.Value);
+                    OnVarDiffUpdate(client, newDiff.Value);
                 }
             }
         }
@@ -208,27 +214,30 @@ namespace MiningCore.Mining
         private void StartVarDiffIdleUpdate(StratumClient client, PoolEndpoint poolEndpoint)
         {
             // Check Every Target Time as we adjust the diff to meet target
-            // Diff may not be changed , only be changed when avg is out of the range.
+            // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
             var interval = poolEndpoint.VarDiff.TargetTime;
-            var shareReceivedFromClient = messageBus.Listen<ClientShare>().Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
+
+            var shareReceivedFromClient = messageBus.Listen<ClientShare>()
+                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
 
             Observable
                 .Timer(TimeSpan.FromSeconds(interval))
                 .TakeUntil(shareReceivedFromClient)
                 .Take(1)
-                .Where(x => client.IsAlive)
-                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
-                .Concat()
-                .Subscribe();
+                .Subscribe(_ =>
+                {
+                    UpdateVarDiff(client, true);
+                }, ex =>
+                {
+                    logger.Debug(ex, nameof(StartVarDiffIdleUpdate));
+                });
         }
 
-        protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
+        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
-
-            return Task.FromResult(true);
         }
 
         #endregion // VarDiff
@@ -252,7 +261,7 @@ namespace MiningCore.Mining
         {
             try
             {
-                logger.Debug(() => $"[{LogCat}] Loading pool stats");
+                logger.Debug(() => $"Loading pool stats");
 
                 var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
 
@@ -265,7 +274,7 @@ namespace MiningCore.Mining
 
             catch(Exception ex)
             {
-                logger.Warn(ex, () => $"[{LogCat}] Unable to load pool stats");
+                logger.Warn(ex, () => $"Unable to load pool stats");
             }
         }
 
@@ -290,7 +299,7 @@ namespace MiningCore.Mining
                         (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
                             clusterConfig.Banning?.BanOnInvalidShares == true))
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                        logger.Info(() => $"[{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
                         banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
@@ -350,7 +359,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"[{LogCat}] Launching ...");
+            logger.Info(() => $"Starting Pool ...");
 
             try
             {
@@ -367,7 +376,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                     StartListeners(ipEndpoints);
                 }
 
-                logger.Info(() => $"[{LogCat}] Online");
+                logger.Info(() => $"Pool Online");
                 OutputPoolInfo();
             }
 

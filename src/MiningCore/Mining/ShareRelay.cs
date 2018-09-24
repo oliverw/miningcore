@@ -7,11 +7,10 @@ using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
 using MiningCore.Messaging;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using NLog;
 using ProtoBuf;
+using ZeroMQ;
 
 namespace MiningCore.Mining
 {
@@ -32,7 +31,7 @@ namespace MiningCore.Mining
         private IDisposable queueSub;
         private readonly int QueueSizeWarningThreshold = 1024;
         private bool hasWarnedAboutBacklogSize;
-        private PublisherSocket pubSocket;
+        private ZSocket pubSocket;
         private readonly JsonSerializerSettings serializerSettings;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -54,7 +53,7 @@ namespace MiningCore.Mining
 
             messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
 
-            pubSocket = new PublisherSocket();
+            pubSocket = new ZSocket(ZSocketType.PUB);
 
             if (!clusterConfig.ShareRelay.Connect)
             {
@@ -100,17 +99,24 @@ namespace MiningCore.Mining
                     try
                     {
                         var flags = (int) WireFormat.ProtocolBuffers;
-                        var msg = new NetMQMessage(2);
 
-                        using(var stream = new MemoryStream())
+                        using (var msg = new ZMessage())
                         {
-                            Serializer.Serialize(stream, share);
-                            msg.Push(stream.ToArray());
-                        }
+                            // Topic frame
+                            msg.Add(new ZFrame(share.PoolId));
 
-                        msg.Push(flags);
-                        msg.Push(share.PoolId);
-                        pubSocket.SendMultipartMessage(msg);
+                            // Frame 2: flags
+                            msg.Add(new ZFrame(flags));
+
+                            // Frame 3: payload
+                            using(var stream = new MemoryStream())
+                            {
+                                Serializer.Serialize(stream, share);
+                                msg.Add(new ZFrame(stream.ToArray()));
+                            }
+
+                            pubSocket.SendMessage(msg);
+                        }
                     }
 
                     catch(Exception ex)

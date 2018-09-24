@@ -44,7 +44,6 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Extensions;
 using MiningCore.Mining;
-using MiningCore.Native;
 using MiningCore.Notifications;
 using MiningCore.Payments;
 using MiningCore.Persistence.Dummy;
@@ -693,8 +692,6 @@ namespace MiningCore
 
         private static void TouchNativeLibs()
         {
-            Console.WriteLine(LibCryptonote.CryptonightHashSlow(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
-            Console.WriteLine(LibCryptonote.CryptonightHashFast(Encoding.UTF8.GetBytes("test")).ToHexString());
             Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
         }
 
@@ -704,7 +701,9 @@ namespace MiningCore
         private static readonly string[] NativeLibs =
         {
             "libmultihash.dll",
-            "libcryptonote.dll"
+            "libcryptonote.dll",
+            "libcryptonight.dll",
+            "libzmq.dll",
         };
 
         /// <summary>

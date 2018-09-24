@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Reactive;
@@ -35,9 +34,8 @@ using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Notifications.Messages;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using NLog;
+using ZeroMQ;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.Blockchain
@@ -66,24 +64,22 @@ namespace MiningCore.Blockchain
         protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
         protected TimeSpan btStreamReceiveTimeout = TimeSpan.FromSeconds(60 * 10);
 
-        protected virtual string LogCat { get; } = "Job Manager";
-
         protected abstract void ConfigureDaemons();
 
         protected virtual async Task StartDaemonAsync(CancellationToken ct)
         {
             while(!await AreDaemonsHealthyAsync())
             {
-                logger.Info(() => $"[{LogCat}] Waiting for daemons to come online ...");
+                logger.Info(() => $"Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
 
-            logger.Info(() => $"[{LogCat}] All daemons online");
+            logger.Info(() => $"All daemons online");
 
             while(!await AreDaemonsConnectedAsync())
             {
-                logger.Info(() => $"[{LogCat}] Waiting for daemons to connect to peers ...");
+                logger.Info(() => $"Waiting for daemons to connect to peers ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
@@ -114,9 +110,10 @@ namespace MiningCore.Blockchain
                             {
                                 try
                                 {
-                                    using(var subSocket = new SubscriberSocket())
+                                    using(var subSocket = new ZSocket(ZSocketType.SUB))
                                     {
                                         //subSocket.Options.ReceiveHighWatermark = 1000;
+                                        subSocket.ReceiveTimeout = btStreamReceiveTimeout;
                                         subSocket.Connect(config.Url);
                                         subSocket.Subscribe(config.Topic);
 
@@ -124,19 +121,29 @@ namespace MiningCore.Blockchain
 
                                         while(!tcs.IsCancellationRequested)
                                         {
-                                            var msg = (NetMQMessage) null;
+                                            string topic;
+                                            uint flags;
+                                            byte[] data;
+                                            long timestamp;
 
-                                            if (!subSocket.TryReceiveMultipartMessage(btStreamReceiveTimeout, ref msg, 4))
+                                            using(var msg = subSocket.ReceiveMessage(out var zerror))
                                             {
-                                                logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
-                                                break;
+                                                if (zerror != null && !zerror.Equals(ZError.None))
+                                                {
+                                                    logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
+                                                    break;
+                                                }
+
+                                                // extract frames
+                                                topic = msg[0].ToString(Encoding.UTF8);
+                                                flags = msg[1].ReadUInt32();
+                                                data = msg[2].Read();
+                                                timestamp = msg[3].ReadInt64();
                                             }
 
-                                            // extract frames
-                                            var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                            var flags = msg.Pop().ConvertToInt32();
-                                            var data = msg.Pop().ToByteArray();
-                                            var timestamp = msg.Pop().ConvertToInt64();
+                                            // TMP FIX
+                                            if (flags != 0 && (flags & 1)== 0)
+                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
 
                                             // compressed
                                             if ((flags & 1) == 1)
@@ -162,8 +169,8 @@ namespace MiningCore.Blockchain
                                             obs.OnNext(json);
 
                                             // telemetry
-                                            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
-                                                TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
+                                            //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
+                                            //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                         }
                                     }
                                 }
@@ -208,13 +215,13 @@ namespace MiningCore.Blockchain
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"[{LogCat}] Launching ...");
+            logger.Info(() => $"Starting Job Manager ...");
 
             await StartDaemonAsync(ct);
             await EnsureDaemonsSynchedAsync(ct);
             await PostStartInitAsync(ct);
 
-            logger.Info(() => $"[{LogCat}] Online");
+            logger.Info(() => $"Job Manager Online");
         }
 
         #endregion // API-Surface

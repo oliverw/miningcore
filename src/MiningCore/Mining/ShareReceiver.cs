@@ -8,15 +8,15 @@ using System.Threading;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
+using ZeroMQ;
 
 namespace MiningCore.Mining
 {
@@ -86,8 +86,9 @@ namespace MiningCore.Mining
                     {
                         try
                         {
-                            using(var subSocket = new SubscriberSocket())
+                            using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
+                                subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
 
                                 // subscribe to all topics
@@ -98,26 +99,31 @@ namespace MiningCore.Mining
 
                                 while(true)
                                 {
-                                    // receive
-                                    var msg = (NetMQMessage) null;
+                                    string topic;
+                                    uint flags;
+                                    byte[] data;
 
-                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
+                                    // receive
+                                    using(var msg = subSocket.ReceiveMessage(out var zerror))
                                     {
-                                        if (receivedOnce)
+                                        if (zerror != null && !zerror.Equals(ZError.None))
                                         {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
+                                            if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
+                                            {
+                                                logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                                break;
+                                            }
+
+                                            // retry
+                                            continue;
                                         }
 
-                                        // retry
-                                        continue;
+                                        // extract frames
+                                        topic = msg[0].ToString(Encoding.UTF8);
+                                        flags = msg[1].ReadUInt32();
+                                        data = msg[2].Read();
+                                        receivedOnce = true;
                                     }
-
-                                    // extract frames
-                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ToByteArray();
-                                    receivedOnce = true;
 
                                     // validate
                                     if (!topics.Contains(topic))
@@ -132,8 +138,13 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
+                                    // TMP FIX
+                                    if ((flags & ShareRelay.WireFormatMask) == 0)
+                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+
                                     // deserialize
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
+
                                     Share share = null;
 
                                     switch(wireFormat)

@@ -143,6 +143,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             { CoinType.BTC, "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm" },
             { CoinType.BCH, "1LJGTzNDTuTvkHpTxNSdmAEBAXAnEHDVqQ" },
+            { CoinType.BCD, "1CdZ2PXisTRxyB4bkvq5oka9YjBHGU5Z36" },
             { CoinType.LTC, "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC" },
             { CoinType.DOGE, "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q" },
             { CoinType.NMC, "NDSLDpFEcTbuRVcWHdJyiRZThVAcb5Z79o" },

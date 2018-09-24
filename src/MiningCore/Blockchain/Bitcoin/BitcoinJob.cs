@@ -46,7 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IMasterClock clock;
         protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
-        protected decimal blockRewardMultiplier;
+        protected decimal blockRewardMultiplier = 1.0m;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
 
-                // done	
+                // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
             }
@@ -432,7 +432,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
+            bool isPoS, double shareMultiplier, decimal? blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -457,7 +457,9 @@ namespace MiningCore.Blockchain.Bitcoin
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
-            this.blockRewardMultiplier = blockrewardMultiplier;
+
+            if(blockrewardMultiplier.HasValue)
+                this.blockRewardMultiplier = blockrewardMultiplier.Value;
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;

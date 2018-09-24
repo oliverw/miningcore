@@ -34,6 +34,12 @@ namespace MiningCore.Native
         [DllImport("libmultihash", EntryPoint = "x11_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int x11(byte* input, byte* output, uint inputLength);
 
+        [DllImport("libmultihash", EntryPoint = "x13_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int x13(byte* input, byte* output, uint inputLength);
+
+        [DllImport("libmultihash", EntryPoint = "x13_bcd_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int x13_bcd(byte* input, byte* output);
+
         [DllImport("libmultihash", EntryPoint = "x15_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int x15(byte* input, byte* output, uint inputLength);
 

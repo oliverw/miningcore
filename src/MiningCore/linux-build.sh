@@ -20,3 +20,8 @@ cp ../Native/libcryptonote/libcryptonote.so $BUILDIR
 (cd ../Native/libmultihash && make)
 cp ../Native/libmultihash/libmultihash.so $BUILDIR
 (cd ../Native/libmultihash && make clean)
+
+# build libcryptonight
+(cd ../Native/libcryptonight && make)
+cp ../Native/libcryptonight/libcryptonight.so $BUILDIR
+(cd ../Native/libcryptonight && make clean)
