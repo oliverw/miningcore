@@ -29,13 +29,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Blake_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Blake();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Blake2s_Hash()
         {
             var hasher = new Blake2s();
@@ -44,13 +37,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("c3ee938582d70ccd9a323b6097357449365d1fdfbbe2ecd7ee44e4bdbbb24392", result);
-        }
-
-        [Fact]
-        public void Blake2s_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Blake2s();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -65,13 +51,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Groestl_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Groestl();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Kezzak_Hash()
         {
             var hasher = new Kezzak();
@@ -80,13 +59,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("00b11e72b948db16a181437150237fa247f9b5932758b7d3f648832ed88e7919", result);
-        }
-
-        [Fact]
-        public void Kezzak_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Kezzak();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -101,13 +73,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Scrypt_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Scrypt(1024, 1);
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void NeoScrypt_Hash()
         {
             var hasher = new NeoScrypt(0);
@@ -116,13 +81,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("7915d56de262bf23b1fb9104cf5d2a13fcbed2f6b4b9b657309c222b09f54bc0", result);
-        }
-
-        [Fact]
-        public void NeoScrypt_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new NeoScrypt(0);
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -138,14 +96,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void ScryptN_Hash_Should_Throw_On_Null_Input()
-        {
-            var clock = new MockMasterClock { CurrentTime = new DateTime(2017, 10, 16) };
-            var hasher = new ScryptN(clock);
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Lyra2Rev2_Hash()
         {
             var hasher = new Lyra2Rev2();
@@ -154,13 +104,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("5cb1eea767131ab0ea446121854dffbfec1bf1f55938e9f877f9bae735a1c481", result);
-        }
-
-        [Fact]
-        public void Lyra2Rev2_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Lyra2Rev2();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -182,13 +125,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha256D_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha256D();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Sha256S_Hash()
         {
             var hasher = new Sha256S();
@@ -197,13 +133,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("bd75a82b9957d6d043076dea52262635042693f1fe23bcadadaecc908e1e5cc6", result);
-        }
-
-        [Fact]
-        public void Sha256S_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha256S();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -218,13 +147,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void X11_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X11();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void X13_Hash()
         {
             var hasher = new X13();
@@ -233,13 +155,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("55b2b7f940ffb87bdb138ebdb04b8f823aa55736852c06ea9de46124f85d70e9", result);
-        }
-
-        [Fact]
-        public void X13_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X13();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -254,13 +169,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void X13_BCD_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X13BCD();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void X17_Hash()
         {
             var hasher = new X17();
@@ -269,13 +177,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("6a9a4f558168e60241e46fe44365021c4d7e7344144ab1739d6fb0125ac4c592", result);
-        }
-
-        [Fact]
-        public void X17_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X17();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -290,13 +191,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void X16R_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X16R();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void X16S_Hash()
         {
             var hasher = new X16S();
@@ -305,13 +199,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("c1b0a424e65b3e01e89de43c4007803be68164320aed1a8ab9a34924cfcc5055", result);
-        }
-
-        [Fact]
-        public void X16S_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new X16S();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -326,13 +213,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Skein_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha256S();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Qubit_Hash()
         {
             var hasher = new Qubit();
@@ -341,13 +221,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("93c1471bb55081ae14ffb78d18f1e1d77844013efb5b32e95269c1a9afe88a71", result);
-        }
-
-        [Fact]
-        public void Qubit_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha256S();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -362,13 +235,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void GroestlMyriad_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha256S();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void DigestReverser_Hash()
         {
             var hasher = new DigestReverser(new Sha256S());
@@ -377,13 +243,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("c65c1e8e90ccaeadadbc23fef193260435262652ea6d0743d0d657992ba875bd", result);
-        }
-
-        [Fact]
-        public void DigestReverser_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new DigestReverser(new Sha256S());
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
 
         [Fact]
@@ -428,13 +287,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void EquihashVerifier_Should_Throw_On_Null_Input()
-        {
-            var hasher = new EquihashSolver_ZCash();
-            Assert.Throws<ArgumentNullException>(() => hasher.Verify(null, null));
-        }
-
-        [Fact]
         public void EquihashVerifier_Should_Throw_On_Wrong_Argument_Length()
         {
             var hasher = new EquihashSolver_ZCash();
@@ -454,13 +306,6 @@ namespace MiningCore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha3_256_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha3_256();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
-        }
-
-        [Fact]
         public void Sha3_512_Hash()
         {
             var hasher = new Sha3_512();
@@ -469,13 +314,6 @@ namespace MiningCore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("e0883cffc9ff0ecf41fca8ade29dba1fc0df4b15beccc06ca03283805e176e497f0dd33db3bda375b199a4bb5eb1bb3ba884f3cc26f65f7acf08e1307058cc8d", result);
-        }
-
-        [Fact]
-        public void Sha3_512_Hash_Should_Throw_On_Null_Input()
-        {
-            var hasher = new Sha3_512();
-            Assert.Throws<ArgumentNullException>(() => hasher.Digest(null, null));
         }
     }
 }

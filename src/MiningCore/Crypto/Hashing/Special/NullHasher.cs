@@ -24,7 +24,7 @@ namespace MiningCore.Crypto.Hashing.Special
 {
     public class DummyHasher : IHashAlgorithm
     {
-        public void Digest(byte[] data, Span<byte> result, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
             throw new InvalidOperationException("Don't call me");
         }

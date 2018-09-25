@@ -19,8 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Linq;
-using MiningCore.Extensions;
 
 namespace MiningCore.Crypto.Hashing.Special
 {
@@ -33,7 +31,7 @@ namespace MiningCore.Crypto.Hashing.Special
 
         private readonly IHashAlgorithm upstream;
 
-        public void Digest(byte[] data, Span<byte> result, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
             upstream.Digest(data, result, extra);
             result.Reverse();

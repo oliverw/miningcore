@@ -50,9 +50,8 @@ namespace MiningCore.Crypto.Hashing.Algorithms
             Tuple.Create(524288L, 1769642992L),
         }.OrderByDescending(x => x.Item1).ToArray();
 
-        public void Digest(byte[] data, Span<byte> result, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             // get nFactor

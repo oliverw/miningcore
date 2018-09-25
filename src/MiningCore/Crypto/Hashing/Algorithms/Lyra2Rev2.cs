@@ -26,9 +26,8 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Lyra2Rev2 : IHashAlgorithm
     {
-        public void Digest(byte[] data, Span<byte> result, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} must be exactly 80 bytes long");
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
