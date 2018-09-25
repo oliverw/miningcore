@@ -56,6 +56,11 @@ namespace MiningCore.Extensions
             return ToHexString(byteArray.ToArray());
         }
 
+        public static string ToHexString(this Span<byte> byteArray)
+        {
+            return ToHexString(byteArray.ToArray());
+        }
+
         public static string ToHexString(this PooledArraySegment<byte> value, bool withPrefix = false)
         {
             return ToHexString(value.Array, value.Offset, value.Size, withPrefix);
@@ -67,6 +72,11 @@ namespace MiningCore.Extensions
             var buf = new byte[value.Size + 1];
             Array.Copy(value.Array, value.Offset, buf, 0, value.Size);
             return new BigInteger(buf);
+        }
+
+        public static BigInteger ToBigInteger(this Span<byte> value)
+        {
+            return new BigInteger(value);
         }
 
         public static BigInteger ToBigInteger(this byte[] value)
@@ -145,7 +155,14 @@ namespace MiningCore.Extensions
             }
         }
 
-        public static T[] ToReverseArray<T>(this IEnumerable<T> bytes)
+        public static T[] ToNewReverseArray<T>(this IEnumerable<T> bytes)
+        {
+            var arr = bytes.ToArray();
+            Array.Reverse(arr);
+            return arr;
+        }
+
+        public static Span<T> ToNewReverseArray<T>(this Span<T> bytes)
         {
             var arr = bytes.ToArray();
             Array.Reverse(arr);

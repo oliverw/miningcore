@@ -26,22 +26,19 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class Lyra2Rev2 : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, params object[] extra)
+        public void Digest(byte[] data, Span<byte> result, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} must be exactly 80 bytes long");
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var result = new byte[32];
-
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
                     LibMultihash.lyra2rev2(input, output);
                 }
             }
-
-            return result;
         }
     }
 }

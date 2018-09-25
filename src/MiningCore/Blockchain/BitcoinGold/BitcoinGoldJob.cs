@@ -88,7 +88,8 @@ namespace MiningCore.Blockchain.BitcoinGold
                 // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
-                coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
+                coinbaseInitialHash = new byte[32];
+                sha256D.Digest(coinbaseInitial, coinbaseInitialHash);
             }
         }
 

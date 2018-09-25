@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using MiningCore.Contracts;
 using MiningCore.Native;
 
@@ -34,21 +35,18 @@ namespace MiningCore.Crypto.Hashing.Algorithms
         private readonly uint n;
         private readonly uint r;
 
-        public byte[] Digest(byte[] data, params object[] extra)
+        public void Digest(byte[] data, Span<byte> result, params object[] extra)
         {
             Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var result = new byte[32];
-
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
                     LibMultihash.scrypt(input, output, n, r, (uint) data.Length);
                 }
             }
-
-            return result;
         }
     }
 }

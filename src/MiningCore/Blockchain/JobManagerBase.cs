@@ -143,7 +143,7 @@ namespace MiningCore.Blockchain
 
                                             // TMP FIX
                                             if (flags != 0 && (flags & 1)== 0)
-                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
                                             // compressed
                                             if ((flags & 1) == 1)
