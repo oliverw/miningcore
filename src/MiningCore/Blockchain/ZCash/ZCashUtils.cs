@@ -14,7 +14,6 @@ namespace MiningCore.Blockchain.ZCash
             var quotient = chainConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray().AsSpan();
             Span<byte> padded = stackalloc byte[ZCashConstants.TargetPaddingLength];
-            padded.Clear();
 
             var padLength = ZCashConstants.TargetPaddingLength - bytes.Length;
 

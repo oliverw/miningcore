@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -30,7 +29,6 @@ using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
-using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Persistence;
@@ -39,7 +37,6 @@ using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
-using BigInteger = NBitcoin.BouncyCastle.Math.BigInteger;
 
 namespace MiningCore.Blockchain.ZCash
 {

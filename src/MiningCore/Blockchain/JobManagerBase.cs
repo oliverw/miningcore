@@ -121,12 +121,12 @@ namespace MiningCore.Blockchain
 
                                         while(!tcs.IsCancellationRequested)
                                         {
-                                            string topic;
+                                            // string topic;
                                             uint flags;
                                             byte[] data;
-                                            long timestamp;
+                                            // long timestamp;
 
-                                            using(var msg = subSocket.ReceiveMessage(out var zerror))
+                                            using (var msg = subSocket.ReceiveMessage(out var zerror))
                                             {
                                                 if (zerror != null && !zerror.Equals(ZError.None))
                                                 {
@@ -135,14 +135,14 @@ namespace MiningCore.Blockchain
                                                 }
 
                                                 // extract frames
-                                                topic = msg[0].ToString(Encoding.UTF8);
+                                                // topic = msg[0].ToString(Encoding.UTF8);
                                                 flags = msg[1].ReadUInt32();
                                                 data = msg[2].Read();
-                                                timestamp = msg[3].ReadInt64();
+                                                // timestamp = msg[3].ReadInt64();
                                             }
 
                                             // TMP FIX
-                                            if (flags != 0 && (flags & 1)== 0)
+                                            if (flags != 0 && ((flags & 1) == 0))
                                                 flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
                                             // compressed

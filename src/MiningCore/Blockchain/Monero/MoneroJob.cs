@@ -67,7 +67,7 @@ namespace MiningCore.Blockchain.Monero
 
             // inject extranonce (big-endian at the beginning of the reserved area of the blob)
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-            extraNonceBytes.CopyTo(blob.Slice((int)BlockTemplate.ReservedOffset, extraNonceBytes.Length));
+            extraNonceBytes.CopyTo(blob.Slice(BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
             var result = LibCryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
             return result;
@@ -77,16 +77,18 @@ namespace MiningCore.Blockchain.Monero
         {
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
             var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
-            var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var bytes = quotient.ToByteArray().AsSpan();
+            Span<byte> padded = stackalloc byte[32];
 
-            if (padded.Length - bytes.Length > 0)
-                Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
+            var padLength = padded.Length - bytes.Length;
 
-            var result = new ArraySegment<byte>(padded, 0, 4)
-                .Reverse()
-                .ToHexString();
+            if (padLength > 0)
+                bytes.CopyTo(padded.Slice(padLength, bytes.Length));
 
+            padded = padded.Slice(0, 4);
+            padded.Reverse();
+
+            var result = padded.ToHexString();
             return result;
         }
 
@@ -135,7 +137,7 @@ namespace MiningCore.Blockchain.Monero
 
             // inject extranonce
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-            extraNonceBytes.CopyTo(blob.Slice((int)BlockTemplate.ReservedOffset, extraNonceBytes.Length));
+            extraNonceBytes.CopyTo(blob.Slice(BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
             // inject nonce
             var nonceBytes = nonce.HexToByteArray();
