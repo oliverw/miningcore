@@ -225,8 +225,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     var jobId = submitRequest?.JobId;
 
-                    if (string.IsNullOrEmpty(jobId) ||
-                        (job = context.ValidJobs.FirstOrDefault(x => x.Id == jobId)) == null)
+                    if ((job = context.FindJob(jobId)) == null)
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
                 }
 
@@ -244,7 +243,6 @@ namespace MiningCore.Blockchain.Monero
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty);
-
                 client.Respond(new MoneroResponseBase(), request.Id);
 
                 // publish

@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using MiningCore.Mining;
 using MiningCore.Time;
 
@@ -29,14 +30,20 @@ namespace MiningCore.Blockchain.Monero
         public string MinerName { get; set; }
         public string WorkerName { get; set; }
         public string PaymentId { get; set; }
-        public List<MoneroWorkerJob> ValidJobs { get; } = new List<MoneroWorkerJob>();
+
+        private List<MoneroWorkerJob> validJobs { get; } = new List<MoneroWorkerJob>();
 
         public void AddJob(MoneroWorkerJob job)
         {
-            ValidJobs.Add(job);
+            validJobs.Add(job);
 
-            while(ValidJobs.Count > 4)
-                ValidJobs.RemoveAt(0);
+            while(validJobs.Count > 4)
+                validJobs.RemoveAt(0);
+        }
+
+        public MoneroWorkerJob FindJob(string jobId)
+        {
+            return validJobs.FirstOrDefault(x => x.Id == jobId);
         }
     }
 }
