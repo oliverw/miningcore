@@ -307,7 +307,7 @@ namespace MiningCore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual unsafe (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;

@@ -7,7 +7,7 @@ namespace MiningCore.Blockchain.ZCash
 {
     public static class ZCashUtils
     {
-        public static unsafe string EncodeTarget(double difficulty, ZCashChainConfig chainConfig)
+        public static string EncodeTarget(double difficulty, ZCashChainConfig chainConfig)
         {
             string result;
             var diff = BigInteger.ValueOf((long)(difficulty * 255d));

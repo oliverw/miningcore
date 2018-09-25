@@ -335,7 +335,7 @@ namespace MiningCore.Blockchain.ZCash
             }
         }
 
-        protected virtual unsafe (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();

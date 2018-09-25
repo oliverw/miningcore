@@ -60,7 +60,7 @@ namespace MiningCore.Blockchain.Monero
             Array.Copy(instanceId, 0, blobTemplate, destOffset, 3);
         }
 
-        private unsafe string EncodeBlob(uint workerExtraNonce)
+        private string EncodeBlob(uint workerExtraNonce)
         {
             Span<byte> blob = stackalloc byte[blobTemplate.Length];
             blobTemplate.CopyTo(blob);
@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.Monero
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public unsafe (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
+        public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");

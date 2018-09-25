@@ -70,7 +70,7 @@ namespace MiningCore.Extensions
             return ToHexString(value, null, null, withPrefix);
         }
 
-        public static unsafe string ToHexString(this Span<byte> value, int? off, int? len, bool withPrefix = false)
+        public static string ToHexString(this Span<byte> value, int? off, int? len, bool withPrefix = false)
         {
             if (value == null || value.Length == 0)
                 return string.Empty;
