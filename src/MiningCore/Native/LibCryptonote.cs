@@ -22,7 +22,6 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
-using MiningCore.Buffers;
 using MiningCore.Contracts;
 
 namespace MiningCore.Native
@@ -41,9 +40,8 @@ namespace MiningCore.Native
         [DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
 
-        public static byte[] ConvertBlob(byte[] data, int size)
+        public static byte[] ConvertBlob(ReadOnlySpan<byte> data, int size)
         {
-            Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
 
             fixed(byte* input = data)
@@ -118,21 +116,17 @@ namespace MiningCore.Native
             }
         }
 
-        public static PooledArraySegment<byte> CryptonightHashFast(byte[] data)
+        public static void CryptonightHashFast(ReadOnlySpan<byte> data, Span<byte> result)
         {
-            Contract.RequiresNonNull(data, nameof(data));
-
-            var result = new PooledArraySegment<byte>(32);
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             fixed (byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed (byte* output = result)
                 {
                     cn_fast_hash(input, output, (uint)data.Length);
                 }
             }
-
-            return result;
         }
     }
 }

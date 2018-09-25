@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
@@ -77,7 +78,7 @@ namespace MiningCore.Blockchain.Ethereum
             // test if share meets at least workers current difficulty
             resultBytes.ReverseArray();
             var resultValue = new uint256(resultBytes);
-            var resultValueBig = resultBytes.ToBigInteger();
+            var resultValueBig = resultBytes.AsSpan().ToBigInteger();
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;
             var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;

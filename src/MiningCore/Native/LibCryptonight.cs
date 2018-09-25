@@ -21,7 +21,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using MiningCore.Buffers;
 using MiningCore.Contracts;
 
 namespace MiningCore.Native
@@ -45,55 +44,43 @@ namespace MiningCore.Native
 
         private static readonly ThreadLocal<IntPtr> ctx = new ThreadLocal<IntPtr>(cryptonight_alloc_context);
 
-        public static PooledArraySegment<byte> Cryptonight(byte[] data, int variant)
+        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
-            Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var result = new PooledArraySegment<byte>(32);
-
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result.Array)
+                fixed(byte* output = result)
                 {
                     cryptonight(ctx.Value, input, output, (uint) data.Length, variant);
                 }
             }
-
-            return result;
         }
 
-        public static PooledArraySegment<byte> CryptonightLight(byte[] data, int variant)
+        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
-            Contract.RequiresNonNull(data, nameof(data));
-
-            var result = new PooledArraySegment<byte>(32);
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             fixed (byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed (byte* output = result)
                 {
                     cryptonight_light(ctx.Value, input, output, (uint)data.Length, variant);
                 }
             }
-
-            return result;
         }
 
-        public static PooledArraySegment<byte> CryptonightHeavy(byte[] data, int variant)
+        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
-            Contract.RequiresNonNull(data, nameof(data));
-
-            var result = new PooledArraySegment<byte>(32);
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             fixed (byte* input = data)
             {
-                fixed (byte* output = result.Array)
+                fixed (byte* output = result)
                 {
                     cryptonight_heavy(ctx.Value, input, output, (uint)data.Length, variant);
                 }
             }
-
-            return result;
         }
     }
 }

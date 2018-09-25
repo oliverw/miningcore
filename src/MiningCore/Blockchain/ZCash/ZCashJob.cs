@@ -172,7 +172,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
             txExpiryHeight = blockTemplate.Height + 100;
 
             // ZCash Sapling & Overwinter support
