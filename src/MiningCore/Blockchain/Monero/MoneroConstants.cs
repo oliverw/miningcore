@@ -75,7 +75,7 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.XMR, Piconero },
             { CoinType.ETN, 100m }, // BUG: https://github.com/electroneum/electroneum/issues/77
             { CoinType.AEON, Piconero },
-            { CoinType.TUBE, Piconero },
+            { CoinType.TUBE, (long)1e8 },
         };
 
         public const string DaemonRpcLocation = "json_rpc";
@@ -106,6 +106,7 @@ namespace MiningCore.Blockchain.Monero
         public const int BlobNonceOffset = 39;
 
         public const long Piconero = (long) 1e12;
+        public const long Nanonero = (long)1e9;
         public const decimal StaticTransactionFeeReserve = 0.03m; // in monero
     }
 

@@ -39,7 +39,7 @@ namespace MiningCore.Blockchain
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" } } },
             { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } } },
-            { CoinType.TUBE, new Dictionary<string, string> { { string.Empty, $"https://explorer.bit.tube/block/{BlockHashPH}" } } },
+            { CoinType.TUBE, new Dictionary<string, string> { { string.Empty, $"https://explorer.bit.tube/block/{BlockHeightPH}" } } },
             { CoinType.LTC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ltc/block.dws?{BlockHeightPH}.htm" } } },
             { CoinType.PPC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ppc/block.dws?{BlockHeightPH}.htm" } } },
             { CoinType.BCH, new Dictionary<string, string> { { string.Empty, $"https://www.blocktrail.com/BCC/block/{BlockHeightPH}" } } },
