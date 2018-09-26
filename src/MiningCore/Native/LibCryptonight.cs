@@ -39,23 +39,23 @@ namespace MiningCore.Native
 
                 // allocate context per CPU
                 for (var i = 0; i < contexts.BoundedCapacity; i++)
-                    contexts.Add(allocator());
+                    contexts.Add(new Lazy<IntPtr>(allocator));
             }
 
             private readonly string logId;
 
             // this holds a finite number of contexts for the cryptonight hashing functions
             // if no context is currently available because all are in use, the thread waits
-            private readonly BlockingCollection<IntPtr> contexts = new BlockingCollection<IntPtr>(Environment.ProcessorCount);
+            private readonly BlockingCollection<Lazy<IntPtr>> contexts = new BlockingCollection<Lazy<IntPtr>>(Environment.ProcessorCount);
 
-            internal IntPtr Lease()
+            internal Lazy<IntPtr> Lease()
             {
                 logger.Debug(()=> $"Leasing {logId} context ({contexts.Count})");
 
                 return contexts.Take();
             }
 
-            internal void Return(IntPtr ctx)
+            internal void Return(Lazy<IntPtr> ctx)
             {
                 contexts.Add(ctx);
 
@@ -108,7 +108,7 @@ namespace MiningCore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight(ctx, input, output, (uint)data.Length, variant);
+                        cryptonight(ctx.Value, input, output, (uint)data.Length, variant);
                     }
                 }
             }
@@ -135,7 +135,7 @@ namespace MiningCore.Native
                 {
                     fixed(byte* output = result)
                     {
-                        cryptonight_light(ctx, input, output, (uint) data.Length, variant);
+                        cryptonight_light(ctx.Value, input, output, (uint) data.Length, variant);
                     }
                 }
             }
@@ -162,7 +162,7 @@ namespace MiningCore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight_heavy(ctx, input, output, (uint) data.Length, variant);
+                        cryptonight_heavy(ctx.Value, input, output, (uint) data.Length, variant);
                     }
                 }
             }
