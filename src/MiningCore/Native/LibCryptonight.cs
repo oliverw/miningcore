@@ -59,7 +59,6 @@ namespace MiningCore.Native
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             var ctx = contexts.Take();  // rent a context
-            Console.WriteLine($"ctx taken");
 
             try
             {
@@ -74,9 +73,7 @@ namespace MiningCore.Native
 
             finally
             {
-                Console.WriteLine($"ctx returning");
                 contexts.Add(ctx);  // return it
-                Console.WriteLine($"ctx returned {contexts.Count}");
             }
         }
 
