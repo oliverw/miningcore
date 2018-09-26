@@ -42,7 +42,12 @@ namespace MiningCore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
-        private static readonly ThreadLocal<IntPtr> ctx = new ThreadLocal<IntPtr>(cryptonight_alloc_context);
+        private static readonly ThreadLocal<IntPtr> ctx = new ThreadLocal<IntPtr>(()=>
+        {
+            var result = cryptonight_alloc_context();
+            Console.WriteLine($"** {ctx.Values.Count} cryptonight contexts allocated");
+            return result;
+        }, true);
 
         public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
