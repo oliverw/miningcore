@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 using MiningCore.Contracts;
@@ -27,6 +28,17 @@ namespace MiningCore.Native
 {
     public static unsafe class LibCryptonight
     {
+        static LibCryptonight()
+        {
+            // allocate context per CPU
+            for (var i = 0; i < contexts.BoundedCapacity; i++)
+                contexts.Add(cryptonight_alloc_context());
+        }
+
+        // this holds a finite number of contexts for the cryptonight hashing functions
+        // if no context is currently available because all are in use, the thread waits
+        private static readonly BlockingCollection<IntPtr> contexts = new BlockingCollection<IntPtr>(Environment.ProcessorCount);
+
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_context();
 
@@ -42,23 +54,26 @@ namespace MiningCore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
-        private static readonly ThreadLocal<IntPtr> ctx = new ThreadLocal<IntPtr>(()=>
-        {
-            var result = cryptonight_alloc_context();
-            Console.WriteLine($"** {ctx.Values.Count} cryptonight contexts allocated");
-            return result;
-        }, true);
-
         public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            fixed (byte* input = data)
+            var ctx = contexts.Take();  // rent a context
+
+            try
             {
-                fixed(byte* output = result)
+                fixed (byte* input = data)
                 {
-                    cryptonight(ctx.Value, input, output, (uint) data.Length, variant);
+                    fixed (byte* output = result)
+                    {
+                        cryptonight(ctx, input, output, (uint)data.Length, variant);
+                    }
                 }
+            }
+
+            finally 
+            {
+                contexts.Add(ctx);  // return it
             }
         }
 
@@ -66,12 +81,22 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
+            var ctx = contexts.Take();  // rent a context
+
+            try
+            {
             fixed (byte* input = data)
             {
                 fixed (byte* output = result)
                 {
-                    cryptonight_light(ctx.Value, input, output, (uint)data.Length, variant);
+                    cryptonight_light(ctx, input, output, (uint)data.Length, variant);
                 }
+            }
+            }
+
+            finally
+            {
+                contexts.Add(ctx);  // return it
             }
         }
 
@@ -79,12 +104,22 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            fixed (byte* input = data)
+            var ctx = contexts.Take(); // rent a context
+
+            try
             {
-                fixed (byte* output = result)
+                fixed (byte* input = data)
                 {
-                    cryptonight_heavy(ctx.Value, input, output, (uint)data.Length, variant);
+                    fixed (byte* output = result)
+                    {
+                        cryptonight_heavy(ctx, input, output, (uint) data.Length, variant);
+                    }
                 }
+            }
+
+            finally
+            {
+                contexts.Add(ctx); // return it
             }
         }
     }
