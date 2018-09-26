@@ -28,19 +28,46 @@ namespace MiningCore.Native
 {
     public static unsafe class LibCryptonight
     {
-        static LibCryptonight()
+        #region Hashing context managment
+
+        internal class CryptonightContextStore
         {
-            // allocate context per CPU
-            for (var i = 0; i < contexts.BoundedCapacity; i++)
-                contexts.Add(cryptonight_alloc_context());
+            internal CryptonightContextStore(Func<IntPtr> allocator)
+            {
+                // allocate context per CPU
+                for (var i = 0; i < contexts.BoundedCapacity; i++)
+                    contexts.Add(allocator());
+            }
+
+            // this holds a finite number of contexts for the cryptonight hashing functions
+            // if no context is currently available because all are in use, the thread waits
+            private readonly BlockingCollection<IntPtr> contexts = new BlockingCollection<IntPtr>(Environment.ProcessorCount);
+
+            internal IntPtr Lease()
+            {
+                return contexts.Take();
+            }
+
+            internal void Return(IntPtr ctx)
+            {
+                contexts.Add(ctx);
+            }
         }
 
-        // this holds a finite number of contexts for the cryptonight hashing functions
-        // if no context is currently available because all are in use, the thread waits
-        private static readonly BlockingCollection<IntPtr> contexts = new BlockingCollection<IntPtr>(Environment.ProcessorCount);
+        private static readonly CryptonightContextStore contextNormal = new CryptonightContextStore(cryptonight_alloc_context);
+        private static readonly CryptonightContextStore contextLite = new CryptonightContextStore(cryptonight_alloc_lite_context);
+        private static readonly CryptonightContextStore contextHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context);
+
+        #endregion // Hashing context managment
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_context();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_lite_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr cryptonight_alloc_lite_context();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_heavy_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr cryptonight_alloc_heavy_context();
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_free_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern void cryptonight_free_context(IntPtr ptr);
@@ -62,7 +89,7 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contexts.Take();  // rent a context
+            var ctx = contextNormal.Lease();
 
             try
             {
@@ -77,7 +104,7 @@ namespace MiningCore.Native
 
             finally
             {
-                contexts.Add(ctx);  // return it
+                contextNormal.Return(ctx);
             }
         }
 
@@ -89,7 +116,7 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contexts.Take();  // rent a context
+            var ctx = contextLite.Lease();
 
             try
             {
@@ -104,7 +131,7 @@ namespace MiningCore.Native
 
             finally
             {
-                contexts.Add(ctx);  // return it
+                contextLite.Return(ctx);
             }
         }
 
@@ -116,7 +143,7 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contexts.Take(); // rent a context
+            var ctx = contextHeavy.Lease();
 
             try
             {
@@ -131,7 +158,7 @@ namespace MiningCore.Native
 
             finally
             {
-                contexts.Add(ctx); // return it
+                contextHeavy.Return(ctx);
             }
         }
     }
