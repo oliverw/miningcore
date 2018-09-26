@@ -54,6 +54,10 @@ namespace MiningCore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
+        /// <summary>
+        /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
         public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
@@ -77,6 +81,10 @@ namespace MiningCore.Native
             }
         }
 
+        /// <summary>
+        /// Cryptonight Lite Hash (AEON etc.)
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
         public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
@@ -100,6 +108,10 @@ namespace MiningCore.Native
             }
         }
 
+        /// <summary>
+        /// Cryptonight Heavy Hash (TUBE etc.)
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
         public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, int variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
