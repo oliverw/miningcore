@@ -23,6 +23,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 using MiningCore.Contracts;
+using NLog;
 
 namespace MiningCore.Native
 {
@@ -32,12 +33,16 @@ namespace MiningCore.Native
 
         internal class CryptonightContextStore
         {
-            internal CryptonightContextStore(Func<IntPtr> allocator)
+            internal CryptonightContextStore(Func<IntPtr> allocator, string logId)
             {
+                this.logId = logId;
+
                 // allocate context per CPU
                 for (var i = 0; i < contexts.BoundedCapacity; i++)
                     contexts.Add(allocator());
             }
+
+            private readonly string logId;
 
             // this holds a finite number of contexts for the cryptonight hashing functions
             // if no context is currently available because all are in use, the thread waits
@@ -45,20 +50,26 @@ namespace MiningCore.Native
 
             internal IntPtr Lease()
             {
+                logger.Debug(()=> $"Leasing {logId} context {contexts.Count}");
+
                 return contexts.Take();
             }
 
             internal void Return(IntPtr ctx)
             {
                 contexts.Add(ctx);
+
+                logger.Debug(() => $"Returned {logId} context {contexts.Count}");
             }
         }
 
-        private static readonly CryptonightContextStore contextNormal = new CryptonightContextStore(cryptonight_alloc_context);
-        private static readonly CryptonightContextStore contextLite = new CryptonightContextStore(cryptonight_alloc_lite_context);
-        private static readonly CryptonightContextStore contextHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context);
+        private static readonly CryptonightContextStore contextNormal = new CryptonightContextStore(cryptonight_alloc_context, "cn");
+        private static readonly CryptonightContextStore contextLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
+        private static readonly CryptonightContextStore contextHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
 
         #endregion // Hashing context managment
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_context();
