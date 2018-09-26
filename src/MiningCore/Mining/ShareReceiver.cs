@@ -140,7 +140,7 @@ namespace MiningCore.Mining
 
                                     // TMP FIX
                                     if ((flags & ShareRelay.WireFormatMask) == 0)
-                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
                                     // deserialize
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);

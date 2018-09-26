@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using MiningCore.Contracts;
 using MiningCore.Native;
 
@@ -25,21 +26,17 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 {
     public unsafe class X16R : IHashAlgorithm
     {
-        public byte[] Digest(byte[] data, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            Contract.RequiresNonNull(data, nameof(data));
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var result = new byte[32];
-
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
                     LibMultihash.x16r(input, output, (uint) data.Length);
                 }
             }
-
-            return result;
         }
     }
 }

@@ -34,7 +34,7 @@ namespace MiningCore.Blockchain.Monero.DaemonResponses
         public string PreviousBlockhash { get; set; }
 
         [JsonProperty("reserved_offset")]
-        public uint ReservedOffset { get; set; }
+        public int ReservedOffset { get; set; }
 
         public string Status { get; set; }
     }

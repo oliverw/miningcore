@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using MiningCore.Buffers;
 using MiningCore.Contracts;
 
 namespace MiningCore.Extensions
@@ -51,30 +50,14 @@ namespace MiningCore.Extensions
             "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"
         };
 
+        public static BigInteger ToBigInteger(this Span<byte> value)
+        {
+            return new BigInteger(value, true);
+        }
+
         public static string ToHexString(this IEnumerable<byte> byteArray)
         {
             return ToHexString(byteArray.ToArray());
-        }
-
-        public static string ToHexString(this PooledArraySegment<byte> value, bool withPrefix = false)
-        {
-            return ToHexString(value.Array, value.Offset, value.Size, withPrefix);
-        }
-
-        public static BigInteger ToBigInteger(this PooledArraySegment<byte> value)
-        {
-            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
-            var buf = new byte[value.Size + 1];
-            Array.Copy(value.Array, value.Offset, buf, 0, value.Size);
-            return new BigInteger(buf);
-        }
-
-        public static BigInteger ToBigInteger(this byte[] value)
-        {
-            // TODO: can be improved by using the BigInteger(Span<T> buf) constructor coming in .Net core 2.1
-            var buf = new byte[value.Length + 1];
-            Array.Copy(value, 0, buf, 0, value.Length);
-            return new BigInteger(buf);
         }
 
         public static string ToHexString(this byte[] value, bool withPrefix = false)
@@ -82,7 +65,12 @@ namespace MiningCore.Extensions
             return ToHexString(value, null, null, withPrefix);
         }
 
-        public static string ToHexString(this byte[] value, int? off, int? len, bool withPrefix = false)
+        public static string ToHexString(this Span<byte> value, bool withPrefix = false)
+        {
+            return ToHexString(value, null, null, withPrefix);
+        }
+
+        public static string ToHexString(this Span<byte> value, int? off, int? len, bool withPrefix = false)
         {
             if (value == null || value.Length == 0)
                 return string.Empty;
@@ -93,34 +81,26 @@ namespace MiningCore.Extensions
             if (withPrefix)
                 bufferSize += 2;
 
-            var buffer = ArrayPool<char>.Shared.Rent(bufferSize);
+            Span<char> buffer = stackalloc char[bufferSize];
 
-            try
+            var offset = 0;
+
+            if (withPrefix)
             {
-                var offset = 0;
-
-                if (withPrefix)
-                {
-                    buffer[offset++] = '0';
-                    buffer[offset++] = 'x';
-                }
-
-                var start = off ?? 0;
-
-                for(var i = start; i < length; i++)
-                {
-                    var hex = HexStringTable[value[i]];
-                    buffer[offset + i * 2 + 0] = hex[0];
-                    buffer[offset + i * 2 + 1] = hex[1];
-                }
-
-                return new string(buffer, 0, bufferSize);
+                buffer[offset++] = '0';
+                buffer[offset++] = 'x';
             }
 
-            finally
+            var start = off ?? 0;
+
+            for(var i = start; i < length; i++)
             {
-                ArrayPool<char>.Shared.Return(buffer);
+                var hex = HexStringTable[value[i]];
+                buffer[offset + i * 2 + 0] = hex[0];
+                buffer[offset + i * 2 + 1] = hex[1];
             }
+
+            return new string(buffer);
         }
 
         /// <summary>
@@ -145,7 +125,14 @@ namespace MiningCore.Extensions
             }
         }
 
-        public static T[] ToReverseArray<T>(this IEnumerable<T> bytes)
+        public static T[] ToNewReverseArray<T>(this IEnumerable<T> bytes)
+        {
+            var arr = bytes.ToArray();
+            Array.Reverse(arr);
+            return arr;
+        }
+
+        public static Span<T> ToNewReverseArray<T>(this Span<T> bytes)
         {
             var arr = bytes.ToArray();
             Array.Reverse(arr);

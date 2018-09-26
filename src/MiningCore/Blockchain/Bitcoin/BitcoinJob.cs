@@ -287,10 +287,10 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual byte[] SerializeHeader(byte[] coinbaseHash, uint nTime, uint nonce)
+        protected virtual byte[] SerializeHeader(Span<byte> coinbaseHash, uint nTime, uint nonce)
         {
             // build merkle-root
-            var merkleRoot = mt.WithFirst(coinbaseHash);
+            var merkleRoot = mt.WithFirst(coinbaseHash.ToArray());
 
 #pragma warning disable 618
             var blockHeader = new BlockHeader
@@ -314,11 +314,13 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // build coinbase
             var coinbase = SerializeCoinbase(extraNonce1, extraNonce2);
-            var coinbaseHash = coinbaseHasher.Digest(coinbase);
+            Span<byte> coinbaseHash = stackalloc byte[32];
+            coinbaseHasher.Digest(coinbase, coinbaseHash);
 
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
-            var headerHash = headerHasher.Digest(headerBytes, (ulong) nTime);
+            Span<byte> headerHash = stackalloc byte[32];
+            headerHasher.Digest(headerBytes, headerHash, (ulong) nTime);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -359,7 +361,10 @@ namespace MiningCore.Blockchain.Bitcoin
             {
                 result.IsBlockCandidate = true;
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
-                result.BlockHash = blockHasher.Digest(headerBytes, nTime).ToHexString();
+
+                Span<byte> blockHash = stackalloc byte[32];
+                blockHasher.Digest(headerBytes, blockHash, nTime);
+                result.BlockHash = blockHash.ToHexString();
 
                 var blockBytes = SerializeBlock(headerBytes, coinbase);
                 var blockHex = blockBytes.ToHexString();

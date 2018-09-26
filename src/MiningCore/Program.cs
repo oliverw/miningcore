@@ -690,11 +690,6 @@ namespace MiningCore
             statsRecorder?.Stop();
         }
 
-        private static void TouchNativeLibs()
-        {
-            Console.WriteLine(new Blake().Digest(Encoding.UTF8.GetBytes("test"), 0).ToHexString());
-        }
-
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
 

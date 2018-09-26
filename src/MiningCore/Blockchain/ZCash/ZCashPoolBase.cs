@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Buffers;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
@@ -30,7 +29,6 @@ using AutoMapper;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
-using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Persistence;
@@ -39,7 +37,6 @@ using MiningCore.Stratum;
 using MiningCore.Time;
 using MiningCore.Util;
 using Newtonsoft.Json;
-using BigInteger = NBitcoin.BouncyCastle.Math.BigInteger;
 
 namespace MiningCore.Blockchain.ZCash
 {
@@ -268,30 +265,7 @@ namespace MiningCore.Blockchain.ZCash
 
         private string EncodeTarget(double difficulty)
         {
-            var diff = BigInteger.ValueOf((long) (difficulty * 255d));
-            var quotient = chainConfig.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
-            var bytes = quotient.ToByteArray();
-            var padded = ArrayPool<byte>.Shared.Rent(ZCashConstants.TargetPaddingLength);
-
-            try
-            {
-                Array.Clear(padded, 0, ZCashConstants.TargetPaddingLength);
-                var padLength = ZCashConstants.TargetPaddingLength - bytes.Length;
-
-                if (padLength > 0)
-                {
-                    Array.Copy(bytes, 0, padded, padLength, bytes.Length);
-                    bytes = padded;
-                }
-
-                var result = bytes.ToHexString(0, ZCashConstants.TargetPaddingLength);
-                return result;
-            }
-
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(padded);
-            }
+            return ZCashUtils.EncodeTarget(difficulty, chainConfig);
         }
     }
 }

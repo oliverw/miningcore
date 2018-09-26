@@ -18,8 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Linq;
-using MiningCore.Extensions;
+using System;
 
 namespace MiningCore.Crypto.Hashing.Special
 {
@@ -32,9 +31,10 @@ namespace MiningCore.Crypto.Hashing.Special
 
         private readonly IHashAlgorithm upstream;
 
-        public byte[] Digest(byte[] data, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            return upstream.Digest(data, extra).ReverseArray();
+            upstream.Digest(data, result, extra);
+            result.Reverse();
         }
     }
 }

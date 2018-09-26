@@ -88,7 +88,8 @@ namespace MiningCore.Blockchain.BitcoinGold
                 // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
-                coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
+                coinbaseInitialHash = new byte[32];
+                sha256D.Digest(coinbaseInitial, coinbaseInitialHash);
             }
         }
 
@@ -140,7 +141,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
 
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;

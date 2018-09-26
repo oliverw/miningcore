@@ -135,13 +135,15 @@ namespace MiningCore.Blockchain.Bitcoin
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
                     var blockNotify = daemon.ZmqSubscribe(zmq, 2)
-                        .Select(frames =>
+                        .Select(msg =>
                         {
-                            // We just take the second frame's raw data and turn it into a hex string.
-                            // If that string changes, we got an update (DistinctUntilChanged)
-                            var result = frames[1].ToHexString();
-                            frames.Dispose();
-                            return result;
+                            using (msg)
+                            {
+                                // We just take the second frame's raw data and turn it into a hex string.
+                                // If that string changes, we got an update (DistinctUntilChanged)
+                                var result = msg[1].Read().ToHexString();
+                                return result;
+                            }
                         })
                         .DistinctUntilChanged()
                         .Select(_ => (false, "ZMQ pub/sub", (string) null))

@@ -34,7 +34,6 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
@@ -255,7 +254,7 @@ namespace MiningCore.DaemonInterface
                 .RefCount();
         }
 
-        public IObservable<PooledArraySegment<byte>[]> ZmqSubscribe(Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
+        public IObservable<ZMessage> ZmqSubscribe(Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
         {
             logger.LogInvoke();
 
@@ -474,7 +473,9 @@ namespace MiningCore.DaemonInterface
                 {
                     using(cts)
                     {
-                        while(!cts.IsCancellationRequested)
+                        var buf = new byte[0x10000];
+
+                        while (!cts.IsCancellationRequested)
                         {
                             try
                             {
@@ -496,38 +497,28 @@ namespace MiningCore.DaemonInterface
                                     await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
 
                                     // stream response
-                                    var buf = ArrayPool<byte>.Shared.Rent(0x10000);
+                                    var stream = new MemoryStream();
 
-                                    try
+                                    while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                     {
-                                        var stream = new MemoryStream();
+                                        stream.SetLength(0);
+                                        var complete = false;
 
-                                        while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                        // read until EndOfMessage
+                                        do
                                         {
-                                            stream.SetLength(0);
-                                            var complete = false;
+                                            var response = await client.ReceiveAsync(buf, cts.Token);
 
-                                            // read until EndOfMessage
-                                            do
-                                            {
-                                                var response = await client.ReceiveAsync(buf, cts.Token);
+                                            if (response.MessageType == WebSocketMessageType.Binary)
+                                                throw new InvalidDataException("expected text, received binary data");
 
-                                                if (response.MessageType == WebSocketMessageType.Binary)
-                                                    throw new InvalidDataException("expected text, received binary data");
+                                            stream.Write(buf, 0, response.Count);
 
-                                                stream.Write(buf, 0, response.Count);
+                                            complete = response.EndOfMessage;
+                                        } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
-                                                complete = response.EndOfMessage;
-                                            } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
-
-                                            // publish
-                                            obs.OnNext(stream.ToArray());
-                                        }
-                                    }
-
-                                    finally
-                                    {
-                                        ArrayPool<byte>.Shared.Return(buf);
+                                        // publish
+                                        obs.OnNext(stream.ToArray());
                                     }
                                 }
                             }
@@ -546,9 +537,9 @@ namespace MiningCore.DaemonInterface
             }));
         }
 
-        private IObservable<PooledArraySegment<byte>[]> ZmqSubscribeEndpoint(DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
+        private IObservable<ZMessage> ZmqSubscribeEndpoint(DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
         {
-            return Observable.Defer(() => Observable.Create<PooledArraySegment<byte>[]>(obs =>
+            return Observable.Defer(() => Observable.Create<ZMessage>(obs =>
             {
                 var tcs = new CancellationTokenSource();
 
@@ -570,18 +561,16 @@ namespace MiningCore.DaemonInterface
 
                                     while(!tcs.IsCancellationRequested)
                                     {
-                                        using(var msg = subSocket.ReceiveMessage())
-                                        {
-                                            // Export all frame data as array of PooledArraySegments
-                                            var result = msg.Select(x =>
-                                            {
-                                                var buf = new PooledArraySegment<byte>((int) x.Length);
-                                                x.Read(buf.Array, 0, (int) x.Length);
-                                                return buf;
-                                            }).ToArray();
+                                        var msg = subSocket.ReceiveMessage(out var zerror);
 
-                                            obs.OnNext(result);
+                                        if (zerror != null && !zerror.Equals(ZError.None))
+                                        {
+                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                            break;
                                         }
+
+                                        if(msg != null)
+                                            obs.OnNext(msg);
                                     }
                                 }
                             }

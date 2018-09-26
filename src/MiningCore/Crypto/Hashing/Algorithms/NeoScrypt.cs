@@ -33,22 +33,18 @@ namespace MiningCore.Crypto.Hashing.Algorithms
 
         private readonly uint profile;
 
-        public byte[] Digest(byte[] data, params object[] extra)
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            Contract.RequiresNonNull(data, nameof(data));
             Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} length must be exactly 80 bytes");
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var result = new byte[32];
-
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
-                fixed(byte* output = result)
+                fixed (byte* output = result)
                 {
                     LibMultihash.neoscrypt(input, output, (uint) data.Length, profile);
                 }
             }
-
-            return result;
         }
     }
 }

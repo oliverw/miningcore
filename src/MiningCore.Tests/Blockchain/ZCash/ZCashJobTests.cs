@@ -7,10 +7,8 @@ using MiningCore.Configuration;
 using MiningCore.Crypto;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Special;
-using MiningCore.Stratum;
 using MiningCore.Tests.Util;
 using NBitcoin;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace MiningCore.Tests.Blockchain.ZCash
@@ -27,6 +25,18 @@ namespace MiningCore.Tests.Blockchain.ZCash
 
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
+
+        [Fact]
+        public void ZCashUtils_EncodeTarget()
+        {
+            var chainConfig = ZCashConstants.Chains[CoinType.ZEC][BitcoinNetworkType.Main];
+
+            var result = ZCashUtils.EncodeTarget(0.5, chainConfig);
+            Assert.Equal(result, "0010102040810204081020408102040810204081020408102040810204080fe0");
+
+            result = ZCashUtils.EncodeTarget(10000, chainConfig);
+            Assert.Equal(result, "000000346dc5d63886594af4f0d844d013a92a305532617c1bda5119ce075e7a");
+        }
 
         [Fact]
         public void ZCashJob_Testnet_Validate_FoundersRewardAddress_At_Height()

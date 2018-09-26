@@ -138,7 +138,9 @@ namespace MiningCore.Blockchain.ZCash
                 // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
-                coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
+
+                coinbaseInitialHash = new byte[32];
+                sha256D.Digest(coinbaseInitial, coinbaseInitialHash);
             }
         }
 
@@ -169,7 +171,7 @@ namespace MiningCore.Blockchain.ZCash
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1b, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
             txExpiryHeight = blockTemplate.Height + 100;
 
             // ZCash Sapling & Overwinter support
@@ -348,8 +350,8 @@ namespace MiningCore.Blockchain.ZCash
 
             // hash block-header
             var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
-            var headerHash = headerHasher.Digest(headerSolutionBytes, (ulong) nTime);
-            var headerHashReversed = headerHash.ToReverseArray();
+            Span<byte> headerHash = stackalloc byte[32];
+            headerHasher.Digest(headerSolutionBytes, headerHash, (ulong) nTime);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -388,6 +390,8 @@ namespace MiningCore.Blockchain.ZCash
 
             if (isBlockCandidate)
             {
+                var headerHashReversed = headerHash.ToNewReverseArray();
+
                 result.IsBlockCandidate = true;
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
                 result.BlockHash = headerHashReversed.ToHexString();
