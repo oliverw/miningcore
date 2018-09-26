@@ -35,7 +35,7 @@ namespace MiningCore.Native
         {
             internal CryptonightContextStore(Func<IntPtr> allocator, string logId)
             {
-                this.logId = logId;
+                this.logId = logId.ToUpper();
 
                 // allocate context per CPU
                 for (var i = 0; i < contexts.BoundedCapacity; i++)
@@ -50,7 +50,7 @@ namespace MiningCore.Native
 
             internal IntPtr Lease()
             {
-                logger.Debug(()=> $"Leasing {logId} context {contexts.Count}");
+                logger.Debug(()=> $"Leasing {logId} context ({contexts.Count})");
 
                 return contexts.Take();
             }
@@ -59,13 +59,13 @@ namespace MiningCore.Native
             {
                 contexts.Add(ctx);
 
-                logger.Debug(() => $"Returned {logId} context {contexts.Count}");
+                logger.Debug(() => $"Returned {logId} context ({contexts.Count})");
             }
         }
 
-        private static readonly CryptonightContextStore contextNormal = new CryptonightContextStore(cryptonight_alloc_context, "cn");
-        private static readonly CryptonightContextStore contextLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
-        private static readonly CryptonightContextStore contextHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
+        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, "cn");
+        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
+        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
 
         #endregion // Hashing context managment
 
@@ -100,7 +100,7 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contextNormal.Lease();
+            var ctx = ctxs.Lease();
 
             try
             {
@@ -115,7 +115,7 @@ namespace MiningCore.Native
 
             finally
             {
-                contextNormal.Return(ctx);
+                ctxs.Return(ctx);
             }
         }
 
@@ -127,22 +127,22 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contextLite.Lease();
+            var ctx = ctxsLite.Lease();
 
             try
             {
-            fixed (byte* input = data)
-            {
-                fixed (byte* output = result)
+                fixed(byte* input = data)
                 {
-                    cryptonight_light(ctx, input, output, (uint)data.Length, variant);
+                    fixed(byte* output = result)
+                    {
+                        cryptonight_light(ctx, input, output, (uint) data.Length, variant);
+                    }
                 }
-            }
             }
 
             finally
             {
-                contextLite.Return(ctx);
+                ctxsLite.Return(ctx);
             }
         }
 
@@ -154,7 +154,7 @@ namespace MiningCore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var ctx = contextHeavy.Lease();
+            var ctx = ctxsHeavy.Lease();
 
             try
             {
@@ -169,7 +169,7 @@ namespace MiningCore.Native
 
             finally
             {
-                contextHeavy.Return(ctx);
+                ctxsHeavy.Return(ctx);
             }
         }
     }
