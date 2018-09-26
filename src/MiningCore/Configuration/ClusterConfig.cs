@@ -64,6 +64,7 @@ namespace MiningCore.Configuration
         RVN, // Ravencoin
         PGN, // Pigeoncoin
         BCD, // Bitcoin Diamond
+        TUBE, // Bittube
     }
 
     public class CoinConfig

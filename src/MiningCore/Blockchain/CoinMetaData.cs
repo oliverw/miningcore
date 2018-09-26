@@ -39,6 +39,7 @@ namespace MiningCore.Blockchain
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" } } },
             { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } } },
+            { CoinType.TUBE, new Dictionary<string, string> { { string.Empty, $"https://explorer.bit.tube/block/{BlockHashPH}" } } },
             { CoinType.LTC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ltc/block.dws?{BlockHeightPH}.htm" } } },
             { CoinType.PPC, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/ppc/block.dws?{BlockHeightPH}.htm" } } },
             { CoinType.BCH, new Dictionary<string, string> { { string.Empty, $"https://www.blocktrail.com/BCC/block/{BlockHeightPH}" } } },
@@ -74,6 +75,7 @@ namespace MiningCore.Blockchain
         {
             { CoinType.XMR, "https://chainradar.com/xmr/transaction/{0}" },
             { CoinType.ETN, "https://blockexplorer.electroneum.com/tx/{0}" },
+            { CoinType.TUBE, "https://explorer.bit.tube/tx/{0}" },
             { CoinType.ETH, "https://etherscan.io/tx/{0}" },
             { CoinType.ETC, "https://gastracker.io/tx/{0}" },
             { CoinType.CLO, "https://explorer.callisto.network/tx/{0}" },
@@ -150,6 +152,7 @@ namespace MiningCore.Blockchain
         private const string Ethash = "Ethash";
         private const string Cryptonight = "Cryptonight";
         private const string CryptonightLight = "Cryptonight-Light";
+        private const string CryptonightHeavy = "Cryptonight-Heavy";
 
         public static readonly Dictionary<CoinType, Func<CoinType, string, string>> CoinAlgorithm = new Dictionary<CoinType, Func<CoinType, string, string>>
         {
@@ -180,6 +183,7 @@ namespace MiningCore.Blockchain
             { CoinType.MOON, BitcoinProperties.GetAlgorithm },
             { CoinType.XVG, BitcoinProperties.GetAlgorithm },
             { CoinType.XMR, (coin, alg) => Cryptonight },
+            { CoinType.TUBE, (coin, alg) => CryptonightHeavy },
             { CoinType.ETN, (coin, alg) => Cryptonight },
             { CoinType.AEON, (coin, alg) => CryptonightLight },
             { CoinType.GBX, BitcoinProperties.GetAlgorithm },
