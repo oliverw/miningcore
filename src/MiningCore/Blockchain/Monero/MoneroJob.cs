@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Linq;
+using System.Threading;
 using MiningCore.Blockchain.Monero.DaemonResponses;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
@@ -48,7 +49,7 @@ namespace MiningCore.Blockchain.Monero
         }
 
         private byte[] blobTemplate;
-        private uint extraNonce;
+        private int extraNonce;
         private readonly CoinType coin;
 
         private void PrepareBlobTemplate(byte[] instanceId)
@@ -113,7 +114,10 @@ namespace MiningCore.Blockchain.Monero
         public void PrepareWorkerJob(MoneroWorkerJob workerJob, out string blob, out string target)
         {
             workerJob.Height = BlockTemplate.Height;
-            workerJob.ExtraNonce = ++extraNonce;
+            workerJob.ExtraNonce = (uint) Interlocked.Increment(ref extraNonce);
+
+            if (extraNonce < 0)
+                extraNonce = 0;
 
             blob = EncodeBlob(workerJob.ExtraNonce);
             target = EncodeTarget(workerJob.Difficulty);
