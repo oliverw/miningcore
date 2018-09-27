@@ -160,7 +160,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
                 }
 
