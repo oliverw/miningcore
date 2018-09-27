@@ -231,7 +231,7 @@ namespace MiningCore.Stratum
 
         private unsafe T Deserialize<T>(ReadOnlySequence<byte> line)
         {
-            // Fast path (zero copy)
+            // zero-copy fast-path
             if (line.IsSingleSegment)
             {
                 var span = line.First.Span;
@@ -249,7 +249,7 @@ namespace MiningCore.Stratum
                 }
             }
 
-            // Slow path
+            // slow path
             using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(line.ToArray()), StratumConstants.Encoding)))
             {
                 return serializer.Deserialize<T>(jr);
@@ -343,7 +343,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync, 
+        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
             var request = Deserialize<JsonRpcRequest>(lineBuffer);
@@ -382,7 +382,7 @@ namespace MiningCore.Stratum
 
             var line = GetString(lineBuffer);
             var peerAddress = RemoteEndpoint.Address;
-            
+
             if (line.StartsWith("PROXY "))
             {
                 var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
