@@ -160,7 +160,9 @@ namespace MiningCore
 
             Shutdown();
 
+#if !DEBUG
             Process.GetCurrentProcess().Kill();
+#endif
         }
 
         private static void LogRuntimeInfo()

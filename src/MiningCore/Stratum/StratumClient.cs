@@ -32,6 +32,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using MiningCore.Configuration;
+using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Mining;
 using MiningCore.Time;
@@ -226,15 +227,39 @@ namespace MiningCore.Stratum
             Disposables.Dispose();
         }
 
-        public T Deserialize<T>(string json)
+        #endregion // API-Surface
+
+        private unsafe T Deserialize<T>(ReadOnlySequence<byte> line)
         {
-            using(var jreader = new JsonTextReader(new StringReader(json)))
+            // Fast path (zero copy)
+            if (line.IsSingleSegment)
             {
-                return serializer.Deserialize<T>(jreader);
+                var span = line.First.Span;
+
+                fixed (byte* buf = span)
+                {
+                    using (var stream = new UnmanagedMemoryStream(buf, span.Length))
+                    {
+                        using (var jr = new JsonTextReader(new StreamReader(stream, StratumConstants.Encoding)))
+                        {
+                            return serializer.Deserialize<T>(jr);
+                        }
+                    }
+
+                }
+            }
+
+            // Slow path
+            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(line.ToArray()), StratumConstants.Encoding)))
+            {
+                return serializer.Deserialize<T>(jr);
             }
         }
 
-        #endregion // API-Surface
+        private string GetString(ReadOnlySequence<byte> line)
+        {
+            return StratumConstants.Encoding.GetString(line.ToSpan());
+        }
 
         private void Send<T>(T payload)
         {
@@ -298,12 +323,11 @@ namespace MiningCore.Stratum
                     if (position != null)
                     {
                         var slice = buffer.Slice(0, position.Value);
-                        var line = StratumConstants.Encoding.GetString(slice.ToArray());
 
-                        logger.Trace(() => $"[{ConnectionId}] Received data: {line}");
+                        logger.Trace(() => $"[{ConnectionId}] Received data: {GetString(slice)}");
 
-                        if (!expectingProxyHeader || !ProcessProxyHeader(line, proxyProtocol))
-                            await ProcessRequestAsync(onRequestAsync, line);
+                        if (!expectingProxyHeader || !ProcessProxyHeader(slice, proxyProtocol))
+                            await ProcessRequestAsync(onRequestAsync, slice);
 
                         // Skip consumed section
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
@@ -317,9 +341,10 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync, string json)
+        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync, 
+            ReadOnlySequence<byte> lineBuffer)
         {
-            var request = Deserialize<JsonRpcRequest>(json.Trim());
+            var request = Deserialize<JsonRpcRequest>(lineBuffer);
 
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
@@ -349,11 +374,13 @@ namespace MiningCore.Stratum
         /// <summary>
         /// Returns true if the line was consumed
         /// </summary>
-        private bool ProcessProxyHeader(string line, TcpProxyProtocolConfig proxyProtocol)
+        private bool ProcessProxyHeader(ReadOnlySequence<byte> lineBuffer, TcpProxyProtocolConfig proxyProtocol)
         {
             expectingProxyHeader = false;
-            var peerAddress = RemoteEndpoint.Address;
 
+            var line = GetString(lineBuffer);
+            var peerAddress = RemoteEndpoint.Address;
+            
             if (line.StartsWith("PROXY "))
             {
                 var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
