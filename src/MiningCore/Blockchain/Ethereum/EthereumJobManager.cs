@@ -140,7 +140,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
-                    BlockchainStats.BlockHeight = (long) job.BlockTemplate.Height;
+                    BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                 }
 
