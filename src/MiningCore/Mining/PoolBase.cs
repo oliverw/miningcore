@@ -219,7 +219,8 @@ namespace MiningCore.Mining
             var interval = poolEndpoint.VarDiff.TargetTime;
 
             var shareReceivedFromClient = messageBus.Listen<ClientShare>()
-                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
+                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
+                .Take(1);
 
             Observable
                 .Timer(TimeSpan.FromSeconds(interval))
