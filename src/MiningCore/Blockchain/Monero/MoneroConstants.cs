@@ -43,7 +43,7 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.XMR, 18 },
             { CoinType.ETN, 18018 },
             { CoinType.AEON, 178 },
-            { CoinType.TUBE, 18 },
+            { CoinType.TUBE, 209 },
         };
 
         public static readonly Dictionary<CoinType, UInt64> AddressPrefixTestnet = new Dictionary<CoinType, UInt64>
