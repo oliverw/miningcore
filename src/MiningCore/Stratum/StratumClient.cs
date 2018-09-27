@@ -282,13 +282,15 @@ namespace MiningCore.Stratum
                     receivePipe.Writer.Advance(cb);
                 }
 
-                catch(Exception ex)
+                catch(Exception)
                 {
                     // Ensure that ProcessReceivePipeAsync completes as well
                     receivePipe.Writer.Complete();
 
                     // Ensure that ProcessSendQueue completes as well
-                    sendQueueDFB.Fault(ex);
+                    sendQueue.Complete();
+
+                    // we are done here
                     throw;
                 }
 
