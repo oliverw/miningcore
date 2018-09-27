@@ -216,15 +216,16 @@ namespace MiningCore.Mining
             // Check Every Target Time as we adjust the diff to meet target
             // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
-            var interval = poolEndpoint.VarDiff.TargetTime;
 
-            var shareReceivedFromClient = messageBus.Listen<ClientShare>()
+            var shareReceived = messageBus.Listen<ClientShare>()
                 .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
                 .Take(1);
 
+            var timeout = poolEndpoint.VarDiff.TargetTime;
+
             Observable
-                .Timer(TimeSpan.FromSeconds(interval))
-                .TakeUntil(shareReceivedFromClient)
+                .Timer(TimeSpan.FromSeconds(timeout))
+                .TakeUntil(shareReceived)
                 .Take(1)
                 .Subscribe(_ =>
                 {
