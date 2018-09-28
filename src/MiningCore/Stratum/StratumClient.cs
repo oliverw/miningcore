@@ -26,7 +26,10 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -56,10 +59,9 @@ namespace MiningCore.Stratum
                 EnsureOrdered = true,
             });
 
-            sendQueueDFB = sendQueue;
-
             this.clock = clock;
             ConnectionId = connectionId;
+            IsAlive = true;
         }
 
         public StratumClient()
@@ -76,9 +78,9 @@ namespace MiningCore.Stratum
         private Stream networkStream;
         private readonly Pipe receivePipe;
         private readonly BufferBlock<object> sendQueue;
-        private readonly IDataflowBlock sendQueueDFB;
         private WorkerContextBase context;
-        private bool expectingProxyHeader = false;
+        private readonly Subject<Unit> terminated = new Subject<Unit>();
+        private bool expectingProxyHeader;
 
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
@@ -103,66 +105,50 @@ namespace MiningCore.Stratum
 
             Task.Run(async () =>
             {
-                try
+                // prepare socket
+                socket.NoDelay = true;
+
+                // create stream
+                networkStream = new NetworkStream(socket, true);
+
+                // TLS handshake
+                if (poolEndpoint.PoolEndpoint.Tls)
                 {
-                    // prepare socket
-                    socket.NoDelay = true;
+                    var sslStream = new SslStream(networkStream, false);
+                    await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
-                    // create stream
-                    networkStream = new NetworkStream(socket, true);
+                    networkStream = sslStream;
+                    logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                }
 
-                    // TLS handshake
-                    if (poolEndpoint.PoolEndpoint.Tls)
+                else
+                    logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+
+                using(networkStream)
+                {
+                    var tasks = new[]
                     {
-                        var sslStream = new SslStream(networkStream, false);
-                        await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                        FillReceivePipeAsync(),
+                        ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                        ProcessSendQueueAsync()
+                    };
 
-                        networkStream = sslStream;
-                        logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
-                    }
+                    await Task.WhenAny(tasks);
 
+                    // Make sure other tasks complete as well
+                    receivePipe.Reader.Complete();
+                    receivePipe.Writer.Complete();
+                    sendQueue.Complete();
+
+                    // Signal completion or error
+                    if (!tasks.Any(t=> t.IsFaulted))
+                        onCompleted(this);
                     else
-                        logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                        onError(this, tasks.First(t=> t.IsFaulted).Exception);
 
-                    using(networkStream)
-                    {
-                        await Task.WhenAll(
-                            FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
-                            ProcessSendQueueAsync());
+                    IsAlive = false;
+                    terminated.OnNext(Unit.Default);
 
-                        onCompleted(this);
-                    }
-                }
-
-                catch(ObjectDisposedException)
-                {
-                    try
-                    {
-                        onCompleted(this);
-                    }
-
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                }
-
-                catch(Exception ex)
-                {
-                    try
-                    {
-                        onError(this, ex);
-                    }
-
-                    catch (Exception ex2)
-                    {
-                        logger.Error(ex2);
-                    }
-                }
-
-                finally
-                {
                     logger.Info(() => $"[{ConnectionId}] Connection closed");
                 }
             });
@@ -172,7 +158,8 @@ namespace MiningCore.Stratum
         public IPEndPoint PoolEndpoint { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
         public DateTime? LastReceive { get; set; }
-        public CompositeDisposable Disposables { get; } = new CompositeDisposable();
+        public bool IsAlive { get; set; }
+        public IObservable<Unit> Terminated => terminated.AsObservable();
 
         public void SetContext<T>(T value) where T : WorkerContextBase
         {
@@ -223,8 +210,6 @@ namespace MiningCore.Stratum
         public void Disconnect()
         {
             networkStream.Close();
-
-            Disposables.Dispose();
         }
 
         #endregion // API-Surface
@@ -272,36 +257,18 @@ namespace MiningCore.Stratum
             {
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
-                try
-                {
-                    var cb = await networkStream.ReadAsync(memory);
-                    if (cb == 0)
-                        break; // EOF
+                var cb = await networkStream.ReadAsync(memory);
+                if (cb == 0)
+                    break; // EOF
 
-                    LastReceive = clock.Now;
-                    receivePipe.Writer.Advance(cb);
-                }
-
-                catch(Exception)
-                {
-                    // Ensure that ProcessReceivePipeAsync completes as well
-                    receivePipe.Writer.Complete();
-
-                    // Ensure that ProcessSendQueue completes as well
-                    sendQueue.Complete();
-
-                    // we are done here
-                    throw;
-                }
+                LastReceive = clock.Now;
+                receivePipe.Writer.Advance(cb);
 
                 var result = await receivePipe.Writer.FlushAsync();
 
                 if (result.IsCompleted)
                     break;
             }
-
-            receivePipe.Writer.Complete();
-            sendQueue.Complete();
         }
 
         private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
@@ -356,18 +323,18 @@ namespace MiningCore.Stratum
 
         private async Task ProcessSendQueueAsync()
         {
-            while (true)
+            while(true)
             {
                 var payload = await sendQueue.ReceiveAsync();
 
                 logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
 
-                using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                 {
                     serializer.Serialize(writer, payload);
                 }
 
-                networkStream.WriteByte(0xa);  // terminator
+                networkStream.WriteByte(0xa); // terminator
 
                 await networkStream.FlushAsync();
             }

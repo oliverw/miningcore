@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
@@ -138,6 +139,7 @@ namespace MiningCore.Mining
         private void EnsureNoZombieClient(StratumClient client)
         {
             Observable.Timer(clock.Now.AddSeconds(10))
+                .TakeUntil(client.Terminated)
                 .Subscribe(_ =>
                 {
                     try
@@ -219,14 +221,16 @@ namespace MiningCore.Mining
 
             var shareReceived = messageBus.Listen<ClientShare>()
                 .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
+                .Select(_=> Unit.Default)
                 .Take(1);
 
             var timeout = poolEndpoint.VarDiff.TargetTime;
 
             Observable
                 .Timer(TimeSpan.FromSeconds(timeout))
-                .TakeUntil(shareReceived)
+                .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
                 .Take(1)
+                .Where(_=> client.IsAlive)
                 .Subscribe(_ =>
                 {
                     UpdateVarDiff(client, true);

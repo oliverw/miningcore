@@ -247,10 +247,13 @@ namespace MiningCore.Stratum
 
         protected virtual void OnReceiveError(StratumClient client, Exception ex)
         {
-            if (ex.InnerException is SocketException)
+            if (ex is AggregateException)
                 ex = ex.InnerException;
 
-            switch(ex)
+            if (ex is IOException && ex.InnerException != null)
+                ex = ex.InnerException;
+
+            switch (ex)
             {
                 case SocketException sockEx:
                     if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
