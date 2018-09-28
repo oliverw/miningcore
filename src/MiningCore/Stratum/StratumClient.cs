@@ -32,6 +32,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using MiningCore.Configuration;
@@ -81,6 +82,7 @@ namespace MiningCore.Stratum
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new Subject<Unit>();
         private bool expectingProxyHeader;
+        private CancellationTokenSource cts = new CancellationTokenSource();
 
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
@@ -124,7 +126,7 @@ namespace MiningCore.Stratum
                 else
                     logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
-                using(networkStream)
+                using(new CompositeDisposable(networkStream, cts))
                 {
                     var tasks = new[]
                     {
@@ -139,6 +141,7 @@ namespace MiningCore.Stratum
                     receivePipe.Reader.Complete();
                     receivePipe.Writer.Complete();
                     sendQueue.Complete();
+                    cts.Cancel();
 
                     // Signal completion or error
                     var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
@@ -260,14 +263,14 @@ namespace MiningCore.Stratum
             {
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
-                var cb = await networkStream.ReadAsync(memory);
+                var cb = await networkStream.ReadAsync(memory, cts.Token);
                 if (cb == 0)
                     break; // EOF
 
                 LastReceive = clock.Now;
                 receivePipe.Writer.Advance(cb);
 
-                var result = await receivePipe.Writer.FlushAsync();
+                var result = await receivePipe.Writer.FlushAsync(cts.Token);
 
                 if (result.IsCompleted)
                     break;
@@ -279,7 +282,7 @@ namespace MiningCore.Stratum
         {
             while(true)
             {
-                var result = await receivePipe.Reader.ReadAsync();
+                var result = await receivePipe.Reader.ReadAsync(cts.Token);
 
                 var buffer = result.Buffer;
                 SequencePosition? position = null;
@@ -328,7 +331,7 @@ namespace MiningCore.Stratum
         {
             while(true)
             {
-                var payload = await sendQueue.ReceiveAsync();
+                var payload = await sendQueue.ReceiveAsync(cts.Token);
 
                 logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
 
@@ -339,7 +342,7 @@ namespace MiningCore.Stratum
 
                 networkStream.WriteByte(0xa); // terminator
 
-                await networkStream.FlushAsync();
+                await networkStream.FlushAsync(cts.Token);
             }
         }
 
