@@ -135,17 +135,20 @@ namespace MiningCore.Stratum
 
                     await Task.WhenAny(tasks);
 
-                    // Make sure other tasks complete as well
+                    // Make sure all tasks complete
                     receivePipe.Reader.Complete();
                     receivePipe.Writer.Complete();
                     sendQueue.Complete();
 
                     // Signal completion or error
-                    if (!tasks.Any(t=> t.IsFaulted))
+                    var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
+
+                    if (error == null)
                         onCompleted(this);
                     else
-                        onError(this, tasks.First(t=> t.IsFaulted).Exception);
+                        onError(this, error);
 
+                    // Release external observables
                     IsAlive = false;
                     terminated.OnNext(Unit.Default);
 
