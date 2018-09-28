@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -122,6 +123,8 @@ namespace MiningCore.Api
             Formatting = Formatting.Indented,
             NullValueHandling = NullValueHandling.Ignore
         };
+
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMapAdmin;
@@ -247,8 +250,11 @@ namespace MiningCore.Api
                     // load stats
                     var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
 
+                    // get pool
+                    pools.TryGetValue(config.Id, out var pool);
+
                     // map
-                    var result = config.ToPoolInfo(mapper, stats);
+                    var result = config.ToPoolInfo(mapper, stats, pool);
 
                     // enrich
                     result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
@@ -278,9 +284,12 @@ namespace MiningCore.Api
             // load stats
             var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, pool.Id));
 
+            // get pool
+            pools.TryGetValue(pool.Id, out var poolInstance);
+
             var response = new GetPoolResponse
             {
-                Pool = pool.ToPoolInfo(mapper, stats)
+                Pool = pool.ToPoolInfo(mapper, stats, poolInstance)
             };
 
             // enrich
@@ -663,6 +672,11 @@ namespace MiningCore.Api
             logger.Info(() => $"Launching ...");
             StartApi(clusterConfig);
             StartAdminApi(clusterConfig);
+        }
+
+        public void AttachPool(IMiningPool pool)
+        {
+            pools[pool.Config.Id] = pool;
         }
 
         #endregion // API-Surface

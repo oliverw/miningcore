@@ -44,7 +44,7 @@ using Newtonsoft.Json;
 
 namespace MiningCore.Blockchain.Monero
 {
-    [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN)]
+    [CoinMetadata(CoinType.XMR, CoinType.AEON, CoinType.ETN, CoinType.TUBE)]
     public class MoneroPool : PoolBase
     {
         public MoneroPool(IComponentContext ctx,
@@ -190,7 +190,7 @@ namespace MiningCore.Blockchain.Monero
             return result;
         }
 
-        private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
                 }
 
@@ -242,7 +242,7 @@ namespace MiningCore.Blockchain.Monero
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty);
+                var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty, ct);
                 client.Respond(new MoneroResponseBase(), request.Id);
 
                 // publish
@@ -335,6 +335,12 @@ namespace MiningCore.Blockchain.Monero
                 // we need work before opening the gates
                 await manager.Blocks.Take(1).ToTask(ct);
             }
+
+            else
+            {
+                // keep updating NetworkStats
+                disposables.Add(manager.Blocks.Subscribe());
+            }
         }
 
         protected override void InitStats()
@@ -350,7 +356,7 @@ namespace MiningCore.Blockchain.Monero
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> tsRequest)
+            Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
@@ -366,7 +372,7 @@ namespace MiningCore.Blockchain.Monero
                     break;
 
                 case MoneroStratumMethods.Submit:
-                    await OnSubmitAsync(client, tsRequest);
+                    await OnSubmitAsync(client, tsRequest, ct);
                     break;
 
                 case MoneroStratumMethods.KeepAlive:

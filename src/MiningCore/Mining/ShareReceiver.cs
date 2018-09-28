@@ -196,7 +196,7 @@ namespace MiningCore.Mining
 
                                         if (pool.NetworkStats != null)
                                         {
-                                            pool.NetworkStats.BlockHeight = share.BlockHeight;
+                                            pool.NetworkStats.BlockHeight = (ulong) share.BlockHeight;
                                             pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
 
                                             if (poolContext.BlockHeight != share.BlockHeight)

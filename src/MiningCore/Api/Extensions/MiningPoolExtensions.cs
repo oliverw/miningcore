@@ -11,23 +11,23 @@ namespace MiningCore.Api.Extensions
 {
     public static class MiningPoolExtensions
     {
-        public static PoolInfo ToPoolInfo(this PoolConfig pool, IMapper mapper, Persistence.Model.PoolStats stats)
+        public static PoolInfo ToPoolInfo(this PoolConfig poolConfig, IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
         {
-            var poolInfo = mapper.Map<PoolInfo>(pool);
+            var poolInfo = mapper.Map<PoolInfo>(poolConfig);
 
             // enrich with basic information
-            poolInfo.Coin.Algorithm = GetPoolAlgorithm(pool);
+            poolInfo.Coin.Algorithm = GetPoolAlgorithm(poolConfig);
 
             poolInfo.PoolStats = mapper.Map<PoolStats>(stats);
-            poolInfo.NetworkStats = mapper.Map<BlockchainStats>(stats);
+            poolInfo.NetworkStats = pool?.NetworkStats ?? mapper.Map<BlockchainStats>(stats);
 
             // pool wallet link
-            CoinMetaData.AddressInfoLinks.TryGetValue(pool.Coin.Type, out var addressInfobaseUrl);
+            CoinMetaData.AddressInfoLinks.TryGetValue(poolConfig.Coin.Type, out var addressInfobaseUrl);
             if (!string.IsNullOrEmpty(addressInfobaseUrl))
                 poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
 
             // pool fees
-            poolInfo.PoolFeePercent = (float) pool.RewardRecipients.Sum(x => x.Percentage);
+            poolInfo.PoolFeePercent = (float) poolConfig.RewardRecipients.Sum(x => x.Percentage);
 
             // strip security critical stuff
             if (poolInfo.PaymentProcessing.Extra != null)

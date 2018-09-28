@@ -34,6 +34,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SOFT_AES true
 #endif
 
+
+extern "C" MODULE_API int cryptonight_get_context_size_export() {
+    return sizeof(cryptonight_ctx) + xmrig::CRYPTONIGHT_MEMORY;
+}
+
 extern "C" MODULE_API cryptonight_ctx *cryptonight_alloc_context_export() {
     cryptonight_ctx *ctx = static_cast<cryptonight_ctx *>(_mm_malloc(sizeof(cryptonight_ctx), 16));
     ctx->memory = static_cast<uint8_t *>(_mm_malloc(xmrig::CRYPTONIGHT_MEMORY, 4096));
@@ -46,6 +51,14 @@ extern "C" MODULE_API cryptonight_ctx *cryptonight_alloc_lite_context_export() {
     ctx->memory = static_cast<uint8_t *>(_mm_malloc(xmrig::CRYPTONIGHT_LITE_MEMORY, 4096));
 
     return ctx;
+}
+
+extern "C" MODULE_API int cryptonight_get_context_lite_size_export() {
+    return sizeof(cryptonight_ctx) + xmrig::CRYPTONIGHT_LITE_MEMORY;
+}
+
+extern "C" MODULE_API int cryptonight_get_context_heavy_size_export() {
+    return sizeof(cryptonight_ctx) + xmrig::CRYPTONIGHT_HEAVY_MEMORY;
 }
 
 extern "C" MODULE_API cryptonight_ctx *cryptonight_alloc_heavy_context_export() {

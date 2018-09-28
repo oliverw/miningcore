@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
@@ -138,6 +139,8 @@ namespace MiningCore.Mining
         private void EnsureNoZombieClient(StratumClient client)
         {
             Observable.Timer(clock.Now.AddSeconds(10))
+                .TakeUntil(client.Terminated)
+                .Where(_=> client.IsAlive)
                 .Subscribe(_ =>
                 {
                     try
@@ -216,15 +219,17 @@ namespace MiningCore.Mining
             // Check Every Target Time as we adjust the diff to meet target
             // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
-            var interval = poolEndpoint.VarDiff.TargetTime;
 
-            var shareReceivedFromClient = messageBus.Listen<ClientShare>()
-                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client);
+            var shareReceived = messageBus.Listen<ClientShare>()
+                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
+                .Select(_=> Unit.Default)
+                .Take(1);
 
-            Observable
-                .Timer(TimeSpan.FromSeconds(interval))
-                .TakeUntil(shareReceivedFromClient)
-                .Take(1)
+            var timeout = poolEndpoint.VarDiff.TargetTime;
+
+            Observable.Timer(TimeSpan.FromSeconds(timeout))
+                .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
+                .Where(_ => client.IsAlive)
                 .Subscribe(_ =>
                 {
                     UpdateVarDiff(client, true);

@@ -302,7 +302,7 @@ namespace MiningCore.Blockchain.Monero
         }
 
         public async Task<Share> SubmitShareAsync(StratumClient worker,
-            MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase)
+            MoneroSubmitShareRequest request, MoneroWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
@@ -532,9 +532,6 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-            if (poolConfig.EnableInternalStratum == false)
-                return;
-
             var blockSubmission = blockSubmissionSubject.Synchronize();
             var pollTimerRestart = blockSubmissionSubject.Synchronize();
 

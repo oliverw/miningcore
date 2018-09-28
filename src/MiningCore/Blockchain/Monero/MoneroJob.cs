@@ -154,6 +154,7 @@ namespace MiningCore.Blockchain.Monero
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
+            int variant;
 
             switch (coin)
             {
@@ -162,8 +163,12 @@ namespace MiningCore.Blockchain.Monero
                     break;
 
                 case CoinType.XMR:
-                    var variant = blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0;
+                    variant = blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0;
                     LibCryptonight.Cryptonight(blobConverted, headerHash, variant);
+                    break;
+
+                case CoinType.TUBE:
+                    LibCryptonight.CryptonightHeavy(blobConverted, headerHash, 2);
                     break;
 
                 default:

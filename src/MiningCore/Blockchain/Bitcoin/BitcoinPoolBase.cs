@@ -95,7 +95,7 @@ namespace MiningCore.Blockchain.Bitcoin
             client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
-        protected virtual async Task OnAuthorizeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        protected virtual async Task OnAuthorizeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
 
@@ -117,7 +117,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
-            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName);
+            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
             context.MinerName = minerName;
             context.WorkerName = workerName;
 
@@ -156,7 +156,7 @@ namespace MiningCore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        protected virtual async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
@@ -171,7 +171,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
                 }
 
@@ -188,7 +188,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 var requestParams = request.ParamsAs<string[]>();
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty);
+                var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty, ct);
 
                 client.Respond(true, request.Id);
 
@@ -340,6 +340,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 // we need work before opening the gates
                 await manager.Jobs.Take(1).ToTask(ct);
             }
+
+            else
+            {
+                // keep updating NetworkStats
+                disposables.Add(manager.Jobs.Subscribe());
+            }
         }
 
         protected override void InitStats()
@@ -355,7 +361,7 @@ namespace MiningCore.Blockchain.Bitcoin
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> tsRequest)
+            Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
 
@@ -366,11 +372,11 @@ namespace MiningCore.Blockchain.Bitcoin
                     break;
 
                 case BitcoinStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest);
+                    await OnAuthorizeAsync(client, tsRequest, ct);
                     break;
 
                 case BitcoinStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest);
+                    await OnSubmitAsync(client, tsRequest, ct);
                     break;
 
                 case BitcoinStratumMethods.SuggestDifficulty:

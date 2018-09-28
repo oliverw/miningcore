@@ -33,13 +33,23 @@ namespace MiningCore.Native
 
         internal class CryptonightContextStore
         {
-            internal CryptonightContextStore(Func<IntPtr> allocator, string logId)
+            internal CryptonightContextStore(Func<IntPtr> allocator, int allocationSize, string logId)
             {
                 this.logId = logId.ToUpper();
 
                 // allocate context per CPU
-                for (var i = 0; i < contexts.BoundedCapacity; i++)
-                    contexts.Add(new Lazy<IntPtr>(allocator));
+                for(var i = 0; i < contexts.BoundedCapacity; i++)
+                {
+                    contexts.Add(new Lazy<IntPtr>(()=>
+                    {
+                        var result = allocator();
+
+                        if(result != IntPtr.Zero)
+                            GC.AddMemoryPressure(allocationSize);
+
+                        return result;
+                    }));
+                }
             }
 
             private readonly string logId;
@@ -63,13 +73,22 @@ namespace MiningCore.Native
             }
         }
 
-        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, "cn");
-        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
-        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
+        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, cryptonight_get_context_size(), "cn");
+        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, cryptonight_get_context_lite_size(), "cn-lite");
+        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, cryptonight_get_context_heavy_size(), "cn-heavy");
 
         #endregion // Hashing context managment
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_size_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cryptonight_get_context_size();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_lite_size_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cryptonight_get_context_lite_size();
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_heavy_size_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cryptonight_get_context_heavy_size();
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_context();

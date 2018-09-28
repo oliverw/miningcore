@@ -140,7 +140,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                     // update stats
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
-                    BlockchainStats.BlockHeight = (long) job.BlockTemplate.Height;
+                    BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                 }
 
@@ -385,7 +385,7 @@ namespace MiningCore.Blockchain.Ethereum
         }
 
         public async Task<Share> SubmitShareAsync(StratumClient worker,
-            string[] request, double stratumDifficulty, double stratumDifficultyBase)
+            string[] request, double stratumDifficulty, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
@@ -577,9 +577,9 @@ namespace MiningCore.Blockchain.Ethereum
                     logger.Info(() => $"Waiting for first valid block template");
                     await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
-
-                SetupJobUpdates();
             }
+
+            SetupJobUpdates();
         }
 
         private void ConfigureRewards()
@@ -601,9 +601,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            if (poolConfig.EnableInternalStratum == false)
-                return;
-
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
             if (enableStreaming && !poolConfig.Daemons.Any(x =>

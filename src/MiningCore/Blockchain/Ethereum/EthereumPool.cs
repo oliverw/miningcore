@@ -145,7 +145,7 @@ namespace MiningCore.Blockchain.Ethereum
             logger.Info(() => $"[{client.ConnectionId}] Authorized worker {workerValue}");
         }
 
-        private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<EthereumWorkerContext>();
@@ -160,7 +160,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
                 }
 
@@ -183,7 +183,7 @@ namespace MiningCore.Blockchain.Ethereum
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(client, submitRequest, context.Difficulty,
-                    poolEndpoint.Difficulty);
+                    poolEndpoint.Difficulty, ct);
 
                 client.Respond(true, request.Id);
 
@@ -300,6 +300,12 @@ namespace MiningCore.Blockchain.Ethereum
                 // we need work before opening the gates
                 await manager.Jobs.Take(1).ToTask(ct);
             }
+
+            else
+            {
+                // keep updating NetworkStats
+                disposables.Add(manager.Jobs.Subscribe());
+            }
         }
 
         protected override void InitStats()
@@ -315,7 +321,7 @@ namespace MiningCore.Blockchain.Ethereum
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> tsRequest)
+            Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
 
@@ -330,7 +336,7 @@ namespace MiningCore.Blockchain.Ethereum
                     break;
 
                 case EthereumStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest);
+                    await OnSubmitAsync(client, tsRequest, ct);
                     break;
 
                 case EthereumStratumMethods.ExtraNonceSubscribe:
