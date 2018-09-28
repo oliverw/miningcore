@@ -236,7 +236,6 @@ namespace MiningCore.Stratum
                             return serializer.Deserialize<T>(jr);
                         }
                     }
-
                 }
             }
 
