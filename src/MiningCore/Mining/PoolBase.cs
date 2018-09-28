@@ -140,6 +140,7 @@ namespace MiningCore.Mining
         {
             Observable.Timer(clock.Now.AddSeconds(10))
                 .TakeUntil(client.Terminated)
+                .Where(_=> client.IsAlive)
                 .Subscribe(_ =>
                 {
                     try
@@ -226,11 +227,9 @@ namespace MiningCore.Mining
 
             var timeout = poolEndpoint.VarDiff.TargetTime;
 
-            Observable
-                .Timer(TimeSpan.FromSeconds(timeout))
+            Observable.Timer(TimeSpan.FromSeconds(timeout))
                 .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
-                .Take(1)
-                .Where(_=> client.IsAlive)
+                .Where(_ => client.IsAlive)
                 .Subscribe(_ =>
                 {
                     UpdateVarDiff(client, true);
