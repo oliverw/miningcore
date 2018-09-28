@@ -335,6 +335,12 @@ namespace MiningCore.Blockchain.Monero
                 // we need work before opening the gates
                 await manager.Blocks.Take(1).ToTask(ct);
             }
+
+            else
+            {
+                // keep updating NetworkStats
+                disposables.Add(manager.Blocks.Subscribe());
+            }
         }
 
         protected override void InitStats()

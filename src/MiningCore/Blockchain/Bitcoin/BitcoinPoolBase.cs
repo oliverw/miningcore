@@ -340,6 +340,12 @@ namespace MiningCore.Blockchain.Bitcoin
                 // we need work before opening the gates
                 await manager.Jobs.Take(1).ToTask(ct);
             }
+
+            else
+            {
+                // keep updating NetworkStats
+                disposables.Add(manager.Jobs.Subscribe());
+            }
         }
 
         protected override void InitStats()
