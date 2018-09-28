@@ -20,7 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Autofac;
 using AutoMapper;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
+using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Messaging;
 using MiningCore.Persistence;
@@ -28,23 +28,17 @@ using MiningCore.Persistence.Repositories;
 using MiningCore.Time;
 using Newtonsoft.Json;
 
-namespace MiningCore.Blockchain.Bitcoin
+namespace MiningCore.Blockchain.HelpTheHomeless
 {
-    [CoinMetadata(
-        CoinType.BTC, CoinType.BCH, CoinType.NMC, CoinType.PPC,
-        CoinType.LTC, CoinType.DOGE, CoinType.DGB, CoinType.VIA,
-        CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
-        CoinType.MOON, CoinType.XVG, CoinType.PAK, CoinType.CANN,
-        CoinType.RVN, CoinType.PGN, CoinType.BCD, CoinType.ACM, 
-        CoinType.GIN)]
-    public class BitcoinPool : BitcoinPoolBase<BitcoinJob<BlockTemplate>, BlockTemplate>
+    [CoinMetadata(CoinType.HTH, CoinType.REDN, CoinType.XMN)]
+    public class HelpTheHomelessPool : BitcoinPoolBase<HelpTheHomelessJob, DaemonResponses.HelpTheHomelessBlockTemplate>
     {
-        public BitcoinPool(IComponentContext ctx,
+        public HelpTheHomelessPool(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
             IConnectionFactory cf,
             IStatsRepository statsRepo,
             IMapper mapper,
-            IMasterClock clock,            
+            IMasterClock clock,
             IMessageBus messageBus) :
             base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
         {

@@ -13,29 +13,29 @@ namespace MiningCore.Blockchain
 
         public static readonly Dictionary<CoinType, Dictionary<string, string>> BlockInfoLinks = new Dictionary<CoinType, Dictionary<string, string>>
         {
-            {
-                CoinType.ETH, new Dictionary<string, string>
-                {
-                    { string.Empty, $"https://etherscan.io/block/{BlockHeightPH}" },
-                    { EthereumConstants.BlockTypeUncle, $"https://etherscan.io/uncle/{BlockHeightPH}" },
-                }
-            },
+            { 
+              CoinType.ETH, new Dictionary<string, string>
+              {
+                { string.Empty, $"https://etherscan.io/block/{BlockHeightPH}" },
+                { EthereumConstants.BlockTypeUncle, $"https://etherscan.io/uncle/{BlockHeightPH}" },
+            }
+          },
 
-            {
-                CoinType.ETC, new Dictionary<string, string>
-                {
-                    { string.Empty, $"https://gastracker.io/block/{BlockHeightPH}" },
-                    { EthereumConstants.BlockTypeUncle, $"https://gastracker.io/uncle/{BlockHeightPH}" }
-                }
-            },
+            { 
+              CoinType.ETC, new Dictionary<string, string>
+              {
+                { string.Empty, $"https://gastracker.io/block/{BlockHeightPH}" },
+                { EthereumConstants.BlockTypeUncle, $"https://gastracker.io/uncle/{BlockHeightPH}" }
+            }
+          },
 
-            {
-                CoinType.CLO, new Dictionary<string, string>
-                {
-                    { string.Empty, $"https://explorer.callisto.network/block/{BlockHeightPH}" },
-                    { EthereumConstants.BlockTypeUncle, $"https://explorer.callisto.network/uncle/{BlockHeightPH}" }
-                }
-            },
+            { 
+              CoinType.CLO, new Dictionary<string, string>
+              {
+                { string.Empty, $"https://explorer.callisto.network/block/{BlockHeightPH}" },
+                { EthereumConstants.BlockTypeUncle, $"https://explorer.callisto.network/uncle/{BlockHeightPH}" }
+            }
+          },
 
             { CoinType.XMR, new Dictionary<string, string> { { string.Empty, $"https://chainradar.com/xmr/block/{BlockHeightPH}" } } },
             { CoinType.ETN, new Dictionary<string, string> { { string.Empty, $"https://blockexplorer.electroneum.com/block/{BlockHeightPH}" } } },
@@ -66,8 +66,13 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, new Dictionary<string, string> { { string.Empty, "https://chainz.cryptoid.info/pak/block.dws?{BlockHeightPH}.htm" } } },
             { CoinType.FLO, new Dictionary<string, string> { { string.Empty, "https://florincoin.info/block/{0}" } } },
             { CoinType.CANN, new Dictionary<string, string> { { string.Empty, $"https://chainz.cryptoid.info/cann/block.dws?{BlockHeightPH}.htm" } } },
-            { CoinType.RVN, new Dictionary<string, string> { { string.Empty, $"http://explorer.threeeyed.info/block/{BlockHashPH}" } } },
+            { CoinType.RVN, new Dictionary<string, string> { { string.Empty, $"https://ravencoin.network/block/{BlockHashPH}" } } },
             { CoinType.PGN, new Dictionary<string, string> { { string.Empty, $"http://explorer.pigeoncoin.org/block/{BlockHashPH}" } } },
+            { CoinType.ACM, new Dictionary<string, string> { { string.Empty, $"https://explorer2.actinium.org/block/{BlockHashPH}" } } },
+            { CoinType.HTH, new Dictionary<string, string> { { string.Empty, $"https://explorer.hthcoin.world/block/{BlockHashPH}" } } },
+            { CoinType.GIN, new Dictionary<string, string> { { string.Empty, $"https://explorer.gincoin.io/block/{BlockHashPH}" } } },
+            { CoinType.REDN, new Dictionary<string, string> { { string.Empty, $"http://explorer.reden.io/block/{BlockHashPH}" } } },
+            { CoinType.XMN, new Dictionary<string, string> { { string.Empty, $"https://explorer.motionproject.org/#/block/{BlockHashPH}" } } },
         };
 
         public static readonly Dictionary<CoinType, string> TxInfoLinks = new Dictionary<CoinType, string>
@@ -106,8 +111,13 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/tx/{0}" },
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm" },
-            { CoinType.RVN, "http://explorer.threeeyed.info/tx/{0}" },
+            { CoinType.RVN, "https://ravencoin.network/tx/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/tx/{0}" },
+            { CoinType.ACM, "http://explorer2.actinium.org/tx/{0}" },
+            { CoinType.HTH, "http://explorer.hthcoin.world/tx/{0}" },
+            { CoinType.GIN, "http://explorer.gincoin.io/tx/{0}" },
+            { CoinType.REDN, "http://explorer.reden.io/tx/{0}" },
+            { CoinType.XMN, "http://explorer.motionproject.org/#/tx/{0}" },
         };
 
         public static readonly Dictionary<CoinType, string> AddressInfoLinks = new Dictionary<CoinType, string>
@@ -143,8 +153,13 @@ namespace MiningCore.Blockchain
             { CoinType.PAK, "https://chainz.cryptoid.info/pak/address.dws?{0}.htm" },
             { CoinType.FLO, "https://florincoin.info/address/{0}" },
             { CoinType.CANN, "https://chainz.cryptoid.info/cann/address.dws?{0}.htm" },
-            { CoinType.RVN, "http://explorer.threeeyed.info/address/{0}" },
+            { CoinType.RVN, "https://ravencoin.network/address/{0}" },
             { CoinType.PGN, "http://explorer.pigeoncoin.org/address/{0}" },
+            { CoinType.ACM, "http://explorer2.actinium.org/address/{0}" },
+            { CoinType.HTH, "http://explorer.hthcoin.world/address/{0}" },
+            { CoinType.GIN, "http://explorer.gincoin.io/address/{0}" },
+            { CoinType.REDN, "http://explorer.reden.io/address/{0}" },
+            { CoinType.XMN, "http://explorer.motionproject.org/#/address/{0}" },
         };
 
         private const string Ethash = "Ethash";
@@ -189,6 +204,11 @@ namespace MiningCore.Blockchain
             { CoinType.CANN, BitcoinProperties.GetAlgorithm },
             { CoinType.RVN, BitcoinProperties.GetAlgorithm },
             { CoinType.PGN, BitcoinProperties.GetAlgorithm },
+            { CoinType.ACM, BitcoinProperties.GetAlgorithm },
+            { CoinType.HTH, BitcoinProperties.GetAlgorithm },
+            { CoinType.GIN, BitcoinProperties.GetAlgorithm },
+            { CoinType.REDN, BitcoinProperties.GetAlgorithm },
+            { CoinType.XMN, BitcoinProperties.GetAlgorithm },
         };
     }
 }

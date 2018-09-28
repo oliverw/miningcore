@@ -1,9 +1,8 @@
 
-[![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
-[![Docker Build Statu](https://img.shields.io/docker/build/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
-[![Docker Stars](https://img.shields.io/docker/stars/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+[![Docker Build Statu](https://img.shields.io/docker/build/calebcall/miningcore-docker.svg)](https://hub.docker.com/r/calebcall/miningcore-docker/)
+[![Docker Stars](https://img.shields.io/docker/stars/calebcall/miningcore-docker.svg)](https://hub.docker.com/r/calebcall/miningcore-docker/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/calebcall/miningcore-docker.svg)]()
+
 
 ## Miningcore
 
@@ -27,31 +26,74 @@ This is going to change in the future.
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
+### Algorithms
+
+Algo | Implemented | Tested | Notes
+:--- | :---: | :---: | :---:
+sha256S  | Yes | Yes |
+sha256D | Yes | Yes |
+sha256DReverse | Yes | Yes |
+x11 | Yes | Yes |
+blake2s | Yes | Yes |
+x17 | Yes | Yes |
+x16r | Yes | Yes |
+x16s | Yes | Yes |
+groestl | Yes | Yes |
+lyra2Rev2 | Yes | Yes |
+lyra2z | Yes | Yes |
+scrypt | Yes | Yes |
+skein | Yes | Yes |
+qubit | Yes | Yes |
+groestlMyriad | Yes | Yes |
+NeoScrypt | Yes | Yes |
+DigestReverser(vergeblockhasher) | Yes | Yes |
+
 ### Coins
 
-Coin | Implemented | Tested | Planned | Notes
+Coin | Implemented | Algorithm | Notes | Website
 :--- | :---: | :---: | :---: | :---:
-Bitcoin | Yes | Yes | |
-Bitcoin Cash | Yes | Yes | |
-Bitcoin Gold | Yes | Yes | |
-Bitcoin Diamond | Yes | Yes | |
-Bitcoin Private | Yes | Yes | |
-Litecoin | Yes | Yes | |
-Zcash | Yes | Yes | |
-Monero | Yes | Yes | |
-Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-DASH | Yes | Yes | |
-Vertcoin | Yes | Yes | |
-Monacoin | Yes | Yes | |
-Groestlcoin | Yes | Yes | |
-Dogecoin | Yes | No | |
-DigiByte | Yes | Yes | |
-Namecoin | Yes | No | |
-Viacoin | Yes | No | |
-Peercoin | Yes | No | |
-Ravencoin | Yes | Yes | |
-MoonCoin | Yes | Yes | |
+Bitcoin | Yes | sha256 | | https://bitcoin.org
+Litecoin | Yes | Scrypt | | https://litecoin.com
+Ethereum | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://www.ethereum.org
+Actinium | Yes | lyra2z | | https://actinium.io
+AEON | Yes | CryptoNight-Light | | http://www.aeon.cash
+Bitcoin Cash | Yes | sha256 | | https://www.bitcoincash.org
+Bitcoin Gold | Yes | Equihash | | https://bitcoingold.org
+Bitcoin Private | Yes | Equihash | | https://btcprvate.org
+Callisto network | Yes | Ethash | | https://callisto.network
+CannabisCoin | Yes | X11 | | http://cannabiscoin.net
+CrowdCoin | Yes | Neoscrypt | | https://crowdcoin.site
+DASH | Yes | X11 | | https://www.dash.org
+DigiByte | Yes | Groestl, Scrypt, skein, sha256, qubit | | http://www.digibyte.io
+Dogecoin | Yes | Scrypt | | http://dogecoin.com
+Electroneum | Yes | CryptoNight | | https://electroneum.com
+Ellaism | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ellaism.org
+Ethereum Classic | Yes | Ethash | Requires [Parity](https://github.com/paritytech/parity/releases) | https://ethereumclassic.org
+Expanse | Yes | Ethash | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases) | http://www.expanse.tech
+Flocoin | Yes | Scrypt | | https://www.flo.cash
+Gincoin | Yes | lyra2z | | https://gincoin.io
+Globaltoken | Yes | sha256 | Requires [GLT Daemon](https://globaltoken.org/#downloads) | http://globaltoken.org
+GoByte | Yes | Neoscrypt | | https://gobyte.network
+Groestlcoin | Yes | Groestl | | http://www.groestlcoin.org
+Help The Homeless | Yes | X16r | | https://hthcoin.world
+Horizen | Yes | Equihash | | https://horizen.global
+Monacoin | Yes | Lyra2Rev2 | | http://monacoin.org
+Monero | Yes | Cryptonight | | https://getmonero.org
+Motion | Yes | X16r | | https://motionproject.org
+MoonCoin | Yes | Scrypt | | http://mooncoin.com
+Namecoin | Yes | sha256 | | https://namecoin.org
+Pakcoin | Yes | Scrypt | | https://www.pakcoin.io
+Peercoin | Yes | sha256 | | https://peercoin.net
+Pigeoncoin | Yes | X16s | | https://pigeoncoin.org
+Ravencoin | Yes | X16r | | https://ravencoin.org 
+REDEN | Yes | X16s | | https://www.reden.io
+Straks | Yes | Lyra2Rev2 | | https://straks.tech
+Vertcoin | Yes | Lyra2Rev2 | | http://vertcoin.org
+Verge | Yes | X17, Blake2s, Lyra2Rev2, Myriad-Groestl, Scrypt | | https://vergecurrency.com
+Viacoin | Yes | Scrypt | | https://viacoin.org
+Zcash | Yes | Equihash | | https://z.cash
+ZClassic | Yes | Equihash | | http://zclassic.org
+
 
 #### Ethereum
 
@@ -66,20 +108,6 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 - First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 - Miners may use both t-addresses and z-addresses when connecting to the pool
-
-### Donations
-
-This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
-
-* BTC:  `17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm`
-* LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
-* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
-* ETH:  `0xcb55abBfe361B12323eb952110cE33d5F28BeeE1`
-* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
-* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
-* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
-* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
-* XMR: `475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH`
 
 ### Runtime Requirements
 
@@ -113,19 +141,19 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
-### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+### [Configuration](https://github.com/calebcall/miningcore/wiki/Configuration)
 
-### [API](https://github.com/coinfoundry/miningcore/wiki/API)
+### [API](https://github.com/coinfoundry/calebcall/wiki/API) 
 
 ### Docker
 
-The official [miningcore docker image](https://hub.docker.com/r/coinfoundry/miningcore-docker/) expects a valid pool configuration file as volume argument:
+The [miningcore docker image](https://hub.docker.com/r/calebcall/miningcore-docker/) expects a valid pool configuration file as volume argument:
 
 ```console
-$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro coinfoundry/miningcore-docker
+$ docker run -d -p 3032:3032 -p 80:80 -v /path/to/config.json:/config.json:ro calebcall/miningcore-docker
 ```
 
-You also need to expose all stratum ports specified in your configuration file.
+You also need to expose all stratum ports specified in your configuration file.  The swagger api documentation will be available on port 80.
 
 ### Building from Source (Shell)
 
@@ -140,7 +168,7 @@ $ sudo apt-get update -y
 $ sudo apt-get install apt-transport-https -y
 $ sudo apt-get update -y
 $ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-$ git clone https://github.com/coinfoundry/miningcore
+$ git clone https://github.com/calebcall/miningcore
 $ cd miningcore/src/MiningCore
 $ ./linux-build.sh
 ```
@@ -148,7 +176,7 @@ $ ./linux-build.sh
 #### Windows
 
 ```dosbatch
-> git clone https://github.com/coinfoundry/miningcore
+> git clone https://github.com/calebcall/miningcore
 > cd miningcore/src/MiningCore
 > windows-build.bat
 ```

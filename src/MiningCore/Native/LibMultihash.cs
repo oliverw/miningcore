@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -114,6 +114,9 @@ namespace MiningCore.Native
 
         [DllImport("libmultihash", EntryPoint = "lyra2rev2_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int lyra2rev2(byte* input, void* output);
+
+        [DllImport("libmultihash", EntryPoint = "lyra2z_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lyra2z(byte* input, byte* output);
 
         [DllImport("libmultihash", EntryPoint = "equihash_verify_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern bool equihash_verify(byte* header, int headerLength, byte* solution, int solutionLength);

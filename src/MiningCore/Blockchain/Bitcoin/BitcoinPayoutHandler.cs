@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -51,7 +51,7 @@ namespace MiningCore.Blockchain.Bitcoin
         CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.BTG,
         CoinType.GLT, CoinType.STAK, CoinType.MOON, CoinType.XVG,
         CoinType.PAK, CoinType.CANN, CoinType.RVN, CoinType.PGN,
-        CoinType.BCD)]
+        CoinType.BCD, CoinType.ACM, CoinType.GIN)]
     public class BitcoinPayoutHandler : PayoutHandlerBase,
         IPayoutHandler
     {

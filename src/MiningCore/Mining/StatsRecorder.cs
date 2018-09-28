@@ -53,9 +53,9 @@ namespace MiningCore.Mining
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-        private const int HashrateCalculationWindow = 1200; // seconds
-        private const int MinHashrateCalculationWindow = 300; // seconds
-        private const double HashrateBoostFactor = 1.07d;
+        private const int HashrateCalculationWindow = 300;  // seconds, default 1200
+        private const int MinHashrateCalculationWindow = 120;  // seconds
+        private const double HashrateBoostFactor = 1.06d;
         private ClusterConfig clusterConfig;
         private Thread thread1;
         private const int RetryCount = 4;
@@ -159,11 +159,17 @@ namespace MiningCore.Mining
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
                         var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
 
-                        // update
-                        pool.PoolStats.ConnectedMiners = byMiner.Length;
+                        // update                        
                         pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
                     }
+                    pool.PoolStats.ConnectedMiners = byMiner.Length;
+                }
+                else
+                {
+                    pool.PoolStats.ConnectedMiners = 0;
+                    pool.PoolStats.PoolHashrate = 0;
+                    pool.PoolStats.SharesPerSecond = 0;                
                 }
 
                 // persist

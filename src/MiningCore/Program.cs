@@ -374,16 +374,7 @@ namespace MiningCore
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
-            Console.WriteLine($" https://github.com/coinfoundry/miningcore\n");
-            Console.WriteLine($" Please contribute to the development of the project by donating:\n");
-            Console.WriteLine($" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
-            Console.WriteLine($" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
-            Console.WriteLine($" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
-            Console.WriteLine($" ZEC  - t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7");
-            Console.WriteLine($" ZCL  - t1MFU1vD3YKgsK6Uh8hW7UTY8mKAV2xVqBr");
-            Console.WriteLine($" ETH  - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
-            Console.WriteLine($" ETC  - 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0");
-            Console.WriteLine($" XMR  - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+            Console.WriteLine($" https://github.com/calebcall/miningcore\n");           
             Console.WriteLine();
         }
 

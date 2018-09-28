@@ -1,16 +1,13 @@
-/*
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -28,6 +25,8 @@ using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.BitcoinGold;
 using MiningCore.Blockchain.Dash;
 using MiningCore.Blockchain.Dash.DaemonResponses;
+using MiningCore.Blockchain.HelpTheHomeless;
+using MiningCore.Blockchain.HelpTheHomeless.DaemonResponses;
 using MiningCore.Blockchain.Ethereum;
 using MiningCore.Blockchain.Flo;
 using MiningCore.Blockchain.Monero;
@@ -102,10 +101,10 @@ namespace MiningCore
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
                 .Where(t => t.GetCustomAttributes<CoinMetadataAttribute>().Any() && t.GetInterfaces()
-                    .Any(i =>
-                        i.IsAssignableFrom(typeof(IMiningPool)) ||
-                        i.IsAssignableFrom(typeof(IPayoutHandler)) ||
-                        i.IsAssignableFrom(typeof(IPayoutScheme))))
+                                .Any(i =>
+                                    i.IsAssignableFrom(typeof(IMiningPool)) ||
+                                    i.IsAssignableFrom(typeof(IPayoutHandler)) ||
+                                    i.IsAssignableFrom(typeof(IPayoutScheme))))
                 .WithMetadataFrom<CoinMetadataAttribute>()
                 .AsImplementedInterfaces();
 
@@ -130,6 +129,9 @@ namespace MiningCore
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<StraksJob, StraksBlockTemplate>>()
+                .AsSelf();
+
+            builder.RegisterType<BitcoinJobManager<HelpTheHomelessJob, HelpTheHomelessBlockTemplate>>()
                 .AsSelf();
 
             builder.RegisterType<BitcoinJobManager<ZCashJob, ZCashBlockTemplate>>()

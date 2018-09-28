@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -62,8 +62,13 @@ namespace MiningCore.Configuration
         PAK, // PAKcoin
         CANN, // CannabisCoin
         RVN, // Ravencoin
-        PGN, // Pigeoncoin
+        PGN, // Pigeoncoin 
         BCD, // Bitcoin Diamond
+        ACM, //Actinium
+        HTH, //Help The Homeless
+        GIN, //GINCOIN
+        REDN, //REDEN 
+        XMN,  //Motion
     }
 
     public class CoinConfig
@@ -356,7 +361,7 @@ namespace MiningCore.Configuration
         public string PublishUrl { get; set; }
 
         /// <summary>
-        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it
+        /// If set to true, the relay will "Connect" to the url, rather than "Bind" it 
         /// </summary>
         public bool Connect { get; set; }
     }
