@@ -126,6 +126,7 @@ namespace MiningCore.Stratum
                 else
                     logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
+                // Async I/O loop
                 using(new CompositeDisposable(networkStream, cts))
                 {
                     var tasks = new[]
@@ -154,9 +155,9 @@ namespace MiningCore.Stratum
                     // Release external observables
                     IsAlive = false;
                     terminated.OnNext(Unit.Default);
-
-                    logger.Info(() => $"[{ConnectionId}] Connection closed");
                 }
+
+                logger.Info(() => $"[{ConnectionId}] Connection closed");
             });
         }
 
@@ -310,7 +311,8 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
+        private async Task ProcessRequestAsync(
+            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
             var request = Deserialize<JsonRpcRequest>(lineBuffer);
