@@ -32,6 +32,7 @@ using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Banning;
@@ -215,7 +216,7 @@ namespace MiningCore.Stratum
 
         protected abstract void OnConnect(StratumClient client, IPEndPoint portItem1);
 
-        protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request)
+        protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request, CancellationToken ct)
         {
             // boot pre-connected clients
             if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
@@ -229,7 +230,7 @@ namespace MiningCore.Stratum
             {
                 logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-                await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now));
+                await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
             }
 
             catch(Exception ex)
@@ -358,23 +359,11 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected IEnumerable<Task> ForEachClient(Func<StratumClient, Task> func)
-        {
-            StratumClient[] tmp;
-
-            lock(clients)
-            {
-                tmp = clients.Values.ToArray();
-            }
-
-            return tmp.Select(func);
-        }
-
         protected virtual void OnDisconnect(string subscriptionId)
         {
         }
 
         protected abstract Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> request);
+            Timestamped<JsonRpcRequest> request, CancellationToken ct);
     }
 }

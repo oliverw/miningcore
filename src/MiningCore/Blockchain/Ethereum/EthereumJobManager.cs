@@ -385,7 +385,7 @@ namespace MiningCore.Blockchain.Ethereum
         }
 
         public async Task<Share> SubmitShareAsync(StratumClient worker,
-            string[] request, double stratumDifficulty, double stratumDifficultyBase)
+            string[] request, double stratumDifficulty, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));

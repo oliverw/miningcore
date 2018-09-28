@@ -96,7 +96,7 @@ namespace MiningCore.Stratum
         public void Run(Socket socket,
             (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) poolEndpoint,
             X509Certificate2 tlsCert,
-            Func<StratumClient, JsonRpcRequest, Task> onRequestAsync,
+            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumClient> onCompleted,
             Action<StratumClient, Exception> onError)
         {
@@ -278,7 +278,7 @@ namespace MiningCore.Stratum
         }
 
         private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
-            Func<StratumClient, JsonRpcRequest, Task> onRequestAsync)
+            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
             while(true)
             {
@@ -316,7 +316,7 @@ namespace MiningCore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, Task> onRequestAsync,
+        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
             var request = Deserialize<JsonRpcRequest>(lineBuffer);
@@ -324,7 +324,7 @@ namespace MiningCore.Stratum
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
 
-            await onRequestAsync(this, request);
+            await onRequestAsync(this, request, cts.Token);
         }
 
         private async Task ProcessSendQueueAsync()

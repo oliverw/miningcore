@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using MiningCore.Blockchain.Bitcoin;
@@ -67,16 +68,16 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        public override async Task<bool> ValidateAddressAsync(string address)
+        public override async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             // handle t-addr
-            if (await base.ValidateAddressAsync(address))
+            if (await base.ValidateAddressAsync(address, ct))
                 return true;
 
             // handle z-addr
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(ct,
                 ZCashCommands.ZValidateAddress, new[] { address });
 
             return result.Response != null && result.Response.IsValid;
@@ -129,7 +130,7 @@ namespace MiningCore.Blockchain.ZCash
         }
 
         public override async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
-            double stratumDifficultyBase)
+            double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));

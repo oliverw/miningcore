@@ -144,7 +144,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
 
             try
             {
@@ -184,7 +184,27 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
+
+            var taskFirstCompleted = await Task.WhenAny(tasks);
+            var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
+            return result;
+        }
+
+        /// <summary>
+        /// Executes the request against all configured demons and returns the first successful response
+        /// </summary>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <returns></returns>
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(CancellationToken ct, string method, object payload = null,
+            JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
+            where TResponse : class
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
+
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, ct, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
@@ -216,7 +236,29 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var task = BuildRequestTask(endPoints.First(), method, payload, payloadJsonSerializerSettings);
+            var task = BuildRequestTask(endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
+            await task;
+
+            var result = MapDaemonResponse<TResponse>(0, task);
+            return result;
+        }
+
+        /// <summary>
+        /// Executes the request against all configured demons and returns the first successful response
+        /// </summary>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <param name="method"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(CancellationToken ct, string method, object payload = null,
+            JsonSerializerSettings payloadJsonSerializerSettings = null)
+            where TResponse : class
+        {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
+
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
+
+            var task = BuildRequestTask(endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
             await task;
 
             var result = MapDaemonResponse<TResponse>(0, task);
@@ -267,7 +309,7 @@ namespace MiningCore.DaemonInterface
         #endregion // API-Surface
 
         private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
+            CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             var rpcRequestId = GetRequestId();
 
@@ -303,7 +345,7 @@ namespace MiningCore.DaemonInterface
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
             // send request
-            using(var response = await httpClients[endPoint].SendAsync(request))
+            using(var response = await httpClients[endPoint].SendAsync(request, ct))
             {
                 // deserialize response
                 using(var stream = await response.Content.ReadAsStreamAsync())

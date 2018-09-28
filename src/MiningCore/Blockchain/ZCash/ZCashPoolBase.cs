@@ -107,9 +107,9 @@ namespace MiningCore.Blockchain.ZCash
             context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
         }
 
-        protected override async Task OnAuthorizeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        protected override async Task OnAuthorizeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
-            await base.OnAuthorizeAsync(client, tsRequest);
+            await base.OnAuthorizeAsync(client, tsRequest, ct);
 
             var context = client.ContextAs<BitcoinWorkerContext>();
 
@@ -163,7 +163,7 @@ namespace MiningCore.Blockchain.ZCash
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> tsRequest)
+            Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
 
@@ -174,11 +174,11 @@ namespace MiningCore.Blockchain.ZCash
                     break;
 
                 case BitcoinStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest);
+                    await OnAuthorizeAsync(client, tsRequest, ct);
                     break;
 
                 case BitcoinStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest);
+                    await OnSubmitAsync(client, tsRequest, ct);
                     break;
 
                 case ZCashStratumMethods.SuggestTarget:

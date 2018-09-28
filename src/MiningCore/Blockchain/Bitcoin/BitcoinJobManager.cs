@@ -439,7 +439,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
         public IObservable<object> Jobs { get; private set; }
 
-        public virtual async Task<bool> ValidateAddressAsync(string address)
+        public virtual async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -493,7 +493,7 @@ namespace MiningCore.Blockchain.Bitcoin
         }
 
         public virtual async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
-            double stratumDifficultyBase)
+            double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
