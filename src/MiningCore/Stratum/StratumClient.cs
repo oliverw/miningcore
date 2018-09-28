@@ -126,7 +126,7 @@ namespace MiningCore.Stratum
                 else
                     logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
-                // Async I/O loop
+                // Async I/O loop(s)
                 using(new CompositeDisposable(networkStream, cts))
                 {
                     var tasks = new[]
