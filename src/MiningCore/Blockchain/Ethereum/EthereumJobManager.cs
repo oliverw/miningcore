@@ -577,9 +577,9 @@ namespace MiningCore.Blockchain.Ethereum
                     logger.Info(() => $"Waiting for first valid block template");
                     await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
-
-                SetupJobUpdates();
             }
+
+            SetupJobUpdates();
         }
 
         private void ConfigureRewards()
