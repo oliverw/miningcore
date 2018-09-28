@@ -246,11 +246,6 @@ namespace MiningCore.Stratum
             }
         }
 
-        private string GetString(ReadOnlySequence<byte> line)
-        {
-            return StratumConstants.Encoding.GetString(line.ToSpan());
-        }
-
         private void Send<T>(T payload)
         {
             sendQueue.Post(payload);
@@ -298,7 +293,7 @@ namespace MiningCore.Stratum
                     {
                         var slice = buffer.Slice(0, position.Value);
 
-                        logger.Trace(() => $"[{ConnectionId}] Received data: {GetString(slice)}");
+                        logger.Trace(() => $"[{ConnectionId}] Received data: {slice.AsString(StratumConstants.Encoding)}");
 
                         if (!expectingProxyHeader || !ProcessProxyHeader(slice, proxyProtocol))
                             await ProcessRequestAsync(onRequestAsync, slice);
@@ -348,11 +343,11 @@ namespace MiningCore.Stratum
         /// <summary>
         /// Returns true if the line was consumed
         /// </summary>
-        private bool ProcessProxyHeader(ReadOnlySequence<byte> lineBuffer, TcpProxyProtocolConfig proxyProtocol)
+        private bool ProcessProxyHeader(ReadOnlySequence<byte> seq, TcpProxyProtocolConfig proxyProtocol)
         {
             expectingProxyHeader = false;
 
-            var line = GetString(lineBuffer);
+            var line = seq.AsString(StratumConstants.Encoding);
             var peerAddress = RemoteEndpoint.Address;
 
             if (line.StartsWith("PROXY "))
