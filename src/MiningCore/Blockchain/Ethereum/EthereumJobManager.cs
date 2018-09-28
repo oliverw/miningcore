@@ -601,9 +601,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected virtual void SetupJobUpdates()
         {
-            if (poolConfig.EnableInternalStratum == false)
-                return;
-
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
             if (enableStreaming && !poolConfig.Daemons.Any(x =>

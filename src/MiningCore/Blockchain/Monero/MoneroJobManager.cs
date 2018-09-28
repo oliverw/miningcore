@@ -532,9 +532,6 @@ namespace MiningCore.Blockchain.Monero
 
         protected virtual void SetupJobUpdates()
         {
-            if (poolConfig.EnableInternalStratum == false)
-                return;
-
             var blockSubmission = blockSubmissionSubject.Synchronize();
             var pollTimerRestart = blockSubmissionSubject.Synchronize();
 
