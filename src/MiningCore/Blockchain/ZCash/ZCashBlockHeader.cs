@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MiningCore.Extensions;
 using NBitcoin;
 using NBitcoin.DataEncoders;

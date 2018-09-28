@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -8,15 +8,15 @@ using System.Threading;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
+using ZeroMQ;
 
 namespace MiningCore.Mining
 {
@@ -58,7 +58,7 @@ namespace MiningCore.Mining
 
         private void StartListeners()
         {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.ExternalStratums?.Any() == true)
+            var stratumsByUrl = clusterConfig.Pools.Where(x => x.Enabled && x.ExternalStratums?.Any() == true)
                 .SelectMany(x => x.ExternalStratums)
                 .Where(x => x.Url != null && x.Topic != null)
                 .GroupBy(x =>
@@ -73,7 +73,7 @@ namespace MiningCore.Mining
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            foreach (var item in stratumsByUrl)
+            foreach(var item in stratumsByUrl)
             {
                 var thread = new Thread(arg =>
                 {
@@ -82,42 +82,48 @@ namespace MiningCore.Mining
                     var topics = new HashSet<string>(urlAndTopic.Distinct());
                     var receivedOnce = false;
 
-                    while (true)
+                    while(true)
                     {
                         try
                         {
-                            using (var subSocket = new SubscriberSocket())
+                            using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
+                                subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
 
                                 // subscribe to all topics
-                                foreach (var topic in topics)
+                                foreach(var topic in topics)
                                     subSocket.Subscribe(topic);
 
                                 logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
 
-                                while (true)
+                                while(true)
                                 {
-                                    // receive
-                                    var msg = (NetMQMessage) null;
+                                    string topic;
+                                    uint flags;
+                                    byte[] data;
 
-                                    if (!subSocket.TryReceiveMultipartMessage(relayReceiveTimeout, ref msg, 3))
+                                    // receive
+                                    using(var msg = subSocket.ReceiveMessage(out var zerror))
                                     {
-                                        if (receivedOnce)
+                                        if (zerror != null && !zerror.Equals(ZError.None))
                                         {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
+                                            if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
+                                            {
+                                                logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
+                                                break;
+                                            }
+
+                                            // retry
+                                            continue;
                                         }
 
-                                        // retry
-                                        continue;
+                                        // extract frames
+                                        topic = msg[0].ToString(Encoding.UTF8);
+                                        flags = msg[1].ReadUInt32();
+                                        data = msg[2].Read();
+                                        receivedOnce = true;
                                     }
-
-                                    // extract frames
-                                    var topic = msg.Pop().ConvertToString(Encoding.UTF8);
-                                    var flags = msg.Pop().ConvertToInt32();
-                                    var data = msg.Pop().ToByteArray();
-                                    receivedOnce = true;
 
                                     // validate
                                     if (!topics.Contains(topic))
@@ -132,18 +138,23 @@ namespace MiningCore.Mining
                                         continue;
                                     }
 
+                                    // TMP FIX
+                                    if ((flags & ShareRelay.WireFormatMask) == 0)
+                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToReverseArray());
+
                                     // deserialize
                                     var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
+
                                     Share share = null;
 
-                                    switch (wireFormat)
+                                    switch(wireFormat)
                                     {
                                         case ShareRelay.WireFormat.Json:
-                                            using (var stream = new MemoryStream(data))
+                                            using(var stream = new MemoryStream(data))
                                             {
-                                                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                                                using(var reader = new StreamReader(stream, Encoding.UTF8))
                                                 {
-                                                    using (var jreader = new JsonTextReader(reader))
+                                                    using(var jreader = new JsonTextReader(reader))
                                                     {
                                                         share = serializer.Deserialize<Share>(jreader);
                                                     }
@@ -153,7 +164,7 @@ namespace MiningCore.Mining
                                             break;
 
                                         case ShareRelay.WireFormat.ProtocolBuffers:
-                                            using (var stream = new MemoryStream(data))
+                                            using(var stream = new MemoryStream(data))
                                             {
                                                 share = Serializer.Deserialize<Share>(stream);
                                                 share.BlockReward = (decimal) share.BlockRewardDouble;
@@ -206,13 +217,13 @@ namespace MiningCore.Mining
                             }
                         }
 
-                        catch (ObjectDisposedException)
+                        catch(ObjectDisposedException)
                         {
                             logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
                             break;
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Error(ex);
                         }

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -34,7 +34,7 @@ namespace MiningCore.Extensions
         /// </summary>
         public static void Run(this IConnectionFactory factory, Action<IDbConnection> action)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
                 action(con);
             }
@@ -46,7 +46,7 @@ namespace MiningCore.Extensions
         /// <returns>The result returned by the action</returns>
         public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
                 return action(con);
             }
@@ -57,7 +57,7 @@ namespace MiningCore.Extensions
         /// </summary>
         public static void Run(this IConnectionFactory factory, Action<IDbConnection> action, Stopwatch sw, ILogger logger)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
                 sw.Reset();
                 sw.Start();
@@ -75,7 +75,7 @@ namespace MiningCore.Extensions
         /// <returns>The result returned by the action</returns>
         public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action, Stopwatch sw, ILogger logger)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
                 sw.Reset();
                 sw.Start();
@@ -95,7 +95,7 @@ namespace MiningCore.Extensions
         public static async Task<T> RunAsync<T>(this IConnectionFactory factory,
             Func<IDbConnection, Task<T>> action)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
                 return await action(con);
             }
@@ -109,9 +109,9 @@ namespace MiningCore.Extensions
             Action<IDbConnection, IDbTransaction> action,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
-                using (var tx = con.BeginTransaction(isolation))
+                using(var tx = con.BeginTransaction(isolation))
                 {
                     try
                     {
@@ -139,9 +139,9 @@ namespace MiningCore.Extensions
             Func<IDbConnection, IDbTransaction, T> action,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
-                using (var tx = con.BeginTransaction(isolation))
+                using(var tx = con.BeginTransaction(isolation))
                 {
                     try
                     {
@@ -171,9 +171,9 @@ namespace MiningCore.Extensions
             Func<IDbConnection, IDbTransaction, Task<T>> action,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
-                using (var tx = con.BeginTransaction(isolation))
+                using(var tx = con.BeginTransaction(isolation))
                 {
                     try
                     {
@@ -203,9 +203,9 @@ namespace MiningCore.Extensions
             Func<IDbConnection, IDbTransaction, Task> action,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using (var con = factory.OpenConnection())
+            using(var con = factory.OpenConnection())
             {
-                using (var tx = con.BeginTransaction(isolation))
+                using(var tx = con.BeginTransaction(isolation))
                 {
                     try
                     {

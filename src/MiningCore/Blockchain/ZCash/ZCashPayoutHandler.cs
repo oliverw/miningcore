@@ -1,13 +1,16 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
+
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -105,7 +108,7 @@ namespace MiningCore.Blockchain.ZCash
             var pageSize = 50;
             var pageCount = (int) Math.Ceiling(balances.Length / (double) pageSize);
 
-            for (var i = 0; i < pageCount; i++)
+            for(var i = 0; i < pageCount; i++)
             {
                 didUnlockWallet = false;
 
@@ -118,7 +121,7 @@ namespace MiningCore.Blockchain.ZCash
                 // build args
                 var amounts = page
                     .Where(x => x.Amount > 0)
-                    .Select(x => new ZSendManyRecipient {Address = x.Address, Amount = Math.Round(x.Amount, 8)})
+                    .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
                     .ToList();
 
                 if (amounts.Count == 0)
@@ -166,10 +169,10 @@ namespace MiningCore.Blockchain.ZCash
 
                         var continueWaiting = true;
 
-                        while (continueWaiting)
+                        while(continueWaiting)
                         {
                             var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                                ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
+                                ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                             if (operationResultResponse.Error == null &&
                                 operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -182,14 +185,14 @@ namespace MiningCore.Blockchain.ZCash
                                     break;
                                 }
 
-                                switch (status)
+                                switch(status)
                                 {
                                     case ZOperationStatus.Success:
                                         var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
                                         logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZSendMany} completed with transaction id: {txId}");
 
                                         PersistPayments(page, txId);
-                                        NotifyPayoutSuccess(poolConfig.Id, page, new[] {txId}, null);
+                                        NotifyPayoutSuccess(poolConfig.Id, page, new[] { txId }, null);
 
                                         continueWaiting = false;
                                         continue;
@@ -295,10 +298,10 @@ namespace MiningCore.Blockchain.ZCash
 
             var continueWaiting = true;
 
-            while (continueWaiting)
+            while(continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                    ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
+                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                 if (operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -311,7 +314,7 @@ namespace MiningCore.Blockchain.ZCash
                         break;
                     }
 
-                    switch (status)
+                    switch(status)
                     {
                         case ZOperationStatus.Success:
                             logger.Info(() => $"[{LogCategory}] {ZCashCommands.ZShieldCoinbase} successful");
@@ -392,10 +395,10 @@ namespace MiningCore.Blockchain.ZCash
 
             var continueWaiting = true;
 
-            while (continueWaiting)
+            while(continueWaiting)
             {
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
-                    ZCashCommands.ZGetOperationResult, new object[] {new object[] {operationId}});
+                    ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                 if (operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
@@ -408,7 +411,7 @@ namespace MiningCore.Blockchain.ZCash
                         break;
                     }
 
-                    switch (status)
+                    switch(status)
                     {
                         case ZOperationStatus.Success:
                             var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;

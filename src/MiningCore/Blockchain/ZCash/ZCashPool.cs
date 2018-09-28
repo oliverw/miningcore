@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -55,7 +55,7 @@ namespace MiningCore.Blockchain.ZCash
             extraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
             if (string.IsNullOrEmpty(extraConfig?.ZAddress))
-                logger.ThrowLogPoolStartupException($"Pool z-address is not configured", LogCat);
+                logger.ThrowLogPoolStartupException($"Pool z-address is not configured");
         }
     }
 }

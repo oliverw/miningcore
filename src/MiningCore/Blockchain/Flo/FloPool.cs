@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -57,7 +57,7 @@ namespace MiningCore.Blockchain.Flo
             extraConfig = poolConfig.Extra.SafeExtensionDataAs<FloPoolConfigExtra>();
 
             if (string.IsNullOrEmpty(extraConfig?.FloData))
-                logger.ThrowLogPoolStartupException("Pool coinbase FloData is not configured", LogCat);
+                logger.ThrowLogPoolStartupException("Pool coinbase FloData is not configured");
         }
 
         protected override BitcoinJobManager<FloJob, BlockTemplate> CreateJobManager()

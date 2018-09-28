@@ -1,4 +1,4 @@
-﻿/* 
+/* 
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -35,7 +35,7 @@ namespace MiningCore.Extensions
                     return JToken.FromObject(extra).ToObject<T>();
                 }
 
-                catch (Exception)
+                catch(Exception)
                 {
                     // ignored
                 }

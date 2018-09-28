@@ -111,9 +111,11 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 
 ### Runtime Requirements
 
-- [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
+- [.Net Core 2.1 Runtime](https://www.microsoft.com/net/download/core#/runtime)
 - [PostgreSQL Database](https://www.postgresql.org/)
+- On Linux you also need to install the libzmq package for your platform (Ubuntu/Debian: libzmq5, CentOS epel: zeromq)
 - Coin Daemon (per pool)
+- To build and run on Linux refer to the section below
 
 ### PostgreSQL Database setup
 
@@ -155,13 +157,17 @@ You also need to expose all stratum ports specified in your configuration file. 
 
 ### Building from Source (Shell)
 
-Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
+Install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core) for your platform
 
-#### Linux (Ubuntu example)
+#### Linux (Ubuntu 16.04 example)
 
 ```console
-$ apt-get update -y 
-$ apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
+$ wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+$ sudo dpkg -i packages-microsoft-prod.deb
+$ sudo apt-get update -y
+$ sudo apt-get install apt-transport-https -y
+$ sudo apt-get update -y
+$ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/calebcall/miningcore
 $ cd miningcore/src/MiningCore
 $ ./linux-build.sh

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -47,8 +47,6 @@ namespace MiningCore.Blockchain.Flo
 
         #region Overrides
 
-        protected override string LogCat => "Flo Job Manager";
-
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             extraFloPoolConfig = poolConfig.Extra.SafeExtensionDataAs<FloPoolConfigExtra>();
@@ -58,7 +56,7 @@ namespace MiningCore.Blockchain.Flo
 
         protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             try
             {
@@ -70,7 +68,7 @@ namespace MiningCore.Blockchain.Flo
                 // may happen if daemon is currently not connected to peers
                 if (response.Error != null)
                 {
-                    logger.Warn(() => $"[{LogCat}] Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
+                    logger.Warn(() => $"Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
                     return (false, forceUpdate);
                 }
 
@@ -78,9 +76,9 @@ namespace MiningCore.Blockchain.Flo
 
                 var job = currentJob;
                 var isNew = job == null ||
-                            (blockTemplate != null &&
-                             job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                             blockTemplate.Height > job.BlockTemplate?.Height);
+                (blockTemplate != null &&
+                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
+                    blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew || forceUpdate)
                 {
@@ -91,14 +89,14 @@ namespace MiningCore.Blockchain.Flo
                         ShareMultiplier, extraPoolPaymentProcessingConfig?.BlockrewardMultiplier ?? 1.0m,
                         coinbaseHasher, headerHasher, blockHasher, extraFloPoolConfig.FloData);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
                         if (isNew)
                         {
                             if (via != null)
-                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height} via {via}");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
                             else
-                                logger.Info(() => $"[{LogCat}] Detected new block {blockTemplate.Height}");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                             validJobs.Clear();
 
@@ -111,7 +109,7 @@ namespace MiningCore.Blockchain.Flo
                         else
                         {
                             // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
+                            while(validJobs.Count > maxActiveJobs - 1)
                                 validJobs.RemoveAt(0);
                         }
 
@@ -124,9 +122,9 @@ namespace MiningCore.Blockchain.Flo
                 return (isNew, forceUpdate);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+                logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
 
             return (false, forceUpdate);

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -134,7 +134,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cn_slow_hash(input, output, (uint) data.Length, variant);
+                    cn_slow_hash(input, output, (uint)data.Length, variant);
                 }
             }
 
@@ -151,7 +151,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cn_slow_hash_lite(input, output, (uint) data.Length);
+                    cn_slow_hash_lite(input, output, (uint)data.Length);
                 }
             }
 
@@ -168,7 +168,7 @@ namespace MiningCore.Native
             {
                 fixed (byte* output = result.Array)
                 {
-                    cn_fast_hash(input, output, (uint) data.Length);
+                    cn_fast_hash(input, output, (uint)data.Length);
                 }
             }
 

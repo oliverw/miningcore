@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -133,7 +133,7 @@ namespace MiningCore.Blockchain.Ethereum
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -142,7 +142,7 @@ namespace MiningCore.Blockchain.Ethereum
             EnsureInitialWorkSent(client);
 
             // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {workerValue} = {client.RemoteEndpoint.Address}");
+            logger.Info(() => $"[{client.ConnectionId}] Authorized worker {workerValue}");
         }
 
         private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -160,7 +160,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                     return;
                 }
 
@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.Ethereum
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
                 EnsureInitialWorkSent(client);
 
                 // update pool stats
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Ethereum
                 UpdateVarDiff(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
@@ -214,7 +214,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Code}");
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
@@ -224,49 +224,62 @@ namespace MiningCore.Blockchain.Ethereum
         private void EnsureInitialWorkSent(StratumClient client)
         {
             var context = client.ContextAs<EthereumWorkerContext>();
+            var sendInitialWork = false;
 
-            lock (context)
+            lock(context)
             {
                 if (context.IsAuthorized && context.IsAuthorized && !context.IsInitialWorkSent)
                 {
                     context.IsInitialWorkSent = true;
-
-                    // send intial update
-                    client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
-                    client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
+                    sendInitialWork = true;
                 }
+            }
+
+            if (sendInitialWork)
+            {
+                // send intial update
+                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }
 
-        private void OnNewJob(object jobParams)
+        protected virtual void OnNewJob(object jobParams)
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"[{LogCat}] Broadcasting job");
+            logger.Info(() => $"Broadcasting job");
 
             ForEachClient(client =>
             {
-                var context = client.ContextAs<EthereumWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
+                try
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<EthereumWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
+
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // varDiff: if the client has a pending difficulty change, apply it now
+                        if (context.ApplyPendingDifficulty())
+                            client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+
+                        // send job
+                        client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
                     }
+                }
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if (context.ApplyPendingDifficulty())
-                        client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
-
-                    // send job
-                    client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
+                catch(Exception ex)
+                {
+                    logger.Error(ex, nameof(OnNewJob));
                 }
             });
         }
@@ -306,7 +319,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case EthereumStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -325,7 +338,7 @@ namespace MiningCore.Blockchain.Ethereum
                     break;
 
                 default:
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
@@ -350,7 +363,7 @@ namespace MiningCore.Blockchain.Ethereum
                 context.ApplyPendingDifficulty();
 
                 // send job
-                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] {context.Difficulty});
+                client.Notify(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 client.Notify(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }

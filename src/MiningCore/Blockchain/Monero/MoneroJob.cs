@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -78,7 +78,7 @@ namespace MiningCore.Blockchain.Monero
             blobTemplate = BlockTemplate.Blob.HexToByteArray();
 
             // inject instanceId at the end of the reserved area of the blob
-            var destOffset = (int) BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
+            var destOffset = (int)BlockTemplate.ReservedOffset + MoneroConstants.ExtraNonceSize;
             Buffer.BlockCopy(instanceId, 0, blobTemplate, destOffset, 3);
         }
 
@@ -91,7 +91,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // inject extranonce (big-endian at the beginning of the reserved area of the blob)
                 var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int) BlockTemplate.ReservedOffset, extraNonceBytes.Length);
+                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int)BlockTemplate.ReservedOffset, extraNonceBytes.Length);
 
                 var result = LibCryptonote.ConvertBlob(blob.Array, blobTemplate.Length).ToHexString();
                 return result;
@@ -100,10 +100,10 @@ namespace MiningCore.Blockchain.Monero
 
         private string EncodeTarget(double difficulty)
         {
-            var diff = BigInteger.ValueOf((long) (difficulty * 255d));
+            var diff = BigInteger.ValueOf((long)(difficulty * 255d));
             var quotient = MoneroConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
             var bytes = quotient.ToByteArray();
-            var padded = Enumerable.Repeat((byte) 0, 32).ToArray();
+            var padded = Enumerable.Repeat((byte)0, 32).ToArray();
 
             if (padded.Length - bytes.Length > 0)
                 Buffer.BlockCopy(bytes, 0, padded, padded.Length - bytes.Length, bytes.Length);
@@ -118,7 +118,7 @@ namespace MiningCore.Blockchain.Monero
         private PooledArraySegment<byte> ComputeBlockHash(byte[] blobConverted)
         {
             // blockhash is computed from the converted blob data prefixed with its length
-            var bytes = new[] {(byte) blobConverted.Length}
+            var bytes = new[] { (byte)blobConverted.Length }
                 .Concat(blobConverted)
                 .ToArray();
 
@@ -161,7 +161,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // inject extranonce
                 var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int) BlockTemplate.ReservedOffset, extraNonceBytes.Length);
+                Buffer.BlockCopy(extraNonceBytes, 0, blob.Array, (int)BlockTemplate.ReservedOffset, extraNonceBytes.Length);
 
                 // inject nonce
                 var nonceBytes = nonce.HexToByteArray();
@@ -181,7 +181,7 @@ namespace MiningCore.Blockchain.Monero
 
                     // check difficulty
                     var headerValue = hashSeg.ToBigInteger();
-                    var shareDiff = (double) new BigRational(MoneroConstants.Diff1b, headerValue);
+                    var shareDiff = (double)new BigRational(MoneroConstants.Diff1b, headerValue);
                     var stratumDifficulty = context.Difficulty;
                     var ratio = shareDiff / stratumDifficulty;
                     var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;

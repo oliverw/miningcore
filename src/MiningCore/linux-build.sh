@@ -9,7 +9,7 @@ echo "Building into $BUILDIR"
 
 # publish
 mkdir -p $BUILDIR
-dotnet publish -c Release --framework netcoreapp2.0 -o $BUILDIR
+dotnet publish -c Release --framework netcoreapp2.1 -o $BUILDIR
 
 # build libcryptonote
 (cd ../Native/libcryptonote && make)
@@ -20,3 +20,8 @@ cp ../Native/libcryptonote/libcryptonote.so $BUILDIR
 (cd ../Native/libmultihash && make)
 cp ../Native/libmultihash/libmultihash.so $BUILDIR
 (cd ../Native/libmultihash && make clean)
+
+# build libcryptonight
+(cd ../Native/libcryptonight && make)
+cp ../Native/libcryptonight/libcryptonight.so $BUILDIR
+(cd ../Native/libcryptonight && make clean)

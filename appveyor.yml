@@ -3,7 +3,8 @@
 #---------------------------------#
 
 # Build worker image (VM template)
-image: Visual Studio 2017
+image:
+- Visual Studio 2017
 
 #---------------------------------#
 #       build configuration       #
@@ -14,7 +15,7 @@ before_build: dotnet restore src
 
 build_script:
   - cd src\MiningCore
-  - dotnet build -c Release --framework netcoreapp2.0
+  - dotnet build -c Release --framework netcoreapp2.1
 
 #---------------------------------#
 #       tests configuration       #

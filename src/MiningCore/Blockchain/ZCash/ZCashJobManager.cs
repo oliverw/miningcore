@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
@@ -36,7 +36,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 new
                 {
-                    capabilities = new[] {"coinbasetxn", "workid", "coinbase/append"},
+                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
                 }
             };
         }
@@ -77,14 +77,14 @@ namespace MiningCore.Blockchain.ZCash
 
             // handle z-addr
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
-                ZCashCommands.ZValidateAddress, new[] {address});
+                ZCashCommands.ZValidateAddress, new[] { address });
 
             return result.Response != null && result.Response.IsValid;
         }
 
         protected override async Task<DaemonResponse<ZCashBlockTemplate>> GetBlockTemplateAsync()
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(BitcoinCommands.GetBlockSubsidy);
 
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.ZCash
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(submission, nameof(submission));
 
-            logger.LogInvoke(LogCat, new[] {worker.ConnectionId});
+            logger.LogInvoke(new[] { worker.ConnectionId });
 
             if (!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
@@ -156,7 +156,7 @@ namespace MiningCore.Blockchain.ZCash
 
             ZCashJob job;
 
-            lock (jobLock)
+            lock(jobLock)
             {
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
@@ -175,7 +175,7 @@ namespace MiningCore.Blockchain.ZCash
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
-                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight} [{share.BlockHash}]");
+                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
                 var acceptResponse = await SubmitBlockAsync(share, blockHex);
 
@@ -184,7 +184,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
                     blockSubmissionSubject.OnNext(Unit.Default);
 

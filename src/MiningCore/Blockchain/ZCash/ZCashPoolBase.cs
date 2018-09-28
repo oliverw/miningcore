@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.ZCash
             if (context.IsAuthorized)
             {
                 // send intial update
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
+                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
@@ -150,7 +150,7 @@ namespace MiningCore.Blockchain.ZCash
                         context.EnqueueNewDifficulty(newDiff);
                         context.ApplyPendingDifficulty();
 
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
+                        client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
                     }
 
                     else
@@ -170,7 +170,7 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case BitcoinStratumMethods.Subscribe:
                     OnSubscribe(client, tsRequest);
@@ -193,7 +193,7 @@ namespace MiningCore.Blockchain.ZCash
                     break;
 
                 default:
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
@@ -204,31 +204,39 @@ namespace MiningCore.Blockchain.ZCash
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"[{LogCat}] Broadcasting job");
+            logger.Info(() => $"Broadcasting job");
 
             ForEachClient(client =>
             {
-                var context = client.ContextAs<BitcoinWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized)
+                try
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<BitcoinWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
+
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // varDiff: if the client has a pending difficulty change, apply it now
+                        if (context.ApplyPendingDifficulty())
+                            client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+
+                        // send job
+                        client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
                     }
+                }
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if (context.ApplyPendingDifficulty())
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
-
-                    // send job
-                    client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                catch(Exception ex)
+                {
+                    logger.Error(ex, nameof(OnNewJob));
                 }
             });
         }
@@ -253,7 +261,7 @@ namespace MiningCore.Blockchain.ZCash
             {
                 context.ApplyPendingDifficulty();
 
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] {EncodeTarget(context.Difficulty)});
+                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
                 client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }

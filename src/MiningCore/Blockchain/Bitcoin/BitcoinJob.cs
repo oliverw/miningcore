@@ -1,13 +1,16 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
+
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -43,7 +46,7 @@ namespace MiningCore.Blockchain.Bitcoin
         protected IMasterClock clock;
         protected IHashAlgorithm coinbaseHasher;
         protected double shareMultiplier;
-        protected decimal blockRewardMultiplier;
+        protected decimal blockRewardMultiplier = 1.0m;
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
@@ -64,7 +67,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             get
             {
-                switch (networkType)
+                switch(networkType)
                 {
                     case BitcoinNetworkType.Main:
                         return Network.Main;
@@ -128,7 +131,7 @@ namespace MiningCore.Blockchain.Bitcoin
             txOut = CreateOutputTransaction();
 
             // build coinbase initial
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -151,13 +154,13 @@ namespace MiningCore.Blockchain.Bitcoin
                 bs.ReadWriteAsVarInt(ref sigScriptLength);
                 bs.ReadWrite(ref sigScriptInitialBytes);
 
-                // done	
+                // done
                 coinbaseInitial = stream.ToArray();
                 coinbaseInitialHex = coinbaseInitial.ToHexString();
             }
 
             // build coinbase final
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -182,19 +185,45 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] SerializeOutputTransaction(Transaction tx)
         {
-            using (var stream = new MemoryStream())
+            var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
+
+            var outputCount = (uint) tx.Outputs.Count;
+            if (withDefaultWitnessCommitment)
+                outputCount++;
+
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
-                // serialize outputs
-                var vout = tx.Outputs;
-                bs.ReadWrite<TxOutList, TxOut>(ref vout);
+                // write output count
+                bs.ReadWriteAsVarInt(ref outputCount);
+
+                long amount;
+                byte[] raw;
+                uint rawLength;
 
                 // serialize witness (segwit)
-                if (!string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment))
+                if (withDefaultWitnessCommitment)
                 {
-                    var witScript = new WitScript(BlockTemplate.DefaultWitnessCommitment);
-                    var raw = witScript.ToBytes();
+                    amount = 0;
+                    raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
+                    rawLength = (uint) raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
+                    bs.ReadWrite(ref raw);
+                }
+
+                // serialize outputs
+                foreach(var output in tx.Outputs)
+                {
+                    amount = output.Value.Satoshi;
+                    var outScript = output.ScriptPubKey;
+                    raw = outScript.ToBytes(true);
+                    rawLength = (uint) raw.Length;
+
+                    bs.ReadWrite(ref amount);
+                    bs.ReadWriteAsVarInt(ref rawLength);
                     bs.ReadWrite(ref raw);
                 }
 
@@ -248,7 +277,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
-            lock (submissions)
+            lock(submissions)
             {
                 if (submissions.Contains(key))
                     return false;
@@ -346,7 +375,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var extraNonce1Bytes = extraNonce1.HexToByteArray();
             var extraNonce2Bytes = extraNonce2.HexToByteArray();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 stream.Write(coinbaseInitial);
                 stream.Write(extraNonce1Bytes);
@@ -362,7 +391,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -381,9 +410,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         protected virtual byte[] BuildRawTransactionBuffer()
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                foreach (var tx in BlockTemplate.Transactions)
+                foreach(var tx in BlockTemplate.Transactions)
                 {
                     var txRaw = tx.Data.HexToByteArray();
                     stream.Write(txRaw);
@@ -403,7 +432,7 @@ namespace MiningCore.Blockchain.Bitcoin
         public virtual void Init(TBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
+            bool isPoS, double shareMultiplier, decimal? blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -428,7 +457,9 @@ namespace MiningCore.Blockchain.Bitcoin
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
-            this.blockRewardMultiplier = blockrewardMultiplier;
+
+            if(blockrewardMultiplier.HasValue)
+                this.blockRewardMultiplier = blockrewardMultiplier.Value;
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;

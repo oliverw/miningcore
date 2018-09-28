@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -23,9 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using MiningCore.Blockchain.Bitcoin;
-using MiningCore.Blockchain.Bitcoin.DaemonResponses;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Blockchain.ZCash.DaemonResponses;
 using MiningCore.Configuration;
@@ -42,10 +40,8 @@ namespace MiningCore.Blockchain.BitcoinGold
 {
     public class BitcoinGoldJob : ZCashJob
     {
-        public BitcoinGoldJob()
-        {
-            txVersion = 1u;
-        }
+        protected uint coinbaseIndex = 4294967295u;
+        protected uint coinbaseSequence = 4294967295u;
 
         #region Overrides of ZCashJob
 
@@ -59,6 +55,41 @@ namespace MiningCore.Blockchain.BitcoinGold
             tx.AddOutput(rewardToPool, poolAddressDestination);
 
             return tx;
+        }
+
+        protected override void BuildCoinbase()
+        {
+            var script = TxIn.CreateCoinbase((int)BlockTemplate.Height).ScriptSig;
+
+            // output transaction
+            txOut = CreateOutputTransaction();
+
+            using (var stream = new MemoryStream())
+            {
+                var bs = new BitcoinStream(stream, true);
+
+                // version
+                bs.ReadWrite(ref txVersion);
+
+                // serialize (simulated) input transaction
+                bs.ReadWriteAsVarInt(ref txInputCount);
+                bs.ReadWrite(ref sha256Empty);
+                bs.ReadWrite(ref coinbaseIndex);
+                bs.ReadWrite(ref script);
+                bs.ReadWrite(ref coinbaseSequence);
+
+                // serialize output transaction
+                var txOutBytes = SerializeOutputTransaction(txOut);
+                bs.ReadWrite(ref txOutBytes);
+
+                // misc
+                bs.ReadWrite(ref txLockTime);
+
+                // done
+                coinbaseInitial = stream.ToArray();
+                coinbaseInitialHex = coinbaseInitial.ToHexString();
+                coinbaseInitialHash = sha256D.Digest(coinbaseInitial);
+            }
         }
 
         protected override byte[] SerializeHeader(uint nTime, string nonce)
@@ -85,7 +116,7 @@ namespace MiningCore.Blockchain.BitcoinGold
         public override void Init(ZCashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, BitcoinNetworkType networkType,
-            bool isPoS, double shareMultiplier, decimal blockrewardMultiplier,
+            bool isPoS, double shareMultiplier, decimal? blockrewardMultiplier,
             IHashAlgorithm coinbaseHasher, IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -134,7 +165,7 @@ namespace MiningCore.Blockchain.BitcoinGold
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> {new uint256(coinbaseInitialHash)};
+            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
 
             // build merkle root

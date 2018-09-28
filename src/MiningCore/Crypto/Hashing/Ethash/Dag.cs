@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -29,12 +29,12 @@ namespace MiningCore.Crypto.Hashing.Ethash
         {
             var chars = new byte[512];
 
-            fixed (byte* data = chars)
+            fixed(byte* data = chars)
             {
                 if (LibMultihash.ethash_get_default_dirname(data, chars.Length))
                 {
                     int length;
-                    for (length = 0; length < chars.Length; length++)
+                    for(length = 0; length < chars.Length; length++)
                     {
                         if (data[length] == 0)
                             break;
@@ -121,7 +121,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
             var value = new LibMultihash.ethash_return_value();
 
-            fixed (byte* input = hash)
+            fixed(byte* input = hash)
             {
                 LibMultihash.ethash_full_compute(handle, input, nonce, ref value);
             }

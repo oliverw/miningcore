@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -27,27 +27,24 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Net.WebSockets;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Buffers;
 using MiningCore.Configuration;
 using MiningCore.Extensions;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Notifications.Messages;
-using MiningCore.Stratum;
 using MiningCore.Util;
-using NetMQ;
-using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using ZeroMQ;
 using Contract = MiningCore.Contracts.Contract;
 
 namespace MiningCore.DaemonInterface
@@ -83,6 +80,7 @@ namespace MiningCore.DaemonInterface
 
         // Telemetry
         private readonly IMessageBus messageBus;
+
         private readonly string server;
         private readonly string poolId;
 
@@ -103,17 +101,19 @@ namespace MiningCore.DaemonInterface
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
             {
-                var handler = new HttpClientHandler
+                var handler = new SocketsHttpHandler
                 {
                     Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
                     PreAuthenticate = true,
-                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
                 };
 
                 if (endpoint.Ssl && !endpoint.ValidateCert)
                 {
-                    handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-                    handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true;
+                    handler.SslOptions = new SslClientAuthenticationOptions
+                    {
+                        RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
+                    };
                 }
 
                 return new HttpClient(handler);
@@ -143,7 +143,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
@@ -152,7 +152,7 @@ namespace MiningCore.DaemonInterface
                 await Task.WhenAll(tasks);
             }
 
-            catch (Exception)
+            catch(Exception)
             {
                 // ignored
             }
@@ -183,7 +183,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, payloadJsonSerializerSettings)).ToArray();
 
@@ -215,7 +215,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(endPoints.First(), method, payload, payloadJsonSerializerSettings);
             await task;
@@ -232,7 +232,7 @@ namespace MiningCore.DaemonInterface
         {
             Contract.RequiresNonNull(batch, nameof(batch));
 
-            logger.LogInvoke(batch.Select(x => x.Method).ToArray());
+            logger.LogInvoke(batch.Select(x => "\"" + x.Method + "\"").ToArray());
 
             var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(endPoint, batch)).ToArray();
 
@@ -241,13 +241,13 @@ namespace MiningCore.DaemonInterface
             return result;
         }
 
-        public IObservable<PooledArraySegment<byte>> WebsocketSubscribe(Dictionary<DaemonEndpointConfig,
+        public IObservable<byte[]> WebsocketSubscribe(Dictionary<DaemonEndpointConfig,
                 (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            logger.LogInvoke(new[] {method});
+            logger.LogInvoke(new[] { method });
 
             return Observable.Merge(portMap.Keys
                     .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
@@ -304,14 +304,14 @@ namespace MiningCore.DaemonInterface
             logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
             // send request
-            using (var response = await httpClients[endPoint].SendAsync(request))
+            using(var response = await httpClients[endPoint].SendAsync(request))
             {
                 // deserialize response
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using(var stream = await response.Content.ReadAsStreamAsync())
                 {
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var reader = new StreamReader(stream, Encoding.UTF8))
                     {
-                        using (var jreader = new JsonTextReader(reader))
+                        using(var jreader = new JsonTextReader(reader))
                         {
                             var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -342,7 +342,7 @@ namespace MiningCore.DaemonInterface
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
-            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
+            using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -361,7 +361,7 @@ namespace MiningCore.DaemonInterface
                 logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
                 // send request
-                using (var response = await httpClients[endPoint].SendAsync(request))
+                using(var response = await httpClients[endPoint].SendAsync(request))
                 {
                     // check success
                     if (!response.IsSuccessStatusCode)
@@ -374,11 +374,11 @@ namespace MiningCore.DaemonInterface
                     }
 
                     // deserialize response
-                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using(var stream = await response.Content.ReadAsStreamAsync())
                     {
-                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        using(var reader = new StreamReader(stream, Encoding.UTF8))
                         {
-                            using (var jreader = new JsonTextReader(reader))
+                            using(var jreader = new JsonTextReader(reader))
                             {
                                 var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
@@ -462,71 +462,77 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<PooledArraySegment<byte>> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint,
+        private IObservable<byte[]> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint,
             (int Port, string HttpPath, bool Ssl) conf, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
-            return Observable.Defer(() => Observable.Create<PooledArraySegment<byte>>(obs =>
+            return Observable.Defer(() => Observable.Create<byte[]>(obs =>
             {
                 var cts = new CancellationTokenSource();
 
-                var thread = new Thread(async (_) =>
+                Task.Run(async () =>
                 {
-                    using (cts)
+                    using(cts)
                     {
-                        while (!cts.IsCancellationRequested)
+                        while(!cts.IsCancellationRequested)
                         {
                             try
                             {
-                                using (var plb = new PooledLineBuffer(logger))
+                                using(var client = new ClientWebSocket())
                                 {
-                                    using (var client = new ClientWebSocket())
+                                    // connect
+                                    var protocol = conf.Ssl ? "wss" : "ws";
+                                    var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
+
+                                    logger.Debug(() => $"Establishing WebSocket connection to {uri}");
+                                    await client.ConnectAsync(uri, cts.Token);
+
+                                    // subscribe
+                                    var request = new JsonRpcRequest(method, payload, GetRequestId());
+                                    var json = JsonConvert.SerializeObject(request, payloadJsonSerializerSettings);
+                                    var requestData = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+
+                                    logger.Debug(() => $"Sending WebSocket subscription request to {uri}");
+                                    await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
+
+                                    // stream response
+                                    var buf = ArrayPool<byte>.Shared.Rent(0x10000);
+
+                                    try
                                     {
-                                        // connect
-                                        var protocol = conf.Ssl ? "wss" : "ws";
-                                        var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
+                                        var stream = new MemoryStream();
 
-                                        logger.Debug(() => $"Establishing WebSocket connection to {uri}");
-                                        await client.ConnectAsync(uri, cts.Token);
-
-                                        // subscribe
-                                        var buf = ArrayPool<byte>.Shared.Rent(0x10000);
-
-                                        try
+                                        while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                         {
-                                            var request = new JsonRpcRequest(method, payload, GetRequestId());
-                                            var json = JsonConvert.SerializeObject(request, payloadJsonSerializerSettings).ToCharArray();
-                                            var byteLength = Encoding.UTF8.GetBytes(json, 0, json.Length, buf, 0);
-                                            var segment = new ArraySegment<byte>(buf, 0, byteLength);
+                                            stream.SetLength(0);
+                                            var complete = false;
 
-                                            logger.Debug(() => $"Sending WebSocket subscription request to {uri}");
-                                            await client.SendAsync(segment, WebSocketMessageType.Text, true, cts.Token);
-
-                                            // stream response
-                                            segment = new ArraySegment<byte>(buf);
-
-                                            while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                            // read until EndOfMessage
+                                            do
                                             {
                                                 var response = await client.ReceiveAsync(buf, cts.Token);
 
                                                 if (response.MessageType == WebSocketMessageType.Binary)
                                                     throw new InvalidDataException("expected text, received binary data");
 
-                                                plb.Receive(segment, response.Count,
-                                                    (src, dst, count) => Array.Copy(src.Array, src.Offset, dst, 0, count),
-                                                    obs.OnNext, (ex) => { }, response.EndOfMessage);
-                                            }
-                                        }
+                                                stream.Write(buf, 0, response.Count);
 
-                                        finally
-                                        {
-                                            ArrayPool<byte>.Shared.Return(buf);
+                                                complete = response.EndOfMessage;
+                                            } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
+
+                                            // publish
+                                            obs.OnNext(stream.ToArray());
                                         }
+                                    }
+
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(buf);
                                     }
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(() => $"{ex.GetType().Name} '{ex.Message}' while streaming websocket responses. Reconnecting in 5s");
                             }
@@ -535,8 +541,6 @@ namespace MiningCore.DaemonInterface
                         }
                     }
                 });
-
-                thread.Start();
 
                 return Disposable.Create(() => { cts.Cancel(); });
             }));
@@ -550,13 +554,13 @@ namespace MiningCore.DaemonInterface
 
                 Task.Factory.StartNew(() =>
                 {
-                    using (tcs)
+                    using(tcs)
                     {
-                        while (!tcs.IsCancellationRequested)
+                        while(!tcs.IsCancellationRequested)
                         {
                             try
                             {
-                                using (var subSocket = new SubscriberSocket())
+                                using(var subSocket = new ZSocket(ZSocketType.SUB))
                                 {
                                     //subSocket.Options.ReceiveHighWatermark = 1000;
                                     subSocket.Connect(url);
@@ -564,24 +568,25 @@ namespace MiningCore.DaemonInterface
 
                                     logger.Debug($"Subscribed to {url}/{topic}");
 
-                                    while (!tcs.IsCancellationRequested)
+                                    while(!tcs.IsCancellationRequested)
                                     {
-                                        var msg = subSocket.ReceiveMultipartMessage(numMsgSegments);
-
-                                        // Export all frame data as array of PooledArraySegments
-                                        var result = msg.Select(x =>
+                                        using(var msg = subSocket.ReceiveMessage())
                                         {
-                                            var buf = ArrayPool<byte>.Shared.Rent(x.BufferSize);
-                                            Array.Copy(x.ToByteArray(), buf, x.BufferSize);
-                                            return new PooledArraySegment<byte>(buf, 0, x.BufferSize);
-                                        }).ToArray();
+                                            // Export all frame data as array of PooledArraySegments
+                                            var result = msg.Select(x =>
+                                            {
+                                                var buf = new PooledArraySegment<byte>((int) x.Length);
+                                                x.Read(buf.Array, 0, (int) x.Length);
+                                                return buf;
+                                            }).ToArray();
 
-                                        obs.OnNext(result);
+                                            obs.OnNext(result);
+                                        }
                                     }
                                 }
                             }
 
-                            catch (Exception ex)
+                            catch(Exception ex)
                             {
                                 logger.Error(ex);
                             }

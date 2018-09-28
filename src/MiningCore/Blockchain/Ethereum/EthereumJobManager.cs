@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -90,16 +90,16 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected async Task<bool> UpdateJobAsync()
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             try
             {
                 return UpdateJob(await GetBlockTemplateAsync());
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJobAsync)}");
+                logger.Error(ex, () => $"Error during {nameof(UpdateJobAsync)}");
             }
 
             return false;
@@ -107,7 +107,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected bool UpdateJob(EthereumBlockTemplate blockTemplate)
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             try
             {
@@ -125,7 +125,7 @@ namespace MiningCore.Blockchain.Ethereum
                     // update template
                     job = new EthereumJob(jobId, blockTemplate, logger);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
                         // add jobs
                         validJobs[jobId] = job;
@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.Ethereum
                         var obsoleteKeys = validJobs.Keys
                             .Where(key => validJobs[key].BlockTemplate.Height < job.BlockTemplate.Height - MaxBlockBacklog).ToArray();
 
-                        foreach (var key in obsoleteKeys)
+                        foreach(var key in obsoleteKeys)
                             validJobs.Remove(key);
                     }
 
@@ -149,9 +149,9 @@ namespace MiningCore.Blockchain.Ethereum
                 return isNew;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                logger.Error(ex, () => $"[{LogCat}] Error during {nameof(UpdateJob)}");
+                logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
 
             return false;
@@ -159,19 +159,19 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             var response = await daemon.ExecuteCmdAnyAsync<JToken>(EC.GetWork);
 
             if (response.Error != null)
             {
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {response.Error})");
+                logger.Warn(() => $"Error(s) refreshing blocktemplate: {response.Error})");
                 return null;
             }
 
             if (response.Response == null)
             {
-                logger.Warn(() => $"[{LogCat}] Error(s) refreshing blocktemplate: {EC.GetWork} returned null response");
+                logger.Warn(() => $"Error(s) refreshing blocktemplate: {EC.GetWork} returned null response");
                 return null;
             }
 
@@ -187,7 +187,7 @@ namespace MiningCore.Blockchain.Ethereum
             // only parity returns the 4th element (block height)
             if (work.Length < 4)
             {
-                logger.Error(() => $"[{LogCat}] Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
+                logger.Error(() => $"Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
                 return null;
             }
 
@@ -210,17 +210,17 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<JToken>(EC.GetSyncState);
-            var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
+            var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
+            var firstValidResponse = responses.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
             if (firstValidResponse != null)
             {
                 // eth_syncing returns false if not synching
-                if (firstValidResponse.Type == JTokenType.Boolean)
+                if (firstValidResponse is bool)
                     return;
 
-                var syncStates = infos.Where(x => x.Error == null && x.Response != null && firstValidResponse.Type == JTokenType.Object)
-                    .Select(x => x.Response.ToObject<SyncState>())
+                var syncStates = responses.Where(x => x.Error == null && x.Response != null && firstValidResponse is JObject)
+                    .Select(x => ((JObject) x.Response).ToObject<SyncState>())
                     .ToArray();
 
                 if (syncStates.Any())
@@ -236,7 +236,7 @@ namespace MiningCore.Blockchain.Ethereum
                         var warpChunkProcessed = syncStates.Max(x => x.WarpChunksProcessed);
                         var percent = (double) warpChunkProcessed / warpChunkAmount * 100;
 
-                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
+                        logger.Info(() => $"Daemons have downloaded {percent:0.00}% of warp-chunks from {peerCount} peers");
                     }
 
                     else if (syncStates.Any(x => x.HighestBlock != 0))
@@ -245,7 +245,7 @@ namespace MiningCore.Blockchain.Ethereum
                         var totalBlocks = syncStates.Max(x => x.HighestBlock);
                         var percent = (double) lowestHeight / totalBlocks * 100;
 
-                        logger.Info(() => $"[{LogCat}] Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
+                        logger.Info(() => $"Daemons have downloaded {percent:0.00}% of blockchain from {peerCount} peers");
                     }
                 }
             }
@@ -253,7 +253,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task UpdateNetworkStatsAsync()
         {
-            logger.LogInvoke(LogCat);
+            logger.LogInvoke();
 
             try
             {
@@ -270,7 +270,7 @@ namespace MiningCore.Blockchain.Ethereum
                         .ToArray();
 
                     if (errors.Any())
-                        logger.Warn(() => $"[{LogCat}] Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
+                        logger.Warn(() => $"Error(s) refreshing network stats: {string.Join(", ", errors.Select(y => y.Error.Message))})");
                 }
 
                 // extract results
@@ -280,7 +280,7 @@ namespace MiningCore.Blockchain.Ethereum
                 BlockchainStats.ConnectedPeers = peerCount;
             }
 
-            catch (Exception e)
+            catch(Exception e)
             {
                 logger.Error(e);
             }
@@ -300,7 +300,7 @@ namespace MiningCore.Blockchain.Ethereum
             {
                 var error = response.Error?.Message ?? response?.Response?.ToString();
 
-                logger.Warn(() => $"[{LogCat}] Block {share.BlockHeight} submission failed with: {error}");
+                logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {error}");
                 messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
 
                 return false;
@@ -327,18 +327,15 @@ namespace MiningCore.Blockchain.Ethereum
             return new object[0];
         }
 
-        private JsonRpcRequest DeserializeRequest(PooledArraySegment<byte> data)
+        private JsonRpcRequest DeserializeRequest(byte[] data)
         {
-            using (data)
+            using(var stream = new MemoryStream(data))
             {
-                using (var stream = new MemoryStream(data.Array, data.Offset, data.Size))
+                using(var reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var jreader = new JsonTextReader(reader))
                     {
-                        using (var jreader = new JsonTextReader(reader))
-                        {
-                            return serializer.Deserialize<JsonRpcRequest>(jreader);
-                        }
+                        return serializer.Deserialize<JsonRpcRequest>(jreader);
                     }
                 }
             }
@@ -395,7 +392,7 @@ namespace MiningCore.Blockchain.Ethereum
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
 
-            logger.LogInvoke(LogCat, new[] {worker.ConnectionId});
+            logger.LogInvoke(new[] { worker.ConnectionId });
             var context = worker.ContextAs<EthereumWorkerContext>();
 
             // var miner = request[0];
@@ -404,7 +401,7 @@ namespace MiningCore.Blockchain.Ethereum
             EthereumJob job;
 
             // stale?
-            lock (jobLock)
+            lock(jobLock)
             {
                 if (!validJobs.TryGetValue(jobId, out job))
                     throw new StratumException(StratumError.MinusOne, "stale share");
@@ -422,13 +419,13 @@ namespace MiningCore.Blockchain.Ethereum
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
-                logger.Info(() => $"[{LogCat}] Submitting block {share.BlockHeight}");
+                logger.Info(() => $"Submitting block {share.BlockHeight}");
 
                 share.IsBlockCandidate = await SubmitBlockAsync(share, fullNonceHex, headerHash, mixHash);
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
                 }
             }
 
@@ -441,8 +438,6 @@ namespace MiningCore.Blockchain.Ethereum
 
         #region Overrides
 
-        protected override string LogCat => "Ethereum Job Manager";
-
         protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
@@ -453,12 +448,12 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] {(object) "pending", true});
+            var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials", LogCat);
+                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -474,22 +469,22 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var syncPendingNotificationShown = false;
 
-            while (true)
+            while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
 
                 var isSynched = responses.All(x => x.Error == null &&
-                                                   x.Response is bool && (bool) x.Response == false);
+                    x.Response is bool && (bool) x.Response == false);
 
                 if (isSynched)
                 {
-                    logger.Info(() => $"[{LogCat}] All daemons synched with blockchain");
+                    logger.Info(() => $"All daemons synched with blockchain");
                     break;
                 }
 
                 if (!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"[{LogCat}] Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -516,13 +511,13 @@ namespace MiningCore.Blockchain.Ethereum
             if (results.Any(x => x.Error != null))
             {
                 if (results[4].Error != null)
-                    logger.ThrowLogPoolStartupException($"Looks like you are NOT running 'Parity' as daemon which is not supported - https://parity.io/", LogCat);
+                    logger.ThrowLogPoolStartupException($"Looks like you are NOT running 'Parity' as daemon which is not supported - https://parity.io/");
 
                 var errors = results.Where(x => x.Error != null)
                     .ToArray();
 
                 if (errors.Any())
-                    logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}", LogCat);
+                    logger.ThrowLogPoolStartupException($"Init RPC failed: {string.Join(", ", errors.Select(y => y.Error.Message))}");
             }
 
             // extract results
@@ -549,28 +544,39 @@ namespace MiningCore.Blockchain.Ethereum
 
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
-                .Select(via => Observable.FromAsync(UpdateNetworkStatsAsync))
+                .Select(via => Observable.FromAsync(async ()=>
+                {
+                    try
+                    {
+                        await UpdateNetworkStatsAsync();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }))
                 .Concat()
                 .Subscribe();
 
             if (poolConfig.EnableInternalStratum == true)
             {
                 // make sure we have a current DAG
-                while (true)
+                while(true)
                 {
                     var blockTemplate = await GetBlockTemplateAsync();
 
                     if (blockTemplate != null)
                     {
-                        logger.Info(() => $"[{LogCat}] Loading current DAG ...");
+                        logger.Info(() => $"Loading current DAG ...");
 
                         await ethash.GetDagAsync(blockTemplate.Height, logger);
 
-                        logger.Info(() => $"[{LogCat}] Loaded current DAG");
+                        logger.Info(() => $"Loaded current DAG");
                         break;
                     }
 
-                    logger.Info(() => $"[{LogCat}] Waiting for first valid block template");
+                    logger.Info(() => $"Waiting for first valid block template");
                     await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
 
@@ -603,9 +609,9 @@ namespace MiningCore.Blockchain.Ethereum
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
             if (enableStreaming && !poolConfig.Daemons.Any(x =>
-                    x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
+                x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
             {
-                logger.Warn(() => $"[{LogCat}] '{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
                 enableStreaming = false;
             }
 
@@ -621,10 +627,10 @@ namespace MiningCore.Blockchain.Ethereum
                         return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
                     });
 
-                logger.Info(() => $"[{LogCat}] Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
+                logger.Info(() => $"Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
 
                 // stream work updates
-                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] {(object) EC.GetWork})
+                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
                     {
                         try
@@ -633,9 +639,9 @@ namespace MiningCore.Blockchain.Ethereum
                             return psp?.Result;
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
-                            logger.Info(() => $"[{LogCat}] Error deserializing pending block: {ex.Message}");
+                            logger.Info(() => $"Error deserializing pending block: {ex.Message}");
                         }
 
                         return null;
@@ -647,7 +653,7 @@ namespace MiningCore.Blockchain.Ethereum
                     .Do(isNew =>
                     {
                         if (isNew)
-                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
+                            logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))
@@ -663,7 +669,7 @@ namespace MiningCore.Blockchain.Ethereum
                     .Do(isNew =>
                     {
                         if (isNew)
-                            logger.Info(() => $"[{LogCat}] New block {currentJob.BlockTemplate.Height} detected");
+                            logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))

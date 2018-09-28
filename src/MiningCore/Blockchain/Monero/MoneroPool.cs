@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -119,7 +119,7 @@ namespace MiningCore.Blockchain.Monero
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                 context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
@@ -135,7 +135,7 @@ namespace MiningCore.Blockchain.Monero
             client.Respond(loginResponse, request.Id);
 
             // log association
-            logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] = {loginRequest.Login} = {client.RemoteEndpoint.Address}");
+            logger.Info(() => $"[{client.ConnectionId}] Authorized worker {loginRequest.Login}");
         }
 
         private void OnGetJob(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -182,7 +182,7 @@ namespace MiningCore.Blockchain.Monero
             };
 
             // update context
-            lock (context)
+            lock(context)
             {
                 context.AddJob(job);
             }
@@ -205,7 +205,7 @@ namespace MiningCore.Blockchain.Monero
 
                 if (requestAge > maxShareAge)
                 {
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
+                    logger.Debug(() => $"[{client.ConnectionId}] Dropping stale share submission request (not client's fault)");
                     return;
                 }
 
@@ -221,7 +221,7 @@ namespace MiningCore.Blockchain.Monero
 
                 MoneroWorkerJob job;
 
-                lock (context)
+                lock(context)
                 {
                     var jobId = submitRequest?.JobId;
 
@@ -233,7 +233,7 @@ namespace MiningCore.Blockchain.Monero
                 // dupe check
                 var nonceLower = submitRequest.Nonce.ToLower();
 
-                lock (job)
+                lock(job)
                 {
                     if (job.Submissions.Contains(nonceLower))
                         throw new StratumException(StratumError.MinusOne, "duplicate share");
@@ -253,7 +253,7 @@ namespace MiningCore.Blockchain.Monero
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -264,7 +264,7 @@ namespace MiningCore.Blockchain.Monero
                 UpdateVarDiff(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 client.RespondError(ex.Code, ex.Message, request.Id, false);
 
@@ -273,7 +273,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
@@ -287,28 +287,36 @@ namespace MiningCore.Blockchain.Monero
 
         private void OnNewJob()
         {
-            logger.Info(() => $"[{LogCat}] Broadcasting job");
+            logger.Info(() => $"Broadcasting job");
 
             ForEachClient(client =>
             {
-                var context = client.ContextAs<MoneroWorkerContext>();
-
-                if (context.IsSubscribed && context.IsAuthorized)
+                try
                 {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var context = client.ContextAs<MoneroWorkerContext>();
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if (context.IsSubscribed && context.IsAuthorized)
                     {
-                        logger.Info(() => $"[{LogCat}] [{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        DisconnectClient(client);
-                        return;
-                    }
+                        // check alive
+                        var lastActivityAgo = clock.Now - context.LastActivity;
 
-                    // send job
-                    var job = CreateWorkerJob(client);
-                    client.Notify(MoneroStratumMethods.JobNotify, job);
+                        if (poolConfig.ClientConnectionTimeout > 0 &&
+                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                            DisconnectClient(client);
+                            return;
+                        }
+
+                        // send job
+                        var job = CreateWorkerJob(client);
+                        client.Notify(MoneroStratumMethods.JobNotify, job);
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    logger.Error(ex, nameof(OnNewJob));
                 }
             });
         }
@@ -324,7 +332,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (poolConfig.EnableInternalStratum == true)
             {
-                disposables.Add(manager.Blocks.Subscribe(_ => OnNewJob()));
+                disposables.Add(manager.Blocks.Subscribe(_=> OnNewJob()));
 
                 // we need work before opening the gates
                 await manager.Blocks.Take(1).ToTask(ct);
@@ -349,7 +357,7 @@ namespace MiningCore.Blockchain.Monero
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
 
-            switch (request.Method)
+            switch(request.Method)
             {
                 case MoneroStratumMethods.Login:
                     OnLogin(client, tsRequest);
@@ -369,7 +377,7 @@ namespace MiningCore.Blockchain.Monero
                     break;
 
                 default:
-                    logger.Debug(() => $"[{LogCat}] [{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                     client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;

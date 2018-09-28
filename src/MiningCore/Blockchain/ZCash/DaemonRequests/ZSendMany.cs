@@ -1,4 +1,4 @@
-﻿namespace MiningCore.Blockchain.ZCash.DaemonRequests
+namespace MiningCore.Blockchain.ZCash.DaemonRequests
 {
     public class ZSendManyRecipient
     {

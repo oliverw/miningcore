@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
 
@@ -30,6 +30,7 @@ namespace MiningCore.Blockchain.Straks.DaemonResponses
 
         //public string Txid { get; set; }
         public decimal Fee { get; set; }
+
         public int SigOps { get; set; }
 
         [JsonProperty("treasuryreward")]

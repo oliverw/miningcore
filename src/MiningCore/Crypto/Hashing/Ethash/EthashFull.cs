@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,7 +26,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
 
         public void Dispose()
         {
-            foreach (var value in caches.Values)
+            foreach(var value in caches.Values)
                 value.Dispose();
         }
 
@@ -35,7 +35,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
             var epoch = block / EthereumConstants.EpochLength;
             Dag result;
 
-            lock (cacheLock)
+            lock(cacheLock)
             {
                 if (numCaches == 0)
                     numCaches = 3;
@@ -43,7 +43,7 @@ namespace MiningCore.Crypto.Hashing.Ethash
                 if (!caches.TryGetValue(epoch, out result))
                 {
                     // No cached DAG, evict the oldest if the cache limit was reached
-                    while (caches.Count >= numCaches)
+                    while(caches.Count >= numCaches)
                     {
                         var toEvict = caches.Values.OrderBy(x => x.LastUsed).First();
                         var key = caches.First(pair => pair.Value == toEvict).Key;

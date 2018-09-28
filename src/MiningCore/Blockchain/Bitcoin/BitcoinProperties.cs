@@ -35,6 +35,7 @@ namespace MiningCore.Blockchain.Bitcoin
         private static readonly IHashAlgorithm sha256D = new Sha256D();
         private static readonly IHashAlgorithm sha256DReverse = new DigestReverser(sha256D);
         private static readonly IHashAlgorithm x11 = new X11();
+        private static readonly IHashAlgorithm x13bcd = new X13BCD();
         private static readonly IHashAlgorithm blake2s = new Blake2s();
         private static readonly IHashAlgorithm x17 = new X17();
         private static readonly IHashAlgorithm x16r = new X16R();
@@ -69,6 +70,9 @@ namespace MiningCore.Blockchain.Bitcoin
 
         private static readonly BitcoinCoinProperties x11Coin =
             new BitcoinCoinProperties(1, sha256D, x11, new DigestReverser(x11), "X11");
+
+        private static readonly BitcoinCoinProperties x13bcdCoin =
+            new BitcoinCoinProperties(1, sha256D, x13bcd, sha256DReverse, "X13-BCD");
 
         private static readonly BitcoinCoinProperties skeinCoin =
             new BitcoinCoinProperties(1, sha256D, skein, sha256DReverse, "Skein");
@@ -137,6 +141,9 @@ namespace MiningCore.Blockchain.Bitcoin
             { CoinType.DASH, x11Coin },
             { CoinType.CANN, x11Coin },
 
+            // X13
+            { CoinType.BCD, x13bcdCoin },
+
             // Equihash
             { CoinType.ZEC, equihashCoin },
             { CoinType.BTG, equihashCoin },
@@ -175,7 +182,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch (algorithm.ToLower())
+            switch(algorithm.ToLower())
             {
                 case "sha256d":
                 case "sha256":
@@ -200,7 +207,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algorithm), $"{nameof(algorithm)} must not be empty");
 
-            switch (algorithm.ToLower())
+            switch(algorithm.ToLower())
             {
                 case "lyra":
                     return vergeLyraCoin;
