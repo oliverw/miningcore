@@ -81,8 +81,8 @@ namespace MiningCore.Stratum
         private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new Subject<Unit>();
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool expectingProxyHeader;
-        private CancellationTokenSource cts = new CancellationTokenSource();
 
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
