@@ -86,10 +86,7 @@ namespace MiningCore.Blockchain.ZCash
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
 
@@ -127,10 +124,7 @@ namespace MiningCore.Blockchain.ZCash
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
             var target = requestParams.FirstOrDefault();
@@ -167,33 +161,41 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            try
             {
-                case BitcoinStratumMethods.Subscribe:
-                    await OnSubscribeAsync(client, tsRequest);
-                    break;
+                switch(request.Method)
+                {
+                    case BitcoinStratumMethods.Subscribe:
+                        await OnSubscribeAsync(client, tsRequest);
+                        break;
 
-                case BitcoinStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest, ct);
-                    break;
+                    case BitcoinStratumMethods.Authorize:
+                        await OnAuthorizeAsync(client, tsRequest, ct);
+                        break;
 
-                case BitcoinStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest, ct);
-                    break;
+                    case BitcoinStratumMethods.SubmitShare:
+                        await OnSubmitAsync(client, tsRequest, ct);
+                        break;
 
-                case ZCashStratumMethods.SuggestTarget:
-                    await OnSuggestTargetAsync(client, tsRequest);
-                    break;
+                    case ZCashStratumMethods.SuggestTarget:
+                        await OnSuggestTargetAsync(client, tsRequest);
+                        break;
 
-                case BitcoinStratumMethods.ExtraNonceSubscribe:
-                    // ignored
-                    break;
+                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                        // ignored
+                        break;
 
-                default:
-                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    default:
+                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
+                        await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                        break;
+                }
+            }
+
+            catch(StratumException ex)
+            {
+                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
             }
         }
 
