@@ -20,7 +20,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -34,7 +33,6 @@ using MiningCore.Configuration;
 using MiningCore.JsonRpc;
 using MiningCore.Messaging;
 using MiningCore.Mining;
-using MiningCore.Notifications;
 using MiningCore.Notifications.Messages;
 using MiningCore.Persistence;
 using MiningCore.Persistence.Repositories;
@@ -65,21 +63,16 @@ namespace MiningCore.Blockchain.Monero
         private async Task OnLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+
             var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var loginRequest = request.ParamsAs<MoneroLoginRequest>();
 
             if (string.IsNullOrEmpty(loginRequest?.Login))
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "missing login", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing login");
 
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
@@ -103,17 +96,11 @@ namespace MiningCore.Blockchain.Monero
             context.IsAuthorized = result;
 
             if (!context.IsAuthorized)
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "invalid login");
 
             // validate payment Id
             if (!string.IsNullOrEmpty(context.PaymentId) && context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "invalid payment id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "invalid payment id");
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
@@ -143,22 +130,17 @@ namespace MiningCore.Blockchain.Monero
         private async Task OnGetJobAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
+
             var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var getJobRequest = request.ParamsAs<MoneroGetJobRequest>();
 
             // validate worker
             if (client.ConnectionId != getJobRequest?.WorkerId || !context.IsAuthorized)
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "unauthorized", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "unauthorized");
 
             // respond
             var job = CreateWorkerJob(client);
@@ -266,8 +248,6 @@ namespace MiningCore.Blockchain.Monero
 
             catch(StratumException ex)
             {
-                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
-
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
 
@@ -277,6 +257,8 @@ namespace MiningCore.Blockchain.Monero
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
+
+                throw;
             }
         }
 
@@ -366,30 +348,38 @@ namespace MiningCore.Blockchain.Monero
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
 
-            switch(request.Method)
+            try
             {
-                case MoneroStratumMethods.Login:
-                    await OnLoginAsync(client, tsRequest);
-                    break;
+                switch(request.Method)
+                {
+                    case MoneroStratumMethods.Login:
+                        await OnLoginAsync(client, tsRequest);
+                        break;
 
-                case MoneroStratumMethods.GetJob:
-                    await OnGetJobAsync(client, tsRequest);
-                    break;
+                    case MoneroStratumMethods.GetJob:
+                        await OnGetJobAsync(client, tsRequest);
+                        break;
 
-                case MoneroStratumMethods.Submit:
-                    await OnSubmitAsync(client, tsRequest, ct);
-                    break;
+                    case MoneroStratumMethods.Submit:
+                        await OnSubmitAsync(client, tsRequest, ct);
+                        break;
 
-                case MoneroStratumMethods.KeepAlive:
-                    // recognize activity
-                    context.LastActivity = clock.Now;
-                    break;
+                    case MoneroStratumMethods.KeepAlive:
+                        // recognize activity
+                        context.LastActivity = clock.Now;
+                        break;
 
-                default:
-                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    default:
+                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
+                        await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                        break;
+                }
+            }
+
+            catch(StratumException ex)
+            {
+                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
             }
         }
 

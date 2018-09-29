@@ -66,18 +66,12 @@ namespace MiningCore.Blockchain.Ethereum
             var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.Other, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
 
             if (requestParams == null || requestParams.Length < 2 || requestParams.Any(string.IsNullOrEmpty))
-            {
-                await client.RespondErrorAsync(StratumError.MinusOne, "invalid request", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "invalid request");
 
             manager.PrepareWorker(client);
 
@@ -106,10 +100,7 @@ namespace MiningCore.Blockchain.Ethereum
             var context = client.ContextAs<EthereumWorkerContext>();
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
@@ -209,8 +200,6 @@ namespace MiningCore.Blockchain.Ethereum
 
             catch(StratumException ex)
             {
-                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
-
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
 
@@ -220,6 +209,8 @@ namespace MiningCore.Blockchain.Ethereum
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
+
+                throw;
             }
         }
 
@@ -330,29 +321,37 @@ namespace MiningCore.Blockchain.Ethereum
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            try
             {
-                case EthereumStratumMethods.Subscribe:
-                    await OnSubscribeAsync(client, tsRequest);
-                    break;
+                switch(request.Method)
+                {
+                    case EthereumStratumMethods.Subscribe:
+                        await OnSubscribeAsync(client, tsRequest);
+                        break;
 
-                case EthereumStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest);
-                    break;
+                    case EthereumStratumMethods.Authorize:
+                        await OnAuthorizeAsync(client, tsRequest);
+                        break;
 
-                case EthereumStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest, ct);
-                    break;
+                    case EthereumStratumMethods.SubmitShare:
+                        await OnSubmitAsync(client, tsRequest, ct);
+                        break;
 
-                case EthereumStratumMethods.ExtraNonceSubscribe:
-                    //await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
-                    break;
+                    case EthereumStratumMethods.ExtraNonceSubscribe:
+                        //await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
+                        break;
 
-                default:
-                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    default:
+                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
+                        await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                        break;
+                }
+            }
+
+            catch(StratumException ex)
+            {
+                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
             }
         }
 
