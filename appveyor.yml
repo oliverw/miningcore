@@ -17,7 +17,12 @@ before_build:
   - dotnet restore
 
 build_script:
+  - cd MiningCore
   - dotnet build -c Release --framework netcoreapp2.1
+  - cd ..
+  - cd MiningCore.Tests
+  - dotnet build -c Release --framework netcoreapp2.1
+  - cd ..
 
 #---------------------------------#
 #       tests configuration       #
