@@ -585,7 +585,9 @@ namespace MiningCore.Blockchain.Monero
                 if (poolConfig.BlockRefreshInterval > 0)
                 {
                     // periodically update block-template
-                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
                         .TakeUntil(pollTimerRestart)
                         .Select(_ => ("RPC polling", (string) null))
                         .Repeat());

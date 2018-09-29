@@ -159,7 +159,9 @@ namespace MiningCore.Blockchain.Bitcoin
                 if (poolConfig.BlockRefreshInterval > 0)
                 {
                     // periodically update block-template
-                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                    var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
                         .TakeUntil(pollTimerRestart)
                         .Select(_ => (false, "RPC polling", (string) null))
                         .Repeat());
@@ -440,7 +442,7 @@ namespace MiningCore.Blockchain.Bitcoin
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(ct,
                 BitcoinCommands.ValidateAddress, new[] { address });
 
             return result.Response != null && result.Response.IsValid;
