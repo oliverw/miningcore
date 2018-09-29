@@ -84,6 +84,8 @@ namespace MiningCore.Stratum
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
+        private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
+
         #region API-Surface
 
         public void Run(Socket socket,
@@ -106,49 +108,55 @@ namespace MiningCore.Stratum
                 // create stream
                 networkStream = new NetworkStream(socket, true);
 
-                // TLS handshake
-                if (poolEndpoint.PoolEndpoint.Tls)
+                try
                 {
-                    var sslStream = new SslStream(networkStream, false);
-                    await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
-
-                    networkStream = sslStream;
-                    logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
-                }
-
-                else
-                    logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
-
-                // Async I/O loop(s)
-                using(new CompositeDisposable(networkStream, cts))
-                {
-                    var tasks = new[]
+                    // Async I/O loop(s)
+                    using(new CompositeDisposable(networkStream, cts))
                     {
-                        FillReceivePipeAsync(),
-                        ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync)
-                    };
+                        // TLS handshake
+                        if (poolEndpoint.PoolEndpoint.Tls)
+                        {
+                            var sslStream = new SslStream(networkStream, false);
+                            await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
-                    await Task.WhenAny(tasks);
+                            networkStream = sslStream;
+                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                        }
 
-                    // Make sure all tasks complete
-                    receivePipe.Reader.Complete();
-                    receivePipe.Writer.Complete();
-                    cts.Cancel();
+                        else
+                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
-                    // Signal completion or error
-                    var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
+                        var tasks = new[]
+                        {
+                            FillReceivePipeAsync(),
+                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync)
+                        };
 
-                    if (error == null)
-                        onCompleted(this);
-                    else
-                        onError(this, error);
+                        await Task.WhenAny(tasks);
 
-                    // Release external observables
-                    IsAlive = false;
-                    terminated.OnNext(Unit.Default);
+                        // Make sure all tasks complete
+                        receivePipe.Reader.Complete();
+                        receivePipe.Writer.Complete();
+                        cts.Cancel();
+
+                        // Signal completion or error
+                        var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
+
+                        if (error == null)
+                            onCompleted(this);
+                        else
+                            onError(this, error);
+
+                        // Release external observables
+                        IsAlive = false;
+                        terminated.OnNext(Unit.Default);
+                    }
                 }
 
-                logger.Info(() => $"[{ConnectionId}] Connection closed");
+                finally
+                {
+                    logger.Info(() => $"[{ConnectionId}] Connection closed");
+                }
             });
         }
 
@@ -242,14 +250,21 @@ namespace MiningCore.Stratum
         {
             logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
 
-            using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+            using(var ctsTimeout = new CancellationTokenSource())
             {
-                serializer.Serialize(writer, payload);
+                var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token);
+
+                using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                {
+                    serializer.Serialize(writer, payload);
+                }
+
+                networkStream.WriteByte(0xa); // terminator
+
+                ctsTimeout.CancelAfter(sendTimeout);
+
+                return networkStream.FlushAsync(ctsComposite.Token);
             }
-
-            networkStream.WriteByte(0xa); // terminator
-
-            return networkStream.FlushAsync(cts.Token);
         }
 
         private async Task FillReceivePipeAsync()
