@@ -170,7 +170,7 @@ namespace MiningCore.Mining
 
         #region VarDiff
 
-        protected void UpdateVarDiff(StratumClient client, bool isIdleUpdate = false)
+        protected async Task UpdateVarDiffAsync(StratumClient client, bool isIdleUpdate = false)
         {
             var context = client.ContextAs<WorkerContextBase>();
 
@@ -205,7 +205,7 @@ namespace MiningCore.Mining
                 {
                     logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
-                    OnVarDiffUpdate(client, newDiff.Value);
+                    await OnVarDiffUpdateAsync(client, newDiff.Value);
                 }
             }
         }
@@ -230,19 +230,20 @@ namespace MiningCore.Mining
             Observable.Timer(TimeSpan.FromSeconds(timeout))
                 .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
                 .Where(_ => client.IsAlive)
-                .Subscribe(_ =>
-                {
-                    UpdateVarDiff(client, true);
-                }, ex =>
+                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
+                .Concat()
+                .Subscribe(_ => { }, ex =>
                 {
                     logger.Debug(ex, nameof(StartVarDiffIdleUpdate));
                 });
         }
 
-        protected virtual void OnVarDiffUpdate(StratumClient client, double newDiff)
+        protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
+
+            return Task.FromResult(true);
         }
 
         #endregion // VarDiff

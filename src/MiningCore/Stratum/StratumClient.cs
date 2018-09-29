@@ -54,12 +54,6 @@ namespace MiningCore.Stratum
             this.logger = logger;
             receivePipe = new Pipe(PipeOptions.Default);
 
-            sendQueue = new BufferBlock<object>(new DataflowBlockOptions
-            {
-                BoundedCapacity = 100,
-                EnsureOrdered = true,
-            });
-
             this.clock = clock;
             ConnectionId = connectionId;
             IsAlive = true;
@@ -78,7 +72,6 @@ namespace MiningCore.Stratum
 
         private Stream networkStream;
         private readonly Pipe receivePipe;
-        private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new Subject<Unit>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
@@ -132,8 +125,7 @@ namespace MiningCore.Stratum
                     var tasks = new[]
                     {
                         FillReceivePipeAsync(),
-                        ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
-                        ProcessSendQueueAsync()
+                        ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync)
                     };
 
                     await Task.WhenAny(tasks);
@@ -141,7 +133,6 @@ namespace MiningCore.Stratum
                     // Make sure all tasks complete
                     receivePipe.Reader.Complete();
                     receivePipe.Writer.Complete();
-                    sendQueue.Complete();
                     cts.Cancel();
 
                     // Signal completion or error
@@ -178,40 +169,40 @@ namespace MiningCore.Stratum
             return (T) context;
         }
 
-        public void Respond<T>(T payload, object id)
+        public Task RespondAsync<T>(T payload, object id)
         {
             Contract.RequiresNonNull(payload, nameof(payload));
             Contract.RequiresNonNull(id, nameof(id));
 
-            Respond(new JsonRpcResponse<T>(payload, id));
+            return RespondAsync(new JsonRpcResponse<T>(payload, id));
         }
 
-        public void RespondError(StratumError code, string message, object id, object result = null, object data = null)
+        public Task RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
         {
             Contract.RequiresNonNull(message, nameof(message));
 
-            Respond(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
+            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
         }
 
-        public void Respond<T>(JsonRpcResponse<T> response)
+        public Task RespondAsync<T>(JsonRpcResponse<T> response)
         {
             Contract.RequiresNonNull(response, nameof(response));
 
-            Send(response);
+            return SendAsync(response);
         }
 
-        public void Notify<T>(string method, T payload)
+        public Task NotifyAsync<T>(string method, T payload)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
-            Notify(new JsonRpcRequest<T>(method, payload, null));
+            return NotifyAsync(new JsonRpcRequest<T>(method, payload, null));
         }
 
-        public void Notify<T>(JsonRpcRequest<T> request)
+        public Task NotifyAsync<T>(JsonRpcRequest<T> request)
         {
             Contract.RequiresNonNull(request, nameof(request));
 
-            Send(request);
+            return SendAsync(request);
         }
 
         public void Disconnect()
@@ -247,9 +238,18 @@ namespace MiningCore.Stratum
             }
         }
 
-        private void Send<T>(T payload)
+        private Task SendAsync<T>(T payload)
         {
-            sendQueue.Post(payload);
+            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+
+            using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+            {
+                serializer.Serialize(writer, payload);
+            }
+
+            networkStream.WriteByte(0xa); // terminator
+
+            return networkStream.FlushAsync(cts.Token);
         }
 
         private async Task FillReceivePipeAsync()
@@ -321,25 +321,6 @@ namespace MiningCore.Stratum
                 throw new JsonException("Unable to deserialize request");
 
             await onRequestAsync(this, request, cts.Token);
-        }
-
-        private async Task ProcessSendQueueAsync()
-        {
-            while(true)
-            {
-                var payload = await sendQueue.ReceiveAsync(cts.Token);
-
-                logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
-
-                using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                {
-                    serializer.Serialize(writer, payload);
-                }
-
-                networkStream.WriteByte(0xa); // terminator
-
-                await networkStream.FlushAsync(cts.Token);
-            }
         }
 
         /// <summary>

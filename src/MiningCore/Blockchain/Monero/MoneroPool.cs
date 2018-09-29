@@ -62,14 +62,14 @@ namespace MiningCore.Blockchain.Monero
 
         private MoneroJobManager manager;
 
-        private void OnLogin(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "missing request id", request.Id);
                 return;
             }
 
@@ -77,7 +77,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (string.IsNullOrEmpty(loginRequest?.Login))
             {
-                client.RespondError(StratumError.MinusOne, "missing login", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "missing login", request.Id);
                 return;
             }
 
@@ -104,14 +104,14 @@ namespace MiningCore.Blockchain.Monero
 
             if (!context.IsAuthorized)
             {
-                client.RespondError(StratumError.MinusOne, "invalid login", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
                 return;
             }
 
             // validate payment Id
             if (!string.IsNullOrEmpty(context.PaymentId) && context.PaymentId.Length != MoneroConstants.PaymentIdHexLength)
             {
-                client.RespondError(StratumError.MinusOne, "invalid payment id", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "invalid payment id", request.Id);
                 return;
             }
 
@@ -123,6 +123,8 @@ namespace MiningCore.Blockchain.Monero
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
+
+                logger.Info(() => $"[{client.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
             }
 
             // respond
@@ -132,20 +134,20 @@ namespace MiningCore.Blockchain.Monero
                 Job = CreateWorkerJob(client)
             };
 
-            client.Respond(loginResponse, request.Id);
+            await client.RespondAsync(loginResponse, request.Id);
 
             // log association
             logger.Info(() => $"[{client.ConnectionId}] Authorized worker {loginRequest.Login}");
         }
 
-        private void OnGetJob(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnGetJobAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<MoneroWorkerContext>();
 
             if (request.Id == null)
             {
-                client.RespondError(StratumError.MinusOne, "missing request id", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "missing request id", request.Id);
                 return;
             }
 
@@ -154,13 +156,13 @@ namespace MiningCore.Blockchain.Monero
             // validate worker
             if (client.ConnectionId != getJobRequest?.WorkerId || !context.IsAuthorized)
             {
-                client.RespondError(StratumError.MinusOne, "unauthorized", request.Id);
+                await client.RespondErrorAsync(StratumError.MinusOne, "unauthorized", request.Id);
                 return;
             }
 
             // respond
             var job = CreateWorkerJob(client);
-            client.Respond(job, request.Id);
+            await client.RespondAsync(job, request.Id);
         }
 
         private MoneroJobParams CreateWorkerJob(StratumClient client)
@@ -243,7 +245,7 @@ namespace MiningCore.Blockchain.Monero
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
                 var share = await manager.SubmitShareAsync(client, submitRequest, job, poolEndpoint.Difficulty, ct);
-                client.Respond(new MoneroResponseBase(), request.Id);
+                await client.RespondAsync(new MoneroResponseBase(), request.Id);
 
                 // publish
                 messageBus.SendMessage(new ClientShare(client, share));
@@ -259,12 +261,12 @@ namespace MiningCore.Blockchain.Monero
 
                 // update client stats
                 context.Stats.ValidShares++;
-                UpdateVarDiff(client);
+                await UpdateVarDiffAsync(client);
             }
 
             catch(StratumException ex)
             {
-                client.RespondError(ex.Code, ex.Message, request.Id, false);
+                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
@@ -283,40 +285,37 @@ namespace MiningCore.Blockchain.Monero
             return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
         }
 
-        private void OnNewJob()
+        private Task OnNewJobAsync()
         {
-            logger.Info(() => $"Broadcasting job");
+            logger.Info(() => $"[Broadcasting job");
 
-            ForEachClient(client =>
+            var tasks = ForEachClient(async client =>
             {
-                try
-                {
-                    var context = client.ContextAs<MoneroWorkerContext>();
+                if (!client.IsAlive)
+                    return;
 
-                    if (context.IsSubscribed && context.IsAuthorized)
+                var context = client.ContextAs<MoneroWorkerContext>();
+
+                if (context.IsSubscribed && context.IsAuthorized)
+                {
+                    // check alive
+                    var lastActivityAgo = clock.Now - context.LastActivity;
+
+                    if (poolConfig.ClientConnectionTimeout > 0 &&
+                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        // check alive
-                        var lastActivityAgo = clock.Now - context.LastActivity;
-
-                        if (poolConfig.ClientConnectionTimeout > 0 &&
-                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                        {
-                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                            DisconnectClient(client);
-                            return;
-                        }
-
-                        // send job
-                        var job = CreateWorkerJob(client);
-                        client.Notify(MoneroStratumMethods.JobNotify, job);
+                        logger.Info(() => $"[[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        DisconnectClient(client);
+                        return;
                     }
-                }
 
-                catch (Exception ex)
-                {
-                    logger.Error(ex, nameof(OnNewJob));
+                    // send job
+                    var job = CreateWorkerJob(client);
+                    await client.NotifyAsync(MoneroStratumMethods.JobNotify, job);
                 }
             });
+
+            return Task.WhenAll(tasks);
         }
 
         #region Overrides
@@ -330,7 +329,13 @@ namespace MiningCore.Blockchain.Monero
 
             if (poolConfig.EnableInternalStratum == true)
             {
-                disposables.Add(manager.Blocks.Subscribe(_=> OnNewJob()));
+                disposables.Add(manager.Blocks
+                    .Select(x => Observable.FromAsync(() => OnNewJobAsync()))
+                    .Concat()
+                    .Subscribe(_ => { }, ex =>
+                    {
+                        logger.Debug(ex, nameof(OnNewJobAsync));
+                    }));
 
                 // we need work before opening the gates
                 await manager.Blocks.Take(1).ToTask(ct);
@@ -364,11 +369,11 @@ namespace MiningCore.Blockchain.Monero
             switch(request.Method)
             {
                 case MoneroStratumMethods.Login:
-                    OnLogin(client, tsRequest);
+                    await OnLoginAsync(client, tsRequest);
                     break;
 
                 case MoneroStratumMethods.GetJob:
-                    OnGetJob(client, tsRequest);
+                    await OnGetJobAsync(client, tsRequest);
                     break;
 
                 case MoneroStratumMethods.Submit:
@@ -383,7 +388,7 @@ namespace MiningCore.Blockchain.Monero
                 default:
                     logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                    await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                     break;
             }
         }
@@ -394,9 +399,9 @@ namespace MiningCore.Blockchain.Monero
             return result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
+        protected override async Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
         {
-            base.OnVarDiffUpdate(client, newDiff);
+            await base.OnVarDiffUpdateAsync(client, newDiff);
 
             // apply immediately and notify client
             var context = client.ContextAs<MoneroWorkerContext>();
@@ -407,7 +412,7 @@ namespace MiningCore.Blockchain.Monero
 
                 // re-send job
                 var job = CreateWorkerJob(client);
-                client.Notify(MoneroStratumMethods.JobNotify, job);
+                await client.NotifyAsync(MoneroStratumMethods.JobNotify, job);
             }
         }
 

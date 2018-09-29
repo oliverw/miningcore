@@ -454,7 +454,7 @@ namespace MiningCore.Blockchain.Monero
 
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
-                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(MWC.GetAddress);
+                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(ct, MWC.GetAddress);
 
                 // ensure pool owns wallet
                 if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
