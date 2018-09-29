@@ -17,7 +17,7 @@ before_build:
   - dotnet restore
 
 build_script:
-  - # Install Linux build-dependenciess
+  - # Install Linux build-dependencies
   - sh: sudo apt-get update -y && sudo apt-get -y install cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
   - # Publish
   - cd MiningCore
