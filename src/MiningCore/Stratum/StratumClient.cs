@@ -102,14 +102,14 @@ namespace MiningCore.Stratum
 
             Task.Run(async () =>
             {
-                // prepare socket
-                socket.NoDelay = true;
-
-                // create stream
-                networkStream = new NetworkStream(socket, true);
-
                 try
                 {
+                    // prepare socket
+                    socket.NoDelay = true;
+
+                    // create stream
+                    networkStream = new NetworkStream(socket, true);
+
                     // Async I/O loop(s)
                     using(new CompositeDisposable(networkStream, cts))
                     {
@@ -151,6 +151,11 @@ namespace MiningCore.Stratum
                         IsAlive = false;
                         terminated.OnNext(Unit.Default);
                     }
+                }
+
+                catch(Exception ex)
+                {
+                    onError(this, ex);
                 }
 
                 finally
