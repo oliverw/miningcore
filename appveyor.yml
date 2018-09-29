@@ -23,7 +23,7 @@ build_script:
   - cd MiningCore
   - dotnet publish -c Release --framework netcoreapp2.1
   - sh: (cd bin/Release/netcoreapp2.1 && mkdir miningcore && cp -r publish/* miningcore && tar cf miningcore.tar.gz miningcore && appveyor PushArtifact miningcore.tar.gz)
-  - cmd: cd bin\Release\netcoreapp2.1 && mkdir miningcore && xcopy publish\* miningcore /S && zip -r miningcore.zip miningcore && appveyor PushArtifact miningcore.zip && cd ..\..\..
+  - cmd: cd bin\Release\netcoreapp2.1 && mkdir miningcore && xcopy publish\* miningcore /S && 7z a miningcore.zip miningcore && appveyor PushArtifact miningcore.zip && cd ..\..\..
   - # Build Tests
   - cd ../MiningCore.Tests
   - dotnet build -c Release --framework netcoreapp2.1
