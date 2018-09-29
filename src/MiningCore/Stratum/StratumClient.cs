@@ -146,10 +146,6 @@ namespace MiningCore.Stratum
                             onCompleted(this);
                         else
                             onError(this, error);
-
-                        // Release external observables
-                        IsAlive = false;
-                        terminated.OnNext(Unit.Default);
                     }
                 }
 
@@ -160,6 +156,10 @@ namespace MiningCore.Stratum
 
                 finally
                 {
+                    // Release external observables
+                    IsAlive = false;
+                    terminated.OnNext(Unit.Default);
+
                     logger.Info(() => $"[{ConnectionId}] Connection closed");
                 }
             });
