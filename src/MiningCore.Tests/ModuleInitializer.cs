@@ -26,8 +26,6 @@ namespace MiningCore.Tests
                 if (isInitialized)
                     return;
 
-                Program.PreloadNativeLibs();
-
                 var builder = new ContainerBuilder();
 
                 builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);

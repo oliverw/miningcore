@@ -5,16 +5,18 @@
 # Build worker image (VM template)
 image:
 - Visual Studio 2017
+- Ubuntu
 
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
 # scripts to run before build
-before_build: dotnet restore src
+before_build:
+  - cd src
+  - dotnet restore
 
 build_script:
-  - cd src\MiningCore
   - dotnet build -c Release --framework netcoreapp2.1
 
 #---------------------------------#
@@ -23,8 +25,7 @@ build_script:
 
 # to run tests again only selected assemblies and/or categories
 test_script:
- - cd ..\MiningCore.Tests
- - dotnet test
+ - dotnet test -c Release --no-build MiningCore.Tests/MiningCore.Tests.csproj
 
 #---------------------------------#
 #         notifications           #
