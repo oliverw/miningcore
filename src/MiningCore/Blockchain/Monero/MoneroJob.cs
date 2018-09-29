@@ -93,14 +93,13 @@ namespace MiningCore.Blockchain.Monero
             return result;
         }
 
-        private void ComputeBlockHash(byte[] blobConverted, Span<byte> result)
+        private void ComputeBlockHash(ReadOnlySpan<byte> blobConverted, Span<byte> result)
         {
             // blockhash is computed from the converted blob data prefixed with its length
-            var bytes = new[] { (byte) blobConverted.Length }
-                .Concat(blobConverted)
-                .ToArray();
+            Span<byte> block = stackalloc byte[blobConverted.Length + 1];
+            blobConverted.CopyTo(block.Slice(1));
 
-            LibCryptonote.CryptonightHashFast(bytes, result);
+            LibCryptonote.CryptonightHashFast(block, result);
         }
 
         #region API-Surface
