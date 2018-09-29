@@ -97,6 +97,7 @@ namespace MiningCore.Blockchain.Monero
         {
             // blockhash is computed from the converted blob data prefixed with its length
             Span<byte> block = stackalloc byte[blobConverted.Length + 1];
+            block[0] = (byte) blobConverted.Length;
             blobConverted.CopyTo(block.Slice(1));
 
             LibCryptonote.CryptonightHashFast(block, result);
