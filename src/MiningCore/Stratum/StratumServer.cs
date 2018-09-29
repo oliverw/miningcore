@@ -188,14 +188,8 @@ namespace MiningCore.Stratum
             // setup client
             var client = new StratumClient(logger, clock, connectionId);
 
-            lock(clients)
-            {
-                clients[connectionId] = client;
-            }
-
+            RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-
-            // run async I/O loop
             client.Run(socket, port, tlsCert, OnRequestAsync, OnReceiveComplete, OnReceiveError);
         }
 
@@ -210,6 +204,31 @@ namespace MiningCore.Stratum
                     var socket = portValues[i];
 
                     socket.Close();
+                }
+            }
+        }
+
+        protected virtual void RegisterClient(StratumClient client, string connectionId)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            lock (clients)
+            {
+                clients[connectionId] = client;
+            }
+        }
+
+        protected virtual void UnregisterClient(StratumClient client)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            var subscriptionId = client.ConnectionId;
+
+            if (!string.IsNullOrEmpty(subscriptionId))
+            {
+                lock (clients)
+                {
+                    clients.Remove(subscriptionId);
                 }
             }
         }
@@ -290,34 +309,22 @@ namespace MiningCore.Stratum
                     break;
             }
 
-            DisconnectClient(client);
+            UnregisterClient(client);
         }
 
         protected virtual void OnReceiveComplete(StratumClient client)
         {
             logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
 
-            DisconnectClient(client);
+            UnregisterClient(client);
         }
 
         protected virtual void DisconnectClient(StratumClient client)
         {
             Contract.RequiresNonNull(client, nameof(client));
 
-            var subscriptionId = client.ConnectionId;
-
             client.Disconnect();
-
-            if (!string.IsNullOrEmpty(subscriptionId))
-            {
-                // unregister client
-                lock(clients)
-                {
-                    clients.Remove(subscriptionId);
-                }
-            }
-
-            OnDisconnect(subscriptionId);
+            UnregisterClient(client);
         }
 
         private X509Certificate2 AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
@@ -357,10 +364,6 @@ namespace MiningCore.Stratum
                     logger.Error(ex);
                 }
             }
-        }
-
-        protected virtual void OnDisconnect(string subscriptionId)
-        {
         }
 
         protected abstract Task OnRequestAsync(StratumClient client,
