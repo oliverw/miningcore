@@ -33,7 +33,7 @@ build_script:
 #       tests configuration       #
 #---------------------------------#
 
-# to run tests again only selected assemblies and/or categories
+# to run tests again only selected assemblies and/orr categories
 test_script:
  - dotnet test -c Release --no-build
 
