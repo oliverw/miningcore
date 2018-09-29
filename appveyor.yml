@@ -17,7 +17,7 @@ before_build:
   - dotnet restore
 
 build_script:
-  - sh: sudo apt-get update -y && apt-get -y install cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+  - sh: sudo apt-get update -y && sudo apt-get -y install cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
   - cd MiningCore
   - dotnet publish -c Release --framework netcoreapp2.1
   - cd ../MiningCore.Tests
