@@ -83,7 +83,6 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 
 - [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
-- On Linux you also need to install the libzmq package for your platform (Ubuntu/Debian: libzmq5, CentOS epel: zeromq)
 - Coin Daemon (per pool)
 - MiningCore needs to be built from source on Linux. Refer to the section further down below for instructions.
 
