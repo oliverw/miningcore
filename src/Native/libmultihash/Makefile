@@ -29,4 +29,4 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	find . -name '*.o' -exec rm -r {} \;
-	rm libmultihash.so
+	rm -f libmultihash.so
