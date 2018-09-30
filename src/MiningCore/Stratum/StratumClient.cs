@@ -235,24 +235,24 @@ namespace MiningCore.Stratum
 
         #endregion // API-Surface
 
-        private unsafe T Deserialize<T>(ReadOnlySequence<byte> line)
+        private T Deserialize<T>(ReadOnlySequence<byte> line)
         {
             // zero-copy fast-path
-            if (line.IsSingleSegment)
-            {
-                var span = line.First.Span;
+            //if (line.IsSingleSegment)
+            //{
+            //    var span = line.First.Span;
 
-                fixed (byte* buf = span)
-                {
-                    using (var stream = new UnmanagedMemoryStream(buf, span.Length))
-                    {
-                        using (var jr = new JsonTextReader(new StreamReader(stream, StratumConstants.Encoding)))
-                        {
-                            return serializer.Deserialize<T>(jr);
-                        }
-                    }
-                }
-            }
+            //    fixed (byte* buf = span)
+            //    {
+            //        using (var stream = new UnmanagedMemoryStream(buf, span.Length))
+            //        {
+            //            using (var jr = new JsonTextReader(new StreamReader(stream, StratumConstants.Encoding)))
+            //            {
+            //                return serializer.Deserialize<T>(jr);
+            //            }
+            //        }
+            //    }
+            //}
 
             // slow path
             using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(line.ToArray()), StratumConstants.Encoding)))
