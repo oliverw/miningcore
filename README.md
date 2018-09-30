@@ -5,14 +5,6 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-## Miningcore
-
-Miningcore a the multi-currency stratum-engine.
-
-Even though the pool engine can be used to run a production-pool, doing so currently requires to
-develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
-This is going to change in the future.
-
 ### Features
 
 - Supports clusters of pools each running individual currencies
@@ -172,3 +164,7 @@ Create a configuration file <code>config.json</code> as described [here](https:/
 cd ../../build
 dotnet MiningCore.dll -c config.json
 ```
+
+## Running a production pool
+
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. MiningCore does not include such frontend but there are several community projects that can be used as starting point.
