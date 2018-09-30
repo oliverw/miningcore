@@ -81,13 +81,27 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 * BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
 * XMR: `475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH`
 
-### Runtime Requirements
+### Runtime Requirements on Windows
 
-- [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core#/sdk)
+- [.Net Core 2.1 Runtime](https://www.microsoft.com/net/download/core)
+- [PostgreSQL Database](https://www.postgresql.org/)
+- Coin Daemon (per pool)
+
+### Runtime Requirements on Linux
+
+- [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - On Linux you also need to install the libzmq package for your platform (Ubuntu/Debian: libzmq5, CentOS epel: zeromq)
 - Coin Daemon (per pool)
-- To build and run on Linux refer to the section below
+- MiningCore needs to be built from source on Linux. Refer to the section further down below for instructions.
+
+### Running pre-built Release Binaries on Windows
+
+- Download miningcore-win-x64.zip from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Extract the Archive
+- Setup the database as outlined below
+- Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Run <code>dotnet MiningCore.dll -c config.json</code>
 
 ### PostgreSQL Database setup
 
@@ -117,21 +131,9 @@ $ psql -d miningcore -U miningcore -f createdb.sql
 
 ### [API](https://github.com/coinfoundry/miningcore/wiki/API)
 
-### Docker
+### Building from Source
 
-The official [miningcore docker image](https://hub.docker.com/r/coinfoundry/miningcore-docker/) expects a valid pool configuration file as volume argument:
-
-```console
-$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro coinfoundry/miningcore-docker
-```
-
-You also need to expose all stratum ports specified in your configuration file.
-
-### Building from Source (Shell)
-
-Install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core) for your platform
-
-#### Linux (Ubuntu 16.04 example)
+#### Building on Ubuntu 16.04
 
 ```console
 $ wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
@@ -145,7 +147,9 @@ $ cd miningcore/src/MiningCore
 $ ./linux-build.sh
 ```
 
-#### Windows
+#### Building on Windows
+
+Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
@@ -153,17 +157,18 @@ $ ./linux-build.sh
 > windows-build.bat
 ```
 
+#### Building on Windows - Visual Studio
+
+- Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+- Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
+- Open `MiningCore.sln` in VS 2017
+
+
 #### After successful build
 
-Now copy `config.json` to `../../build`, edit it to your liking and run:
+Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
 ```
 cd ../../build
 dotnet MiningCore.dll -c config.json
 ```
-
-### Building from Source (Visual Studio)
-
-- Install [Visual Studio 2017](https://www.visualstudio.com/vs/) (Community Edition is sufficient) for your platform
-- Install [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
-- Open `MiningCore.sln` in VS 2017
