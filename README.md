@@ -5,18 +5,10 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-## Miningcore
-
-Miningcore a the multi-currency stratum-engine.
-
-Even though the pool engine can be used to run a production-pool, doing so currently requires to
-develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
-This is going to change in the future.
-
 ### Features
 
 - Supports clusters of pools each running individual currencies
-- Ultra-low-latency Stratum implementation using asynchronous I/O (LibUv)
+- Ultra-low-latency, multi-threaded Stratum implementation using asynchronous I/O
 - Adaptive share difficulty ("vardiff")
 - PoW validation (hashing) using native code for maximum performance
 - Session management for purging DDoS/flood initiated zombie workers
@@ -91,7 +83,6 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 
 - [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
-- On Linux you also need to install the libzmq package for your platform (Ubuntu/Debian: libzmq5, CentOS epel: zeromq)
 - Coin Daemon (per pool)
 - MiningCore needs to be built from source on Linux. Refer to the section further down below for instructions.
 
@@ -172,3 +163,7 @@ Create a configuration file <code>config.json</code> as described [here](https:/
 cd ../../build
 dotnet MiningCore.dll -c config.json
 ```
+
+## Running a production pool
+
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. MiningCore does not include such frontend but there are several community projects that can be used as starting point.
