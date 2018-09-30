@@ -19,4 +19,4 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	find . -name '*.o' -exec rm -r {} \;
-	rm libcryptonight.so
+	rm -f libcryptonight.so

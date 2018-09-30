@@ -80,16 +80,13 @@ namespace MiningCore.Blockchain.ZCash
 
         #endregion
 
-        protected override void OnSubscribe(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        protected override async Task OnSubscribeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
-            {
-                client.RespondError(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
 
@@ -100,7 +97,7 @@ namespace MiningCore.Blockchain.ZCash
                 .Concat(manager.GetSubscriberData(client))
                 .ToArray();
 
-            client.Respond(data, request.Id);
+            await client.RespondAsync(data, request.Id);
 
             // setup worker context
             context.IsSubscribed = true;
@@ -116,21 +113,18 @@ namespace MiningCore.Blockchain.ZCash
             if (context.IsAuthorized)
             {
                 // send intial update
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
-                client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
 
-        private void OnSuggestTarget(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSuggestTargetAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
             if (request.Id == null)
-            {
-                client.RespondError(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
             var target = requestParams.FirstOrDefault();
@@ -147,19 +141,19 @@ namespace MiningCore.Blockchain.ZCash
                         context.EnqueueNewDifficulty(newDiff);
                         context.ApplyPendingDifficulty();
 
-                        client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                        await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
                     }
 
                     else
-                        client.RespondError(StratumError.Other, "suggested difficulty too low", request.Id);
+                        await client.RespondErrorAsync(StratumError.Other, "suggested difficulty too low", request.Id);
                 }
 
                 else
-                    client.RespondError(StratumError.Other, "invalid target", request.Id);
+                    await client.RespondErrorAsync(StratumError.Other, "invalid target", request.Id);
             }
 
             else
-                client.RespondError(StratumError.Other, "invalid target", request.Id);
+                await client.RespondErrorAsync(StratumError.Other, "invalid target", request.Id);
         }
 
         protected override async Task OnRequestAsync(StratumClient client,
@@ -167,75 +161,80 @@ namespace MiningCore.Blockchain.ZCash
         {
             var request = tsRequest.Value;
 
-            switch(request.Method)
+            try
             {
-                case BitcoinStratumMethods.Subscribe:
-                    OnSubscribe(client, tsRequest);
-                    break;
+                switch(request.Method)
+                {
+                    case BitcoinStratumMethods.Subscribe:
+                        await OnSubscribeAsync(client, tsRequest);
+                        break;
 
-                case BitcoinStratumMethods.Authorize:
-                    await OnAuthorizeAsync(client, tsRequest, ct);
-                    break;
+                    case BitcoinStratumMethods.Authorize:
+                        await OnAuthorizeAsync(client, tsRequest, ct);
+                        break;
 
-                case BitcoinStratumMethods.SubmitShare:
-                    await OnSubmitAsync(client, tsRequest, ct);
-                    break;
+                    case BitcoinStratumMethods.SubmitShare:
+                        await OnSubmitAsync(client, tsRequest, ct);
+                        break;
 
-                case ZCashStratumMethods.SuggestTarget:
-                    OnSuggestTarget(client, tsRequest);
-                    break;
+                    case ZCashStratumMethods.SuggestTarget:
+                        await OnSuggestTargetAsync(client, tsRequest);
+                        break;
 
-                case BitcoinStratumMethods.ExtraNonceSubscribe:
-                    // ignored
-                    break;
+                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                        // ignored
+                        break;
 
-                default:
-                    logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                    default:
+                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
-                    client.RespondError(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
-                    break;
+                        await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
+                        break;
+                }
+            }
+
+            catch(StratumException ex)
+            {
+                await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
             }
         }
 
-        protected override void OnNewJob(object jobParams)
+        protected override Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => $"Broadcasting job");
 
-            ForEachClient(client =>
+            var tasks = ForEachClient(async client =>
             {
-                try
-                {
-                    var context = client.ContextAs<BitcoinWorkerContext>();
+                if (!client.IsAlive)
+                    return;
 
-                    if (context.IsSubscribed && context.IsAuthorized)
+                var context = client.ContextAs<BitcoinWorkerContext>();
+
+                if (context.IsSubscribed && context.IsAuthorized)
+                {
+                    // check alive
+                    var lastActivityAgo = clock.Now - context.LastActivity;
+
+                    if (poolConfig.ClientConnectionTimeout > 0 &&
+                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        // check alive
-                        var lastActivityAgo = clock.Now - context.LastActivity;
-
-                        if (poolConfig.ClientConnectionTimeout > 0 &&
-                            lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                        {
-                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                            DisconnectClient(client);
-                            return;
-                        }
-
-                        // varDiff: if the client has a pending difficulty change, apply it now
-                        if (context.ApplyPendingDifficulty())
-                            client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
-
-                        // send job
-                        client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        DisconnectClient(client);
+                        return;
                     }
-                }
 
-                catch(Exception ex)
-                {
-                    logger.Error(ex, nameof(OnNewJob));
+                    // varDiff: if the client has a pending difficulty change, apply it now
+                    if (context.ApplyPendingDifficulty())
+                        await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+
+                    // send job
+                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
             });
+
+            return Task.WhenAll(tasks);
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -247,7 +246,7 @@ namespace MiningCore.Blockchain.ZCash
             return result;
         }
 
-        protected override void OnVarDiffUpdate(StratumClient client, double newDiff)
+        protected override async Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
         {
             var context = client.ContextAs<BitcoinWorkerContext>();
 
@@ -258,8 +257,8 @@ namespace MiningCore.Blockchain.ZCash
             {
                 context.ApplyPendingDifficulty();
 
-                client.Notify(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
-                client.Notify(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                await client.NotifyAsync(ZCashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
+                await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             }
         }
 

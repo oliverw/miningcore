@@ -188,15 +188,9 @@ namespace MiningCore.Stratum
             // setup client
             var client = new StratumClient(logger, clock, connectionId);
 
-            lock(clients)
-            {
-                clients[connectionId] = client;
-            }
-
+            RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-
-            // run async I/O loop
-            client.Run(socket, port, tlsCert, OnRequestAsync, OnReceiveComplete, OnReceiveError);
+            client.Run(socket, port, tlsCert, OnRequestAsync, OnClientComplete, OnClientError);
         }
 
         public void StopListeners()
@@ -214,6 +208,31 @@ namespace MiningCore.Stratum
             }
         }
 
+        protected virtual void RegisterClient(StratumClient client, string connectionId)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            lock (clients)
+            {
+                clients[connectionId] = client;
+            }
+        }
+
+        protected virtual void UnregisterClient(StratumClient client)
+        {
+            Contract.RequiresNonNull(client, nameof(client));
+
+            var subscriptionId = client.ConnectionId;
+
+            if (!string.IsNullOrEmpty(subscriptionId))
+            {
+                lock (clients)
+                {
+                    clients.Remove(subscriptionId);
+                }
+            }
+        }
+
         protected abstract void OnConnect(StratumClient client, IPEndPoint portItem1);
 
         protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request, CancellationToken ct)
@@ -226,27 +245,12 @@ namespace MiningCore.Stratum
                 return;
             }
 
-            try
-            {
-                logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+            logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-                await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
-            }
-
-            catch(Exception ex)
-            {
-                var innerEx = ex.InnerException != null ? ": " + ex : "";
-
-                if (request != null)
-                    logger.Error(ex, () => $"[{client.ConnectionId}] Error processing request {request.Method} [{request.Id}]{innerEx}");
-                else
-                    logger.Error(ex, () => $"[{client.ConnectionId}] Error processing request{innerEx}");
-
-                throw;
-            }
+            await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
         }
 
-        protected virtual void OnReceiveError(StratumClient client, Exception ex)
+        protected virtual void OnClientError(StratumClient client, Exception ex)
         {
             if (ex is AggregateException)
                 ex = ex.InnerException;
@@ -290,34 +294,22 @@ namespace MiningCore.Stratum
                     break;
             }
 
-            DisconnectClient(client);
+            UnregisterClient(client);
         }
 
-        protected virtual void OnReceiveComplete(StratumClient client)
+        protected virtual void OnClientComplete(StratumClient client)
         {
             logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
 
-            DisconnectClient(client);
+            UnregisterClient(client);
         }
 
         protected virtual void DisconnectClient(StratumClient client)
         {
             Contract.RequiresNonNull(client, nameof(client));
 
-            var subscriptionId = client.ConnectionId;
-
             client.Disconnect();
-
-            if (!string.IsNullOrEmpty(subscriptionId))
-            {
-                // unregister client
-                lock(clients)
-                {
-                    clients.Remove(subscriptionId);
-                }
-            }
-
-            OnDisconnect(subscriptionId);
+            UnregisterClient(client);
         }
 
         private X509Certificate2 AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
@@ -359,8 +351,16 @@ namespace MiningCore.Stratum
             }
         }
 
-        protected virtual void OnDisconnect(string subscriptionId)
+        protected IEnumerable<Task> ForEachClient(Func<StratumClient, Task> func)
         {
+            StratumClient[] tmp;
+
+            lock (clients)
+            {
+                tmp = clients.Values.ToArray();
+            }
+
+            return tmp.Select(x => func(x));
         }
 
         protected abstract Task OnRequestAsync(StratumClient client,

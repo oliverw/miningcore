@@ -658,7 +658,9 @@ namespace MiningCore.Blockchain.Ethereum
 
             else
             {
-                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(poolConfig.BlockRefreshInterval))
+                var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(pollingInterval))
                     .Select(_ => Observable.FromAsync(UpdateJobAsync))
                     .Concat()
                     .Do(isNew =>

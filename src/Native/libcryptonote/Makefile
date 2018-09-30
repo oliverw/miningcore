@@ -23,4 +23,4 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	find . -name '*.o' -exec rm -r {} \;
-	rm libcryptonote.so
+	rm -f libcryptonote.so

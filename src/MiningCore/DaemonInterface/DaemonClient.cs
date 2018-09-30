@@ -348,20 +348,19 @@ namespace MiningCore.DaemonInterface
             using(var response = await httpClients[endPoint].SendAsync(request, ct))
             {
                 // deserialize response
-                using(var stream = await response.Content.ReadAsStreamAsync())
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                using (var reader = new StringReader(jsonResponse))
                 {
-                    using(var reader = new StreamReader(stream, Encoding.UTF8))
+                    using(var jreader = new JsonTextReader(reader))
                     {
-                        using(var jreader = new JsonTextReader(reader))
-                        {
-                            var result = serializer.Deserialize<JsonRpcResponse>(jreader);
+                        var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
-                            // telemetry
-                            sw.Stop();
-                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
+                        // telemetry
+                        sw.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
 
-                            return result;
-                        }
+                        return result;
                     }
                 }
             }
@@ -415,20 +414,19 @@ namespace MiningCore.DaemonInterface
                     }
 
                     // deserialize response
-                    using(var stream = await response.Content.ReadAsStreamAsync())
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                    using(var reader = new StringReader(jsonResponse))
                     {
-                        using(var reader = new StreamReader(stream, Encoding.UTF8))
+                        using(var jreader = new JsonTextReader(reader))
                         {
-                            using(var jreader = new JsonTextReader(reader))
-                            {
-                                var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
+                            var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
-                                // telemetry
-                                sw.Stop();
-                                PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+                            // telemetry
+                            sw.Stop();
+                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
 
-                                return result;
-                            }
+                            return result;
                         }
                     }
                 }

@@ -19,7 +19,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Buffers;
 using System.Globalization;
+using System.Text;
 
 namespace MiningCore.Extensions
 {
@@ -110,6 +112,11 @@ namespace MiningCore.Extensions
                 return str;
 
             return char.ToLowerInvariant(str[0]) + str.Substring(1);
+        }
+
+        public static string AsString(this ReadOnlySequence<byte> line, Encoding encoding)
+        {
+            return encoding.GetString(line.ToSpan());
         }
     }
 }

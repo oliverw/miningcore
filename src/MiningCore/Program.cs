@@ -90,10 +90,7 @@ namespace MiningCore
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
                 Console.CancelKeyPress += OnCancelKeyPress;
-#if DEBUG
-                PreloadNativeLibs();
-#endif
-                //TouchNativeLibs();
+
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
@@ -330,6 +327,10 @@ namespace MiningCore
             // root check
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
                 logger.Warn(() => "Running as root is discouraged!");
+
+            // require 64-bit on Windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
         }
 
         private static void MonitorGc()
@@ -691,42 +692,6 @@ namespace MiningCore
             shareRelay?.Stop();
             shareRecorder?.Stop();
             statsRecorder?.Stop();
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
-
-        private static readonly string[] NativeLibs =
-        {
-            "libmultihash.dll",
-            "libcryptonote.dll",
-            "libcryptonight.dll",
-            "libzmq.dll",
-        };
-
-        /// <summary>
-        /// work-around for libmultihash.dll not being found when running in dev-environment
-        /// </summary>
-        public static void PreloadNativeLibs()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.WriteLine($"{nameof(PreloadNativeLibs)} only operates on Windows");
-                return;
-            }
-
-            // load it
-            var runtime = Environment.Is64BitProcess ? "win-x64" : "win-86";
-            var appRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            foreach(var nativeLib in NativeLibs)
-            {
-                var path = Path.Combine(appRoot, "runtimes", runtime, "native", nativeLib);
-                var result = LoadLibraryEx(path, IntPtr.Zero, 0);
-
-                if (result == IntPtr.Zero)
-                    Console.WriteLine($"Unable to load {path}");
-            }
         }
     }
 }
