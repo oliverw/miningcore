@@ -8,7 +8,7 @@
 ### Features
 
 - Supports clusters of pools each running individual currencies
-- Ultra-low-latency Stratum implementation using asynchronous I/O (LibUv)
+- Ultra-low-latency, multi-threaded Stratum implementation using asynchronous I/O
 - Adaptive share difficulty ("vardiff")
 - PoW validation (hashing) using native code for maximum performance
 - Session management for purging DDoS/flood initiated zombie workers
