@@ -341,18 +341,19 @@ namespace MiningCore.Stratum
 
             using(var ctsTimeout = new CancellationTokenSource())
             {
-                var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token);
-
-                using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
                 {
-                    serializer.Serialize(writer, payload);
+                    using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    {
+                        serializer.Serialize(writer, payload);
+                    }
+
+                    networkStream.WriteByte(0xa); // terminator
+
+                    // Send to network
+                    ctsTimeout.CancelAfter(sendTimeout);
+                    await networkStream.FlushAsync(ctsComposite.Token);
                 }
-
-                networkStream.WriteByte(0xa); // terminator
-
-                // Send to network
-                ctsTimeout.CancelAfter(sendTimeout);
-                await networkStream.FlushAsync(ctsComposite.Token);
             }
         }
 
