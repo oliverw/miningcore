@@ -135,7 +135,7 @@ $ sudo apt-get update -y
 $ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
 $ cd miningcore/src/MiningCore
-$ ./linux-build.sh
+$ dotnet publish -c Release --framework netcoreapp2.1  -o ../../build
 ```
 
 #### Building on Windows
@@ -145,7 +145,7 @@ Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/downl
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
 > cd miningcore/src/MiningCore
-> windows-build.bat
+> dotnet publish -c Release --framework netcoreapp2.1  -o ..\..\build
 ```
 
 #### Building on Windows - Visual Studio
