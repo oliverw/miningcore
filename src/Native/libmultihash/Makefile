@@ -1,10 +1,8 @@
 CC = gcc
 CFLAGS = -g -Wall -c -fPIC -O2 -Wno-pointer-sign -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable
 CXXFLAGS = -g -Wall -fPIC -fpermissive -O2 -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-sign-compare -std=c++11
-LDFLAGS = -shared /usr/lib/x86_64-linux-gnu/libsodium.a
-# LDFLAGS = -shared
-LDLIBS =
-# LDLIBS = -lsodium
+LDFLAGS = -shared
+LDLIBS = -lsodium
 TARGET  = libmultihash.so
 
 OBJECTS = bcrypt.o blake.o blake2s.o c11.o dcrypt.o fresh.o \
