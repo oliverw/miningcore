@@ -58,7 +58,7 @@ namespace MiningCore.JsonRpc
         [JsonProperty("params")]
         public object Params { get; set; }
 
-        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("id")]
         public object Id { get; set; }
 
         public TParam ParamsAs<TParam>() where TParam : class

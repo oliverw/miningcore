@@ -97,10 +97,7 @@ namespace MiningCore.Blockchain.Bitcoin
             var request = tsRequest.Value;
 
             if (request.Id == null)
-            {
-                await client.RespondErrorAsync(StratumError.Other, "missing request id", request.Id);
-                return;
-            }
+                throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
