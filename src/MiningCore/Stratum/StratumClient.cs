@@ -52,7 +52,14 @@ namespace MiningCore.Stratum
         public StratumClient(ILogger logger, IMasterClock clock, string connectionId)
         {
             this.logger = logger;
+
             receivePipe = new Pipe(PipeOptions.Default);
+
+            sendQueue = new BufferBlock<object>(new DataflowBlockOptions
+            {
+                BoundedCapacity = 32,
+                EnsureOrdered = true,
+            });
 
             this.clock = clock;
             ConnectionId = connectionId;
@@ -72,6 +79,7 @@ namespace MiningCore.Stratum
 
         private Stream networkStream;
         private readonly Pipe receivePipe;
+        private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new Subject<Unit>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
@@ -96,7 +104,7 @@ namespace MiningCore.Stratum
             Action<StratumClient, Exception> onError)
         {
             PoolEndpoint = poolEndpoint.IPEndPoint;
-            RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
+            RemoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
 
             expectingProxyHeader = poolEndpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
@@ -111,7 +119,7 @@ namespace MiningCore.Stratum
                     networkStream = new NetworkStream(socket, true);
 
                     // Async I/O loop(s)
-                    using(new CompositeDisposable(networkStream, cts))
+                    using (new CompositeDisposable(networkStream, cts))
                     {
                         // TLS handshake
                         if (poolEndpoint.PoolEndpoint.Tls)
@@ -129,7 +137,8 @@ namespace MiningCore.Stratum
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync)
+                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                            ProcessSendQueueAsync()
                         };
 
                         await Task.WhenAny(tasks);
@@ -137,6 +146,7 @@ namespace MiningCore.Stratum
                         // Make sure all tasks complete
                         receivePipe.Reader.Complete();
                         receivePipe.Writer.Complete();
+                        sendQueue.Complete();
                         cts.Cancel();
 
                         // Signal completion or error
@@ -149,7 +159,7 @@ namespace MiningCore.Stratum
                     }
                 }
 
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     onError(this, ex);
                 }
@@ -179,7 +189,7 @@ namespace MiningCore.Stratum
 
         public T ContextAs<T>() where T : WorkerContextBase
         {
-            return (T) context;
+            return (T)context;
         }
 
         public Task RespondAsync<T>(T payload, object id)
@@ -194,7 +204,7 @@ namespace MiningCore.Stratum
         {
             Contract.RequiresNonNull(message, nameof(message));
 
-            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int) code, message, null), id, result));
+            return RespondAsync(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
 
         public Task RespondAsync<T>(JsonRpcResponse<T> response)
@@ -253,28 +263,12 @@ namespace MiningCore.Stratum
 
         private Task SendAsync<T>(T payload)
         {
-            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
-
-            using(var ctsTimeout = new CancellationTokenSource())
-            {
-                var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token);
-
-                using (var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                {
-                    serializer.Serialize(writer, payload);
-                }
-
-                networkStream.WriteByte(0xa); // terminator
-
-                ctsTimeout.CancelAfter(sendTimeout);
-
-                return networkStream.FlushAsync(ctsComposite.Token);
-            }
+            return sendQueue.SendAsync(payload, cts.Token);
         }
 
         private async Task FillReceivePipeAsync()
         {
-            while(true)
+            while (true)
             {
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
@@ -295,7 +289,7 @@ namespace MiningCore.Stratum
         private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
-            while(true)
+            while (true)
             {
                 var result = await receivePipe.Reader.ReadAsync(cts.Token);
 
@@ -308,7 +302,7 @@ namespace MiningCore.Stratum
                 do
                 {
                     // Scan buffer for line terminator
-                    position = buffer.PositionOf((byte) '\n');
+                    position = buffer.PositionOf((byte)'\n');
 
                     if (position != null)
                     {
@@ -322,12 +316,43 @@ namespace MiningCore.Stratum
                         // Skip consumed section
                         buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
                     }
-                } while(position != null);
+                } while (position != null);
 
                 receivePipe.Reader.AdvanceTo(buffer.Start, buffer.End);
 
                 if (result.IsCompleted)
                     break;
+            }
+        }
+
+        private async Task ProcessSendQueueAsync()
+        {
+            while (true)
+            {
+                var payload = await sendQueue.ReceiveAsync(cts.Token);
+
+                await SendResponse(payload);
+            }
+        }
+
+        private async Task SendResponse(object payload)
+        {
+            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+
+            using(var ctsTimeout = new CancellationTokenSource())
+            {
+                var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token);
+
+                using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                {
+                    serializer.Serialize(writer, payload);
+                }
+
+                networkStream.WriteByte(0xa); // terminator
+
+                // Send to network
+                ctsTimeout.CancelAfter(sendTimeout);
+                await networkStream.FlushAsync(ctsComposite.Token);
             }
         }
 
