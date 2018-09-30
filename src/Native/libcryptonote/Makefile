@@ -1,9 +1,9 @@
 CC = gcc
 INC_DIRS = -I. -Icontrib/epee/include
-CFLAGS = -g -Wall -c -fPIC -maes -O2 $(INC_DIRS) -Wno-strict-aliasing
+CFLAGS = -g -Wall -c -fPIC -maes -O2  -Wno-strict-aliasing $(INC_DIRS)
 CXXFLAGS = -Wall -Wno-unused-function -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 -g $(INC_DIRS)
-LDFLAGS = -shared
-LDLIBS = -lboost_system -lboost_date_time
+LDFLAGS = -shared /usr/lib/x86_64-linux-gnu/libboost_date_time.a /usr/lib/x86_64-linux-gnu/libboost_system.a
+# LDLIBS = -lboost_system -lboost_date_time
 TARGET  = libcryptonote.so
 
 OBJECTS = contrib/epee/src/hex.o \
