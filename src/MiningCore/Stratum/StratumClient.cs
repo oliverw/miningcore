@@ -119,7 +119,6 @@ namespace MiningCore.Stratum
                     // create stream
                     networkStream = new NetworkStream(socket, true);
 
-                    // Async I/O loop(s)
                     using (new CompositeDisposable(networkStream, cts))
                     {
                         // TLS handshake
@@ -135,6 +134,7 @@ namespace MiningCore.Stratum
                         else
                             logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
+                        // Async I/O loop(s)
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
