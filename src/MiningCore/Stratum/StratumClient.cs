@@ -343,12 +343,14 @@ namespace MiningCore.Stratum
             {
                 using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
                 {
+                    // serialize to JSON
                     using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, payload);
                     }
 
-                    networkStream.WriteByte(0xa); // terminator
+                    // append terminator
+                    networkStream.WriteByte(0xa);
 
                     // Send to network
                     ctsTimeout.CancelAfter(sendTimeout);
