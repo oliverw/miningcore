@@ -6,7 +6,10 @@ using System.Reactive.Linq;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Crypto;
+using MiningCore.Extensions;
 using MiningCore.Messaging;
+using MiningCore.Util;
 using Newtonsoft.Json;
 using NLog;
 using ProtoBuf;
@@ -55,10 +58,30 @@ namespace MiningCore.Mining
 
             pubSocket = new ZSocket(ZSocketType.PUB);
 
+            // ZMQ Curve Transport-Layer-Security
+            var keyPlain = clusterConfig.ShareRelay.SharedEncryptionKey?.Trim();
+
+            if (!string.IsNullOrEmpty(keyPlain))
+            {
+                if(!ZContext.Has("curve"))
+                    logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+
+                var keyBytes = KeyFactory.Derive256BitKey(keyPlain);
+                Z85.CurvePublic(out var publicKey, keyBytes.ToZ85Encoded());
+
+                pubSocket.CurveServer = true;
+                pubSocket.CurveSecretKey = keyBytes;
+                pubSocket.CurvePublicKey = publicKey;
+            }
+
             if (!clusterConfig.ShareRelay.Connect)
             {
                 pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
-                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
+
+                if(pubSocket.CurveServer)
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
+                else
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
             }
 
             else

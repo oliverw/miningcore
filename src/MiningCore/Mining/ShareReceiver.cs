@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Crypto;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
@@ -58,46 +60,67 @@ namespace MiningCore.Mining
 
         private void StartListeners()
         {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.Enabled && x.ExternalStratums?.Any() == true)
-                .SelectMany(x => x.ExternalStratums)
-                .Where(x => x.Url != null && x.Topic != null)
-                .GroupBy(x =>
-                {
-                    var tmp = x.Url.Trim();
-                    return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
-                }, x => x.Topic.Trim())
-                .ToArray();
-
             var serializer = new JsonSerializer
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            foreach(var item in stratumsByUrl)
+            var encryptionKeys = new ConcurrentDictionary<string, byte[]>();
+
+            foreach(var relay in clusterConfig.ShareRelays)
             {
-                var thread = new Thread(arg =>
+                Task.Run(()=> 
                 {
-                    var urlAndTopic = (IGrouping<string, string>) arg;
-                    var url = urlAndTopic.Key;
-                    var topics = new HashSet<string>(urlAndTopic.Distinct());
+                    var url = relay.Url;
                     var receivedOnce = false;
 
-                    while(true)
+                    // ZMQ Curve Transport-Layer-Security
+                    var keyPlain = relay.SharedEncryptionKey?.Trim();
+                    var keyBytes = (byte[]) null;
+
+                    if (!string.IsNullOrEmpty(keyPlain))
+                    {
+                        if (!encryptionKeys.TryGetValue(keyPlain, out keyBytes))
+                        {
+                            keyBytes = KeyFactory.Derive256BitKey(keyPlain);
+                            encryptionKeys[keyPlain] = keyBytes;
+                        }
+                    }
+
+                    // Receive loop
+                    var done = false;
+
+                    while (!done)
                     {
                         try
                         {
                             using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
+                                // ZMQ Curve Transport-Layer-Security
+                                if (keyBytes != null)
+                                {
+                                    if (!ZContext.Has("curve"))
+                                        logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
+
+                                    Z85.CurvePublic(out var serverPublicKey, keyBytes.ToZ85Encoded());
+                                    Z85.CurveKeypair(out var publicKey, out var secretKey);
+
+                                    subSocket.CurveServer = false;
+                                    subSocket.CurveServerKey = serverPublicKey;
+                                    subSocket.CurveSecretKey = secretKey;
+                                    subSocket.CurvePublicKey = publicKey;
+                                }
+
                                 subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
+                                subSocket.SubscribeAll();
 
-                                // subscribe to all topics
-                                foreach(var topic in topics)
-                                    subSocket.Subscribe(topic);
+                                if (keyBytes != null)
+                                    logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                                else
+                                    logger.Info($"Monitoring external stratum {url}");
 
-                                logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
-
-                                while(true)
+                                while (true)
                                 {
                                     string topic;
                                     uint flags;
@@ -126,12 +149,6 @@ namespace MiningCore.Mining
                                     }
 
                                     // validate
-                                    if (!topics.Contains(topic))
-                                    {
-                                        logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
-                                        continue;
-                                    }
-
                                     if (data?.Length == 0)
                                     {
                                         logger.Warn(() => $"Received empty data from {url}/{topic}");
@@ -219,7 +236,7 @@ namespace MiningCore.Mining
 
                         catch(ObjectDisposedException)
                         {
-                            logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
+                            logger.Info($"Exiting monitoring thread for external stratum {url}]");
                             break;
                         }
 
@@ -229,11 +246,9 @@ namespace MiningCore.Mining
                         }
                     }
                 });
-
-                thread.Start(item);
             }
 
-            if (stratumsByUrl.Any())
+            if (clusterConfig.ShareRelays.Any())
                 logger.Info(() => "Online");
         }
 
@@ -248,7 +263,8 @@ namespace MiningCore.Mining
         {
             this.clusterConfig = clusterConfig;
 
-            StartListeners();
+            if(clusterConfig.ShareRelays != null)
+                StartListeners();
         }
 
         public void Stop()
