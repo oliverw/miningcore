@@ -144,10 +144,12 @@ namespace MiningCore.Stratum
 
                         await Task.WhenAny(tasks);
 
-                        // Make sure all tasks complete
+                        // We are done with this client, make sure all tasks complete
                         receivePipe.Reader.Complete();
                         receivePipe.Writer.Complete();
                         sendQueue.Complete();
+
+                        // additional safety net to ensure remaining tasks don't linger
                         cts.Cancel();
 
                         // Signal completion or error
