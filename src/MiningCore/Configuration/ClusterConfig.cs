@@ -350,13 +350,16 @@ namespace MiningCore.Configuration
     {
         public string Url { get; set; }
         public string Topic { get; set; }
+
+        // Curve Transport Layer Security Encryption key shared by client and server
+        public string SharedEncryptionKey { get; set; }
     }
 
     public partial class ShareRelayEndpointConfig
     {
         public string Url { get; set; }
 
-        // Curve Transport Layer Security Encryption key shared by client and server 
+        // Curve Transport Layer Security Encryption key shared by client and server
         public string SharedEncryptionKey { get; set; }
     }
 
@@ -369,7 +372,7 @@ namespace MiningCore.Configuration
         /// </summary>
         public bool Connect { get; set; }
 
-        // Curve Transport Layer Security Encryption key shared by client and server 
+        // Curve Transport Layer Security Encryption key shared by client and server
         public string SharedEncryptionKey { get; set; }
     }
 

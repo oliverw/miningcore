@@ -113,6 +113,7 @@ namespace MiningCore.Blockchain
                                     using(var subSocket = new ZSocket(ZSocketType.SUB))
                                     {
                                         //subSocket.Options.ReceiveHighWatermark = 1000;
+                                        subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
                                         subSocket.ReceiveTimeout = btStreamReceiveTimeout;
                                         subSocket.Connect(config.Url);
                                         subSocket.Subscribe(config.Topic);

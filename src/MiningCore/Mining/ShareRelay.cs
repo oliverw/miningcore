@@ -57,23 +57,7 @@ namespace MiningCore.Mining
             messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
 
             pubSocket = new ZSocket(ZSocketType.PUB);
-
-            // ZMQ Curve Transport-Layer-Security
-            var sharedKeyPlain = clusterConfig.ShareRelay.SharedEncryptionKey?.Trim();
-
-            if (!string.IsNullOrEmpty(sharedKeyPlain))
-            {
-                if(!ZContext.Has("curve"))
-                    logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
-
-                // Derive own public-key from shared secret
-                var keyBytes = sharedKeyPlain.DeriveKey(32);
-                Z85.CurvePublic(out var serverPubKey, keyBytes.ToZ85Encoded());
-
-                pubSocket.CurveServer = true;
-                pubSocket.CurveSecretKey = keyBytes;
-                pubSocket.CurvePublicKey = serverPubKey;
-            }
+            pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
 
             if (!clusterConfig.ShareRelay.Connect)
             {

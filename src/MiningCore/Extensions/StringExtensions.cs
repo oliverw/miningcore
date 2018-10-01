@@ -120,17 +120,5 @@ namespace MiningCore.Extensions
         {
             return encoding.GetString(line.ToSpan());
         }
-
-        const int PasswordIterations = 5000;
-        private static readonly byte[] NoSalt = Enumerable.Repeat((byte)0, 32).ToArray();
-
-        public static byte[] DeriveKey(this string password, int length = 32)
-        {
-            using (var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), NoSalt, PasswordIterations))
-            {
-                var block = kbd.GetBytes(length);
-                return block;
-            }
-        }
     }
 }

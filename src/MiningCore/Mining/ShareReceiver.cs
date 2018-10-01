@@ -19,6 +19,7 @@ using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
 using ZeroMQ;
+using ZeroMQ.Monitoring;
 
 namespace MiningCore.Mining
 {
@@ -65,43 +66,12 @@ namespace MiningCore.Mining
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            // ZMQ Curve Transport-Layer-Security
-            var encryptionKeys = new ConcurrentDictionary<string, byte[]>();
-            var ownPubKey = (byte[])null;
-            var ownSecretKey = (byte[])null;
-
-            if (clusterConfig.ShareRelays.Any(x => !string.IsNullOrEmpty(x.SharedEncryptionKey?.Trim())))
-            {
-                if (!ZContext.Has("curve"))
-                    logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
-
-                // Generate fresh ephemeral keys for ourselves
-                Z85.CurveKeypair(out ownPubKey, out ownSecretKey);
-            }
-
             foreach (var relay in clusterConfig.ShareRelays)
             {
-                Task.Run(()=> 
+                Task.Run(()=>
                 {
                     var url = relay.Url;
                     var receivedOnce = false;
-
-                    // ZMQ Curve Transport-Layer-Security
-                    var sharedKeyPlain = relay.SharedEncryptionKey?.Trim();
-                    var serverPubKey = (byte[]) null;
-
-                    if (!string.IsNullOrEmpty(sharedKeyPlain))
-                    {
-                        // Get server's public key
-                        if (!encryptionKeys.TryGetValue(sharedKeyPlain, out serverPubKey))
-                        {
-                            var keyBytes = sharedKeyPlain.DeriveKey(32);
-
-                            // Derive server's public-key from shared secret
-                            Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
-                            encryptionKeys[sharedKeyPlain] = serverPubKey;
-                        }
-                    }
 
                     // Receive loop
                     var done = false;
@@ -112,20 +82,12 @@ namespace MiningCore.Mining
                         {
                             using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
-                                // ZMQ Curve Transport-Layer-Security
-                                if (serverPubKey != null)
-                                {
-                                    subSocket.CurveServer = false;
-                                    subSocket.CurveServerKey = serverPubKey;
-                                    subSocket.CurveSecretKey = ownSecretKey;
-                                    subSocket.CurvePublicKey = ownPubKey;
-                                }
-
+                                subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
                                 subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
                                 subSocket.SubscribeAll();
 
-                                if (serverPubKey != null)
+                                if (subSocket.CurveServerKey != null)
                                     logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
                                 else
                                     logger.Info($"Monitoring external stratum {url}");
