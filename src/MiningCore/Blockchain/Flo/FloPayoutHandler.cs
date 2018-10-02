@@ -134,7 +134,7 @@ namespace MiningCore.Blockchain.Flo
             }
 
             // send command
-            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, smr, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, smr, new JsonSerializerSettings());
 
             if (result.Error == null)
             {

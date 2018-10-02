@@ -126,7 +126,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     new[] { block.TransactionConfirmationData })).ToArray();
 
                 // execute batch
-                var results = await daemon.ExecuteBatchAnyAsync(batch);
+                var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
 
                 for(var j = 0; j < results.Length; j++)
                 {
@@ -267,7 +267,7 @@ namespace MiningCore.Blockchain.Bitcoin
 
             // send command
             tryTransfer:
-            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
@@ -275,7 +275,7 @@ namespace MiningCore.Blockchain.Bitcoin
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
                 }
 
                 // check result
@@ -299,7 +299,7 @@ namespace MiningCore.Blockchain.Bitcoin
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds

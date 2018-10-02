@@ -129,7 +129,7 @@ namespace MiningCore.Blockchain.Monero
         {
             if (!networkType.HasValue)
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo, true);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, MC.GetInfo, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
                 networkType = info.IsTestnet ? MoneroNetworkType.Test : MoneroNetworkType.Main;
@@ -165,7 +165,7 @@ namespace MiningCore.Blockchain.Monero
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             // send command
-            var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
+            var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, MWC.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
             if (transferResponse.Error?.Code == -4)
@@ -175,7 +175,7 @@ namespace MiningCore.Blockchain.Monero
                     logger.Error(() => $"[{LogCategory}] Daemon command '{MWC.Transfer}' returned error: {transferResponse.Error.Message} code {transferResponse.Error.Code}");
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(MWC.TransferSplit, request);
+                    var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(logger, MWC.TransferSplit, request);
 
                     return HandleTransferResponse(transferSplitResponse, balances);
                 }
@@ -237,7 +237,7 @@ namespace MiningCore.Blockchain.Monero
                 logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
-            var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.Transfer, request);
+            var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, MWC.Transfer, request);
 
             if (walletSupportsTransferSplit)
             {
@@ -246,7 +246,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {MWC.TransferSplit}");
 
-                    result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit, request);
+                    result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, MWC.TransferSplit, request);
                 }
             }
 
@@ -301,7 +301,7 @@ namespace MiningCore.Blockchain.Monero
             await GetNetworkTypeAsync();
 
             // detect transfer_split support
-            var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(MWC.TransferSplit);
+            var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, MWC.TransferSplit);
             walletSupportsTransferSplit = response.Error.Code != MoneroConstants.MoneroRpcMethodNotFound;
         }
 
@@ -327,7 +327,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     var block = page[j];
 
-                    var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(
+                    var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(logger,
                         MC.GetBlockHeaderByHeight,
                         new GetBlockHeaderByHeightRequest
                         {

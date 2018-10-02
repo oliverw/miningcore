@@ -140,7 +140,7 @@ namespace MiningCore.Blockchain.Monero
                 ReserveSize = MoneroConstants.ReserveSize
             };
 
-            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(MC.GetBlockTemplate, request);
+            return await daemon.ExecuteCmdAnyAsync<GetBlockTemplateResponse>(logger, MC.GetBlockTemplate, request);
         }
 
         private DaemonResponse<GetBlockTemplateResponse> GetBlockTemplateFromJson(string json)
@@ -157,7 +157,7 @@ namespace MiningCore.Blockchain.Monero
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
+            var infos = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, MC.GetInfo);
             var firstValidResponse = infos.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
             if (firstValidResponse != null)
@@ -178,7 +178,7 @@ namespace MiningCore.Blockchain.Monero
 
             try
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, MC.GetInfo);
 
                 if (infoResponse.Error != null)
                     logger.Warn(() => $"Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
@@ -197,7 +197,7 @@ namespace MiningCore.Blockchain.Monero
 
         private async Task<bool> SubmitBlockAsync(Share share, string blobHex, string blobHash)
         {
-            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(MC.SubmitBlock, new[] { blobHex });
+            var response = await daemon.ExecuteCmdAnyAsync<SubmitResponse>(logger, MC.SubmitBlock, new[] { blobHex });
 
             if (response.Error != null || response?.Response?.Status != "OK")
             {
@@ -375,7 +375,7 @@ namespace MiningCore.Blockchain.Monero
         protected override async Task<bool> AreDaemonsHealthyAsync()
         {
             // test daemons
-            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(MC.GetInfo);
+            var responses = await daemon.ExecuteCmdAllAsync<GetInfoResponse>(logger, MC.GetInfo);
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -388,7 +388,7 @@ namespace MiningCore.Blockchain.Monero
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // test wallet daemons
-                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(MWC.GetAddress);
+                var responses2 = await walletDaemon.ExecuteCmdAllAsync<object>(logger, MWC.GetAddress);
 
                 if (responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                     .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -403,7 +403,7 @@ namespace MiningCore.Blockchain.Monero
 
         protected override async Task<bool> AreDaemonsConnectedAsync()
         {
-            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
+            var response = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, MC.GetInfo);
 
             return response.Error == null && response.Response != null &&
                 (response.Response.OutgoingConnectionsCount + response.Response.IncomingConnectionsCount) > 0;
@@ -421,7 +421,7 @@ namespace MiningCore.Blockchain.Monero
                     ReserveSize = MoneroConstants.ReserveSize
                 };
 
-                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(
+                var responses = await daemon.ExecuteCmdAllAsync<GetBlockTemplateResponse>(logger,
                     MC.GetBlockTemplate, request);
 
                 var isSynched = responses.All(x => x.Error == null || x.Error.Code != -9);
@@ -447,14 +447,14 @@ namespace MiningCore.Blockchain.Monero
 
         protected override async Task PostStartInitAsync(CancellationToken ct)
         {
-            var infoResponse = await daemon.ExecuteCmdAnyAsync(MC.GetInfo);
+            var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, MC.GetInfo);
 
             if (infoResponse.Error != null)
                 logger.ThrowLogPoolStartupException($"Init RPC failed: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
-                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(ct, MWC.GetAddress);
+                var addressResponse = await walletDaemon.ExecuteCmdAnyAsync<GetAddressResponse>(logger, ct, MWC.GetAddress);
 
                 // ensure pool owns wallet
                 if (clusterConfig.PaymentProcessing?.Enabled == true && addressResponse.Response?.Address != poolConfig.Address)
@@ -557,7 +557,7 @@ namespace MiningCore.Blockchain.Monero
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(zmq, 2)
+                    var blockNotify = daemon.ZmqSubscribe(logger, zmq, 2)
                         .Select(msg =>
                         {
                             using (msg)
