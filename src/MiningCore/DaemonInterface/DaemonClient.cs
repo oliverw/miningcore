@@ -592,7 +592,7 @@ namespace MiningCore.DaemonInterface
             {
                 var tcs = new CancellationTokenSource();
 
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     using(tcs)
                     {
@@ -610,16 +610,8 @@ namespace MiningCore.DaemonInterface
 
                                     while(!tcs.IsCancellationRequested)
                                     {
-                                        var msg = subSocket.ReceiveMessage(out var zerror);
-
-                                        if (zerror != null && !zerror.Equals(ZError.None))
-                                        {
-                                            logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                            break;
-                                        }
-
-                                        if(msg != null)
-                                            obs.OnNext(msg);
+                                        var msg = subSocket.ReceiveMessage();
+                                        obs.OnNext(msg);
                                     }
                                 }
                             }
@@ -633,7 +625,7 @@ namespace MiningCore.DaemonInterface
                             Thread.Sleep(1000);
                         }
                     }
-                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                }, tcs.Token);
 
                 return Disposable.Create(() => { tcs.Cancel(); });
             }));
