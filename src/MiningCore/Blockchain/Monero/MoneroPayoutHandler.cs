@@ -413,7 +413,7 @@ namespace MiningCore.Blockchain.Monero
             Contract.RequiresNonNull(balances, nameof(balances));
 
 #if !DEBUG // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(MC.GetInfo);
+            var infoResponse = await daemon.ExecuteCmdAnyAsync<GetInfoResponse>(logger, MC.GetInfo);
             if (infoResponse.Error != null || infoResponse.Response == null ||
                 infoResponse.Response.IncomingConnectionsCount + infoResponse.Response.OutgoingConnectionsCount < 3)
             {
