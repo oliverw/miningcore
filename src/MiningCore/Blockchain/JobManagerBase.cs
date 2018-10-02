@@ -98,91 +98,91 @@ namespace MiningCore.Blockchain
         protected IObservable<string> BtStreamSubscribe(ZmqPubSubEndpointConfig config)
         {
             return Observable.Defer(() => Observable.Create<string>(obs =>
+            {
+                var tcs = new CancellationTokenSource();
+
+                Task.Factory.StartNew(() =>
                 {
-                    var tcs = new CancellationTokenSource();
-
-                    Task.Factory.StartNew(() =>
+                    using(tcs)
                     {
-                        using(tcs)
+                        while(!tcs.IsCancellationRequested)
                         {
-                            while(!tcs.IsCancellationRequested)
+                            try
                             {
-                                try
+                                using(var subSocket = new ZSocket(ZSocketType.SUB))
                                 {
-                                    using(var subSocket = new ZSocket(ZSocketType.SUB))
+                                    //subSocket.Options.ReceiveHighWatermark = 1000;
+                                    subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
+                                    subSocket.Connect(config.Url);
+                                    subSocket.Subscribe(config.Topic);
+
+                                    logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
+
+                                    while(!tcs.IsCancellationRequested)
                                     {
-                                        //subSocket.Options.ReceiveHighWatermark = 1000;
-                                        subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
-                                        subSocket.Connect(config.Url);
-                                        subSocket.Subscribe(config.Topic);
+                                        // string topic;
+                                        uint flags;
+                                        byte[] data;
+                                        // long timestamp;
 
-                                        logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
-
-                                        while(!tcs.IsCancellationRequested)
+                                        using (var msg = subSocket.ReceiveMessage())
                                         {
-                                            // string topic;
-                                            uint flags;
-                                            byte[] data;
-                                            // long timestamp;
+                                            // extract frames
+                                            // topic = msg[0].ToString(Encoding.UTF8);
+                                            flags = msg[1].ReadUInt32();
+                                            data = msg[2].Read();
+                                            // timestamp = msg[3].ReadInt64();
+                                        }
 
-                                            using (var msg = subSocket.ReceiveMessage())
+                                        // TMP FIX
+                                        if (flags != 0 && ((flags & 1) == 0))
+                                            flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
+
+                                        // compressed
+                                        if ((flags & 1) == 1)
+                                        {
+                                            using(var stm = new MemoryStream(data))
                                             {
-                                                // extract frames
-                                                // topic = msg[0].ToString(Encoding.UTF8);
-                                                flags = msg[1].ReadUInt32();
-                                                data = msg[2].Read();
-                                                // timestamp = msg[3].ReadInt64();
-                                            }
-
-                                            // TMP FIX
-                                            if (flags != 0 && ((flags & 1) == 0))
-                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
-                                            // compressed
-                                            if ((flags & 1) == 1)
-                                            {
-                                                using(var stm = new MemoryStream(data))
+                                                using(var stmOut = new MemoryStream())
                                                 {
-                                                    using(var stmOut = new MemoryStream())
+                                                    using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
                                                     {
-                                                        using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
-                                                        {
-                                                            ds.CopyTo(stmOut);
-                                                        }
-
-                                                        data = stmOut.ToArray();
+                                                        ds.CopyTo(stmOut);
                                                     }
+
+                                                    data = stmOut.ToArray();
                                                 }
                                             }
-
-                                            // convert
-                                            var json = Encoding.UTF8.GetString(data);
-
-                                            // publish
-                                            obs.OnNext(json);
-
-                                            // telemetry
-                                            //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
-                                            //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                         }
+
+                                        // convert
+                                        var json = Encoding.UTF8.GetString(data);
+
+                                        // publish
+                                        obs.OnNext(json);
+
+                                        // telemetry
+                                        //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
+                                        //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
                                     }
                                 }
-
-                                catch(Exception ex)
-                                {
-                                    logger.Error(ex);
-                                }
-
-                                // do not consume all CPU cycles in case of a long lasting error condition
-                                Thread.Sleep(1000);
                             }
-                        }
-                    }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-                    return Disposable.Create(() => { tcs.Cancel(); });
-                }))
-                .Publish()
-                .RefCount();
+                            catch(Exception ex)
+                            {
+                                logger.Error(ex);
+                            }
+
+                            // do not consume all CPU cycles in case of a long lasting error condition
+                            Thread.Sleep(1000);
+                        }
+                    }
+                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+                return Disposable.Create(() => { tcs.Cancel(); });
+            }))
+            .Publish()
+            .RefCount();
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();
