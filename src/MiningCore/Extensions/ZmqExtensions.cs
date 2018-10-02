@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using MiningCore.Util;
 using NLog;
 using ZeroMQ;
+using ZeroMQ.Monitoring;
 
 namespace MiningCore.Extensions
 {
@@ -33,6 +37,42 @@ namespace MiningCore.Extensions
                 var block = kbd.GetBytes(length);
                 return block;
             }
+        }
+
+        private static long monitorSocketIndex = 0;
+
+        public static IObservable<ZMonitorEventArgs> MonitorAsObservable(this ZSocket socket)
+        {
+            return Observable.Defer(() => Observable.Create<ZMonitorEventArgs>(obs=>
+            {
+                var url = $"inproc://monitor{Interlocked.Increment(ref monitorSocketIndex)}";
+                var monitor = ZMonitor.Create(socket.Context, url);
+                var cts = new CancellationTokenSource();
+
+                void OnEvent(object sender, ZMonitorEventArgs e)
+                {
+                    obs.OnNext(e);
+                }
+
+                monitor.AllEvents += OnEvent;
+
+                socket.Monitor(url);
+                monitor.Start(cts);
+
+                return Disposable.Create(() =>
+                {
+                    using(new CompositeDisposable(monitor, cts))
+                    {
+                        monitor.AllEvents -= OnEvent;
+                        monitor.Stop();
+                    }
+                });
+            }));
+        }
+
+        public static void LogMonitorEvent(ILogger logger, ZMonitorEventArgs e)
+        {
+            logger.Info(()=> $"[ZMQ] [{e.Event.Address}] {Enum.GetName(typeof(ZMonitorEvents), e.Event.Event)} [{e.Event.EventValue}]");
         }
 
         /// <summary>

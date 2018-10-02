@@ -119,7 +119,7 @@ namespace MiningCore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
-        /// Validate SSL certificate (if SSL option is set to true)
+        /// Validate SSL certificate (if SSL option is set to true) - default is false
         /// </summary>
         public bool ValidateCert { get; set; }
 
@@ -359,8 +359,15 @@ namespace MiningCore.Configuration
     {
         public string Url { get; set; }
 
-        // Curve Transport Layer Security Encryption key shared by client and server
+        /// <summary>
+        /// Curve Transport Layer Security Encryption key shared by client and server
+        /// </summary>
         public string SharedEncryptionKey { get; set; }
+
+        /// <summary>
+        /// Set to true to enable logging of connection state. Defaults to false.
+        /// </summary>
+        public bool LogConnectionState { get; set; } = false;
     }
 
     public partial class ShareRelayConfig
