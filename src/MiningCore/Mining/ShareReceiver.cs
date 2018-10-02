@@ -66,6 +66,8 @@ namespace MiningCore.Mining
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
+            var knownPools = new HashSet<string>(clusterConfig.Pools.Select(x => x.Id));
+
             foreach (var relay in clusterConfig.ShareRelays)
             {
                 Task.Run(()=>
@@ -107,9 +109,15 @@ namespace MiningCore.Mining
                                     }
 
                                     // validate
+                                    if (string.IsNullOrEmpty(topic) || !knownPools.Contains(topic))
+                                    {
+                                        logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
+                                        continue;
+                                    }
+
                                     if (data?.Length == 0)
                                     {
-                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
+                                        logger.Warn(() => $"Received empty data from {url}/{topic}. Ignoring ...");
                                         continue;
                                     }
 
