@@ -564,6 +564,8 @@ namespace MiningCore.DaemonInterface
                                             }
                                         } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
+                                        logger.Debug(()=> $"Received WebSocket message with length {stream.Length}");
+
                                         // publish
                                         obs.OnNext(stream.ToArray());
                                     }

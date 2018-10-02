@@ -113,6 +113,8 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
+                logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
+
                 var job = currentJob;
                 var isNew = currentJob == null ||
                     job.BlockTemplate.Height < blockTemplate.Height ||
