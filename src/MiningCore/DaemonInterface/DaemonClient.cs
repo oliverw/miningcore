@@ -320,7 +320,7 @@ namespace MiningCore.DaemonInterface
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
             // build request url
-            var protocol = endPoint.Ssl ? "https" : "http";
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if (!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
@@ -375,7 +375,7 @@ namespace MiningCore.DaemonInterface
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
             // build request url
-            var protocol = endPoint.Ssl ? "https" : "http";
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if (!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
