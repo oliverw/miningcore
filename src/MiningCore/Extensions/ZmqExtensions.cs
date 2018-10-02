@@ -32,7 +32,8 @@ namespace MiningCore.Extensions
 
         private static byte[] DeriveKey(string password, int length = 32)
         {
-            using (var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), NoSalt, PasswordIterations))
+            using (var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password),
+                NoSalt, PasswordIterations, HashAlgorithmName.SHA256))
             {
                 var block = kbd.GetBytes(length);
                 return block;
@@ -132,7 +133,7 @@ namespace MiningCore.Extensions
             if (!knownKeys.TryGetValue(keyPlain, out var serverKeys))
             {
                 var keyBytes = DeriveKey(keyPlain, 32);
-
+Console.WriteLine(keyBytes.ToHexString());
                 // Derive server's public-key from shared secret
                 Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
                 knownKeys[keyPlain] = (keyBytes, serverPubKey);
