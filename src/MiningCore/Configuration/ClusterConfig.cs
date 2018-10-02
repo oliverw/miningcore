@@ -363,11 +363,6 @@ namespace MiningCore.Configuration
         /// Curve Transport Layer Security Encryption key shared by client and server
         /// </summary>
         public string SharedEncryptionKey { get; set; }
-
-        /// <summary>
-        /// Set to true to enable logging of connection state. Defaults to false.
-        /// </summary>
-        public bool LogConnectionState { get; set; } = false;
     }
 
     public partial class ShareRelayConfig

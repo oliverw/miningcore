@@ -62,7 +62,6 @@ namespace MiningCore.Blockchain
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
         protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
-        protected TimeSpan btStreamReceiveTimeout = TimeSpan.FromSeconds(60 * 10);
 
         protected abstract void ConfigureDaemons();
 
@@ -114,7 +113,6 @@ namespace MiningCore.Blockchain
                                     {
                                         //subSocket.Options.ReceiveHighWatermark = 1000;
                                         subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
-                                        subSocket.ReceiveTimeout = btStreamReceiveTimeout;
                                         subSocket.Connect(config.Url);
                                         subSocket.Subscribe(config.Topic);
 
@@ -127,14 +125,8 @@ namespace MiningCore.Blockchain
                                             byte[] data;
                                             // long timestamp;
 
-                                            using (var msg = subSocket.ReceiveMessage(out var zerror))
+                                            using (var msg = subSocket.ReceiveMessage())
                                             {
-                                                if (zerror != null && !zerror.Equals(ZError.None))
-                                                {
-                                                    logger.Warn(() => $"Timeout receiving message from {config.Url}. Reconnecting ...");
-                                                    break;
-                                                }
-
                                                 // extract frames
                                                 // topic = msg[0].ToString(Encoding.UTF8);
                                                 flags = msg[1].ReadUInt32();

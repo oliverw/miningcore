@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Crypto;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
@@ -16,6 +19,7 @@ using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
 using ZeroMQ;
+using ZeroMQ.Monitoring;
 
 namespace MiningCore.Mining
 {
@@ -53,7 +57,7 @@ namespace MiningCore.Mining
             public long BlockHeight;
         }
 
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
 
         private void StartListeners()
         {
@@ -67,7 +71,6 @@ namespace MiningCore.Mining
                 Task.Run(()=>
                 {
                     var url = relay.Url;
-                    var receivedOnce = false;
 
                     // Receive loop
                     var done = false;
@@ -76,136 +79,115 @@ namespace MiningCore.Mining
                     {
                         try
                         {
-                            using(var zcontext = new ZContext())
+                            using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
-                                using (var subSocket = new ZSocket(zcontext, ZSocketType.SUB))
+                                subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
+                                subSocket.ReceiveTimeout = relayReceiveTimeout;
+                                subSocket.Connect(url);
+                                subSocket.SubscribeAll();
+
+                                if (subSocket.CurveServerKey != null)
+                                    logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                                else
+                                    logger.Info($"Monitoring external stratum {url}");
+
+                                while (true)
                                 {
-                                    using (relay.LogConnectionState ?
-                                        subSocket.MonitorAsObservable().Subscribe(x => ZmqExtensions.LogMonitorEvent(logger, x)) :
-                                        System.Reactive.Disposables.Disposable.Empty)
+                                    string topic;
+                                    uint flags;
+                                    byte[] data;
+
+                                    // receive
+                                    using(var msg = subSocket.ReceiveMessage())
                                     {
-                                        subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
-                                        subSocket.ReceiveTimeout = relayReceiveTimeout;
-                                        subSocket.Connect(url);
-                                        subSocket.SubscribeAll();
+                                        // extract frames
+                                        topic = msg[0].ToString(Encoding.UTF8);
+                                        flags = msg[1].ReadUInt32();
+                                        data = msg[2].Read();
+                                    }
 
-                                        if (subSocket.CurveServerKey != null)
-                                            logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-                                        else
-                                            logger.Info($"Monitoring external stratum {url}");
+                                    // validate
+                                    if (data?.Length == 0)
+                                    {
+                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
+                                        continue;
+                                    }
 
-                                        while (true)
+                                    // TMP FIX
+                                    if ((flags & ShareRelay.WireFormatMask) == 0)
+                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
+
+                                    // deserialize
+                                    var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
+
+                                    Share share = null;
+
+                                    switch(wireFormat)
+                                    {
+                                        case ShareRelay.WireFormat.Json:
+                                            using(var stream = new MemoryStream(data))
+                                            {
+                                                using(var reader = new StreamReader(stream, Encoding.UTF8))
+                                                {
+                                                    using(var jreader = new JsonTextReader(reader))
+                                                    {
+                                                        share = serializer.Deserialize<Share>(jreader);
+                                                    }
+                                                }
+                                            }
+
+                                            break;
+
+                                        case ShareRelay.WireFormat.ProtocolBuffers:
+                                            using(var stream = new MemoryStream(data))
+                                            {
+                                                share = Serializer.Deserialize<Share>(stream);
+                                                share.BlockReward = (decimal) share.BlockRewardDouble;
+                                            }
+
+                                            break;
+
+                                        default:
+                                            logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
+                                            break;
+                                    }
+
+                                    if (share == null)
+                                    {
+                                        logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
+                                        continue;
+                                    }
+
+                                    // store
+                                    share.PoolId = topic;
+                                    share.Created = clock.Now;
+                                    messageBus.SendMessage(new ClientShare(null, share));
+
+                                    // update poolstats from shares
+                                    if (pools.TryGetValue(topic, out var poolContext))
+                                    {
+                                        var pool = poolContext.Pool;
+                                        poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+
+                                        if (pool.NetworkStats != null)
                                         {
-                                            string topic;
-                                            uint flags;
-                                            byte[] data;
+                                            pool.NetworkStats.BlockHeight = (ulong) share.BlockHeight;
+                                            pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
 
-                                            // receive
-                                            using (var msg = subSocket.ReceiveMessage(out var zerror))
+                                            if (poolContext.BlockHeight != share.BlockHeight)
                                             {
-                                                if (zerror != null && !zerror.Equals(ZError.None))
-                                                {
-                                                    if (!receivedOnce || (!zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN)))
-                                                    {
-                                                        logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                                        break;
-                                                    }
-
-                                                    // retry
-                                                    continue;
-                                                }
-
-                                                // extract frames
-                                                topic = msg[0].ToString(Encoding.UTF8);
-                                                flags = msg[1].ReadUInt32();
-                                                data = msg[2].Read();
-                                                receivedOnce = true;
-                                            }
-
-                                            // validate
-                                            if (data?.Length == 0)
-                                            {
-                                                logger.Warn(() => $"Received empty data from {url}/{topic}");
-                                                continue;
-                                            }
-
-                                            // TMP FIX
-                                            if ((flags & ShareRelay.WireFormatMask) == 0)
-                                                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
-                                            // deserialize
-                                            var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
-
-                                            Share share = null;
-
-                                            switch (wireFormat)
-                                            {
-                                                case ShareRelay.WireFormat.Json:
-                                                    using (var stream = new MemoryStream(data))
-                                                    {
-                                                        using (var reader = new StreamReader(stream, Encoding.UTF8))
-                                                        {
-                                                            using (var jreader = new JsonTextReader(reader))
-                                                            {
-                                                                share = serializer.Deserialize<Share>(jreader);
-                                                            }
-                                                        }
-                                                    }
-
-                                                    break;
-
-                                                case ShareRelay.WireFormat.ProtocolBuffers:
-                                                    using (var stream = new MemoryStream(data))
-                                                    {
-                                                        share = Serializer.Deserialize<Share>(stream);
-                                                        share.BlockReward = (decimal)share.BlockRewardDouble;
-                                                    }
-
-                                                    break;
-
-                                                default:
-                                                    logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
-                                                    break;
-                                            }
-
-                                            if (share == null)
-                                            {
-                                                logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
-                                                continue;
-                                            }
-
-                                            // store
-                                            share.PoolId = topic;
-                                            share.Created = clock.Now;
-                                            messageBus.SendMessage(new ClientShare(null, share));
-
-                                            // update poolstats from shares
-                                            if (pools.TryGetValue(topic, out var poolContext))
-                                            {
-                                                var pool = poolContext.Pool;
-                                                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                                                if (pool.NetworkStats != null)
-                                                {
-                                                    pool.NetworkStats.BlockHeight = (ulong)share.BlockHeight;
-                                                    pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
-
-                                                    if (poolContext.BlockHeight != share.BlockHeight)
-                                                    {
-                                                        pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                                        poolContext.BlockHeight = share.BlockHeight;
-                                                        poolContext.LastBlock = clock.Now;
-                                                    }
-
-                                                    else
-                                                        pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
-                                                }
+                                                pool.NetworkStats.LastNetworkBlockTime = clock.Now;
+                                                poolContext.BlockHeight = share.BlockHeight;
+                                                poolContext.LastBlock = clock.Now;
                                             }
 
                                             else
-                                                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+                                                pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
                                         }
                                     }
+
+                                    else
+                                        logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
                                 }
                             }
                         }
