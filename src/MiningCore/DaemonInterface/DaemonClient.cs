@@ -547,14 +547,22 @@ namespace MiningCore.DaemonInterface
                                         // read until EndOfMessage
                                         do
                                         {
-                                            var response = await client.ReceiveAsync(buf, cts.Token);
+                                            using(var ctsTimeout = new CancellationTokenSource())
+                                            {
+                                                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                                                {
+                                                    ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
 
-                                            if (response.MessageType == WebSocketMessageType.Binary)
-                                                throw new InvalidDataException("expected text, received binary data");
+                                                    var response = await client.ReceiveAsync(buf, ctsComposite.Token);
 
-                                            stream.Write(buf, 0, response.Count);
+                                                    if (response.MessageType == WebSocketMessageType.Binary)
+                                                        throw new InvalidDataException("expected text, received binary data");
 
-                                            complete = response.EndOfMessage;
+                                                    stream.Write(buf, 0, response.Count);
+
+                                                    complete = response.EndOfMessage;
+                                                }
+                                            }
                                         } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
                                         // publish

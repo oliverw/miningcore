@@ -642,9 +642,19 @@ namespace MiningCore.Blockchain.Ethereum
                         return null;
                     });
 
-                Jobs = getWorkObs.Where(x => x != null)
-                    .Select(AssembleBlockTemplate)
-                    .Select(UpdateJob)
+                // with the latest parity releases, relying on websocket updates is no longer reliable
+                // use periodic polling as fallback
+                var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+                var poll = Observable.Interval(TimeSpan.FromMilliseconds(pollingInterval))
+                    .Select(_ => Observable.FromAsync(UpdateJobAsync))
+                    .Concat();
+
+                Jobs = Observable.Merge(
+                        getWorkObs.Where(x => x != null)
+                            .Select(AssembleBlockTemplate)
+                            .Select(UpdateJob),
+                        poll)
                     .Do(isNew =>
                     {
                         if (isNew)
