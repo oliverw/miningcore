@@ -113,7 +113,7 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
-                logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
+                // logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
 
                 var job = currentJob;
                 var isNew = currentJob == null ||
@@ -450,7 +450,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Block>(logger, EC.GetBlockByNumber, new[] { (object) "pending", true });
+            var responses = await daemon.ExecuteCmdAllAsync<Block>(logger, EC.GetBlockByNumber, new[] { (object) "latest", true });
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
