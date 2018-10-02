@@ -525,7 +525,7 @@ namespace MiningCore.DaemonInterface
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
 
-                                    logger.Debug(() => $"Establishing WebSocket connection to {uri}");
+                                    logger.Info(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
 
                                     // subscribe
