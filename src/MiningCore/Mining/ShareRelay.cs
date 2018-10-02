@@ -57,10 +57,11 @@ namespace MiningCore.Mining
             messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
 
             pubSocket = new ZSocket(ZSocketType.PUB);
-            pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
 
             if (!clusterConfig.ShareRelay.Connect)
             {
+                pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
+
                 pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
 
                 if(pubSocket.CurveServer)
@@ -71,6 +72,9 @@ namespace MiningCore.Mining
 
             else
             {
+                if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
+                    logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
+
                 pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
                 logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
             }

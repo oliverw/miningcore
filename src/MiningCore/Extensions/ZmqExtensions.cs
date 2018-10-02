@@ -98,13 +98,13 @@ namespace MiningCore.Extensions
 
                 // Derive server's public-key from shared secret
                 Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
-                knownKeys[keyPlain] = (keyBytes, serverPubKey);
+                knownKeys[keyPlain] = (serverPubKey, keyBytes);
             }
 
             else
             {
-                keyBytes = serverKeys.Item1;
-                serverPubKey = serverKeys.Item2;
+                keyBytes = serverKeys.SecretKey;
+                serverPubKey = serverKeys.PubKey;
             }
 
             // set socket options
@@ -135,7 +135,7 @@ namespace MiningCore.Extensions
 
                 // Derive server's public-key from shared secret
                 Z85.CurvePublic(out serverPubKey, keyBytes.ToZ85Encoded());
-                knownKeys[keyPlain] = (keyBytes, serverPubKey);
+                knownKeys[keyPlain] = (serverPubKey, keyBytes);
             }
 
             else
