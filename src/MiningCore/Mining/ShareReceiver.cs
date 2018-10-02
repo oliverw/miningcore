@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Crypto;
 using MiningCore.Extensions;
 using MiningCore.Messaging;
 using MiningCore.Time;
@@ -17,6 +19,7 @@ using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
 using ZeroMQ;
+using ZeroMQ.Monitoring;
 
 namespace MiningCore.Mining
 {
@@ -58,83 +61,63 @@ namespace MiningCore.Mining
 
         private void StartListeners()
         {
-            var stratumsByUrl = clusterConfig.Pools.Where(x => x.Enabled && x.ExternalStratums?.Any() == true)
-                .SelectMany(x => x.ExternalStratums)
-                .Where(x => x.Url != null && x.Topic != null)
-                .GroupBy(x =>
-                {
-                    var tmp = x.Url.Trim();
-                    return !tmp.EndsWith("/") ? tmp : tmp.Substring(0, tmp.Length - 1);
-                }, x => x.Topic.Trim())
-                .ToArray();
-
             var serializer = new JsonSerializer
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            foreach(var item in stratumsByUrl)
-            {
-                var thread = new Thread(arg =>
-                {
-                    var urlAndTopic = (IGrouping<string, string>) arg;
-                    var url = urlAndTopic.Key;
-                    var topics = new HashSet<string>(urlAndTopic.Distinct());
-                    var receivedOnce = false;
+            var knownPools = new HashSet<string>(clusterConfig.Pools.Select(x => x.Id));
 
-                    while(true)
+            foreach (var relay in clusterConfig.ShareRelays)
+            {
+                Task.Run(()=>
+                {
+                    var url = relay.Url;
+
+                    // Receive loop
+                    var done = false;
+
+                    while (!done)
                     {
                         try
                         {
                             using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
+                                subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
                                 subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
+                                subSocket.SubscribeAll();
 
-                                // subscribe to all topics
-                                foreach(var topic in topics)
-                                    subSocket.Subscribe(topic);
+                                if (subSocket.CurveServerKey != null)
+                                    logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                                else
+                                    logger.Info($"Monitoring external stratum {url}");
 
-                                logger.Info($"Monitoring external stratum {url}/[{string.Join(", ", topics)}]");
-
-                                while(true)
+                                while (true)
                                 {
                                     string topic;
                                     uint flags;
                                     byte[] data;
 
                                     // receive
-                                    using(var msg = subSocket.ReceiveMessage(out var zerror))
+                                    using(var msg = subSocket.ReceiveMessage())
                                     {
-                                        if (zerror != null && !zerror.Equals(ZError.None))
-                                        {
-                                            if (!receivedOnce && !zerror.Equals(ZError.ETIMEDOUT) && !zerror.Equals(ZError.EAGAIN))
-                                            {
-                                                logger.Warn(() => $"Timeout receiving message from {url}. Reconnecting ...");
-                                                break;
-                                            }
-
-                                            // retry
-                                            continue;
-                                        }
-
                                         // extract frames
                                         topic = msg[0].ToString(Encoding.UTF8);
                                         flags = msg[1].ReadUInt32();
                                         data = msg[2].Read();
-                                        receivedOnce = true;
                                     }
 
                                     // validate
-                                    if (!topics.Contains(topic))
+                                    if (string.IsNullOrEmpty(topic) || !knownPools.Contains(topic))
                                     {
-                                        logger.Warn(() => $"Received non-matching topic {topic} on ZeroMQ subscriber socket");
+                                        logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
                                         continue;
                                     }
 
                                     if (data?.Length == 0)
                                     {
-                                        logger.Warn(() => $"Received empty data from {url}/{topic}");
+                                        logger.Warn(() => $"Received empty data from {url}/{topic}. Ignoring ...");
                                         continue;
                                     }
 
@@ -219,7 +202,7 @@ namespace MiningCore.Mining
 
                         catch(ObjectDisposedException)
                         {
-                            logger.Info($"Exiting monitoring thread for external stratum {url}/[{string.Join(", ", topics)}]");
+                            logger.Info($"Exiting monitoring thread for external stratum {url}]");
                             break;
                         }
 
@@ -229,11 +212,9 @@ namespace MiningCore.Mining
                         }
                     }
                 });
-
-                thread.Start(item);
             }
 
-            if (stratumsByUrl.Any())
+            if (clusterConfig.ShareRelays.Any())
                 logger.Info(() => "Online");
         }
 
@@ -248,7 +229,8 @@ namespace MiningCore.Mining
         {
             this.clusterConfig = clusterConfig;
 
-            StartListeners();
+            if(clusterConfig.ShareRelays != null)
+                StartListeners();
         }
 
         public void Stop()

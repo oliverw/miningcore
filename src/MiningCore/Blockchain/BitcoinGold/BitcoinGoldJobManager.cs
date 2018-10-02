@@ -31,7 +31,7 @@ namespace MiningCore.Blockchain.BitcoinGold
 
         protected override async Task<DaemonResponse<ZCashBlockTemplate>> GetBlockTemplateAsync()
         {
-            var result = await daemon.ExecuteCmdAnyAsync<ZCashBlockTemplate>(
+            var result = await daemon.ExecuteCmdAnyAsync<ZCashBlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
             return result;

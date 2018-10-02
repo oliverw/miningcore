@@ -77,7 +77,7 @@ namespace MiningCore.Blockchain.ZCash
                 return true;
 
             // handle z-addr
-            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(ct,
+            var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 ZCashCommands.ZValidateAddress, new[] { address });
 
             return result.Response != null && result.Response.IsValid;
@@ -87,9 +87,9 @@ namespace MiningCore.Blockchain.ZCash
         {
             logger.LogInvoke();
 
-            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(BitcoinCommands.GetBlockSubsidy);
+            var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy);
 
-            var result = await daemon.ExecuteCmdAnyAsync<ZCashBlockTemplate>(
+            var result = await daemon.ExecuteCmdAnyAsync<ZCashBlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
             if (subsidyResponse.Error == null && result.Error == null && result.Response != null)

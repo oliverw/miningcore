@@ -114,11 +114,11 @@ namespace MiningCore.Stratum
                 {
                     // prepare socket
                     socket.NoDelay = true;
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
                     // create stream
                     networkStream = new NetworkStream(socket, true);
 
-                    // Async I/O loop(s)
                     using (new CompositeDisposable(networkStream, cts))
                     {
                         // TLS handshake
@@ -134,6 +134,7 @@ namespace MiningCore.Stratum
                         else
                             logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
 
+                        // Async I/O loop(s)
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
@@ -143,10 +144,12 @@ namespace MiningCore.Stratum
 
                         await Task.WhenAny(tasks);
 
-                        // Make sure all tasks complete
+                        // We are done with this client, make sure all tasks complete
                         receivePipe.Reader.Complete();
                         receivePipe.Writer.Complete();
                         sendQueue.Complete();
+
+                        // additional safety net to ensure remaining tasks don't linger
                         cts.Cancel();
 
                         // Signal completion or error
@@ -341,18 +344,21 @@ namespace MiningCore.Stratum
 
             using(var ctsTimeout = new CancellationTokenSource())
             {
-                var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token);
-
-                using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
                 {
-                    serializer.Serialize(writer, payload);
+                    // serialize to JSON
+                    using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    {
+                        serializer.Serialize(writer, payload);
+                    }
+
+                    // append terminator
+                    networkStream.WriteByte(0xa);
+
+                    // Send to network
+                    ctsTimeout.CancelAfter(sendTimeout);
+                    await networkStream.FlushAsync(ctsComposite.Token);
                 }
-
-                networkStream.WriteByte(0xa); // terminator
-
-                // Send to network
-                ctsTimeout.CancelAfter(sendTimeout);
-                await networkStream.FlushAsync(ctsComposite.Token);
             }
         }
 

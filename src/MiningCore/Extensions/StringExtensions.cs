@@ -21,6 +21,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Buffers;
 using System.Globalization;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MiningCore.Extensions

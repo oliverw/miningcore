@@ -121,7 +121,7 @@ namespace MiningCore.Blockchain.Ethereum
                     .ToArray();
 
                 // get latest block
-                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(EC.GetBlockByNumber, new[] { (object) "latest", true });
+                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) "latest", true });
                 var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
 
                 // execute batch
@@ -191,7 +191,7 @@ namespace MiningCore.Blockchain.Ethereum
 
                             logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
 
-                            var uncleResponses = await daemon.ExecuteBatchAnyAsync(uncleBatch);
+                            var uncleResponses = await daemon.ExecuteBatchAnyAsync(logger, uncleBatch);
 
                             logger.Info(() => $"[{LogCategory}] Fetched {uncleResponses.Count(x => x.Error == null && x.Response != null)} uncles for block {blockInfo2.Height}");
 
@@ -269,7 +269,7 @@ namespace MiningCore.Blockchain.Ethereum
         public async Task PayoutAsync(Balance[] balances)
         {
             // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(EC.GetPeerCount);
+            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.GetPeerCount);
 
             if (networkType == EthereumNetworkType.Main &&
                 (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
@@ -316,7 +316,7 @@ namespace MiningCore.Blockchain.Ethereum
                         true
                     })).ToArray();
 
-                var tmp = await daemon.ExecuteBatchAnyAsync(blockBatch);
+                var tmp = await daemon.ExecuteBatchAnyAsync(logger, blockBatch);
 
                 var transformed = tmp
                     .Where(x => x.Error == null && x.Response != null)
@@ -371,7 +371,7 @@ namespace MiningCore.Blockchain.Ethereum
             var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] { tx.Hash }))
                 .ToArray();
 
-            var results = await daemon.ExecuteBatchAnyAsync(batch);
+            var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
 
             if (results.Any(x => x.Error != null))
                 throw new Exception($"Error fetching tx receipts: {string.Join(", ", results.Where(x => x.Error != null).Select(y => y.Error.Message))}");
@@ -414,7 +414,7 @@ namespace MiningCore.Blockchain.Ethereum
                 new DaemonCmd(EC.ParityChain),
             };
 
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
+            var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
 
             if (results.Any(x => x.Error != null))
             {
@@ -437,7 +437,7 @@ namespace MiningCore.Blockchain.Ethereum
             // unlock account
             if (extraConfig.CoinbasePassword != null)
             {
-                var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(EC.UnlockAccount, new[]
+                var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EC.UnlockAccount, new[]
                 {
                     poolConfig.Address,
                     extraConfig.CoinbasePassword,
@@ -458,7 +458,7 @@ namespace MiningCore.Blockchain.Ethereum
                 Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
-            var response = await daemon.ExecuteCmdSingleAsync<string>(EC.SendTx, new[] { request });
+            var response = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.SendTx, new[] { request });
 
             if (response.Error != null)
                 throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");

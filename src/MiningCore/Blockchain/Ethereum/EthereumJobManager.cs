@@ -113,8 +113,12 @@ namespace MiningCore.Blockchain.Ethereum
                 if (blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
+                logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
+
                 var job = currentJob;
-                var isNew = currentJob == null || job.BlockTemplate.Header != blockTemplate.Header;
+                var isNew = currentJob == null ||
+                    job.BlockTemplate.Height < blockTemplate.Height ||
+                    job.BlockTemplate.Header != blockTemplate.Header;
 
                 if (isNew)
                 {
@@ -159,7 +163,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             logger.LogInvoke();
 
-            var response = await daemon.ExecuteCmdAnyAsync<JToken>(EC.GetWork);
+            var response = await daemon.ExecuteCmdAnyAsync<JToken>(logger, EC.GetWork);
 
             if (response.Error != null)
             {
@@ -208,7 +212,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         private async Task ShowDaemonSyncProgressAsync()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
+            var responses = await daemon.ExecuteCmdAllAsync<object>(logger, EC.GetSyncState);
             var firstValidResponse = responses.FirstOrDefault(x => x.Error == null && x.Response != null)?.Response;
 
             if (firstValidResponse != null)
@@ -224,7 +228,7 @@ namespace MiningCore.Blockchain.Ethereum
                 if (syncStates.Any())
                 {
                     // get peer count
-                    var response = await daemon.ExecuteCmdAllAsync<string>(EC.GetPeerCount);
+                    var response = await daemon.ExecuteCmdAllAsync<string>(logger, EC.GetPeerCount);
                     var validResponses = response.Where(x => x.Error == null && x.Response != null).ToArray();
                     var peerCount = validResponses.Any() ? validResponses.Max(x => x.Response.IntegralFromHex<uint>()) : 0;
 
@@ -260,7 +264,7 @@ namespace MiningCore.Blockchain.Ethereum
                     new DaemonCmd(EC.GetPeerCount),
                 };
 
-                var results = await daemon.ExecuteBatchAnyAsync(commands);
+                var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
 
                 if (results.Any(x => x.Error != null))
                 {
@@ -287,7 +291,7 @@ namespace MiningCore.Blockchain.Ethereum
         private async Task<bool> SubmitBlockAsync(Share share, string fullNonceHex, string headerHash, string mixHash)
         {
             // submit work
-            var response = await daemon.ExecuteCmdAnyAsync<object>(EC.SubmitWork, new[]
+            var response = await daemon.ExecuteCmdAnyAsync<object>(logger, EC.SubmitWork, new[]
             {
                 fullNonceHex,
                 headerHash,
@@ -446,7 +450,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override async Task<bool> AreDaemonsHealthyAsync()
         {
-            var responses = await daemon.ExecuteCmdAllAsync<Block>(EC.GetBlockByNumber, new[] { (object) "pending", true });
+            var responses = await daemon.ExecuteCmdAllAsync<Block>(logger, EC.GetBlockByNumber, new[] { (object) "pending", true });
 
             if (responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
@@ -458,7 +462,7 @@ namespace MiningCore.Blockchain.Ethereum
 
         protected override async Task<bool> AreDaemonsConnectedAsync()
         {
-            var response = await daemon.ExecuteCmdAnyAsync<string>(EC.GetPeerCount);
+            var response = await daemon.ExecuteCmdAnyAsync<string>(logger, EC.GetPeerCount);
 
             return response.Error == null && response.Response.IntegralFromHex<uint>() > 0;
         }
@@ -469,7 +473,7 @@ namespace MiningCore.Blockchain.Ethereum
 
             while(true)
             {
-                var responses = await daemon.ExecuteCmdAllAsync<object>(EC.GetSyncState);
+                var responses = await daemon.ExecuteCmdAllAsync<object>(logger, EC.GetSyncState);
 
                 var isSynched = responses.All(x => x.Error == null &&
                     x.Response is bool && (bool) x.Response == false);
@@ -504,7 +508,7 @@ namespace MiningCore.Blockchain.Ethereum
                 new DaemonCmd(EC.ParityChain),
             };
 
-            var results = await daemon.ExecuteBatchAnyAsync(commands);
+            var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
 
             if (results.Any(x => x.Error != null))
             {
@@ -625,7 +629,7 @@ namespace MiningCore.Blockchain.Ethereum
                 logger.Info(() => $"Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
 
                 // stream work updates
-                var getWorkObs = daemon.WebsocketSubscribe(wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
+                var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
                     .Select(data =>
                     {
                         try

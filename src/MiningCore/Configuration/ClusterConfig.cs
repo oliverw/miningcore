@@ -119,7 +119,7 @@ namespace MiningCore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
-        /// Validate SSL certificate (if SSL option is set to true)
+        /// Validate SSL certificate (if SSL option is set to true) - default is false
         /// </summary>
         public bool ValidateCert { get; set; }
 
@@ -350,6 +350,19 @@ namespace MiningCore.Configuration
     {
         public string Url { get; set; }
         public string Topic { get; set; }
+
+        // Curve Transport Layer Security Encryption key shared by client and server
+        public string SharedEncryptionKey { get; set; }
+    }
+
+    public partial class ShareRelayEndpointConfig
+    {
+        public string Url { get; set; }
+
+        /// <summary>
+        /// Curve Transport Layer Security Encryption key shared by client and server
+        /// </summary>
+        public string SharedEncryptionKey { get; set; }
     }
 
     public partial class ShareRelayConfig
@@ -360,6 +373,9 @@ namespace MiningCore.Configuration
         /// If set to true, the relay will "Connect" to the url, rather than "Bind" it
         /// </summary>
         public bool Connect { get; set; }
+
+        // Curve Transport Layer Security Encryption key shared by client and server
+        public string SharedEncryptionKey { get; set; }
     }
 
     public partial class PoolConfig
@@ -384,11 +400,6 @@ namespace MiningCore.Configuration
         /// </summary>
         public bool? EnableInternalStratum { get; set; }
 
-        /// <summary>
-        /// External stratums (ZMQ based share publishers)
-        /// </summary>
-        public ZmqPubSubEndpointConfig[] ExternalStratums { get; set; }
-
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
     }
@@ -409,6 +420,11 @@ namespace MiningCore.Configuration
         /// poolid as topic
         /// </summary>
         public ShareRelayConfig ShareRelay { get; set; }
+
+        /// <summary>
+        /// External relays to monitor for shares (see option above)
+        /// </summary>
+        public ShareRelayEndpointConfig[] ShareRelays { get; set; }
 
         /// <summary>
         /// Maximum parallelism of Equihash solver

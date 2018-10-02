@@ -157,9 +157,7 @@ namespace MiningCore
 
             Shutdown();
 
-#if !DEBUG
             Process.GetCurrentProcess().Kill();
-#endif
         }
 
         private static void LogRuntimeInfo()
@@ -173,7 +171,7 @@ namespace MiningCore
             foreach(var config in clusterConfig.Pools)
             {
                 if (!config.EnableInternalStratum.HasValue)
-                    config.EnableInternalStratum = config.ExternalStratums == null || config.ExternalStratums.Length == 0;
+                    config.EnableInternalStratum = clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
             }
 
             try

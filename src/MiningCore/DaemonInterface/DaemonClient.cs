@@ -71,7 +71,6 @@ namespace MiningCore.DaemonInterface
         }
 
         private readonly JsonSerializerSettings serializerSettings;
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         protected DaemonEndpointConfig[] endPoints;
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
@@ -124,9 +123,9 @@ namespace MiningCore.DaemonInterface
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(string method)
+        public Task<DaemonResponse<JToken>[]> ExecuteCmdAllAsync(ILogger logger, string method)
         {
-            return ExecuteCmdAllAsync<JToken>(method);
+            return ExecuteCmdAllAsync<JToken>(logger, method);
         }
 
         /// <summary>
@@ -136,7 +135,7 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(string method,
+        public async Task<DaemonResponse<TResponse>[]> ExecuteCmdAllAsync<TResponse>(ILogger logger, string method,
             object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
@@ -144,7 +143,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
 
             try
             {
@@ -166,9 +165,9 @@ namespace MiningCore.DaemonInterface
         /// Executes the request against all configured demons and returns the first successful response
         /// </summary>
         /// <returns></returns>
-        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(string method, bool throwOnError = false)
+        public Task<DaemonResponse<JToken>> ExecuteCmdAnyAsync(ILogger logger, string method, bool throwOnError = false)
         {
-            return ExecuteCmdAnyAsync<JToken>(method, null, null, throwOnError);
+            return ExecuteCmdAnyAsync<JToken>(logger, method, null, null, throwOnError);
         }
 
         /// <summary>
@@ -176,7 +175,7 @@ namespace MiningCore.DaemonInterface
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(string method, object payload = null,
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(ILogger logger, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
             where TResponse : class
         {
@@ -184,7 +183,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, CancellationToken.None, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
@@ -196,7 +195,7 @@ namespace MiningCore.DaemonInterface
         /// </summary>
         /// <typeparam name="TResponse"></typeparam>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(CancellationToken ct, string method, object payload = null,
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdAnyAsync<TResponse>(ILogger logger, CancellationToken ct, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null, bool throwOnError = false)
             where TResponse : class
         {
@@ -204,7 +203,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var tasks = endPoints.Select(endPoint => BuildRequestTask(endPoint, method, payload, ct, payloadJsonSerializerSettings)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildRequestTask(logger, endPoint, method, payload, ct, payloadJsonSerializerSettings)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonResponse<TResponse>(0, taskFirstCompleted, throwOnError);
@@ -216,9 +215,9 @@ namespace MiningCore.DaemonInterface
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public Task<DaemonResponse<JToken>> ExecuteCmdSingleAsync(string method)
+        public Task<DaemonResponse<JToken>> ExecuteCmdSingleAsync(ILogger logger, string method)
         {
-            return ExecuteCmdAnyAsync<JToken>(method);
+            return ExecuteCmdAnyAsync<JToken>(logger, method);
         }
 
         /// <summary>
@@ -228,7 +227,7 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(string method, object payload = null,
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
@@ -236,7 +235,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var task = BuildRequestTask(endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
+            var task = BuildRequestTask(logger, endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
             await task;
 
             var result = MapDaemonResponse<TResponse>(0, task);
@@ -250,7 +249,7 @@ namespace MiningCore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(CancellationToken ct, string method, object payload = null,
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, CancellationToken ct, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
@@ -258,7 +257,7 @@ namespace MiningCore.DaemonInterface
 
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
-            var task = BuildRequestTask(endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
+            var task = BuildRequestTask(logger, endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
             await task;
 
             var result = MapDaemonResponse<TResponse>(0, task);
@@ -269,20 +268,20 @@ namespace MiningCore.DaemonInterface
         /// Executes the requests against all configured demons and returns the first successful response array
         /// </summary>
         /// <returns></returns>
-        public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(params DaemonCmd[] batch)
+        public async Task<DaemonResponse<JToken>[]> ExecuteBatchAnyAsync(ILogger logger, params DaemonCmd[] batch)
         {
             Contract.RequiresNonNull(batch, nameof(batch));
 
             logger.LogInvoke(batch.Select(x => "\"" + x.Method + "\"").ToArray());
 
-            var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(endPoint, batch)).ToArray();
+            var tasks = endPoints.Select(endPoint => BuildBatchRequestTask(logger, endPoint, batch)).ToArray();
 
             var taskFirstCompleted = await Task.WhenAny(tasks);
             var result = MapDaemonBatchResponse(0, taskFirstCompleted);
             return result;
         }
 
-        public IObservable<byte[]> WebsocketSubscribe(Dictionary<DaemonEndpointConfig,
+        public IObservable<byte[]> WebsocketSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig,
                 (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
@@ -291,24 +290,24 @@ namespace MiningCore.DaemonInterface
             logger.LogInvoke(new[] { method });
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => WebsocketSubscribeEndpoint(endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
+                    .Select(endPoint => WebsocketSubscribeEndpoint(logger, endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
                 .Publish()
                 .RefCount();
         }
 
-        public IObservable<ZMessage> ZmqSubscribe(Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
+        public IObservable<ZMessage> ZmqSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
         {
             logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic, numMsgSegments)))
+                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic, numMsgSegments)))
                 .Publish()
                 .RefCount();
         }
 
         #endregion // API-Surface
 
-        private async Task<JsonRpcResponse> BuildRequestTask(DaemonEndpointConfig endPoint, string method, object payload,
+        private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload,
             CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             var rpcRequestId = GetRequestId();
@@ -321,7 +320,7 @@ namespace MiningCore.DaemonInterface
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
 
             // build request url
-            var protocol = endPoint.Ssl ? "https" : "http";
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if (!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
@@ -366,7 +365,7 @@ namespace MiningCore.DaemonInterface
             }
         }
 
-        private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(DaemonEndpointConfig endPoint, DaemonCmd[] batch)
+        private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(ILogger logger, DaemonEndpointConfig endPoint, DaemonCmd[] batch)
         {
             // telemetry
             var sw = new Stopwatch();
@@ -376,7 +375,7 @@ namespace MiningCore.DaemonInterface
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
 
             // build request url
-            var protocol = endPoint.Ssl ? "https" : "http";
+            var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
             if (!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
@@ -501,7 +500,7 @@ namespace MiningCore.DaemonInterface
             }).ToArray();
         }
 
-        private IObservable<byte[]> WebsocketSubscribeEndpoint(DaemonEndpointConfig endPoint,
+        private IObservable<byte[]> WebsocketSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint,
             (int Port, string HttpPath, bool Ssl) conf, string method, object payload = null,
             JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
@@ -525,7 +524,7 @@ namespace MiningCore.DaemonInterface
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
 
-                                    logger.Debug(() => $"Establishing WebSocket connection to {uri}");
+                                    logger.Info(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
 
                                     // subscribe
@@ -547,15 +546,25 @@ namespace MiningCore.DaemonInterface
                                         // read until EndOfMessage
                                         do
                                         {
-                                            var response = await client.ReceiveAsync(buf, cts.Token);
+                                            using(var ctsTimeout = new CancellationTokenSource())
+                                            {
+                                                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                                                {
+                                                    ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
 
-                                            if (response.MessageType == WebSocketMessageType.Binary)
-                                                throw new InvalidDataException("expected text, received binary data");
+                                                    var response = await client.ReceiveAsync(buf, ctsComposite.Token);
 
-                                            stream.Write(buf, 0, response.Count);
+                                                    if (response.MessageType == WebSocketMessageType.Binary)
+                                                        throw new InvalidDataException("expected text, received binary data");
 
-                                            complete = response.EndOfMessage;
+                                                    stream.Write(buf, 0, response.Count);
+
+                                                    complete = response.EndOfMessage;
+                                                }
+                                            }
                                         } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
+
+                                        logger.Debug(()=> $"Received WebSocket message with length {stream.Length}");
 
                                         // publish
                                         obs.OnNext(stream.ToArray());
@@ -577,7 +586,7 @@ namespace MiningCore.DaemonInterface
             }));
         }
 
-        private IObservable<ZMessage> ZmqSubscribeEndpoint(DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
+        private IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
         {
             return Observable.Defer(() => Observable.Create<ZMessage>(obs =>
             {

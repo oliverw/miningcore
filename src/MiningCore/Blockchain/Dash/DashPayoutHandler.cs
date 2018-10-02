@@ -105,7 +105,7 @@ namespace MiningCore.Blockchain.Dash
 
             // send command
             tryTransfer:
-            var result = await daemon.ExecuteCmdSingleAsync<string>(BitcoinCommands.SendMany, args, new JsonSerializerSettings());
+            var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
             if (result.Error == null)
             {
@@ -113,7 +113,7 @@ namespace MiningCore.Blockchain.Dash
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
-                    await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+                    await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
                 }
 
                 // check result
@@ -137,7 +137,7 @@ namespace MiningCore.Blockchain.Dash
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
+                        var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
                         {
                             (object) extraPoolPaymentProcessingConfig.WalletPassword,
                             (object) 5 // unlock for N seconds

@@ -74,7 +74,7 @@ namespace MiningCore.Blockchain.ZCash
             poolExtraConfig = poolConfig.Extra.SafeExtensionDataAs<ZCashPoolConfigExtra>();
 
             // detect network
-            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(BitcoinCommands.GetBlockchainInfo);
+            var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo);
 
             if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
                 networkType = BitcoinNetworkType.Test;
@@ -88,7 +88,7 @@ namespace MiningCore.Blockchain.ZCash
                 coinbaseTx.TryGetValue(networkType, out chainConfig);
 
             // detect z_shieldcoinbase support
-            var response = await daemon.ExecuteCmdSingleAsync<JObject>(ZCashCommands.ZShieldCoinbase);
+            var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, ZCashCommands.ZShieldCoinbase);
             supportsNativeShielding = response.Error.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND;
         }
 
@@ -130,7 +130,7 @@ namespace MiningCore.Blockchain.ZCash
                 var pageAmount = amounts.Sum(x => x.Amount);
 
                 // check shielded balance
-                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(ZCashCommands.ZGetBalance, new object[]
+                var balanceResult = await daemon.ExecuteCmdSingleAsync<object>(logger, ZCashCommands.ZGetBalance, new object[]
                 {
                     poolExtraConfig.ZAddress, // default account
                     ZMinConfirmations, // only spend funds covered by this many confirmations
@@ -154,7 +154,7 @@ namespace MiningCore.Blockchain.ZCash
 
                 // send command
                 tryTransfer:
-                var result = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+                var result = await daemon.ExecuteCmdSingleAsync<string>(logger, ZCashCommands.ZSendMany, args);
 
                 if (result.Error == null)
                 {
@@ -171,7 +171,7 @@ namespace MiningCore.Blockchain.ZCash
 
                         while(continueWaiting)
                         {
-                            var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                            var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                                 ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                             if (operationResultResponse.Error == null &&
@@ -221,7 +221,7 @@ namespace MiningCore.Blockchain.ZCash
                         {
                             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-                            var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletPassphrase, new[]
+                            var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
                             {
                                 (object) extraPoolPaymentProcessingConfig.WalletPassword,
                                 (object) 5 // unlock for N seconds
@@ -260,7 +260,7 @@ namespace MiningCore.Blockchain.ZCash
 
             // lock wallet
             logger.Info(() => $"[{LogCategory}] Locking wallet");
-            await daemon.ExecuteCmdSingleAsync<JToken>(BitcoinCommands.WalletLock);
+            await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
         }
 
         #endregion // IPayoutHandler
@@ -280,7 +280,7 @@ namespace MiningCore.Blockchain.ZCash
                 poolExtraConfig.ZAddress, // dest:   pool's z-addr
             };
 
-            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(ZCashCommands.ZShieldCoinbase, args);
+            var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(logger, ZCashCommands.ZShieldCoinbase, args);
 
             if (result.Error != null)
             {
@@ -300,7 +300,7 @@ namespace MiningCore.Blockchain.ZCash
 
             while(continueWaiting)
             {
-                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                     ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                 if (operationResultResponse.Error == null &&
@@ -341,7 +341,7 @@ namespace MiningCore.Blockchain.ZCash
             logger.Info(() => $"[{LogCategory}] Shielding ZCash Coinbase funds (emulated)");
 
             // get t-addr unspent balance for just the coinbase address (pool wallet)
-            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(BitcoinCommands.ListUnspent);
+            var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent);
 
             if (unspentResult.Error != null)
             {
@@ -381,7 +381,7 @@ namespace MiningCore.Blockchain.ZCash
             };
 
             // send command
-            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(ZCashCommands.ZSendMany, args);
+            var sendResult = await daemon.ExecuteCmdSingleAsync<string>(logger, ZCashCommands.ZSendMany, args);
 
             if (sendResult.Error != null)
             {
@@ -397,7 +397,7 @@ namespace MiningCore.Blockchain.ZCash
 
             while(continueWaiting)
             {
-                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(
+                var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                     ZCashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
                 if (operationResultResponse.Error == null &&

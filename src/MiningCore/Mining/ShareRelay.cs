@@ -6,7 +6,10 @@ using System.Reactive.Linq;
 using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Contracts;
+using MiningCore.Crypto;
+using MiningCore.Extensions;
 using MiningCore.Messaging;
+using MiningCore.Util;
 using Newtonsoft.Json;
 using NLog;
 using ProtoBuf;
@@ -57,12 +60,21 @@ namespace MiningCore.Mining
 
             if (!clusterConfig.ShareRelay.Connect)
             {
+                pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
+
                 pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
-                logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
+
+                if(pubSocket.CurveServer)
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
+                else
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
             }
 
             else
             {
+                if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
+                    logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
+
                 pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
                 logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
             }
