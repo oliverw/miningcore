@@ -18,12 +18,187 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using MiningCore.Blockchain.ZCash;
+using MiningCore.Crypto;
+using MiningCore.Crypto.Hashing.Equihash;
+using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
 namespace MiningCore.Configuration
 {
+    #region Coin Definitions
+
+    public enum CoinFamily
+    {
+        Bitcoin,
+        Equihash,
+        Cryptonote,
+        Ethereum
+    }
+
+    public class CoinDefinition
+    {
+        /// <summary>
+        /// Name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Trade Symbol
+        /// </summary>
+        public string Symbol { get; set; }
+
+        /// <summary>
+        /// Family
+        /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
+        public CoinFamily Family { get; set; }
+
+        /// <summary>
+        /// Dictionary mapping block type to a block explorer Url
+        /// Supported placeholders: $height$ and $hash$
+        /// </summary>
+        public Dictionary<string, string> ExplorerBlockLinks { get; set; }
+
+        /// <summary>
+        /// Block explorer URL for transactions
+        /// Can be alternatively used to define the url for the default Block type
+        /// Supported placeholders: $height$ and $hash$
+        /// </summary>
+        public string ExplorerBlockLink { get; set; }
+
+        /// <summary>
+        /// Block explorer URL for transactions
+        /// Supported placeholders: {0}
+        /// </summary>
+        public string ExplorerTxLink { get; set; }
+
+        /// <summary>
+        /// Block explorer URL for accounts
+        /// Supported placeholders: {0}
+        /// </summary>
+        public string ExplorerAccountLink { get; set; }
+
+        /// <summary>
+        /// Recipient of Miningcore dev donation fee (0.1% of block-rewards)
+        /// </summary>
+        public string DevDonationAddress { get; set; }
+    }
+
+    public class BitcoinDefinition : CoinDefinition
+    {
+        public string CoinbaseHasher { get; set; }
+        public string HeaderHasher { get; set; }
+        public string BlockHasher { get; set; }
+        public string PoSBlockHasher { get; set; }
+        public bool HasMasterNodes { get; set; }
+        public double ShareMultiplier { get; set; }
+        public double HashrateMultiplier { get; set; }
+    }
+
+    public class EquihashCoinDefinition : CoinDefinition
+    {
+        public class EquihashNetworkDefinition
+        {
+            public class EquihashSolverDefinition
+            {
+                public string Type { get; set; }
+                public string Personalization { get; set; }
+            }
+
+            public string Diff1 { get; set; }
+
+            public int SolutionSize { get; set; } = 1344;
+            public int SolutionPreambleSize { get; set; } = 3;
+            public EquihashSolverDefinition Solver { get; set; }
+            public string CoinbaseTxNetwork { get; set; }
+
+            public bool PayFoundersReward { get; set; }
+            public decimal PercentFoundersReward { get; set; }
+            public string[] FoundersRewardAddresses { get; set; }
+            public ulong FoundersRewardSubsidySlowStartInterval { get; set; }
+            public ulong FoundersRewardSubsidyHalvingInterval { get; set; }
+
+            public decimal PercentTreasuryReward { get; set; }
+            public ulong TreasuryRewardStartBlockHeight { get; set; }
+            public string[] TreasuryRewardAddresses { get; set; }
+            public double TreasuryRewardAddressChangeInterval { get; set; }
+
+            // ZCash "Overwinter"
+            public uint? OverwinterActivationHeight { get; set; }
+            public uint? OverwinterTxVersion { get; set; }
+            public uint? OverwinterTxVersionGroupId { get; set; }
+
+            // ZCash "Sapling"
+            public uint? SaplingActivationHeight { get; set; }
+            public uint? SaplingTxVersion { get; set; }
+            public uint? SaplingTxVersionGroupId { get; set; }
+        }
+
+        public Dictionary<string, EquihashNetworkDefinition> Networks { get; set; }
+        public bool UsesZCashAddressFormat { get; set; } = true;
+        public bool EnableBitcoinGoldQuirks { get; set; }
+    }
+
+    public enum CryptonightHashFamily
+    {
+        [EnumMember(Value = "Cryptonight")]
+        Normal = 1,
+
+        [EnumMember(Value = "Cryptonight-Lite")]
+        Lite,
+
+        [EnumMember(Value = "Cryptonight-Heavy")]
+        Heavy
+    }
+
+    public class CryptonoteCoinDefinition : CoinDefinition
+    {
+        /// <summary>
+        /// Prefix of a valid address
+        /// </summary>
+        public ulong AddressPrefix { get; set; }
+
+        /// <summary>
+        /// Prefix of a valid testnet-address
+        /// </summary>
+        public ulong AddressPrefixTestnet { get; set; }
+
+        /// <summary>
+        /// Prefix of a valid integrated address
+        /// </summary>
+        public ulong AddressPrefixIntegrated { get; set; }
+
+        /// <summary>
+        /// Prefix of a valid integrated testnet-address
+        /// </summary>
+        public ulong AddressPrefixIntegratedTestnet { get; set; }
+
+        /// <summary>
+        /// Broader Cryptonight hash family
+        /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
+        public CryptonightHashFamily HashFamily { get; set; }
+
+        /// <summary>
+        /// Set to 0 for automatic selection from blobtemplate
+        /// </summary>
+        public int HashVariant { get; set; }
+
+        /// <summary>
+        /// Smallest unit for Blockreward formatting
+        /// </summary>
+        public decimal SmallestUnit { get; set; }
+    }
+
+    #endregion // Coin Definitions
+
     public enum CoinType
     {
         // ReSharper disable InconsistentNaming

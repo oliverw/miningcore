@@ -46,6 +46,10 @@ namespace MiningCore.Crypto.Hashing.Equihash
         protected static readonly Lazy<Semaphore> sem = new Lazy<Semaphore>(() =>
             new Semaphore(maxThreads, maxThreads));
 
+        protected string personalization;
+
+        public string Personalization => personalization;
+
         /// <summary>
         /// Verify an Equihash solution
         /// </summary>
@@ -55,8 +59,13 @@ namespace MiningCore.Crypto.Hashing.Equihash
         public abstract bool Verify(byte[] header, byte[] solution);
     }
 
-    public unsafe class EquihashSolver_ZCash : EquihashSolverBase
+    public unsafe class EquihashSolver_200_9 : EquihashSolverBase
     {
+        public EquihashSolver_200_9(string personalization)
+        {
+            this.personalization = personalization;
+        }
+
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public override bool Verify(byte[] header, byte[] solution)
@@ -76,7 +85,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
                 {
                     fixed(byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify(h, header.Length, s, solution.Length);
+                        return LibMultihash.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
                     }
                 }
             }
@@ -88,8 +97,13 @@ namespace MiningCore.Crypto.Hashing.Equihash
         }
     }
 
-    public unsafe class EquihashSolver_Btg : EquihashSolverBase
+    public unsafe class EquihashSolver_144_5 : EquihashSolverBase
     {
+        public EquihashSolver_144_5(string personalization)
+        {
+            this.personalization = personalization;
+        }
+
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public override bool Verify(byte[] header, byte[] solution)
@@ -109,7 +123,7 @@ namespace MiningCore.Crypto.Hashing.Equihash
                 {
                     fixed(byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify_btg(h, header.Length, s, solution.Length);
+                        return LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
                     }
                 }
             }

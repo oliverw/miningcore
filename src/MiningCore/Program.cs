@@ -39,6 +39,7 @@ using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
 using MiningCore.Api;
 using MiningCore.Api.Responses;
+using MiningCore.Blockchain;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
@@ -93,7 +94,7 @@ namespace MiningCore
 
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
-
+CoinDefinitionGenerator.WriteCoinDefinitions("");
                 Logo();
                 clusterConfig = ReadConfig(configFile);
 

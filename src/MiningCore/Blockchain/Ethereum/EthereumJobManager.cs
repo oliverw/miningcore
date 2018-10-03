@@ -34,6 +34,7 @@ using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Ethereum.Configuration;
 using MiningCore.Blockchain.Ethereum.DaemonResponses;
 using MiningCore.Configuration;
+using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Ethash;
 using MiningCore.DaemonInterface;
 using MiningCore.Extensions;
@@ -77,6 +78,7 @@ namespace MiningCore.Blockchain.Ethereum
         private DaemonClient daemon;
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
+        private bool isParity = true;
         private EthashFull ethash;
         private readonly IMasterClock clock;
         private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
@@ -92,7 +94,11 @@ namespace MiningCore.Blockchain.Ethereum
 
             try
             {
-                return UpdateJob(await GetBlockTemplateAsync());
+                var task = isParity ?
+                    GetBlockTemplateAsync() :
+                    GetBlockTemplateGethAsync();
+
+                return UpdateJob(await task);
             }
 
             catch(Exception ex)
@@ -181,6 +187,39 @@ namespace MiningCore.Blockchain.Ethereum
             var work = response.Response.ToObject<string[]>();
             var result = AssembleBlockTemplate(work);
 
+            return result;
+        }
+
+        private async Task<EthereumBlockTemplate> GetBlockTemplateGethAsync()
+        {
+            logger.LogInvoke();
+
+            var commands = new[]
+            {
+                new DaemonCmd(EC.GetWork),
+                new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true })
+            };
+
+            var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
+
+            if (results.Any(x => x.Error != null))
+            {
+                logger.Warn(() => $"Error(s) refreshing blocktemplate: {results.First(x=> x.Error != null).Error.Message}");
+                return null;
+            }
+
+            // extract results
+            var work = results[0].Response.ToObject<string[]>();
+            var block = results[1].Response.ToObject<Block>();
+
+            // append blockheight (parity returns this as 4th element in the getWork response, geth does not)
+            if (work.Length < 4)
+            {
+                var currentHeight = block.Height.Value;
+                work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
+            }
+
+            var result = AssembleBlockTemplate(work);
             return result;
         }
 
@@ -504,7 +543,6 @@ namespace MiningCore.Blockchain.Ethereum
                 new DaemonCmd(EC.GetNetVersion),
                 new DaemonCmd(EC.GetAccounts),
                 new DaemonCmd(EC.GetCoinbase),
-                new DaemonCmd(EC.ParityVersion),
                 new DaemonCmd(EC.ParityChain),
             };
 
@@ -512,10 +550,10 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (results.Any(x => x.Error != null))
             {
-                if (results[4].Error != null)
-                    logger.ThrowLogPoolStartupException($"Looks like you are NOT running 'Parity' as daemon which is not supported - https://parity.io/");
+                if (results[3].Error != null)
+                    isParity = false;
 
-                var errors = results.Where(x => x.Error != null)
+                var errors = results.Take(3).Where(x => x.Error != null)
                     .ToArray();
 
                 if (errors.Any())
@@ -526,8 +564,9 @@ namespace MiningCore.Blockchain.Ethereum
             var netVersion = results[0].Response.ToObject<string>();
             var accounts = results[1].Response.ToObject<string[]>();
             var coinbase = results[2].Response.ToObject<string>();
-            var parityVersion = results[3].Response.ToObject<JObject>();
-            var parityChain = results[4].Response.ToObject<string>();
+            var parityChain = isParity ?
+                results[3].Response.ToObject<string>() :
+                (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
 
             // ensure pool owns wallet
             //if (clusterConfig.PaymentProcessing?.Enabled == true && !accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
@@ -589,7 +628,8 @@ namespace MiningCore.Blockchain.Ethereum
         private void ConfigureRewards()
         {
             // Donation to MiningCore development
-            if (chainType == ParityChainType.Mainnet &&
+            if (networkType == EthereumNetworkType.Main &&
+                chainType == ParityChainType.Mainnet &&
                 DevDonation.Addresses.TryGetValue(poolConfig.Coin.Type, out var address))
             {
                 poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
@@ -628,36 +668,58 @@ namespace MiningCore.Blockchain.Ethereum
 
                 logger.Info(() => $"Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
 
-                // stream work updates
-                var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
-                    .Select(data =>
-                    {
-                        try
+                if (isParity)
+                {
+                    // stream work updates
+                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
+                        .Select(data =>
                         {
-                            var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
-                            return psp?.Result;
-                        }
+                            try
+                            {
+                                var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
+                                return psp?.Result;
+                            }
 
-                        catch(Exception ex)
+                            catch(Exception ex)
+                            {
+                                logger.Info(() => $"Error deserializing pending block: {ex.Message}");
+                            }
+
+                            return null;
+                        });
+
+                    Jobs = getWorkObs.Where(x => x != null)
+                        .Select(AssembleBlockTemplate)
+                        .Select(UpdateJob)
+                        .Do(isNew =>
                         {
-                            logger.Info(() => $"Error deserializing pending block: {ex.Message}");
-                        }
+                            if (isNew)
+                                logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                        })
+                        .Where(isNew => isNew)
+                        .Select(_ => GetJobParamsForStratum(true))
+                        .Publish()
+                        .RefCount();
+                }
 
-                        return null;
-                    });
+                else
+                {
+                    // stream work updates
+                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.Subscribe, new[] { (object) "newHeads" });
 
-                Jobs = getWorkObs.Where(x => x != null)
-                    .Select(AssembleBlockTemplate)
-                    .Select(UpdateJob)
-                    .Do(isNew =>
-                    {
-                        if (isNew)
-                            logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
-                    })
-                    .Where(isNew => isNew)
-                    .Select(_ => GetJobParamsForStratum(true))
-                    .Publish()
-                    .RefCount();
+                    Jobs = getWorkObs.Where(x => x != null)
+                        .Select(_ => Observable.FromAsync(UpdateJobAsync))
+                        .Concat()
+                        .Do(isNew =>
+                        {
+                            if (isNew)
+                                logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                        })
+                        .Where(isNew => isNew)
+                        .Select(_ => GetJobParamsForStratum(true))
+                        .Publish()
+                        .RefCount();
+                }
             }
 
             else

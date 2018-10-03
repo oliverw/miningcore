@@ -102,11 +102,10 @@ namespace MiningCore.Blockchain.Ethereum
         public const string GetTxReceipt = "eth_getTransactionReceipt";
         public const string SendTx = "eth_sendTransaction";
         public const string UnlockAccount = "personal_unlockAccount";
+        public const string Subscribe = "eth_subscribe";
 
         public const string ParityVersion = "parity_versionInfo";
         public const string ParityChain = "parity_chain";
-        public const string ParityChainStatus = "parity_chainStatus";
         public const string ParitySubscribe = "parity_subscribe";
-        public const string ParityUnsubscribe = "parity_unsubscribe";
     }
 }

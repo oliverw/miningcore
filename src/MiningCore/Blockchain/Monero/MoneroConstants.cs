@@ -38,7 +38,7 @@ namespace MiningCore.Blockchain.Monero
     {
         public const string WalletDaemonCategory = "wallet";
 
-        public static readonly Dictionary<CoinType, UInt64> AddressPrefix = new Dictionary<CoinType, UInt64>
+        public static readonly Dictionary<CoinType, ulong> AddressPrefix = new Dictionary<CoinType, ulong>
         {
             { CoinType.XMR, 18 },
             { CoinType.ETN, 18018 },
@@ -46,7 +46,7 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.TUBE, 209 },
         };
 
-        public static readonly Dictionary<CoinType, UInt64> AddressPrefixTestnet = new Dictionary<CoinType, UInt64>
+        public static readonly Dictionary<CoinType, ulong> AddressPrefixTestnet = new Dictionary<CoinType, ulong>
         {
             { CoinType.XMR, 53 },
             { CoinType.ETN, 53 },
@@ -54,20 +54,20 @@ namespace MiningCore.Blockchain.Monero
             { CoinType.TUBE, 209 },
         };
 
-        public static readonly Dictionary<CoinType, UInt64> AddressPrefixIntegrated = new Dictionary<CoinType, UInt64>
+        public static readonly Dictionary<CoinType, ulong> AddressPrefixIntegrated = new Dictionary<CoinType, ulong>
         {
             { CoinType.XMR, 19 },
             { CoinType.ETN, 18019 },
             { CoinType.AEON, 178 },
-            { CoinType.TUBE, 19 },
+            { CoinType.TUBE, 16463 },
         };
 
-        public static readonly Dictionary<CoinType, UInt64> AddressPrefixIntegratedTestnet = new Dictionary<CoinType, UInt64>
+        public static readonly Dictionary<CoinType, ulong> AddressPrefixIntegratedTestnet = new Dictionary<CoinType, ulong>
         {
             { CoinType.XMR, 54 },
             { CoinType.ETN, 54 },
             { CoinType.AEON, 178 },
-            { CoinType.TUBE, 54 },
+            { CoinType.TUBE, 16463 },
         };
 
         public static readonly Dictionary<CoinType, decimal> SmallestUnit = new Dictionary<CoinType, decimal>

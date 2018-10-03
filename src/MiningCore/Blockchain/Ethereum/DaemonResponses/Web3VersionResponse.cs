@@ -18,25 +18,17 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
+using System.Numerics;
+using MiningCore.Serialization;
+using Newtonsoft.Json;
 
-namespace MiningCore.Crypto.Hashing.Special
+namespace MiningCore.Blockchain.Ethereum.DaemonResponses
 {
-    public class DigestReverser : IHashAlgorithm
+    public class Web3Version
     {
-        public DigestReverser(IHashAlgorithm upstream)
-        {
-            this.upstream = upstream;
-        }
-
-        private readonly IHashAlgorithm upstream;
-
-        public IHashAlgorithm Upstream => upstream;
-
-        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
-        {
-            upstream.Digest(data, result, extra);
-            result.Reverse();
-        }
+        public string Api { get; set; }
+        public uint Ethereum { get; set; }
+        public uint Network { get; set; }
+        public string Node { get; set; }
     }
 }

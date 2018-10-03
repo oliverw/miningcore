@@ -75,7 +75,9 @@ namespace MiningCore.Blockchain.Ethereum
         private EthereumNetworkType networkType;
         private ParityChainType chainType;
         private const int BlockSearchOffset = 50;
+        private EthereumPoolConfigExtra extraPoolConfig;
         private EthereumPoolPaymentProcessingConfigExtra extraConfig;
+        private bool isParity = true;
 
         protected override string LogCategory => "Ethereum Payout Handler";
 
@@ -85,6 +87,7 @@ namespace MiningCore.Blockchain.Ethereum
         {
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>();
             extraConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<EthereumPoolPaymentProcessingConfigExtra>();
 
             logger = LogUtil.GetPoolScopedLogger(typeof(EthereumPayoutHandler), poolConfig);
@@ -146,14 +149,17 @@ namespace MiningCore.Blockchain.Ethereum
                         // additional check
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
-                        var match = blockInfo.SealFields[0].Substring(4) == mixHash.Substring(2) &&
-                            blockInfo.SealFields[1].Substring(4) == nonce.Substring(2);
+                        var match = isParity ?
+                            true :
+                            blockInfo.SealFields[0].Substring(2) == mixHash &&
+                            blockInfo.SealFields[1].Substring(2) == nonce;
 
                         // mature?
-                        if (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
+                        if (match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations))
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
+                            block.BlockHeight = (ulong) blockInfo.Height;
                             block.Reward = GetBaseBlockReward(chainType, block.BlockHeight); // base reward
 
                             if (extraConfig?.KeepUncles == false)
@@ -418,7 +424,10 @@ namespace MiningCore.Blockchain.Ethereum
 
             if (results.Any(x => x.Error != null))
             {
-                var errors = results.Where(x => x.Error != null)
+                if (results[1].Error != null)
+                    isParity = false;
+
+                var errors = results.Take(1).Where(x => x.Error != null)
                     .ToArray();
 
                 if (errors.Any())
@@ -427,7 +436,9 @@ namespace MiningCore.Blockchain.Ethereum
 
             // convert network
             var netVersion = results[0].Response.ToObject<string>();
-            var parityChain = results[1].Response.ToObject<string>();
+            var parityChain = isParity ?
+                results[1].Response.ToObject<string>() :
+                (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
         }
