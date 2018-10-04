@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Blockchain.Monero;
 using MiningCore.Blockchain.ZCash;
@@ -68,15 +69,24 @@ namespace MiningCore.Blockchain
             { typeof(Scrypt), 1.5 },
         };
 
+        public static string Name2Id(string name)
+        {
+            var id = name.ToLower();
+            id = Regex.Replace(id, @"\s", "-");
+            id = Regex.Replace(id, @"-+", "-");
+            return id;
+        }
+
         public static void WriteCoinDefinitions(string path)
         {
-            var defs = GetCoinDefinitions();
+            var defs = GetCoinDefinitions()
+                .ToDictionary(x=> Name2Id(x.Name), x=> x);
 
             var json = JsonConvert.SerializeObject(defs, new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
                 Formatting = Formatting.Indented,
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
             });
         }
 
@@ -190,10 +200,6 @@ namespace MiningCore.Blockchain
                     }
                 }
             }
-
-            // dev donation
-            if (DevDonation.Addresses.TryGetValue(coin, out var address))
-                result.DevDonationAddress = address;
 
             return result;
         }
@@ -332,12 +338,12 @@ namespace MiningCore.Blockchain
             switch (coin)
             {
                 case CoinType.XMR:
-                    result.HashFamily = CryptonightHashFamily.Normal;
+                    result.Hash = CryptonightHashType.Normal;
                     result.HashVariant = 0; // auto
                     break;
 
                 case CoinType.TUBE:
-                    result.HashFamily = CryptonightHashFamily.Heavy;
+                    result.Hash = CryptonightHashType.Heavy;
                     result.HashVariant = 2; // Variant TUBE
                     break;
             }

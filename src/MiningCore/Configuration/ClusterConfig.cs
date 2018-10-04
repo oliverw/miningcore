@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.Serialization;
 using MiningCore.Blockchain.ZCash;
 using MiningCore.Crypto;
@@ -47,17 +48,20 @@ namespace MiningCore.Configuration
         /// <summary>
         /// Name
         /// </summary>
+        [JsonProperty(Order = -10)]
         public string Name { get; set; }
 
         /// <summary>
         /// Trade Symbol
         /// </summary>
+        [JsonProperty(Order = -9)]
         public string Symbol { get; set; }
 
         /// <summary>
         /// Family
         /// </summary>
         [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(Order = -8)]
         public CoinFamily Family { get; set; }
 
         /// <summary>
@@ -84,11 +88,6 @@ namespace MiningCore.Configuration
         /// Supported placeholders: {0}
         /// </summary>
         public string ExplorerAccountLink { get; set; }
-
-        /// <summary>
-        /// Recipient of Miningcore dev donation fee (0.1% of block-rewards)
-        /// </summary>
-        public string DevDonationAddress { get; set; }
     }
 
     public class BitcoinDefinition : CoinDefinition
@@ -96,10 +95,20 @@ namespace MiningCore.Configuration
         public string CoinbaseHasher { get; set; }
         public string HeaderHasher { get; set; }
         public string BlockHasher { get; set; }
+
+        [JsonProperty("posBlockHasher")]
         public string PoSBlockHasher { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
-        public double ShareMultiplier { get; set; }
-        public double HashrateMultiplier { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(1.0d)]
+        public double ShareMultiplier { get; set; } = 1.0d;
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(1.0d)]
+        public double HashrateMultiplier { get; set; } = 1.0d;
     }
 
     public class EquihashCoinDefinition : CoinDefinition
@@ -146,7 +155,7 @@ namespace MiningCore.Configuration
         public bool EnableBitcoinGoldQuirks { get; set; }
     }
 
-    public enum CryptonightHashFamily
+    public enum CryptonightHashType
     {
         [EnumMember(Value = "Cryptonight")]
         Normal = 1,
@@ -160,6 +169,24 @@ namespace MiningCore.Configuration
 
     public class CryptonoteCoinDefinition : CoinDefinition
     {
+        /// <summary>
+        /// Broader Cryptonight hash family
+        /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(Order = -5)]
+        public CryptonightHashType Hash { get; set; }
+
+        /// <summary>
+        /// Set to 0 for automatic selection from blobtemplate
+        /// </summary>
+        [JsonProperty(Order = -4, DefaultValueHandling = DefaultValueHandling.Include)]
+        public int HashVariant { get; set; }
+
+        /// <summary>
+        /// Smallest unit for Blockreward formatting
+        /// </summary>
+        public decimal SmallestUnit { get; set; }
+
         /// <summary>
         /// Prefix of a valid address
         /// </summary>
@@ -179,22 +206,6 @@ namespace MiningCore.Configuration
         /// Prefix of a valid integrated testnet-address
         /// </summary>
         public ulong AddressPrefixIntegratedTestnet { get; set; }
-
-        /// <summary>
-        /// Broader Cryptonight hash family
-        /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
-        public CryptonightHashFamily HashFamily { get; set; }
-
-        /// <summary>
-        /// Set to 0 for automatic selection from blobtemplate
-        /// </summary>
-        public int HashVariant { get; set; }
-
-        /// <summary>
-        /// Smallest unit for Blockreward formatting
-        /// </summary>
-        public decimal SmallestUnit { get; set; }
     }
 
     #endregion // Coin Definitions
