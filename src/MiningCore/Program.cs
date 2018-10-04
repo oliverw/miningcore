@@ -95,6 +95,8 @@ namespace MiningCore
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
+                //CoinDefinitionGenerator.WriteCoinDefinitions("../../../coins.json");
+
                 Logo();
                 clusterConfig = ReadConfig(configFile);
 

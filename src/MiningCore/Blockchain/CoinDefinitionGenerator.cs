@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -88,6 +89,14 @@ namespace MiningCore.Blockchain
                 Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
             });
+
+            using(var stm = File.OpenWrite(path))
+            {
+                using(var writer = new StreamWriter(stm, Encoding.UTF8))
+                {
+                    writer.WriteLine(json);
+                }
+            }
         }
 
         private static CoinDefinition[] GetCoinDefinitions()
