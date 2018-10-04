@@ -85,7 +85,7 @@ namespace MiningCore.Mining
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
-        protected static readonly Regex regexStaticDiff = new Regex(@"d=(\d*(\.\d+)?)", RegexOptions.Compiled);
+        protected static readonly Regex regexStaticDiff = new Regex(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
