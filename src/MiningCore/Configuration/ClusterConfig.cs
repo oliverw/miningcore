@@ -18,15 +18,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
-using MiningCore.Blockchain.ZCash;
-using MiningCore.Crypto;
-using MiningCore.Crypto.Hashing.Equihash;
-using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
