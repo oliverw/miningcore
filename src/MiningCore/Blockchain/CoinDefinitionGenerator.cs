@@ -14,6 +14,7 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.Extensions;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -220,14 +221,34 @@ namespace MiningCore.Blockchain
 
             string result;
 
-            if(hash.GetType() != typeof(DigestReverser))
-                result = hash.GetType().Name.ToLower();
+            if (hash.GetType() != typeof(DigestReverser))
+            {
+                var name = hash.GetType().Name.ToLower();
+                result = name + "(";
+
+                // special handling for certain algos
+                switch(name)
+                {
+                    case "scrypt":
+                        result += "1024, 1";    // scrypt params
+                        break;
+
+                    case "neoscrypt":
+                        result += "0x80000620"; // neoscrypt profile
+                        break;
+                }
+
+                result += ")";
+            }
+
             else
             {
-                result = "reverse-";
+                result = "reverse(";
 
                 var reverser = (DigestReverser) hash;
                 result += GetHashAlgorithmId(reverser.Upstream);
+
+                result += ")";
             }
 
             return result;
@@ -257,16 +278,11 @@ namespace MiningCore.Blockchain
         }
 
 
-        private static EquihashCoinDefinition.EquihashNetworkDefinition.EquihashSolverDefinition GetEquihashSolverDefinition(Func<EquihashSolverBase> txConfigSolver)
+        private static string GetEquihashSolverDefinition(Func<EquihashSolverBase> txConfigSolver)
         {
             var solver = txConfigSolver();
-
-            var result = new EquihashCoinDefinition.EquihashNetworkDefinition.EquihashSolverDefinition
-            {
-                Type = solver.GetType().Name.Substring(solver.GetType().Name.IndexOf("_") + 1),
-                Personalization = solver.Personalization
-            };
-
+            var m = Regex.Match(solver.GetType().Name, @"(\d+)_(\d+)");
+            var result = $"equihash({m.Groups[1]}, {m.Groups[2]}, {solver.Personalization})";
             return result;
         }
 
@@ -323,6 +339,22 @@ namespace MiningCore.Blockchain
                             break;
                         case BitcoinNetworkType.RegTest:
                             network.CoinbaseTxNetwork = ZCashConstants.ZCashNetworkReg.Name;
+                            break;
+                    }
+                }
+
+                else
+                {
+                    switch (networkType)
+                    {
+                        case BitcoinNetworkType.Main:
+                            network.CoinbaseTxNetwork = Network.Main.Name;
+                            break;
+                        case BitcoinNetworkType.Test:
+                            network.CoinbaseTxNetwork = Network.TestNet.Name;
+                            break;
+                        case BitcoinNetworkType.RegTest:
+                            network.CoinbaseTxNetwork = Network.RegTest.Name;
                             break;
                     }
                 }

@@ -109,17 +109,11 @@ namespace MiningCore.Configuration
     {
         public class EquihashNetworkDefinition
         {
-            public class EquihashSolverDefinition
-            {
-                public string Type { get; set; }
-                public string Personalization { get; set; }
-            }
-
             public string Diff1 { get; set; }
 
             public int SolutionSize { get; set; } = 1344;
             public int SolutionPreambleSize { get; set; } = 3;
-            public EquihashSolverDefinition Solver { get; set; }
+            public string Solver { get; set; }
             public string CoinbaseTxNetwork { get; set; }
 
             public bool PayFoundersReward { get; set; }
