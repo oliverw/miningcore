@@ -21,7 +21,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using MiningCore.Configuration;
-using MiningCore.Notifications;
 
 namespace MiningCore
 {
@@ -40,4 +39,21 @@ namespace MiningCore
 
         public CoinType[] SupportedCoins { get; }
     }
+
+    public class CoinFamilyAttribute : Attribute
+    {
+        public CoinFamilyAttribute(IDictionary<string, object> values)
+        {
+            if (values.ContainsKey(nameof(SupportedFamilies)))
+                SupportedFamilies = (CoinFamily[])values[nameof(SupportedFamilies)];
+        }
+
+        public CoinFamilyAttribute(params CoinFamily[] supportedFamilies)
+        {
+            SupportedFamilies = supportedFamilies;
+        }
+
+        public CoinFamily[] SupportedFamilies { get; }
+    }
+
 }
