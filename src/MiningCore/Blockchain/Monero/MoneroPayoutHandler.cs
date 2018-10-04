@@ -367,6 +367,9 @@ namespace MiningCore.Blockchain.Monero
                         block.ConfirmationProgress = 1;
                         block.Reward = (decimal) blockHeader.Reward / MoneroConstants.SmallestUnit[poolConfig.Coin.Type];
 
+// Temporary work-around until we get things sorted the correct way
+block.Reward *= 0.7m;
+
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
                     }
                 }
