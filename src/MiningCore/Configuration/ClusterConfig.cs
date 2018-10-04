@@ -129,24 +129,49 @@ namespace MiningCore.Configuration
             public string CoinbaseTxNetwork { get; set; }
 
             public bool PayFoundersReward { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public decimal PercentFoundersReward { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public string[] FoundersRewardAddresses { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public ulong FoundersRewardSubsidySlowStartInterval { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public ulong FoundersRewardSubsidyHalvingInterval { get; set; }
 
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public decimal PercentTreasuryReward { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public ulong TreasuryRewardStartBlockHeight { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public string[] TreasuryRewardAddresses { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public double TreasuryRewardAddressChangeInterval { get; set; }
 
             // ZCash "Overwinter"
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? OverwinterActivationHeight { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? OverwinterTxVersion { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? OverwinterTxVersionGroupId { get; set; }
 
             // ZCash "Sapling"
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? SaplingActivationHeight { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? SaplingTxVersion { get; set; }
+
+            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public uint? SaplingTxVersionGroupId { get; set; }
         }
 

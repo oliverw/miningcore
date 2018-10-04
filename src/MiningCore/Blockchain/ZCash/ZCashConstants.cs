@@ -201,14 +201,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.Main),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -219,14 +211,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.TestNet),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -237,14 +221,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.RegTest),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
         };
@@ -263,14 +239,6 @@ namespace MiningCore.Blockchain.ZCash
                     SolutionPreambleSize = 1,
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -285,14 +253,6 @@ namespace MiningCore.Blockchain.ZCash
                     SolutionPreambleSize = 1,
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -307,14 +267,6 @@ namespace MiningCore.Blockchain.ZCash
                     SolutionPreambleSize = 1,
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
         };
@@ -445,14 +397,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.Main),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -463,14 +407,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.TestNet),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
             {
@@ -481,14 +417,6 @@ namespace MiningCore.Blockchain.ZCash
                     CreateCoinbaseTx = () => Transaction.Create(Network.RegTest),
 
                     PayFoundersReward = false,
-                    PercentFoundersReward = 0,
-                    FoundersRewardSubsidyHalvingInterval = 0,
-                    FoundersRewardSubsidySlowStartInterval = 0,
-
-                    FoundersRewardAddresses = new[]
-                    {
-                        ""
-                    }
                 }
             },
         };
