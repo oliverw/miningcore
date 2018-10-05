@@ -481,7 +481,7 @@
         "saplingTxVersion": 4,
         "saplingTxVersionGroupId": 2301567109
       },
-      "regTest": {
+      "regtest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
@@ -529,7 +529,7 @@
         },
         "payFoundersReward": false
       },
-      "regTest": {
+      "regtest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
@@ -695,7 +695,7 @@
         ],
         "treasuryRewardAddressChangeInterval": 10000.0
       },
-      "regTest": {
+      "regtest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
@@ -748,7 +748,7 @@
         },
         "payFoundersReward": false
       },
-      "regTest": {
+      "regtest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 100,
         "solutionPreambleSize": 1,
@@ -790,7 +790,7 @@
         },
         "payFoundersReward": false
       },
-      "regTest": {
+      "regtest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,

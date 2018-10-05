@@ -327,7 +327,7 @@ namespace MiningCore.Blockchain
                     }
                 }
 
-                result.Networks[networkType.ToString()] = network;
+                result.Networks[networkType.ToString().ToLower()] = network;
             }
 
             return result;
