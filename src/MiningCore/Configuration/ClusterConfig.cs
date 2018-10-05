@@ -84,14 +84,22 @@ namespace MiningCore.Configuration
         public string ExplorerAccountLink { get; set; }
     }
 
+    public class HashInvocation
+    {
+        public string Hash { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public object[] Args { get; set; }
+    }
+
     public class BitcoinDefinition : CoinDefinition
     {
-        public string CoinbaseHasher { get; set; }
-        public string HeaderHasher { get; set; }
-        public string BlockHasher { get; set; }
+        public JObject CoinbaseHasher { get; set; }
+        public JObject HeaderHasher { get; set; }
+        public JObject BlockHasher { get; set; }
 
         [JsonProperty("posBlockHasher")]
-        public string PoSBlockHasher { get; set; }
+        public JObject PoSBlockHasher { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
@@ -113,7 +121,7 @@ namespace MiningCore.Configuration
 
             public int SolutionSize { get; set; } = 1344;
             public int SolutionPreambleSize { get; set; } = 3;
-            public string Solver { get; set; }
+            public JObject Solver { get; set; }
             public string CoinbaseTxNetwork { get; set; }
 
             public bool PayFoundersReward { get; set; }

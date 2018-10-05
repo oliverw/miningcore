@@ -3,9 +3,16 @@
     "name": "Bitcoin",
     "symbol": "BTC",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://blockchain.info/block/$height$",
     "explorerTxLink": "https://blockchain.info/tx/{0}",
     "explorerAccountLink": "https://blockchain.info/address/{0}"
@@ -14,9 +21,16 @@
     "name": "Bitcoin Cash",
     "symbol": "BCH",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://www.blocktrail.com/BCC/block/$height$",
     "explorerTxLink": "https://www.blocktrail.com/BCC/tx/{0}",
     "explorerAccountLink": "https://www.blocktrail.com/BCC/address/{0}"
@@ -25,9 +39,16 @@
     "name": "Namecoin",
     "symbol": "NMC",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://explorer.namecoin.info/b/$height$",
     "explorerTxLink": "https://explorer.namecoin.info/tx/{0}",
     "explorerAccountLink": "https://explorer.namecoin.info/a/{0}"
@@ -36,9 +57,16 @@
     "name": "Peercoin",
     "symbol": "PPC",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://chainz.cryptoid.info/ppc/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/ppc/tx.dws?{0}.htm",
     "explorerAccountLink": "https://chainz.cryptoid.info/ppc/address.dws?{0}.htm"
@@ -47,11 +75,27 @@
     "name": "Litecoin",
     "symbol": "LTC",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://chainz.cryptoid.info/ltc/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm",
@@ -61,11 +105,27 @@
     "name": "Dogecoin,",
     "symbol": "DOGE",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://dogechain.info/block/$height$",
     "explorerTxLink": "https://dogechain.info/tx/{0}",
@@ -75,20 +135,43 @@
     "name": "Viacoin",
     "symbol": "VIA",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5
   },
   "dash": {
     "name": "Dash",
     "symbol": "DASH",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x11()",
-    "blockHasher": "reverse(x11())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x11"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "x11" } ]
+    },
     "hasMasterNodes": true,
     "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
@@ -98,10 +181,17 @@
     "name": "GroestlCoin",
     "symbol": "GRS",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256s()",
-    "headerHasher": "groestl()",
-    "blockHasher": "reverse(groestl())",
-    "shareMultiplier": 256.0,
+    "coinbaseHasher": {
+      "hash": "sha256s"
+    },
+    "headerHasher": {
+      "hash": "groestl"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "groestl" } ]
+    },
+    "shareMultiplier": 256,
     "explorerBlockLink": "https://groestlsight.groestlcoin.org/block/$height$",
     "explorerTxLink": "https://groestlsight.groestlcoin.org/tx/{0}",
     "explorerAccountLink": "https://groestlsight.groestlcoin.org/address/{0}"
@@ -110,11 +200,18 @@
     "name": "Monacoin",
     "symbol": "MONA",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "lyra2rev2()",
-    "blockHasher": "reverse(sha256d())",
-    "shareMultiplier": 256.0,
-    "hashrateMultiplier": 4.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "lyra2rev2"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "shareMultiplier": 256,
+    "hashrateMultiplier": 4,
     "explorerBlockLink": "https://bchain.info/MONA/block/$height$",
     "explorerTxLink": "https://bchain.info/MONA/tx/{0}",
     "explorerAccountLink": "https://bchain.info/MONA/addr/{0}"
@@ -123,11 +220,18 @@
     "name": "Vertcoin",
     "symbol": "VTC",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "lyra2rev2()",
-    "blockHasher": "reverse(sha256d())",
-    "shareMultiplier": 256.0,
-    "hashrateMultiplier": 4.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "lyra2rev2"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "shareMultiplier": 256,
+    "hashrateMultiplier": 4,
     "explorerBlockLink": "https://bchain.info/VTC/block/$height$",
     "explorerTxLink": "https://bchain.info/VTC/tx/{0}",
     "explorerAccountLink": "https://bchain.info/VTC/addr/{0}"
@@ -136,9 +240,16 @@
     "name": "Globaltoken",
     "symbol": "GLT",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://bchain.info/GLT/block/$height$",
     "explorerTxLink": "https://bchain.info/GLT/tx/{0}",
     "explorerAccountLink": "https://bchain.info/GLT/addr/{0}"
@@ -147,11 +258,27 @@
     "name": "MoonCoin",
     "symbol": "MOON",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://chainz.cryptoid.info/moon/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/moon/tx.dws?{0}.htm",
@@ -161,11 +288,27 @@
     "name": "PAKcoin",
     "symbol": "PAK",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://chainz.cryptoid.info/pak/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm",
@@ -175,9 +318,16 @@
     "name": "CannabisCoin",
     "symbol": "CANN",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x11()",
-    "blockHasher": "reverse(x11())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x11"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "x11" } ]
+    },
     "explorerBlockLink": "https://chainz.cryptoid.info/cann/block.dws?$height$.htm",
     "explorerTxLink": "https://chainz.cryptoid.info/cann/tx.dws?{0}.htm",
     "explorerAccountLink": "https://chainz.cryptoid.info/cann/address.dws?{0}.htm"
@@ -186,10 +336,17 @@
     "name": "Ravencoin",
     "symbol": "RVN",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x16r()",
-    "blockHasher": "reverse(x16r())",
-    "shareMultiplier": 256.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x16r"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "x16r" } ]
+    },
+    "shareMultiplier": 256,
     "explorerBlockLink": "http://explorer.threeeyed.info/block/$hash$",
     "explorerTxLink": "http://explorer.threeeyed.info/tx/{0}",
     "explorerAccountLink": "http://explorer.threeeyed.info/address/{0}"
@@ -198,10 +355,17 @@
     "name": "Pigeoncoin",
     "symbol": "PGN",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x16s()",
-    "blockHasher": "reverse(x16s())",
-    "shareMultiplier": 256.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x16s"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "x16s" } ]
+    },
+    "shareMultiplier": 256,
     "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",
     "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",
     "explorerAccountLink": "http://explorer.pigeoncoin.org/address/{0}"
@@ -210,9 +374,16 @@
     "name": "Bitcoin Diamond",
     "symbol": "BCD",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x13bcd()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x13bcd"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "http://explorer.btcd.io/#/blockInfo?hash=$hash$",
     "explorerTxLink": "http://explorer.btcd.io/#/TX?TX={0}",
     "explorerAccountLink": "http://explorer.btcd.io/#/address?address={0}"
@@ -221,11 +392,18 @@
     "name": "Straks",
     "symbol": "STAK",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "lyra2rev2()",
-    "blockHasher": "reverse(lyra2rev2())",
-    "shareMultiplier": 256.0,
-    "hashrateMultiplier": 4.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "lyra2rev2"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "lyra2rev2" } ]
+    },
+    "shareMultiplier": 256,
+    "hashrateMultiplier": 4,
     "explorerBlockLink": "https://straks.info/block/$height$",
     "explorerTxLink": "https://straks.info/transaction/{0}",
     "explorerAccountLink": "https://straks.info/address/{0}"
@@ -234,11 +412,27 @@
     "name": "FLO",
     "symbol": "FLO",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "scrypt(1024, 1)",
-    "blockHasher": "reverse(sha256d())",
-    "posBlockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 65536.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "scrypt",
+      "args": [ 1024, 1 ]
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "posBlockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://florincoin.info/block/0",
     "explorerTxLink": "https://florincoin.info/tx/{0}",
@@ -248,9 +442,16 @@
     "name": "Digibyte-Sha256",
     "symbol": "DGB",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "sha256d()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "sha256d"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://digiexplorer.info/block/$height$",
     "explorerTxLink": "https://digiexplorer.info/tx/{0}",
     "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -259,9 +460,16 @@
     "name": "Digibyte-Skein",
     "symbol": "DGB",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "skein()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "skein"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://digiexplorer.info/block/$height$",
     "explorerTxLink": "https://digiexplorer.info/tx/{0}",
     "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -270,9 +478,16 @@
     "name": "Digibyte-Qubit",
     "symbol": "DGB",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "qubit()",
-    "blockHasher": "reverse(sha256d())",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "qubit"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
     "explorerBlockLink": "https://digiexplorer.info/block/$height$",
     "explorerTxLink": "https://digiexplorer.info/tx/{0}",
     "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -281,10 +496,17 @@
     "name": "Digibyte-Groestl",
     "symbol": "DGB",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256s()",
-    "headerHasher": "groestlmyriad()",
-    "blockHasher": "reverse(sha256d())",
-    "shareMultiplier": 256.0,
+    "coinbaseHasher": {
+      "hash": "sha256s"
+    },
+    "headerHasher": {
+      "hash": "groestlmyriad"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [ { "hash": "sha256d" } ]
+    },
+    "shareMultiplier": 256,
     "explorerBlockLink": "https://digiexplorer.info/block/$height$",
     "explorerTxLink": "https://digiexplorer.info/tx/{0}",
     "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -293,11 +515,23 @@
     "name": "Verge-Lyra",
     "symbol": "XVG",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "lyra2rev2()",
-    "blockHasher": "reverse(scrypt(1024, 1))",
-    "shareMultiplier": 256.0,
-    "hashrateMultiplier": 4.0,
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "lyra2rev2"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 256,
+    "hashrateMultiplier": 4,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -306,9 +540,21 @@
     "name": "Verge-X17",
     "symbol": "XVG",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "x17()",
-    "blockHasher": "reverse(scrypt(1024, 1))",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x17"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
     "hashrateMultiplier": 2.55,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -318,9 +564,21 @@
     "name": "Verge-Blake",
     "symbol": "XVG",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "blake2s()",
-    "blockHasher": "reverse(scrypt(1024, 1))",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "blake2s"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -329,9 +587,21 @@
     "name": "Verge-Groestl",
     "symbol": "XVG",
     "family": "Bitcoin",
-    "coinbaseHasher": "sha256d()",
-    "headerHasher": "groestlmyriad()",
-    "blockHasher": "reverse(scrypt(1024, 1))",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "groestlmyriad"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -345,10 +615,13 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "zcash-main",
         "payFoundersReward": true,
-        "percentFoundersReward": 20.0,
+        "percentFoundersReward": 20,
         "foundersRewardAddresses": [
           "t3Vz22vK5z2LcKEdg16Yv4FFneEL1zg9ojd",
           "t3cL9AucCajm3HXDhb5jBnJK2vapVoXsop3",
@@ -412,10 +685,13 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "zcash-test",
         "payFoundersReward": true,
-        "percentFoundersReward": 20.0,
+        "percentFoundersReward": 20,
         "foundersRewardAddresses": [
           "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
           "t2N9PH9Wk9xjqYg9iin1Ua3aekJqfAtE543",
@@ -479,13 +755,14 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "zcash-reg",
         "payFoundersReward": true,
-        "percentFoundersReward": 20.0,
-        "foundersRewardAddresses": [
-          "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg"
-        ],
+        "percentFoundersReward": 20,
+        "foundersRewardAddresses": [ "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" ],
         "foundersRewardSubsidyHalvingInterval": 150
       }
     },
@@ -504,7 +781,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "Main",
         "payFoundersReward": false
       },
@@ -512,7 +792,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "TestNet",
         "payFoundersReward": false
       },
@@ -520,7 +803,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "RegTest",
         "payFoundersReward": false
       }
@@ -540,7 +826,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "Main",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
@@ -596,7 +885,7 @@
         ],
         "foundersRewardSubsidySlowStartInterval": 2,
         "foundersRewardSubsidyHalvingInterval": 840000,
-        "percentTreasuryReward": 12.0,
+        "percentTreasuryReward": 12,
         "treasuryRewardStartBlockHeight": 139200,
         "treasuryRewardAddresses": [
           "zsyF68hcYYNLPj5i4PfQJ1kUY6nsFnZkc82",
@@ -604,13 +893,16 @@
           "zsoemTfqjicem2QVU8cgBHquKb1o9JR5p4Z",
           "zt339oiGL6tTgc9Q71f5g1sFTZf6QiXrRUr"
         ],
-        "treasuryRewardAddressChangeInterval": 50000.0
+        "treasuryRewardAddressChangeInterval": 50000
       },
       "test": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "TestNet",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
@@ -666,7 +958,7 @@
         ],
         "foundersRewardSubsidySlowStartInterval": 2,
         "foundersRewardSubsidyHalvingInterval": 840000,
-        "percentTreasuryReward": 12.0,
+        "percentTreasuryReward": 12,
         "treasuryRewardStartBlockHeight": 85500,
         "treasuryRewardAddresses": [
           "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1",
@@ -674,26 +966,25 @@
           "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1",
           "zrRBQ5heytPMN5nY3ssPf3cG4jocXeD8fm1"
         ],
-        "treasuryRewardAddressChangeInterval": 10000.0
+        "treasuryRewardAddressChangeInterval": 10000
       },
       "regTest": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "RegTest",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
-        "foundersRewardAddresses": [
-          "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa"
-        ],
+        "foundersRewardAddresses": [ "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa" ],
         "foundersRewardSubsidyHalvingInterval": 2000,
-        "percentTreasuryReward": 12.0,
+        "percentTreasuryReward": 12,
         "treasuryRewardStartBlockHeight": 139200,
-        "treasuryRewardAddresses": [
-          "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa"
-        ],
-        "treasuryRewardAddressChangeInterval": 100.0
+        "treasuryRewardAddresses": [ "zrKmSdqZKZjnARd5e8FfRg4v1m74X7twxGa" ],
+        "treasuryRewardAddressChangeInterval": 100
       }
     },
     "usesZCashAddressFormat": true,
@@ -711,7 +1002,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 100,
         "solutionPreambleSize": 1,
-        "solver": "equihash(144, 5, BgoldPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 144, 5, "BgoldPoW" ]
+        },
         "coinbaseTxNetwork": "Main",
         "payFoundersReward": false
       },
@@ -719,7 +1013,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 100,
         "solutionPreambleSize": 1,
-        "solver": "equihash(144, 5, BgoldPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 144, 5, "BgoldPoW" ]
+        },
         "coinbaseTxNetwork": "TestNet",
         "payFoundersReward": false
       },
@@ -727,7 +1024,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 100,
         "solutionPreambleSize": 1,
-        "solver": "equihash(144, 5, BgoldPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 144, 5, "BgoldPoW" ]
+        },
         "coinbaseTxNetwork": "RegTest",
         "payFoundersReward": false
       }
@@ -747,7 +1047,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "Main",
         "payFoundersReward": false
       },
@@ -755,7 +1058,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "TestNet",
         "payFoundersReward": false
       },
@@ -763,7 +1069,10 @@
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "solutionSize": 1344,
         "solutionPreambleSize": 3,
-        "solver": "equihash(200, 9, ZcashPoW)",
+        "solver": {
+          "hash": "equihash",
+          "args": [ 200, 9, "ZcashPoW" ]
+        },
         "coinbaseTxNetwork": "RegTest",
         "payFoundersReward": false
       }
@@ -780,7 +1089,7 @@
     "family": "Cryptonote",
     "hash": "Cryptonight",
     "hashVariant": 0,
-    "smallestUnit": 1000000000000.0,
+    "smallestUnit": 1000000000000,
     "addressPrefix": 18,
     "addressPrefixTestnet": 53,
     "addressPrefixIntegrated": 19,
@@ -794,7 +1103,7 @@
     "family": "Cryptonote",
     "hash": "Cryptonight-Heavy",
     "hashVariant": 2,
-    "smallestUnit": 100000000.0,
+    "smallestUnit": 100000000,
     "addressPrefix": 209,
     "addressPrefixTestnet": 209,
     "addressPrefixIntegrated": 16463,
