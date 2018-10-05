@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using MiningCore.Blockchain.Bitcoin;
 using MiningCore.Configuration;
 using MiningCore.Crypto.Hashing.Equihash;

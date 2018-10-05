@@ -14,7 +14,9 @@ using MiningCore.Crypto.Hashing.Algorithms;
 using MiningCore.Crypto.Hashing.Equihash;
 using MiningCore.Crypto.Hashing.Special;
 using MiningCore.Extensions;
+using NBitcoin;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace MiningCore.Blockchain
@@ -70,6 +72,8 @@ namespace MiningCore.Blockchain
             { typeof(Scrypt), 1.5 },
         };
 
+        private static JsonSerializer serializer;
+
         public static string Name2Id(string name)
         {
             var id = name.ToLower();
@@ -80,24 +84,24 @@ namespace MiningCore.Blockchain
 
         public static void WriteCoinDefinitions(string path)
         {
-            var defs = GetCoinDefinitions()
-                .ToDictionary(x=> Name2Id(x.Name), x=> x);
-
-            var json = JsonConvert.SerializeObject(defs, new JsonSerializerSettings
+            serializer = new JsonSerializer
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
                 Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
-            });
+            };
+
+            var defs = GetCoinDefinitions()
+                .ToDictionary(x=> Name2Id(x.Name), x=> x);
 
             using(var stm = File.OpenWrite(path))
             {
                 using(var writer = new StreamWriter(stm, Encoding.UTF8))
                 {
-                    writer.WriteLine(json);
+                    serializer.Serialize(writer, defs);
                 }
             }
-        }
+            }
 
         private static CoinDefinition[] GetCoinDefinitions()
         {
@@ -213,21 +217,37 @@ namespace MiningCore.Blockchain
             return result;
         }
 
-        private static string GetHashAlgorithmId(IHashAlgorithm hash)
+        private static HashInvocation GetHashAlgorithmId(IHashAlgorithm hash)
         {
             if (hash == null)
                 return null;
 
-            string result;
+            var result = new HashInvocation();
 
-            if(hash.GetType() != typeof(DigestReverser))
-                result = hash.GetType().Name.ToLower();
+            if (hash.GetType() != typeof(DigestReverser))
+            {
+                var name = hash.GetType().Name.ToLower();
+                result.Hash = name;
+
+                // special handling for certain algos
+                switch(name)
+                {
+                    case "scrypt":
+                        result.Args = new object[] { 1024, 1 };
+                        break;
+
+                    case "neoscrypt":
+                        result.Args = new object[] { 0x80000620 };
+                        break;
+                }
+            }
+
             else
             {
-                result = "reverse-";
+                result.Hash = "reverse";
 
                 var reverser = (DigestReverser) hash;
-                result += GetHashAlgorithmId(reverser.Upstream);
+                result.Args = new object[] { GetHashAlgorithmId(reverser.Upstream)};
             }
 
             return result;
@@ -241,10 +261,12 @@ namespace MiningCore.Blockchain
 
             var props = BitcoinProperties.GetCoinProperties(coin, algorithm);
             result.HasMasterNodes = hasMasterNodes;
-            result.CoinbaseHasher = GetHashAlgorithmId(props.CoinbaseHasher);
-            result.HeaderHasher = GetHashAlgorithmId(props.HeaderHasher);
-            result.BlockHasher = GetHashAlgorithmId(props.BlockHasher);
-            result.PoSBlockHasher = GetHashAlgorithmId(props.PoSBlockHasher);
+            result.CoinbaseHasher = JObject.FromObject(GetHashAlgorithmId(props.CoinbaseHasher), serializer);
+            result.HeaderHasher = JObject.FromObject(GetHashAlgorithmId(props.HeaderHasher), serializer);
+            result.BlockHasher = JObject.FromObject(GetHashAlgorithmId(props.BlockHasher), serializer);
+
+            if(props.PoSBlockHasher != null)
+                result.PoSBlockHasher = JObject.FromObject(GetHashAlgorithmId(props.PoSBlockHasher), serializer);
 
             if (hashrateMultipliers.TryGetValue(props.HeaderHasher.GetType(), out var hashrateMultiplier))
                 result.HashrateMultiplier = hashrateMultiplier;
@@ -257,16 +279,16 @@ namespace MiningCore.Blockchain
         }
 
 
-        private static EquihashCoinDefinition.EquihashNetworkDefinition.EquihashSolverDefinition GetEquihashSolverDefinition(Func<EquihashSolverBase> txConfigSolver)
+        private static HashInvocation GetEquihashSolverDefinition(Func<EquihashSolverBase> txConfigSolver)
         {
             var solver = txConfigSolver();
+            var m = Regex.Match(solver.GetType().Name, @"(\d+)_(\d+)");
 
-            var result = new EquihashCoinDefinition.EquihashNetworkDefinition.EquihashSolverDefinition
+            var result = new HashInvocation
             {
-                Type = solver.GetType().Name.Substring(solver.GetType().Name.IndexOf("_") + 1),
-                Personalization = solver.Personalization
+                Hash = "equihash",
+                Args = new object[] { int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value), solver.Personalization }
             };
-
             return result;
         }
 
@@ -289,7 +311,7 @@ namespace MiningCore.Blockchain
                     Diff1 = "00" + txConfig.Diff1.ToByteArray().ToHexString(),
                     SolutionSize = txConfig.SolutionSize,
                     SolutionPreambleSize = txConfig.SolutionPreambleSize,
-                    Solver = GetEquihashSolverDefinition(txConfig.Solver),
+                    Solver = JObject.FromObject(GetEquihashSolverDefinition(txConfig.Solver), serializer),
 
                     PayFoundersReward = txConfig.PayFoundersReward,
                     FoundersRewardAddresses = txConfig.FoundersRewardAddresses,
@@ -323,6 +345,22 @@ namespace MiningCore.Blockchain
                             break;
                         case BitcoinNetworkType.RegTest:
                             network.CoinbaseTxNetwork = ZCashConstants.ZCashNetworkReg.Name;
+                            break;
+                    }
+                }
+
+                else
+                {
+                    switch (networkType)
+                    {
+                        case BitcoinNetworkType.Main:
+                            network.CoinbaseTxNetwork = Network.Main.Name;
+                            break;
+                        case BitcoinNetworkType.Test:
+                            network.CoinbaseTxNetwork = Network.TestNet.Name;
+                            break;
+                        case BitcoinNetworkType.RegTest:
+                            network.CoinbaseTxNetwork = Network.RegTest.Name;
                             break;
                     }
                 }

@@ -18,15 +18,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
-using MiningCore.Blockchain.ZCash;
-using MiningCore.Crypto;
-using MiningCore.Crypto.Hashing.Equihash;
-using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -90,14 +84,22 @@ namespace MiningCore.Configuration
         public string ExplorerAccountLink { get; set; }
     }
 
+    public class HashInvocation
+    {
+        public string Hash { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public object[] Args { get; set; }
+    }
+
     public class BitcoinDefinition : CoinDefinition
     {
-        public string CoinbaseHasher { get; set; }
-        public string HeaderHasher { get; set; }
-        public string BlockHasher { get; set; }
+        public JObject CoinbaseHasher { get; set; }
+        public JObject HeaderHasher { get; set; }
+        public JObject BlockHasher { get; set; }
 
         [JsonProperty("posBlockHasher")]
-        public string PoSBlockHasher { get; set; }
+        public JObject PoSBlockHasher { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
@@ -115,17 +117,11 @@ namespace MiningCore.Configuration
     {
         public class EquihashNetworkDefinition
         {
-            public class EquihashSolverDefinition
-            {
-                public string Type { get; set; }
-                public string Personalization { get; set; }
-            }
-
             public string Diff1 { get; set; }
 
             public int SolutionSize { get; set; } = 1344;
             public int SolutionPreambleSize { get; set; } = 3;
-            public EquihashSolverDefinition Solver { get; set; }
+            public JObject Solver { get; set; }
             public string CoinbaseTxNetwork { get; set; }
 
             public bool PayFoundersReward { get; set; }
