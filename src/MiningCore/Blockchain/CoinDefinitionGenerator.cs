@@ -101,7 +101,7 @@ namespace MiningCore.Blockchain
                     serializer.Serialize(writer, defs);
                 }
             }
-            }
+        }
 
         private static CoinDefinition[] GetCoinDefinitions()
         {
@@ -392,6 +392,7 @@ namespace MiningCore.Blockchain
                 case CoinType.TUBE:
                     result.Hash = CryptonightHashType.Heavy;
                     result.HashVariant = 2; // Variant TUBE
+                    result.BlockRewardShare = 0.7m;
                     break;
             }
 

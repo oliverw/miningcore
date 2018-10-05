@@ -2,7 +2,7 @@
   "bitcoin": {
     "name": "Bitcoin",
     "symbol": "BTC",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -24,7 +24,7 @@
   "bitcoin-cash": {
     "name": "Bitcoin Cash",
     "symbol": "BCH",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -46,7 +46,7 @@
   "namecoin": {
     "name": "Namecoin",
     "symbol": "NMC",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -68,7 +68,7 @@
   "peercoin": {
     "name": "Peercoin",
     "symbol": "PPC",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -90,7 +90,7 @@
   "litecoin": {
     "name": "Litecoin",
     "symbol": "LTC",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -130,7 +130,7 @@
   "dogecoin,": {
     "name": "Dogecoin,",
     "symbol": "DOGE",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -170,7 +170,7 @@
   "viacoin": {
     "name": "Viacoin",
     "symbol": "VIA",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -207,7 +207,7 @@
   "dash": {
     "name": "Dash",
     "symbol": "DASH",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -230,7 +230,7 @@
   "groestlcoin": {
     "name": "GroestlCoin",
     "symbol": "GRS",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256s"
     },
@@ -253,7 +253,7 @@
   "monacoin": {
     "name": "Monacoin",
     "symbol": "MONA",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -277,7 +277,7 @@
   "vertcoin": {
     "name": "Vertcoin",
     "symbol": "VTC",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -301,7 +301,7 @@
   "globaltoken": {
     "name": "Globaltoken",
     "symbol": "GLT",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -323,7 +323,7 @@
   "mooncoin": {
     "name": "MoonCoin",
     "symbol": "MOON",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -363,7 +363,7 @@
   "pakcoin": {
     "name": "PAKcoin",
     "symbol": "PAK",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -403,7 +403,7 @@
   "cannabiscoin": {
     "name": "CannabisCoin",
     "symbol": "CANN",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -425,7 +425,7 @@
   "ravencoin": {
     "name": "Ravencoin",
     "symbol": "RVN",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -448,7 +448,7 @@
   "pigeoncoin": {
     "name": "Pigeoncoin",
     "symbol": "PGN",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -471,7 +471,7 @@
   "bitcoin-diamond": {
     "name": "Bitcoin Diamond",
     "symbol": "BCD",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -493,7 +493,7 @@
   "straks": {
     "name": "Straks",
     "symbol": "STAK",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -517,7 +517,7 @@
   "flo": {
     "name": "FLO",
     "symbol": "FLO",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -557,7 +557,7 @@
   "digibyte-sha256": {
     "name": "Digibyte-Sha256",
     "symbol": "DGB",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -579,7 +579,7 @@
   "digibyte-skein": {
     "name": "Digibyte-Skein",
     "symbol": "DGB",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -601,7 +601,7 @@
   "digibyte-qubit": {
     "name": "Digibyte-Qubit",
     "symbol": "DGB",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -623,7 +623,7 @@
   "digibyte-groestl": {
     "name": "Digibyte-Groestl",
     "symbol": "DGB",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256s"
     },
@@ -646,7 +646,7 @@
   "verge-lyra": {
     "name": "Verge-Lyra",
     "symbol": "XVG",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -674,7 +674,7 @@
   "verge-x17": {
     "name": "Verge-X17",
     "symbol": "XVG",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -701,7 +701,7 @@
   "verge-blake": {
     "name": "Verge-Blake",
     "symbol": "XVG",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -727,7 +727,7 @@
   "verge-groestl": {
     "name": "Verge-Groestl",
     "symbol": "XVG",
-    "family": "Bitcoin",
+    "family": "bitcoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -753,7 +753,7 @@
   "zcash": {
     "name": "ZCash",
     "symbol": "ZEC",
-    "family": "Equihash",
+    "family": "equihash",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -933,7 +933,7 @@
   "zclassic": {
     "name": "ZClassic",
     "symbol": "ZCL",
-    "family": "Equihash",
+    "family": "equihash",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -990,7 +990,7 @@
   "zencash": {
     "name": "Zencash",
     "symbol": "ZEN",
-    "family": "Equihash",
+    "family": "equihash",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -1182,7 +1182,7 @@
   "bitcoin-gold": {
     "name": "Bitcoin Gold",
     "symbol": "BTG",
-    "family": "Equihash",
+    "family": "equihash",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -1239,7 +1239,7 @@
   "bitcoin-private": {
     "name": "Bitcoin Private",
     "symbol": "BTCP",
-    "family": "Equihash",
+    "family": "equihash",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -1296,8 +1296,8 @@
   "monero": {
     "name": "Monero",
     "symbol": "XMR",
-    "family": "Cryptonote",
-    "hash": "Cryptonight",
+    "family": "cryptonote",
+    "hash": "cryptonight",
     "hashVariant": 0,
     "smallestUnit": 1000000000000.0,
     "addressPrefix": 18,
@@ -1310,21 +1310,22 @@
   "bittube": {
     "name": "Bittube",
     "symbol": "TUBE",
-    "family": "Cryptonote",
-    "hash": "Cryptonight-Heavy",
+    "family": "cryptonote",
+    "hash": "cryptonight-heavy",
     "hashVariant": 2,
     "smallestUnit": 100000000.0,
     "addressPrefix": 209,
     "addressPrefixTestnet": 209,
     "addressPrefixIntegrated": 16463,
     "addressPrefixIntegratedTestnet": 16463,
+    "blockRewardShare": 0.7,
     "explorerBlockLink": "https://explorer.bit.tube/block/$height$",
     "explorerTxLink": "https://explorer.bit.tube/tx/{0}"
   },
   "ethereum": {
     "name": "Ethereum",
     "symbol": "ETH",
-    "family": "Ethereum",
+    "family": "ethereum",
     "explorerBlockLinks": {
       "block": "https://etherscan.io/block/$height$",
       "uncle": "https://etherscan.io/uncle/$height$"
@@ -1335,7 +1336,7 @@
   "ethereum-classic": {
     "name": "Ethereum Classic",
     "symbol": "ETC",
-    "family": "Ethereum",
+    "family": "ethereum",
     "explorerBlockLinks": {
       "block": "https://gastracker.io/block/$height$",
       "uncle": "https://gastracker.io/uncle/$height$"
