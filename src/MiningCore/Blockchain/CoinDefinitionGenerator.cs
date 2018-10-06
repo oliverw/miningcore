@@ -368,6 +368,8 @@ namespace MiningCore.Blockchain
                     }
                 }
 
+                network.CoinbaseTxNetwork = network.CoinbaseTxNetwork.ToLower();
+
                 result.Networks[networkType.ToString().ToLower()] = network;
             }
 

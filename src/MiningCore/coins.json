@@ -951,7 +951,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "Main",
+        "coinbaseTxNetwork": "main",
         "payFoundersReward": false
       },
       "test": {
@@ -966,7 +966,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "TestNet",
+        "coinbaseTxNetwork": "testnet",
         "payFoundersReward": false
       },
       "regtest": {
@@ -981,7 +981,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "RegTest",
+        "coinbaseTxNetwork": "regtest",
         "payFoundersReward": false
       }
     },
@@ -1008,7 +1008,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "Main",
+        "coinbaseTxNetwork": "main",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
         "foundersRewardAddresses": [
@@ -1085,7 +1085,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "TestNet",
+        "coinbaseTxNetwork": "testnet",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
         "foundersRewardAddresses": [
@@ -1162,7 +1162,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "RegTest",
+        "coinbaseTxNetwork": "regtest",
         "payFoundersReward": true,
         "percentFoundersReward": 8.5,
         "foundersRewardAddresses": [
@@ -1200,7 +1200,7 @@
             "BgoldPoW"
           ]
         },
-        "coinbaseTxNetwork": "Main",
+        "coinbaseTxNetwork": "main",
         "payFoundersReward": false
       },
       "test": {
@@ -1215,7 +1215,7 @@
             "BgoldPoW"
           ]
         },
-        "coinbaseTxNetwork": "TestNet",
+        "coinbaseTxNetwork": "testnet",
         "payFoundersReward": false
       },
       "regtest": {
@@ -1230,7 +1230,7 @@
             "BgoldPoW"
           ]
         },
-        "coinbaseTxNetwork": "RegTest",
+        "coinbaseTxNetwork": "regtest",
         "payFoundersReward": false
       }
     },
@@ -1257,7 +1257,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "Main",
+        "coinbaseTxNetwork": "main",
         "payFoundersReward": false
       },
       "test": {
@@ -1272,7 +1272,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "TestNet",
+        "coinbaseTxNetwork": "testnet",
         "payFoundersReward": false
       },
       "regtest": {
@@ -1287,7 +1287,7 @@
             "ZcashPoW"
           ]
         },
-        "coinbaseTxNetwork": "RegTest",
+        "coinbaseTxNetwork": "regtest",
         "payFoundersReward": false
       }
     },
