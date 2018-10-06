@@ -275,6 +275,9 @@ namespace MiningCore.Blockchain
 
             result.ShareMultiplier = props.ShareMultiplier;
 
+            if(coin == CoinType.XVG)
+                result.BlockrewardMultiplier = 100;
+
             return result;
         }
 
@@ -296,7 +299,7 @@ namespace MiningCore.Blockchain
         {
             var result = CreateCoinDefinition<EquihashCoinDefinition>(coin);
             result.Family = CoinFamily.Equihash;
-            result.EnableBitcoinGoldQuirks = coin == CoinType.BTG;
+            result.UseBitcoinPayoutHandler = coin == CoinType.BTG;
 
             var chain = ZCashConstants.Chains[coin];
             result.Networks = new Dictionary<string, EquihashCoinDefinition.EquihashNetworkDefinition>();
@@ -392,7 +395,7 @@ namespace MiningCore.Blockchain
                 case CoinType.TUBE:
                     result.Hash = CryptonightHashType.Heavy;
                     result.HashVariant = 2; // Variant TUBE
-                    result.BlockRewardShare = 0.7m;
+                    result.BlockrewardMultiplier = 0.7m;
                     break;
             }
 

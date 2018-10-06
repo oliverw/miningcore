@@ -118,6 +118,14 @@ namespace MiningCore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double HashrateMultiplier { get; set; } = 1.0d;
+
+        /// <summary>
+        /// Fraction of block reward, the pool gets to keep
+        /// Default: 1.0 (all)
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(1.0d)]
+        public double BlockrewardMultiplier { get; set; } = 1.0d;
     }
 
     public class EquihashCoinDefinition : CoinDefinition
@@ -180,7 +188,11 @@ namespace MiningCore.Configuration
 
         public Dictionary<string, EquihashNetworkDefinition> Networks { get; set; }
         public bool UsesZCashAddressFormat { get; set; } = true;
-        public bool EnableBitcoinGoldQuirks { get; set; }
+
+        /// <summary>
+        /// Force use of BitcoinPayoutHandler instead of EquihashPayoutHandler
+        /// </summary>
+        public bool UseBitcoinPayoutHandler { get; set; }
     }
 
     public enum CryptonightHashType
@@ -241,7 +253,7 @@ namespace MiningCore.Configuration
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
-        public decimal BlockRewardShare { get; set; } = 1.0m;
+        public decimal BlockrewardMultiplier { get; set; } = 1.0m;
     }
 
     #endregion // Coin Definitions

@@ -667,6 +667,7 @@
     },
     "shareMultiplier": 256.0,
     "hashrateMultiplier": 4.0,
+    "blockrewardMultiplier": 100.0,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -694,6 +695,7 @@
       ]
     },
     "hashrateMultiplier": 2.55,
+    "blockrewardMultiplier": 100.0,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -720,6 +722,7 @@
         }
       ]
     },
+    "blockrewardMultiplier": 100.0,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -746,6 +749,7 @@
         }
       ]
     },
+    "blockrewardMultiplier": 100.0,
     "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -925,7 +929,7 @@
       }
     },
     "usesZCashAddressFormat": true,
-    "enableBitcoinGoldQuirks": false,
+    "useBitcoinPayoutHandler": false,
     "explorerBlockLink": "https://explorer.zcha.in/blocks/$hash$",
     "explorerTxLink": "https://explorer.zcha.in/transactions/{0}",
     "explorerAccountLink": "https://explorer.zcha.in/accounts/{0}"
@@ -982,7 +986,7 @@
       }
     },
     "usesZCashAddressFormat": true,
-    "enableBitcoinGoldQuirks": false,
+    "useBitcoinPayoutHandler": false,
     "explorerBlockLink": "http://explorer.zclmine.pro/block/$height$",
     "explorerTxLink": "http://explorer.zclmine.pro/transactions/{0}",
     "explorerAccountLink": "http://explorer.zclmine.pro/accounts/{0}"
@@ -1174,7 +1178,7 @@
       }
     },
     "usesZCashAddressFormat": true,
-    "enableBitcoinGoldQuirks": false,
+    "useBitcoinPayoutHandler": false,
     "explorerBlockLink": "http://explorer.zensystem.io/block/$hash$",
     "explorerTxLink": "http://explorer.zensystem.io/transactions/{0}",
     "explorerAccountLink": "http://explorer.zensystem.io/accounts/{0}"
@@ -1231,7 +1235,7 @@
       }
     },
     "usesZCashAddressFormat": false,
-    "enableBitcoinGoldQuirks": true,
+    "useBitcoinPayoutHandler": true,
     "explorerBlockLink": "https://explorer.bitcoingold.org/insight/block/$hash$",
     "explorerTxLink": "https://explorer.bitcoingold.org/insight/tx/{0}",
     "explorerAccountLink": "https://explorer.bitcoingold.org/insight/address/{0}"
@@ -1288,7 +1292,7 @@
       }
     },
     "usesZCashAddressFormat": true,
-    "enableBitcoinGoldQuirks": false,
+    "useBitcoinPayoutHandler": false,
     "explorerBlockLink": "https://explorer.btcprivate.org/block-index/$hash$",
     "explorerTxLink": "https://explorer.btcprivate.org/tx/{0}",
     "explorerAccountLink": "https://explorer.btcprivate.org/address/{0}"
@@ -1318,7 +1322,7 @@
     "addressPrefixTestnet": 209,
     "addressPrefixIntegrated": 16463,
     "addressPrefixIntegratedTestnet": 16463,
-    "blockRewardShare": 0.7,
+    "blockrewardMultiplier": 0.7,
     "explorerBlockLink": "https://explorer.bit.tube/block/$height$",
     "explorerTxLink": "https://explorer.bit.tube/tx/{0}"
   },
