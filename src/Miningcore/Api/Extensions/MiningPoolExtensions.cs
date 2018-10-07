@@ -12,8 +12,7 @@ namespace Miningcore.Api.Extensions
 {
     public static class MiningPoolExtensions
     {
-        public static PoolInfo ToPoolInfo(this PoolConfig poolConfig,
-                IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
+        public static PoolInfo ToPoolInfo(this PoolConfig poolConfig, IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
         {
             var poolInfo = mapper.Map<PoolInfo>(poolConfig);
 
