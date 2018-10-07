@@ -413,7 +413,7 @@
       ]
     },
     "coinbaseTxVersion": 2,
-    "coinbaseTxAppendData": "Flo MiningCore",
+    "coinbaseTxAppendData": "Flo Miningcore",
     "shareMultiplier": 65536,
     "hashrateMultiplier": 1.5,
     "explorerBlockLink": "https://florincoin.info/block/0",
