@@ -103,9 +103,6 @@ namespace MiningCore.Configuration
     {
         [EnumMember(Value = "none")]
         None,
-
-        [EnumMember(Value = "florincoin")]
-        Florincoin,
     }
 
     public class BitcoinDefinition : CoinDefinition
@@ -121,6 +118,12 @@ namespace MiningCore.Configuration
 
         [JsonProperty("posBlockHasher")]
         public JObject PoSBlockHasher { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(1u)]
+        public uint CoinbaseTxVersion { get; set; } = 1u;
+
+        public string CoinbaseTxAppendData { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }

@@ -259,7 +259,10 @@ namespace MiningCore.Blockchain
             result.Family = CoinFamily.Bitcoin;
 
             if (coin == CoinType.FLO)
-                result.Subfamily = BitcoinSubfamily.Florincoin;
+            {
+                result.CoinbaseTxVersion = 2u;
+                result.CoinbaseTxAppendData = "Flo MiningCore";
+            }
 
             var props = BitcoinProperties.GetCoinProperties(coin, algorithm);
             result.HasMasterNodes = hasMasterNodes;
