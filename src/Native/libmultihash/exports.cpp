@@ -209,7 +209,7 @@ extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t
     x16s_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API bool equihash_verify_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
     if (header_length != 140) {
         return false;
@@ -217,10 +217,10 @@ extern "C" MODULE_API bool equihash_verify_export(const char* header, int header
 
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
-    return verifyEH_200_9(header, vecSolution, NULL);
+    return verifyEH_200_9(header, vecSolution, personalization);
 }
 
-extern "C" MODULE_API bool equihash_verify_btg_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
     if (header_length != 140) {
         return false;
@@ -228,7 +228,7 @@ extern "C" MODULE_API bool equihash_verify_btg_export(const char* header, int he
 
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
-    return verifyEH_144_5(header, vecSolution, "BgoldPoW");
+    return verifyEH_144_5(header, vecSolution, personalization);
 }
 
 extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)

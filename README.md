@@ -1,4 +1,3 @@
-
 [![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
 [![Docker Build Statu](https://img.shields.io/docker/build/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
 [![Docker Stars](https://img.shields.io/docker/stars/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
@@ -29,8 +28,9 @@ Bitcoin Gold | Yes | Yes | |
 Bitcoin Diamond | Yes | Yes | |
 Bitcoin Private | Yes | Yes | |
 Litecoin | Yes | Yes | |
-Zcash | Yes | Yes | |
+ZCash | Yes | Yes | |
 Monero | Yes | Yes | |
+Bittube | Yes | Yes | |
 Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 DASH | Yes | Yes | |
@@ -84,7 +84,7 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 - [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
-- MiningCore needs to be built from source on Linux. Refer to the section further down below for instructions.
+- Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
 
 ### Running pre-built Release Binaries on Windows
 
@@ -92,7 +92,7 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 - Extract the Archive
 - Setup the database as outlined below
 - Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
-- Run <code>dotnet MiningCore.dll -c config.json</code>
+- Run <code>dotnet Miningcore.dll -c config.json</code>
 
 ### PostgreSQL Database setup
 
@@ -114,7 +114,7 @@ grant all privileges on database miningcore to miningcore;
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/MiningCore/Persistence/Postgres/Scripts/createdb.sql
+$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
@@ -134,7 +134,7 @@ $ sudo apt-get install apt-transport-https -y
 $ sudo apt-get update -y
 $ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
-$ cd miningcore/src/MiningCore
+$ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework netcoreapp2.1  -o ../../build
 ```
 
@@ -144,7 +144,7 @@ Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/downl
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
-> cd miningcore/src/MiningCore
+> cd miningcore/src/Miningcore
 > dotnet publish -c Release --framework netcoreapp2.1  -o ..\..\build
 ```
 
@@ -152,7 +152,7 @@ Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/downl
 
 - Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 - Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
-- Open `MiningCore.sln` in VS 2017
+- Open `Miningcore.sln` in VS 2017
 
 
 #### After successful build
@@ -161,9 +161,9 @@ Create a configuration file <code>config.json</code> as described [here](https:/
 
 ```
 cd ../../build
-dotnet MiningCore.dll -c config.json
+dotnet Miningcore.dll -c config.json
 ```
 
 ## Running a production pool
 
-A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. MiningCore does not include such frontend but there are several community projects that can be used as starting point.
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
