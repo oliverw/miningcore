@@ -79,7 +79,7 @@ namespace Miningcore.Configuration
 
         public override string GetAlgorithmName(IComponentContext ctx)
         {
-            var hash = HashAlgorithmFactory.GetHash(ctx, HeaderHasher);
+            var hash = HeaderHasherValue;
 
             if (hash.GetType() == typeof(DigestReverser))
                 return ((DigestReverser)hash).Upstream.GetType().Name.ToLower();
