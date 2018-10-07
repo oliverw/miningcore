@@ -113,5 +113,5 @@ $RECYCLE.BIN/
 
 logs/
 
-src/MiningCore/config\.json
-/src/MiningCore/config2.json
+src/Miningcore/config.json
+src/Miningcore/config2.json

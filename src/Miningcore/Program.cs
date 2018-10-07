@@ -713,7 +713,7 @@ namespace Miningcore
 
         private static void Shutdown()
         {
-            logger.Info(() => "Shutdown ...");
+            logger?.Info(() => "Shutdown ...");
             Console.WriteLine("Shutdown...");
 
             foreach(var pool in pools.Values)
