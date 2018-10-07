@@ -12,10 +12,11 @@ namespace Miningcore.Api.Extensions
 {
     public static class MiningPoolExtensions
     {
-        public static PoolInfo ToPoolInfo(this PoolConfig poolConfig, 
+        public static PoolInfo ToPoolInfo(this PoolConfig poolConfig,
             IComponentContext ctx, IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
         {
-            var poolInfo = mapper.Map<PoolInfo>(poolConfig);
+            var poolInfo = mapper.Map<PoolInfo>(poolConfig,
+                options=> options.Items.Add(AutoMapperProfile.AutofacContextItemName, ctx));
 
             // enrich with basic information
             poolInfo.Coin.Algorithm = GetPoolAlgorithm(ctx, poolConfig);

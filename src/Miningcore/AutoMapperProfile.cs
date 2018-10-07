@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Autofac;
 using AutoMapper;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
@@ -29,6 +30,8 @@ namespace Miningcore
 {
     public class AutoMapperProfile : Profile
     {
+        public const string AutofacContextItemName = "ctx";
+
         public AutoMapperProfile()
         {
             //////////////////////
@@ -52,7 +55,17 @@ namespace Miningcore
                 .ForMember(dest => dest.Created, opt => opt.Ignore());
 
             // API
-            CreateMap<PoolConfig, Api.Responses.PoolInfo>();
+            CreateMap<CoinTemplate, Api.Responses.ApiCoinConfig>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Symbol))
+                .ForMember(dest => dest.Algorithm, opt => opt.ResolveUsing((src, dst, member, resolutionContext)=>
+                {
+                    var ctx = (IComponentContext) resolutionContext.Items[AutofacContextItemName];
+                    return src.GetAlgorithmName(ctx);
+                }));
+
+            CreateMap<PoolConfig, Api.Responses.PoolInfo>()
+                .ForMember(dest => dest.Coin, opt => opt.MapFrom(src => src.Template));
+
             CreateMap<PoolStats, Api.Responses.PoolInfo>();
             CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
             CreateMap<Block, Api.Responses.Block>();
