@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miningcore", "MiningCore\Miningcore.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miningcore", "Miningcore\Miningcore.csproj", "{A427248A-B5E1-4808-9883-BC2AD68EE997}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Miningcore.Tests", "Miningcore.Tests\Miningcore.Tests.csproj", "{DCDE9CE6-84B8-42FE-AA55-2A3909A5E757}"
 EndProject
