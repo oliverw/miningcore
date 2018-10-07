@@ -13,13 +13,9 @@ namespace Miningcore.Api.Extensions
     public static class MiningPoolExtensions
     {
         public static PoolInfo ToPoolInfo(this PoolConfig poolConfig,
-            IComponentContext ctx, IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
+                IMapper mapper, Persistence.Model.PoolStats stats, IMiningPool pool)
         {
-            var poolInfo = mapper.Map<PoolInfo>(poolConfig,
-                options=> options.Items.Add(AutoMapperProfile.AutofacContextItemName, ctx));
-
-            // enrich with basic information
-            poolInfo.Coin.Algorithm = GetPoolAlgorithm(ctx, poolConfig);
+            var poolInfo = mapper.Map<PoolInfo>(poolConfig);
 
             poolInfo.PoolStats = mapper.Map<PoolStats>(stats);
             poolInfo.NetworkStats = pool?.NetworkStats ?? mapper.Map<BlockchainStats>(stats);
@@ -41,17 +37,6 @@ namespace Miningcore.Api.Extensions
             }
 
             return poolInfo;
-        }
-
-        private static string GetPoolAlgorithm(IComponentContext ctx, PoolConfig pool)
-        {
-            string result = pool.Template.GetAlgorithmName(ctx);
-
-            // Capitalize
-            if (!string.IsNullOrEmpty(result) && result.Length > 1)
-                result = result.Substring(0, 1).ToUpper() + result.Substring(1);
-
-            return result;
         }
     }
 }

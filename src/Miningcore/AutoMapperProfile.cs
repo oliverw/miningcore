@@ -57,11 +57,7 @@ namespace Miningcore
             // API
             CreateMap<CoinTemplate, Api.Responses.ApiCoinConfig>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Symbol))
-                .ForMember(dest => dest.Algorithm, opt => opt.ResolveUsing((src, dst, member, resolutionContext)=>
-                {
-                    var ctx = (IComponentContext) resolutionContext.Items[AutofacContextItemName];
-                    return src.GetAlgorithmName(ctx);
-                }));
+                .ForMember(dest => dest.Algorithm, opt => opt.MapFrom(src => src.GetAlgorithmName()));
 
             CreateMap<PoolConfig, Api.Responses.PoolInfo>()
                 .ForMember(dest => dest.Coin, opt => opt.MapFrom(src => src.Template));

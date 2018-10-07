@@ -17,7 +17,7 @@ namespace Miningcore.Configuration
             return (T) this;
         }
 
-        public abstract string GetAlgorithmName(IComponentContext ctx);
+        public abstract string GetAlgorithmName();
 
         /// <summary>
         /// json source file where this template originated from
@@ -77,7 +77,7 @@ namespace Miningcore.Configuration
 
         #region Overrides of CoinDefinition
 
-        public override string GetAlgorithmName(IComponentContext ctx)
+        public override string GetAlgorithmName()
         {
             var hash = HeaderHasherValue;
 
@@ -148,7 +148,7 @@ namespace Miningcore.Configuration
 
         #region Overrides of CoinDefinition
 
-        public override string GetAlgorithmName(IComponentContext ctx)
+        public override string GetAlgorithmName()
         {
             // TODO: return variant
             return "Equihash";
@@ -161,7 +161,7 @@ namespace Miningcore.Configuration
     {
         #region Overrides of CoinDefinition
 
-        public override string GetAlgorithmName(IComponentContext ctx)
+        public override string GetAlgorithmName()
         {
             switch (Hash)
             {
@@ -183,7 +183,7 @@ namespace Miningcore.Configuration
     {
         #region Overrides of CoinDefinition
 
-        public override string GetAlgorithmName(IComponentContext ctx)
+        public override string GetAlgorithmName()
         {
             return "Ethhash";
         }
