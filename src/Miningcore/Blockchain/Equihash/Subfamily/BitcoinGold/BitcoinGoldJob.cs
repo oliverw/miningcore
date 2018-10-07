@@ -64,8 +64,6 @@ namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
             }
         }
 
-        #region Overrides of ZCashJob
-
         protected Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
@@ -241,7 +239,5 @@ namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
                 false
             };
         }
-
-        #endregion
     }
 }
