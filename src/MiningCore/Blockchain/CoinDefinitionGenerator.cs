@@ -56,7 +56,7 @@ namespace MiningCore.Blockchain
             { CoinType.CRC, "CrowdCoin" },
             { CoinType.BTCP, "Bitcoin Private" },
             { CoinType.CLO, "Callisto" },
-            { CoinType.FLO, "FLO" },
+            { CoinType.FLO, "Florincoin" },
             { CoinType.PAK, "PAKcoin" },
             { CoinType.CANN, "CannabisCoin" },
             { CoinType.RVN, "Ravencoin" },
@@ -120,8 +120,7 @@ namespace MiningCore.Blockchain
                 CoinType.LTC, CoinType.DOGE, CoinType.VIA, CoinType.DASH,
                 CoinType.GRS, CoinType.MONA, CoinType.VTC, CoinType.GLT,
                 CoinType.MOON, CoinType.PAK, CoinType.CANN,
-                CoinType.RVN, CoinType.PGN, CoinType.BCD, CoinType.STAK,
-                CoinType.FLO
+                CoinType.RVN, CoinType.PGN, CoinType.BCD, CoinType.FLO
             }
             .Select(x=> GetBitcoinDefinition(x, null, x == CoinType.DASH))
             .ToArray();
@@ -259,6 +258,9 @@ namespace MiningCore.Blockchain
             var result = CreateCoinDefinition<BitcoinDefinition>(coin, algorithm);
             result.Family = CoinFamily.Bitcoin;
 
+            if (coin == CoinType.FLO)
+                result.Subfamily = BitcoinSubfamily.Florincoin;
+
             var props = BitcoinProperties.GetCoinProperties(coin, algorithm);
             result.HasMasterNodes = hasMasterNodes;
             result.CoinbaseHasher = JObject.FromObject(GetHashAlgorithmId(props.CoinbaseHasher), serializer);
@@ -300,6 +302,9 @@ namespace MiningCore.Blockchain
             var result = CreateCoinDefinition<EquihashCoinDefinition>(coin);
             result.Family = CoinFamily.Equihash;
             result.UseBitcoinPayoutHandler = coin == CoinType.BTG;
+
+            if (coin == CoinType.BTG)
+                result.Subfamily = EquihashSubfamily.BitcoinGold;
 
             var chain = ZCashConstants.Chains[coin];
             result.Networks = new Dictionary<string, EquihashCoinDefinition.EquihashNetworkDefinition>();
@@ -406,7 +411,7 @@ namespace MiningCore.Blockchain
 
         private static CoinDefinition GetEthereumCoinDefinition(CoinType coin)
         {
-            var result = CreateCoinDefinition<CoinDefinition>(coin);
+            var result = CreateCoinDefinition<EthereumCoinDefinition>(coin);
             result.Family = CoinFamily.Ethereum;
 
             return result;

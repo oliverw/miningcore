@@ -490,34 +490,11 @@
     "explorerTxLink": "http://explorer.btcd.io/#/TX?TX={0}",
     "explorerAccountLink": "http://explorer.btcd.io/#/address?address={0}"
   },
-  "straks": {
-    "name": "Straks",
-    "symbol": "STAK",
-    "family": "bitcoin",
-    "coinbaseHasher": {
-      "hash": "sha256d"
-    },
-    "headerHasher": {
-      "hash": "lyra2rev2"
-    },
-    "blockHasher": {
-      "hash": "reverse",
-      "args": [
-        {
-          "hash": "lyra2rev2"
-        }
-      ]
-    },
-    "shareMultiplier": 256.0,
-    "hashrateMultiplier": 4.0,
-    "explorerBlockLink": "https://straks.info/block/$height$",
-    "explorerTxLink": "https://straks.info/transaction/{0}",
-    "explorerAccountLink": "https://straks.info/address/{0}"
-  },
-  "flo": {
-    "name": "FLO",
+  "florincoin": {
+    "name": "Florincoin",
     "symbol": "FLO",
     "family": "bitcoin",
+    "subfamily": "florincoin",
     "coinbaseHasher": {
       "hash": "sha256d"
     },
@@ -1187,6 +1164,7 @@
     "name": "Bitcoin Gold",
     "symbol": "BTG",
     "family": "equihash",
+    "subfamily": "bitcoin-gold",
     "networks": {
       "main": {
         "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
