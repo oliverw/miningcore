@@ -102,6 +102,11 @@ namespace Miningcore.Extensions
             return new string(buffer);
         }
 
+        public static string ToHexString(this Memory<byte> value, bool withPrefix = false)
+        {
+            return ToHexString(value.Span, null, null, withPrefix);
+        }
+
         /// <summary>
         /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
         /// block of 4 bytes must be reversed before reversing the entire buffer
