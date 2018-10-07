@@ -28,7 +28,6 @@ using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
-using Miningcore.Crypto;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
@@ -75,18 +74,6 @@ namespace Miningcore.Blockchain.Bitcoin
             };
         }
 
-        protected override void SetupCrypto()
-        {
-            coinbaseHasher = HashAlgorithmFactory.GetHash(ctx, coin.CoinbaseHasher);
-            headerHasher = HashAlgorithmFactory.GetHash(ctx, coin.HeaderHasher);
-
-            blockHasher = !isPoS ?
-                HashAlgorithmFactory.GetHash(ctx, coin.BlockHasher) :
-                (HashAlgorithmFactory.GetHash(ctx, coin.CoinbaseHasher ?? coin.BlockHasher));
-
-            ShareMultiplier = coin.ShareMultiplier;
-        }
-
         private BitcoinJob CreateJob()
         {
             //switch (coin.Subfamily)
@@ -128,7 +115,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
                     job.Init(blockTemplate, NextJobId(),
                         poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
-                        ShareMultiplier, coinbaseHasher, headerHasher, blockHasher);
+                        ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue, !isPoS ?
+                            coin.BlockHasherValue :
+                            coin.PoSBlockHasherValue ?? coin.BlockHasherValue);
 
                     lock (jobLock)
                     {
@@ -293,7 +282,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return share;
         }
 
-        public double ShareMultiplier { get; private set; }
+        public double ShareMultiplier => coin.ShareMultiplier;
 
         #endregion // API-Surface
     }

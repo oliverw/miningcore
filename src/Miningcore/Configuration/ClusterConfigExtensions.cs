@@ -28,6 +28,53 @@ namespace Miningcore.Configuration
 
     public partial class BitcoinTemplate
     {
+        public BitcoinTemplate()
+        {
+            coinbaseHasherValue = new Lazy<IHashAlgorithm>(() =>
+            {
+                if (CoinbaseHasher == null)
+                    return null;
+
+                return HashAlgorithmFactory.GetHash(ComponentContext, CoinbaseHasher);
+            });
+
+            headerHasherValue = new Lazy<IHashAlgorithm>(() =>
+            {
+                if (HeaderHasher == null)
+                    return null;
+
+                return HashAlgorithmFactory.GetHash(ComponentContext, HeaderHasher);
+            });
+
+            blockHasherValue = new Lazy<IHashAlgorithm>(() =>
+            {
+                if (BlockHasher == null)
+                    return null;
+
+                return HashAlgorithmFactory.GetHash(ComponentContext, BlockHasher);
+            });
+
+            posBlockHasherValue = new Lazy<IHashAlgorithm>(() =>
+            {
+                if (PoSBlockHasher == null)
+                    return null;
+
+                return HashAlgorithmFactory.GetHash(ComponentContext, PoSBlockHasher);
+            });
+        }
+
+        private readonly Lazy<IHashAlgorithm> coinbaseHasherValue;
+        private readonly Lazy<IHashAlgorithm> headerHasherValue;
+        private readonly Lazy<IHashAlgorithm> blockHasherValue;
+        private readonly Lazy<IHashAlgorithm> posBlockHasherValue;
+
+        public IComponentContext ComponentContext { get; set; }
+
+        public IHashAlgorithm CoinbaseHasherValue => coinbaseHasherValue.Value;
+        public IHashAlgorithm HeaderHasherValue => headerHasherValue.Value;
+        public IHashAlgorithm BlockHasherValue => blockHasherValue.Value;
+        public IHashAlgorithm PoSBlockHasherValue => posBlockHasherValue.Value;
+
         #region Overrides of CoinDefinition
 
         public override string GetAlgorithmName(IComponentContext ctx)
