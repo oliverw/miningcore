@@ -37,20 +37,18 @@ using Autofac.Features.Metadata;
 using AutoMapper;
 using FluentValidation;
 using Microsoft.Extensions.CommandLineUtils;
-using MiningCore.Api;
-using MiningCore.Api.Responses;
-using MiningCore.Blockchain;
-using MiningCore.Configuration;
-using MiningCore.Crypto.Hashing.Algorithms;
-using MiningCore.Crypto.Hashing.Equihash;
-using MiningCore.Extensions;
-using MiningCore.Mining;
-using MiningCore.Notifications;
-using MiningCore.Payments;
-using MiningCore.Persistence.Dummy;
-using MiningCore.Persistence.Postgres;
-using MiningCore.Persistence.Postgres.Repositories;
-using MiningCore.Util;
+using Miningcore.Api;
+using Miningcore.Api.Responses;
+using Miningcore.Configuration;
+using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.Mining;
+using Miningcore.Notifications;
+using Miningcore.Payments;
+using Miningcore.Persistence.Dummy;
+using Miningcore.Persistence.Postgres;
+using Miningcore.Persistence.Postgres.Repositories;
+using Miningcore.Util;
+using NBitcoin.Zcash;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -60,13 +58,13 @@ using NLog.Layouts;
 using NLog.Targets;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
-namespace MiningCore
+namespace Miningcore
 {
     public class Program
     {
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
-        private static ILogger logger;
         private static IContainer container;
+        private static ILogger logger;
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static ShareRecorder shareRecorder;
@@ -95,7 +93,7 @@ namespace MiningCore
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
-                CoinDefinitionGenerator.WriteCoinDefinitions("../../../coins.json");
+                //CoinDefinitionGenerator.WriteCoinDefinitions("../../../coins.json");
 
                 Logo();
                 clusterConfig = ReadConfig(configFile);
@@ -242,6 +240,8 @@ namespace MiningCore
 
         private static void Bootstrap()
         {
+            ZcashNetworks.Instance.EnsureRegistered();
+
             // Service collection
             var builder = new ContainerBuilder();
 
@@ -310,11 +310,8 @@ namespace MiningCore
                 var line = m.Groups[3].Value;
                 var col = m.Groups[4].Value;
 
-                if (type == typeof(CoinType))
-                    Console.WriteLine($"Error: Coin '{value}' is not (yet) supported (line {line}, column {col})");
-                else if (type == typeof(PayoutScheme))
-                    Console.WriteLine(
-                        $"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+                if (type == typeof(PayoutScheme))
+                    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
             }
 
             else
@@ -486,7 +483,7 @@ namespace MiningCore
 
             LogManager.Configuration = loggingConfig;
 
-            logger = LogManager.GetCurrentClassLogger();
+            logger = LogManager.GetLogger("Core");
         }
 
         private static Layout GetLogPath(ClusterLoggingConfig config, string name)
@@ -501,7 +498,7 @@ namespace MiningCore
         {
             // Configure Equihash
             if (clusterConfig.EquihashMaxThreads.HasValue)
-                EquihashSolverBase.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)
@@ -561,8 +558,40 @@ namespace MiningCore
                 .SingleInstance();
         }
 
+        private static Dictionary<string, CoinTemplate> LoadCoinTemplates()
+        {
+            var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var defaultTemplates = Path.Combine(basePath, "coins.json");
+
+            // make sure default templates are loaded first
+            clusterConfig.CoinTemplates = new[]
+            {
+                defaultTemplates
+            }
+            .Concat(clusterConfig.CoinTemplates != null ?
+                clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
+                new string[0])
+            .ToArray();
+
+            return CoinTemplateLoader.Load(clusterConfig.CoinTemplates);
+        }
+
         private static async Task Start()
         {
+            var coinTemplates = LoadCoinTemplates();
+            logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
+
+            // Populate pool configs with corresponding template
+            foreach (var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
+            {
+                // Lookup coin definition
+                if (!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                    logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+
+                poolConfig.Template = template;
+            }
+
+            // Notifications
             notificationService = container.Resolve<NotificationService>();
 
             if (clusterConfig.ShareRelay == null)
@@ -615,8 +644,8 @@ namespace MiningCore
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
             {
                 // resolve pool implementation
-                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinMetadataAttribute>>>>()
-                    .First(x => x.Value.Metadata.SupportedCoins.Contains(poolConfig.Coin.Type)).Value;
+                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
                 // create and configure
                 var pool = poolImpl.Value;

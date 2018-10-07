@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <AssemblyName>MiningCore</AssemblyName>
-    <RootNamespace>MiningCore</RootNamespace>
+    <AssemblyName>Miningcore</AssemblyName>
+    <RootNamespace>Miningcore</RootNamespace>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
@@ -41,12 +41,6 @@
 
   <ItemGroup>
     <None Remove="config.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="config.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

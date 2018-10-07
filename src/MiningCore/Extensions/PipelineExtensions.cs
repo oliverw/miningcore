@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-namespace MiningCore.Extensions
+namespace Miningcore.Extensions
 {
     public static class PipelineExtensions
     {

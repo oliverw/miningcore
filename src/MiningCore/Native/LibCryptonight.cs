@@ -22,10 +22,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
-using MiningCore.Contracts;
+using Miningcore.Contracts;
 using NLog;
 
-namespace MiningCore.Native
+namespace Miningcore.Native
 {
     public static unsafe class LibCryptonight
     {
