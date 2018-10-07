@@ -45,6 +45,8 @@ Peercoin | Yes | No | |
 Ravencoin | Yes | Yes | |
 MoonCoin | Yes | Yes | |
 
+Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+
 #### Ethereum
 
 Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
