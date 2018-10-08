@@ -160,7 +160,7 @@ namespace Miningcore.Configuration
 
     public partial class EquihashCoinTemplate : CoinTemplate
     {
-        public partial class EquihashNetworkDefinition
+        public partial class EquihashNetworkParams
         {
             public string Diff1 { get; set; }
 
@@ -221,7 +221,7 @@ namespace Miningcore.Configuration
         [JsonConverter(typeof(StringEnumConverter))]
         public EquihashSubfamily Subfamily { get; set; }
 
-        public Dictionary<string, EquihashNetworkDefinition> Networks { get; set; }
+        public Dictionary<string, EquihashNetworkParams> Networks { get; set; }
         public bool UsesZCashAddressFormat { get; set; } = true;
 
         /// <summary>

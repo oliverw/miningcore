@@ -43,7 +43,7 @@ namespace Miningcore.Blockchain.Equihash
         }
 
         private EquihashCoinTemplate coin;
-        public EquihashCoinTemplate.EquihashNetworkDefinition ChainConfig { get; private set; }
+        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
         private EquihashSolver solver;
 
         protected override void PostChainIdentifyConfigure()

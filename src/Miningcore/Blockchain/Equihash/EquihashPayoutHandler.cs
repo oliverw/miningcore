@@ -62,7 +62,7 @@ namespace Miningcore.Blockchain.Equihash
         protected EquihashPoolConfigExtra poolExtraConfig;
         protected bool supportsNativeShielding;
         protected BitcoinNetworkType networkType;
-        protected EquihashCoinTemplate.EquihashNetworkDefinition chainConfig;
+        protected EquihashCoinTemplate.EquihashNetworkParams chainConfig;
         protected override string LogCategory => "ZCash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
         protected const int ZMinConfirmations = 8;

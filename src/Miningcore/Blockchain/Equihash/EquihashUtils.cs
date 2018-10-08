@@ -8,7 +8,7 @@ namespace Miningcore.Blockchain.Equihash
 {
     public static class EquihashUtils
     {
-        public static string EncodeTarget(double difficulty, EquihashCoinTemplate.EquihashNetworkDefinition chainConfig)
+        public static string EncodeTarget(double difficulty, EquihashCoinTemplate.EquihashNetworkParams chainConfig)
         {
             string result;
             var diff = BigInteger.ValueOf((long)(difficulty * 255d));

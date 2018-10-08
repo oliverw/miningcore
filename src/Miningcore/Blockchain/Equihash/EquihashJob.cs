@@ -54,7 +54,7 @@ namespace Miningcore.Blockchain.Equihash
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
-        protected EquihashCoinTemplate.EquihashNetworkDefinition chainConfig;
+        protected EquihashCoinTemplate.EquihashNetworkParams chainConfig;
         protected decimal blockReward;
         protected decimal rewardFees;
 
