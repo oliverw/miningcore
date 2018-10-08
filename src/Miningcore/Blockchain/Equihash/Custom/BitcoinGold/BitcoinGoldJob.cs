@@ -34,7 +34,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Transaction = NBitcoin.Transaction;
 
-namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
+namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 {
     public class BitcoinGoldJob : EquihashJob
     {
@@ -43,32 +43,11 @@ namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
         private static uint txInputCount = 1u;
         private static uint txLockTime;
 
-        private BitcoinNetworkType networkType;
-
-        private Network NBitcoinNetworkType
+        protected override Transaction CreateOutputTransaction()
         {
-            get
-            {
-                switch (networkType)
-                {
-                    case BitcoinNetworkType.Main:
-                        return Network.Main;
-                    case BitcoinNetworkType.Test:
-                        return Network.TestNet;
-                    case BitcoinNetworkType.RegTest:
-                        return Network.RegTest;
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
 
-                    default:
-                        throw new NotSupportedException("unsupported network type");
-                }
-            }
-        }
-
-        protected Transaction CreateOutputTransaction()
-        {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
-
-            var tx = Transaction.Create(NBitcoinNetworkType);
+            var tx = Transaction.Create(network);
 
             // pool reward (t-addr)
             tx.AddOutput(rewardToPool, poolAddressDestination);
@@ -193,7 +172,8 @@ namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
 
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
-            this.networkType = networkType;
+            coin = poolConfig.Template.As<EquihashCoinTemplate>();
+            network = networkType.ToNetwork();
             var equihashTemplate = poolConfig.Template.As<EquihashCoinTemplate>();
             equihashTemplate.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
             BlockTemplate = blockTemplate;

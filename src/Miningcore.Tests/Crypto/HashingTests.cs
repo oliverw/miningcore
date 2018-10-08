@@ -288,14 +288,6 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
-        public void EquihashVerifier_Should_Throw_On_Wrong_Argument_Length()
-        {
-            var hasher = new EquihashSolver_200_9("ZcashPoW");
-            Assert.Throws<ArgumentException>(() => hasher.Verify(new byte[3], null));
-            Assert.Throws<ArgumentException>(() => hasher.Verify(new byte[140], new byte[3]));
-        }
-
-        [Fact]
         public void Sha3_256_Hash()
         {
             var hasher = new Sha3_256();

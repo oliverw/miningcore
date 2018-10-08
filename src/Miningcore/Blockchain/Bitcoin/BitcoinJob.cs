@@ -49,6 +49,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected bool isPoS;
 
         protected BitcoinNetworkType networkType;
+        protected Network network;
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
@@ -60,25 +61,6 @@ namespace Miningcore.Blockchain.Bitcoin
         protected string coinbaseInitialHex;
         protected string[] merkleBranchesHex;
         protected MerkleTree mt;
-
-        protected Network NBitcoinNetworkType
-        {
-            get
-            {
-                switch(networkType)
-                {
-                    case BitcoinNetworkType.Main:
-                        return Network.Main;
-                    case BitcoinNetworkType.Test:
-                        return Network.TestNet;
-                    case BitcoinNetworkType.RegTest:
-                        return Network.RegTest;
-
-                    default:
-                        throw new NotSupportedException("unsupported network type");
-                }
-            }
-        }
 
         ///////////////////////////////////////////
         // GetJobParams related properties
@@ -270,7 +252,7 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
 
-            var tx = Transaction.Create(NBitcoinNetworkType);
+            var tx = Transaction.Create(network);
 
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
             {
@@ -448,7 +430,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var blockReward = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
-            var tx = Transaction.Create(NBitcoinNetworkType);
+            var tx = Transaction.Create(network);
 
             // outputs
             rewardToPool = CreateMasternodeOutputs(tx, blockReward);
@@ -534,6 +516,7 @@ namespace Miningcore.Blockchain.Bitcoin
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
             txVersion = coin.CoinbaseTxVersion;
+            network = networkType.ToNetwork();
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             this.networkType = networkType;

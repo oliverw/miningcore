@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -46,6 +47,7 @@ namespace Miningcore.Blockchain.Equihash
         protected IMasterClock clock;
         protected static IHashAlgorithm headerHasher = new Sha256D();
         protected EquihashCoinTemplate coin;
+        protected Network network;
 
         protected IDestination poolAddressDestination;
         protected readonly HashSet<string> submissions = new HashSet<string>();
@@ -84,7 +86,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Money rewardToPool;
         protected Transaction txOut;
 
-        private Transaction CreateOutputTransaction()
+        protected virtual Transaction CreateOutputTransaction()
         {
             var txNetwork = Network.GetNetwork(chainConfig.CoinbaseTxNetwork);
             var tx = Transaction.Create(txNetwork);
@@ -202,7 +204,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private byte[] SerializeBlock(byte[] header, byte[] coinbase, byte[] solution)
+        private byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
         {
             var transactionCount = (uint)BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
@@ -225,17 +227,21 @@ namespace Miningcore.Blockchain.Equihash
             uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
-            var solutionBytes = solution.HexToByteArray();
+            var solutionBytes = (Span<byte>) solution.HexToByteArray();
 
             // serialize block-header
             var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
 
             // verify solution
-            if (!solver.Verify(headerBytes, solutionBytes.Skip(chainConfig.SolutionPreambleSize).ToArray())) // skip preamble (3 bytes)
+            if (!solver.Verify(headerBytes, solutionBytes.Slice(chainConfig.SolutionPreambleSize)))
                 throw new StratumException(StratumError.Other, "invalid solution");
 
+            // concat header and solution
+            Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length + solutionBytes.Length];
+            headerBytes.CopyTo(headerSolutionBytes);
+            solutionBytes.CopyTo(headerSolutionBytes.Slice(headerBytes.Length));
+
             // hash block-header
-            var headerSolutionBytes = headerBytes.Concat(solutionBytes).ToArray();
             Span<byte> headerHash = stackalloc byte[32];
             headerHasher.Digest(headerSolutionBytes, headerHash, (ulong)nTime);
             var headerValue = new uint256(headerHash);
@@ -323,6 +329,7 @@ namespace Miningcore.Blockchain.Equihash
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
             coin.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
+            network = networkType.ToNetwork();
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = (double) new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
@@ -369,7 +376,10 @@ namespace Miningcore.Blockchain.Equihash
                 .ReverseArray()
                 .ToHexString();
 
-            blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
+            if (blockTemplate.Subsidy != null)
+                blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
+            else
+                blockReward = BlockTemplate.CoinbaseValue;
 
             if (chainConfig?.PayFoundersReward == true)
             {
@@ -429,8 +439,8 @@ namespace Miningcore.Blockchain.Equihash
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
-                throw new StratumException(StratumError.Other, "ntime out of range");
+            //if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
+            //    throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = context.ExtraNonce1 + extraNonce2;
 

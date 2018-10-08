@@ -118,8 +118,7 @@ namespace Miningcore.Payments
                 case CoinFamily.Equihash:
                     var equihashTemplate = pool.Template.As<EquihashCoinTemplate>();
 
-                    if (equihashTemplate.UseBitcoinPayoutHandler ||
-                        equihashTemplate.Subfamily == EquihashSubfamily.BitcoinGold)
+                    if (equihashTemplate.UseBitcoinPayoutHandler)
                         return CoinFamily.Bitcoin;
 
                     break;
