@@ -82,9 +82,9 @@ namespace Miningcore.Configuration
             var hash = HeaderHasherValue;
 
             if (hash.GetType() == typeof(DigestReverser))
-                return ((DigestReverser)hash).Upstream.GetType().Name.ToLower();
+                return ((DigestReverser)hash).Upstream.GetType().Name;
 
-            return hash.GetType().Name.ToLower();
+            return hash.GetType().Name;
         }
 
         #endregion

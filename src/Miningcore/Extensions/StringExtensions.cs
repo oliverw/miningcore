@@ -120,5 +120,13 @@ namespace Miningcore.Extensions
         {
             return encoding.GetString(line.ToSpan());
         }
+
+        public static string Capitalize(this string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return str;
+
+            return str.Substring(0, 1).ToUpper() + str.Substring(1);
+        }
     }
 }
