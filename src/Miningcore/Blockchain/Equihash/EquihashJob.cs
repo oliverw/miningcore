@@ -230,7 +230,7 @@ namespace Miningcore.Blockchain.Equihash
             var solutionBytes = (Span<byte>) solution.HexToByteArray();
 
             // serialize block-header
-            var headerBytes = SerializeHeader(nTime, nonce); // 144 bytes (doesn't contain soln)
+            var headerBytes = SerializeHeader(nTime, nonce);
 
             // verify solution
             if (!solver.Verify(headerBytes, solutionBytes.Slice(chainConfig.SolutionPreambleSize)))
