@@ -28,7 +28,6 @@ using Autofac.Features.Metadata;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
-using Miningcore.Notifications;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -147,7 +146,7 @@ namespace Miningcore.Payments
                     {
                         // fill block effort if empty
                         if (!block.Effort.HasValue)
-                            await CalculateBlockEffort(pool, block, handler);
+                            await CalculateBlockEffortAsync(pool, block, handler);
 
                         switch(block.Status)
                         {
@@ -206,7 +205,7 @@ namespace Miningcore.Payments
             return Task.FromResult(true);
         }
 
-        private async Task CalculateBlockEffort(PoolConfig pool, Block block, IPayoutHandler handler)
+        private async Task CalculateBlockEffortAsync(PoolConfig pool, Block block, IPayoutHandler handler)
         {
             // get share date-range
             var from = DateTime.MinValue;
@@ -232,7 +231,7 @@ namespace Miningcore.Payments
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
-#region API-Surface
+        #region API-Surface
 
         public void Configure(ClusterConfig clusterConfig)
         {
@@ -283,6 +282,6 @@ namespace Miningcore.Payments
             logger.Info(() => "Stopped");
         }
 
-#endregion // API-Surface
+        #endregion // API-Surface
     }
 }

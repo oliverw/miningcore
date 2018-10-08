@@ -133,7 +133,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
-            return con.QuerySingle<ulong?>(query, new { poolId, start, end });
+            return con.QuerySingle<double?>(query, new { poolId, start, end });
         }
 
         public MinerWorkerHashes[] GetAccumulatedShareDifficultyTotal(IDbConnection con, string poolId)
