@@ -519,6 +519,33 @@
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
   },
+  "verge-scrypt": {
+    "name": "Verge-Scrypt",
+    "symbol": "XVG",
+    "family": "bitcoin",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+        "hash": "scrypt",
+        "args": [ 1024, 1 ]
+      },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [
+        {
+          "hash": "scrypt",
+          "args": [ 1024, 1 ]
+        }
+      ]
+    },
+    "shareMultiplier": 65536,
+    "hashrateMultiplier": 1.5,
+    "blockrewardMultiplier": 100,
+    "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
+    "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
+    "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
+  },
   "verge-x17": {
     "name": "Verge-X17",
     "symbol": "XVG",
