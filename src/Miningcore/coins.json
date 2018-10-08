@@ -438,6 +438,27 @@
     "explorerTxLink": "https://digiexplorer.info/tx/{0}",
     "explorerAccountLink": "https://digiexplorer.info/address/{0}"
   },
+  "digibyte-scrypt": {
+    "name": "Digibyte-Scrypt",
+    "symbol": "DGB",
+    "family": "bitcoin",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+        "hash": "scrypt",
+        "args": [ 1024, 1 ]
+      },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [{ "hash": "sha256d" }]
+    },
+    "shareMultiplier": 65536,
+    "hashrateMultiplier": 1.5,
+    "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+    "explorerTxLink": "https://digiexplorer.info/tx/{0}",
+    "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+  },
   "digibyte-skein": {
     "name": "Digibyte-Skein",
     "symbol": "DGB",

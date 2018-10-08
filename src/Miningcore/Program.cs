@@ -573,7 +573,7 @@ namespace Miningcore
                 new string[0])
             .ToArray();
 
-            return CoinTemplateLoader.Load(clusterConfig.CoinTemplates);
+            return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
         }
 
         private static async Task Start()

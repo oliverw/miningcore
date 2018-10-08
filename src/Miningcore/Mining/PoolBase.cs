@@ -106,7 +106,8 @@ namespace Miningcore.Mining
                 if (m.Success)
                 {
                     var str = m.Groups[1].Value.Trim();
-                    if (double.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff))
+                    if (double.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff) &&
+                        !double.IsNaN(diff) && !double.IsInfinity(diff))
                         return diff;
                 }
             }

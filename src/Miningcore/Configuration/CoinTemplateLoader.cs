@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Autofac;
 using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,7 +14,7 @@ namespace Miningcore.Configuration
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private static IEnumerable<KeyValuePair<string, CoinTemplate>> LoadTemplates(string filename, JsonSerializer serializer)
+        private static IEnumerable<KeyValuePair<string, CoinTemplate>> LoadTemplates(string filename, JsonSerializer serializer, IComponentContext ctx)
         {
             using (var jreader = new JsonTextReader(File.OpenText(filename)))
             {
@@ -30,6 +31,8 @@ namespace Miningcore.Configuration
 
                     var family = value.ToObject<CoinFamily>();
                     var result = (CoinTemplate)o.Value.ToObject(CoinTemplate.Families[family]);
+
+                    ctx.InjectProperties(result);
 
                     // Patch explorer links
                     if ((result.ExplorerBlockLinks == null || result.ExplorerBlockLinks.Count == 0) &&
@@ -49,7 +52,7 @@ namespace Miningcore.Configuration
             }
         }
 
-        public static Dictionary<string, CoinTemplate> Load(string[] coinDefs)
+        public static Dictionary<string, CoinTemplate> Load(IComponentContext ctx, string[] coinDefs)
         {
             var serializer = new JsonSerializer
             {
@@ -62,7 +65,7 @@ namespace Miningcore.Configuration
 
             foreach (var filename in coinDefs)
             {
-                var definitions = LoadTemplates(filename, serializer).ToArray();
+                var definitions = LoadTemplates(filename, serializer, ctx).ToArray();
 
                 foreach (var definition in definitions)
                 {

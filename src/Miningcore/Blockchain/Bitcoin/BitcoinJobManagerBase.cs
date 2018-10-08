@@ -79,10 +79,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
         protected readonly List<TJob> validJobs = new List<TJob>();
         protected DateTime? lastJobRebroadcast;
-        protected IHashAlgorithm blockHasher;
-        protected IHashAlgorithm coinbaseHasher;
         protected bool hasSubmitBlockMethod;
-        protected IHashAlgorithm headerHasher;
         protected bool isPoS;
         protected TimeSpan jobRebroadcastTimeout;
         protected BitcoinNetworkType networkType;

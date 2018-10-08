@@ -181,10 +181,13 @@ namespace Miningcore.Blockchain.Cryptonote
                 if (infoResponse.Error != null)
                     logger.Warn(() => $"Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
 
-                var info = infoResponse.Response.ToObject<GetInfoResponse>();
+                if (infoResponse.Response != null)
+                {
+                    var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-                BlockchainStats.NetworkHashrate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
-                BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+                    BlockchainStats.NetworkHashrate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
+                    BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
+                }
             }
 
             catch(Exception e)

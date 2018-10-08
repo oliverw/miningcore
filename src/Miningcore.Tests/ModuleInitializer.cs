@@ -53,7 +53,7 @@ namespace Miningcore.Tests
                     defaultDefinitions
                 };
 
-                coinTemplates = CoinTemplateLoader.Load(coinDefs);
+                coinTemplates = CoinTemplateLoader.Load(container, coinDefs);
             }
         }
     }

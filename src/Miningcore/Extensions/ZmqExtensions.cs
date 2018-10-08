@@ -28,7 +28,7 @@ namespace Miningcore.Extensions
         });
 
         const int PasswordIterations = 5000;
-        private static readonly byte[] NoSalt = Enumerable.Repeat((byte)0, 32).ToArray();
+        private static readonly byte[] NoSalt = new byte[32];
 
         private static byte[] DeriveKey(string password, int length = 32)
         {

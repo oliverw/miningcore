@@ -73,7 +73,7 @@ namespace Miningcore.Blockchain.Equihash
         protected static readonly FieldInfo versionGroupField = typeof(ZcashTransaction).GetField("nVersionGroupId", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 
         // serialization constants
-        protected byte[] sha256Empty = Enumerable.Repeat((byte)0, 32).ToArray();
+        protected byte[] sha256Empty = new byte[32];
         protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
 
         ///////////////////////////////////////////

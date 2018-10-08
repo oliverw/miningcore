@@ -162,9 +162,8 @@ namespace Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold
         protected override byte[] SerializeHeader(uint nTime, string nonce)
         {
             // BTG requires the blockheight to be encoded in the first 4 bytes of the hashReserved field
-            var heightAndReserved = BitConverter.GetBytes(BlockTemplate.Height)
-                .Concat(Enumerable.Repeat((byte)0, 28))
-                .ToArray();
+            var heightAndReserved = new byte[32];
+            BitConverter.TryWriteBytes(heightAndReserved, BlockTemplate.Height);
 
             var blockHeader = new EquihashBlockHeader
             {

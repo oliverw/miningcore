@@ -259,7 +259,7 @@ namespace Miningcore.Api
                     pools.TryGetValue(config.Id, out var pool);
 
                     // map
-                    var result = config.ToPoolInfo(ctx, mapper, stats, pool);
+                    var result = config.ToPoolInfo(mapper, stats, pool);
 
                     // enrich
                     result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
@@ -294,7 +294,7 @@ namespace Miningcore.Api
 
             var response = new GetPoolResponse
             {
-                Pool = pool.ToPoolInfo(ctx, mapper, stats, poolInstance)
+                Pool = pool.ToPoolInfo(mapper, stats, poolInstance)
             };
 
             // enrich
