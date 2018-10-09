@@ -350,7 +350,7 @@ namespace Miningcore.Stratum
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
-            // Serialize
+            // Deserialize
             JsonRpcRequest request;
 
             using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
