@@ -266,9 +266,8 @@ namespace Miningcore.Stratum
 
         private async Task SendAsync<T>(T payload)
         {
-            var result = await sendQueue.SendAsync(payload, cts.Token);
-            if (!result)
-                logger.Warn(() => $"[{ConnectionId}] SendAsync failed!");
+            if (!await sendQueue.SendAsync(payload, cts.Token))
+                logger.Warn(() => $"[{ConnectionId}] Failed to queue response");
         }
 
         private async Task FillReceivePipeAsync()
