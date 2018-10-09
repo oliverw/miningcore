@@ -136,7 +136,7 @@ namespace Miningcore.Extensions
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static T RunTx<T>(this IConnectionFactory factory,
-            Func<IDbConnection, IDbTransaction, T> action,
+            Func<IDbConnection, IDbTransaction, T> func,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
             using(var con = factory.OpenConnection())
@@ -145,7 +145,7 @@ namespace Miningcore.Extensions
                 {
                     try
                     {
-                        var result = action(con, tx);
+                        var result = func(con, tx);
 
                         if (autoCommit)
                             tx.Commit();
@@ -168,7 +168,7 @@ namespace Miningcore.Extensions
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory,
-            Func<IDbConnection, IDbTransaction, Task<T>> action,
+            Func<IDbConnection, IDbTransaction, Task<T>> func,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
             using(var con = factory.OpenConnection())
@@ -177,7 +177,7 @@ namespace Miningcore.Extensions
                 {
                     try
                     {
-                        var result = await action(con, tx);
+                        var result = await func(con, tx);
 
                         if (autoCommit)
                             tx.Commit();
@@ -200,7 +200,7 @@ namespace Miningcore.Extensions
         /// </summary>
         /// <returns>The result returned by the action</returns>
         public static async Task RunTxAsync(this IConnectionFactory factory,
-            Func<IDbConnection, IDbTransaction, Task> action,
+            Func<IDbConnection, IDbTransaction, Task> func,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
             using(var con = factory.OpenConnection())
@@ -209,7 +209,7 @@ namespace Miningcore.Extensions
                 {
                     try
                     {
-                        await action(con, tx);
+                        await func(con, tx);
 
                         if (autoCommit)
                             tx.Commit();
