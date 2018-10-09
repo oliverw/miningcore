@@ -231,7 +231,7 @@ namespace Miningcore.Mining
             Observable.Timer(TimeSpan.FromSeconds(timeout))
                 .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
                 .Where(_ => client.IsAlive)
-                .Select(_ => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
+                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
                 .Concat()
                 .Subscribe(_ => { }, ex =>
                 {

@@ -267,7 +267,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
         }
 
-        private async Task OnNewJobAsync()
+        private Task OnNewJobAsync()
         {
             logger.Info(() => "Broadcasting job");
 
@@ -297,15 +297,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 }
             });
 
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-
-            catch (Exception ex)
-            {
-                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-            }
+            return Task.WhenAll(tasks);
         }
 
         #region Overrides

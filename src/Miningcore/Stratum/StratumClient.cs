@@ -55,6 +55,12 @@ namespace Miningcore.Stratum
 
             receivePipe = new Pipe(PipeOptions.Default);
 
+            sendQueue = new BufferBlock<object>(new DataflowBlockOptions
+            {
+                BoundedCapacity = 32,
+                EnsureOrdered = true,
+            });
+
             this.clock = clock;
             ConnectionId = connectionId;
             IsAlive = true;
@@ -73,6 +79,7 @@ namespace Miningcore.Stratum
 
         private Stream networkStream;
         private readonly Pipe receivePipe;
+        private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new Subject<Unit>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
@@ -85,7 +92,7 @@ namespace Miningcore.Stratum
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(5000);
+        private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
 
         #region API-Surface
 
@@ -131,7 +138,8 @@ namespace Miningcore.Stratum
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync)
+                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                            ProcessSendQueueAsync()
                         };
 
                         await Task.WhenAny(tasks);
@@ -139,6 +147,8 @@ namespace Miningcore.Stratum
                         // We are done with this client, make sure all tasks complete
                         receivePipe.Reader.Complete();
                         receivePipe.Writer.Complete();
+                        sendQueue.Complete();
+
                         // additional safety net to ensure remaining tasks don't linger
                         cts.Cancel();
 
@@ -256,26 +266,9 @@ namespace Miningcore.Stratum
 
         private async Task SendAsync<T>(T payload)
         {
-            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
-
-            using(var ctsTimeout = new CancellationTokenSource())
-            {
-                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
-                {
-                    // serialize to JSON
-                    using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
-                    {
-                        serializer.Serialize(writer, payload);
-                    }
-
-                    // append terminator
-                    networkStream.WriteByte(0xa);
-
-                    // Send to network
-                    ctsTimeout.CancelAfter(sendTimeout);
-                    await networkStream.FlushAsync(ctsComposite.Token);
-                }
-            }
+            var result = await sendQueue.SendAsync(payload, cts.Token);
+            if (!result)
+                logger.Warn(() => $"[{ConnectionId}] SendAsync failed!");
         }
 
         private async Task FillReceivePipeAsync()
@@ -334,6 +327,40 @@ namespace Miningcore.Stratum
 
                 if (result.IsCompleted)
                     break;
+            }
+        }
+
+        private async Task ProcessSendQueueAsync()
+        {
+            while (true)
+            {
+                var payload = await sendQueue.ReceiveAsync(cts.Token);
+
+                await SendResponse(payload);
+            }
+        }
+
+        private async Task SendResponse(object payload)
+        {
+            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+
+            using(var ctsTimeout = new CancellationTokenSource())
+            {
+                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                {
+                    // serialize to JSON
+                    using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    {
+                        serializer.Serialize(writer, payload);
+                    }
+
+                    // append terminator
+                    networkStream.WriteByte(0xa);
+
+                    // Send to network
+                    ctsTimeout.CancelAfter(sendTimeout);
+                    await networkStream.FlushAsync(ctsComposite.Token);
+                }
             }
         }
 
