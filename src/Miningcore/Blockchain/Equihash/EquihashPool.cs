@@ -354,7 +354,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        protected Task OnNewJobAsync(object jobParams)
+        protected async Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
 
@@ -389,7 +389,15 @@ namespace Miningcore.Blockchain.Equihash
                 }
             });
 
-            return Task.WhenAll(tasks);
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
+            }
         }
 
         public override double HashrateFromShares(double shares, double interval)

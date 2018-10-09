@@ -236,7 +236,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        protected virtual Task OnNewJobAsync(object jobParams)
+        protected async Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
 
@@ -271,7 +271,15 @@ namespace Miningcore.Blockchain.Ethereum
                 }
             });
 
-            return Task.WhenAll(tasks);
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
+            }
         }
 
         #region Overrides
