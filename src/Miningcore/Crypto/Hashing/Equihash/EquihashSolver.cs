@@ -20,10 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Threading;
-using Miningcore.Contracts;
-using Miningcore.Extensions;
 using Miningcore.Native;
-using NLog;
 
 // ReSharper disable InconsistentNaming
 
@@ -56,7 +53,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
         /// Verify an Equihash solution
         /// </summary>
         /// <param name="header">header including nonce (140 bytes)</param>
-        /// <param name="solution">equihash solution (excluding 3 bytes with size, so 1344 bytes length) - Do not include byte size preamble "fd4005"</param>
+        /// <param name="solution">equihash solution without size-preamble</param>
         /// <returns></returns>
         public abstract bool Verify(Span<byte> header, Span<byte> solution);
     }
@@ -68,14 +65,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
         public override bool Verify(Span<byte> header, Span<byte> solution)
         {
-            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
-
-            logger.LogInvoke();
-
             try
             {
                 sem.Value.WaitOne();
@@ -103,14 +94,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
         public override bool Verify(Span<byte> header, Span<byte> solution)
         {
-            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
-
-            logger.LogInvoke();
-
             try
             {
                 sem.Value.WaitOne();
@@ -138,14 +123,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
         public override bool Verify(Span<byte> header, Span<byte> solution)
         {
-            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
-
-            logger.LogInvoke();
-
             try
             {
                 sem.Value.WaitOne();
