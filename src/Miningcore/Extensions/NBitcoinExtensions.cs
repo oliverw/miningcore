@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Miningcore.Blockchain.Bitcoin;
 using NBitcoin;
 
 namespace Miningcore.Extensions
 {
-    public static class NBitcoinExtensions
+    public static class MiscExtensions
     {
         public static Network ToNetwork(this BitcoinNetworkType networkType)
         {
@@ -14,8 +12,10 @@ namespace Miningcore.Extensions
             {
                 case BitcoinNetworkType.Main:
                     return Network.Main;
+
                 case BitcoinNetworkType.Test:
                     return Network.TestNet;
+
                 case BitcoinNetworkType.RegTest:
                     return Network.RegTest;
 
