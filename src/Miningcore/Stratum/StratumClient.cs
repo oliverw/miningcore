@@ -57,7 +57,7 @@ namespace Miningcore.Stratum
 
             sendQueue = new BufferBlock<object>(new DataflowBlockOptions
             {
-                BoundedCapacity = 32,
+                BoundedCapacity = SendQueueCapacity,
                 EnsureOrdered = true,
             });
 
@@ -92,6 +92,7 @@ namespace Miningcore.Stratum
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
+        private const int SendQueueCapacity = 32;
         private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
 
         #region API-Surface
@@ -236,37 +237,32 @@ namespace Miningcore.Stratum
             networkStream.Close();
         }
 
-        #endregion // API-Surface
-
-        private T Deserialize<T>(ReadOnlySequence<byte> line)
+        private static JsonRpcRequest DeserializeRequest(ReadOnlySequence<byte> lineBuffer)
         {
-            // zero-copy fast-path
-            //if (line.IsSingleSegment)
-            //{
-            //    var span = line.First.Span;
+            JsonRpcRequest request;
 
-            //    fixed (byte* buf = span)
-            //    {
-            //        using (var stream = new UnmanagedMemoryStream(buf, span.Length))
-            //        {
-            //            using (var jr = new JsonTextReader(new StreamReader(stream, StratumConstants.Encoding)))
-            //            {
-            //                return serializer.Deserialize<T>(jr);
-            //            }
-            //        }
-            //    }
-            //}
-
-            // slow path
-            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(line.ToArray()), StratumConstants.Encoding)))
+            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
             {
-                return serializer.Deserialize<T>(jr);
+                request = serializer.Deserialize<JsonRpcRequest>(jr);
             }
+
+            return request;
         }
 
-        private Task SendAsync<T>(T payload)
+        #endregion // API-Surface
+
+        private async Task SendAsync<T>(T payload)
         {
-            return sendQueue.SendAsync(payload, cts.Token);
+            using (var ctsTimeout = new CancellationTokenSource())
+            {
+                using (var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                {
+                    ctsTimeout.CancelAfter(sendTimeout);
+
+                    if (!await sendQueue.SendAsync(payload, ctsComposite.Token))
+                        throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
+                }
+            }
         }
 
         private async Task FillReceivePipeAsync()
@@ -366,11 +362,12 @@ namespace Miningcore.Stratum
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
-            var request = Deserialize<JsonRpcRequest>(lineBuffer);
+            var request = DeserializeRequest(lineBuffer);
 
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
 
+            // Dispatch
             await onRequestAsync(this, request, cts.Token);
         }
 

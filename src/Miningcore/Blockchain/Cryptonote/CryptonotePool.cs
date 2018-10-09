@@ -298,7 +298,7 @@ namespace Miningcore.Blockchain.Cryptonote
             });
 
             return Task.WhenAll(tasks);
-        }
+       }
 
         #region Overrides
 
@@ -312,7 +312,18 @@ namespace Miningcore.Blockchain.Cryptonote
             if (poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Blocks
-                    .Select(x => Observable.FromAsync(() => OnNewJobAsync()))
+                    .Select(_ => Observable.FromAsync(async () =>
+                    {
+                        try
+                        {
+                            await OnNewJobAsync();
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
+                        }
+                    }))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {

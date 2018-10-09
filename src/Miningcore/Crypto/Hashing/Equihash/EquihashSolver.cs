@@ -20,10 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Threading;
-using Miningcore.Contracts;
-using Miningcore.Extensions;
 using Miningcore.Native;
-using NLog;
 
 // ReSharper disable InconsistentNaming
 
@@ -56,9 +53,9 @@ namespace Miningcore.Crypto.Hashing.Equihash
         /// Verify an Equihash solution
         /// </summary>
         /// <param name="header">header including nonce (140 bytes)</param>
-        /// <param name="solution">equihash solution (excluding 3 bytes with size, so 1344 bytes length) - Do not include byte size preamble "fd4005"</param>
+        /// <param name="solution">equihash solution without size-preamble</param>
         /// <returns></returns>
-        public abstract bool Verify(byte[] header, byte[] solution);
+        public abstract bool Verify(Span<byte> header, Span<byte> solution);
     }
 
     public unsafe class EquihashSolver_200_9 : EquihashSolver
@@ -68,17 +65,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        public override bool Verify(byte[] header, byte[] solution)
+        public override bool Verify(Span<byte> header, Span<byte> solution)
         {
-            Contract.RequiresNonNull(header, nameof(header));
-            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
-            Contract.RequiresNonNull(solution, nameof(solution));
-            Contract.Requires<ArgumentException>(solution.Length == 1344, $"{nameof(solution)} must be exactly 1344 bytes");
-
-            logger.LogInvoke();
-
             try
             {
                 sem.Value.WaitOne();
@@ -106,17 +94,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        public override bool Verify(byte[] header, byte[] solution)
+        public override bool Verify(Span<byte> header, Span<byte> solution)
         {
-            Contract.RequiresNonNull(header, nameof(header));
-            Contract.Requires<ArgumentException>(header.Length == 140, $"{nameof(header)} must be exactly 140 bytes");
-            Contract.RequiresNonNull(solution, nameof(solution));
-            Contract.Requires<ArgumentException>(solution.Length == 100, $"{nameof(solution)} must be exactly 100 bytes");
-
-            logger.LogInvoke();
-
             try
             {
                 sem.Value.WaitOne();
@@ -126,6 +105,35 @@ namespace Miningcore.Crypto.Hashing.Equihash
                     fixed (byte* s = solution)
                     {
                         return LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
+                    }
+                }
+            }
+
+            finally
+            {
+                sem.Value.Release();
+            }
+        }
+    }
+
+    public unsafe class EquihashSolver_96_5 : EquihashSolver
+    {
+        public EquihashSolver_96_5(string personalization)
+        {
+            this.personalization = personalization;
+        }
+
+        public override bool Verify(Span<byte> header, Span<byte> solution)
+        {
+            try
+            {
+                sem.Value.WaitOne();
+
+                fixed (byte* h = header)
+                {
+                    fixed (byte* s = solution)
+                    {
+                        return LibMultihash.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
                     }
                 }
             }

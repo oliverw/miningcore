@@ -6,7 +6,6 @@ using System.Reactive.Linq;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
-using Miningcore.Crypto;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Util;

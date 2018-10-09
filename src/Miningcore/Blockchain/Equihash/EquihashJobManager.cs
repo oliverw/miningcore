@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using Autofac;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
+using Miningcore.Blockchain.Equihash.Custom.BitcoinGold;
+using Miningcore.Blockchain.Equihash.Custom.Minexcoin;
 using Miningcore.Blockchain.Equihash.DaemonResponses;
-using Miningcore.Blockchain.Equihash.Subfamily.BitcoinGold;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -42,7 +43,7 @@ namespace Miningcore.Blockchain.Equihash
         }
 
         private EquihashCoinTemplate coin;
-        public EquihashCoinTemplate.EquihashNetworkDefinition ChainConfig { get; private set; }
+        public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
         private EquihashSolver solver;
 
         protected override void PostChainIdentifyConfigure()
@@ -64,7 +65,7 @@ namespace Miningcore.Blockchain.Equihash
 
             if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
-            else
+            else if(subsidyResponse.Error?.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
                 result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
 
             return result;
@@ -95,10 +96,13 @@ namespace Miningcore.Blockchain.Equihash
 
         private EquihashJob CreateJob()
         {
-            switch(coin.Subfamily)
+            switch(coin.Symbol)
             {
-                case EquihashSubfamily.BitcoinGold:
+                case "BTG":
                     return new BitcoinGoldJob();
+
+                case "MNX":
+                    return new MinexcoinJob();
             }
 
             return new EquihashJob();

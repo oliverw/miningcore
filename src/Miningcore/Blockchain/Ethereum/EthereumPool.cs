@@ -286,7 +286,18 @@ namespace Miningcore.Blockchain.Ethereum
             if (poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(x => Observable.FromAsync(() => OnNewJobAsync(x)))
+                    .Select(job => Observable.FromAsync(async () =>
+                    {
+                        try
+                        {
+                            await OnNewJobAsync(job);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
+                        }
+                    }))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {

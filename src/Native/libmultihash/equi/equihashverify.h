@@ -9,6 +9,7 @@ extern "C" {
 
 bool verifyEH_200_9(const char*, const std::vector<unsigned char>&, const char *personalization);
 bool verifyEH_144_5(const char*, const std::vector<unsigned char>&, const char *personalization);
+bool verifyEH_96_5(const char*, const std::vector<unsigned char>&, const char *personalization);
 
 #ifdef __cplusplus
 }

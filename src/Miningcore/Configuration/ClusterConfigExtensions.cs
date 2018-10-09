@@ -82,9 +82,9 @@ namespace Miningcore.Configuration
             var hash = HeaderHasherValue;
 
             if (hash.GetType() == typeof(DigestReverser))
-                return ((DigestReverser)hash).Upstream.GetType().Name.ToLower();
+                return ((DigestReverser)hash).Upstream.GetType().Name;
 
-            return hash.GetType().Name.ToLower();
+            return hash.GetType().Name;
         }
 
         #endregion
@@ -92,9 +92,9 @@ namespace Miningcore.Configuration
 
     public partial class EquihashCoinTemplate
     {
-        public partial class EquihashNetworkDefinition
+        public partial class EquihashNetworkParams
         {
-            public EquihashNetworkDefinition()
+            public EquihashNetworkParams()
             {
                 diff1Value = new Lazy<NBitcoin.BouncyCastle.Math.BigInteger>(() =>
                 {
@@ -129,7 +129,7 @@ namespace Miningcore.Configuration
             public ulong LastFoundersRewardBlockHeight => FoundersRewardSubsidyHalvingInterval + FoundersRewardSubsidySlowStartShift - 1;
         }
 
-        public EquihashNetworkDefinition GetNetwork(BitcoinNetworkType networkType)
+        public EquihashNetworkParams GetNetwork(BitcoinNetworkType networkType)
         {
             switch(networkType)
             {

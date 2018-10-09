@@ -156,14 +156,11 @@ namespace Miningcore.Configuration
     {
         [EnumMember(Value = "none")]
         None,
-
-        [EnumMember(Value = "bitcoin-gold")]
-        BitcoinGold,
     }
 
     public partial class EquihashCoinTemplate : CoinTemplate
     {
-        public partial class EquihashNetworkDefinition
+        public partial class EquihashNetworkParams
         {
             public string Diff1 { get; set; }
 
@@ -224,13 +221,20 @@ namespace Miningcore.Configuration
         [JsonConverter(typeof(StringEnumConverter))]
         public EquihashSubfamily Subfamily { get; set; }
 
-        public Dictionary<string, EquihashNetworkDefinition> Networks { get; set; }
+        public Dictionary<string, EquihashNetworkParams> Networks { get; set; }
         public bool UsesZCashAddressFormat { get; set; } = true;
 
         /// <summary>
         /// Force use of BitcoinPayoutHandler instead of EquihashPayoutHandler
         /// </summary>
         public bool UseBitcoinPayoutHandler { get; set; }
+
+        /// <summary>
+        /// Fraction of block reward, the pool really gets to keep
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(1.0d)]
+        public decimal BlockrewardMultiplier { get; set; }
     }
 
     public enum CryptonoteSubfamily

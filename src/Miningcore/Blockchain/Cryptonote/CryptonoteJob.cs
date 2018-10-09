@@ -46,11 +46,27 @@ namespace Miningcore.Blockchain.Cryptonote
             coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
             BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
+
+            switch (coin.Hash)
+            {
+                case CryptonightHashType.Normal:
+                    hashFunc = LibCryptonight.Cryptonight;
+                    break;
+
+                case CryptonightHashType.Lite:
+                    hashFunc = LibCryptonight.CryptonightLight;
+                    break;
+
+                case CryptonightHashType.Heavy:
+                    hashFunc = LibCryptonight.CryptonightHeavy;
+                    break;
+            }
         }
 
         private byte[] blobTemplate;
         private int extraNonce;
         private readonly CryptonoteCoinTemplate coin;
+        private readonly LibCryptonight.CryptonightHash hashFunc;
 
         private void PrepareBlobTemplate(byte[] instanceId)
         {
@@ -70,8 +86,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
             extraNonceBytes.CopyTo(blob.Slice(BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
-            var result = LibCryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
-            return result;
+            return LibCryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
         }
 
         private string EncodeTarget(double difficulty)
@@ -89,8 +104,7 @@ namespace Miningcore.Blockchain.Cryptonote
             padded = padded.Slice(0, 4);
             padded.Reverse();
 
-            var result = padded.ToHexString();
-            return result;
+            return padded.ToHexString();
         }
 
         private void ComputeBlockHash(ReadOnlySpan<byte> blobConverted, Span<byte> result)
@@ -107,10 +121,6 @@ namespace Miningcore.Blockchain.Cryptonote
 
         public GetBlockTemplateResponse BlockTemplate { get; }
 
-        public void Init()
-        {
-        }
-
         public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
         {
             workerJob.Height = BlockTemplate.Height;
@@ -123,7 +133,7 @@ namespace Miningcore.Blockchain.Cryptonote
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
+        public (Share Share, string BlobHex) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -154,26 +164,10 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            var variant = coin.HashVariant;
+            var variant = coin.HashVariant != 0 ?
+                coin.HashVariant : ((blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0));
 
-            // auto-select?
-            if (variant == 0)
-                variant = blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0;
-
-            switch (coin.Hash)
-            {
-                case CryptonightHashType.Normal:
-                    LibCryptonight.Cryptonight(blobConverted, headerHash, variant);
-                    break;
-
-                case CryptonightHashType.Lite:
-                    LibCryptonight.CryptonightLight(blobConverted, headerHash, variant);
-                    break;
-
-                case CryptonightHashType.Heavy:
-                    LibCryptonight.CryptonightHeavy(blobConverted, headerHash, variant);
-                    break;
-            }
+            hashFunc(blobConverted, headerHash, variant);
 
             var headerHashString = headerHash.ToHexString();
             if (headerHashString != workerHash)
@@ -205,22 +199,24 @@ namespace Miningcore.Blockchain.Cryptonote
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            // Compute block hash
-            Span<byte> blockHash = stackalloc byte[32];
-            ComputeBlockHash(blobConverted, blockHash);
-
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate,
-                BlockHash = blockHash.ToHexString(),
                 Difficulty = stratumDifficulty,
             };
 
-            var blobHex = blob.ToHexString();
-            var blobHash = blockHash.ToHexString();
+            if(isBlockCandidate)
+            {
+                // Compute block hash
+                Span<byte> blockHash = stackalloc byte[32];
+                ComputeBlockHash(blobConverted, blockHash);
 
-            return (result, blobHex, blobHash);
+                // Fill in block-relevant fields
+                result.IsBlockCandidate = true;
+                result.BlockHash = blockHash.ToHexString();
+            }
+
+            return (result, blob.ToHexString());
         }
 
         #endregion // API-Surface
