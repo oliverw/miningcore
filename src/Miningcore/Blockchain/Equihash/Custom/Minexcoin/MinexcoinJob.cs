@@ -32,18 +32,18 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
 
         protected override Transaction CreateOutputTransaction()
         {
-            var feeReward = BlockTemplate.Transactions.Sum(x => x.Fee);
-            rewardToPool = new Money(250000000 + feeReward, MoneyUnit.Satoshi); // Minexcoin has a static block reward
+            var txFees = BlockTemplate.Transactions.Sum(x => x.Fee);
+            rewardToPool = new Money(250000000 + txFees, MoneyUnit.Satoshi); // Minexcoin has a static block reward
 
             var bankReward = ComputeBankReward(BlockTemplate.Height, rewardToPool);
             rewardToPool -= bankReward;
 
             var tx = Transaction.Create(network);
 
-            // pool reward (t-addr)
+            // pool reward
             tx.AddOutput(rewardToPool, poolAddressDestination);
 
-            // bank reward (t-addr)
+            // bank reward
             tx.AddOutput(bankReward, bankScript);
 
             return tx;
