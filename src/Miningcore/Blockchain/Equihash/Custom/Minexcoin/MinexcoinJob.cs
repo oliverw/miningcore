@@ -29,11 +29,12 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
     public class MinexcoinJob : EquihashJob
     {
         private static readonly Script bankScript = new Script("2103ae6efe9458f1d3bdd9a458b1970eabbdf9fcb1357e0dff2744a777ff43c391eeac".HexToByteArray());
+        private const decimal BlockReward = 250000000m;
 
         protected override Transaction CreateOutputTransaction()
         {
             var txFees = BlockTemplate.Transactions.Sum(x => x.Fee);
-            rewardToPool = new Money(250000000 + txFees, MoneyUnit.Satoshi); // Minexcoin has a static block reward
+            rewardToPool = new Money(BlockReward + txFees, MoneyUnit.Satoshi); // Minexcoin has a static block reward
 
             var bankReward = ComputeBankReward(BlockTemplate.Height, rewardToPool);
             rewardToPool -= bankReward;
