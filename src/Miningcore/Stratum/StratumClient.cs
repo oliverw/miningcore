@@ -57,7 +57,7 @@ namespace Miningcore.Stratum
 
             sendQueue = new BufferBlock<object>(new DataflowBlockOptions
             {
-                BoundedCapacity = 32,
+                BoundedCapacity = SendQueueCapacity,
                 EnsureOrdered = true,
             });
 
@@ -92,6 +92,7 @@ namespace Miningcore.Stratum
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
+        private const int SendQueueCapacity = 32;
         private static readonly TimeSpan sendTimeout = TimeSpan.FromMilliseconds(10000);
 
         #region API-Surface
@@ -267,7 +268,7 @@ namespace Miningcore.Stratum
         private async Task SendAsync<T>(T payload)
         {
             if (!await sendQueue.SendAsync(payload, cts.Token))
-                logger.Warn(() => $"[{ConnectionId}] Failed to queue response");
+                throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
         }
 
         private async Task FillReceivePipeAsync()
