@@ -264,9 +264,11 @@ namespace Miningcore.Stratum
             }
         }
 
-        private Task SendAsync<T>(T payload)
+        private async Task SendAsync<T>(T payload)
         {
-            return sendQueue.SendAsync(payload, cts.Token);
+            var result = await sendQueue.SendAsync(payload, cts.Token);
+            if (!result)
+                logger.Warn(() => $"[{ConnectionId}] SendAsync failed!");
         }
 
         private async Task FillReceivePipeAsync()
