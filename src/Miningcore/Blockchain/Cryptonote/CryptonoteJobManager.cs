@@ -108,7 +108,6 @@ namespace Miningcore.Blockchain.Cryptonote
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                     job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
-                    job.Init();
                     currentJob = job;
 
                     // update stats

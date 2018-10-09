@@ -111,6 +111,8 @@ namespace Miningcore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
 
+        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, int variant);
+
         /// <summary>
         /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
         /// </summary>
