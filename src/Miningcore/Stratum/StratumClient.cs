@@ -267,8 +267,16 @@ namespace Miningcore.Stratum
 
         private async Task SendAsync<T>(T payload)
         {
-            if (!await sendQueue.SendAsync(payload, cts.Token))
-                throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
+            using (var ctsTimeout = new CancellationTokenSource())
+            {
+                using (var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                {
+                    ctsTimeout.CancelAfter(sendTimeout);
+
+                    if (!await sendQueue.SendAsync(payload, ctsComposite.Token))
+                        throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
+                }
+            }
         }
 
         private async Task FillReceivePipeAsync()

@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Linq;
 using Miningcore.Extensions;
 using NBitcoin;
 using Transaction = NBitcoin.Transaction;
@@ -31,7 +32,9 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
+            var feeReward = BlockTemplate.Transactions.Sum(x => x.Fee);
+            rewardToPool = new Money(250000000 + feeReward, MoneyUnit.Satoshi); // Minexcoin has a static block reward
+
             var bankReward = ComputeBankReward(BlockTemplate.Height, rewardToPool);
             rewardToPool -= bankReward;
 
