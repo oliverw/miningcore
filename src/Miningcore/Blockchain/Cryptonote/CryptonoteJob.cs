@@ -211,6 +211,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 Span<byte> blockHash = stackalloc byte[32];
                 ComputeBlockHash(blobConverted, blockHash);
 
+                // Fill in block-relevant fields
                 result.IsBlockCandidate = true;
                 result.BlockHash = blockHash.ToHexString();
             }
