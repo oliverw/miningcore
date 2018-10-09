@@ -316,7 +316,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 throw new StratumException(StratumError.MinusOne, "block expired");
 
             // validate & process
-            var (share, blobHex, blobHash) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
+            var (share, blobHex) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
@@ -332,16 +332,16 @@ namespace Miningcore.Blockchain.Cryptonote
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
             {
-                logger.Info(() => $"Submitting block {share.BlockHeight} [{blobHash.Substring(0, 6)}]");
+                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}]");
 
-                share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, blobHash);
+                share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, share.BlockHash);
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.MinerName}");
                     blockSubmissionSubject.OnNext(Unit.Default);
 
-                    share.TransactionConfirmationData = blobHash;
+                    share.TransactionConfirmationData = share.BlockHash;
                 }
 
                 else

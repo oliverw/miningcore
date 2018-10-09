@@ -133,7 +133,7 @@ namespace Miningcore.Blockchain.Cryptonote
             target = EncodeTarget(workerJob.Difficulty);
         }
 
-        public (Share Share, string BlobHex, string BlobHash) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
+        public (Share Share, string BlobHex) ProcessShare(string nonce, uint workerExtraNonce, string workerHash, StratumClient worker)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(workerHash), $"{nameof(workerHash)} must not be empty");
@@ -199,22 +199,23 @@ namespace Miningcore.Blockchain.Cryptonote
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
             }
 
-            // Compute block hash
-            Span<byte> blockHash = stackalloc byte[32];
-            ComputeBlockHash(blobConverted, blockHash);
-
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                IsBlockCandidate = isBlockCandidate,
-                BlockHash = blockHash.ToHexString(),
                 Difficulty = stratumDifficulty,
             };
 
-            var blobHex = blob.ToHexString();
-            var blobHash = blockHash.ToHexString();
+            if(isBlockCandidate)
+            {
+                // Compute block hash
+                Span<byte> blockHash = stackalloc byte[32];
+                ComputeBlockHash(blobConverted, blockHash);
 
-            return (result, blobHex, blobHash);
+                result.IsBlockCandidate = true;
+                result.BlockHash = blockHash.ToHexString();
+            }
+
+            return (result, blob.ToHexString());
         }
 
         #endregion // API-Surface
