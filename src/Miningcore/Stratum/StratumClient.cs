@@ -239,32 +239,6 @@ namespace Miningcore.Stratum
 
         #endregion // API-Surface
 
-        private T Deserialize<T>(ReadOnlySequence<byte> line)
-        {
-            // zero-copy fast-path
-            //if (line.IsSingleSegment)
-            //{
-            //    var span = line.First.Span;
-
-            //    fixed (byte* buf = span)
-            //    {
-            //        using (var stream = new UnmanagedMemoryStream(buf, span.Length))
-            //        {
-            //            using (var jr = new JsonTextReader(new StreamReader(stream, StratumConstants.Encoding)))
-            //            {
-            //                return serializer.Deserialize<T>(jr);
-            //            }
-            //        }
-            //    }
-            //}
-
-            // slow path
-            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(line.ToArray()), StratumConstants.Encoding)))
-            {
-                return serializer.Deserialize<T>(jr);
-            }
-        }
-
         private async Task SendAsync<T>(T payload)
         {
             using (var ctsTimeout = new CancellationTokenSource())
@@ -376,11 +350,18 @@ namespace Miningcore.Stratum
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
-            var request = Deserialize<JsonRpcRequest>(lineBuffer);
+            // Serialize
+            JsonRpcRequest request;
+
+            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
+            {
+                request = serializer.Deserialize<JsonRpcRequest>(jr);
+            }
 
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
 
+            // Dispatch
             await onRequestAsync(this, request, cts.Token);
         }
 
