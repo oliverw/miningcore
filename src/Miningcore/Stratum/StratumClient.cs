@@ -237,6 +237,18 @@ namespace Miningcore.Stratum
             networkStream.Close();
         }
 
+        private static JsonRpcRequest DeserializeRequest(ReadOnlySequence<byte> lineBuffer)
+        {
+            JsonRpcRequest request;
+
+            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
+            {
+                request = serializer.Deserialize<JsonRpcRequest>(jr);
+            }
+
+            return request;
+        }
+
         #endregion // API-Surface
 
         private async Task SendAsync<T>(T payload)
@@ -350,13 +362,7 @@ namespace Miningcore.Stratum
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
-            // Deserialize
-            JsonRpcRequest request;
-
-            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
-            {
-                request = serializer.Deserialize<JsonRpcRequest>(jr);
-            }
+            var request = DeserializeRequest(lineBuffer);
 
             if (request == null)
                 throw new JsonException("Unable to deserialize request");
