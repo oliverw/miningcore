@@ -359,8 +359,8 @@ namespace Miningcore.Blockchain.Ethereum
                 return new object[]
                 {
                     job.Id,
-                    job.BlockTemplate.Seed,
-                    job.BlockTemplate.Header,
+                    job.BlockTemplate.Seed.Substring(2),
+                    job.BlockTemplate.Header.Substring(2),
                     isNew
                 };
             }
