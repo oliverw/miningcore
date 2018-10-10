@@ -347,9 +347,9 @@
       "args": [{ "hash": "x16r" }]
     },
     "shareMultiplier": 256,
-    "explorerBlockLink": "http://explorer.threeeyed.info/block/$hash$",
-    "explorerTxLink": "http://explorer.threeeyed.info/tx/{0}",
-    "explorerAccountLink": "http://explorer.threeeyed.info/address/{0}"
+    "explorerBlockLink": "https://ravencoin.network/block/$hash$",
+    "explorerTxLink": "https://ravencoin.network/tx/{0}",
+    "explorerAccountLink": "https://ravencoin.network/address/{0}"
   },
   "pigeoncoin": {
     "name": "Pigeoncoin",
