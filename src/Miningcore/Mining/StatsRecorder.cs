@@ -91,6 +91,7 @@ namespace Miningcore.Mining
                     try
                     {
                         UpdatePoolHashrates();
+                        PerformStatsGc();
                     }
 
                     catch(Exception ex)
@@ -212,6 +213,26 @@ namespace Miningcore.Mining
                     });
                 }
             }
+        }
+
+        private void PerformStatsGc()
+        {
+            logger.Info(() => $"Performing Stats GC");
+
+            cf.Run(con =>
+            {
+                var cutOff = DateTime.UtcNow.AddMonths(-3);
+
+                var rowCount = statsRepo.DeletePoolStatsBefore(con, cutOff);
+                if(rowCount > 0)
+                    logger.Info(() => $"Deleted {rowCount} old poolstats records");
+
+                rowCount = statsRepo.DeleteMinerStatsBefore(con, cutOff);
+                if (rowCount > 0)
+                    logger.Info(() => $"Deleted {rowCount} old minerstats records");
+            });
+
+            logger.Info(() => $"Stats GC complete");
         }
 
         private void BuildFaultHandlingPolicy()

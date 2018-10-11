@@ -306,5 +306,23 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .Select(mapper.Map<MinerWorkerPerformanceStats>)
                 .ToArray();
         }
+
+        public int DeletePoolStatsBefore(IDbConnection con, DateTime date)
+        {
+            logger.LogInvoke();
+
+            var query = "DELETE FROM poolstats WHERE created < @date";
+
+            return con.Execute(query, new { date });
+        }
+
+        public int DeleteMinerStatsBefore(IDbConnection con, DateTime date)
+        {
+            logger.LogInvoke();
+
+            var query = "DELETE FROM minerstats WHERE created < @date";
+
+            return con.Execute(query, new { date });
+        }
     }
 }
