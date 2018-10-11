@@ -40,7 +40,7 @@ namespace Miningcore.Persistence.Model.Projections
         public ulong PendingShares { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
-        public decimal Paid24h { get; set; }
+        public decimal TodayPaid { get; set; }
         public Payment LastPayment { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }
         public MinerWorkerPerformanceStats[] PerformanceStats { get; set; }
