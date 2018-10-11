@@ -45,9 +45,7 @@
     "pools": [{
         "id": "dash1",
         "enabled": true,
-        "coin": {
-            "type": "DASH"
-        },
+        "coin": "dash",
         "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
         "rewardRecipients": [{
             "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",

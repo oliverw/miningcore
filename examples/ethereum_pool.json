@@ -45,9 +45,7 @@
     "pools": [{
         "id": "eth1",
         "enabled": true,
-        "coin": {
-            "type": "ETH"
-        },
+        "coin": "ethereum",
         "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
         "rewardRecipients": [{
                 "type": "op",

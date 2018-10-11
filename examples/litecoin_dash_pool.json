@@ -45,9 +45,7 @@
     "pools": [{
         "id": "ltc1",
         "enabled": true,
-        "coin": {
-            "type": "LTC"
-        },
+        "coin": "litecoin",
         "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
         "rewardRecipients": [{
             "address": "LUWYwkz6DQLVeqJqHRtGjNhWUxBvBmE3SX",
@@ -93,9 +91,7 @@
     {
         "id": "dash1",
         "enabled": true,
-        "coin": {
-            "type": "DASH"
-        },
+        "coin": "dash",
         "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
         "rewardRecipients": [{
             "type": "op",

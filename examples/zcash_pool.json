@@ -46,9 +46,7 @@
     "pools": [{
         "id": "zec1",
         "enabled": true,
-        "coin": {
-            "type": "ZEC"
-        },
+        "coin": "zcash",
         "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
         "z-address": "zca7tCyUqn6axyZTWfiFTufI28sJNOnC2p3PHV4txH1XdDGsAjw1AKM8qiHznMTSw5GXUbWqS7P7Qc1sDw93CQePCLuPXXr",
         "rewardRecipients": [
