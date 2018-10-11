@@ -103,21 +103,37 @@ namespace Miningcore.Native
         private static extern void cryptonight_free_context(IntPtr ptr);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_light_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_light(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight_light(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, int variant);
+        private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
 
-        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, int variant);
+        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant);
+
+        // see https://github.com/xmrig/xmrig/blob/master/src/common/xmrig.h
+        public enum CryptonightVariant
+        {
+            VARIANT_AUTO = -1, // Autodetect
+            VARIANT_0 = 0,  // Original CryptoNight or CryptoNight-Heavy
+            VARIANT_1 = 1,  // CryptoNight variant 1 also known as Monero7 and CryptoNightV7
+            VARIANT_TUBE = 2,  // Modified CryptoNight-Heavy (TUBE only)
+            VARIANT_XTL = 3,  // Modified CryptoNight variant 1 (Stellite only)
+            VARIANT_MSR = 4,  // Modified CryptoNight variant 1 (Masari only)
+            VARIANT_XHV = 5,  // Modified CryptoNight-Heavy (Haven Protocol only)
+            VARIANT_XAO = 6,  // Modified CryptoNight variant 0 (Alloy only)
+            VARIANT_RTO = 7,  // Modified CryptoNight variant 1 (Arto only)
+            VARIANT_2 = 8,  // CryptoNight variant 2
+            VARIANT_MAX
+        };
 
         /// <summary>
         /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
+        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -144,7 +160,7 @@ namespace Miningcore.Native
         /// Cryptonight Lite Hash (AEON etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, int variant)
+        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -171,7 +187,7 @@ namespace Miningcore.Native
         /// Cryptonight Heavy Hash (TUBE etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, int variant)
+        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
