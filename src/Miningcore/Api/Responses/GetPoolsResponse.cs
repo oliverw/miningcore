@@ -31,6 +31,7 @@ namespace Miningcore.Api.Responses
     {
         public string Type { get; set; }
         public string Name { get; set; }
+        public string Family { get; set; }
         public string Algorithm { get; set; }
     }
 
