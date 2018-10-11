@@ -133,9 +133,7 @@ namespace Miningcore.Mining
                 Created = start
             };
 
-            var poolIds = pools.Keys;
-
-            foreach(var poolId in poolIds)
+            foreach(var poolId in pools.Keys)
             {
                 stats.PoolId = poolId;
 
