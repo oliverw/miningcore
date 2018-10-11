@@ -167,11 +167,6 @@ namespace Miningcore.Mining
                                         continue;
                                     }
 
-                                    // Obsolete: Migrate cryptonote shares with paymentid received from old relays
-                                    // Concat miner and paymentid
-                                    if (!string.IsNullOrEmpty(share.PayoutInfo))
-                                        share.Miner = share.Miner + PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
-
                                     // store
                                     share.PoolId = topic;
                                     share.Created = clock.Now;

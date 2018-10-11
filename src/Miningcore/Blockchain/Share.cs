@@ -45,12 +45,6 @@ namespace Miningcore.Blockchain
         public string Worker { get; set; }
 
         /// <summary>
-        /// Extra information for payout processing
-        /// </summary>
-        [ProtoMember(4)]
-        public string PayoutInfo { get; set; }
-
-        /// <summary>
         /// Mining Software
         /// </summary>
         [ProtoMember(5)]
