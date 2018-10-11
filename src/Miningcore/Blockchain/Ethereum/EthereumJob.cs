@@ -107,8 +107,8 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 BlockHeight = (long) BlockTemplate.Height,
                 IpAddress = worker.RemoteEndpoint?.Address?.ToString(),
-                Miner = context.MinerName,
-                Worker = context.WorkerName,
+                Miner = context.Miner,
+                Worker = context.Worker,
                 UserAgent = context.UserAgent,
                 IsBlockCandidate = isBlockCandidate,
                 Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,

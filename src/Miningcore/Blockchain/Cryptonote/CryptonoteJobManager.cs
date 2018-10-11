@@ -322,16 +322,12 @@ namespace Miningcore.Blockchain.Cryptonote
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = context.MinerName;
-            share.Worker = context.WorkerName;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
-
-            // Concat miner and paymentid
-            if (!string.IsNullOrEmpty(context.PaymentId))
-                share.Miner = share.Miner + PayoutConstants.PayoutInfoSeperator + context.PaymentId;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)
@@ -342,7 +338,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
                     blockSubmissionSubject.OnNext(Unit.Default);
 
                     share.TransactionConfirmationData = share.BlockHash;

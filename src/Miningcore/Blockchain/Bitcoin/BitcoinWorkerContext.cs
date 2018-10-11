@@ -24,8 +24,15 @@ namespace Miningcore.Blockchain.Bitcoin
 {
     public class BitcoinWorkerContext : WorkerContextBase
     {
-        public string MinerName { get; set; }
-        public string WorkerName { get; set; }
+        /// <summary>
+        /// Usually a wallet address
+        /// </summary>
+        public string Miner { get; set; }
+
+        /// <summary>
+        /// Arbitrary worker identififer for miners using multiple rigs
+        /// </summary>
+        public string Worker { get; set; }
 
         public string ExtraNonce1 { get; set; }
     }

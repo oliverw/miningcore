@@ -466,7 +466,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.Miner}");
                 }
             }
 

@@ -21,15 +21,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
 using Miningcore.Mining;
-using Miningcore.Time;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
     public class CryptonoteWorkerContext : WorkerContextBase
     {
-        public string MinerName { get; set; }
-        public string WorkerName { get; set; }
-        public string PaymentId { get; set; }
+        /// <summary>
+        /// Usually a wallet address
+        /// NOTE: May include paymentid (seperated by a dot .)
+        /// </summary>
+        public string Miner { get; set; }
+
+        /// <summary>
+        /// Arbitrary worker identififer for miners using multiple rigs
+        /// </summary>
+        public string Worker { get; set; }
 
         private List<CryptonoteWorkerJob> validJobs { get; } = new List<CryptonoteWorkerJob>();
 

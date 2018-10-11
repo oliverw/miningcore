@@ -171,8 +171,8 @@ namespace Miningcore.Blockchain.Equihash
 
             // assumes that workerName is an address
             context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
-            context.MinerName = minerName;
-            context.WorkerName = workerName;
+            context.Miner = minerName;
+            context.Worker = workerName;
 
             if (context.IsAuthorized)
             {
