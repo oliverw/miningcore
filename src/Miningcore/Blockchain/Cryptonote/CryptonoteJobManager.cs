@@ -40,6 +40,7 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
+using Miningcore.Payments;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -323,11 +324,14 @@ namespace Miningcore.Blockchain.Cryptonote
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
             share.Miner = context.MinerName;
             share.Worker = context.WorkerName;
-            share.PayoutInfo = context.PaymentId;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
             share.Created = clock.Now;
+
+            // Concat miner and paymentid
+            if (!string.IsNullOrEmpty(context.PaymentId))
+                share.Miner = share.Miner + PayoutConstants.PayoutInfoSeperator + context.PaymentId;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)

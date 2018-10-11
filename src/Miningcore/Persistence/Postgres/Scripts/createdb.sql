@@ -6,7 +6,6 @@ CREATE TABLE shares
 	blockheight BIGINT NOT NULL,
 	difficulty DOUBLE PRECISION NOT NULL,
 	networkdifficulty DOUBLE PRECISION NOT NULL,
-	payoutinfo TEXT NULL,
 	miner TEXT NOT NULL,
 	worker TEXT NULL,
 	useragent TEXT NULL,

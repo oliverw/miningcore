@@ -12,6 +12,7 @@ using Miningcore.Contracts;
 using Miningcore.Crypto;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Payments;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
@@ -165,6 +166,11 @@ namespace Miningcore.Mining
                                         logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
                                         continue;
                                     }
+
+                                    // Obsolete: Migrate cryptonote shares with paymentid received from old relays
+                                    // Concat miner and paymentid
+                                    if (!string.IsNullOrEmpty(share.PayoutInfo))
+                                        share.Miner = share.Miner + PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
                                     // store
                                     share.PoolId = topic;
