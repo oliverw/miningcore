@@ -97,7 +97,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>SODIUM_STATIC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp14</LanguageStandard>
@@ -114,7 +114,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>SODIUM_STATIC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp14</LanguageStandard>
@@ -236,6 +236,7 @@
     <ClInclude Include="sha3\sph_shavite.h" />
     <ClInclude Include="sha3\sph_simd.h" />
     <ClInclude Include="sha3\sph_skein.h" />
+    <ClInclude Include="sha3\sph_sm3.h" />
     <ClInclude Include="sha3\sph_types.h" />
     <ClInclude Include="sha3\sph_whirlpool.h" />
     <ClInclude Include="shavite3.h" />
@@ -296,6 +297,7 @@
     <ClCompile Include="scryptn.c" />
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\hamsi.c" />
+    <ClCompile Include="sha3\sm3.c" />
     <ClCompile Include="sha3\sph_blake.c" />
     <ClCompile Include="sha3\sph_blake2s.c" />
     <ClCompile Include="sha3\sph_bmw.c" />

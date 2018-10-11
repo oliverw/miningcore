@@ -72,6 +72,16 @@ extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t 
 	x11_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x13_export(const char* input, char* output, uint32_t input_len)
+{
+    x13_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x13_bcd_export(const char* input, char* output)
+{
+    x13_bcd_hash(input, output);
+}
+
 extern "C" MODULE_API void x17_export(const char* input, char* output, uint32_t input_len)
 {
     x17_hash(input, output, input_len);
@@ -199,15 +209,37 @@ extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t
     x16s_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API bool equihash_verify_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
-    if (header_length != 140 || solution_length != 1344) {
+    if (header_length != 140) {
         return false;
     }
 
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
-    return verifyEH(header, vecSolution);
+    return verifyEH_200_9(header, vecSolution, personalization);
+}
+
+extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
+{
+    if (header_length != 140) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH_144_5(header, vecSolution, personalization);
+}
+
+extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
+{
+    if (header_length != 140) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH_96_5(header, vecSolution, personalization);
 }
 
 extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)

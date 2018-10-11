@@ -20,6 +20,8 @@ build/
 *.ilk
 *.meta
 *.obj
+*.o
+*.so
 *.pch
 *.pdb
 *.pgc
@@ -111,10 +113,5 @@ $RECYCLE.BIN/
 
 logs/
 
-src/multihash-native/**/*.o
-
-recovered-shares.json
-
-
-src/MiningCore/config\.json
-/src/MiningCore/config2.json
+src/Miningcore/config.json
+src/Miningcore/config2.json

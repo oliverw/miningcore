@@ -1,22 +1,13 @@
-
 [![Build status](https://ci.appveyor.com/api/projects/status/nbvaa55gu3icd1q8?svg=true)](https://ci.appveyor.com/project/oliverw/miningcore)
 [![Docker Build Statu](https://img.shields.io/docker/build/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
 [![Docker Stars](https://img.shields.io/docker/stars/coinfoundry/miningcore-docker.svg)](https://hub.docker.com/r/coinfoundry/miningcore-docker/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-## Miningcore
-
-Miningcore a the multi-currency stratum-engine.
-
-Even though the pool engine can be used to run a production-pool, doing so currently requires to
-develop your own website frontend talking to the pool's API-Endpoint at http://127.0.0.1:4000.
-This is going to change in the future.
-
 ### Features
 
 - Supports clusters of pools each running individual currencies
-- Ultra-low-latency Stratum implementation using asynchronous I/O (LibUv)
+- Ultra-low-latency, multi-threaded Stratum implementation using asynchronous I/O
 - Adaptive share difficulty ("vardiff")
 - PoW validation (hashing) using native code for maximum performance
 - Session management for purging DDoS/flood initiated zombie workers
@@ -32,28 +23,29 @@ This is going to change in the future.
 Coin | Implemented | Tested | Planned | Notes
 :--- | :---: | :---: | :---: | :---:
 Bitcoin | Yes | Yes | |
+Bitcoin Cash | Yes | Yes | |
+Bitcoin Gold | Yes | Yes | |
+Bitcoin Diamond | Yes | Yes | |
+Bitcoin Private | Yes | Yes | |
 Litecoin | Yes | Yes | |
-Zcash | Yes | Yes | |
+ZCash | Yes | Yes | |
 Monero | Yes | Yes | |
+Bittube | Yes | Yes | |
 Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Expanse | Yes | Yes | | - **Not working for Byzantinium update**<br>- Requires [Parity](https://github.com/paritytech/parity/releases)
 DASH | Yes | Yes | |
-Bitcoin Gold | Yes | Yes | |
-Bitcoin Cash | Yes | Yes | |
 Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
-Globaltoken | Yes | Yes | | Requires [GLT Daemon](https://globaltoken.org/#downloads)
-Ellaism | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
 Groestlcoin | Yes | Yes | |
 Dogecoin | Yes | No | |
 DigiByte | Yes | Yes | |
 Namecoin | Yes | No | |
 Viacoin | Yes | No | |
 Peercoin | Yes | No | |
-Straks | Yes | Yes | |
-Electroneum | Yes | Yes | |
+Ravencoin | Yes | Yes | |
 MoonCoin | Yes | Yes | |
+
+Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 #### Ethereum
 
@@ -83,11 +75,26 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 * BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
 * XMR: `475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH`
 
-### Runtime Requirements
+### Runtime Requirements on Windows
 
-- [.Net Core 2.0 Runtime](https://www.microsoft.com/net/download/core#/runtime)
+- [.Net Core 2.1 Runtime](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
+
+### Runtime Requirements on Linux
+
+- [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+- [PostgreSQL Database](https://www.postgresql.org/)
+- Coin Daemon (per pool)
+- Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
+
+### Running pre-built Release Binaries on Windows
+
+- Download miningcore-win-x64.zip from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Extract the Archive
+- Setup the database as outlined below
+- Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Run <code>dotnet Miningcore.dll -c config.json</code>
 
 ### PostgreSQL Database setup
 
@@ -109,7 +116,7 @@ grant all privileges on database miningcore to miningcore;
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/MiningCore/Persistence/Postgres/Scripts/createdb.sql
+$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
@@ -117,49 +124,48 @@ $ psql -d miningcore -U miningcore -f createdb.sql
 
 ### [API](https://github.com/coinfoundry/miningcore/wiki/API)
 
-### Docker
+### Building from Source
 
-The official [miningcore docker image](https://hub.docker.com/r/coinfoundry/miningcore-docker/) expects a valid pool configuration file as volume argument:
-
-```console
-$ docker run -d -p 3032:3032 -v /path/to/config.json:/config.json:ro coinfoundry/miningcore-docker
-```
-
-You also need to expose all stratum ports specified in your configuration file.
-
-### Building from Source (Shell)
-
-Install the [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
-
-#### Linux (Ubuntu example)
+#### Building on Ubuntu 16.04
 
 ```console
-$ apt-get update -y 
-$ apt-get -y install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev
+$ wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+$ sudo dpkg -i packages-microsoft-prod.deb
+$ sudo apt-get update -y
+$ sudo apt-get install apt-transport-https -y
+$ sudo apt-get update -y
+$ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
-$ cd miningcore/src/MiningCore
-$ ./linux-build.sh
+$ cd miningcore/src/Miningcore
+$ dotnet publish -c Release --framework netcoreapp2.1  -o ../../build
 ```
 
-#### Windows
+#### Building on Windows
+
+Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
-> cd miningcore/src/MiningCore
-> windows-build.bat
+> cd miningcore/src/Miningcore
+> dotnet publish -c Release --framework netcoreapp2.1  -o ..\..\build
 ```
+
+#### Building on Windows - Visual Studio
+
+- Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+- Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
+- Open `Miningcore.sln` in VS 2017
+
 
 #### After successful build
 
-Now copy `config.json` to `../../build`, edit it to your liking and run:
+Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
 ```
 cd ../../build
-dotnet MiningCore.dll -c config.json
+dotnet Miningcore.dll -c config.json
 ```
 
-### Building from Source (Visual Studio)
+## Running a production pool
 
-- Install [Visual Studio 2017](https://www.visualstudio.com/vs/) (Community Edition is sufficient) for your platform
-- Install [.Net Core 2.0 SDK](https://www.microsoft.com/net/download/core) for your platform
-- Open `MiningCore.sln` in VS 2017
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.

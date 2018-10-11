@@ -45,10 +45,7 @@
     "pools": [{
       "id": "dgb-sha256-1",
       "enabled": true,
-      "coin": {
-        "type": "DGB",
-        "algorithm": "sha256d"
-      },
+      "coin": "digibyte-sha256",
       "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
       "rewardRecipients": [
         {
