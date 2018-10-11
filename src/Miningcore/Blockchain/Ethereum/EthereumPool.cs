@@ -114,8 +114,8 @@ namespace Miningcore.Blockchain.Ethereum
 
             // assumes that workerName is an address
             context.IsAuthorized = !string.IsNullOrEmpty(minerName) && manager.ValidateAddress(minerName);
-            context.MinerName = minerName;
-            context.WorkerName = workerName;
+            context.Miner = minerName;
+            context.Worker = workerName;
 
             // respond
             await client.RespondAsync(context.IsAuthorized, request.Id);

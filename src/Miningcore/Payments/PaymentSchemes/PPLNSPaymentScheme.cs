@@ -147,11 +147,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 for(var i = 0; i < page.Length; i++)
                 {
                     var share = page[i];
-
-                    // build address
                     var address = share.Miner;
-                    if (!string.IsNullOrEmpty(share.PayoutInfo))
-                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
                     // record attributed shares for diagnostic purposes
                     if (!shares.ContainsKey(address))
@@ -209,8 +205,6 @@ namespace Miningcore.Payments.PaymentSchemes
 
                     // build address
                     var address = share.Miner;
-                    if (!string.IsNullOrEmpty(share.PayoutInfo))
-                        address += PayoutConstants.PayoutInfoSeperator + share.PayoutInfo;
 
                     // record attributed shares for diagnostic purposes
                     if (!shares.ContainsKey(address))

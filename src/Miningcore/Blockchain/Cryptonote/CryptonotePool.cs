@@ -34,6 +34,7 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
+using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
@@ -63,7 +64,6 @@ namespace Miningcore.Blockchain.Cryptonote
         private async Task OnLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
             if (request.Id == null)
@@ -76,33 +76,37 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
-            context.MinerName = split[0].Trim();
-            context.WorkerName = split.Length > 1 ? split[1].Trim() : null;
+            context.Miner = split[0].Trim();
+            context.Worker = split.Length > 1 ? split[1].Trim() : null;
             context.UserAgent = loginRequest.UserAgent?.Trim();
-            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
+
+            var addressToValidate = context.Miner;
 
             // extract paymentid
-            var index = context.MinerName.IndexOf('#');
+            var index = context.Miner.IndexOf('#');
             if (index != -1)
             {
-                context.PaymentId = context.MinerName.Substring(index + 1).Trim();
-                context.MinerName = context.MinerName.Substring(0, index).Trim();
+                var paymentId = context.Miner.Substring(index + 1).Trim();
+
+                // validate
+                if (!string.IsNullOrEmpty(paymentId) && paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
+                    throw new StratumException(StratumError.MinusOne, "invalid payment id");
+
+                // re-append to address
+                addressToValidate = context.Miner.Substring(0, index).Trim();
+                context.Miner = addressToValidate + PayoutConstants.PayoutInfoSeperator + paymentId;
             }
 
             // validate login
-            var result = manager.ValidateAddress(context.MinerName);
+            var result = manager.ValidateAddress(addressToValidate);
+            if (!result)
+                throw new StratumException(StratumError.MinusOne, "invalid login");
 
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
-            if (!context.IsAuthorized)
-                throw new StratumException(StratumError.MinusOne, "invalid login");
-
-            // validate payment Id
-            if (!string.IsNullOrEmpty(context.PaymentId) && context.PaymentId.Length != CryptonoteConstants.PaymentIdHexLength)
-                throw new StratumException(StratumError.MinusOne, "invalid payment id");
-
             // extract control vars from password
+            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
             var staticDiff = GetStaticDiffFromPassparts(passParts);
             if (staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
@@ -124,13 +128,15 @@ namespace Miningcore.Blockchain.Cryptonote
             await client.RespondAsync(loginResponse, request.Id);
 
             // log association
-            logger.Info(() => $"[{client.ConnectionId}] Authorized worker {loginRequest.Login}");
+            if(!string.IsNullOrEmpty(context.Worker))
+                logger.Info(() => $"[{client.ConnectionId}] Authorized worker {context.Worker}@{context.Miner}");
+            else
+                logger.Info(() => $"[{client.ConnectionId}] Authorized miner {context.Miner}");
         }
 
         private async Task OnGetJobAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
             if (request.Id == null)

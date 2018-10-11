@@ -95,6 +95,14 @@ namespace Miningcore.Extensions
             return "0x" + value.ToString("x", CultureInfo.InvariantCulture);
         }
 
+        public static string StripHexPrefix(this string value)
+        {
+            if (value?.ToLower().StartsWith("0x") == true)
+                return value.Substring(2);
+
+            return value;
+        }
+
         public static T IntegralFromHex<T>(this string value)
         {
             var underlyingType = Nullable.GetUnderlyingType(typeof(T));

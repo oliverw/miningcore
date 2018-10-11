@@ -45,10 +45,7 @@
     "pools": [{
       "id": "pak1",
       "enabled": true,
-      "coin": {
-        "type": "PAK",
-        "algorithm": "scrypt"
-      },
+      "coin": "pakcoin",
       "hasLegacyDaemon": true,
       "address": "PSWsdRBXui6nnhV9FJ4NduC2KdFkeudtEz",
       "rewardRecipients": [

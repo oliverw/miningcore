@@ -45,9 +45,7 @@
     "pools": [{
       "id": "ltc1",
       "enabled": true,
-      "coin": {
-        "type": "LTC"
-      },
+      "coin": "litecoin",
       "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
       "rewardRecipients": [
         {

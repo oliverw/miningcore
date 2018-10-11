@@ -260,7 +260,10 @@ namespace Miningcore.Stratum
                     ctsTimeout.CancelAfter(sendTimeout);
 
                     if (!await sendQueue.SendAsync(payload, ctsComposite.Token))
+                    {
+                        // this will force a disconnect down the line 
                         throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
+                    }
                 }
             }
         }
@@ -271,15 +274,17 @@ namespace Miningcore.Stratum
             {
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
+                // read from network directly into pipe memory
                 var cb = await networkStream.ReadAsync(memory, cts.Token);
                 if (cb == 0)
                     break; // EOF
 
                 LastReceive = clock.Now;
+
+                // hand off to pipe
                 receivePipe.Writer.Advance(cb);
 
                 var result = await receivePipe.Writer.FlushAsync(cts.Token);
-
                 if (result.IsCompleted)
                     break;
             }
@@ -328,24 +333,24 @@ namespace Miningcore.Stratum
         {
             while (true)
             {
-                var payload = await sendQueue.ReceiveAsync(cts.Token);
+                var msg = await sendQueue.ReceiveAsync(cts.Token);
 
-                await SendResponse(payload);
+                await SendMessage(msg);
             }
         }
 
-        private async Task SendResponse(object payload)
+        private async Task SendMessage(object msg)
         {
-            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(payload)}");
+            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
 
             using(var ctsTimeout = new CancellationTokenSource())
             {
                 using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
                 {
-                    // serialize to JSON
+                    // serialize to JSON directly onto network stream
                     using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
-                        serializer.Serialize(writer, payload);
+                        serializer.Serialize(writer, msg);
                     }
 
                     // append terminator

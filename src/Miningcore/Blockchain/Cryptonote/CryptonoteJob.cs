@@ -28,6 +28,7 @@ using Miningcore.Native;
 using Miningcore.Stratum;
 using Miningcore.Util;
 using NBitcoin.BouncyCastle.Math;
+using static Miningcore.Native.LibCryptonight;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Cryptonote
@@ -162,11 +163,31 @@ namespace Miningcore.Blockchain.Cryptonote
             if (blobConverted == null)
                 throw new StratumException(StratumError.MinusOne, "malformed blob");
 
+            // determine variant
+            CryptonightVariant variant;
+
+            if (coin.HashVariant != 0)
+                variant = (CryptonightVariant)coin.HashVariant;
+            else
+            {
+                switch(blobConverted[0])
+                {
+                    case 9:
+                        variant = CryptonightVariant.VARIANT_2;
+                        break;
+
+                    case 7:
+                        variant = CryptonightVariant.VARIANT_1;
+                        break;
+
+                    default:
+                        variant = CryptonightVariant.VARIANT_0;
+                        break;
+                }
+            }
+
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            var variant = coin.HashVariant != 0 ?
-                coin.HashVariant : ((blobConverted[0] >= 7 ? blobConverted[0] - 6 : 0));
-
             hashFunc(blobConverted, headerHash, variant);
 
             var headerHashString = headerHash.ToHexString();

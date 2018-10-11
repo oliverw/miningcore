@@ -40,6 +40,7 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
+using Miningcore.Payments;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -321,9 +322,8 @@ namespace Miningcore.Blockchain.Cryptonote
             // enrich share with common data
             share.PoolId = poolConfig.Id;
             share.IpAddress = worker.RemoteEndpoint.Address.ToString();
-            share.Miner = context.MinerName;
-            share.Worker = context.WorkerName;
-            share.PayoutInfo = context.PaymentId;
+            share.Miner = context.Miner;
+            share.Worker = context.Worker;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
@@ -338,7 +338,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
                     blockSubmissionSubject.OnNext(Unit.Default);
 
                     share.TransactionConfirmationData = share.BlockHash;

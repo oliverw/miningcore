@@ -46,9 +46,7 @@
     {
       "id": "flo1",
       "enabled": true,
-      "coin": {
-        "type": "FLO"
-      },
+      "coin": "florincoin",
       "address": "FC3d6JT1Z3uZvKVNWjKt3qN8PX8knhAU7d",
       "rewardRecipients": [
         {

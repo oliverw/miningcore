@@ -359,8 +359,8 @@ namespace Miningcore.Blockchain.Ethereum
                 return new object[]
                 {
                     job.Id,
-                    job.BlockTemplate.Seed,
-                    job.BlockTemplate.Header,
+                    job.BlockTemplate.Seed.StripHexPrefix(),
+                    job.BlockTemplate.Header.StripHexPrefix(),
                     isNew
                 };
             }
@@ -466,7 +466,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if (share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.MinerName}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} submitted by {context.Miner}");
                 }
             }
 
