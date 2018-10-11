@@ -58,8 +58,6 @@ namespace Miningcore.Mining
             public long BlockHeight;
         }
 
-        private readonly TimeSpan relayReceiveTimeout = TimeSpan.FromSeconds(60);
-
         private void StartListeners()
         {
             var serializer = new JsonSerializer
@@ -85,7 +83,6 @@ namespace Miningcore.Mining
                             using(var subSocket = new ZSocket(ZSocketType.SUB))
                             {
                                 subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
-                                subSocket.ReceiveTimeout = relayReceiveTimeout;
                                 subSocket.Connect(url);
                                 subSocket.SubscribeAll();
 
