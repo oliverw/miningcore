@@ -67,6 +67,7 @@ namespace Miningcore
         private static ILogger logger;
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
+        private static bool isShareRecoveryMode;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
         private static ShareReceiver shareReceiver;
@@ -78,7 +79,6 @@ namespace Miningcore
         private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
-
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
@@ -108,7 +108,9 @@ namespace Miningcore
                 Bootstrap();
                 LogRuntimeInfo();
 
-                if (!shareRecoveryOption.HasValue())
+                isShareRecoveryMode = shareRecoveryOption.HasValue();
+
+                if (!isShareRecoveryMode)
                 {
                     if (!cts.IsCancellationRequested)
                         Start().Wait(cts.Token);
@@ -402,7 +404,7 @@ namespace Miningcore
 
                 var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
-                if (config.EnableConsoleLog)
+                if (config.EnableConsoleLog || isShareRecoveryMode)
                 {
                     if (config.EnableConsoleColors)
                     {
@@ -451,7 +453,7 @@ namespace Miningcore
                     }
                 }
 
-                if (!string.IsNullOrEmpty(config.LogFile))
+                if (!string.IsNullOrEmpty(config.LogFile) && !isShareRecoveryMode)
                 {
                     var target = new FileTarget("file")
                     {
@@ -464,7 +466,7 @@ namespace Miningcore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
-                if (config.PerPoolLogFile)
+                if (config.PerPoolLogFile && !isShareRecoveryMode)
                 {
                     foreach(var poolConfig in clusterConfig.Pools)
                     {
