@@ -308,8 +308,8 @@ namespace Miningcore.Mining
         {
             logger.Info(() => "Stopping ..");
 
-            queueSub.Dispose();
-            queue.Dispose();
+            queueSub?.Dispose();
+            queue?.Dispose();
 
             logger.Info(() => "Stopped");
         }
