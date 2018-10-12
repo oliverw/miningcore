@@ -124,7 +124,7 @@ namespace Miningcore.Extensions
                     }
 
                     writer.Flush();
-                    return stream.ToArray().ReverseToNewArray();
+                    return stream.ToArray().ReverseInPlace();
                 }
             }
         }
@@ -143,7 +143,7 @@ namespace Miningcore.Extensions
             return arr;
         }
 
-        public static T[] ReverseToNewArray<T>(this T[] arr)
+        public static T[] ReverseInPlace<T>(this T[] arr)
         {
             Array.Reverse(arr);
             return arr;

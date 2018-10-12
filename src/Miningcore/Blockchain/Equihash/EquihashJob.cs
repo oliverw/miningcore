@@ -373,7 +373,7 @@ namespace Miningcore.Blockchain.Equihash
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ReverseToNewArray()
+                .ReverseInPlace()
                 .ToHexString();
 
             if (blockTemplate.Subsidy != null)
@@ -400,8 +400,8 @@ namespace Miningcore.Blockchain.Equihash
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToReverseByteArray())));
 
             // build merkle root
-            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseToNewArray();
-            merkleRootReversed = merkleRoot.ReverseToNewArray();
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseInPlace();
+            merkleRootReversed = merkleRoot.ReverseInPlace();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             // misc

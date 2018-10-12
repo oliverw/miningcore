@@ -192,7 +192,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ReverseToNewArray()
+                .ReverseInPlace()
                 .ToHexString();
 
             BuildCoinbase();
@@ -202,8 +202,8 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToReverseByteArray())));
 
             // build merkle root
-            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseToNewArray();
-            merkleRootReversed = merkleRoot.ReverseToNewArray();
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseInPlace();
+            merkleRootReversed = merkleRoot.ReverseInPlace();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             jobParams = new object[]
