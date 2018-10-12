@@ -187,7 +187,7 @@ namespace Miningcore.Mining
             {
                 var successCount = 0;
                 var failCount = 0;
-                const int bufferSize = 20;
+                const int bufferSize = 100;
 
                 using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
                 {
@@ -228,8 +228,8 @@ namespace Miningcore.Mining
                                 {
                                     PersistShares(shares);
 
-                                    shares.Clear();
                                     successCount += shares.Count;
+                                    shares.Clear();
                                 }
                             }
 
@@ -241,7 +241,7 @@ namespace Miningcore.Mining
 
                             // progress
                             var now = DateTime.UtcNow;
-                            if (now - lastProgressUpdate > TimeSpan.FromMinutes(1))
+                            if (now - lastProgressUpdate > TimeSpan.FromSeconds(10))
                             {
                                 logger.Info($"{successCount} shares imported");
                                 lastProgressUpdate = now;
@@ -268,9 +268,9 @@ namespace Miningcore.Mining
                 }
 
                 if (failCount == 0)
-                    logger.Info(() => $"Successfully recovered {successCount} shares");
+                    logger.Info(() => $"Successfully imported {successCount} shares");
                 else
-                    logger.Warn(() => $"Successfully {successCount} shares with {failCount} failures");
+                    logger.Warn(() => $"Successfully imported {successCount} shares with {failCount} failures");
             }
 
             catch(FileNotFoundException)
