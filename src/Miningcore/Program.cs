@@ -93,7 +93,7 @@ namespace Miningcore
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
-                //CoinDefinitionGenerator.WriteCoinDefinitions("../../../coins.json");
+                isShareRecoveryMode = shareRecoveryOption.HasValue();
 
                 Logo();
                 clusterConfig = ReadConfig(configFile);
@@ -107,8 +107,6 @@ namespace Miningcore
                 ValidateConfig();
                 Bootstrap();
                 LogRuntimeInfo();
-
-                isShareRecoveryMode = shareRecoveryOption.HasValue();
 
                 if (!isShareRecoveryMode)
                 {
