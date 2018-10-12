@@ -23,7 +23,7 @@ namespace Miningcore.Blockchain.Ethereum
             if (target.StartsWith("0x"))
                 target = target.Substring(2);
 
-            blockTarget = new uint256(target.HexToByteArray().ReverseArray());
+            blockTarget = new uint256(target.HexToReverseByteArray());
         }
 
         private readonly Dictionary<StratumClient, HashSet<string>> workerNonces =
@@ -76,7 +76,7 @@ namespace Miningcore.Blockchain.Ethereum
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // test if share meets at least workers current difficulty
-            resultBytes.ReverseArray();
+            resultBytes.ReverseToNewArray();
             var resultValue = new uint256(resultBytes);
             var resultValueBig = resultBytes.AsSpan().ToBigInteger();
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;

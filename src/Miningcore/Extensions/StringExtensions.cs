@@ -30,7 +30,7 @@ namespace Miningcore.Extensions
     public static class StringExtensions
     {
         /// <summary>
-        /// Converts a str string to byte array.
+        /// Converts a hex string to byte array
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -40,9 +40,29 @@ namespace Miningcore.Extensions
                 str = str.Substring(2);
 
             var arr = new byte[str.Length >> 1];
+            var count = str.Length >> 1;
 
-            for(var i = 0; i < str.Length >> 1; ++i)
+            for (var i = 0; i < count; ++i)
                 arr[i] = (byte) ((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
+
+            return arr;
+        }
+
+        /// <summary>
+        /// Converts a hex string to byte array
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static byte[] HexToReverseByteArray(this string str)
+        {
+            if (str.StartsWith("0x"))
+                str = str.Substring(2);
+
+            var arr = new byte[str.Length >> 1];
+            var count = str.Length >> 1;
+
+            for (var i = count - 1; i > 0; i--)
+                arr[i] = (byte)((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
 
             return arr;
         }
