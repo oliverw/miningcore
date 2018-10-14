@@ -87,7 +87,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT SUM(amount), date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
+            var query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
                 "AND address = @address " +
                 "GROUP BY date " +
                 "ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
