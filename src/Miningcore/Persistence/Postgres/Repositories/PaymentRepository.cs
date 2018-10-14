@@ -25,6 +25,7 @@ using AutoMapper;
 using Dapper;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
+using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Util;
 using NLog;
@@ -79,6 +80,19 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             return con.Query<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize })
                 .Select(mapper.Map<BalanceChange>)
+                .ToArray();
+        }
+
+        public AmountByDate[] PageMinerPaymentsByDay(IDbConnection con, string poolId, string address, int page, int pageSize)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            var query = "SELECT SUM(amount), date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
+                "AND address = @address " +
+                "GROUP BY date " +
+                "ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return con.Query<AmountByDate>(query, new { poolId, address, offset = page * pageSize, pageSize })
                 .ToArray();
         }
     }

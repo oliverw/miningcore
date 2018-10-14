@@ -97,6 +97,7 @@ namespace Miningcore.Api
                 {new Regex("^/api/pools/(?<poolId>[^/]+)$", RegexOptions.Compiled), GetPoolInfoAsync},
                 {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/payments$", RegexOptions.Compiled), PageMinerPaymentsAsync},
                 {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/balancechanges$", RegexOptions.Compiled), PageMinerBalanceChangesAsync},
+                {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/earnings/daily", RegexOptions.Compiled), PageMinerEarningsByDayAsync},
                 {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)/performance$", RegexOptions.Compiled), GetMinerPerformanceAsync},
                 {new Regex("^/api/pools/(?<poolId>[^/]+)/miners/(?<address>[^/]+)$", RegexOptions.Compiled), GetMinerInfoAsync},
             };
@@ -557,6 +558,35 @@ namespace Miningcore.Api
                 .ToArray();
 
             await SendJsonAsync(context, balanceChanges);
+        }
+
+        private async Task PageMinerEarningsByDayAsync(HttpContext context, Match m)
+        {
+            var pool = GetPool(context, m);
+            if (pool == null)
+                return;
+
+            var address = m.Groups["address"]?.Value;
+            if (string.IsNullOrEmpty(address))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            var page = context.GetQueryParameter<int>("page", 0);
+            var pageSize = context.GetQueryParameter<int>("pageSize", 20);
+
+            if (pageSize == 0)
+            {
+                context.Response.StatusCode = 500;
+                return;
+            }
+
+            var earnings = cf.Run(con => paymentsRepo.PageMinerPaymentsByDay(
+                    con, pool.Id, address, page, pageSize))
+                .ToArray();
+
+            await SendJsonAsync(context, earnings);
         }
 
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)

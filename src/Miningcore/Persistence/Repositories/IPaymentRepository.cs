@@ -18,9 +18,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
 using System.Data;
 using Miningcore.Persistence.Model;
+using Miningcore.Persistence.Model.Projections;
 
 namespace Miningcore.Persistence.Repositories
 {
@@ -30,5 +30,6 @@ namespace Miningcore.Persistence.Repositories
 
         Payment[] PagePayments(IDbConnection con, string poolId, string address, int page, int pageSize);
         BalanceChange[] PageBalanceChanges(IDbConnection con, string poolId, string address, int page, int pageSize);
+        AmountByDate[] PageMinerPaymentsByDay(IDbConnection con, string poolId, string address, int page, int pageSize);
     }
 }
