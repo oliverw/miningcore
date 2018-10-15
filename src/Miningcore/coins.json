@@ -1191,6 +1191,20 @@
     "explorerBlockLink": "https://explorer.bit.tube/block/$height$",
     "explorerTxLink": "https://explorer.bit.tube/tx/{0}"
   },
+  "aeon": {
+    "name": "Aeon",
+    "symbol": "AEON",
+    "family": "cryptonote",
+    "hash": "cryptonight-lite",
+    "hashVariant": 0,
+    "smallestUnit": 100000000,
+    "addressPrefix": 178,
+    "addressPrefixTestnet": 1062,
+    "addressPrefixIntegrated": 10035,
+    "addressPrefixIntegratedTestnet": 11303,
+    "explorerBlockLink": "https://aeonblocks.com/block/$height$",
+    "explorerTxLink": "https://aeonblocks.com/tx/{0}"
+  },
   "ethereum": {
     "name": "Ethereum",
     "symbol": "ETH",
