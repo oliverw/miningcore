@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +29,6 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using NBitcoin;
 using NLog;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
@@ -55,7 +53,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
-            var query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
+            const string query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
                 "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
                 "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
                 "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
@@ -72,7 +70,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             if (string.IsNullOrEmpty(mapped.Worker))
                 mapped.Worker = string.Empty;
 
-            var query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
+            const string query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
                 "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
@@ -82,7 +80,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            var query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
+            const string query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
             var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(query, new { poolId });
             if (entity == null)
@@ -95,7 +93,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            var query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
+            const string query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
 
             var result = await con.ExecuteScalarAsync<decimal>(query, new { poolId });
             return result;
@@ -105,7 +103,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT date_trunc('hour', created) AS created, " +
+            const string query = "SELECT date_trunc('hour', created) AS created, " +
                 "AVG(poolhashrate) AS poolhashrate, " +
                 "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
                 "FROM poolstats " +
@@ -189,7 +187,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate, " +
+            const string query = "SELECT worker, date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate, " +
                 "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
                 "GROUP BY date_trunc('hour', created), worker " +
@@ -239,7 +237,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate, " +
+            const string query = "SELECT worker, date_trunc('day', created) AS created, AVG(hashrate) AS hashrate, " +
                 "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
                 "GROUP BY date_trunc('day', created), worker " +
@@ -282,7 +280,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
 
-            var query = "WITH tmp AS " +
+            const string query = "WITH tmp AS " +
                 "( " +
                 "	SELECT  " +
                 "		ms.miner,  " +
@@ -304,22 +302,22 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public async Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date)
+        public Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date)
         {
             logger.LogInvoke();
 
-            var query = "DELETE FROM poolstats WHERE created < @date";
+            const string query = "DELETE FROM poolstats WHERE created < @date";
 
-            return await con.ExecuteAsync(query, new { date });
+            return con.ExecuteAsync(query, new { date });
         }
 
-        public async Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date)
+        public Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date)
         {
             logger.LogInvoke();
 
-            var query = "DELETE FROM minerstats WHERE created < @date";
+            const string query = "DELETE FROM minerstats WHERE created < @date";
 
-            return await con.ExecuteAsync(query, new { date });
+            return con.ExecuteAsync(query, new { date });
         }
     }
 }

@@ -48,7 +48,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Block>(block);
 
-            var query =
+            const string query =
                 "INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata, miner, reward, effort, confirmationprogress, source, hash, created) " +
                 "VALUES(@poolid, @blockheight, @networkdifficulty, @status, @type, @transactionconfirmationdata, @miner, @reward, @effort, @confirmationprogress, @source, @hash, @created)";
 
@@ -59,7 +59,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            var query = "DELETE FROM blocks WHERE id = @id";
+            const string query = "DELETE FROM blocks WHERE id = @id";
             await con.ExecuteAsync(query, block, tx);
         }
 
@@ -69,7 +69,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Block>(block);
 
-            var query = "UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress WHERE id = @id";
+            const string query = "UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress WHERE id = @id";
             await con.ExecuteAsync(query, mapped, tx);
         }
 
@@ -77,7 +77,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
+            const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return (await con.QueryAsync<Entities.Block>(query, new
@@ -95,7 +95,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
+            const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = @status";
 
             return (await con.QueryAsync<Entities.Block>(query, new { status = BlockStatus.Pending.ToString().ToLower(), poolid = poolId }))
                 .Select(mapper.Map<Block>)
@@ -106,7 +106,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
+            const string query = "SELECT * FROM blocks WHERE poolid = @poolid AND status = ANY(@status) AND created < @before " +
                 "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
 
             return (await con.QueryAsync<Entities.Block>(query, new

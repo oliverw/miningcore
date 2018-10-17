@@ -18,7 +18,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,7 +27,6 @@ using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories
@@ -49,7 +47,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Payment>(payment);
 
-            var query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
+            const string query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
                 "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
@@ -75,7 +73,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
+            const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
                 "AND address = @address " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
@@ -88,7 +86,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
+            const string query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
                 "AND address = @address " +
                 "GROUP BY date " +
                 "ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";

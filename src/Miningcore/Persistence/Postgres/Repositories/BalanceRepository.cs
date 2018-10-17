@@ -24,11 +24,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
-using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories
@@ -108,7 +106,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
+            const string query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
 
             return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
                 .Select(mapper.Map<Balance>)
