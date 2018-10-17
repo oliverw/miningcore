@@ -89,14 +89,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return mapper.Map<PoolStats>(entity);
         }
 
-        public async Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId)
+        public Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke();
 
             const string query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
 
-            var result = await con.ExecuteScalarAsync<decimal>(query, new { poolId });
-            return result;
+            return con.ExecuteScalarAsync<decimal>(query, new { poolId });
         }
 
         public async Task<PoolStats[]> GetPoolPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
