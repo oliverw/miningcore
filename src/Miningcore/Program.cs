@@ -115,7 +115,7 @@ namespace Miningcore
                 }
 
                 else
-                    RecoverShares(shareRecoveryOption.Value());
+                    RecoverSharesAsync(shareRecoveryOption.Value()).Wait();
             }
 
             catch(PoolStartupAbortException ex)
@@ -664,10 +664,10 @@ namespace Miningcore
             await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
-        private static void RecoverShares(string recoveryFilename)
+        private static Task RecoverSharesAsync(string recoveryFilename)
         {
             shareRecorder = container.Resolve<ShareRecorder>();
-            shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+            return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
         }
 
         private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)

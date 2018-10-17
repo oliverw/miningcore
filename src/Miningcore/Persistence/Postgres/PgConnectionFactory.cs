@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Data;
+using System.Threading.Tasks;
 using Npgsql;
 
 namespace Miningcore.Persistence.Postgres
@@ -36,10 +37,10 @@ namespace Miningcore.Persistence.Postgres
         /// This implementation ensures that Glimpse.ADO is able to collect data
         /// </summary>
         /// <returns></returns>
-        public IDbConnection OpenConnection()
+        public async Task<IDbConnection> OpenConnectionAsync()
         {
             var con = new NpgsqlConnection(connectionString);
-            con.Open();
+            await con.OpenAsync();
             return con;
         }
     }

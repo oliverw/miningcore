@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
 using Miningcore.Extensions;
@@ -48,7 +49,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly TimeSpan MinerStatsMaxAge = TimeSpan.FromMinutes(20);
 
-        public void InsertPoolStats(IDbConnection con, IDbTransaction tx, PoolStats stats)
+        public async Task InsertPoolStatsAsync(IDbConnection con, IDbTransaction tx, PoolStats stats)
         {
             logger.LogInvoke();
 
@@ -59,10 +60,10 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
                 "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
-            con.Execute(query, mapped, tx);
+            await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public void InsertMinerWorkerPerformanceStats(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats)
+        public async Task InsertMinerWorkerPerformanceStatsAsync(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats)
         {
             logger.LogInvoke();
 
@@ -74,33 +75,33 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
                 "VALUES(@poolid, @miner, @worker, @hashrate, @sharespersecond, @created)";
 
-            con.Execute(query, mapped, tx);
+            await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public PoolStats GetLastPoolStats(IDbConnection con, string poolId)
+        public async Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke();
 
             var query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
-            var entity = con.QuerySingleOrDefault<Entities.PoolStats>(query, new { poolId });
+            var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(query, new { poolId });
             if (entity == null)
                 return null;
 
             return mapper.Map<PoolStats>(entity);
         }
 
-        public decimal GetTotalPoolPayments(IDbConnection con, string poolId)
+        public async Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke();
 
             var query = "SELECT sum(amount) FROM payments WHERE poolid = @poolId";
 
-            var result = con.ExecuteScalar<decimal>(query, new { poolId });
+            var result = await con.ExecuteScalarAsync<decimal>(query, new { poolId });
             return result;
         }
 
-        public PoolStats[] GetPoolPerformanceBetweenHourly(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public async Task<PoolStats[]> GetPoolPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -112,12 +113,12 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "GROUP BY date_trunc('hour', created) " +
                 "ORDER BY created;";
 
-            return con.Query<Entities.PoolStats>(query, new { poolId, start, end })
+            return (await con.QueryAsync<Entities.PoolStats>(query, new { poolId, start, end }))
                 .Select(mapper.Map<PoolStats>)
                 .ToArray();
         }
 
-        public MinerStats GetMinerStats(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        public async Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
         {
             logger.LogInvoke(new[] { poolId, miner });
 
@@ -126,20 +127,20 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner) as totalpaid," +
                 "(SELECT SUM(amount) FROM payments WHERE poolid = @poolId and address = @miner and created >= date_trunc('day', now())) as todaypaid";
 
-            var result = con.QuerySingleOrDefault<MinerStats>(query, new { poolId, miner }, tx);
+            var result = await con.QuerySingleOrDefaultAsync<MinerStats>(query, new { poolId, miner }, tx);
 
             if (result != null)
             {
                 query = "SELECT * FROM payments WHERE poolid = @poolId AND address = @miner" +
                     " ORDER BY created DESC LIMIT 1";
 
-                result.LastPayment = con.QuerySingleOrDefault<Payment>(query, new { poolId, miner }, tx);
+                result.LastPayment = await con.QuerySingleOrDefaultAsync<Payment>(query, new { poolId, miner }, tx);
 
                 // query timestamp of last stats update
                 query = "SELECT created FROM minerstats WHERE poolid = @poolId AND miner = @miner" +
                     " ORDER BY created DESC LIMIT 1";
 
-                var lastUpdate = con.QuerySingleOrDefault<DateTime?>(query, new { poolId, miner }, tx);
+                var lastUpdate = await con.QuerySingleOrDefaultAsync<DateTime?>(query, new { poolId, miner }, tx);
 
                 // ignore stale minerstats
                 if (lastUpdate.HasValue && (clock.Now - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
@@ -150,7 +151,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                     // load rows rows by timestamp
                     query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
 
-                    var stats = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate })
+                    var stats = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, created = lastUpdate }))
                         .Select(mapper.Map<MinerWorkerPerformanceStats>)
                         .ToArray();
 
@@ -184,7 +185,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return result;
         }
 
-        public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenHourly(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -194,7 +195,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "GROUP BY date_trunc('hour', created), worker " +
                 "ORDER BY created, worker;";
 
-            var entities = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+            var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
                 .ToArray();
 
             // ensure worker is not null
@@ -234,7 +235,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return tmp;
         }
 
-        public WorkerPerformanceStatsContainer[] GetMinerPerformanceBetweenDaily(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -244,7 +245,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "GROUP BY date_trunc('day', created), worker " +
                 "ORDER BY created, worker;";
 
-            var entitiesByDate = con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end })
+            var entitiesByDate = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
                 .ToArray()
                 .GroupBy(x => x.Created);
 
@@ -277,7 +278,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return tmp;
         }
 
-        public MinerWorkerPerformanceStats[] PagePoolMinersByHashrate(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
+        public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
         {
             logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
 
@@ -298,27 +299,27 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "ORDER by t.hashrate DESC " +
                 "OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize })
+            return (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, from, offset = page * pageSize, pageSize }))
                 .Select(mapper.Map<MinerWorkerPerformanceStats>)
                 .ToArray();
         }
 
-        public int DeletePoolStatsBefore(IDbConnection con, DateTime date)
+        public async Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date)
         {
             logger.LogInvoke();
 
             var query = "DELETE FROM poolstats WHERE created < @date";
 
-            return con.Execute(query, new { date });
+            return await con.ExecuteAsync(query, new { date });
         }
 
-        public int DeleteMinerStatsBefore(IDbConnection con, DateTime date)
+        public async Task<int> DeleteMinerStatsBeforeAsync(IDbConnection con, DateTime date)
         {
             logger.LogInvoke();
 
             var query = "DELETE FROM minerstats WHERE created < @date";
 
-            return con.Execute(query, new { date });
+            return await con.ExecuteAsync(query, new { date });
         }
     }
 }

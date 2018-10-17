@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
 using Miningcore.Configuration;
@@ -42,7 +43,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, string coin, string address, decimal amount, string usage)
+        public async Task AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string coin, string address, decimal amount, string usage)
         {
             logger.LogInvoke();
 
@@ -62,12 +63,12 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Usage = usage,
             };
 
-            con.Execute(query, balanceChange, tx);
+            await con.ExecuteAsync(query, balanceChange, tx);
 
             // update balance
             query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
-            var balance = con.Query<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx)
+            var balance = (await con.QueryAsync<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx))
                 .FirstOrDefault();
 
             if (balance == null)
@@ -85,7 +86,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 query = "INSERT INTO balances(poolid, coin, address, amount, created, updated) " +
                     "VALUES(@poolid, @coin, @address, @amount, @created, @updated)";
 
-                con.Execute(query, balance, tx);
+                await con.ExecuteAsync(query, balance, tx);
             }
 
             else
@@ -93,7 +94,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 query = "UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc' " +
                     "WHERE poolid = @poolId AND coin = @coin AND address = @address";
 
-                con.Execute(query, new
+                await con.ExecuteAsync(query, new
                 {
                     poolId,
                     address,
@@ -103,13 +104,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
             }
         }
 
-        public Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum)
+        public async Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum)
         {
             logger.LogInvoke();
 
             var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
 
-            return con.Query<Entities.Balance>(query, new { poolId, minimum })
+            return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
                 .Select(mapper.Map<Balance>)
                 .ToArray();
         }

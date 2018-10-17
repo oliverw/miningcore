@@ -191,7 +191,7 @@ namespace Miningcore.Blockchain.Equihash
                                         var txId = operationResult.Result?.Value<string>("txid") ?? string.Empty;
                                         logger.Info(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} completed with transaction id: {txId}");
 
-                                        PersistPayments(page, txId);
+                                        await PersistPaymentsAsync(page, txId);
                                         NotifyPayoutSuccess(poolConfig.Id, page, new[] { txId }, null);
 
                                         continueWaiting = false;

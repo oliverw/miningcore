@@ -28,6 +28,8 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
@@ -91,7 +93,7 @@ namespace Miningcore.Mining
         private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
         private readonly int QueueSizeWarningThreshold = 1024;
-        private Policy faultPolicy;
+        private IAsyncPolicy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
         private bool hasWarnedAboutBacklogSize;
         private IDisposable queueSub;
@@ -100,27 +102,27 @@ namespace Miningcore.Mining
         private const string PolicyContextKeyShares = "share";
         private bool notifiedAdminOnPolicyFallback = false;
 
-        private void PersistSharesFaulTolerant(IList<Share> shares)
+        private async Task PersistSharesFaulTolerantAsync(IList<Share> shares)
         {
             var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
-            faultPolicy.Execute(ctx => PersistShares((IList<Share>) ctx[PolicyContextKeyShares]), context);
+            await faultPolicy.ExecuteAsync(ctx => PersistSharesAsync((IList<Share>) ctx[PolicyContextKeyShares]), context);
         }
 
-        private void PersistShares(IList<Share> shares)
+        private async Task PersistSharesAsync(IList<Share> shares)
         {
-            cf.RunTx((con, tx) =>
+            await cf.RunTx(async (con, tx) =>
             {
                 foreach(var share in shares)
                 {
                     var shareEntity = mapper.Map<Persistence.Model.Share>(share);
-                    shareRepo.Insert(con, tx, shareEntity);
+                    await shareRepo.InsertAsync(con, tx, shareEntity);
 
                     if (share.IsBlockCandidate)
                     {
                         var blockEntity = mapper.Map<Block>(share);
                         blockEntity.Status = BlockStatus.Pending;
-                        blockRepo.Insert(con, tx, blockEntity);
+                        await blockRepo.InsertAsync(con, tx, blockEntity);
 
                         messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
                     }
@@ -133,12 +135,13 @@ namespace Miningcore.Mining
             logger.Warn(() => $"Retry {retry} in {timeSpan} due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
         }
 
-        private void OnPolicyFallback(Exception ex, Context context)
+        private Task OnPolicyFallbackAsync(Exception ex, Context context)
         {
             logger.Warn(() => $"Fallback due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
+            return Task.FromResult(true);
         }
 
-        private void OnExecutePolicyFallback(Context context)
+        private async Task OnExecutePolicyFallbackAsync(Context context, CancellationToken ct)
         {
             var shares = (IList<Share>) context[PolicyContextKeyShares];
 
@@ -154,7 +157,7 @@ namespace Miningcore.Mining
                         foreach(var share in shares)
                         {
                             var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
-                            writer.WriteLine(json);
+                            await writer.WriteLineAsync(json);
                         }
                     }
                 }
@@ -179,7 +182,7 @@ namespace Miningcore.Mining
             writer.WriteLine("# miningcore -c <path-to-config> -rs <path-to-this-file>\n");
         }
 
-        public void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
+        public async Task RecoverSharesAsync(ClusterConfig clusterConfig, string recoveryFilename)
         {
             logger.Info(() => $"Recovering shares using {recoveryFilename} ...");
 
@@ -226,7 +229,7 @@ namespace Miningcore.Mining
                             {
                                 if (shares.Count == bufferSize)
                                 {
-                                    PersistShares(shares);
+                                    await PersistSharesAsync(shares);
 
                                     successCount += shares.Count;
                                     shares.Clear();
@@ -253,7 +256,7 @@ namespace Miningcore.Mining
                         {
                             if (shares.Count > 0)
                             {
-                                PersistShares(shares);
+                                await PersistSharesAsync(shares);
 
                                 successCount += shares.Count;
                             }
@@ -325,18 +328,20 @@ namespace Miningcore.Mining
                 .Do(_ => CheckQueueBacklog())
                 .Buffer(TimeSpan.FromSeconds(1), 100)
                 .Where(shares => shares.Any())
-                .Subscribe(shares =>
+                .Select(shares => Observable.FromAsync(async () =>
                 {
                     try
                     {
-                        PersistSharesFaulTolerant(shares);
+                        await PersistSharesFaulTolerantAsync(shares);
                     }
 
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         logger.Error(ex);
                     }
-                });
+                }))
+                .Concat()
+                .Subscribe();
         }
 
         private void ConfigureRecovery()
@@ -370,7 +375,7 @@ namespace Miningcore.Mining
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                .WaitAndRetryAsync(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     OnPolicyRetry);
 
             // after retries failed several times, break the circuit and fall through to
@@ -379,21 +384,21 @@ namespace Miningcore.Mining
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .CircuitBreaker(2, TimeSpan.FromMinutes(1));
+                .CircuitBreakerAsync(2, TimeSpan.FromMinutes(1));
 
             var fallback = Policy
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
+                .FallbackAsync(OnExecutePolicyFallbackAsync, OnPolicyFallbackAsync);
 
             var fallbackOnBrokenCircuit = Policy
                 .Handle<BrokenCircuitException>()
-                .Fallback(OnExecutePolicyFallback, (ex, context) => { });
+                .FallbackAsync(OnExecutePolicyFallbackAsync, (ex, context) => Task.FromResult(true));
 
-            faultPolicy = Policy.Wrap(
+            faultPolicy = Policy.WrapAsync(
                 fallbackOnBrokenCircuit,
-                Policy.Wrap(fallback, breaker, retry));
+                Policy.WrapAsync(fallback, breaker, retry));
         }
     }
 }

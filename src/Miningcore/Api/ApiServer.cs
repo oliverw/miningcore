@@ -208,7 +208,7 @@ namespace Miningcore.Api
             }
         }
 
-        private WorkerPerformanceStatsContainer[] GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
+        private async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceInternal(string mode, PoolConfig pool, string address)
         {
             Persistence.Model.Projections.WorkerPerformanceStatsContainer[] stats;
             var end = clock.Now;
@@ -224,7 +224,7 @@ namespace Miningcore.Api
 
                 var start = end.AddDays(-1);
 
-                stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourly(
+                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(
                     con, pool.Id, address, start, end));
             }
 
@@ -238,7 +238,7 @@ namespace Miningcore.Api
                 // set range
                 var start = end.AddMonths(-1);
 
-                stats = cf.Run(con => statsRepo.GetMinerPerformanceBetweenDaily(
+                stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(
                     con, pool.Id, address, start, end));
             }
 
@@ -251,10 +251,10 @@ namespace Miningcore.Api
         {
             var response = new GetPoolsResponse
             {
-                Pools = clusterConfig.Pools.Where(x => x.Enabled).Select(config =>
+                Pools = await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async config =>
                 {
                     // load stats
-                    var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, config.Id));
+                    var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, config.Id));
 
                     // get pool
                     pools.TryGetValue(config.Id, out var pool);
@@ -263,19 +263,19 @@ namespace Miningcore.Api
                     var result = config.ToPoolInfo(mapper, stats, pool);
 
                     // enrich
-                    result.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, config.Id));
+                    result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
 #if DEBUG
                     var from = new DateTime(2018, 1, 6, 16, 0, 0);
 #else
                     var from = clock.Now.AddDays(-1);
 #endif
-                    result.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
-                            con, config.Id, from, 0, 15))
+                    result.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
+                            con, config.Id, from, 0, 15)))
                         .Select(mapper.Map<MinerPerformanceStats>)
                         .ToArray();
 
                     return result;
-                }).ToArray()
+                }).ToArray())
             };
 
             await SendJsonAsync(context, response);
@@ -288,7 +288,7 @@ namespace Miningcore.Api
                 return;
 
             // load stats
-            var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, pool.Id));
+            var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, pool.Id));
 
             // get pool
             pools.TryGetValue(pool.Id, out var poolInstance);
@@ -299,15 +299,15 @@ namespace Miningcore.Api
             };
 
             // enrich
-            response.Pool.TotalPaid = cf.Run(con => statsRepo.GetTotalPoolPayments(con, pool.Id));
+            response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
 #if DEBUG
             var from = new DateTime(2018, 1, 7, 16, 0, 0);
 #else
             var from = clock.Now.AddDays(-1);
 #endif
 
-            response.Pool.TopMiners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
-                    con, pool.Id, from, 0, 15))
+            response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
+                    con, pool.Id, from, 0, 15)))
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
@@ -324,7 +324,7 @@ namespace Miningcore.Api
             var end = clock.Now;
             var start = end.AddDays(-1);
 
-            var stats = cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourly(
+            var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourlyAsync(
                 con, pool.Id, start, end));
 
             var response = new GetPoolStatsResponse
@@ -354,8 +354,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var miners = cf.Run(con => statsRepo.PagePoolMinersByHashrate(
-                    con, pool.Id, start, page, pageSize))
+            var miners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
+                    con, pool.Id, start, page, pageSize)))
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
 
@@ -377,8 +377,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var blocks = cf.Run(con => blocksRepo.PageBlocks(con, pool.Id,
-                    new[] {BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned}, page, pageSize))
+            var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id,
+                    new[] {BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned}, page, pageSize)))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 
@@ -420,8 +420,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var payments = cf.Run(con => paymentsRepo.PagePayments(
-                    con, pool.Id, null, page, pageSize))
+            var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
+                    con, pool.Id, null, page, pageSize)))
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
@@ -458,8 +458,8 @@ namespace Miningcore.Api
 
             var perfMode = context.GetQueryParameter<string>("perfMode", "day");
 
-            var statsResult = cf.RunTx((con, tx) =>
-                statsRepo.GetMinerStats(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
+            var statsResult = await cf.RunTx((con, tx) =>
+                statsRepo.GetMinerStatsAsync(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
 
             MinerStats stats = null;
 
@@ -479,7 +479,7 @@ namespace Miningcore.Api
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
-                stats.PerformanceSamples = GetMinerPerformanceInternal(perfMode, pool, address);
+                stats.PerformanceSamples = await GetMinerPerformanceInternal(perfMode, pool, address);
             }
 
             await SendJsonAsync(context, stats);
@@ -507,8 +507,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var payments = cf.Run(con => paymentsRepo.PagePayments(
-                    con, pool.Id, address, page, pageSize))
+            var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
+                    con, pool.Id, address, page, pageSize)))
                 .Select(mapper.Map<Responses.Payment>)
                 .ToArray();
 
@@ -552,8 +552,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var balanceChanges = cf.Run(con => paymentsRepo.PageBalanceChanges(
-                    con, pool.Id, address, page, pageSize))
+            var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
+                    con, pool.Id, address, page, pageSize)))
                 .Select(mapper.Map<Responses.BalanceChange>)
                 .ToArray();
 
@@ -582,8 +582,8 @@ namespace Miningcore.Api
                 return;
             }
 
-            var earnings = cf.Run(con => paymentsRepo.PageMinerPaymentsByDay(
-                    con, pool.Id, address, page, pageSize))
+            var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
+                    con, pool.Id, address, page, pageSize)))
                 .ToArray();
 
             await SendJsonAsync(context, earnings);

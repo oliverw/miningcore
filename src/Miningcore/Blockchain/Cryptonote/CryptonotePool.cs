@@ -347,9 +347,9 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        protected override void InitStats()
+        protected override async Task InitStatsAsync()
         {
-            base.InitStats();
+            await base.InitStatsAsync();
 
             blockchainStats = manager.BlockchainStats;
         }

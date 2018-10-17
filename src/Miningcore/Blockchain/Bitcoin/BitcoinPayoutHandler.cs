@@ -192,7 +192,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return Task.FromResult(true);
         }
 
-        public virtual Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -208,11 +208,11 @@ namespace Miningcore.Blockchain.Bitcoin
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
-            return Task.FromResult(blockRewardRemaining);
+            return blockRewardRemaining;
         }
 
         public virtual async Task PayoutAsync(Balance[] balances)
@@ -296,7 +296,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 else
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
-                PersistPayments(balances, txId);
+                await PersistPaymentsAsync(balances, txId);
 
                 NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
             }

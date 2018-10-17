@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Data;
+using System.Threading.Tasks;
 using Miningcore.Configuration;
 using Miningcore.Persistence.Model;
 
@@ -26,8 +27,8 @@ namespace Miningcore.Persistence.Repositories
 {
     public interface IBalanceRepository
     {
-        void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, string coin, string address, decimal amount, string usage);
+        Task AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string coin, string address, decimal amount, string usage);
 
-        Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum);
+        Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum);
     }
 }

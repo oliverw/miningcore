@@ -19,11 +19,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Data;
+using System.Threading.Tasks;
 
 namespace Miningcore.Persistence
 {
     public interface IConnectionFactory
     {
-        IDbConnection OpenConnection();
+        Task<IDbConnection> OpenConnectionAsync();
     }
 }

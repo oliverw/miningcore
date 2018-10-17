@@ -20,18 +20,19 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Data;
+using System.Threading.Tasks;
 using Miningcore.Persistence.Model;
 
 namespace Miningcore.Persistence.Repositories
 {
     public interface IBlockRepository
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Block block);
-        void DeleteBlock(IDbConnection con, IDbTransaction tx, Block block);
-        void UpdateBlock(IDbConnection con, IDbTransaction tx, Block block);
+        Task InsertAsync(IDbConnection con, IDbTransaction tx, Block block);
+        Task DeleteBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
+        Task UpdateBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
 
-        Block[] PageBlocks(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
-        Block[] GetPendingBlocksForPool(IDbConnection con, string poolId);
-        Block GetBlockBefore(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
+        Task<Block[]> PageBlocksAsync(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
+        Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId);
+        Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
     }
 }

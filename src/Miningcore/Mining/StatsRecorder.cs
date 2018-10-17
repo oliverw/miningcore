@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Miningcore.Configuration;
@@ -59,7 +60,7 @@ namespace Miningcore.Mining
         private ClusterConfig clusterConfig;
         private Thread thread1;
         private const int RetryCount = 4;
-        private Policy readFaultPolicy;
+        private IAsyncPolicy readFaultPolicy;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -79,7 +80,7 @@ namespace Miningcore.Mining
         {
             logger.Info(() => "Online");
 
-            thread1 = new Thread(() =>
+            thread1 = new Thread(async () =>
             {
                 // warm-up delay
                 Thread.Sleep(TimeSpan.FromSeconds(10));
@@ -90,8 +91,8 @@ namespace Miningcore.Mining
                 {
                     try
                     {
-                        UpdatePoolHashrates();
-                        PerformStatsGc();
+                        await UpdatePoolHashratesAsync();
+                        await PerformStatsGcAsync();
                     }
 
                     catch(Exception ex)
@@ -123,7 +124,7 @@ namespace Miningcore.Mining
 
         #endregion // API-Surface
 
-        private void UpdatePoolHashrates()
+        private async Task UpdatePoolHashratesAsync()
         {
             var start = clock.Now;
             var target = start.AddSeconds(-HashrateCalculationWindow);
@@ -142,8 +143,8 @@ namespace Miningcore.Mining
                 var pool = pools[poolId];
 
                 // fetch stats
-                var result = readFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.GetHashAccumulationBetweenCreated(con, poolId, target, start)));
+                var result = await readFaultPolicy.ExecuteAsync(() =>
+                    cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, target, start)));
 
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
@@ -166,7 +167,7 @@ namespace Miningcore.Mining
                 }
 
                 // persist
-                cf.RunTx((con, tx) =>
+                await cf.RunTx(async (con, tx) =>
                 {
                     var mapped = new Persistence.Model.PoolStats
                     {
@@ -177,7 +178,7 @@ namespace Miningcore.Mining
                     mapper.Map(pool.PoolStats, mapped);
                     mapper.Map(pool.NetworkStats, mapped);
 
-                    statsRepo.InsertPoolStats(con, tx, mapped);
+                    await statsRepo.InsertPoolStatsAsync(con, tx, mapped);
                 });
 
                 if (result.Length == 0)
@@ -186,7 +187,7 @@ namespace Miningcore.Mining
                 // calculate & update miner, worker hashrates
                 foreach(var minerHashes in byMiner)
                 {
-                    cf.RunTx((con, tx) =>
+                    await cf.RunTx(async (con, tx) =>
                     {
                         stats.Miner = minerHashes.Key;
 
@@ -205,7 +206,7 @@ namespace Miningcore.Mining
                                 stats.SharesPerSecond = (double) item.Count / windowActual;
 
                                 // persist
-                                statsRepo.InsertMinerWorkerPerformanceStats(con, tx, stats);
+                                await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
                             }
                         }
                     });
@@ -213,19 +214,19 @@ namespace Miningcore.Mining
             }
         }
 
-        private void PerformStatsGc()
+        private async Task PerformStatsGcAsync()
         {
             logger.Info(() => $"Performing Stats GC");
 
-            cf.Run(con =>
+            await cf.Run(async con =>
             {
                 var cutOff = DateTime.UtcNow.AddMonths(-3);
 
-                var rowCount = statsRepo.DeletePoolStatsBefore(con, cutOff);
+                var rowCount = await statsRepo.DeletePoolStatsBeforeAsync(con, cutOff);
                 if(rowCount > 0)
                     logger.Info(() => $"Deleted {rowCount} old poolstats records");
 
-                rowCount = statsRepo.DeleteMinerStatsBefore(con, cutOff);
+                rowCount = await statsRepo.DeleteMinerStatsBeforeAsync(con, cutOff);
                 if (rowCount > 0)
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
@@ -239,7 +240,7 @@ namespace Miningcore.Mining
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .Retry(RetryCount, OnPolicyRetry);
+                .RetryAsync(RetryCount, OnPolicyRetry);
 
             readFaultPolicy = retry;
         }

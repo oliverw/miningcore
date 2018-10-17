@@ -258,19 +258,19 @@ namespace Miningcore.Mining
             }
         }
 
-        protected virtual void InitStats()
+        protected virtual async Task InitStatsAsync()
         {
             if (clusterConfig.ShareRelay == null)
-                LoadStats();
+                await LoadStatsAsync();
         }
 
-        private void LoadStats()
+        private async Task LoadStatsAsync()
         {
             try
             {
                 logger.Debug(() => $"Loading pool stats");
 
-                var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
+                var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id));
 
                 if (stats != null)
                 {
@@ -372,7 +372,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             {
                 SetupBanning(clusterConfig);
                 await SetupJobManager(ct);
-                InitStats();
+                await InitStatsAsync();
 
                 if (poolConfig.EnableInternalStratum == true)
                 {

@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data.Common;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
@@ -103,15 +104,15 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
-        protected virtual void PersistPayments(Balance[] balances, string transactionConfirmation)
+        protected virtual async Task PersistPaymentsAsync(Balance[] balances, string transactionConfirmation)
         {
             var coin = poolConfig.Template.As<CoinTemplate>();
 
             try
             {
-                faultPolicy.Execute(() =>
+                await faultPolicy.ExecuteAsync(async () =>
                 {
-                    cf.RunTx((con, tx) =>
+                    await cf.RunTx(async (con, tx) =>
                     {
                         foreach(var balance in balances)
                         {
@@ -129,12 +130,12 @@ namespace Miningcore.Payments
                                     TransactionConfirmationData = transactionConfirmation
                                 };
 
-                                paymentRepo.Insert(con, tx, payment);
+                                await paymentRepo.InsertAsync(con, tx, payment);
                             }
 
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
-                            balanceRepo.AddAmount(con, tx, poolConfig.Id, coin.Symbol, balance.Address, -balance.Amount, $"Balance reset after payment");
+                            await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, coin.Symbol, balance.Address, -balance.Amount, $"Balance reset after payment");
                         }
                     });
                 });
