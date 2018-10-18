@@ -405,7 +405,9 @@ namespace Miningcore.Blockchain.Equihash
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             // misc
-            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ? blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() : sha256Empty.ToHexString();
+            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
+                blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() :
+                sha256Empty.ToHexString();
 
             jobParams = new object[]
             {
