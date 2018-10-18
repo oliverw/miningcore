@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,6 +31,8 @@ using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Util;
 using NLog;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace Miningcore.Persistence.Postgres.Repositories
 {
@@ -55,6 +58,36 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "@networkdifficulty, @miner, @worker, @useragent, @ipaddress, @source, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
+        }
+
+        public void BulkInsert(IDbConnection con, IEnumerable<Share> shares)
+        {
+            logger.LogInvoke();
+
+            var pgCon = (NpgsqlConnection)con;
+
+            const string query = "COPY shares (poolid, blockheight, difficulty, " +
+                "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
+
+            using (var writer = pgCon.BeginBinaryImport(query))
+            {
+                foreach (var share in shares)
+                {
+                    writer.StartRow();
+                    writer.Write(share.PoolId);
+                    writer.Write(share.BlockHeight, NpgsqlDbType.Bigint);
+                    writer.Write(share.Difficulty, NpgsqlDbType.Double);
+                    writer.Write(share.NetworkDifficulty, NpgsqlDbType.Double);
+                    writer.Write(share.Miner);
+                    writer.Write(share.Worker);
+                    writer.Write(share.UserAgent);
+                    writer.Write(share.IpAddress);
+                    writer.Write(share.Source);
+                    writer.Write(share.Created, NpgsqlDbType.Timestamp);
+                }
+
+                writer.Complete();
+            }
         }
 
         public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)

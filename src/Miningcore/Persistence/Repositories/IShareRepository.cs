@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Miningcore.Persistence.Model;
@@ -29,6 +30,7 @@ namespace Miningcore.Persistence.Repositories
     public interface IShareRepository
     {
         Task InsertAsync(IDbConnection con, IDbTransaction tx, Share share);
+        void BulkInsert(IDbConnection con, IEnumerable<Share> shares);
         Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize);
         Task<Share[]> ReadSharesBeforeAndAfterCreatedAsync(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize);
         Task<Share[]> PageSharesBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize);

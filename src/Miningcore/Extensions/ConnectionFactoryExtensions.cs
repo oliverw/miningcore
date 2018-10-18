@@ -33,6 +33,19 @@ namespace Miningcore.Extensions
         /// Run the specified action providing it with a fresh connection returing its result.
         /// </summary>
         /// <returns>The result returned by the action</returns>
+        public static async void Run(this IConnectionFactory factory,
+            Action<IDbConnection> action)
+        {
+            using (var con = await factory.OpenConnectionAsync())
+            {
+                action(con);
+            }
+        }
+
+        /// <summary>
+        /// Run the specified action providing it with a fresh connection returing its result.
+        /// </summary>
+        /// <returns>The result returned by the action</returns>
         public static async Task Run(this IConnectionFactory factory,
             Func<IDbConnection, Task> action)
         {
