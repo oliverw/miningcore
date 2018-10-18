@@ -81,7 +81,7 @@ namespace Miningcore.Payments
         protected readonly IMasterClock clock;
         protected readonly IMessageBus messageBus;
         protected ClusterConfig clusterConfig;
-        private Policy faultPolicy;
+        private IAsyncPolicy faultPolicy;
 
         protected ILogger logger;
         protected PoolConfig poolConfig;
@@ -94,7 +94,7 @@ namespace Miningcore.Payments
             var retry = Policy
                 .Handle<DbException>()
                 .Or<TimeoutException>()
-                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
+                .WaitAndRetryAsync(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
 
             faultPolicy = retry;
         }
