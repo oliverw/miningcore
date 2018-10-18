@@ -30,13 +30,17 @@ namespace Miningcore.Crypto.Hashing.Algorithms
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
+            var o = new byte[32];
+
             fixed (byte* input = data)
             {
-                fixed (byte* output = result)
+                fixed (byte* output = o)
                 {
                     LibMultihash.x11(input, output, (uint) data.Length);
                 }
             }
+
+            o.CopyTo(result);
         }
     }
 }
