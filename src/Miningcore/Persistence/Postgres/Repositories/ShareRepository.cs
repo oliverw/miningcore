@@ -60,22 +60,24 @@ namespace Miningcore.Persistence.Postgres.Repositories
             await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public void BulkInsert(IDbConnection con, IEnumerable<Share> shares)
+        public Task BulkInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
         {
             logger.LogInvoke();
 
-            var pgCon = (NpgsqlConnection)con;
+            // NOTE: Even though the tx parameter is completely ignored here,
+            // the COPY command still honors the current transaction if there is one
 
             const string query = "COPY shares (poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-            using (var writer = pgCon.BeginBinaryImport(query))
+            using (var writer = ((NpgsqlConnection) con).BeginBinaryImport(query))
             {
                 foreach (var share in shares)
                 {
                     writer.StartRow();
+
                     writer.Write(share.PoolId);
-                    writer.Write(share.BlockHeight, NpgsqlDbType.Bigint);
+                    writer.Write((long) share.BlockHeight, NpgsqlDbType.Bigint);
                     writer.Write(share.Difficulty, NpgsqlDbType.Double);
                     writer.Write(share.NetworkDifficulty, NpgsqlDbType.Double);
                     writer.Write(share.Miner);
@@ -88,6 +90,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
                 writer.Complete();
             }
+
+            return Task.FromResult(true);
         }
 
         public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)

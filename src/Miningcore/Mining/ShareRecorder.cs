@@ -107,19 +107,21 @@ namespace Miningcore.Mining
         {
             await cf.RunTx(async (con, tx) =>
             {
-                foreach(var share in shares)
+                // Insert shares
+                var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
+                await shareRepo.BulkInsertAsync(con, tx, mapped);
+
+                // Insert blocks
+                foreach (var share in shares)
                 {
-                    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
-                    await shareRepo.InsertAsync(con, tx, shareEntity);
+                    if (!share.IsBlockCandidate)
+                        continue;
 
-                    if (share.IsBlockCandidate)
-                    {
-                        var blockEntity = mapper.Map<Block>(share);
-                        blockEntity.Status = BlockStatus.Pending;
-                        await blockRepo.InsertAsync(con, tx, blockEntity);
+                    var blockEntity = mapper.Map<Block>(share);
+                    blockEntity.Status = BlockStatus.Pending;
+                    await blockRepo.InsertAsync(con, tx, blockEntity);
 
-                        messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
-                    }
+                    messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
                 }
             });
         }
@@ -317,7 +319,7 @@ namespace Miningcore.Mining
             queueSub = messageBus.Listen<ClientShare>()
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Select(x=> x.Share)
-                .Buffer(TimeSpan.FromSeconds(1), 100)
+                .Buffer(TimeSpan.FromSeconds(60), 100)
                 .Where(shares => shares.Any())
                 .Select(shares => Observable.FromAsync(async () =>
                 {
