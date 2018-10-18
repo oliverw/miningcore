@@ -494,7 +494,7 @@ inline void cryptonight_single_hash(const uint8_t *__restrict__ input, size_t si
         else if (SOFT_AES) {
             cx = soft_aesenc((uint32_t*)&l0[idx0 & MASK], ax0);
         }
-        else {  
+        else {
             cx = _mm_aesenc_si128(cx, ax0);
         }
 
