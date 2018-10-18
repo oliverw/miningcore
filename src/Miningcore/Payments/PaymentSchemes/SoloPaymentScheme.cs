@@ -105,8 +105,9 @@ namespace Miningcore.Payments.PaymentSchemes
 
         private DateTime? CalculateRewards(PoolConfig poolConfig, Block block, decimal blockReward, Dictionary<string, decimal> rewards)
         {
-            var recipients = poolConfig.RewardRecipients
-                .Where(x => x.Type?.ToLower() == "solo")
+            var recipients = (poolConfig.RewardRecipients.Length == 1 ?
+                    poolConfig.RewardRecipients.Take(1) :
+                    poolConfig.RewardRecipients.Where(x => x.Type?.ToLower() == "solo"))
                 .Select(x => x.Address)
                 .ToArray();
 
