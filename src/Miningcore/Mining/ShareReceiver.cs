@@ -102,7 +102,6 @@ namespace Miningcore.Mining
                             {
                                 if (sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
-                                    // emit received messages
                                     for (var i = 0; i < messages.Length; i++)
                                     {
                                         var msg = messages[i];
@@ -111,7 +110,6 @@ namespace Miningcore.Mining
                                             queue.Post((urls[i], msg));
                                     }
 
-                                    // log error
                                     if (error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
                                 }
