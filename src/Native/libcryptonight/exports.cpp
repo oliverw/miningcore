@@ -18,6 +18,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <string>
 #include <algorithm>
+#include "crypto/Asm.h"
 #include "crypto/CryptoNight_x86.h"
 #include "common/crypto/keccak.h"
 
