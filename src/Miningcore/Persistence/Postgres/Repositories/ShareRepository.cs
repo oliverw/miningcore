@@ -60,17 +60,19 @@ namespace Miningcore.Persistence.Postgres.Repositories
             await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public Task BulkInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
+        public Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
         {
             logger.LogInvoke();
 
             // NOTE: Even though the tx parameter is completely ignored here,
-            // the COPY command still honors the current transaction if there is one
+            // the COPY command still honors a current ambient transaction
+
+            var pgCon = (NpgsqlConnection)con;
 
             const string query = "COPY shares (poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-            using (var writer = ((NpgsqlConnection) con).BeginBinaryImport(query))
+            using (var writer = pgCon.BeginBinaryImport(query))
             {
                 foreach (var share in shares)
                 {

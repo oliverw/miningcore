@@ -184,9 +184,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // validate worker
                 if (!context.IsAuthorized)
-                    throw new StratumException(StratumError.UnauthorizedWorker, "Unauthorized worker");
+                    throw new StratumException(StratumError.UnauthorizedWorker, "unauthorized worker");
                 else if (!context.IsSubscribed)
-                    throw new StratumException(StratumError.NotSubscribed, "Not subscribed");
+                    throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
                 // submit
                 var requestParams = request.ParamsAs<string[]>();
@@ -220,7 +220,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Code}");
+                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);

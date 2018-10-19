@@ -61,8 +61,8 @@ namespace Miningcore.Extensions
             var arr = new byte[str.Length >> 1];
             var count = str.Length >> 1;
 
-            for (var i = count - 1; i > 0; i--)
-                arr[i] = (byte)((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
+            for (var i = 0; i < count; ++i)
+                arr[count - 1 - i] = (byte)((GetHexVal(str[i << 1]) << 4) + GetHexVal(str[(i << 1) + 1]));
 
             return arr;
         }

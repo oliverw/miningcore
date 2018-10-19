@@ -109,7 +109,7 @@ namespace Miningcore.Mining
             {
                 // Insert shares
                 var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
-                await shareRepo.BulkInsertAsync(con, tx, mapped);
+                await shareRepo.BatchInsertAsync(con, tx, mapped);
 
                 // Insert blocks
                 foreach (var share in shares)
