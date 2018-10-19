@@ -95,7 +95,7 @@ namespace Miningcore.Mining
 
                         using (new CompositeDisposable(sockets))
                         {
-                            // setup poll-items
+                            var urls = clusterConfig.ShareRelays.Select(x => x.Url).ToArray();
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
                             while (!cts.IsCancellationRequested)
@@ -108,11 +108,7 @@ namespace Miningcore.Mining
                                         var msg = messages[i];
 
                                         if (msg != null)
-                                        {
-                                            var socketUrl = clusterConfig.ShareRelays[i].Url;
-
-                                            queue.Post((socketUrl, msg));
-                                        }
+                                            queue.Post((urls[i], msg));
                                     }
 
                                     // log error
