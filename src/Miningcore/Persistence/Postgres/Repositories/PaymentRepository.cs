@@ -20,12 +20,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
+using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories
@@ -40,19 +41,19 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public void Insert(IDbConnection con, IDbTransaction tx, Payment payment)
+        public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment)
         {
             logger.LogInvoke();
 
             var mapped = mapper.Map<Entities.Payment>(payment);
 
-            var query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
+            const string query = "INSERT INTO payments(poolid, coin, address, amount, transactionconfirmationdata, created) " +
                 "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
-            con.Execute(query, mapped, tx);
+            await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public Payment[] PagePayments(IDbConnection con, string poolId, string address, int page, int pageSize)
+        public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -63,21 +64,34 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             query += "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Payment>(query, new { poolId, address, offset = page * pageSize, pageSize })
+            return (await con.QueryAsync<Entities.Payment>(query, new { poolId, address, offset = page * pageSize, pageSize }))
                 .Select(mapper.Map<Payment>)
                 .ToArray();
         }
 
-        public BalanceChange[] PageBalanceChanges(IDbConnection con, string poolId, string address, int page, int pageSize)
+        public async Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
+            const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
                 "AND address = @address " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize })
+            return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, address, offset = page * pageSize, pageSize }))
                 .Select(mapper.Map<BalanceChange>)
+                .ToArray();
+        }
+
+        public async Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT SUM(amount) AS amount, date_trunc('day', created) AS date FROM payments WHERE poolid = @poolid " +
+                "AND address = @address " +
+                "GROUP BY date " +
+                "ORDER BY date DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return (await con.QueryAsync<AmountByDate>(query, new { poolId, address, offset = page * pageSize, pageSize }))
                 .ToArray();
         }
     }

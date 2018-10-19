@@ -178,7 +178,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             equihashTemplate.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
+            Difficulty = (double)new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());
 
             this.solver = solver;
 
@@ -192,18 +192,18 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ReverseArray()
+                .ReverseInPlace()
                 .ToHexString();
 
             BuildCoinbase();
 
             // build tx hashes
             var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
-            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToReverseByteArray())));
 
             // build merkle root
-            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
-            merkleRootReversed = merkleRoot.ReverseArray();
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseInPlace();
+            merkleRootReversed = merkleRoot.ReverseInPlace();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             jobParams = new object[]
@@ -214,7 +214,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
                 merkleRootReversedHex,
                 BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(), // height + hashReserved
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
+                BlockTemplate.Bits.HexToReverseByteArray().ToHexString(),
                 false
             };
         }

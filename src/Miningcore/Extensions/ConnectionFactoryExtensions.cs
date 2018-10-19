@@ -20,23 +20,23 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Data;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Miningcore.Persistence;
-using NLog;
 
 namespace Miningcore.Extensions
 {
     public static class ConnectionFactoryExtensions
     {
         /// <summary>
-        /// Run the specified action providing it with a fresh connection.
+        /// Run the specified action providing it with a fresh connection returing its result.
         /// </summary>
-        public static void Run(this IConnectionFactory factory, Action<IDbConnection> action)
+        /// <returns>The result returned by the action</returns>
+        public static async Task Run(this IConnectionFactory factory,
+            Func<IDbConnection, Task> action)
         {
-            using(var con = factory.OpenConnection())
+            using (var con = await factory.OpenConnectionAsync())
             {
-                action(con);
+                await action(con);
             }
         }
 
@@ -44,58 +44,10 @@ namespace Miningcore.Extensions
         /// Run the specified action providing it with a fresh connection returing its result.
         /// </summary>
         /// <returns>The result returned by the action</returns>
-        public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action)
-        {
-            using(var con = factory.OpenConnection())
-            {
-                return action(con);
-            }
-        }
-
-        /// <summary>
-        /// Run the specified action providing it with a fresh connection.
-        /// </summary>
-        public static void Run(this IConnectionFactory factory, Action<IDbConnection> action, Stopwatch sw, ILogger logger)
-        {
-            using(var con = factory.OpenConnection())
-            {
-                sw.Reset();
-                sw.Start();
-
-                action(con);
-
-                sw.Stop();
-                logger.Debug(() => $"Query took {sw.ElapsedMilliseconds} ms");
-            }
-        }
-
-        /// <summary>
-        /// Run the specified action providing it with a fresh connection returing its result.
-        /// </summary>
-        /// <returns>The result returned by the action</returns>
-        public static T Run<T>(this IConnectionFactory factory, Func<IDbConnection, T> action, Stopwatch sw, ILogger logger)
-        {
-            using(var con = factory.OpenConnection())
-            {
-                sw.Reset();
-                sw.Start();
-
-                var result = action(con);
-
-                sw.Stop();
-                logger.Debug(() => $"Query took {sw.ElapsedMilliseconds} ms");
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Run the specified action providing it with a fresh connection returing its result.
-        /// </summary>
-        /// <returns>The result returned by the action</returns>
-        public static async Task<T> RunAsync<T>(this IConnectionFactory factory,
+        public static async Task<T> Run<T>(this IConnectionFactory factory,
             Func<IDbConnection, Task<T>> action)
         {
-            using(var con = factory.OpenConnection())
+            using(var con = await factory.OpenConnectionAsync())
             {
                 return await action(con);
             }
@@ -105,17 +57,17 @@ namespace Miningcore.Extensions
         /// Run the specified action inside a transaction. If the action throws an exception,
         /// the transaction is rolled back. Otherwise it is commited.
         /// </summary>
-        public static void RunTx(this IConnectionFactory factory,
-            Action<IDbConnection, IDbTransaction> action,
+        public static async Task RunTx(this IConnectionFactory factory,
+            Func<IDbConnection, IDbTransaction, Task> action,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using(var con = factory.OpenConnection())
+            using(var con = await factory.OpenConnectionAsync())
             {
                 using(var tx = con.BeginTransaction(isolation))
                 {
                     try
                     {
-                        action(con, tx);
+                        await action(con, tx);
 
                         if (autoCommit)
                             tx.Commit();
@@ -135,43 +87,11 @@ namespace Miningcore.Extensions
         /// the transaction is rolled back. Otherwise it is commited.
         /// </summary>
         /// <returns>The result returned by the action</returns>
-        public static T RunTx<T>(this IConnectionFactory factory,
-            Func<IDbConnection, IDbTransaction, T> func,
-            bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
-        {
-            using(var con = factory.OpenConnection())
-            {
-                using(var tx = con.BeginTransaction(isolation))
-                {
-                    try
-                    {
-                        var result = func(con, tx);
-
-                        if (autoCommit)
-                            tx.Commit();
-
-                        return result;
-                    }
-
-                    catch
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited.
-        /// </summary>
-        /// <returns>The result returned by the action</returns>
-        public static async Task<T> RunTxAsync<T>(this IConnectionFactory factory,
+        public static async Task<T> RunTx<T>(this IConnectionFactory factory,
             Func<IDbConnection, IDbTransaction, Task<T>> func,
             bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
         {
-            using(var con = factory.OpenConnection())
+            using(var con = await factory.OpenConnectionAsync())
             {
                 using(var tx = con.BeginTransaction(isolation))
                 {
@@ -183,36 +103,6 @@ namespace Miningcore.Extensions
                             tx.Commit();
 
                         return result;
-                    }
-
-                    catch
-                    {
-                        tx.Rollback();
-                        throw;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Run the specified action inside a transaction. If the action throws an exception,
-        /// the transaction is rolled back. Otherwise it is commited.
-        /// </summary>
-        /// <returns>The result returned by the action</returns>
-        public static async Task RunTxAsync(this IConnectionFactory factory,
-            Func<IDbConnection, IDbTransaction, Task> func,
-            bool autoCommit = true, IsolationLevel isolation = IsolationLevel.ReadCommitted)
-        {
-            using(var con = factory.OpenConnection())
-            {
-                using(var tx = con.BeginTransaction(isolation))
-                {
-                    try
-                    {
-                        await func(con, tx);
-
-                        if (autoCommit)
-                            tx.Commit();
                     }
 
                     catch

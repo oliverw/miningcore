@@ -47,6 +47,7 @@ namespace Miningcore.Api.Responses
         public ulong PendingShares { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalPaid { get; set; }
+        public decimal TodayPaid { get; set; }
         public DateTime? LastPayment { get; set; }
         public string LastPaymentLink { get; set; }
         public WorkerPerformanceStatsContainer Performance { get; set; }

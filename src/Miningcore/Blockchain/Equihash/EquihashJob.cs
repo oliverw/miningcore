@@ -185,7 +185,7 @@ namespace Miningcore.Blockchain.Equihash
             };
 
             if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
-                blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray();
+                blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToReverseByteArray();
 
             return blockHeader.ToBytes();
         }
@@ -332,7 +332,7 @@ namespace Miningcore.Blockchain.Equihash
             network = networkType.ToNetwork();
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
+            Difficulty = (double) new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());
 
             // ZCash Sapling & Overwinter support
             isSaplingActive = chainConfig.SaplingActivationHeight.HasValue &&
@@ -373,7 +373,7 @@ namespace Miningcore.Blockchain.Equihash
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ReverseArray()
+                .ReverseInPlace()
                 .ToHexString();
 
             if (blockTemplate.Subsidy != null)
@@ -397,15 +397,17 @@ namespace Miningcore.Blockchain.Equihash
 
             // build tx hashes
             var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
-            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToByteArray().ReverseArray())));
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToReverseByteArray())));
 
             // build merkle root
-            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
-            merkleRootReversed = merkleRoot.ReverseArray();
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseInPlace();
+            merkleRootReversed = merkleRoot.ReverseInPlace();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             // misc
-            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ? blockTemplate.FinalSaplingRootHash.HexToByteArray().ReverseArray().ToHexString() : sha256Empty.ToHexString();
+            var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
+                blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() :
+                sha256Empty.ToHexString();
 
             jobParams = new object[]
             {
@@ -415,7 +417,7 @@ namespace Miningcore.Blockchain.Equihash
                 merkleRootReversedHex,
                 hashReserved,
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
+                BlockTemplate.Bits.HexToReverseByteArray().ToHexString(),
                 false
             };
         }
@@ -438,9 +440,9 @@ namespace Miningcore.Blockchain.Equihash
             if (nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
-            var nTimeInt = uint.Parse(nTime.HexToByteArray().ReverseArray().ToHexString(), NumberStyles.HexNumber);
-            //if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
-            //    throw new StratumException(StratumError.Other, "ntime out of range");
+            var nTimeInt = uint.Parse(nTime.HexToReverseByteArray().ToHexString(), NumberStyles.HexNumber);
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.Now).ToUnixTimeSeconds() + 7200)
+                throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = context.ExtraNonce1 + extraNonce2;
 

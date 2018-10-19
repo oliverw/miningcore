@@ -67,6 +67,7 @@ namespace Miningcore
         private static ILogger logger;
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
+        private static bool isShareRecoveryMode;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
         private static ShareReceiver shareReceiver;
@@ -78,7 +79,6 @@ namespace Miningcore
         private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
 
         public static AdminGcStats gcStats = new AdminGcStats();
-
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
@@ -93,7 +93,7 @@ namespace Miningcore
                 if (!HandleCommandLineOptions(args, out var configFile))
                     return;
 
-                //CoinDefinitionGenerator.WriteCoinDefinitions("../../../coins.json");
+                isShareRecoveryMode = shareRecoveryOption.HasValue();
 
                 Logo();
                 clusterConfig = ReadConfig(configFile);
@@ -108,14 +108,14 @@ namespace Miningcore
                 Bootstrap();
                 LogRuntimeInfo();
 
-                if (!shareRecoveryOption.HasValue())
+                if (!isShareRecoveryMode)
                 {
                     if (!cts.IsCancellationRequested)
                         Start().Wait(cts.Token);
                 }
 
                 else
-                    RecoverShares(shareRecoveryOption.Value());
+                    RecoverSharesAsync(shareRecoveryOption.Value()).Wait();
             }
 
             catch(PoolStartupAbortException ex)
@@ -402,7 +402,7 @@ namespace Miningcore
 
                 var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
-                if (config.EnableConsoleLog)
+                if (config.EnableConsoleLog || isShareRecoveryMode)
                 {
                     if (config.EnableConsoleColors)
                     {
@@ -451,7 +451,7 @@ namespace Miningcore
                     }
                 }
 
-                if (!string.IsNullOrEmpty(config.LogFile))
+                if (!string.IsNullOrEmpty(config.LogFile) && !isShareRecoveryMode)
                 {
                     var target = new FileTarget("file")
                     {
@@ -464,7 +464,7 @@ namespace Miningcore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
-                if (config.PerPoolLogFile)
+                if (config.PerPoolLogFile && !isShareRecoveryMode)
                 {
                     foreach(var poolConfig in clusterConfig.Pools)
                     {
@@ -664,10 +664,10 @@ namespace Miningcore
             await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
-        private static void RecoverShares(string recoveryFilename)
+        private static Task RecoverSharesAsync(string recoveryFilename)
         {
             shareRecorder = container.Resolve<ShareRecorder>();
-            shareRecorder.RecoverShares(clusterConfig, recoveryFilename);
+            return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
         }
 
         private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -720,6 +720,7 @@ namespace Miningcore
                 pool.Stop();
 
             shareRelay?.Stop();
+            shareReceiver?.Stop();
             shareRecorder?.Stop();
             statsRecorder?.Stop();
         }

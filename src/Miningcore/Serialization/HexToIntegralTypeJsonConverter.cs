@@ -38,7 +38,7 @@ namespace Miningcore.Serialization
                 return BigInteger.Parse("0" + str, NumberStyles.HexNumber);
 
             if (typeof(T) == typeof(uint256))
-                return new uint256(str.HexToByteArray().ReverseArray());
+                return new uint256(str.HexToReverseByteArray());
 
             var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             return Convert.ChangeType(val, underlyingType ?? typeof(T));

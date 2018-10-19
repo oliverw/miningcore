@@ -120,9 +120,9 @@ namespace Miningcore.Blockchain.Equihash
             hashrateDivisor = (double) new BigRational(manager.ChainConfig.Diff1BValue, EquihashConstants.ZCashDiff1b);
         }
 
-        protected override void InitStats()
+        protected override async Task InitStatsAsync()
         {
-            base.InitStats();
+            await base.InitStatsAsync();
 
             blockchainStats = manager.BlockchainStats;
         }

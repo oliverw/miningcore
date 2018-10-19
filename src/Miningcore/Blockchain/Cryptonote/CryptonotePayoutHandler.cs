@@ -77,7 +77,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected override string LogCategory => "Monero Payout Handler";
 
-        private bool HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
@@ -88,7 +88,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
-                PersistPayments(balances, txHash);
+                await PersistPaymentsAsync(balances, txHash);
                 NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
                 return true;
             }
@@ -102,7 +102,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        private bool HandleTransferResponse(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
@@ -113,7 +113,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
-                PersistPayments(balances, txHashes.First());
+                await PersistPaymentsAsync(balances, txHashes.First());
                 NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
                 return true;
             }
@@ -181,11 +181,11 @@ namespace Miningcore.Blockchain.Cryptonote
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, request);
 
-                    return HandleTransferResponse(transferSplitResponse, balances);
+                    return await HandleTransferResponseAsync(transferSplitResponse, balances);
                 }
             }
 
-            return HandleTransferResponse(transferResponse, balances);
+            return await HandleTransferResponseAsync(transferResponse, balances);
         }
 
         private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
@@ -256,7 +256,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 }
             }
 
-            HandleTransferResponse(result, balance);
+            await HandleTransferResponseAsync(result, balance);
         }
 
         #region IPayoutHandler
@@ -389,7 +389,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return Task.FromResult(true);
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -405,14 +405,14 @@ namespace Miningcore.Blockchain.Cryptonote
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
             // Deduct static reserve for tx fees
             blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;
 
-            return Task.FromResult(blockRewardRemaining);
+            return blockRewardRemaining;
         }
 
         public async Task PayoutAsync(Balance[] balances)

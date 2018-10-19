@@ -246,7 +246,7 @@ namespace Miningcore.Blockchain.Ethereum
             return Task.FromResult(true);
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
             var blockRewardRemaining = block.Reward;
 
@@ -262,14 +262,14 @@ namespace Miningcore.Blockchain.Ethereum
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
             // Deduct static reserve for tx fees
             blockRewardRemaining -= EthereumConstants.StaticTransactionFeeReserve;
 
-            return Task.FromResult(blockRewardRemaining);
+            return blockRewardRemaining;
         }
 
         public async Task PayoutAsync(Balance[] balances)
@@ -291,7 +291,7 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 try
                 {
-                    var txHash = await Payout(balance);
+                    var txHash = await PayoutAsync(balance);
                     txHashes.Add(txHash);
                 }
 
@@ -443,7 +443,7 @@ namespace Miningcore.Blockchain.Ethereum
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
         }
 
-        private async Task<string> Payout(Balance balance)
+        private async Task<string> PayoutAsync(Balance balance)
         {
             // unlock account
             if (extraConfig.CoinbasePassword != null)
@@ -481,7 +481,7 @@ namespace Miningcore.Blockchain.Ethereum
             logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");
 
             // update db
-            PersistPayments(new[] { balance }, txHash);
+            await PersistPaymentsAsync(new[] { balance }, txHash);
 
             // done
             return txHash;

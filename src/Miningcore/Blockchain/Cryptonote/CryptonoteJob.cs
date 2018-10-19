@@ -173,6 +173,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 switch(blobConverted[0])
                 {
                     case 9:
+                    case 8:
                         variant = CryptonightVariant.VARIANT_2;
                         break;
 

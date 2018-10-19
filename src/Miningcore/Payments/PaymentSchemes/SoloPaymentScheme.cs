@@ -67,7 +67,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
             IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             // calculate rewards
@@ -82,33 +82,32 @@ namespace Miningcore.Payments.PaymentSchemes
                 if (amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
             // delete discarded shares
             if (shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
                 if (cutOffCount > 0)
                 {
 #if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                    shareRepo.DeleteSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                    await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 #endif
                 }
             }
-
-            return Task.FromResult(true);
         }
 
         #endregion // IPayoutScheme
 
         private DateTime? CalculateRewards(PoolConfig poolConfig, Block block, decimal blockReward, Dictionary<string, decimal> rewards)
         {
-            var recipients = poolConfig.RewardRecipients
-                .Where(x => x.Type?.ToLower() == "solo")
+            var recipients = (poolConfig.RewardRecipients.Length == 1 ?
+                    poolConfig.RewardRecipients.Take(1) :
+                    poolConfig.RewardRecipients.Where(x => x.Type?.ToLower() == "solo"))
                 .Select(x => x.Address)
                 .ToArray();
 

@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using Miningcore.Configuration;
 
 namespace Miningcore.Persistence.Model
 {

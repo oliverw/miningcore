@@ -86,7 +86,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var transactionHashes = BlockTemplate.Transactions
                 .Select(tx => (tx.TxId ?? tx.Hash)
                     .HexToByteArray()
-                    .ReverseArray())
+                    .ReverseInPlace())
                 .ToArray();
 
             mt = new MerkleTree(transactionHashes);

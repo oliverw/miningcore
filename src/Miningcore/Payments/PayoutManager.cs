@@ -130,7 +130,7 @@ namespace Miningcore.Payments
         private async Task UpdatePoolBalancesAsync(PoolConfig pool, IPayoutHandler handler, IPayoutScheme scheme)
         {
             // get pending blockRepo for pool
-            var pendingBlocks = cf.Run(con => blockRepo.GetPendingBlocksForPool(con, pool.Id));
+            var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, pool.Id));
 
             // classify
             var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
@@ -141,7 +141,7 @@ namespace Miningcore.Payments
                 {
                     logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
 
-                    await cf.RunTxAsync(async (con, tx) =>
+                    await cf.RunTx(async (con, tx) =>
                     {
                         // fill block effort if empty
                         if (!block.Effort.HasValue)
@@ -158,12 +158,12 @@ namespace Miningcore.Payments
                                 await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
 
                                 // finally update block status
-                                blockRepo.UpdateBlock(con, tx, block);
+                                await blockRepo.UpdateBlockAsync(con, tx, block);
                                 break;
 
                             case BlockStatus.Orphaned:
                             case BlockStatus.Pending:
-                                blockRepo.UpdateBlock(con, tx, block);
+                                await blockRepo.UpdateBlockAsync(con, tx, block);
                                 break;
                         }
                     });
@@ -176,8 +176,8 @@ namespace Miningcore.Payments
 
         private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
         {
-            var poolBalancesOverMinimum = cf.Run(con =>
-                balanceRepo.GetPoolBalancesOverThreshold(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
+            var poolBalancesOverMinimum = await cf.Run(con =>
+                balanceRepo.GetPoolBalancesOverThresholdAsync(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
 
             if (poolBalancesOverMinimum.Length > 0)
             {
@@ -211,7 +211,7 @@ namespace Miningcore.Payments
             var to = block.Created;
 
             // get last block for pool
-            var lastBlock = cf.Run(con => blockRepo.GetBlockBefore(con, pool.Id, new[]
+            var lastBlock = await cf.Run(con => blockRepo.GetBlockBeforeAsync(con, pool.Id, new[]
             {
                 BlockStatus.Confirmed,
                 BlockStatus.Orphaned,
@@ -222,8 +222,8 @@ namespace Miningcore.Payments
                 from = lastBlock.Created;
 
             // get combined diff of all shares for block
-            var accumulatedShareDiffForBlock = cf.Run(con =>
-                shareRepo.GetAccumulatedShareDifficultyBetweenCreated(con, pool.Id, from, to));
+            var accumulatedShareDiffForBlock = await cf.Run(con =>
+                shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, from, to));
 
             // handler has the final say
             if (accumulatedShareDiffForBlock.HasValue)
