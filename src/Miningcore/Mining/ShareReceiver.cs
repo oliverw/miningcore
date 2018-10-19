@@ -35,8 +35,6 @@ namespace Miningcore.Mining
 
             this.clock = clock;
             this.messageBus = messageBus;
-
-            disposables.Add(cts);
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -72,6 +70,7 @@ namespace Miningcore.Mining
             Task.Run(() =>
             {
                 Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
+                var timeout = TimeSpan.FromMilliseconds(1000);
 
                 while (!cts.IsCancellationRequested)
                 {
@@ -94,39 +93,34 @@ namespace Miningcore.Mining
                                 return subSocket;
                             }).ToArray();
 
-                        // disposing the sockets in the Stop() method will cause polling to abort, terminating this thread
-                        disposables.Add(new CompositeDisposable(sockets));
-
-                        // setup poll-items
-                        var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
-
-                        while (!cts.IsCancellationRequested)
+                        using (new CompositeDisposable(sockets))
                         {
-                            if (sockets.PollIn(pollItems, out var messages, out var error))
+                            // setup poll-items
+                            var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
+
+                            while (!cts.IsCancellationRequested)
                             {
-                                // emit received messages
-                                for (var i = 0; i < messages.Length; i++)
+                                if (sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
-                                    var msg = messages[i];
-
-                                    if (msg != null)
+                                    // emit received messages
+                                    for (var i = 0; i < messages.Length; i++)
                                     {
-                                        var socketUrl = clusterConfig.ShareRelays[i].Url;
+                                        var msg = messages[i];
 
-                                        queue.Post((socketUrl, msg));
+                                        if (msg != null)
+                                        {
+                                            var socketUrl = clusterConfig.ShareRelays[i].Url;
+
+                                            queue.Post((socketUrl, msg));
+                                        }
                                     }
-                                }
 
-                                // log error
-                                if (error != null)
-                                    logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                    // log error
+                                    if (error != null)
+                                        logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                }
                             }
                         }
-                    }
-
-                    catch (ObjectDisposedException)
-                    {
-                        break;
                     }
 
                     catch (Exception ex)
