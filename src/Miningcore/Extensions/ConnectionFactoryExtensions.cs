@@ -20,28 +20,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Data;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Miningcore.Persistence;
-using NLog;
 
 namespace Miningcore.Extensions
 {
     public static class ConnectionFactoryExtensions
     {
-        /// <summary>
-        /// Run the specified action providing it with a fresh connection returing its result.
-        /// </summary>
-        /// <returns>The result returned by the action</returns>
-        public static async void Run(this IConnectionFactory factory,
-            Action<IDbConnection> action)
-        {
-            using (var con = await factory.OpenConnectionAsync())
-            {
-                action(con);
-            }
-        }
-
         /// <summary>
         /// Run the specified action providing it with a fresh connection returing its result.
         /// </summary>

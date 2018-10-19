@@ -34,9 +34,8 @@ namespace Miningcore.Crypto
 
             // check cache if possible
             var hasArgs = args != null && args.Length > 0;
-            //if (!hasArgs && cache.TryGetValue(name, out var result))
-            //    return result;
-            IHashAlgorithm result;
+            if (!hasArgs && cache.TryGetValue(name, out var result))
+                return result;
 
             var hashClass = (typeof(Sha256D).Namespace + "." + name).ToLower();
             var hashType = typeof(Sha256D).Assembly.GetType(hashClass, true, true);
@@ -47,7 +46,7 @@ namespace Miningcore.Crypto
             else
             {
                 result = (IHashAlgorithm) ctx.Resolve(hashType);
-                //cache.TryAdd(name, result);
+                cache.TryAdd(name, result);
             }
 
             return result;
