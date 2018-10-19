@@ -142,11 +142,11 @@ namespace Miningcore.Mining
                 {
                     try
                     {
-                        var (socketUrl, msg) = await queue.ReceiveAsync(cts.Token);
+                        var (url, msg) = await queue.ReceiveAsync(cts.Token);
 
                         using (msg)
                         {
-                            ProcessMessage(socketUrl, msg);
+                            ProcessMessage(url, msg);
                         }
                     }
 
