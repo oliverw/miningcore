@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
-using Miningcore.Crypto;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
-using Miningcore.Payments;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
@@ -20,7 +20,6 @@ using Newtonsoft.Json.Serialization;
 using NLog;
 using ProtoBuf;
 using ZeroMQ;
-using ZeroMQ.Monitoring;
 
 namespace Miningcore.Mining
 {
@@ -36,13 +35,23 @@ namespace Miningcore.Mining
 
             this.clock = clock;
             this.messageBus = messageBus;
+
+            disposables.Add(cts);
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
+        private CompositeDisposable disposables = new CompositeDisposable();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
+        private readonly BufferBlock<(string SocketUrl, ZMessage Message)> queue = new BufferBlock<(string SocketUrl, ZMessage Message)>();
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+
+        JsonSerializer serializer = new JsonSerializer
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
 
         class PoolContext
         {
@@ -58,162 +67,204 @@ namespace Miningcore.Mining
             public long BlockHeight;
         }
 
-        private void StartListeners()
+        private void StartMessageReceiver()
         {
-            var serializer = new JsonSerializer
+            Task.Run(() =>
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+                Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
 
-            var knownPools = new HashSet<string>(clusterConfig.Pools.Select(x => x.Id));
-
-            foreach (var relay in clusterConfig.ShareRelays)
-            {
-                Task.Run(()=>
+                while (!cts.IsCancellationRequested)
                 {
-                    var url = relay.Url;
-
-                    // Receive loop
-                    var done = false;
-
-                    while (!done)
+                    try
                     {
-                        try
-                        {
-                            using(var subSocket = new ZSocket(ZSocketType.SUB))
+                        // setup sockets
+                        var sockets = clusterConfig.ShareRelays
+                            .Select(relay =>
                             {
+                                var subSocket = new ZSocket(ZSocketType.SUB);
                                 subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
-                                subSocket.Connect(url);
+                                subSocket.Connect(relay.Url);
                                 subSocket.SubscribeAll();
 
                                 if (subSocket.CurveServerKey != null)
-                                    logger.Info($"Monitoring external stratum {url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                                    logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
                                 else
-                                    logger.Info($"Monitoring external stratum {url}");
+                                    logger.Info($"Monitoring external stratum {relay.Url}");
 
-                                while (true)
+                                return subSocket;
+                            }).ToArray();
+
+                        // disposing the sockets in the Stop() method will cause polling to abort, terminating this thread
+                        disposables.Add(new CompositeDisposable(sockets));
+
+                        // setup poll-items
+                        var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
+
+                        while (!cts.IsCancellationRequested)
+                        {
+                            if (sockets.PollIn(pollItems, out var messages, out var error))
+                            {
+                                // emit received messages
+                                for (var i = 0; i < messages.Length; i++)
                                 {
-                                    string topic;
-                                    uint flags;
-                                    byte[] data;
+                                    var msg = messages[i];
 
-                                    // receive
-                                    using(var msg = subSocket.ReceiveMessage())
+                                    if (msg != null)
                                     {
-                                        // extract frames
-                                        topic = msg[0].ToString(Encoding.UTF8);
-                                        flags = msg[1].ReadUInt32();
-                                        data = msg[2].Read();
+                                        var socketUrl = clusterConfig.ShareRelays[i].Url;
+
+                                        queue.Post((socketUrl, msg));
                                     }
-
-                                    // validate
-                                    if (string.IsNullOrEmpty(topic) || !knownPools.Contains(topic))
-                                    {
-                                        logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
-                                        continue;
-                                    }
-
-                                    if (data?.Length == 0)
-                                    {
-                                        logger.Warn(() => $"Received empty data from {url}/{topic}. Ignoring ...");
-                                        continue;
-                                    }
-
-                                    // TMP FIX
-                                    if ((flags & ShareRelay.WireFormatMask) == 0)
-                                        flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
-                                    // deserialize
-                                    var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
-
-                                    Share share = null;
-
-                                    switch(wireFormat)
-                                    {
-                                        case ShareRelay.WireFormat.Json:
-                                            using(var stream = new MemoryStream(data))
-                                            {
-                                                using(var reader = new StreamReader(stream, Encoding.UTF8))
-                                                {
-                                                    using(var jreader = new JsonTextReader(reader))
-                                                    {
-                                                        share = serializer.Deserialize<Share>(jreader);
-                                                    }
-                                                }
-                                            }
-
-                                            break;
-
-                                        case ShareRelay.WireFormat.ProtocolBuffers:
-                                            using(var stream = new MemoryStream(data))
-                                            {
-                                                share = Serializer.Deserialize<Share>(stream);
-                                                share.BlockReward = (decimal) share.BlockRewardDouble;
-                                            }
-
-                                            break;
-
-                                        default:
-                                            logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
-                                            break;
-                                    }
-
-                                    if (share == null)
-                                    {
-                                        logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
-                                        continue;
-                                    }
-
-                                    // store
-                                    share.PoolId = topic;
-                                    share.Created = clock.Now;
-                                    messageBus.SendMessage(new ClientShare(null, share));
-
-                                    // update poolstats from shares
-                                    if (pools.TryGetValue(topic, out var poolContext))
-                                    {
-                                        var pool = poolContext.Pool;
-                                        poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                                        if (pool.NetworkStats != null)
-                                        {
-                                            pool.NetworkStats.BlockHeight = (ulong) share.BlockHeight;
-                                            pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
-
-                                            if (poolContext.BlockHeight != share.BlockHeight)
-                                            {
-                                                pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                                                poolContext.BlockHeight = share.BlockHeight;
-                                                poolContext.LastBlock = clock.Now;
-                                            }
-
-                                            else
-                                                pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
-                                        }
-                                    }
-
-                                    else
-                                        logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
                                 }
+
+                                // log error
+                                if (error != null)
+                                    logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
                             }
                         }
+                    }
 
-                        catch(ObjectDisposedException)
-                        {
-                            logger.Info($"Exiting monitoring thread for external stratum {url}]");
-                            break;
-                        }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
 
-                        catch(Exception ex)
+                    catch (Exception ex)
+                    {
+                        logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
+
+                        if (!cts.IsCancellationRequested)
+                            Thread.Sleep(5000);
+                    }
+                }
+            }, cts.Token);
+        }
+
+        private void StartMessageProcessors()
+        {
+            for (var i = 0; i < Environment.ProcessorCount; i++)
+                ProcessMessages();
+        }
+
+        private void ProcessMessages()
+        {
+            Task.Run(async () =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var (socketUrl, msg) = await queue.ReceiveAsync(cts.Token);
+
+                        using (msg)
                         {
-                            logger.Error(ex);
+                            ProcessMessage(socketUrl, msg);
                         }
                     }
-                });
+
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+                }
+            }, cts.Token);
+        }
+
+        private void ProcessMessage(string url, ZMessage msg)
+        {
+            // extract frames
+            var topic = msg[0].ToString(Encoding.UTF8);
+            var flags = msg[1].ReadUInt32();
+            var data = msg[2].Read();
+
+            // validate
+            if (string.IsNullOrEmpty(topic) || !pools.ContainsKey(topic))
+            {
+                logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
+                return;
             }
 
-            if (clusterConfig.ShareRelays.Any())
-                logger.Info(() => "Online");
+            if (data?.Length == 0)
+            {
+                logger.Warn(() => $"Received empty data from {url}/{topic}. Ignoring ...");
+                return;
+            }
+
+            // TMP FIX
+            if ((flags & ShareRelay.WireFormatMask) == 0)
+                flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
+
+            // deserialize
+            var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
+
+            Share share = null;
+
+            switch (wireFormat)
+            {
+                case ShareRelay.WireFormat.Json:
+                    using (var stream = new MemoryStream(data))
+                    {
+                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            using (var jreader = new JsonTextReader(reader))
+                            {
+                                share = serializer.Deserialize<Share>(jreader);
+                            }
+                        }
+                    }
+
+                    break;
+
+                case ShareRelay.WireFormat.ProtocolBuffers:
+                    using (var stream = new MemoryStream(data))
+                    {
+                        share = Serializer.Deserialize<Share>(stream);
+                        share.BlockReward = (decimal)share.BlockRewardDouble;
+                    }
+
+                    break;
+
+                default:
+                    logger.Error(() => $"Unsupported wire format {wireFormat} of share received from {url}/{topic} ");
+                    break;
+            }
+
+            if (share == null)
+            {
+                logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
+                return;
+            }
+
+            // store
+            share.PoolId = topic;
+            share.Created = clock.Now;
+            messageBus.SendMessage(new ClientShare(null, share));
+
+            // update poolstats from shares
+            if (pools.TryGetValue(topic, out var poolContext))
+            {
+                var pool = poolContext.Pool;
+                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+
+                if (pool.NetworkStats != null)
+                {
+                    pool.NetworkStats.BlockHeight = (ulong)share.BlockHeight;
+                    pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
+
+                    if (poolContext.BlockHeight != share.BlockHeight)
+                    {
+                        pool.NetworkStats.LastNetworkBlockTime = clock.Now;
+                        poolContext.BlockHeight = share.BlockHeight;
+                        poolContext.LastBlock = clock.Now;
+                    }
+
+                    else
+                        pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
+                }
+            }
+
+            else
+                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
         }
 
         #region API-Surface
@@ -227,13 +278,19 @@ namespace Miningcore.Mining
         {
             this.clusterConfig = clusterConfig;
 
-            if(clusterConfig.ShareRelays != null)
-                StartListeners();
+            if (clusterConfig.ShareRelays != null)
+            {
+                StartMessageReceiver();
+                StartMessageProcessors();
+            }
         }
 
         public void Stop()
         {
             logger.Info(() => "Stopping ..");
+
+            cts.Cancel();
+            disposables.Dispose();
 
             logger.Info(() => "Stopped");
         }

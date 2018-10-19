@@ -720,6 +720,7 @@ namespace Miningcore
                 pool.Stop();
 
             shareRelay?.Stop();
+            shareReceiver?.Stop();
             shareRecorder?.Stop();
             statsRecorder?.Stop();
         }
