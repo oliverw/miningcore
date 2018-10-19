@@ -43,7 +43,7 @@ namespace Miningcore.Mining
         private ClusterConfig clusterConfig;
         private CompositeDisposable disposables = new CompositeDisposable();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
-        private readonly BufferBlock<(string SocketUrl, ZMessage Message)> queue = new BufferBlock<(string SocketUrl, ZMessage Message)>();
+        private readonly BufferBlock<(string Url, ZMessage Message)> queue = new BufferBlock<(string Url, ZMessage Message)>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
         JsonSerializer serializer = new JsonSerializer
