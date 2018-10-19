@@ -86,7 +86,7 @@ extern "C" MODULE_API void cryptonight_export(cryptonight_ctx* ctx, const char* 
     case 2:
     case 8:
 #if !SOFT_AES && defined(CPU_INTEL)
-        #pragma warning Using IvyBridge assembler implementation
+        #warning Using IvyBridge assembler implementation
             cryptonight_single_hash_asm<xmrig::CRYPTONIGHT, xmrig::VARIANT_2, xmrig::ASM_INTEL>(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx);
 #elif !SOFT_AES && defined(CPU_AMD)
         #warning Using Ryzen assembler implementation
