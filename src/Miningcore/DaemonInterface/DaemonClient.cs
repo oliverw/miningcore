@@ -326,32 +326,34 @@ namespace Miningcore.DaemonInterface
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-            var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            if (endPoint.Http2)
-                request.Version = new Version(2, 0);
-
-            // build auth header
-            if (!string.IsNullOrEmpty(endPoint.User))
+            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
-                var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
-            }
+                request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+                if (endPoint.Http2)
+                    request.Version = new Version(2, 0);
 
-            // send request
-            using(var response = await httpClients[endPoint].SendAsync(request, ct))
-            {
-                // deserialize response
-                var jsonResponse = await response.Content.ReadAsStringAsync();
+                // build request content
+                var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                using (var reader = new StringReader(jsonResponse))
+                // build auth header
+                if (!string.IsNullOrEmpty(endPoint.User))
                 {
-                    using(var jreader = new JsonTextReader(reader))
+                    var auth = $"{endPoint.User}:{endPoint.Password}";
+                    var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                }
+
+                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+
+                // send request
+                using (var response = await httpClients[endPoint].SendAsync(request, ct))
+                {
+                    // deserialize response
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                    using (var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -383,11 +385,14 @@ namespace Miningcore.DaemonInterface
             // build http request
             using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
-                var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                request.Headers.ConnectionClose = false;    // enable keep-alive
 
                 if (endPoint.Http2)
                     request.Version = new Version(2, 0);
+
+                // build request content
+                var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
                 if (!string.IsNullOrEmpty(endPoint.User))
@@ -415,18 +420,15 @@ namespace Miningcore.DaemonInterface
                     // deserialize response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
 
-                    using(var reader = new StringReader(jsonResponse))
+                    using (var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
-                        using(var jreader = new JsonTextReader(reader))
-                        {
-                            var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
+                        var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
-                            // telemetry
-                            sw.Stop();
-                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+                        // telemetry
+                        sw.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
 
-                            return result;
-                        }
+                        return result;
                     }
                 }
             }
