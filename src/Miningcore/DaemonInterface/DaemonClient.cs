@@ -295,12 +295,12 @@ namespace Miningcore.DaemonInterface
                 .RefCount();
         }
 
-        public IObservable<ZMessage> ZmqSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
+        public IObservable<ZMessage> ZmqSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap)
         {
             logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic, numMsgSegments)))
+                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic)))
                 .Publish()
                 .RefCount();
         }
@@ -588,7 +588,7 @@ namespace Miningcore.DaemonInterface
             }));
         }
 
-        private IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
+        private IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint, string url, string topic)
         {
             return Observable.Defer(() => Observable.Create<ZMessage>(obs =>
             {

@@ -559,7 +559,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, zmq, 2)
+                    var blockNotify = daemon.ZmqSubscribe(logger, zmq)
                         .Select(msg =>
                         {
                             using (msg)
