@@ -52,6 +52,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
+using Prometheus;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Api
@@ -687,7 +688,12 @@ namespace Miningcore.Api
             var port = clusterConfig.Api?.AdminPort ?? 4001;
 
             webHostAdmin = new WebHostBuilder()
-                .Configure(app => { app.Run(HandleRequestAdmin); })
+                .Configure(app => 
+                {
+                    app.UseMetricServer();
+
+                    app.Run(HandleRequestAdmin);
+                })
                 .UseKestrel(options => { options.Listen(address, port); })
                 .Build();
 
