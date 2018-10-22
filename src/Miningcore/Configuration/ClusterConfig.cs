@@ -595,6 +595,11 @@ namespace Miningcore.Configuration
         /// Port for admin-apis
         /// </summary>
         public int? AdminPort { get; set; }
+
+        /// <summary>
+        /// Port for prometheus compatible metrics endpoint /metrics
+        /// </summary>
+        public int? MetricsPort { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
