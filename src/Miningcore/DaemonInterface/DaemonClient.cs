@@ -101,12 +101,16 @@ namespace Miningcore.DaemonInterface
             {
                 var handler = new SocketsHttpHandler
                 {
-                    Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
-                    PreAuthenticate = true,
                     AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
                 };
 
-                if (endpoint.Ssl && !endpoint.ValidateCert)
+                if(!string.IsNullOrEmpty(endpoint.User))
+                {
+                    handler.Credentials = new NetworkCredential(endpoint.User, endpoint.Password);
+                    handler.PreAuthenticate = true;
+                }
+
+                if ((endpoint.Ssl || endpoint.Http2) && !endpoint.ValidateCert)
                 {
                     handler.SslOptions = new SslClientAuthenticationOptions
                     {
