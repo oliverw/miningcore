@@ -640,6 +640,26 @@
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
   },
+  "help-the-homeless": {
+    "name": "Help The Homeless",
+    "symbol": "HTH",
+    "family": "bitcoin",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "x16r"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [{ "hash": "x16r" }]
+    },
+    "shareMultiplier": 256,
+    "hasMasterNodes": true,
+    "explorerBlockLink": "http://explorer.hthcoin.world/block/$hash$",
+    "explorerTxLink": "http://explorer.hthcoin.world/tx/{0}",
+    "explorerAccountLink": "http://explorer.hthcoin.world/address/{0}"
+  },
   "zcash": {
     "name": "ZCash",
     "symbol": "ZEC",
