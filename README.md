@@ -31,8 +31,8 @@ Litecoin | Yes | Yes | |
 ZCash | Yes | Yes | |
 Monero | Yes | Yes | |
 Bittube | Yes | Yes | |
-Ethereum | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
-Ethereum Classic | Yes | Yes | | Requires [Parity](https://github.com/paritytech/parity/releases)
+Ethereum | Yes | Yes | | 
+Ethereum Classic | Yes | Yes | | 
 DASH | Yes | Yes | |
 Vertcoin | Yes | Yes | |
 Monacoin | Yes | Yes | |
