@@ -640,6 +640,25 @@
     "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
     "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
   },
+  "geekcash": {
+    "name": "GeekCash",
+    "symbol": "GEEK",
+    "family": "bitcoin",
+    "coinbaseHasher": {
+      "hash": "sha256d"
+    },
+    "headerHasher": {
+      "hash": "geek"
+    },
+    "blockHasher": {
+      "hash": "reverse",
+      "args": [{ "hash": "geek" }]
+    },
+    "hasMasterNodes": true,
+    "explorerBlockLink": "http://explorer.geekcash.org/block/$hash$",
+    "explorerTxLink": "http://explorer.geekcash.org/tx/{0}",
+    "explorerAccountLink": "http://explorer.geekcash.org/address/{0}"
+  },
   "zcash": {
     "name": "ZCash",
     "symbol": "ZEC",

@@ -193,6 +193,7 @@
     <ClInclude Include="equi\utilstrencodings.h" />
     <ClInclude Include="fresh.h" />
     <ClInclude Include="fugue.h" />
+    <ClInclude Include="geek.h" />
     <ClInclude Include="groestl.h" />
     <ClInclude Include="hefty1.h" />
     <ClInclude Include="jh.h" />
@@ -276,6 +277,7 @@
     <ClCompile Include="equi\utilstrencodings.cpp" />
     <ClCompile Include="fresh.c" />
     <ClCompile Include="fugue.c" />
+    <ClCompile Include="geek.c" />
     <ClCompile Include="groestl.c" />
     <ClCompile Include="hefty1.c" />
     <ClCompile Include="jh.c" />
