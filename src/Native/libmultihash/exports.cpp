@@ -27,6 +27,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "blake.h"
 #include "blake2s.h"
 #include "fugue.h"
+#include "geek.h"
 #include "qubit.h"
 #include "s3.h"
 #include "hefty1.h"
@@ -147,6 +148,11 @@ extern "C" MODULE_API void dcrypt_export(const char* input, char* output, uint32
 extern "C" MODULE_API void fugue_export(const char* input, char* output, uint32_t input_len)
 {
 	fugue_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void geek_export(const char* input, char* output, uint32_t input_len)
+{
+	geek_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void qubit_export(const char* input, char* output, uint32_t input_len)
