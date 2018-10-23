@@ -133,6 +133,8 @@ namespace Miningcore.Blockchain.Bitcoin
                             BlockchainStats.LastNetworkBlockTime = clock.Now;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
                             BlockchainStats.NetworkDifficulty = job.Difficulty;
+                            BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                            BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                         }
 
                         else
