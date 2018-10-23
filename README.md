@@ -18,32 +18,7 @@
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
-### Coins
-
-Coin | Implemented | Tested | Planned | Notes
-:--- | :---: | :---: | :---: | :---:
-Bitcoin | Yes | Yes | |
-Bitcoin Cash | Yes | Yes | |
-Bitcoin Gold | Yes | Yes | |
-Bitcoin Diamond | Yes | Yes | |
-Bitcoin Private | Yes | Yes | |
-Litecoin | Yes | Yes | |
-ZCash | Yes | Yes | |
-Monero | Yes | Yes | |
-Bittube | Yes | Yes | |
-Ethereum | Yes | Yes | | 
-Ethereum Classic | Yes | Yes | | 
-DASH | Yes | Yes | |
-Vertcoin | Yes | Yes | |
-Monacoin | Yes | Yes | |
-Groestlcoin | Yes | Yes | |
-Dogecoin | Yes | No | |
-DigiByte | Yes | Yes | |
-Namecoin | Yes | No | |
-Viacoin | Yes | No | |
-Peercoin | Yes | No | |
-Ravencoin | Yes | Yes | |
-MoonCoin | Yes | Yes | |
+### Supported Coins
 
 Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
