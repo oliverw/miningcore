@@ -1265,5 +1265,16 @@
       },
       "explorerTxLink": "https://gastracker.io/tx/{0}",
       "explorerAccountLink": "https://gastracker.io/addr/{0}"
-    }
+    },
+    "ellaism": {
+		"name": "Ellaism",
+		"symbol": "ELLA",
+		"family": "ethereum",
+		"explorerBlockLinks": {
+			"block": "https://explorer.ellaism.org/block/$height$",
+			"uncle": "https://explorer.ellaism.org/block/$height$"
+		},
+		"explorerTxLink": "https://explorer.ellaism.org/tx/{0}",
+		"explorerAccountLink": "https://explorer.ellaism.org/account/{0}"
+	}
   }
