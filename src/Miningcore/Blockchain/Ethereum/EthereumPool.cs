@@ -236,7 +236,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        protected virtual Task OnNewJobAsync(object jobParams)
+        protected virtual Task OnNewJobAsync(object[] jobParams)
         {
             currentJobParams = jobParams;
 
@@ -266,8 +266,27 @@ namespace Miningcore.Blockchain.Ethereum
                     if (context.ApplyPendingDifficulty())
                         await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    // send job
-                    await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+                    if (!context.IsEthminer)
+                    {
+                        // send job
+                        await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+                    }
+
+                    else
+                    {
+                        // clone and patch jobparams
+                        var tmpParams = new object[]
+                        {
+                            jobParams[0],
+                            "0x" + jobParams[1],
+                            "0x" + jobParams[2],
+                            jobParams[3]
+                        };
+
+                        logger.Info("ethminer jobparams patch");
+
+                        await client.NotifyAsync(EthereumStratumMethods.MiningNotify, tmpParams);
+                    }
                 }
             });
 

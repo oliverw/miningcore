@@ -37,5 +37,7 @@ namespace Miningcore.Blockchain.Ethereum
         public bool IsInitialWorkSent { get; set; } = false;
 
         public string ExtraNonce1 { get; set; }
+
+        public bool IsEthminer => Miner?.ToLower().Contains("ethminer") == true;
     }
 }
