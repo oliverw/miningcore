@@ -388,7 +388,7 @@ namespace Miningcore.Blockchain.Ethereum
 
         #region API-Surface
 
-        public IObservable<object[]> Jobs { get; private set; }
+        public IObservable<object> Jobs { get; private set; }
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {

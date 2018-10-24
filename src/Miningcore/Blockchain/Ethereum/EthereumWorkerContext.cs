@@ -37,7 +37,5 @@ namespace Miningcore.Blockchain.Ethereum
         public bool IsInitialWorkSent { get; set; } = false;
 
         public string ExtraNonce1 { get; set; }
-
-        public bool IsEthminer => UserAgent?.ToLower().Contains("ethminer") == true;
     }
 }
