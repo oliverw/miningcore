@@ -94,11 +94,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             try
             {
-                var task = isParity ?
-                    GetBlockTemplateAsync() :
-                    GetBlockTemplateGethAsync();
-
-                return UpdateJob(await task);
+                return UpdateJob(await GetBlockTemplateAsync());
             }
 
             catch(Exception ex)
@@ -165,7 +161,15 @@ namespace Miningcore.Blockchain.Ethereum
             return false;
         }
 
-        private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
+        private Task<EthereumBlockTemplate> GetBlockTemplateAsync()
+        {
+            if (isParity)
+                return GetBlockTemplateParityAsync();
+
+            return GetBlockTemplateGethAsync();
+        }
+
+        private async Task<EthereumBlockTemplate> GetBlockTemplateParityAsync()
         {
             logger.LogInvoke();
 
@@ -400,7 +404,9 @@ namespace Miningcore.Blockchain.Ethereum
             if (poolConfig.EnableInternalStratum == true)
             {
                 // ensure dag location is configured
-                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : Dag.GetDefaultDagDirectory();
+                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? 
+                    Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : 
+                    Dag.GetDefaultDagDirectory();
 
                 // create it if necessary
                 Directory.CreateDirectory(dagDir);

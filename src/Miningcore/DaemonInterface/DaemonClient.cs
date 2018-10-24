@@ -354,10 +354,14 @@ namespace Miningcore.DaemonInterface
                 // send request
                 using (var response = await httpClients[endPoint].SendAsync(request, ct))
                 {
-                    // deserialize response
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    // read response
+                    var responseContent = await response.Content.ReadAsStringAsync();
 
-                    using (var jreader = new JsonTextReader(new StringReader(jsonResponse)))
+                    if (!response.IsSuccessStatusCode)
+                        throw new HttpRequestException($"{(int) response.StatusCode} {responseContent}");
+
+                    // deserialize response
+                    using (var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -529,6 +533,9 @@ namespace Miningcore.DaemonInterface
                                     // connect
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
+
+                                    if(!endPoint.ValidateCert)
+                                        client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
                                     logger.Info(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
