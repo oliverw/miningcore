@@ -537,7 +537,7 @@ namespace Miningcore.DaemonInterface
                                     if(!endPoint.ValidateCert)
                                         client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
-                                    logger.Info(() => $"Establishing WebSocket connection to {uri}");
+                                    logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
 
                                     // subscribe

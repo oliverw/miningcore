@@ -26,6 +26,7 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -628,7 +629,7 @@ namespace Miningcore.Blockchain.Ethereum
                 }
             }
 
-            SetupJobUpdates();
+            await SetupJobUpdatesAsync();
         }
 
         private void ConfigureRewards()
@@ -649,7 +650,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        protected virtual void SetupJobUpdates()
+        protected virtual async Task SetupJobUpdatesAsync()
         {
             var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
@@ -672,7 +673,7 @@ namespace Miningcore.Blockchain.Ethereum
                         return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
                     });
 
-                logger.Info(() => $"Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
+                logger.Info(() => $"Subscribing to WebSocket(s) {string.Join(", ", wsDaemons.Keys.Select(x => $"{(wsDaemons[x].SslWs ? "wss" : "ws")}://{x.Host}:{wsDaemons[x].Value}").Distinct())}");
 
                 if (isParity)
                 {
@@ -710,10 +711,34 @@ namespace Miningcore.Blockchain.Ethereum
 
                 else
                 {
-                    // stream work updates
-                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.Subscribe, new[] { (object) "newHeads" });
+                    var wsSubscription = "newHeads";
+                    var isRetry = false;
+                    retry:
 
-                    Jobs = getWorkObs.Where(x => x != null)
+                    // stream work updates
+                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.Subscribe, new[] { (object) wsSubscription, new object() });
+
+                    // test subscription
+                    var subcriptionResponse = await getWorkObs
+                        .Take(1)
+                        .Select(x=> JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
+                        .ToTask();
+
+                    if(subcriptionResponse.Error != null)
+                    {
+                        // older versions of geth only support subscriptions to "newBlocks"
+                        if(!isRetry && subcriptionResponse.Error.Code == (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
+                        {
+                            wsSubscription = "newBlocks";
+
+                            isRetry = true;
+                            goto retry;
+                        }
+
+                        logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                    }
+
+                    Jobs = getWorkObs.Skip(1).Where(x => x != null)
                         .Select(_ => Observable.FromAsync(UpdateJobAsync))
                         .Concat()
                         .Do(isNew =>
