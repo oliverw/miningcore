@@ -57,7 +57,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
         }
 
-        private object currentJobParams;
+        private object[] currentJobParams;
         private EthereumJobManager manager;
 
         private async Task OnSubscribeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -232,7 +232,7 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 // send intial update
                 await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-                await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+                await SendWork(client, context, currentJobParams);
             }
         }
 
@@ -266,31 +266,32 @@ namespace Miningcore.Blockchain.Ethereum
                     if (context.ApplyPendingDifficulty())
                         await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    if (!context.IsEthminer)
-                    {
-                        // send job
-                        await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
-                    }
-
-                    else
-                    {
-                        // clone and patch jobparams
-                        var tmpParams = new object[]
-                        {
-                            jobParams[0],
-                            "0x" + jobParams[1],
-                            "0x" + jobParams[2],
-                            jobParams[3]
-                        };
-
-                        logger.Info("ethminer jobparams patch");
-
-                        await client.NotifyAsync(EthereumStratumMethods.MiningNotify, tmpParams);
-                    }
+                    await SendWork(client, context, currentJobParams);
                 }
             });
 
             return Task.WhenAll(tasks);
+        }
+
+        private async Task SendWork(StratumClient client, EthereumWorkerContext context, object[] jobParams)
+        {
+            var _jobParams = jobParams;
+
+            if (context.IsEthminer)
+            {
+                logger.Info("ethminer jobparams workaround");
+
+                // clone and patch jobparams
+                _jobParams = new object[]
+                {
+                    jobParams[0],
+                    "0x" + jobParams[1],
+                    "0x" + jobParams[2],
+                    jobParams[3]
+                };
+            }
+
+            await client.NotifyAsync(EthereumStratumMethods.MiningNotify, _jobParams);
         }
 
         #region Overrides
@@ -404,7 +405,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 // send job
                 await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-                await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+                await SendWork(client, context, currentJobParams);
             }
         }
 
