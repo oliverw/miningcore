@@ -279,8 +279,6 @@ namespace Miningcore.Blockchain.Ethereum
 
             if (context.IsEthminer)
             {
-                logger.Info("ethminer jobparams workaround");
-
                 // clone and patch jobparams
                 _jobParams = new object[]
                 {

@@ -38,6 +38,6 @@ namespace Miningcore.Blockchain.Ethereum
 
         public string ExtraNonce1 { get; set; }
 
-        public bool IsEthminer => Miner?.ToLower().Contains("ethminer") == true;
+        public bool IsEthminer => UserAgent?.ToLower().Contains("ethminer") == true;
     }
 }
