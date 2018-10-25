@@ -115,6 +115,8 @@ namespace Miningcore.Blockchain.Cryptonote
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
                     BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
+                    BlockchainStats.NextNetworkTarget = "";
+                    BlockchainStats.NextNetworkBits = "";
                 }
 
                 return isNew;
@@ -526,7 +528,8 @@ namespace Miningcore.Blockchain.Cryptonote
                     new RewardRecipient
                     {
                         Address = address,
-                        Percentage = DevDonation.Percent
+                        Percentage = DevDonation.Percent,
+                        Type = "dev"
                     }
                 }).ToArray();
             }
@@ -559,7 +562,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, zmq, 2)
+                    var blockNotify = daemon.ZmqSubscribe(logger, zmq)
                         .Select(msg =>
                         {
                             using (msg)

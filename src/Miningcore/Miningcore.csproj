@@ -47,6 +47,7 @@
     <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="AutoMapper" Version="7.0.1" />
     <PackageReference Include="Dapper" Version="1.50.5" />
+    <PackageReference Include="Discord.Net" Version="1.0.2" />
     <PackageReference Include="FluentValidation" Version="8.0.100" />
     <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.0.100" />
     <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
@@ -56,12 +57,14 @@
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
-    <PackageReference Include="NBitcoin" Version="4.1.1.46" />
+    <PackageReference Include="NBitcoin" Version="4.1.1.59" />
     <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
     <PackageReference Include="Npgsql" Version="4.0.3" />
     <PackageReference Include="Polly" Version="6.1.0" />
+    <PackageReference Include="prometheus-net" Version="2.1.3" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="2.1.3" />
     <PackageReference Include="protobuf-net" Version="2.4.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="4.1.0" />

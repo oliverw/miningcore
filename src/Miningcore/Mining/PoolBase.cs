@@ -338,7 +338,7 @@ Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
 Network Hash Rate:      {FormatUtil.FormatHashrate(blockchainStats.NetworkHashrate)}
 Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty)}
-Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0)}%
+Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Where(x=> x.Type != "dev").Sum(x => x.Percentage) : 0)}%
 ";
 
             logger.Info(() => msg);

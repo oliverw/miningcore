@@ -221,7 +221,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             lock (context)
             {
-                if (context.IsAuthorized && context.IsAuthorized && !context.IsInitialWorkSent)
+                if (context.IsSubscribed && context.IsAuthorized && !context.IsInitialWorkSent)
                 {
                     context.IsInitialWorkSent = true;
                     sendInitialWork = true;
@@ -349,7 +349,7 @@ namespace Miningcore.Blockchain.Ethereum
                         break;
 
                     case EthereumStratumMethods.ExtraNonceSubscribe:
-                        //await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
+                        await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
                         break;
 
                     default:

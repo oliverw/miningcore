@@ -52,6 +52,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
+using Prometheus;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Api
@@ -120,6 +121,7 @@ namespace Miningcore.Api
         private ClusterConfig clusterConfig;
         private IWebHost webHost;
         private IWebHost webHostAdmin;
+        private IWebHost webHostMetrics;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly Encoding encoding = new UTF8Encoding(false);
 
@@ -130,6 +132,20 @@ namespace Miningcore.Api
             NullValueHandling = NullValueHandling.Ignore
         };
 
+        class ApiException : Exception
+        {
+            public ApiException(string message, int? responseStatusCode = null) : base(message)
+            {
+                ResponseStatusCode = responseStatusCode;
+            }
+
+            public ApiException()
+            {
+            }
+
+            public int? ResponseStatusCode { get; }
+        }
+
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private readonly Dictionary<Regex, Func<HttpContext, Match, Task>> requestMap;
@@ -139,16 +155,15 @@ namespace Miningcore.Api
         {
             var poolId = m.Groups["poolId"]?.Value;
 
-            if (!string.IsNullOrEmpty(poolId))
-            {
-                var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
+            if (string.IsNullOrEmpty(poolId))
+                throw new ApiException($"Invalid pool id", 401);
 
-                if (pool != null)
-                    return pool;
-            }
+            var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
-            context.Response.StatusCode = 404;
-            return null;
+            if (pool == null)
+                throw new ApiException($"Pool {poolId} is not known", 401);
+
+            return pool;
         }
 
         private async Task SendJsonAsync(HttpContext context, object response)
@@ -201,6 +216,14 @@ namespace Miningcore.Api
                 context.Response.StatusCode = 404;
             }
 
+            catch (ApiException ex)
+            {
+                if (ex.ResponseStatusCode.HasValue)
+                    context.Response.StatusCode = ex.ResponseStatusCode.Value;
+
+                await SendJsonAsync(context, ex.Message);
+            }
+            
             catch (Exception ex)
             {
                 logger.Error(ex);
@@ -284,8 +307,6 @@ namespace Miningcore.Api
         private async Task GetPoolInfoAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             // load stats
             var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, pool.Id));
@@ -317,8 +338,6 @@ namespace Miningcore.Api
         private async Task GetPoolPerformanceAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             // set range
             var end = clock.Now;
@@ -338,8 +357,6 @@ namespace Miningcore.Api
         private async Task PagePoolMinersAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             // set range
             var end = clock.Now;
@@ -365,8 +382,6 @@ namespace Miningcore.Api
         private async Task PagePoolBlocksPagedAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var page = context.GetQueryParameter<int>("page", 0);
             var pageSize = context.GetQueryParameter<int>("pageSize", 20);
@@ -408,8 +423,6 @@ namespace Miningcore.Api
         private async Task PagePoolPaymentsAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var page = context.GetQueryParameter<int>("page", 0);
             var pageSize = context.GetQueryParameter<int>("pageSize", 20);
@@ -446,8 +459,6 @@ namespace Miningcore.Api
         private async Task GetMinerInfoAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var address = m.Groups["address"]?.Value;
             if (string.IsNullOrEmpty(address))
@@ -488,8 +499,6 @@ namespace Miningcore.Api
         private async Task PageMinerPaymentsAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var address = m.Groups["address"]?.Value;
             if (string.IsNullOrEmpty(address))
@@ -533,8 +542,6 @@ namespace Miningcore.Api
         private async Task PageMinerBalanceChangesAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var address = m.Groups["address"]?.Value;
             if (string.IsNullOrEmpty(address))
@@ -563,8 +570,6 @@ namespace Miningcore.Api
         private async Task PageMinerEarningsByDayAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var address = m.Groups["address"]?.Value;
             if (string.IsNullOrEmpty(address))
@@ -592,8 +597,6 @@ namespace Miningcore.Api
         private async Task GetMinerPerformanceAsync(HttpContext context, Match m)
         {
             var pool = GetPool(context, m);
-            if (pool == null)
-                return;
 
             var address = m.Groups["address"]?.Value;
             if (string.IsNullOrEmpty(address))
@@ -603,7 +606,7 @@ namespace Miningcore.Api
             }
 
             var mode = context.GetQueryParameter<string>("mode", "day").ToLower(); // "day" or "month"
-            var result = GetMinerPerformanceInternal(mode, pool, address);
+            var result = await GetMinerPerformanceInternal(mode, pool, address);
 
             await SendJsonAsync(context, result);
         }
@@ -671,7 +674,15 @@ namespace Miningcore.Api
                 context.Response.StatusCode = 404;
             }
 
-            catch(Exception ex)
+            catch (ApiException ex)
+            {
+                if (ex.ResponseStatusCode.HasValue)
+                    context.Response.StatusCode = ex.ResponseStatusCode.Value;
+
+                await SendJsonAsync(context, ex.Message);
+            }
+
+            catch (Exception ex)
             {
                 logger.Error(ex);
                 throw;
@@ -687,13 +698,37 @@ namespace Miningcore.Api
             var port = clusterConfig.Api?.AdminPort ?? 4001;
 
             webHostAdmin = new WebHostBuilder()
-                .Configure(app => { app.Run(HandleRequestAdmin); })
+                .Configure(app => 
+                {
+                    app.Run(HandleRequestAdmin);
+                })
                 .UseKestrel(options => { options.Listen(address, port); })
                 .Build();
 
             webHostAdmin.Start();
 
             logger.Info(() => $"Admin API Online @ {address}:{port}");
+        }
+
+        private void StartMetrics(ClusterConfig clusterConfig)
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.MetricsPort ?? 4002;
+
+            webHostMetrics = new WebHostBuilder()
+                .Configure(app =>
+                {
+                    app.UseMetricServer();
+                })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHostMetrics.Start();
+
+            logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
         }
 
         #endregion // Admin API
@@ -708,6 +743,7 @@ namespace Miningcore.Api
             logger.Info(() => $"Launching ...");
             StartApi(clusterConfig);
             StartAdminApi(clusterConfig);
+            StartMetrics(clusterConfig);
         }
 
         public void AttachPool(IMiningPool pool)

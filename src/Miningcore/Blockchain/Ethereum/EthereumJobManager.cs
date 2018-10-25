@@ -26,6 +26,7 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,11 +95,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             try
             {
-                var task = isParity ?
-                    GetBlockTemplateAsync() :
-                    GetBlockTemplateGethAsync();
-
-                return UpdateJob(await task);
+                return UpdateJob(await GetBlockTemplateAsync());
             }
 
             catch(Exception ex)
@@ -152,6 +149,8 @@ namespace Miningcore.Blockchain.Ethereum
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
                     BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
+                    BlockchainStats.NextNetworkTarget = job.BlockTemplate.Target;
+                    BlockchainStats.NextNetworkBits = "";
                 }
 
                 return isNew;
@@ -165,7 +164,15 @@ namespace Miningcore.Blockchain.Ethereum
             return false;
         }
 
-        private async Task<EthereumBlockTemplate> GetBlockTemplateAsync()
+        private Task<EthereumBlockTemplate> GetBlockTemplateAsync()
+        {
+            if (isParity)
+                return GetBlockTemplateParityAsync();
+
+            return GetBlockTemplateGethAsync();
+        }
+
+        private async Task<EthereumBlockTemplate> GetBlockTemplateParityAsync()
         {
             logger.LogInvoke();
 
@@ -225,7 +232,6 @@ namespace Miningcore.Blockchain.Ethereum
 
         private EthereumBlockTemplate AssembleBlockTemplate(string[] work)
         {
-            // only parity returns the 4th element (block height)
             if (work.Length < 4)
             {
                 logger.Error(() => $"Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a Parity daemon?");
@@ -400,7 +406,9 @@ namespace Miningcore.Blockchain.Ethereum
             if (poolConfig.EnableInternalStratum == true)
             {
                 // ensure dag location is configured
-                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : Dag.GetDefaultDagDirectory();
+                var dagDir = !string.IsNullOrEmpty(extraPoolConfig?.DagDir) ? 
+                    Environment.ExpandEnvironmentVariables(extraPoolConfig.DagDir) : 
+                    Dag.GetDefaultDagDirectory();
 
                 // create it if necessary
                 Directory.CreateDirectory(dagDir);
@@ -622,7 +630,7 @@ namespace Miningcore.Blockchain.Ethereum
                 }
             }
 
-            SetupJobUpdates();
+            await SetupJobUpdatesAsync();
         }
 
         private void ConfigureRewards()
@@ -637,83 +645,129 @@ namespace Miningcore.Blockchain.Ethereum
                     new RewardRecipient
                     {
                         Address = address,
-                        Percentage = DevDonation.Percent
+                        Percentage = DevDonation.Percent,
+                        Type = "dev"
                     }
                 }).ToArray();
             }
         }
 
-        protected virtual void SetupJobUpdates()
+        protected virtual async Task SetupJobUpdatesAsync()
         {
-            var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
-
-            if (enableStreaming && !poolConfig.Daemons.Any(x =>
-                x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
+            if (extraPoolConfig?.BtStream == null)
             {
-                logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
-                enableStreaming = false;
-            }
+                var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
-            if (enableStreaming)
-            {
-                // collect ports
-                var wsDaemons = poolConfig.Daemons
-                    .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
-                    .ToDictionary(x => x, x =>
-                    {
-                        var extra = x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>();
-
-                        return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
-                    });
-
-                logger.Info(() => $"Subscribing to WebSocket push-updates from {string.Join(", ", wsDaemons.Keys.Select(x => x.Host).Distinct())}");
-
-                if (isParity)
+                if (enableStreaming && !poolConfig.Daemons.Any(x =>
+                    x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
                 {
-                    // stream work updates
-                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.ParitySubscribe, new[] { (object) EC.GetWork })
-                        .Select(data =>
+                    logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
+                    enableStreaming = false;
+                }
+
+                if (enableStreaming)
+                {
+                    // collect ports
+                    var wsDaemons = poolConfig.Daemons
+                        .Where(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true)
+                        .ToDictionary(x => x, x =>
                         {
-                            try
-                            {
-                                var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
-                                return psp?.Result;
-                            }
+                            var extra = x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>();
 
-                            catch(Exception ex)
-                            {
-                                logger.Info(() => $"Error deserializing pending block: {ex.Message}");
-                            }
-
-                            return null;
+                            return (extra.PortWs.Value, extra.HttpPathWs, extra.SslWs);
                         });
 
-                    Jobs = getWorkObs.Where(x => x != null)
-                        .Select(AssembleBlockTemplate)
-                        .Select(UpdateJob)
-                        .Do(isNew =>
+                    logger.Info(() => $"Subscribing to WebSocket(s) {string.Join(", ", wsDaemons.Keys.Select(x => $"{(wsDaemons[x].SslWs ? "wss" : "ws")}://{x.Host}:{wsDaemons[x].Value}").Distinct())}");
+
+                    if (isParity)
+                    {
+                        // stream work updates
+                        var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.ParitySubscribe, new[] { (object)EC.GetWork })
+                            .Select(data =>
+                            {
+                                try
+                                {
+                                    var psp = DeserializeRequest(data).ParamsAs<PubSubParams<string[]>>();
+                                    return psp?.Result;
+                                }
+
+                                catch (Exception ex)
+                                {
+                                    logger.Info(() => $"Error deserializing pending block: {ex.Message}");
+                                }
+
+                                return null;
+                            });
+
+                        Jobs = getWorkObs.Where(x => x != null)
+                            .Select(AssembleBlockTemplate)
+                            .Select(UpdateJob)
+                            .Do(isNew =>
+                            {
+                                if (isNew)
+                                    logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                            })
+                            .Where(isNew => isNew)
+                            .Select(_ => GetJobParamsForStratum(true))
+                            .Publish()
+                            .RefCount();
+                    }
+
+                    else
+                    {
+                        var wsSubscription = "newHeads";
+                        var isRetry = false;
+                        retry:
+
+                        // stream work updates
+                        var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.Subscribe, new[] { (object)wsSubscription, new object() });
+
+                        // test subscription
+                        var subcriptionResponse = await getWorkObs
+                            .Take(1)
+                            .Select(x => JsonConvert.DeserializeObject<JsonRpcResponse<string>>(Encoding.UTF8.GetString(x)))
+                            .ToTask();
+
+                        if (subcriptionResponse.Error != null)
                         {
-                            if (isNew)
-                                logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
-                        })
-                        .Where(isNew => isNew)
-                        .Select(_ => GetJobParamsForStratum(true))
-                        .Publish()
-                        .RefCount();
+                            // older versions of geth only support subscriptions to "newBlocks"
+                            if (!isRetry && subcriptionResponse.Error.Code == (int)BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
+                            {
+                                wsSubscription = "newBlocks";
+
+                                isRetry = true;
+                                goto retry;
+                            }
+
+                            logger.ThrowLogPoolStartupException($"Unable to subscribe to geth websocket '{wsSubscription}': {subcriptionResponse.Error.Message} [{subcriptionResponse.Error.Code}]");
+                        }
+
+                        Jobs = getWorkObs.Where(x => x != null)
+                            .Select(_ => Observable.FromAsync(UpdateJobAsync))
+                            .Concat()
+                            .Do(isNew =>
+                            {
+                                if (isNew)
+                                    logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via WebSocket");
+                            })
+                            .Where(isNew => isNew)
+                            .Select(_ => GetJobParamsForStratum(true))
+                            .Publish()
+                            .RefCount();
+                    }
                 }
 
                 else
                 {
-                    // stream work updates
-                    var getWorkObs = daemon.WebsocketSubscribe(logger, wsDaemons, EC.Subscribe, new[] { (object) "newHeads" });
+                    var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
 
-                    Jobs = getWorkObs.Where(x => x != null)
+                    Jobs = Observable.Interval(TimeSpan.FromMilliseconds(pollingInterval))
                         .Select(_ => Observable.FromAsync(UpdateJobAsync))
                         .Concat()
                         .Do(isNew =>
                         {
                             if (isNew)
-                                logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                                logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via RPC Polling");
                         })
                         .Where(isNew => isNew)
                         .Select(_ => GetJobParamsForStratum(true))
@@ -724,15 +778,16 @@ namespace Miningcore.Blockchain.Ethereum
 
             else
             {
-                var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+                var btStream = BtStreamSubscribe(extraPoolConfig.BtStream);
 
-                Jobs = Observable.Interval(TimeSpan.FromMilliseconds(pollingInterval))
-                    .Select(_ => Observable.FromAsync(UpdateJobAsync))
-                    .Concat()
+                Jobs = btStream.Where(x => x != null)
+                    .Select(JsonConvert.DeserializeObject<string[]>)
+                    .Select(AssembleBlockTemplate)
+                    .Select(UpdateJob)
                     .Do(isNew =>
                     {
                         if (isNew)
-                            logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                            logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via BT-Stream");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))

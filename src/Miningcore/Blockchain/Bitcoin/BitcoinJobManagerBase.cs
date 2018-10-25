@@ -122,7 +122,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
-                    var blockNotify = daemon.ZmqSubscribe(logger, zmq, 2)
+                    var blockNotify = daemon.ZmqSubscribe(logger, zmq)
                         .Select(msg =>
                         {
                             using (msg)
@@ -587,7 +587,8 @@ namespace Miningcore.Blockchain.Bitcoin
                     new RewardRecipient
                     {
                         Address = address,
-                        Percentage = DevDonation.Percent
+                        Percentage = DevDonation.Percent,
+                        Type = "dev"
                     }
                 }).ToArray();
             }

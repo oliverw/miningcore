@@ -43,7 +43,7 @@ namespace Miningcore.Mining
         private ClusterConfig clusterConfig;
         private CompositeDisposable disposables = new CompositeDisposable();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new ConcurrentDictionary<string, PoolContext>();
-        private readonly BufferBlock<(string SocketUrl, ZMessage Message)> queue = new BufferBlock<(string SocketUrl, ZMessage Message)>();
+        private readonly BufferBlock<(string Url, ZMessage Message)> queue = new BufferBlock<(string Url, ZMessage Message)>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
         JsonSerializer serializer = new JsonSerializer
@@ -95,27 +95,21 @@ namespace Miningcore.Mining
 
                         using (new CompositeDisposable(sockets))
                         {
-                            // setup poll-items
+                            var urls = clusterConfig.ShareRelays.Select(x => x.Url).ToArray();
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
                             while (!cts.IsCancellationRequested)
                             {
                                 if (sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
-                                    // emit received messages
                                     for (var i = 0; i < messages.Length; i++)
                                     {
                                         var msg = messages[i];
 
                                         if (msg != null)
-                                        {
-                                            var socketUrl = clusterConfig.ShareRelays[i].Url;
-
-                                            queue.Post((socketUrl, msg));
-                                        }
+                                            queue.Post((urls[i], msg));
                                     }
 
-                                    // log error
                                     if (error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
                                 }
@@ -148,11 +142,11 @@ namespace Miningcore.Mining
                 {
                     try
                     {
-                        var (socketUrl, msg) = await queue.ReceiveAsync(cts.Token);
+                        var (url, msg) = await queue.ReceiveAsync(cts.Token);
 
                         using (msg)
                         {
-                            ProcessMessage(socketUrl, msg);
+                            ProcessMessage(url, msg);
                         }
                     }
 
