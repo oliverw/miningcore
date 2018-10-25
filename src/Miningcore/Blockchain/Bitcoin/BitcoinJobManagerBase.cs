@@ -587,7 +587,8 @@ namespace Miningcore.Blockchain.Bitcoin
                     new RewardRecipient
                     {
                         Address = address,
-                        Percentage = DevDonation.Percent
+                        Percentage = DevDonation.Percent,
+                        Type = "dev"
                     }
                 }).ToArray();
             }
