@@ -115,6 +115,8 @@ namespace Miningcore.Blockchain.Cryptonote
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
                     BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
+                    BlockchainStats.NextNetworkTarget = "";
+                    BlockchainStats.NextNetworkBits = "";
                 }
 
                 return isNew;

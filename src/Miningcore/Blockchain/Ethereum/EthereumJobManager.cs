@@ -149,6 +149,8 @@ namespace Miningcore.Blockchain.Ethereum
                     BlockchainStats.LastNetworkBlockTime = clock.Now;
                     BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
+                    BlockchainStats.NextNetworkTarget = job.BlockTemplate.Target;
+                    BlockchainStats.NextNetworkBits = "";
                 }
 
                 return isNew;
