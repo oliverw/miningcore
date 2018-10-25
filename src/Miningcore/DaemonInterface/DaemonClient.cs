@@ -590,7 +590,8 @@ namespace Miningcore.DaemonInterface
                                 logger.Error(() => $"{ex.GetType().Name} '{ex.Message}' while streaming websocket responses. Reconnecting in 5s");
                             }
 
-                            await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
+                            if(!cts.IsCancellationRequested)
+                                await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
                 });

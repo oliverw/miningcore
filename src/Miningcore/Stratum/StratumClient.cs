@@ -32,6 +32,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -343,23 +344,36 @@ namespace Miningcore.Stratum
         {
             logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
 
-            using(var ctsTimeout = new CancellationTokenSource())
+            var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
+
+            try
             {
-                using(var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                using (var stream = new MemoryStream(buffer, true))
                 {
-                    // serialize to JSON directly onto network stream
-                    using(var writer = new StreamWriter(networkStream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    // serialize
+                    using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, msg);
+
+                        writer.WriteLine(); // terminator
                     }
 
-                    // append terminator
-                    networkStream.WriteByte(0xa);
+                    // send
+                    using (var ctsTimeout = new CancellationTokenSource())
+                    {
+                        using (var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
+                        {
+                            ctsTimeout.CancelAfter(sendTimeout);
 
-                    // Send to network
-                    ctsTimeout.CancelAfter(sendTimeout);
-                    await networkStream.FlushAsync(ctsComposite.Token);
+                            await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsComposite.Token);
+                        }
+                    }
                 }
+            }
+
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
