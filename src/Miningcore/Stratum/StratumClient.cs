@@ -273,12 +273,16 @@ namespace Miningcore.Stratum
         {
             while (true)
             {
+                logger.Debug(() => $"[{ConnectionId}] [NET] Waiting for data ...");
+
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
                 // read from network directly into pipe memory
                 var cb = await networkStream.ReadAsync(memory, cts.Token);
                 if (cb == 0)
                     break; // EOF
+
+                logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
 
                 LastReceive = clock.Now;
 
@@ -296,13 +300,17 @@ namespace Miningcore.Stratum
         {
             while (true)
             {
-                var result = await receivePipe.Reader.ReadAsync(cts.Token);
+                logger.Debug(() => $"[{ConnectionId}] [PIPE] Waiting for data ...");
 
+                var result = await receivePipe.Reader.ReadAsync(cts.Token);
+                
                 var buffer = result.Buffer;
                 SequencePosition? position = null;
 
                 if (buffer.Length > MaxInboundRequestLength)
                     throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
+
+                logger.Debug(() => $"[{ConnectionId}] [PIPE] Received data: {result.Buffer.AsString(StratumConstants.Encoding)}");
 
                 do
                 {
@@ -312,8 +320,6 @@ namespace Miningcore.Stratum
                     if (position != null)
                     {
                         var slice = buffer.Slice(0, position.Value);
-
-                        logger.Trace(() => $"[{ConnectionId}] Received data: {slice.AsString(StratumConstants.Encoding)}");
 
                         if (!expectingProxyHeader || !ProcessProxyHeader(slice, proxyProtocol))
                             await ProcessRequestAsync(onRequestAsync, slice);
@@ -342,7 +348,7 @@ namespace Miningcore.Stratum
 
         private async Task SendMessage(object msg)
         {
-            logger.Trace(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
+            logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
 
             var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
 
@@ -366,6 +372,7 @@ namespace Miningcore.Stratum
                             ctsTimeout.CancelAfter(sendTimeout);
 
                             await networkStream.WriteAsync(buffer, 0, (int) stream.Position, ctsComposite.Token);
+                            await networkStream.FlushAsync(ctsComposite.Token);
                         }
                     }
                 }
