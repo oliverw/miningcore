@@ -360,9 +360,9 @@ namespace Miningcore.Stratum
                     using (var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, msg);
-
-                        writer.WriteLine(); // terminator
                     }
+
+                    stream.WriteByte((byte) '\n'); // terminator
 
                     // send
                     using (var ctsTimeout = new CancellationTokenSource())
