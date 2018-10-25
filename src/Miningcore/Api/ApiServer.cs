@@ -606,7 +606,7 @@ namespace Miningcore.Api
             }
 
             var mode = context.GetQueryParameter<string>("mode", "day").ToLower(); // "day" or "month"
-            var result = GetMinerPerformanceInternal(mode, pool, address);
+            var result = await GetMinerPerformanceInternal(mode, pool, address);
 
             await SendJsonAsync(context, result);
         }
