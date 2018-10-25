@@ -47,14 +47,13 @@
     <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="AutoMapper" Version="7.0.1" />
     <PackageReference Include="Dapper" Version="1.50.5" />
-    <PackageReference Include="Discord.Net" Version="1.0.2" />
     <PackageReference Include="FluentValidation" Version="8.0.100" />
     <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.0.100" />
     <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
     <PackageReference Include="MailKit" Version="2.0.6" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.2.5" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.1.2" />
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
     <PackageReference Include="NBitcoin" Version="4.1.1.59" />

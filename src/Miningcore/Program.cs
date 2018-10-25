@@ -36,7 +36,7 @@ using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using FluentValidation;
-using Microsoft.Extensions.CommandLineUtils;
+using McMaster.Extensions.CommandLineUtils;
 using Miningcore.Api;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
