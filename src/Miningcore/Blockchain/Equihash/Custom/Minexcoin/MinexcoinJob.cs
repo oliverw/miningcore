@@ -42,10 +42,10 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
             var tx = Transaction.Create(network);
 
             // pool reward
-            tx.AddOutput(rewardToPool, poolAddressDestination);
+            tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
             // bank reward
-            tx.AddOutput(bankReward, bankScript);
+            tx.Outputs.Add(bankReward, bankScript);
 
             return tx;
         }

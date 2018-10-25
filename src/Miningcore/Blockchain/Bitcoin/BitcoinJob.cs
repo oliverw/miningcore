@@ -456,7 +456,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     reward -= payeeReward;
                     rewardToPool -= payeeReward;
 
-                    tx.AddOutput(payeeReward, payeeAddress);
+                    tx.Outputs.Add(payeeReward, payeeAddress);
                 }
 
                 else if (masterNodeParameters.SuperBlocks.Length > 0)
@@ -469,7 +469,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         reward -= payeeReward;
                         rewardToPool -= payeeReward;
 
-                        tx.AddOutput(payeeReward, payeeAddress);
+                        tx.Outputs.Add(payeeReward, payeeAddress);
                     }
                 }
             }
@@ -482,7 +482,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
 
-                tx.AddOutput(payeeReward, payeeAddress);
+                tx.Outputs.Add(payeeReward, payeeAddress);
             }
 
             return reward;
