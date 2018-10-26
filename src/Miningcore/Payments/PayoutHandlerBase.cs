@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
@@ -102,6 +103,29 @@ namespace Miningcore.Payments
         protected virtual void OnRetry(Exception ex, TimeSpan timeSpan, int retry, object context)
         {
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
+        }
+
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        {
+            var blockRewardRemaining = block.Reward;
+
+            // Distribute funds to configured reward recipients
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            {
+                var amount = block.Reward * (recipient.Percentage / 100.0m);
+                var address = recipient.Address;
+
+                blockRewardRemaining -= amount;
+
+                // skip transfers from pool wallet to pool wallet
+                if (address != poolConfig.Address)
+                {
+                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                }
+            }
+
+            return blockRewardRemaining;
         }
 
         protected virtual async Task PersistPaymentsAsync(Balance[] balances, string transactionConfirmation)
