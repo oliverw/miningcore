@@ -41,6 +41,7 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Miningcore
 {
@@ -87,9 +88,6 @@ namespace Miningcore
             builder.RegisterType<ShareRelay>()
                 .SingleInstance();
 
-            builder.RegisterType<ApiServer>()
-                .SingleInstance();
-
             builder.RegisterType<StatsRecorder>()
                 .AsSelf();
 
@@ -115,6 +113,16 @@ namespace Miningcore
                 .PropertiesAutowired()
                 .AsSelf();
 
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t => t.IsAssignableTo<ControllerBase>())
+                .PropertiesAutowired()
+                .AsSelf();
+
+            builder.RegisterType<WebSocketNotificationsRelay>()
+                .PropertiesAutowired()
+                .AsSelf()
+                .SingleInstance();
+            
             //////////////////////
             // Payment Schemes
 

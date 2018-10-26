@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -37,7 +38,13 @@ using Autofac.Features.Metadata;
 using AutoMapper;
 using FluentValidation;
 using McMaster.Extensions.CommandLineUtils;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
 using Miningcore.Api;
+using Miningcore.Api.Controllers;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -57,6 +64,14 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
+using Microsoft.Extensions.Logging;
+using LogLevel = NLog.LogLevel;
+using ILogger = NLog.ILogger;
+using NLog.Extensions.Logging;
+using Prometheus;
+using WebSocketManager;
+using Miningcore.Api.Middlewares;
+using System.Collections.Concurrent;
 
 namespace Miningcore
 {
@@ -74,11 +89,11 @@ namespace Miningcore
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
-        private static ApiServer apiServer;
         private static NotificationService notificationService;
-        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
-        public static AdminGcStats gcStats = new AdminGcStats();
+        private static AdminGcStats gcStats = new AdminGcStats();
+        private static IWebHost webHost;
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
@@ -247,6 +262,8 @@ namespace Miningcore
 
             builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
             builder.RegisterInstance(clusterConfig);
+            builder.RegisterInstance(pools);
+            builder.RegisterInstance(gcStats);
 
             // AutoMapper
             var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
@@ -576,6 +593,55 @@ namespace Miningcore
             return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
         }
 
+        private static void StartApi()
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.Port ?? 4000;
+
+            webHost = WebHost.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    logging.AddNLog();
+
+                    logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                })
+                .ConfigureServices(services =>
+                {
+                    services.AddSingleton((IComponentContext) container);
+
+                    services.AddSingleton<PoolApiController, PoolApiController>();
+                    services.AddSingleton<AdminApiController, AdminApiController>();
+
+                    services.AddMvc()
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                        .AddControllersAsServices();
+
+                    services.AddCors();
+                    services.AddWebSocketManager();
+                })
+                .Configure(app =>
+                {
+                    app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                    app.UseMvc();
+                    app.UseCors(builder => builder.WithOrigins("*").AllowAnyHeader());
+                    app.UseMetricServer();
+                    app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
+                })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHost.Start();
+
+            logger.Info(() => $"API Online @ {address}:{port}");
+            logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
+            logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
+        }
+
         private static async Task Start()
         {
             var coinTemplates = LoadCoinTemplates();
@@ -614,10 +680,7 @@ namespace Miningcore
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
-            {
-                apiServer = container.Resolve<ApiServer>();
-                apiServer.Start(clusterConfig);
-            }
+                StartApi();
 
             // start payment processor
             if (clusterConfig.PaymentProcessing?.Enabled == true &&
@@ -655,7 +718,7 @@ namespace Miningcore
                 // pre-start attachments
                 shareReceiver?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
-                apiServer?.AttachPool(pool);
+                //apiServer?.AttachPool(pool);
 
                 await pool.StartAsync(cts.Token);
             }));
