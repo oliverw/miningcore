@@ -628,7 +628,6 @@ namespace Miningcore
                     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
                     app.UseMvc();
-                    app.UseCors(builder => builder.WithOrigins("*").AllowAnyHeader());
                     app.UseMetricServer();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                 })

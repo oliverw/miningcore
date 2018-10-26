@@ -6,14 +6,12 @@ using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Globalization;
@@ -67,11 +65,8 @@ namespace Miningcore.Api.Controllers
 
                     // enrich
                     result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
-#if DEBUG
-                    var from = new DateTime(2018, 1, 6, 16, 0, 0);
-#else
                     var from = clock.Now.AddDays(-1);
-#endif
+
                     result.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
                             con, config.Id, from, 0, 15)))
                         .Select(mapper.Map<MinerPerformanceStats>)
@@ -102,11 +97,8 @@ namespace Miningcore.Api.Controllers
 
             // enrich
             response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
-#if DEBUG
-            var from = new DateTime(2018, 1, 7, 16, 0, 0);
-#else
+
             var from = clock.Now.AddDays(-1);
-#endif
 
             response.Pool.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
                     con, pool.Id, from, 0, 15)))
