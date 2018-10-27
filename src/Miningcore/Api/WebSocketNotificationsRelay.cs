@@ -18,7 +18,7 @@ namespace Miningcore.Api
     public class WebSocketNotificationsRelay : WebSocketHandler
     {
         public WebSocketNotificationsRelay(WebSocketConnectionManager webSocketConnectionManager, IComponentContext ctx) : 
-            base(webSocketConnectionManager)
+            base(webSocketConnectionManager, new StringMethodInvocationStrategy())
         {
             messageBus = ctx.Resolve<IMessageBus>();
 
@@ -40,9 +40,10 @@ namespace Miningcore.Api
 
         public override async Task OnConnected(WebSocket socket)
         {
-            await base.OnConnected(socket);
+            WebSocketConnectionManager.AddSocket(socket);
 
-            await socket.SendAsync("Subscribed to Miningcore notification relay ...", CancellationToken.None);
+            var greeting = ToJson(NotificationType.Greeting, new { Message = "Connected to Miningcore notification relay" });
+            await socket.SendAsync(greeting, CancellationToken.None);
         }
 
         private void Relay<T>(NotificationType type)
@@ -61,7 +62,7 @@ namespace Miningcore.Api
 
                 var msg = new Message
                 {
-                    MessageType = MessageType.Text,
+                    MessageType = MessageType.TextRaw,
                     Data = json
                 };
 

@@ -6,6 +6,7 @@ namespace Miningcore.Api
 {
     public enum NotificationType
     {
+        Greeting,
         BlockFound,
         NewChainHeight,
         Payment,
