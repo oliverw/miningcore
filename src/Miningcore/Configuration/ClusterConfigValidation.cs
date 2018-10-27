@@ -62,17 +62,6 @@ namespace Miningcore.Configuration
         }
     }
 
-    public class SlackNotificationsConfigValidator : AbstractValidator<SlackNotifications>
-    {
-        public SlackNotificationsConfigValidator()
-        {
-            RuleFor(j => j.WebHookUrl)
-                .NotNull()
-                .When(x => x.Enabled)
-                .WithMessage("You must provide the webhook url");
-        }
-    }
-
     public class NetworkEndpointConfigValidator<T> : AbstractValidator<T>
         where T : NetworkEndpointConfig
     {
@@ -330,11 +319,6 @@ namespace Miningcore.Configuration
 
     [Validator(typeof(NotificationsConfigValidator))]
     public partial class NotificationsConfig
-    {
-    }
-
-    [Validator(typeof(SlackNotificationsConfigValidator))]
-    public partial class SlackNotifications
     {
     }
 

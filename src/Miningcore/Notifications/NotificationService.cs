@@ -156,41 +156,18 @@ namespace Miningcore.Notifications
                         break;
 
                     case NotificationCategory.Block:
-                        // notify admin
                         if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
-
-                        // notify slack
-                        if (poolConfig?.SlackNotifications?.Enabled == true &&
-                            poolConfig?.SlackNotifications?.NotifyBlockFound == true)
-                        {
-                            await SendSlackNotificationAsync(poolConfig.SlackNotifications.WebHookUrl, notification.Subject, notification.Msg,
-                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.BlockFoundUsername,
-                                poolConfig.SlackNotifications.BlockFoundEmoji);
-                        }
-
                         break;
 
                     case NotificationCategory.PaymentSuccess:
-                        // notify admin
                         if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
-
-                        // notify slack
-                        if (poolConfig?.SlackNotifications?.Enabled == true &&
-                            poolConfig?.SlackNotifications?.NotifyBlockFound == true)
-                        {
-                            await SendSlackNotificationAsync(poolConfig.SlackNotifications.WebHookUrl, notification.Subject, notification.Msg,
-                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.PaymentSuccessUsername,
-                                poolConfig.SlackNotifications.PaymentSuccessEmoji);
-                        }
-
                         break;
 
                     case NotificationCategory.PaymentFailure:
-                        // notify admin
                         if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
@@ -225,25 +202,6 @@ namespace Miningcore.Notifications
             }
 
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
-        }
-
-        private async Task SendSlackNotificationAsync(string webHookUrl, string subject, string msg, string channel, string username, string emoji)
-        {
-            var notification = new SlackNotification
-            {
-                Channel = channel,
-                Body = regexStripHtml.Replace(msg, string.Empty),
-                Username = username,
-                Emoji = emoji
-            };
-
-            // build http request
-            var request = new HttpRequestMessage(HttpMethod.Post, webHookUrl);
-            var json = JsonConvert.SerializeObject(notification, serializerSettings);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            // send request
-            await httpClient.SendAsync(request);
         }
     }
 }

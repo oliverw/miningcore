@@ -544,40 +544,6 @@ namespace Miningcore.Configuration
         public bool NotifyPaymentSuccess { get; set; }
     }
 
-    public partial class SlackNotifications
-    {
-        public bool Enabled { get; set; }
-        public string WebHookUrl { get; set; }
-
-        /// <summary>
-        /// Optional default channel override - must start with '#'
-        /// </summary>
-        public string Channel { get; set; }
-
-        public bool NotifyBlockFound { get; set; }
-        public bool NotifyPaymentSuccess { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for block found notifications - optional
-        /// </summary>
-        public string BlockFoundUsername { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessUsername { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for block found notifications - optional
-        /// </summary>
-        public string BlockFoundEmoji { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessEmoji { get; set; }
-    }
-
     public partial class NotificationsConfig
     {
         public bool Enabled { get; set; }
@@ -680,7 +646,6 @@ namespace Miningcore.Configuration
         public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
-        public SlackNotifications SlackNotifications { get; set; }
         public string Address { get; set; }
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
