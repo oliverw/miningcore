@@ -625,11 +625,12 @@ namespace Miningcore
                 })
                 .Configure(app =>
                 {
+                    app.UseWebSockets();
                     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
-                    app.UseMvc();
-                    app.UseMetricServer();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
+                    app.UseMetricServer();
+                    app.UseMvc();
                 })
                 .UseKestrel(options => { options.Listen(address, port); })
                 .Build();

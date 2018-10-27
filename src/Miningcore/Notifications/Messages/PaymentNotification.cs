@@ -6,25 +6,27 @@ namespace Miningcore.Notifications.Messages
 {
     public class PaymentNotification
     {
-        public PaymentNotification(string poolId, string error, decimal amount, int recpientsCount, string txInfo, decimal? txFee)
+        public PaymentNotification(string poolId, string error, decimal amount, int recpientsCount, string[] txIds, string[] txLinks, decimal? txFee)
         {
             PoolId = poolId;
             Error = error;
             Amount = amount;
             RecpientsCount = recpientsCount;
-            TxInfo = txInfo;
+            TxIds = txLinks;
+            TxLinks = txLinks;
             TxFee = txFee;
         }
 
-        public PaymentNotification(string poolId, string error, decimal amount) : this(poolId, error, amount, 0, null, null)
+        public PaymentNotification(string poolId, string error, decimal amount) : this(poolId, error, amount, 0, null, null, null)
         {
         }
 
+        public string PoolId { get; }
         public decimal? TxFee { get; }
-        public string TxInfo { get; }
+        public string[] TxIds { get; }
+        public string[] TxLinks { get; }
         public int RecpientsCount { get; }
         public decimal Amount { get; }
         public string Error { get; }
-        public string PoolId { get; }
     }
 }

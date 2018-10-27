@@ -42,6 +42,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
+using Miningcore.Notifications.Messages;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -359,11 +360,15 @@ namespace Miningcore.Blockchain.Cryptonote
                     block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
                     result.Add(block);
 
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight));
+
                     // orphaned?
                     if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
                     {
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
                         continue;
                     }
 
@@ -375,6 +380,8 @@ namespace Miningcore.Blockchain.Cryptonote
                         block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
                     }
                 }
             }

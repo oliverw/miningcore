@@ -83,7 +83,7 @@ namespace Miningcore.Notifications
                                 Category = NotificationCategory.PaymentSuccess,
                                 PoolId = x.PoolId,
                                 Subject = "Payout Success Notification",
-                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {x.TxInfo}."
+                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {x.TxLinks}."
                             });
                         }
 

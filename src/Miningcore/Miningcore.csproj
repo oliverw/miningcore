@@ -45,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="2.1.0" />
     <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="AutoMapper" Version="7.0.1" />
     <PackageReference Include="Dapper" Version="1.50.5" />
@@ -82,6 +83,10 @@
     <None Update="coins.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Api\Notifications\" />
   </ItemGroup>
 
   <!-- Copy pre-built library binaries on Windows  -->

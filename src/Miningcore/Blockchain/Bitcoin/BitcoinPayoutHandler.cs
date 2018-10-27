@@ -32,6 +32,7 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications;
+using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -159,6 +160,8 @@ namespace Miningcore.Blockchain.Bitcoin
                                 var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
+
+                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight));
                                 break;
 
                             case "generate":
@@ -168,6 +171,8 @@ namespace Miningcore.Blockchain.Bitcoin
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long) block.BlockHeight));
                                 break;
 
                             default:
@@ -176,6 +181,8 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Status = BlockStatus.Orphaned;
                                 block.Reward = 0;
                                 result.Add(block);
+
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
                                 break;
                         }
                     }

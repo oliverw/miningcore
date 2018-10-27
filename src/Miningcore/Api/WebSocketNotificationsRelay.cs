@@ -1,8 +1,17 @@
 ﻿using System;
+using System.Net.WebSockets;
+using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Autofac;
+using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using NLog;
 using WebSocketManager;
+using WebSocketManager.Common;
 
 namespace Miningcore.Api
 {
@@ -13,13 +22,63 @@ namespace Miningcore.Api
         {
             messageBus = ctx.Resolve<IMessageBus>();
 
-            messageBus.Listen<BlockNotification>().Subscribe(OnBlockNotification);
+            serializer = new JsonSerializer
+            {
+                ContractResolver = ctx.Resolve<JsonSerializerSettings>().ContractResolver
+            };
+
+            Relay<BlockFoundNotification>(NotificationType.BlockFound);
+            Relay<BlockUnlockedNotification>(NotificationType.BlockUnlocked);
+            Relay<BlockConfirmationProgressNotification>(NotificationType.BlockUnlockProgress);
+            Relay<NewChainHeightNotification>(NotificationType.NewChainHeight);
+            Relay<PaymentNotification>(NotificationType.Payment);
         }
 
         private IMessageBus messageBus;
+        private JsonSerializer serializer;
+        private static ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private void OnBlockNotification(BlockNotification notification)
+        public override async Task OnConnected(WebSocket socket)
         {
+            await base.OnConnected(socket);
+
+            await socket.SendAsync("Subscribed to Miningcore notification relay ...", CancellationToken.None);
+        }
+
+        private void Relay<T>(NotificationType type)
+        {
+            messageBus.Listen<T>()
+                .Select(x => Observable.FromAsync(async () => await BroadcastNotification(type, x)))
+                .Concat()
+                .Subscribe();
+        }
+
+        private async Task BroadcastNotification<T>(NotificationType type, T notification)
+        {
+            try
+            {
+                var json = ToJson(type, notification);
+
+                var msg = new Message
+                {
+                    MessageType = MessageType.Text,
+                    Data = json
+                };
+
+                await SendMessageToAllAsync(msg);
+            }
+
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+            }
+        }
+
+        private string ToJson<T>(NotificationType type, T msg)
+        {
+            var result = JObject.FromObject(msg, serializer);
+            result["type"] = type.ToString().ToLower();
+            return result.ToString(Formatting.None);
         }
     }
 }

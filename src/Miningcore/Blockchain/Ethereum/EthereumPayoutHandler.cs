@@ -34,6 +34,7 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications;
+using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -143,6 +144,8 @@ namespace Miningcore.Blockchain.Ethereum
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
 
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight));
+
                     // is it block mined by us?
                     if (blockInfo.Miner == poolConfig.Address)
                     {
@@ -169,6 +172,8 @@ namespace Miningcore.Blockchain.Ethereum
                                 block.Reward += await GetTxRewardAsync(blockInfo); // tx fees
 
                             logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
                         }
 
                         continue;
@@ -217,6 +222,8 @@ namespace Miningcore.Blockchain.Ethereum
                                     block.Type = EthereumConstants.BlockTypeUncle;
 
                                     logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
+
+                                    messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, "uncle"));
                                 }
 
                                 else
@@ -232,6 +239,8 @@ namespace Miningcore.Blockchain.Ethereum
                         // we've lost this one
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
                     }
                 }
             }

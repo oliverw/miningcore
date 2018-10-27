@@ -188,13 +188,12 @@ namespace Miningcore.Payments
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
             {
                 // prepare tx link
-                var txInfo = string.Join(", ", txHashes);
-                var baseUrl = coin.ExplorerTxLink;
+                string[] txLinks = null;
 
-                if(!string.IsNullOrEmpty(baseUrl))
-                    txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
+                if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                    txLinks = txHashes.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
-                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee));
+                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), balances.Length, txHashes, txLinks, txFee));
             }
         }
 
