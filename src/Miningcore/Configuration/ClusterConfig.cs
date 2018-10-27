@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
+using AspNetCoreRateLimit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -585,11 +586,21 @@ namespace Miningcore.Configuration
         public AdminNotifications Admin { get; set; }
     }
 
+    public partial class ApiRateLimitConfig
+    {
+        public bool Disabled { get; set; }
+
+        public RateLimitRule[] Rules { get; set; }
+        public string[] IpWhitelist { get; set; }
+    }
+
     public partial class ApiConfig
     {
         public bool Enabled { get; set; }
         public string ListenAddress { get; set; }
         public int Port { get; set; }
+
+        public ApiRateLimitConfig RateLimiting { get; set; }
 
         /// <summary>
         /// Port for admin-apis

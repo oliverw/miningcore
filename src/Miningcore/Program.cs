@@ -73,6 +73,8 @@ using WebSocketManager;
 using Miningcore.Api.Middlewares;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using AspNetCoreRateLimit;
 
 namespace Miningcore
 {
@@ -601,9 +603,57 @@ namespace Miningcore
             if (defaultToLoopback && (ipList == null || ipList.Length == 0))
                 ipList = new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 };
 
-            if(ipList?.Length > 0)
-                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList);
+            if (ipList?.Length > 0)
+            {
+                logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x=> x.ToString()))}");
 
+                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList);
+            }
+        }
+
+        private static void ConfigureIpRateLimitOptions(IpRateLimitOptions options)
+        {
+            options.EnableEndpointRateLimiting = false;
+
+            // exclude admin api and metrics from throtteling
+            options.EndpointWhitelist = new List<string>
+            {
+                "*:/api/admin",
+                "get:/metrics"
+            };
+
+            options.IpWhitelist = clusterConfig.Api?.RateLimiting?.IpWhitelist?.ToList();
+
+            // default to whitelist localhost if whitelist absent
+            if (options.IpWhitelist == null || options.IpWhitelist.Count == 0)
+            {
+                options.IpWhitelist = new List<string>
+                {
+                    IPAddress.Loopback.ToString(),
+                    IPAddress.IPv6Loopback.ToString(),
+                    IPUtils.IPv4LoopBackOnIPv6.ToString()
+                };
+            }
+
+            // limits
+            var rules = clusterConfig.Api?.RateLimiting?.Rules?.ToList();
+
+            if (rules == null || rules.Count == 0)
+            {
+                rules = new List<RateLimitRule>
+                {
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Period = "1s",
+                        Limit = 10,
+                    }
+                };
+            }
+
+            options.GeneralRules = rules;
+
+            logger.Info(() => $"API access limited to {(string.Join(", ", rules.Select(x => $"{x.Limit} requests per {x.Period}")))}, except from {string.Join(", ", options.IpWhitelist)}");
         }
 
         private static void StartApi()
@@ -613,10 +663,12 @@ namespace Miningcore
                 : IPAddress.Parse("127.0.0.1");
 
             var port = clusterConfig.Api?.Port ?? 4000;
+            var enableApiRateLimiting = !(clusterConfig.Api?.RateLimiting?.Disabled == true);
 
             webHost = WebHost.CreateDefaultBuilder()
                 .ConfigureLogging(logging =>
                 {
+                    // NLog
                     logging.ClearProviders();
                     logging.AddNLog();
 
@@ -624,6 +676,15 @@ namespace Miningcore
                 })
                 .ConfigureServices(services =>
                 {
+                    // rate limiting
+                    if (enableApiRateLimiting)
+                    {
+                        services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
+                        services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+                        services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+                    }
+
+                    // MVC
                     services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
@@ -634,11 +695,17 @@ namespace Miningcore
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                         .AddControllersAsServices();
 
+                    // Cors
                     services.AddCors();
+
+                    // WebSockets
                     services.AddWebSocketManager();
                 })
                 .Configure(app =>
                 {
+                    if (enableApiRateLimiting)
+                        app.UseIpRateLimiting();
+
                     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 
                     UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
