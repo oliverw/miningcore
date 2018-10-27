@@ -20,7 +20,6 @@ namespace Miningcore.Api.Controllers
 {
     [Route("api/admin")]
     [ApiController]
-    [Authorize]
     public class AdminApiController : ControllerBase
     {
         public AdminApiController(IComponentContext ctx)

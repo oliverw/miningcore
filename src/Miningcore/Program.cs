@@ -72,6 +72,7 @@ using Prometheus;
 using WebSocketManager;
 using Miningcore.Api.Middlewares;
 using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Http;
 
 namespace Miningcore
 {
@@ -96,6 +97,7 @@ namespace Miningcore
         private static IWebHost webHost;
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+        private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         public static void Main(string[] args)
         {
@@ -593,6 +595,17 @@ namespace Miningcore
             return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
         }
 
+        private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
+        {
+            var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToArray();
+            if (defaultToLoopback && (ipList == null || ipList.Length == 0))
+                ipList = new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 };
+
+            if(ipList?.Length > 0)
+                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList);
+
+        }
+
         private static void StartApi()
         {
             var address = clusterConfig.Api?.ListenAddress != null
@@ -612,6 +625,7 @@ namespace Miningcore
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton((IComponentContext) container);
+                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                     services.AddSingleton<PoolApiController, PoolApiController>();
                     services.AddSingleton<AdminApiController, AdminApiController>();
@@ -625,8 +639,12 @@ namespace Miningcore
                 })
                 .Configure(app =>
                 {
-                    app.UseWebSockets();
                     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+
+                    UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
+                    UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
+
+                    app.UseWebSockets();
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();

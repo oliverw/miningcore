@@ -600,6 +600,18 @@ namespace Miningcore.Configuration
         /// Port for prometheus compatible metrics endpoint /metrics
         /// </summary>
         public int? MetricsPort { get; set; }
+
+        /// <summary>
+        /// Restricts access to the admin API to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] AdminIpWhitelist { get; set; }
+
+        /// <summary>
+        /// Restricts access to the /metrics endpoint to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] MetricsIpWhitelist { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
