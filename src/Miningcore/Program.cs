@@ -423,6 +423,17 @@ namespace Miningcore
 
                 var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
 
+                var nullTarget = new NullTarget("null")
+                {
+                };
+
+                loggingConfig.AddTarget(nullTarget);
+
+                // Suppress some Aspnet stuff
+                loggingConfig.AddRule(level, LogLevel.Fatal, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
+                loggingConfig.AddRule(level, LogLevel.Fatal, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
+
+                // Api Log
                 if (!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
                 {
                     var target = new FileTarget("file")
@@ -725,8 +736,8 @@ namespace Miningcore
                     UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
                     UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
 
-                    app.UseWebSockets();
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                    app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
                     app.UseMvc();
