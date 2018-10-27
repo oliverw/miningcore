@@ -430,8 +430,8 @@ namespace Miningcore
                 loggingConfig.AddTarget(nullTarget);
 
                 // Suppress some Aspnet stuff
-                loggingConfig.AddRule(level, LogLevel.Fatal, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
-                loggingConfig.AddRule(level, LogLevel.Fatal, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
+                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
+                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
 
                 // Api Log
                 if (!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
