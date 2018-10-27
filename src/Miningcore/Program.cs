@@ -92,11 +92,11 @@ namespace Miningcore
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
+        private static IWebHost webHost;
         private static NotificationService notificationService;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private static AdminGcStats gcStats = new AdminGcStats();
-        private static IWebHost webHost;
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
@@ -422,6 +422,19 @@ namespace Miningcore
                     : LogLevel.Info;
 
                 var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+
+                if (!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
+                {
+                    var target = new FileTarget("file")
+                    {
+                        FileName = GetLogPath(config, config.ApiLogFile),
+                        FileNameKind = FilePathKind.Unknown,
+                        Layout = layout
+                    };
+
+                    loggingConfig.AddTarget(target);
+                    loggingConfig.AddRule(level, LogLevel.Fatal, target, "Microsoft.AspNetCore.*", true);
+                }
 
                 if (config.EnableConsoleLog || isShareRecoveryMode)
                 {

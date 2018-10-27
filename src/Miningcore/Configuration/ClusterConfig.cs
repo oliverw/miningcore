@@ -342,6 +342,7 @@ namespace Miningcore.Configuration
         public bool EnableConsoleLog { get; set; }
         public bool EnableConsoleColors { get; set; }
         public string LogFile { get; set; }
+        public string ApiLogFile { get; set; }
         public bool PerPoolLogFile { get; set; }
         public string LogBaseDirectory { get; set; }
     }
