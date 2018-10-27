@@ -619,7 +619,8 @@ namespace Miningcore
             options.EndpointWhitelist = new List<string>
             {
                 "*:/api/admin",
-                "get:/metrics"
+                "get:/metrics",
+                "*:/notifications",
             };
 
             options.IpWhitelist = clusterConfig.Api?.RateLimiting?.IpWhitelist?.ToList();
@@ -646,7 +647,7 @@ namespace Miningcore
                     {
                         Endpoint = "*",
                         Period = "1s",
-                        Limit = 10,
+                        Limit = 5,
                     }
                 };
             }
