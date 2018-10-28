@@ -103,7 +103,7 @@ namespace Miningcore.Blockchain.Bitcoin
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
-            var coin = poolConfig.Template.As<BitcoinTemplate>();
+            var coin = poolConfig.Template.As<CoinTemplate>();
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
