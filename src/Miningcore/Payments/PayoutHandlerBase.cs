@@ -179,7 +179,7 @@ namespace Miningcore.Payments
             return $"{amount:0.#####} {coin.Symbol}";
         }
 
-        protected virtual void NotifyPayoutSuccess(string poolId, string symbol, Balance[] balances, string[] txHashes, decimal? txFee)
+        protected virtual void NotifyPayoutSuccess(string poolId, Balance[] balances, string[] txHashes, decimal? txFee)
         {
             var coin = poolConfig.Template.As<CoinTemplate>();
 
@@ -187,19 +187,19 @@ namespace Miningcore.Payments
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
             {
-                // prepare tx link
-                string[] txLinks = null;
+                var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
+                    txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
+                    new string[0];
 
-                if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
-                    txLinks = txHashes.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
-
-                messageBus.SendMessage(new PaymentNotification(poolId, symbol, null, balances.Sum(x => x.Amount), balances.Length, txHashes, txLinks, txFee));
+                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
             }
         }
 
-        protected virtual void NotifyPayoutFailure(string poolId, string symbol, Balance[] balances, string error, Exception ex)
+        protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
         {
-            messageBus.SendMessage(new PaymentNotification(poolId, symbol, error ?? ex?.Message, balances.Sum(x => x.Amount)));
+            var coin = poolConfig.Template.As<CoinTemplate>();
+
+            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount), coin.Symbol));
         }
     }
 }

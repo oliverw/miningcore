@@ -42,6 +42,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 using Microsoft.AspNetCore.Mvc;
+using Miningcore.Api.WebSocketNotifications;
 
 namespace Miningcore
 {

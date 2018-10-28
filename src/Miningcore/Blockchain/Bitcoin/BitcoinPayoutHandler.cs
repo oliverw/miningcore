@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -102,6 +103,7 @@ namespace Miningcore.Blockchain.Bitcoin
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
+            var coin = poolConfig.Template.As<BitcoinTemplate>();
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
@@ -161,7 +163,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
                                 break;
 
                             case "generate":
@@ -172,7 +174,18 @@ namespace Miningcore.Blockchain.Bitcoin
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long) block.BlockHeight, poolConfig.Template.Symbol));
+                                // build explorer link
+                                string explorerLink = null;
+                                if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                                {
+                                    if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                                    else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                                }
+
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                    block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
                                 break;
 
                             default:
@@ -182,7 +195,8 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Reward = 0;
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                    block.BlockHeight, block.Hash, coin.Symbol, null));
                                 break;
                         }
                     }
@@ -282,7 +296,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 await PersistPaymentsAsync(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
             }
 
             else
@@ -317,7 +331,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                    NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
                 }
             }
         }

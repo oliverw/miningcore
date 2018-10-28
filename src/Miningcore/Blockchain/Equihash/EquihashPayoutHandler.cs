@@ -192,7 +192,7 @@ namespace Miningcore.Blockchain.Equihash
                                         logger.Info(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} completed with transaction id: {txId}");
 
                                         await PersistPaymentsAsync(page, txId);
-                                        NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, page, new[] { txId }, null);
+                                        NotifyPayoutSuccess(poolConfig.Id, page, new[] { txId }, null);
 
                                         continueWaiting = false;
                                         continue;
@@ -200,7 +200,7 @@ namespace Miningcore.Blockchain.Equihash
                                     case ZOperationStatus.Cancelled:
                                     case ZOperationStatus.Failed:
                                         logger.Error(() => $"{EquihashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}");
-                                        NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, page, $"{EquihashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
+                                        NotifyPayoutFailure(poolConfig.Id, page, $"{EquihashCommands.ZSendMany} failed: {operationResult.Error.Message} code {operationResult.Error.Code}", null);
 
                                         continueWaiting = false;
                                         continue;
@@ -236,7 +236,7 @@ namespace Miningcore.Blockchain.Equihash
                             else
                             {
                                 logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
-                                NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, page, $"{BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                                NotifyPayoutFailure(poolConfig.Id, page, $"{BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}", null);
                                 break;
                             }
                         }
@@ -244,7 +244,7 @@ namespace Miningcore.Blockchain.Equihash
                         else
                         {
                             logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
-                            NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, page, $"Wallet is locked but walletPassword was not configured. Unable to send funds.", null);
+                            NotifyPayoutFailure(poolConfig.Id, page, $"Wallet is locked but walletPassword was not configured. Unable to send funds.", null);
                             break;
                         }
                     }
@@ -253,7 +253,7 @@ namespace Miningcore.Blockchain.Equihash
                     {
                         logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                        NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, page, $"{EquihashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                        NotifyPayoutFailure(poolConfig.Id, page, $"{EquihashCommands.ZSendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
                     }
                 }
             }

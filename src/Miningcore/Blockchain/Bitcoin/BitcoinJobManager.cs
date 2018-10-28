@@ -111,7 +111,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if(isNew)
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
+                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, coin.Symbol));
 
                 if (isNew || forceUpdate)
                 {

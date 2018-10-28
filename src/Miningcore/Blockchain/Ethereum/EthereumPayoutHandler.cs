@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -111,6 +112,7 @@ namespace Miningcore.Blockchain.Ethereum
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
+            var coin = poolConfig.Template.As<EthereumCoinTemplate>();
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var blockCache = new Dictionary<long, DaemonResponses.Block>();
@@ -144,7 +146,7 @@ namespace Miningcore.Blockchain.Ethereum
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
 
-                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
 
                     // is it block mined by us?
                     if (blockInfo.Miner == poolConfig.Address)
@@ -164,6 +166,7 @@ namespace Miningcore.Blockchain.Ethereum
                             block.ConfirmationProgress = 1;
                             block.BlockHeight = (ulong) blockInfo.Height;
                             block.Reward = GetBaseBlockReward(chainType, block.BlockHeight); // base reward
+                            block.Type = "block";
 
                             if (extraConfig?.KeepUncles == false)
                                 block.Reward += blockInfo.Uncles.Length * (block.Reward / 32); // uncle rewards
@@ -173,7 +176,18 @@ namespace Miningcore.Blockchain.Ethereum
 
                             logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                            // build explorer link
+                            string explorerLink = null;
+                            if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                            {
+                                if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                    explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                                else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                    explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                            }
+
+                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                block.BlockHeight, block.Hash, coin.Symbol, explorerLink, block.Type));
                         }
 
                         continue;
@@ -223,7 +237,18 @@ namespace Miningcore.Blockchain.Ethereum
 
                                     logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
 
-                                    messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, "uncle"));
+                                    // build explorer link
+                                    string explorerLink = null;
+                                    if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                                    {
+                                        if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                            explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                                        else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                            explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                                    }
+
+                                    messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                        block.BlockHeight, block.Hash, coin.Symbol, explorerLink, block.Type));
                                 }
 
                                 else
@@ -240,7 +265,8 @@ namespace Miningcore.Blockchain.Ethereum
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                            block.BlockHeight, block.Hash, coin.Symbol, null));
                     }
                 }
             }
@@ -292,12 +318,12 @@ namespace Miningcore.Blockchain.Ethereum
                 {
                     logger.Error(ex);
 
-                    NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, new[] { balance }, ex.Message, null);
+                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
                 }
             }
 
             if (txHashes.Any())
-                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, txHashes.ToArray(), null);
+                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
         }
 
         #endregion // IPayoutHandler

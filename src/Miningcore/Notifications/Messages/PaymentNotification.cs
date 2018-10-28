@@ -6,28 +6,33 @@ namespace Miningcore.Notifications.Messages
 {
     public class PaymentNotification
     {
-        public PaymentNotification(string poolId, string poolCurrencySymbol, string error, decimal amount, int recpientsCount, string[] txIds, string[] txLinks, decimal? txFee)
+        public PaymentNotification(string poolId, string error, decimal amount, string symbol, int recpientsCount, string[] txIds, string[] txExplorerLinks, decimal? txFee)
         {
             PoolId = poolId;
             Error = error;
             Amount = amount;
             RecpientsCount = recpientsCount;
-            TxIds = txLinks;
-            TxLinks = txLinks;
+            TxIds = txIds;
             TxFee = txFee;
+            Symbol = symbol;
+            TxExplorerLinks = txExplorerLinks;
         }
 
-        public PaymentNotification(string poolId, string poolCurrencySymbol, string error, decimal amount) : this(poolId, poolCurrencySymbol, error, amount, 0, null, null, null)
+        public PaymentNotification(string poolId, string error, decimal amount, string symbol) : this(poolId, error, amount, symbol, 0, null, null, null)
         {
         }
 
-        public string PoolId { get; }
-        public string PoolCurrencySymbol { get; }
-        public decimal? TxFee { get; }
-        public string[] TxIds { get; }
-        public string[] TxLinks { get; }
-        public int RecpientsCount { get; }
-        public decimal Amount { get; }
-        public string Error { get; }
+        public PaymentNotification()
+        {
+        }
+
+        public string PoolId { get; set; }
+        public decimal? TxFee { get; set; }
+        public string[] TxIds { get; set; }
+        public string[] TxExplorerLinks { get; set; }
+        public string Symbol { get; set; }
+        public int RecpientsCount { get; set; }
+        public decimal Amount { get; set; }
+        public string Error { get; set; }
     }
 }

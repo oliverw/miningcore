@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Miningcore.Api
+namespace Miningcore.Api.WebSocketNotifications
 {
-    public enum NotificationType
+    public enum WsNotificationType
     {
         Greeting,
         BlockFound,

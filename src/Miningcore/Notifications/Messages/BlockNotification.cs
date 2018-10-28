@@ -1,62 +1,79 @@
 using Miningcore.Persistence.Model;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Miningcore.Notifications.Messages
 {
     public abstract class BlockNotification
     {
-        protected BlockNotification(string poolId, long blockHeight, string poolCurrencySymbol)
+        protected BlockNotification(string poolId, ulong blockHeight, string symbol)
         {
             PoolId = poolId;
             BlockHeight = blockHeight;
-            PoolCurrencySymbol = poolCurrencySymbol;
+            Symbol = symbol;
         }
 
-        public string PoolId { get; }
-        public string PoolCurrencySymbol { get; }
-        public long BlockHeight { get; }
+        protected BlockNotification()
+        {
+        }
+
+        public string PoolId { get; set; }
+        public ulong BlockHeight { get; set; }
+        public string Symbol { get; set; }
     }
 
     public class BlockFoundNotification : BlockNotification
     {
-        public BlockFoundNotification(string poolId, long blockHeight, 
-            string poolCurrencySymbol) : base(poolId, blockHeight, poolCurrencySymbol)
+        public BlockFoundNotification(string poolId, ulong blockHeight, string symbol) : base(poolId, blockHeight, symbol)
+        {
+        }
+
+        public BlockFoundNotification()
         {
         }
     }
 
     public class NewChainHeightNotification : BlockNotification
     {
-        public NewChainHeightNotification(string poolId, long blockHeight, 
-            string poolCurrencySymbol) : base(poolId, blockHeight, poolCurrencySymbol)
+        public NewChainHeightNotification(string poolId, ulong blockHeight, string symbol) : base(poolId, blockHeight, symbol)
+        {
+        }
+
+        public NewChainHeightNotification()
         {
         }
     }
 
     public class BlockConfirmationProgressNotification : BlockNotification
     {
-        public BlockConfirmationProgressNotification(double progress, string poolId, long blockHeight, 
-            string poolCurrencySymbol) : base(poolId, blockHeight, poolCurrencySymbol)
+        public BlockConfirmationProgressNotification(double progress, string poolId, ulong blockHeight, string symbol) : base(poolId, blockHeight, symbol)
         {
             Progress = progress;
         }
 
-        public double Progress { get; }
+        public BlockConfirmationProgressNotification()
+        {
+        }
+
+        public double Progress { get; set; }
     }
 
     public class BlockUnlockedNotification : BlockNotification
     {
-        public BlockUnlockedNotification(BlockStatus status, string poolId, long blockHeight, 
-            string poolCurrencySymbol, string blockType = "block") : base(poolId, blockHeight, poolCurrencySymbol)
+        public BlockUnlockedNotification(BlockStatus status, string poolId, ulong blockHeight, string blockHash, string symbol, string explorerLink, string blockType = "block") : 
+            base(poolId, blockHeight, symbol)
         {
             Status = status;
             BlockType = blockType;
+            BlockHash = blockHash;
+            ExplorerLink = explorerLink;
         }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        public BlockStatus Status { get; }
+        public BlockUnlockedNotification()
+        {
+        }
 
-        public string BlockType { get; }
+        public BlockStatus Status { get; set; }
+        public string BlockType { get; set; }
+        public string BlockHash { get; set; }
+        public string ExplorerLink { get; set; }
     }
 }

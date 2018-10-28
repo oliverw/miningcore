@@ -43,6 +43,7 @@ using Newtonsoft.Json;
 using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
 using Miningcore.Notifications.Messages;
+using System.Globalization;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -90,7 +91,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
 
                 await PersistPaymentsAsync(balances, txHash);
-                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, new[] { txHash }, txFee);
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
                 return true;
             }
 
@@ -98,7 +99,7 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, balances, $"Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {response.Error.Message} code {response.Error.Code}", null);
                 return false;
             }
         }
@@ -115,7 +116,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
                 await PersistPaymentsAsync(balances, txHashes.First());
-                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, txHashes, txFees.Sum());
+                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
                 return true;
             }
 
@@ -123,7 +124,7 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}");
 
-                NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, balances, $"Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, $"Daemon command '{CryptonoteWalletCommands.TransferSplit}' returned error: {response.Error.Message} code {response.Error.Code}", null);
                 return false;
             }
         }
@@ -360,7 +361,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
                     result.Add(block);
 
-                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
 
                     // orphaned?
                     if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
@@ -368,7 +369,9 @@ namespace Miningcore.Blockchain.Cryptonote
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                            block.BlockHeight, block.Hash, coin.Symbol, null));
+
                         continue;
                     }
 
@@ -381,7 +384,18 @@ namespace Miningcore.Blockchain.Cryptonote
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
+                        // build explorer link
+                        string explorerLink = null;
+                        if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                        {
+                            if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                            else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                        }
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, 
+                            block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
                     }
                 }
             }

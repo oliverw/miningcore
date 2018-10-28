@@ -29,12 +29,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Api\Notifications\**" />
     <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
     <Compile Remove="DataAccess\**" />
     <Compile Remove="Maintenance\**" />
+    <EmbeddedResource Remove="Api\Notifications\**" />
     <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
     <EmbeddedResource Remove="DataAccess\**" />
     <EmbeddedResource Remove="Maintenance\**" />
+    <None Remove="Api\Notifications\**" />
     <None Remove="Blockchain\Bitcoin\Transactions\**" />
     <None Remove="DataAccess\**" />
     <None Remove="Maintenance\**" />
@@ -88,10 +91,6 @@
     <None Update="coins.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Api\Notifications\" />
   </ItemGroup>
 
   <!-- Copy pre-built library binaries on Windows  -->

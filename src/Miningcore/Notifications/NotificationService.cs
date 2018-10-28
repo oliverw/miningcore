@@ -76,12 +76,20 @@ namespace Miningcore.Notifications
                     {
                         if (string.IsNullOrEmpty(x.Error))
                         {
+                            var coin = poolConfigs[x.PoolId].Template;
+
+                            // prepare tx links
+                            string[] txLinks = null;
+
+                            if (!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                                txLinks = x.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
+
                             queue?.Add(new QueuedNotification
                             {
                                 Category = NotificationCategory.PaymentSuccess,
                                 PoolId = x.PoolId,
                                 Subject = "Payout Success Notification",
-                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {x.TxLinks}."
+                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {txLinks}."
                             });
                         }
 
