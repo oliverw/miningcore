@@ -199,7 +199,7 @@ namespace Miningcore.Payments
 
         private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
         {
-            messageBus.SendMessage(new PaymentNotification(pool.Id, ex.Message, balances.Sum(x => x.Amount)));
+            messageBus.SendMessage(new PaymentNotification(pool.Id, pool.Template.Symbol, ex.Message, balances.Sum(x => x.Amount)));
 
             return Task.FromResult(true);
         }

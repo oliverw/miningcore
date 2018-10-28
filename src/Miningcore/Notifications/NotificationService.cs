@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
@@ -16,7 +15,6 @@ using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
-using Miningcore.Notifications.Slack;
 using Newtonsoft.Json;
 using NLog;
 

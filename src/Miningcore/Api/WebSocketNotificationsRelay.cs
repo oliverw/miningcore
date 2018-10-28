@@ -49,7 +49,7 @@ namespace Miningcore.Api
         private void Relay<T>(NotificationType type)
         {
             messageBus.Listen<T>()
-                .Select(x => Observable.FromAsync(async () => await BroadcastNotification(type, x)))
+                .Select(x => Observable.FromAsync(() => BroadcastNotification(type, x)))
                 .Concat()
                 .Subscribe();
         }

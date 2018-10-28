@@ -161,7 +161,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight));
+                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
                                 break;
 
                             case "generate":
@@ -172,7 +172,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long) block.BlockHeight));
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long) block.BlockHeight, poolConfig.Template.Symbol));
                                 break;
 
                             default:
@@ -182,7 +182,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Reward = 0;
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
                                 break;
                         }
                     }
@@ -282,7 +282,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 await PersistPaymentsAsync(balances, txId);
 
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, new[] { txId }, null);
             }
 
             else
@@ -317,7 +317,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
 
-                    NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
+                    NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
                 }
             }
         }

@@ -103,7 +103,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if (isNew)
                 {
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height));
+                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
 
                     if (via != null)
                         logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");

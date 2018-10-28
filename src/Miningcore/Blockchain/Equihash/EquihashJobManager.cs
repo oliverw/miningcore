@@ -136,7 +136,7 @@ namespace Miningcore.Blockchain.Equihash
                     blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew)
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height));
+                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
 
                 if (isNew || forceUpdate)
                 {

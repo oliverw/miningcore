@@ -86,6 +86,7 @@ namespace Miningcore.Mining
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
+        private Dictionary<string, string> poolSymbols;
         private readonly IMapper mapper;
 
         private IAsyncPolicy faultPolicy;
@@ -121,7 +122,7 @@ namespace Miningcore.Mining
                     blockEntity.Status = BlockStatus.Pending;
                     await blockRepo.InsertAsync(con, tx, blockEntity);
 
-                    messageBus.SendMessage(new BlockFoundNotification(share.PoolId, share.BlockHeight));
+                    messageBus.SendMessage(new BlockFoundNotification(share.PoolId, share.BlockHeight, poolSymbols[share.PoolId]));
                 }
             });
         }
@@ -296,6 +297,7 @@ namespace Miningcore.Mining
         public void Start(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
+            poolSymbols = clusterConfig.Pools.ToDictionary(x => x.Id, x => x.Template.Symbol);
 
             ConfigureRecovery();
             StartQueue();

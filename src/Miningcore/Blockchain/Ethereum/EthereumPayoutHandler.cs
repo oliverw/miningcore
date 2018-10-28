@@ -144,7 +144,7 @@ namespace Miningcore.Blockchain.Ethereum
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
 
-                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight));
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
 
                     // is it block mined by us?
                     if (blockInfo.Miner == poolConfig.Address)
@@ -173,7 +173,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                             logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
+                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
                         }
 
                         continue;
@@ -240,7 +240,7 @@ namespace Miningcore.Blockchain.Ethereum
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight));
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, (long)block.BlockHeight, poolConfig.Template.Symbol));
                     }
                 }
             }
@@ -292,12 +292,12 @@ namespace Miningcore.Blockchain.Ethereum
                 {
                     logger.Error(ex);
 
-                    NotifyPayoutFailure(poolConfig.Id, new[] { balance }, ex.Message, null);
+                    NotifyPayoutFailure(poolConfig.Id, poolConfig.Template.Symbol, new[] { balance }, ex.Message, null);
                 }
             }
 
             if (txHashes.Any())
-                NotifyPayoutSuccess(poolConfig.Id, balances, txHashes.ToArray(), null);
+                NotifyPayoutSuccess(poolConfig.Id, poolConfig.Template.Symbol, balances, txHashes.ToArray(), null);
         }
 
         #endregion // IPayoutHandler
