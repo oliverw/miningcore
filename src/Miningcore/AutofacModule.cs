@@ -142,9 +142,7 @@ namespace Miningcore
                 .AsSelf();
 
             //////////////////////
-            // Flo
-            //////////////////////
-            // Monero
+            // Cryptonote
 
             builder.RegisterType<CryptonoteJobManager>()
                 .AsSelf();
