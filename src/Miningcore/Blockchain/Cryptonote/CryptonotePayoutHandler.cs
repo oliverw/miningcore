@@ -77,7 +77,7 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
         private bool walletSupportsTransferSplit;
 
-        protected override string LogCategory => "Monero Payout Handler";
+        protected override string LogCategory => "Cryptonote Payout Handler";
 
         private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
