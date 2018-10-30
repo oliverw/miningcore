@@ -101,6 +101,24 @@
       "explorerTxLink": "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/ltc/address.dws?{0}.htm"
     },
+    "litecoin-cash": {
+      "name": "Litecoin Cash",
+      "symbol": "LCC",
+      "family": "bitcoin",
+      "coinbaseHasher": {
+        "hash": "sha256d"
+      },
+      "headerHasher": {
+        "hash": "sha256d"
+      },
+      "blockHasher": {
+        "hash": "reverse",
+        "args": [{ "hash": "sha256d" }]
+      },
+      "explorerBlockLink": "https://chainz.cryptoid.info/lcc/block.dws?$height$.htm",
+      "explorerTxLink": "https://chainz.cryptoid.info/lcc/tx.dws?{0}.htm",
+      "explorerAccountLink": "https://chainz.cryptoid.info/lcc/address.dws?{0}.htm"
+    },
     "dogecoin,": {
       "name": "Dogecoin,",
       "symbol": "DOGE",
