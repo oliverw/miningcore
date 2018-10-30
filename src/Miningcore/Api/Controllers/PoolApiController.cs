@@ -128,6 +128,26 @@ namespace Miningcore.Api.Controllers
             return response;
         }
 
+        [HttpGet("{poolId}/performance/monthly")]
+        public async Task<GetPoolStatsResponse> GetPoolPerformanceMonthlyAsync(string poolId)
+        {
+            var pool = GetPool(poolId);
+
+            // set range
+            var end = clock.Now;
+            var start = end.AddMonths(-1);
+
+            var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourlyAsync(
+                con, pool.Id, start, end));
+
+            var response = new GetPoolStatsResponse
+            {
+                Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
+            };
+
+            return response;
+        }
+
         [HttpGet("{poolId}/miners")]
         public async Task<MinerPerformanceStats[]> PagePoolMinersAsync(
             string poolId, [FromQuery] int page, [FromQuery] int pageSize)
