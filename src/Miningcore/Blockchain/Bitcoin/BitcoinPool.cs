@@ -259,6 +259,13 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
+        private async Task OnConfigureMiningAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<BitcoinWorkerContext>();
+
+        }
+
         protected virtual async Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
@@ -385,8 +392,12 @@ namespace Miningcore.Blockchain.Bitcoin
                         await OnSuggestDifficultyAsync(client, tsRequest);
                         break;
 
+                    case BitcoinStratumMethods.MiningConfigure:
+                        await OnConfigureMiningAsync(client, tsRequest);
+                        // ignored
+                        break;
+
                     case BitcoinStratumMethods.GetTransactions:
-                        //OnGetTransactions(client, tsRequest);
                         // ignored
                         break;
 

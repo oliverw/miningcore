@@ -69,5 +69,11 @@ namespace Miningcore.Blockchain.Bitcoin
         /// https://www.reddit.com/r/Bitcoin/comments/63yo27/some_circumstantial_evidence_supporting_the_claim/dfy5o65/
         /// </summary>
         public const string MiningMultiVersion = "mining.multi_version";
+
+        /// <summary>
+        /// The client uses the message to advertise its features and to request/allow some protocol extensions.
+        /// https://github.com/slushpool/stratumprotocol/blob/master/stratum-extensions.mediawiki#Request_miningconfigure
+        /// </summary>
+        public const string MiningConfigure = "mining.configure";
     }
 }
