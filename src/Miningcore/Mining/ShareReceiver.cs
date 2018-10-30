@@ -233,22 +233,6 @@ namespace Miningcore.Mining
             {
                 var pool = poolContext.Pool;
                 poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
-
-                if (pool.NetworkStats != null)
-                {
-                    pool.NetworkStats.BlockHeight = (ulong)share.BlockHeight;
-                    pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
-
-                    if (poolContext.BlockHeight != share.BlockHeight)
-                    {
-                        pool.NetworkStats.LastNetworkBlockTime = clock.Now;
-                        poolContext.BlockHeight = share.BlockHeight;
-                        poolContext.LastBlock = clock.Now;
-                    }
-
-                    else
-                        pool.NetworkStats.LastNetworkBlockTime = poolContext.LastBlock;
-                }
             }
 
             else
