@@ -348,7 +348,7 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 BlockHeight = BlockTemplate.Height,
                 NetworkDifficulty = Difficulty,
-                Difficulty = stratumDifficulty,
+                Difficulty = stratumDifficulty / shareMultiplier,
             };
 
             if (isBlockCandidate)
