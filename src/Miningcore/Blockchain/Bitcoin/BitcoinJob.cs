@@ -347,7 +347,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                NetworkDifficulty = Difficulty / shareMultiplier,
+                NetworkDifficulty = Difficulty,
                 Difficulty = stratumDifficulty,
             };
 
