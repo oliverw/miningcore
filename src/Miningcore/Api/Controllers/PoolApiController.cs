@@ -12,6 +12,7 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Globalization;
@@ -109,36 +110,32 @@ namespace Miningcore.Api.Controllers
         }
 
         [HttpGet("{poolId}/performance")]
-        public async Task<GetPoolStatsResponse> GetPoolPerformanceAsync(string poolId)
+        public async Task<GetPoolStatsResponse> GetPoolPerformanceAsync(string poolId,
+            [FromQuery(Name = "r")] SampleRange range = SampleRange.Day,
+            [FromQuery(Name = "i")] SampleInterval interval = SampleInterval.Hour)
         {
             var pool = GetPool(poolId);
 
             // set range
             var end = clock.Now;
-            var start = end.AddDays(-1);
+            DateTime start;
 
-            var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourlyAsync(
-                con, pool.Id, start, end));
-
-            var response = new GetPoolStatsResponse
+            switch (range)
             {
-                Stats = stats.Select(mapper.Map<AggregatedPoolStats>).ToArray()
-            };
+                case SampleRange.Day:
+                    start = end.AddDays(-1);
+                    break;
 
-            return response;
-        }
+                case SampleRange.Month:
+                    start = end.AddMonths(-1);
+                    break;
 
-        [HttpGet("{poolId}/performance/monthly")]
-        public async Task<GetPoolStatsResponse> GetPoolPerformanceMonthlyAsync(string poolId)
-        {
-            var pool = GetPool(poolId);
+                default:
+                    throw new ApiException("invalid interval");
+            }
 
-            // set range
-            var end = clock.Now;
-            var start = end.AddMonths(-1);
-
-            var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenHourlyAsync(
-                con, pool.Id, start, end));
+            var stats = await cf.Run(con => statsRepo.GetPoolPerformanceBetweenAsync(
+                con, pool.Id, interval, start, end));
 
             var response = new GetPoolStatsResponse
             {

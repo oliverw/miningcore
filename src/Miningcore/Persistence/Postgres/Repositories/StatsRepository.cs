@@ -98,16 +98,29 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return con.ExecuteScalarAsync<decimal>(query, new { poolId });
         }
 
-        public async Task<PoolStats[]> GetPoolPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public async Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId, SampleInterval interval, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
-            const string query = "SELECT date_trunc('hour', created) AS created, " +
+            string trunc = null;
+
+            switch(interval)
+            {
+                case SampleInterval.Hour:
+                    trunc = "hour";
+                    break;
+
+                case SampleInterval.Day:
+                    trunc = "day";
+                    break;
+            }
+
+            var query = $"SELECT date_trunc('{trunc}', created) AS created, " +
                 "AVG(poolhashrate) AS poolhashrate, " +
                 "CAST(AVG(connectedminers) AS BIGINT) AS connectedminers " +
                 "FROM poolstats " +
                 "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
-                "GROUP BY date_trunc('hour', created) " +
+                $"GROUP BY date_trunc('{trunc}', created) " +
                 "ORDER BY created;";
 
             return (await con.QueryAsync<Entities.PoolStats>(query, new { poolId, start, end }))

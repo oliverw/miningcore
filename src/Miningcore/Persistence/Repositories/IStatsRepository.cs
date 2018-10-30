@@ -33,7 +33,7 @@ namespace Miningcore.Persistence.Repositories
         Task InsertMinerWorkerPerformanceStatsAsync(IDbConnection con, IDbTransaction tx, MinerWorkerPerformanceStats stats);
         Task<PoolStats> GetLastPoolStatsAsync(IDbConnection con, string poolId);
         Task<decimal> GetTotalPoolPaymentsAsync(IDbConnection con, string poolId);
-        Task<PoolStats[]> GetPoolPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, DateTime start, DateTime end);
+        Task<PoolStats[]> GetPoolPerformanceBetweenAsync(IDbConnection con, string poolId, SampleInterval interval, DateTime start, DateTime end);
         Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner);
         Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize);
         Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
