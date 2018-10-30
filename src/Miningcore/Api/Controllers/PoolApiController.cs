@@ -127,7 +127,7 @@ namespace Miningcore.Api.Controllers
                     break;
 
                 case SampleRange.Month:
-                    start = end.AddMonths(-1);
+                    start = end.AddDays(-30);
                     break;
 
                 default:
