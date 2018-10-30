@@ -14,7 +14,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public EquihashBlockHeader(byte[] bytes)
         {
-            this.ReadWrite(bytes);
+            this.ReadWrite(new BitcoinStream(bytes));
         }
 
         public EquihashBlockHeader()

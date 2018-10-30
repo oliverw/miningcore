@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
@@ -104,6 +105,29 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        {
+            var blockRewardRemaining = block.Reward;
+
+            // Distribute funds to configured reward recipients
+            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            {
+                var amount = block.Reward * (recipient.Percentage / 100.0m);
+                var address = recipient.Address;
+
+                blockRewardRemaining -= amount;
+
+                // skip transfers from pool wallet to pool wallet
+                if (address != poolConfig.Address)
+                {
+                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                }
+            }
+
+            return blockRewardRemaining;
+        }
+
         protected virtual async Task PersistPaymentsAsync(Balance[] balances, string transactionConfirmation)
         {
             var coin = poolConfig.Template.As<CoinTemplate>();
@@ -163,20 +187,19 @@ namespace Miningcore.Payments
             if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
             {
-                // prepare tx link
-                var txInfo = string.Join(", ", txHashes);
-                var baseUrl = coin.ExplorerTxLink;
+                var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
+                    txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
+                    new string[0];
 
-                if(!string.IsNullOrEmpty(baseUrl))
-                    txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
-
-                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee));
+                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
             }
         }
 
         protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
         {
-            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount)));
+            var coin = poolConfig.Template.As<CoinTemplate>();
+
+            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount), coin.Symbol));
         }
     }
 }

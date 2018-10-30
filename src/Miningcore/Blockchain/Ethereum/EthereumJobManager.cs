@@ -125,6 +125,8 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if (isNew)
                 {
+                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
+
                     var jobId = NextJobId("x8");
 
                     // update template

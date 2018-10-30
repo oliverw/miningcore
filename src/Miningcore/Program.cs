@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -36,8 +37,14 @@ using Autofac;
 using Autofac.Features.Metadata;
 using AutoMapper;
 using FluentValidation;
-using Microsoft.Extensions.CommandLineUtils;
+using McMaster.Extensions.CommandLineUtils;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
 using Miningcore.Api;
+using Miningcore.Api.Controllers;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -57,6 +64,17 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
+using Microsoft.Extensions.Logging;
+using LogLevel = NLog.LogLevel;
+using ILogger = NLog.ILogger;
+using NLog.Extensions.Logging;
+using Prometheus;
+using WebSocketManager;
+using Miningcore.Api.Middlewares;
+using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using AspNetCoreRateLimit;
 
 namespace Miningcore
 {
@@ -74,13 +92,14 @@ namespace Miningcore
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
-        private static ApiServer apiServer;
+        private static IWebHost webHost;
         private static NotificationService notificationService;
-        private static readonly Dictionary<string, IMiningPool> pools = new Dictionary<string, IMiningPool>();
+        private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
-        public static AdminGcStats gcStats = new AdminGcStats();
+        private static AdminGcStats gcStats = new AdminGcStats();
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+        private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         public static void Main(string[] args)
         {
@@ -247,6 +266,8 @@ namespace Miningcore
 
             builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
             builder.RegisterInstance(clusterConfig);
+            builder.RegisterInstance(pools);
+            builder.RegisterInstance(gcStats);
 
             // AutoMapper
             var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
@@ -401,6 +422,30 @@ namespace Miningcore
                     : LogLevel.Info;
 
                 var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
+
+                var nullTarget = new NullTarget("null")
+                {
+                };
+
+                loggingConfig.AddTarget(nullTarget);
+
+                // Suppress some Aspnet stuff
+                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
+                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
+
+                // Api Log
+                if (!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
+                {
+                    var target = new FileTarget("file")
+                    {
+                        FileName = GetLogPath(config, config.ApiLogFile),
+                        FileNameKind = FilePathKind.Unknown,
+                        Layout = layout
+                    };
+
+                    loggingConfig.AddTarget(target);
+                    loggingConfig.AddRule(level, LogLevel.Fatal, target, "Microsoft.AspNetCore.*", true);
+                }
 
                 if (config.EnableConsoleLog || isShareRecoveryMode)
                 {
@@ -576,6 +621,137 @@ namespace Miningcore
             return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
         }
 
+        private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
+        {
+            var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToArray();
+            if (defaultToLoopback && (ipList == null || ipList.Length == 0))
+                ipList = new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 };
+
+            if (ipList?.Length > 0)
+            {
+                logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x=> x.ToString()))}");
+
+                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList);
+            }
+        }
+
+        private static void ConfigureIpRateLimitOptions(IpRateLimitOptions options)
+        {
+            options.EnableEndpointRateLimiting = false;
+
+            // exclude admin api and metrics from throtteling
+            options.EndpointWhitelist = new List<string>
+            {
+                "*:/api/admin",
+                "get:/metrics",
+                "*:/notifications",
+            };
+
+            options.IpWhitelist = clusterConfig.Api?.RateLimiting?.IpWhitelist?.ToList();
+
+            // default to whitelist localhost if whitelist absent
+            if (options.IpWhitelist == null || options.IpWhitelist.Count == 0)
+            {
+                options.IpWhitelist = new List<string>
+                {
+                    IPAddress.Loopback.ToString(),
+                    IPAddress.IPv6Loopback.ToString(),
+                    IPUtils.IPv4LoopBackOnIPv6.ToString()
+                };
+            }
+
+            // limits
+            var rules = clusterConfig.Api?.RateLimiting?.Rules?.ToList();
+
+            if (rules == null || rules.Count == 0)
+            {
+                rules = new List<RateLimitRule>
+                {
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Period = "1s",
+                        Limit = 5,
+                    }
+                };
+            }
+
+            options.GeneralRules = rules;
+
+            logger.Info(() => $"API access limited to {(string.Join(", ", rules.Select(x => $"{x.Limit} requests per {x.Period}")))}, except from {string.Join(", ", options.IpWhitelist)}");
+        }
+
+        private static void StartApi()
+        {
+            var address = clusterConfig.Api?.ListenAddress != null
+                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
+                : IPAddress.Parse("127.0.0.1");
+
+            var port = clusterConfig.Api?.Port ?? 4000;
+            var enableApiRateLimiting = !(clusterConfig.Api?.RateLimiting?.Disabled == true);
+
+            webHost = WebHost.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
+                {
+                    // NLog
+                    logging.ClearProviders();
+                    logging.AddNLog();
+
+                    logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                })
+                .ConfigureServices(services =>
+                {
+                    // rate limiting
+                    if (enableApiRateLimiting)
+                    {
+                        services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
+                        services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+                        services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+                    }
+
+                    // MVC
+                    services.AddSingleton((IComponentContext) container);
+                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+                    services.AddSingleton<PoolApiController, PoolApiController>();
+                    services.AddSingleton<AdminApiController, AdminApiController>();
+
+                    services.AddMvc()
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                        .AddControllersAsServices();
+
+                    // Cors
+                    services.AddCors();
+
+                    // WebSockets
+                    services.AddWebSocketManager();
+                })
+                .Configure(app =>
+                {
+                    if (enableApiRateLimiting)
+                        app.UseIpRateLimiting();
+
+                    app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+
+                    UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
+                    UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
+
+                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                    app.UseWebSockets();
+                    app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
+                    app.UseMetricServer();
+                    app.UseMvc();
+                })
+                .UseKestrel(options => { options.Listen(address, port); })
+                .Build();
+
+            webHost.Start();
+
+            logger.Info(() => $"API Online @ {address}:{port}");
+            logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
+            logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
+        }
+
         private static async Task Start()
         {
             var coinTemplates = LoadCoinTemplates();
@@ -614,10 +790,7 @@ namespace Miningcore
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
-            {
-                apiServer = container.Resolve<ApiServer>();
-                apiServer.Start(clusterConfig);
-            }
+                StartApi();
 
             // start payment processor
             if (clusterConfig.PaymentProcessing?.Enabled == true &&
@@ -655,7 +828,7 @@ namespace Miningcore
                 // pre-start attachments
                 shareReceiver?.AttachPool(pool);
                 statsRecorder?.AttachPool(pool);
-                apiServer?.AttachPool(pool);
+                //apiServer?.AttachPool(pool);
 
                 await pool.StartAsync(cts.Token);
             }));

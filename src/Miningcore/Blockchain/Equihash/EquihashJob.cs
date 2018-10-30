@@ -111,24 +111,24 @@ namespace Miningcore.Blockchain.Equihash
                 {
                     // pool reward (t-addr)
                     rewardToPool = new Money(Math.Round(blockReward * (1m - (chainConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(rewardToPool, poolAddressDestination);
+                    tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
                     // treasury reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
                     var amount = new Money(Math.Round(blockReward * (chainConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, destination);
+                    tx.Outputs.Add(amount, destination);
                 }
 
                 else
                 {
                     // pool reward (t-addr)
                     rewardToPool = new Money(Math.Round(blockReward * (1m - (chainConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
-                    tx.AddOutput(rewardToPool, poolAddressDestination);
+                    tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
                     // founders reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetFoundersRewardAddress());
                     var amount = new Money(Math.Round(blockReward * (chainConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
-                    tx.AddOutput(amount, destination);
+                    tx.Outputs.Add(amount, destination);
                 }
             }
 
@@ -137,7 +137,7 @@ namespace Miningcore.Blockchain.Equihash
                 // no founders reward
                 // pool reward (t-addr)
                 rewardToPool = new Money(blockReward + rewardFees, MoneyUnit.Satoshi);
-                tx.AddOutput(rewardToPool, poolAddressDestination);
+                tx.Outputs.Add(rewardToPool, poolAddressDestination);
             }
 
             return tx;
@@ -156,7 +156,7 @@ namespace Miningcore.Blockchain.Equihash
         {
             // output transaction
             txOut = CreateOutputTransaction();
-            txOut.AddInput(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+            txOut.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
             using(var stream = new MemoryStream())
             {

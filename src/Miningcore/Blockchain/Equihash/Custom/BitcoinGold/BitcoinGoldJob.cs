@@ -50,7 +50,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             var tx = Transaction.Create(network);
 
             // pool reward (t-addr)
-            tx.AddOutput(rewardToPool, poolAddressDestination);
+            tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
             return tx;
         }

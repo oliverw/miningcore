@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
+using AspNetCoreRateLimit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -341,6 +342,7 @@ namespace Miningcore.Configuration
         public bool EnableConsoleLog { get; set; }
         public bool EnableConsoleColors { get; set; }
         public string LogFile { get; set; }
+        public string ApiLogFile { get; set; }
         public bool PerPoolLogFile { get; set; }
         public string LogBaseDirectory { get; set; }
     }
@@ -543,40 +545,6 @@ namespace Miningcore.Configuration
         public bool NotifyPaymentSuccess { get; set; }
     }
 
-    public partial class SlackNotifications
-    {
-        public bool Enabled { get; set; }
-        public string WebHookUrl { get; set; }
-
-        /// <summary>
-        /// Optional default channel override - must start with '#'
-        /// </summary>
-        public string Channel { get; set; }
-
-        public bool NotifyBlockFound { get; set; }
-        public bool NotifyPaymentSuccess { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for block found notifications - optional
-        /// </summary>
-        public string BlockFoundUsername { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessUsername { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for block found notifications - optional
-        /// </summary>
-        public string BlockFoundEmoji { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessEmoji { get; set; }
-    }
-
     public partial class NotificationsConfig
     {
         public bool Enabled { get; set; }
@@ -585,11 +553,21 @@ namespace Miningcore.Configuration
         public AdminNotifications Admin { get; set; }
     }
 
+    public partial class ApiRateLimitConfig
+    {
+        public bool Disabled { get; set; }
+
+        public RateLimitRule[] Rules { get; set; }
+        public string[] IpWhitelist { get; set; }
+    }
+
     public partial class ApiConfig
     {
         public bool Enabled { get; set; }
         public string ListenAddress { get; set; }
         public int Port { get; set; }
+
+        public ApiRateLimitConfig RateLimiting { get; set; }
 
         /// <summary>
         /// Port for admin-apis
@@ -600,6 +578,18 @@ namespace Miningcore.Configuration
         /// Port for prometheus compatible metrics endpoint /metrics
         /// </summary>
         public int? MetricsPort { get; set; }
+
+        /// <summary>
+        /// Restricts access to the admin API to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] AdminIpWhitelist { get; set; }
+
+        /// <summary>
+        /// Restricts access to the /metrics endpoint to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] MetricsIpWhitelist { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
@@ -657,7 +647,6 @@ namespace Miningcore.Configuration
         public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
-        public SlackNotifications SlackNotifications { get; set; }
         public string Address { get; set; }
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }

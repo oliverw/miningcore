@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -32,6 +33,7 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications;
+using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -101,6 +103,7 @@ namespace Miningcore.Blockchain.Bitcoin
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
+            var coin = poolConfig.Template.As<CoinTemplate>();
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
@@ -159,6 +162,8 @@ namespace Miningcore.Blockchain.Bitcoin
                                 var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 result.Add(block);
+
+                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
                                 break;
 
                             case "generate":
@@ -168,6 +173,19 @@ namespace Miningcore.Blockchain.Bitcoin
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                                // build explorer link
+                                string explorerLink = null;
+                                if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                                {
+                                    if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                                    else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                                }
+
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                    block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
                                 break;
 
                             default:
@@ -176,6 +194,9 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Status = BlockStatus.Orphaned;
                                 block.Reward = 0;
                                 result.Add(block);
+
+                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                                    block.BlockHeight, block.Hash, coin.Symbol, null));
                                 break;
                         }
                     }
@@ -190,29 +211,6 @@ namespace Miningcore.Blockchain.Bitcoin
             block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
-        }
-
-        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
-        {
-            var blockRewardRemaining = block.Reward;
-
-            // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
-            {
-                var amount = block.Reward * (recipient.Percentage / 100.0m);
-                var address = recipient.Address;
-
-                blockRewardRemaining -= amount;
-
-                // skip transfers from pool wallet to pool wallet
-                if (address != poolConfig.Address)
-                {
-                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
-                }
-            }
-
-            return blockRewardRemaining;
         }
 
         public virtual async Task PayoutAsync(Balance[] balances)

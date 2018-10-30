@@ -32,6 +32,7 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
@@ -108,6 +109,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 (blockTemplate != null &&
                     job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
                     blockTemplate.Height > job.BlockTemplate?.Height);
+
+                if(isNew)
+                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, coin.Symbol));
 
                 if (isNew || forceUpdate)
                 {

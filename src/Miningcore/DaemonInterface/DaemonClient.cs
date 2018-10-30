@@ -240,7 +240,7 @@ namespace Miningcore.DaemonInterface
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(logger, endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
-            await task;
+            await Task.WhenAny(new[] { task });
 
             var result = MapDaemonResponse<TResponse>(0, task);
             return result;
@@ -262,7 +262,7 @@ namespace Miningcore.DaemonInterface
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(logger, endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
-            await task;
+            await Task.WhenAny(new[] { task });
 
             var result = MapDaemonResponse<TResponse>(0, task);
             return result;
@@ -358,7 +358,7 @@ namespace Miningcore.DaemonInterface
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
-                        throw new HttpRequestException($"{(int) response.StatusCode} {responseContent}");
+                        throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
 
                     // deserialize response
                     using (var jreader = new JsonTextReader(new StringReader(responseContent)))

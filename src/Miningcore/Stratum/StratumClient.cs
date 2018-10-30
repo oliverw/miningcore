@@ -41,6 +41,7 @@ using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Mining;
 using Miningcore.Time;
+using Miningcore.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -85,8 +86,6 @@ namespace Miningcore.Stratum
         private readonly Subject<Unit> terminated = new Subject<Unit>();
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool expectingProxyHeader;
-
-        private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         private static readonly JsonSerializer serializer = new JsonSerializer
         {
@@ -411,7 +410,7 @@ namespace Miningcore.Stratum
             {
                 var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
                 if (proxyAddresses == null || !proxyAddresses.Any())
-                    proxyAddresses = new[] { IPAddress.Loopback, IPv4LoopBackOnIPv6, IPAddress.IPv6Loopback };
+                    proxyAddresses = new[] { IPAddress.Loopback, IPUtils.IPv4LoopBackOnIPv6, IPAddress.IPv6Loopback };
 
                 if (proxyAddresses.Any(x => x.Equals(peerAddress)))
                 {

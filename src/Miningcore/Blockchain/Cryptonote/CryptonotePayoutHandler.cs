@@ -42,6 +42,8 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
+using Miningcore.Notifications.Messages;
+using System.Globalization;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -75,7 +77,7 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
         private bool walletSupportsTransferSplit;
 
-        protected override string LogCategory => "Monero Payout Handler";
+        protected override string LogCategory => "Cryptonote Payout Handler";
 
         private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
@@ -359,11 +361,17 @@ namespace Miningcore.Blockchain.Cryptonote
                     block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
                     result.Add(block);
 
+                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
+
                     // orphaned?
                     if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
                     {
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
+                            block.BlockHeight, block.Hash, coin.Symbol, null));
+
                         continue;
                     }
 
@@ -375,6 +383,19 @@ namespace Miningcore.Blockchain.Cryptonote
                         block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                        // build explorer link
+                        string explorerLink = null;
+                        if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
+                        {
+                            if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                            else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                        }
+
+                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, 
+                            block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
                     }
                 }
             }
@@ -389,25 +410,9 @@ namespace Miningcore.Blockchain.Cryptonote
             return Task.FromResult(true);
         }
 
-        public async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
-            var blockRewardRemaining = block.Reward;
-
-            // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
-            {
-                var amount = block.Reward * (recipient.Percentage / 100.0m);
-                var address = recipient.Address;
-
-                blockRewardRemaining -= amount;
-
-                // skip transfers from pool wallet to pool wallet
-                if (address != poolConfig.Address)
-                {
-                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
-                }
-            }
+            var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
             // Deduct static reserve for tx fees
             blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;

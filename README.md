@@ -12,8 +12,8 @@
 - PoW validation (hashing) using native code for maximum performance
 - Session management for purging DDoS/flood initiated zombie workers
 - Payment processing
-- Banning System for banning peers that are flooding with invalid shares
-- Live Stats API on Port 4000
+- Banning System
+- Live Stats [API](https://github.com/coinfoundry/miningcore/wiki/API) on Port 4000
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
