@@ -35,5 +35,10 @@ namespace Miningcore.Blockchain.Bitcoin
         public string Worker { get; set; }
 
         public string ExtraNonce1 { get; set; }
+
+        /// <summary>
+        /// Mask for version-rolling (Overt ASIC-Boost)
+        /// </summary>
+        public uint? VersionRollingMask { get; internal set; }
     }
 }

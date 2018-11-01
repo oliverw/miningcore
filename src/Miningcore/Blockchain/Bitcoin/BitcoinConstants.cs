@@ -67,6 +67,13 @@ namespace Miningcore.Blockchain.Bitcoin
         public static readonly BigInteger Diff1 = BigInteger.Parse("00ffff0000000000000000000000000000000000000000000000000000", NumberStyles.HexNumber);
         public const int CoinbaseMinConfimations = 102;
 
+        /// <summary>
+        /// Pool-side mask for version-rolling (Overt ASIC-Boost)
+        /// https://github.com/btcdrak/bips/blob/d0a2ac057c0d10496a8df63158fd4dbea0370e49/bip-reservedbits.mediawiki
+        /// https://github.com/slushpool/stratumprotocol/blob/master/stratum-extensions.mediawiki#Request_miningconfigure
+        /// </summary>
+        public const uint VersionRollingPoolMask = 0x1fffe000;
+
         public const string ZmqPublisherTopicBlockHash = "hashblock";
         public const string ZmqPublisherTopicTxHash = "hashtx";
         public const string ZmqPublisherTopicBlockRaw = "rawblock";

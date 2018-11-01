@@ -297,6 +297,9 @@ namespace Miningcore.Stratum
         private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
+var b = Encoding.UTF8.GetBytes("{ \"id\": 34, \"method\": \"mining.configure\", \"params\": [[\"version-rolling\"], {\"version-rolling.mask\": \"ffffffff\", \"version-rolling.min-bit-count\": 2}]}");
+await ProcessRequestAsync(onRequestAsync, new ReadOnlySequence<byte>(b));
+
             while (true)
             {
                 logger.Debug(() => $"[{ConnectionId}] [PIPE] Waiting for data ...");

@@ -12,6 +12,7 @@ namespace Miningcore.Blockchain
             { "BCH", "qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv" },
             { "BCD", "1CdZ2PXisTRxyB4bkvq5oka9YjBHGU5Z36" },
             { "LTC", "LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC" },
+            { "LCC", "MWbtNqiW1xntchQXxyzj9UZcfpXxuNQyv3" },
             { "DOGE", "DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q" },
             { "DGB", "DEvrh1UEqm89bGJ9QTBjBonjGotKQSSBmq" },
             { "ETH", "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1" },
