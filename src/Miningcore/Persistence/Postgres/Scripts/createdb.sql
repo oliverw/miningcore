@@ -43,7 +43,6 @@ CREATE INDEX IDX_BLOCKS_POOL_BLOCK_STATUS on blocks(poolid, blockheight, status)
 CREATE TABLE balances
 (
 	poolid TEXT NOT NULL,
-	coin TEXT NOT NULL,
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL DEFAULT 0,
 	created TIMESTAMP NOT NULL,
@@ -56,7 +55,6 @@ CREATE TABLE balance_changes
 (
 	id BIGSERIAL NOT NULL PRIMARY KEY,
 	poolid TEXT NOT NULL,
-	coin TEXT NOT NULL,
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL DEFAULT 0,
 	usage TEXT NULL,
