@@ -747,7 +747,7 @@ namespace Miningcore
 
             webHost.Start();
 
-            logger.Info(() => $"API Online @ {address}:{port}");
+            logger.Info(() => $"API Online @ {address}:{port}{(!enableApiRateLimiting ? " - rate-limiting disabled" : string.Empty)}");
             logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
             logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
         }
