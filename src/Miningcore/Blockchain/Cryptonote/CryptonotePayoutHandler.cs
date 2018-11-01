@@ -370,7 +370,7 @@ namespace Miningcore.Blockchain.Cryptonote
                         block.Reward = 0;
 
                         messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                            block.BlockHeight, block.Hash, coin.Symbol, null));
+                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
 
                         continue;
                     }
@@ -395,7 +395,7 @@ namespace Miningcore.Blockchain.Cryptonote
                         }
 
                         messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, 
-                            block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
+                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink));
                     }
                 }
             }

@@ -187,7 +187,7 @@ namespace Miningcore.Blockchain.Ethereum
                             }
 
                             messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                block.BlockHeight, block.Hash, coin.Symbol, explorerLink, block.Type));
+                                block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink, block.Type));
                         }
 
                         continue;
@@ -248,7 +248,7 @@ namespace Miningcore.Blockchain.Ethereum
                                     }
 
                                     messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                        block.BlockHeight, block.Hash, coin.Symbol, explorerLink, block.Type));
+                                        block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink, block.Type));
                                 }
 
                                 else
@@ -266,7 +266,7 @@ namespace Miningcore.Blockchain.Ethereum
                         block.Reward = 0;
 
                         messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                            block.BlockHeight, block.Hash, coin.Symbol, null));
+                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
                     }
                 }
             }

@@ -58,12 +58,13 @@ namespace Miningcore.Notifications.Messages
 
     public class BlockUnlockedNotification : BlockNotification
     {
-        public BlockUnlockedNotification(BlockStatus status, string poolId, ulong blockHeight, string blockHash, string symbol, string explorerLink, string blockType = "block") : 
+        public BlockUnlockedNotification(BlockStatus status, string poolId, ulong blockHeight, string blockHash, string miner, string symbol, string explorerLink, string blockType = "block") : 
             base(poolId, blockHeight, symbol)
         {
             Status = status;
             BlockType = blockType;
             BlockHash = blockHash;
+            Miner = miner;
             ExplorerLink = explorerLink;
         }
 
@@ -74,6 +75,7 @@ namespace Miningcore.Notifications.Messages
         public BlockStatus Status { get; set; }
         public string BlockType { get; set; }
         public string BlockHash { get; set; }
+        public string Miner { get; set; }
         public string ExplorerLink { get; set; }
     }
 }
