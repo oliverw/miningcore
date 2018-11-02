@@ -514,9 +514,9 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 // bitcoincashd returns a different address than what was passed in
                 if (!validateAddressResponse.Address.StartsWith("bitcoincash:"))
-                    poolAddressDestination = AddressToDestination(validateAddressResponse.Address);
+                    poolAddressDestination = AddressToDestination(validateAddressResponse.Address, extraPoolConfig?.AddressType);
                 else
-                    poolAddressDestination = AddressToDestination(poolConfig.Address);
+                    poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
             }
 
             else
@@ -563,9 +563,22 @@ namespace Miningcore.Blockchain.Bitcoin
             SetupJobUpdates();
         }
 
-        protected virtual IDestination AddressToDestination(string address)
+        protected virtual IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
         {
-            return BitcoinUtils.AddressToDestination(address);
+            if(!addressType.HasValue)
+                return BitcoinUtils.AddressToDestination(address, networkType.ToNetwork());
+
+            switch (addressType.Value)
+            {
+                case BitcoinAddressType.SegwitPubKey:
+                    return BitcoinUtils.SegwitAddressToDestination(poolConfig.Address, networkType.ToNetwork());
+
+                case BitcoinAddressType.SegwitBechPubKey:
+                    return BitcoinUtils.SegwitBechAddressToDestination(poolConfig.Address, networkType.ToNetwork());
+
+                default:
+                    return BitcoinUtils.AddressToDestination(poolConfig.Address, networkType.ToNetwork());
+            }
         }
 
         protected virtual void SetupCrypto()

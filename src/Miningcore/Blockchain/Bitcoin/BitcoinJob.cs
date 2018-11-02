@@ -458,7 +458,7 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 if (!string.IsNullOrEmpty(masterNodeParameters.Masternode.Payee))
                 {
-                    var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Masternode.Payee);
+                    var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Masternode.Payee, network);
                     var payeeReward = masterNodeParameters.Masternode.Amount;
 
                     reward -= payeeReward;
@@ -471,7 +471,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     foreach (var superBlock in masterNodeParameters.SuperBlocks)
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
+                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee, network);
                         var payeeReward = superBlock.Amount;
 
                         reward -= payeeReward;
@@ -484,7 +484,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             if (!string.IsNullOrEmpty(masterNodeParameters.Payee))
             {
-                var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee);
+                var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
                 var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
 
                 reward -= payeeReward;

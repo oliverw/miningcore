@@ -31,6 +31,13 @@ namespace Miningcore.Blockchain.Bitcoin
         RegTest
     }
 
+    public enum BitcoinAddressType
+    {
+        PubKey,
+        SegwitPubKey,
+        SegwitBechPubKey,
+    }
+
     public enum BitcoinTransactionCategory
     {
         /// <summary>
