@@ -82,7 +82,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected bool hasSubmitBlockMethod;
         protected bool isPoS;
         protected TimeSpan jobRebroadcastTimeout;
-        protected BitcoinNetworkType networkType;
+        protected Network network;
         protected IDestination poolAddressDestination;
 
         protected object[] getBlockTemplateParams =
@@ -486,17 +486,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // chain detection
             if (!hasLegacyDaemon)
-            {
-                if (blockchainInfoResponse.Chain.ToLower() == "test")
-                    networkType = BitcoinNetworkType.Test;
-                else if (blockchainInfoResponse.Chain.ToLower() == "regtest")
-                    networkType = BitcoinNetworkType.RegTest;
-                else
-                    networkType = BitcoinNetworkType.Main;
-            }
-
+                network = Network.GetNetwork(blockchainInfoResponse.Chain.ToLower());
             else
-                networkType = daemonInfoResponse.Testnet ? BitcoinNetworkType.Test : BitcoinNetworkType.Main;
+                network = daemonInfoResponse.Testnet ? Network.TestNet : Network.Main;
 
             PostChainIdentifyConfigure();
 
@@ -526,7 +518,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 ConfigureRewards();
 
             // update stats
-            BlockchainStats.NetworkType = networkType.ToString();
+            BlockchainStats.NetworkType = network.Name;
             BlockchainStats.RewardType = isPoS ? "POS" : "POW";
 
             // block submission RPC method
@@ -566,18 +558,18 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
         {
             if(!addressType.HasValue)
-                return BitcoinUtils.AddressToDestination(address, networkType.ToNetwork());
+                return BitcoinUtils.AddressToDestination(address, network);
 
             switch (addressType.Value)
             {
                 case BitcoinAddressType.SegwitPubKey:
-                    return BitcoinUtils.SegwitAddressToDestination(poolConfig.Address, networkType.ToNetwork());
+                    return BitcoinUtils.SegwitAddressToDestination(poolConfig.Address, network);
 
                 case BitcoinAddressType.SegwitBechPubKey:
-                    return BitcoinUtils.SegwitBechAddressToDestination(poolConfig.Address, networkType.ToNetwork());
+                    return BitcoinUtils.SegwitBechAddressToDestination(poolConfig.Address, network);
 
                 default:
-                    return BitcoinUtils.AddressToDestination(poolConfig.Address, networkType.ToNetwork());
+                    return BitcoinUtils.AddressToDestination(poolConfig.Address, network);
             }
         }
 
@@ -592,7 +584,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected void ConfigureRewards()
         {
             // Donation to MiningCore development
-            if (networkType == BitcoinNetworkType.Main &&
+            if (network.NetworkType == NetworkType.Mainnet &&
                 DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
             {
                 poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
@@ -609,7 +601,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         #region API-Surface
 
-        public BitcoinNetworkType NetworkType => networkType;
+        public Network Network => network;
         public IObservable<object> Jobs { get; private set; }
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
 

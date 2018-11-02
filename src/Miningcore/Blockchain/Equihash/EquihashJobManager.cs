@@ -49,7 +49,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected override void PostChainIdentifyConfigure()
         {
-            ChainConfig = coin.GetNetwork(networkType);
+            ChainConfig = coin.GetNetwork(network.NetworkType);
             solver = EquihashSolverFactory.GetSolver(ctx, ChainConfig.Solver);
 
             base.PostChainIdentifyConfigure();
@@ -143,7 +143,7 @@ namespace Miningcore.Blockchain.Equihash
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, clusterConfig, clock, poolAddressDestination, networkType,
+                        poolConfig, clusterConfig, clock, poolAddressDestination, network,
                         solver);
 
                     lock (jobLock)

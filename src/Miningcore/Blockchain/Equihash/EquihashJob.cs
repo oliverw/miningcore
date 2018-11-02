@@ -314,7 +314,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public virtual void Init(EquihashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, Network network,
             EquihashSolver solver)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -328,8 +328,8 @@ namespace Miningcore.Blockchain.Equihash
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
-            coin.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
-            network = networkType.ToNetwork();
+            chainConfig = coin.GetNetwork(network.NetworkType);
+            this.network = network;
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = (double) new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());

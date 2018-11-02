@@ -48,7 +48,6 @@ namespace Miningcore.Blockchain.Bitcoin
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
 
-        protected BitcoinNetworkType networkType;
         protected Network network;
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
@@ -507,7 +506,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public void Init(BlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, Network network,
             bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
             IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
@@ -524,10 +523,9 @@ namespace Miningcore.Blockchain.Bitcoin
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
             txVersion = coin.CoinbaseTxVersion;
-            network = networkType.ToNetwork();
+            this.network = network;
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
-            this.networkType = networkType;
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;

@@ -160,7 +160,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
         public override void Init(EquihashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, Network network,
             EquihashSolver solver)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -173,9 +173,9 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
-            network = networkType.ToNetwork();
+            this.network = network;
             var equihashTemplate = poolConfig.Template.As<EquihashCoinTemplate>();
-            equihashTemplate.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
+            chainConfig = coin.GetNetwork(network.NetworkType);
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = (double)new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());

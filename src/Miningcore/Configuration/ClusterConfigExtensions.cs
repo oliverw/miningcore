@@ -129,21 +129,19 @@ namespace Miningcore.Configuration
             public ulong LastFoundersRewardBlockHeight => FoundersRewardSubsidyHalvingInterval + FoundersRewardSubsidySlowStartShift - 1;
         }
 
-        public EquihashNetworkParams GetNetwork(BitcoinNetworkType networkType)
+        public EquihashNetworkParams GetNetwork(NetworkType networkType)
         {
             switch(networkType)
             {
-                case BitcoinNetworkType.Main:
+                case NetworkType.Mainnet:
                     return Networks["main"];
-
-                case BitcoinNetworkType.Test:
+                case NetworkType.Testnet:
                     return Networks["test"];
-
-                case BitcoinNetworkType.RegTest:
+                case NetworkType.Regtest:
                     return Networks["regtest"];
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException("unsupported network type");
         }
 
         #region Overrides of CoinDefinition

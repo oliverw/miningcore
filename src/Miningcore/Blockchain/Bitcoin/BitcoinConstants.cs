@@ -24,13 +24,6 @@ using System.Numerics;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
-    public enum BitcoinNetworkType
-    {
-        Main = 1,
-        Test,
-        RegTest
-    }
-
     public enum BitcoinAddressType
     {
         PubKey,
