@@ -357,9 +357,6 @@ namespace Miningcore.DaemonInterface
                     // read response
                     var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (!response.IsSuccessStatusCode)
-                        throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
-
                     // deserialize response
                     using (var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
@@ -415,16 +412,6 @@ namespace Miningcore.DaemonInterface
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request))
                 {
-                    // check success
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), false, response.StatusCode.ToString());
-
-                        throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
-                    }
-
                     // deserialize response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
 
