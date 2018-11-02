@@ -64,7 +64,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
+            var multiplier = BitcoinConstants.Pow2x32;
             var result = shares * multiplier / interval;
 
             result *= poolConfig.Template.As<BitcoinTemplate>().HashrateMultiplier;
