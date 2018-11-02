@@ -562,11 +562,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
             switch (addressType.Value)
             {
-                case BitcoinAddressType.SegwitPubKey:
-                    return BitcoinUtils.SegwitAddressToDestination(poolConfig.Address, network);
-
-                case BitcoinAddressType.SegwitBechPubKey:
-                    return BitcoinUtils.SegwitBechAddressToDestination(poolConfig.Address, network);
+                case BitcoinAddressType.BechSegwit:
+                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
 
                 default:
                     return BitcoinUtils.AddressToDestination(poolConfig.Address, network);

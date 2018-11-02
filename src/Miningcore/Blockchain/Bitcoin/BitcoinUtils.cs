@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -46,20 +47,13 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
-        public static IDestination SegwitAddressToDestination(string address, Network expectedNetwork)
-        {
-            var decoded = Encoders.Base58Check.DecodeData(address);
-            var networkVersionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
-            decoded = decoded.Skip(networkVersionBytes.Length).ToArray();
-            var result = new WitKeyId(decoded);
-            return result;
-        }
-
-        public static IDestination SegwitBechAddressToDestination(string address, Network expectedNetwork)
+        public static IDestination BechSegwitAddressToDestination(string address, Network expectedNetwork)
         {
             var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
             var decoded = encoder.Decode(address, out var witVersion);
             var result = new WitKeyId(decoded);
+
+            Debug.Assert(result.GetAddress(expectedNetwork).ToString() == address);
             return result;
         }
     }

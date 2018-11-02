@@ -24,7 +24,7 @@ namespace Miningcore.Blockchain.Bitcoin.Configuration
 {
     public class BitcoinPoolConfigExtra
     {
-        public BitcoinAddressType AddressType { get; set; } = BitcoinAddressType.PubKey;
+        public BitcoinAddressType AddressType { get; set; } = BitcoinAddressType.Legacy;
 
         /// <summary>
         /// Maximum number of tracked jobs.

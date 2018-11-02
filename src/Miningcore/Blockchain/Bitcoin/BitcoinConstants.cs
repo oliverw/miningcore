@@ -26,9 +26,15 @@ namespace Miningcore.Blockchain.Bitcoin
 {
     public enum BitcoinAddressType
     {
-        PubKey,
-        SegwitPubKey,
-        SegwitBechPubKey,
+        /// <summary>
+        /// Legacy address
+        /// </summary>
+        Legacy,
+
+        /// <summary>
+        /// Bech encoded, segwit
+        /// </summary>
+        BechSegwit,
     }
 
     public enum BitcoinTransactionCategory
