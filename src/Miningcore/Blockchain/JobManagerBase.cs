@@ -32,6 +32,7 @@ using Autofac;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Util;
 using NLog;
 using ZeroMQ;
@@ -96,102 +97,11 @@ namespace Miningcore.Blockchain
 
         protected IObservable<string> BtStreamSubscribe(ZmqPubSubEndpointConfig config)
         {
-            return Observable.Defer(() => Observable.Create<string>(obs =>
-            {
-                var tcs = new CancellationTokenSource();
-                var receiveTimeout = TimeSpan.FromSeconds(300);
-
-                Task.Factory.StartNew(() =>
-                {
-                    using(tcs)
-                    {
-                        while(!tcs.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                using(var subSocket = new ZSocket(ZSocketType.SUB))
-                                {
-                                    //subSocket.Options.ReceiveHighWatermark = 1000;
-                                    subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
-                                    subSocket.Connect(config.Url);
-                                    subSocket.Subscribe(config.Topic);
-                                    subSocket.ReceiveTimeout = receiveTimeout;
-
-                                    logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
-
-                                    while(!tcs.IsCancellationRequested)
-                                    {
-                                        // string topic;
-                                        uint flags;
-                                        byte[] data;
-                                        // long timestamp;
-
-                                        using (var msg = subSocket.ReceiveMessage())
-                                        {
-                                            // extract frames
-                                            // topic = msg[0].ToString(Encoding.UTF8);
-                                            flags = msg[1].ReadUInt32();
-                                            data = msg[2].Read();
-                                            // timestamp = msg[3].ReadInt64();
-                                        }
-
-                                        // TMP FIX
-                                        if (flags != 0 && ((flags & 1) == 0))
-                                            flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
-                                        // compressed
-                                        if ((flags & 1) == 1)
-                                        {
-                                            using(var stm = new MemoryStream(data))
-                                            {
-                                                using(var stmOut = new MemoryStream())
-                                                {
-                                                    using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
-                                                    {
-                                                        ds.CopyTo(stmOut);
-                                                    }
-
-                                                    data = stmOut.ToArray();
-                                                }
-                                            }
-                                        }
-
-                                        // convert
-                                        var json = Encoding.UTF8.GetString(data);
-
-                                        // publish
-                                        obs.OnNext(json);
-
-                                        // telemetry
-                                        //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
-                                        //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
-                                    }
-                                }
-                            }
-
-                            catch (ZException ex)
-                            {
-                                if (ex.Error == ZError.EAGAIN)
-                                    logger.Info(() => $"BT-Stream receive timeout of {receiveTimeout.TotalSeconds} seconds exceeded. Re-connecting ...");
-                                else
-                                    logger.Error(ex);
-                            }
-
-                            catch (Exception ex)
-                            {
-                                logger.Error(ex);
-                            }
-
-                            // do not consume all CPU cycles in case of a long lasting error condition
-                            Thread.Sleep(1000);
-                        }
-                    }
-                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-                return Disposable.Create(() => { tcs.Cancel(); });
-            }))
-            .Publish()
-            .RefCount();
+            return messageBus.Listen<BtStreamMessage>()
+                .Where(x => x.Topic == config.Topic)
+                .Select(x => x.Payload)
+                .Publish()
+                .RefCount();
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

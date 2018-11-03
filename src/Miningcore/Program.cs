@@ -93,6 +93,7 @@ namespace Miningcore
         private static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
+        private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private static AdminGcStats gcStats = new AdminGcStats();
@@ -768,6 +769,10 @@ namespace Miningcore
 
             // Notifications
             notificationService = container.Resolve<NotificationService>();
+
+            // start btStream receiver
+            btStreamReceiver = container.Resolve<BtStreamReceiver>();
+            btStreamReceiver.Start(clusterConfig);
 
             if (clusterConfig.ShareRelay == null)
             {
