@@ -99,6 +99,7 @@ namespace Miningcore.Blockchain
             return Observable.Defer(() => Observable.Create<string>(obs =>
             {
                 var tcs = new CancellationTokenSource();
+                var receiveTimeout = TimeSpan.FromSeconds(300);
 
                 Task.Factory.StartNew(() =>
                 {
@@ -114,6 +115,7 @@ namespace Miningcore.Blockchain
                                     subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
                                     subSocket.Connect(config.Url);
                                     subSocket.Subscribe(config.Topic);
+                                    subSocket.ReceiveTimeout = receiveTimeout;
 
                                     logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
 
@@ -167,7 +169,15 @@ namespace Miningcore.Blockchain
                                 }
                             }
 
-                            catch(Exception ex)
+                            catch (ZException ex)
+                            {
+                                if (ex.Error == ZError.EAGAIN)
+                                    logger.Info(() => $"BT-Stream receive timeout of {receiveTimeout.TotalSeconds} seconds exceeded. Re-connecting ...");
+                                else
+                                    logger.Error(ex);
+                            }
+
+                            catch (Exception ex)
                             {
                                 logger.Error(ex);
                             }

@@ -73,7 +73,6 @@ using WebSocketManager;
 using Miningcore.Api.Middlewares;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using AspNetCoreRateLimit;
 
 namespace Miningcore
