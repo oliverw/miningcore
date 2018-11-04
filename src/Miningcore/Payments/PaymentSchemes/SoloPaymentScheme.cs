@@ -82,7 +82,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 if (amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 

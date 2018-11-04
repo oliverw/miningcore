@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Net;
 
 namespace Miningcore.Api
 {
     class ApiException : Exception
     {
-        public ApiException(string message, int? responseStatusCode = null) : base(message)
+        public ApiException(string message, HttpStatusCode? responseStatusCode = null) : base(message)
         {
-            ResponseStatusCode = responseStatusCode;
+            if(responseStatusCode.HasValue)
+                ResponseStatusCode = (int) responseStatusCode.Value;
         }
 
         public ApiException()

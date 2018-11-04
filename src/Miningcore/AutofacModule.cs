@@ -86,6 +86,9 @@ namespace Miningcore
             builder.RegisterType<ShareReceiver>()
                 .SingleInstance();
 
+            builder.RegisterType<BtStreamReceiver>()
+                .SingleInstance();
+
             builder.RegisterType<ShareRelay>()
                 .SingleInstance();
 

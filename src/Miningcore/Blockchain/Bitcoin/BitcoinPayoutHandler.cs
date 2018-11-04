@@ -185,7 +185,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 }
 
                                 messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                    block.BlockHeight, block.Hash, coin.Symbol, explorerLink));
+                                    block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink));
                                 break;
 
                             default:
@@ -196,7 +196,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 result.Add(block);
 
                                 messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                    block.BlockHeight, block.Hash, coin.Symbol, null));
+                                    block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
                                 break;
                         }
                     }

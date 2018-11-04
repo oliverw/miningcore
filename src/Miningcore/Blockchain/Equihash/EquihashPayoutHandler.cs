@@ -61,7 +61,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected EquihashPoolConfigExtra poolExtraConfig;
         protected bool supportsNativeShielding;
-        protected BitcoinNetworkType networkType;
+        protected Network network;
         protected EquihashCoinTemplate.EquihashNetworkParams chainConfig;
         protected override string LogCategory => "Equihash Payout Handler";
         protected const decimal TransferFee = 0.0001m;
@@ -78,14 +78,9 @@ namespace Miningcore.Blockchain.Equihash
             // detect network
             var blockchainInfoResponse = await daemon.ExecuteCmdSingleAsync<BlockchainInfo>(logger, BitcoinCommands.GetBlockchainInfo);
 
-            if (blockchainInfoResponse.Response.Chain.ToLower() == "test")
-                networkType = BitcoinNetworkType.Test;
-            else if (blockchainInfoResponse.Response.Chain.ToLower() == "regtest")
-                networkType = BitcoinNetworkType.RegTest;
-            else
-                networkType = BitcoinNetworkType.Main;
+            network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
-            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(networkType);
+            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.NetworkType);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase);

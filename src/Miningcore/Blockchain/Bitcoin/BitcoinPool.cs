@@ -19,6 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -28,6 +30,7 @@ using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
@@ -37,6 +40,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLog;
 
 namespace Miningcore.Blockchain.Bitcoin
@@ -60,7 +64,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = BitcoinConstants.Pow2x32 / manager.ShareMultiplier;
+            var multiplier = BitcoinConstants.Pow2x32;
             var result = shares * multiplier / interval;
 
             result *= poolConfig.Template.As<BitcoinTemplate>().HashrateMultiplier;
@@ -259,6 +263,70 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
+        private async Task OnConfigureMiningAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<BitcoinWorkerContext>();
+
+            var requestParams = request.ParamsAs<JToken[]>();
+            var extensions = requestParams[0].ToObject<string[]>();
+            var extensionParams = requestParams[1].ToObject<Dictionary<string, JToken>>();
+            var result = new Dictionary<string, object>();
+
+            foreach (var extension in extensions)
+            {
+                switch(extension)
+                {
+                    case BitcoinStratumExtensions.VersionRolling:
+                        ConfigureVersionRolling(client, context, extensionParams, result);
+                        break;
+
+                    case BitcoinStratumExtensions.MinimumDiff:
+                        ConfigureMinimumDiff(client, context, extensionParams, result);
+                        break;
+                }
+            }
+
+            await client.RespondAsync(result, request.Id);
+        }
+
+        private void ConfigureVersionRolling(StratumClient client, BitcoinWorkerContext context, 
+            Dictionary<string, JToken> extensionParams, Dictionary<string, object> result)
+        {
+            var requestedBits = extensionParams[BitcoinStratumExtensions.VersionRollingBits].Value<int>();
+            uint requestedMask = BitcoinConstants.VersionRollingPoolMask;
+
+            if (extensionParams.TryGetValue(BitcoinStratumExtensions.VersionRollingMask, out var requestedMaskValue))
+                requestedMask = uint.Parse(requestedMaskValue.Value<string>(), NumberStyles.HexNumber);
+
+            // Compute effective mask
+            context.VersionRollingMask = BitcoinConstants.VersionRollingPoolMask & requestedMask;
+
+            // enabled
+            result[BitcoinStratumExtensions.VersionRolling] = true;
+            result[BitcoinStratumExtensions.VersionRollingMask] = context.VersionRollingMask.Value.ToStringHex8();
+        }
+
+        private void ConfigureMinimumDiff(StratumClient client, BitcoinWorkerContext context, 
+            Dictionary<string, JToken> extensionParams, Dictionary<string, object> result)
+        {
+            var requestedDiff = extensionParams[BitcoinStratumExtensions.MinimumDiffValue].Value<double>();
+
+            // client may suggest higher-than-base difficulty, but not a lower one
+            var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+
+            if (requestedDiff > poolEndpoint.Difficulty)
+            {
+                context.VarDiff = null; // disable vardiff
+                context.SetDifficulty(requestedDiff);
+
+                logger.Info(() => $"[{client.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner. VarDiff now disabled.");
+
+                // enabled
+                result[BitcoinStratumExtensions.MinimumDiff] = true;
+            }
+        }
+
         protected virtual async Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
@@ -385,8 +453,12 @@ namespace Miningcore.Blockchain.Bitcoin
                         await OnSuggestDifficultyAsync(client, tsRequest);
                         break;
 
+                    case BitcoinStratumMethods.MiningConfigure:
+                        await OnConfigureMiningAsync(client, tsRequest);
+                        // ignored
+                        break;
+
                     case BitcoinStratumMethods.GetTransactions:
-                        //OnGetTransactions(client, tsRequest);
                         // ignored
                         break;
 

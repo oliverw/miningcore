@@ -121,7 +121,7 @@ namespace Miningcore.Payments
                 if (address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
 
@@ -159,7 +159,7 @@ namespace Miningcore.Payments
 
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
-                            await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, coin.Symbol, balance.Address, -balance.Amount, $"Balance reset after payment");
+                            await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, balance.Address, -balance.Amount, $"Balance reset after payment");
                         }
                     });
                 });

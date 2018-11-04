@@ -48,7 +48,6 @@ namespace Miningcore.Blockchain.Bitcoin
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
 
-        protected BitcoinNetworkType networkType;
         protected Network network;
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
@@ -281,16 +280,23 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        protected byte[] SerializeHeader(Span<byte> coinbaseHash, uint nTime, uint nonce)
+        protected byte[] SerializeHeader(Span<byte> coinbaseHash, uint nTime, uint nonce, uint? versionMask, uint? versionBits)
         {
             // build merkle-root
             var merkleRoot = mt.WithFirst(coinbaseHash.ToArray());
+
+            // Build version
+            var version = BlockTemplate.Version;
+
+            // Overt-ASIC boost
+            if (versionMask.HasValue && versionBits.HasValue)
+                version = (version & ~versionMask.Value) | (versionBits.Value & versionMask.Value);
 
 #pragma warning disable 618
             var blockHeader = new BlockHeader
 #pragma warning restore 618
             {
-                Version = (int) BlockTemplate.Version,
+                Version = unchecked((int) version),
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -301,7 +307,8 @@ namespace Miningcore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string extraNonce2, uint nTime, uint nonce)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(
+            StratumClient worker, string extraNonce2, uint nTime, uint nonce, uint? versionBits)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
@@ -312,7 +319,7 @@ namespace Miningcore.Blockchain.Bitcoin
             coinbaseHasher.Digest(coinbase, coinbaseHash);
 
             // hash block-header
-            var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce);
+            var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce, context.VersionRollingMask, versionBits);
             Span<byte> headerHash = stackalloc byte[32];
             headerHasher.Digest(headerBytes, headerHash, (ulong) nTime);
             var headerValue = new uint256(headerHash);
@@ -347,8 +354,8 @@ namespace Miningcore.Blockchain.Bitcoin
             var result = new Share
             {
                 BlockHeight = BlockTemplate.Height,
-                NetworkDifficulty = Difficulty * shareMultiplier,
-                Difficulty = stratumDifficulty,
+                NetworkDifficulty = Difficulty,
+                Difficulty = stratumDifficulty / shareMultiplier,
             };
 
             if (isBlockCandidate)
@@ -450,7 +457,7 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 if (!string.IsNullOrEmpty(masterNodeParameters.Masternode.Payee))
                 {
-                    var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Masternode.Payee);
+                    var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Masternode.Payee, network);
                     var payeeReward = masterNodeParameters.Masternode.Amount;
 
                     reward -= payeeReward;
@@ -463,7 +470,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     foreach (var superBlock in masterNodeParameters.SuperBlocks)
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee);
+                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee, network);
                         var payeeReward = superBlock.Amount;
 
                         reward -= payeeReward;
@@ -476,7 +483,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             if (!string.IsNullOrEmpty(masterNodeParameters.Payee))
             {
-                var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee);
+                var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
                 var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
 
                 reward -= payeeReward;
@@ -499,7 +506,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public void Init(BlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, Network network,
             bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
             IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
         {
@@ -516,10 +523,9 @@ namespace Miningcore.Blockchain.Bitcoin
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
             txVersion = coin.CoinbaseTxVersion;
-            network = networkType.ToNetwork();
+            this.network = network;
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
-            this.networkType = networkType;
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
@@ -571,7 +577,7 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
-            string extraNonce2, string nTime, string nonce)
+            string extraNonce2, string nTime, string nonce, string versionBits = null)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
@@ -594,11 +600,23 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
 
+            // validate version-bits (overt ASIC boost)
+            uint versionBitsInt = 0;
+
+            if(context.VersionRollingMask.HasValue && versionBits != null)
+            {
+                versionBitsInt = uint.Parse(versionBits, NumberStyles.HexNumber);
+
+                // enforce that only bits covered by current mask are changed by miner
+                if ((versionBitsInt & ~context.VersionRollingMask.Value) != 0)
+                    throw new StratumException(StratumError.Other, "rolling-version mask violation");
+            }
+
             // dupe check
             if (!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
-            return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt);
+            return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt, versionBitsInt);
         }
 
         #endregion // API-Surface

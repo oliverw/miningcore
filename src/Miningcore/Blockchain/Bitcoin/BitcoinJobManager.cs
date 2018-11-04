@@ -118,7 +118,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, clusterConfig, clock, poolAddressDestination, networkType, isPoS,
+                        poolConfig, clusterConfig, clock, poolAddressDestination, network, isPoS,
                         ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue,
                         !isPoS ? coin.BlockHasherValue : coin.PoSBlockHasherValue ?? coin.BlockHasherValue);
 
@@ -225,6 +225,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var extraNonce2 = submitParams[2] as string;
             var nTime = submitParams[3] as string;
             var nonce = submitParams[4] as string;
+            var versionBits = context.VersionRollingMask.HasValue ? submitParams[5] as string : null;
 
             if (string.IsNullOrEmpty(workerValue))
                 throw new StratumException(StratumError.Other, "missing or invalid workername");
@@ -245,7 +246,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var workerName = split.Length > 1 ? split[1] : null;
 
             // validate & process
-            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce);
+            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce, versionBits);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;

@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -36,11 +37,23 @@ namespace Miningcore.Blockchain.Bitcoin
         /// (these addresses begin with the digit '1')
         /// The resulting hash in both of these cases is always exactly 20 bytes.
         /// </summary>
-        public static IDestination AddressToDestination(string address)
+        public static IDestination AddressToDestination(string address, Network expectedNetwork)
         {
-            var decoded = Encoders.Base58.DecodeData(address);
-            var pubKeyHash = decoded.Skip(1).Take(20).ToArray();
-            var result = new KeyId(pubKeyHash);
+            var decoded = Encoders.Base58Check.DecodeData(address);
+            var networkVersionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
+            decoded = decoded.Skip(networkVersionBytes.Length).ToArray();
+            var result = new KeyId(decoded);
+
+            return result;
+        }
+
+        public static IDestination BechSegwitAddressToDestination(string address, Network expectedNetwork)
+        {
+            var encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
+            var decoded = encoder.Decode(address, out var witVersion);
+            var result = new WitKeyId(decoded);
+
+            Debug.Assert(result.GetAddress(expectedNetwork).ToString() == address);
             return result;
         }
     }

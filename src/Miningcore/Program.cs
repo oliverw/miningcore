@@ -73,7 +73,6 @@ using WebSocketManager;
 using Miningcore.Api.Middlewares;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using AspNetCoreRateLimit;
 
 namespace Miningcore
@@ -94,6 +93,7 @@ namespace Miningcore
         private static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
+        private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private static AdminGcStats gcStats = new AdminGcStats();
@@ -747,7 +747,7 @@ namespace Miningcore
 
             webHost.Start();
 
-            logger.Info(() => $"API Online @ {address}:{port}");
+            logger.Info(() => $"API Online @ {address}:{port}{(!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty)}");
             logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
             logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
         }
@@ -769,6 +769,10 @@ namespace Miningcore
 
             // Notifications
             notificationService = container.Resolve<NotificationService>();
+
+            // start btStream receiver
+            btStreamReceiver = container.Resolve<BtStreamReceiver>();
+            btStreamReceiver.Start(clusterConfig);
 
             if (clusterConfig.ShareRelay == null)
             {

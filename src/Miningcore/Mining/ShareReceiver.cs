@@ -15,6 +15,7 @@ using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Time;
 using Miningcore.Util;
+using MoreLinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NLog;
@@ -71,13 +72,17 @@ namespace Miningcore.Mining
             {
                 Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
                 var timeout = TimeSpan.FromMilliseconds(1000);
+                var reconnectTimeout = TimeSpan.FromSeconds(60);
 
                 while (!cts.IsCancellationRequested)
                 {
+                    var lastMessageReceived = clock.Now;
+
                     try
                     {
                         // setup sockets
                         var sockets = clusterConfig.ShareRelays
+                            .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                             .Select(relay =>
                             {
                                 var subSocket = new ZSocket(ZSocketType.SUB);
@@ -107,11 +112,24 @@ namespace Miningcore.Mining
                                         var msg = messages[i];
 
                                         if (msg != null)
+                                        {
+                                            lastMessageReceived = clock.Now;
+
                                             queue.Post((urls[i], msg));
+                                        }
                                     }
 
                                     if (error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                }
+
+                                else
+                                {
+                                    if (clock.Now - lastMessageReceived > reconnectTimeout)
+                                    {
+                                        logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting ...");
+                                        break;
+                                    }
                                 }
                             }
                         }
