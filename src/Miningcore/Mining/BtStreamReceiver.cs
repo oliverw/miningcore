@@ -155,10 +155,10 @@ namespace Miningcore.Mining
             }
 
             // convert
-            var json = Encoding.UTF8.GetString(data);
+            var content = Encoding.UTF8.GetString(data);
 
             // publish
-            messageBus.SendMessage(new BtStreamMessage(topic, json));
+            messageBus.SendMessage(new BtStreamMessage(topic, content));
         }
 
         #region API-Surface
