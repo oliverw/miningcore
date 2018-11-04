@@ -161,6 +161,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // update progress
                                 var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
+                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
