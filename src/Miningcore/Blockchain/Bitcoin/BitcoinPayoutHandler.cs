@@ -170,6 +170,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
                                 block.ConfirmationProgress = 1;
+                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");

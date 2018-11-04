@@ -553,7 +553,6 @@
       },
       "shareMultiplier": 256,
       "hashrateMultiplier": 4,
-      "blockrewardMultiplier": 100,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -580,7 +579,6 @@
       },
       "shareMultiplier": 65536,
       "hashrateMultiplier": 1.5,
-      "blockrewardMultiplier": 100,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -605,7 +603,6 @@
         ]
       },
       "hashrateMultiplier": 2.55,
-      "blockrewardMultiplier": 100,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -629,7 +626,6 @@
           }
         ]
       },
-      "blockrewardMultiplier": 100,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -653,7 +649,6 @@
           }
         ]
       },
-      "blockrewardMultiplier": 100,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
