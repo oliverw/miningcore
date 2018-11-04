@@ -14,6 +14,7 @@
 - Payment processing
 - Banning System
 - Live Stats [API](https://github.com/coinfoundry/miningcore/wiki/API) on Port 4000
+- WebSocket streaming of notable events like Blocks found, Blocks unlocked, Payments and more
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
