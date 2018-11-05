@@ -270,9 +270,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 var networkInfoResponse = results[1].Response.ToObject<NetworkInfo>();
                 var networkHashRate = results[2].Response.ToObject<JToken>();
 
-                BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps > 0 ? 
-                    miningInfoResponse.NetworkHashps :
-                    results[2].Error != null ? networkHashRate.Value<double>() : 0;
+                BlockchainStats.NetworkHashrate = results[2].Error != null ? 
+                    networkHashRate.Value<double>() :
+                    miningInfoResponse.NetworkHashps;
 
                 BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
             }
