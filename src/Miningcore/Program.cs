@@ -718,7 +718,11 @@ namespace Miningcore
 
                     services.AddMvc()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                        .AddControllersAsServices();
+                        .AddControllersAsServices()
+                        .AddJsonOptions(options =>
+                        {
+                            options.SerializerSettings.Formatting = Formatting.Indented;
+                        });
 
                     // Cors
                     services.AddCors();
