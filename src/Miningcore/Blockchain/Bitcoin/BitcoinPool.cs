@@ -305,6 +305,8 @@ namespace Miningcore.Blockchain.Bitcoin
             // enabled
             result[BitcoinStratumExtensions.VersionRolling] = true;
             result[BitcoinStratumExtensions.VersionRollingMask] = context.VersionRollingMask.Value.ToStringHex8();
+
+            logger.Info(() => $"[{client.ConnectionId}] Using version-rolling mask {result[BitcoinStratumExtensions.VersionRollingMask]}");
         }
 
         private void ConfigureMinimumDiff(StratumClient client, BitcoinWorkerContext context, 
