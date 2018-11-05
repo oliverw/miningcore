@@ -38,6 +38,17 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
         public uint Mixin { get; set; }
 
         /// <summary>
+        /// Set a priority for the transaction. Accepted Values are: 0-3 for: default, unimportant, normal, elevated, priority
+        /// </summary>
+        public uint Priority { get; set; }
+
+        /// <summary>
+        /// Number of outputs to mix in the transaction (this output + N decoys from the blockchain)
+        /// </summary>
+        [JsonProperty("ring_size")]
+        public uint RingSize { get; set; } = 7;
+
+        /// <summary>
         /// (Optional) Random 32-byte/64-character hex string to identify a transaction
         /// </summary>
         [JsonProperty("payment_id")]
