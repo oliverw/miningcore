@@ -250,9 +250,9 @@
       },
       "shareMultiplier": 256,
       "hashrateMultiplier": 4,
-      "explorerBlockLink": "https://bchain.info/VTC/block/$height$",
-      "explorerTxLink": "https://bchain.info/VTC/tx/{0}",
-      "explorerAccountLink": "https://bchain.info/VTC/addr/{0}"
+      "explorerBlockLink": "https://chainz.cryptoid.info/vtc/block.dws?$height$.htm",
+      "explorerTxLink": "https://chainz.cryptoid.info/vtc/tx.dws?{0}.htm",
+      "explorerAccountLink": "https://chainz.cryptoid.info/vtc/address.dws?{0}.htm"
     },
     "globaltoken": {
       "name": "Globaltoken",
