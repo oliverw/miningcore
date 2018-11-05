@@ -143,7 +143,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return networkType.Value;
         }
 
-        private async Task<bool> EnsureBalance(decimal requiredAmount)
+        private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin)
         {
             var response = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance);
 
@@ -155,7 +155,10 @@ namespace Miningcore.Blockchain.Cryptonote
 
             else if (response.Response.UnlockedBalance < requiredAmount)
             {
-                logger.Error(() => $"[{LogCategory}] Need {FormatAmount(requiredAmount)} unlocked balance, but only have {FormatAmount(response.Response.UnlockedBalance)} ({FormatAmount(response.Response.Balance)})");
+                var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
+                var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
+
+                logger.Error(() => $"[{LogCategory}] Need {FormatAmount(requiredAmount)} unlocked balance, but only have {FormatAmount(unlockedBalance)} ({FormatAmount(balance)})");
                 return false;
             }
 
@@ -167,7 +170,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
             // ensure there's enough balance
-            if (!await EnsureBalance(balances.Sum(x => x.Amount)))
+            if (!await EnsureBalance(balances.Sum(x => x.Amount), coin))
                 return false;
 
             // build request
@@ -245,7 +248,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
 
             // ensure there's enough balance
-            if (!await EnsureBalance(balance.Amount))
+            if (!await EnsureBalance(balance.Amount, coin))
                 return false;
 
             // build request
