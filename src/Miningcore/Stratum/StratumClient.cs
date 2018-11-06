@@ -120,7 +120,7 @@ namespace Miningcore.Stratum
                     // create stream
                     networkStream = new NetworkStream(socket, true);
 
-                    using (new CompositeDisposable(networkStream, cts))
+                    using (var disposables = new CompositeDisposable(networkStream, cts))
                     {
                         // TLS handshake
                         if (poolEndpoint.PoolEndpoint.Tls)
@@ -129,6 +129,8 @@ namespace Miningcore.Stratum
                             await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                             networkStream = sslStream;
+                            disposables.Add(sslStream);
+
                             logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
                         }
 
