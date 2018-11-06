@@ -534,7 +534,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 await PayoutBatch(simpleBalances);
 #else
             {
-                var maxBatchSize = 28;
+                var maxBatchSize = 15;  // going over 15 yields "sv/gamma are too large"
                 var pageSize = maxBatchSize;
                 var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
 

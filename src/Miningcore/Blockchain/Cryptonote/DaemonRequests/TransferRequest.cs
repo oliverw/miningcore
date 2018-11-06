@@ -61,6 +61,12 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
         public bool GetTxKey { get; set; }
 
         /// <summary>
+        /// (Optional) Return the transaction key after sending
+        /// </summary>
+        [JsonProperty("get_tx_hex")]
+        public bool GetTxHex { get; set; }
+
+        /// <summary>
         /// Number of blocks before the monero can be spent (0 to not add a lock)
         /// </summary>
         [JsonProperty("unlock_time")]
