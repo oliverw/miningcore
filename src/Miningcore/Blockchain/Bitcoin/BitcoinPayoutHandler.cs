@@ -137,6 +137,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         if (cmdResult.Error.Code == -5)
                         {
                             block.Status = BlockStatus.Orphaned;
+                            block.Reward = 0;
                             result.Add(block);
                         }
 
@@ -150,6 +151,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     else if (transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
                     {
                         block.Status = BlockStatus.Orphaned;
+                        block.Reward = 0;
                         result.Add(block);
                     }
 
