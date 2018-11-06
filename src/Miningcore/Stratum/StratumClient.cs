@@ -98,16 +98,16 @@ namespace Miningcore.Stratum
         #region API-Surface
 
         public void Run(Socket socket,
-            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) poolEndpoint,
-            X509Certificate2 tlsCert,
+            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpoint,
+            X509Certificate2 cert,
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumClient> onCompleted,
             Action<StratumClient, Exception> onError)
         {
-            PoolEndpoint = poolEndpoint.IPEndPoint;
+            PoolEndpoint = endpoint.IPEndPoint;
             RemoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
 
-            expectingProxyHeader = poolEndpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
+            expectingProxyHeader = endpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
             Task.Run(async () =>
             {
@@ -123,25 +123,25 @@ namespace Miningcore.Stratum
                     using (var disposables = new CompositeDisposable(networkStream, cts))
                     {
                         // TLS handshake
-                        if (poolEndpoint.PoolEndpoint.Tls)
+                        if (endpoint.PoolEndpoint.Tls)
                         {
                             var sslStream = new SslStream(networkStream, false);
-                            await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                            await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
 
                             networkStream = sslStream;
                             disposables.Add(sslStream);
 
-                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                         }
 
                         else
-                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
 
                         // Async I/O loop(s)
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                            ProcessReceivePipeAsync(endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
                             ProcessSendQueueAsync()
                         };
 

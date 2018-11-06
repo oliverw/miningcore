@@ -177,12 +177,12 @@ namespace Miningcore.Stratum
             }
 
             // TLS cert loading
-            X509Certificate2 tlsCert = null;
+            X509Certificate2 cert = null;
 
             if (port.PoolEndpoint.Tls)
             {
-                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out tlsCert))
-                    tlsCert = AddCert(port);
+                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
+                    cert = AddCert(port);
             }
 
             // setup client
@@ -190,7 +190,7 @@ namespace Miningcore.Stratum
 
             RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-            client.Run(socket, port, tlsCert, OnRequestAsync, OnClientComplete, OnClientError);
+            client.Run(socket, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
         }
 
         public void StopListeners()
