@@ -249,7 +249,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(network);
 
@@ -361,7 +361,6 @@ namespace Miningcore.Blockchain.Bitcoin
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
 
                 Span<byte> blockHash = stackalloc byte[32];
                 blockHasher.Digest(headerBytes, blockHash, nTime);
@@ -434,7 +433,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Transaction CreateMasternodeOutputTransaction()
         {
-            var blockReward = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
+            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(network);

@@ -137,13 +137,6 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
 
-        /// <summary>
-        /// Fraction of block reward, the pool really gets to keep
-        /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public decimal BlockrewardMultiplier { get; set; }
-
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
@@ -229,13 +222,6 @@ namespace Miningcore.Configuration
         /// Force use of BitcoinPayoutHandler instead of EquihashPayoutHandler
         /// </summary>
         public bool UseBitcoinPayoutHandler { get; set; }
-
-        /// <summary>
-        /// Fraction of block reward, the pool really gets to keep
-        /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public decimal BlockrewardMultiplier { get; set; }
     }
 
     public enum CryptonoteSubfamily

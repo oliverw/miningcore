@@ -38,6 +38,17 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
         public uint Mixin { get; set; }
 
         /// <summary>
+        /// Set a priority for the transaction. Accepted Values are: 0-3 for: default, unimportant, normal, elevated, priority
+        /// </summary>
+        public uint Priority { get; set; }
+
+        /// <summary>
+        /// Number of outputs to mix in the transaction (this output + N decoys from the blockchain)
+        /// </summary>
+        [JsonProperty("ring_size")]
+        public uint RingSize { get; set; } = 7;
+
+        /// <summary>
         /// (Optional) Random 32-byte/64-character hex string to identify a transaction
         /// </summary>
         [JsonProperty("payment_id")]
@@ -48,6 +59,12 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonRequests
         /// </summary>
         [JsonProperty("get_tx_key")]
         public bool GetTxKey { get; set; }
+
+        /// <summary>
+        /// (Optional) Return the transaction key after sending
+        /// </summary>
+        [JsonProperty("get_tx_hex")]
+        public bool GetTxHex { get; set; }
 
         /// <summary>
         /// Number of blocks before the monero can be spent (0 to not add a lock)

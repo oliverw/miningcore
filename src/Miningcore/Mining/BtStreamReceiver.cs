@@ -120,7 +120,7 @@ namespace Miningcore.Mining
                         logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
 
                         if (!cts.IsCancellationRequested)
-                            Thread.Sleep(5000);
+                            Thread.Sleep(1000);
                     }
                 }
             }, cts.Token);
@@ -155,10 +155,10 @@ namespace Miningcore.Mining
             }
 
             // convert
-            var json = Encoding.UTF8.GetString(data);
+            var content = Encoding.UTF8.GetString(data);
 
             // publish
-            messageBus.SendMessage(new BtStreamMessage(topic, json));
+            messageBus.SendMessage(new BtStreamMessage(topic, content));
         }
 
         #region API-Surface

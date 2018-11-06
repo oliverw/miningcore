@@ -137,6 +137,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         if (cmdResult.Error.Code == -5)
                         {
                             block.Status = BlockStatus.Orphaned;
+                            block.Reward = 0;
                             result.Add(block);
                         }
 
@@ -150,6 +151,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     else if (transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
                     {
                         block.Status = BlockStatus.Orphaned;
+                        block.Reward = 0;
                         result.Add(block);
                     }
 
@@ -161,6 +163,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // update progress
                                 var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
+                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
@@ -170,6 +173,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
                                 block.ConfirmationProgress = 1;
+                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
