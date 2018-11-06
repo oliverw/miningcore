@@ -272,6 +272,7 @@ namespace Miningcore.Blockchain.Bitcoin
 				BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
                 BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
 
+                // Fall back to alternative RPC if coin does not report Network HPS (Digibyte)
                 if (BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
                     BlockchainStats.NetworkHashrate = results[2].Response.Value<double>();
             }
