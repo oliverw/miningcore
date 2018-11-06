@@ -152,6 +152,7 @@ namespace Miningcore.Blockchain.Bitcoin
         public const string ListUnspent = "listunspent";
         public const string GetNetworkInfo = "getnetworkinfo";
         public const string GetMiningInfo = "getmininginfo";
+        public const string GetNetworkHashPS = "getnetworkhashps";
         public const string GetPeerInfo = "getpeerinfo";
         public const string ValidateAddress = "validateaddress";
         public const string GetBlockTemplate = "getblocktemplate";

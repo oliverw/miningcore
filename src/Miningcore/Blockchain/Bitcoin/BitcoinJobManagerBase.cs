@@ -254,7 +254,8 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 var results = await daemon.ExecuteBatchAnyAsync(logger,
                     new DaemonCmd(BitcoinCommands.GetMiningInfo),
-                    new DaemonCmd(BitcoinCommands.GetNetworkInfo)
+                    new DaemonCmd(BitcoinCommands.GetNetworkInfo),
+                    new DaemonCmd(BitcoinCommands.GetNetworkHashPS)
                 );
 
                 if (results.Any(x => x.Error != null))
@@ -270,6 +271,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
 				BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
                 BlockchainStats.ConnectedPeers = networkInfoResponse.Connections;
+
+                if (BlockchainStats.NetworkHashrate == 0 && results[2].Error == null)
+                    BlockchainStats.NetworkHashrate = results[2].Response.Value<double>();
             }
 
             catch(Exception e)
