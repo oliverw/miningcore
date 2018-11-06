@@ -526,6 +526,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                     return !hasPaymentId && !isIntegratedAddress;
                 })
+                .OrderByDescending(x=> x.Amount)
                 .ToArray();
 
             if (simpleBalances.Length > 0)
