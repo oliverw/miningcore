@@ -45,7 +45,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(network);
 
