@@ -361,7 +361,6 @@ namespace Miningcore.Blockchain.Bitcoin
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
-                result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
 
                 Span<byte> blockHash = stackalloc byte[32];
                 blockHasher.Digest(headerBytes, blockHash, nTime);
