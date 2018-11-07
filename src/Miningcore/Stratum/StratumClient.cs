@@ -122,14 +122,14 @@ namespace Miningcore.Stratum
 
                     using (var disposables = new CompositeDisposable(networkStream, cts))
                     {
-                        // TLS handshake
                         if (endpoint.PoolEndpoint.Tls)
                         {
                             var sslStream = new SslStream(networkStream, false);
-                            await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
-
-                            networkStream = sslStream;
                             disposables.Add(sslStream);
+
+                            // TLS handshake
+                            await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                            networkStream = sslStream;
 
                             logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                         }
