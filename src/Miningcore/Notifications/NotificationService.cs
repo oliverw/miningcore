@@ -116,14 +116,7 @@ namespace Miningcore.Notifications
 
         //private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue;
-
-        private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
-
-        private readonly HttpClient httpClient = new HttpClient(new SocketsHttpHandler
-        {
-            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-        });
 
         enum NotificationCategory
         {
@@ -168,11 +161,6 @@ namespace Miningcore.Notifications
                         break;
 
                     case NotificationCategory.PaymentSuccess:
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
-                            clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                            await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
-                        break;
-
                     case NotificationCategory.PaymentFailure:
                         if (clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
