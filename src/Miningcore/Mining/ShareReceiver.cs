@@ -80,19 +80,16 @@ namespace Miningcore.Mining
 
                 while (!cts.IsCancellationRequested)
                 {
-                    // track last message received per-endpoint
-                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray(); ;
+                    // track last message received per endpoint
+                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
 
                     try
                     {
                         // setup sockets
-                        var sockets = relays
-                            .Select(SetupSubSocket)
-                            .ToArray();
+                        var sockets = relays.Select(SetupSubSocket).ToArray();
 
                         using (new CompositeDisposable(sockets))
                         {
-                            var urls = relays.Select(x => x.Url).ToArray();
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
                             while (!cts.IsCancellationRequested)
@@ -107,7 +104,7 @@ namespace Miningcore.Mining
                                         {
                                             lastMessageReceived[i] = clock.Now;
 
-                                            queue.Post((urls[i], msg));
+                                            queue.Post((relays[i].Url, msg));
                                         }
 
                                         else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
@@ -119,7 +116,7 @@ namespace Miningcore.Mining
                                             // reset clock
                                             lastMessageReceived[i] = clock.Now;
 
-                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {urls[i]} ...");
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
                                         }
                                     }
 
