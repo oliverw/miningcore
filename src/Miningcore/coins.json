@@ -195,6 +195,25 @@
       "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"
     },
+    "paccoin": {
+      "name": "Paccoin",
+      "symbol": "PAC",
+      "family": "bitcoin",
+      "coinbaseHasher": {
+        "hash": "sha256d"
+      },
+      "headerHasher": {
+        "hash": "x11"
+      },
+      "blockHasher": {
+        "hash": "reverse",
+        "args": [{ "hash": "x11" }]
+      },
+      "hasMasterNodes": true,
+      "explorerBlockLink": "http://explorer.paccoin.net/block/$hash$",
+      "explorerTxLink": "http://explorer.paccoin.net/tx/{0}",
+      "explorerAccountLink": "http://explorer.paccoin.net/address/{0}"
+    },
     "groestlcoin": {
       "name": "GroestlCoin",
       "symbol": "GRS",
