@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <None Remove="config.json" />
+    <None Remove="config2.json" />
   </ItemGroup>
 
   <ItemGroup>

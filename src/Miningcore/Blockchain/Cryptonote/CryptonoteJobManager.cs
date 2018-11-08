@@ -307,7 +307,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        public async Task<Share> SubmitShareAsync(StratumClient worker,
+        public async ValueTask<Share> SubmitShareAsync(StratumClient worker,
             CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

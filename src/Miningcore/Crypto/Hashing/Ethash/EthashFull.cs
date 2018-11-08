@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
@@ -30,7 +31,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 value.Dispose();
         }
 
-        public async Task<Dag> GetDagAsync(ulong block, ILogger logger)
+        public async Task<Dag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
         {
             var epoch = block / EthereumConstants.EpochLength;
             Dag result;
@@ -79,14 +80,14 @@ namespace Miningcore.Crypto.Hashing.Ethash
                     future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                    future.GenerateAsync(dagDir, logger);
+                    future.GenerateAsync(dagDir, logger, ct);
 #pragma warning restore 4014
                 }
 
                 result.LastUsed = DateTime.Now;
             }
 
-            await result.GenerateAsync(dagDir, logger);
+            await result.GenerateAsync(dagDir, logger, ct);
             return result;
         }
     }

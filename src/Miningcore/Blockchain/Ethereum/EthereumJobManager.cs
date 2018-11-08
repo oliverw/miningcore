@@ -437,8 +437,7 @@ namespace Miningcore.Blockchain.Ethereum
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<Share> SubmitShareAsync(StratumClient worker,
-            string[] request, double stratumDifficulty, double stratumDifficultyBase, CancellationToken ct)
+        public async ValueTask<Share> SubmitShareAsync(StratumClient worker, string[] request, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
@@ -459,7 +458,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
 
             // validate & process
-            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash);
+            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, ct);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
@@ -621,7 +620,7 @@ namespace Miningcore.Blockchain.Ethereum
                     {
                         logger.Info(() => $"Loading current DAG ...");
 
-                        await ethash.GetDagAsync(blockTemplate.Height, logger);
+                        await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
 
                         logger.Info(() => $"Loaded current DAG");
                         break;

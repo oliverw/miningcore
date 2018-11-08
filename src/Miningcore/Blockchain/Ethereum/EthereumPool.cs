@@ -175,8 +175,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, submitRequest, context.Difficulty,
-                    poolEndpoint.Difficulty, ct);
+                var share = await manager.SubmitShareAsync(client, submitRequest, ct);
 
                 await client.RespondAsync(true, request.Id);
 

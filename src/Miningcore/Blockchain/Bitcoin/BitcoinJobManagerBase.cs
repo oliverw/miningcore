@@ -632,7 +632,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public abstract object[] GetSubscriberData(StratumClient worker);
 
-        public abstract Task<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public abstract ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct);
 
         #endregion // API-Surface
