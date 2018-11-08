@@ -371,7 +371,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var multiplier = BitcoinConstants.Pow2x32;
             var result = shares * multiplier / interval;
 
-            result *= coin.HashrateMultiplier;
+            //result *= coin.HashrateMultiplier;
 
             return result;
         }
