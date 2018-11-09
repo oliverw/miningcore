@@ -418,8 +418,8 @@
       "explorerTxLink": "http://explorer.btcd.io/#/TX?TX={0}",
       "explorerAccountLink": "http://explorer.btcd.io/#/address?address={0}"
     },
-    "florincoin": {
-      "name": "Florincoin",
+    "flo": {
+      "name": "Flo",
       "symbol": "FLO",
       "family": "bitcoin",
       "coinbaseHasher": {
@@ -445,9 +445,9 @@
       "coinbaseTxVersion": 2,
       "coinbaseTxAppendData": "Flo Miningcore",
       "shareMultiplier": 65536,
-      "explorerBlockLink": "https://florincoin.info/block/0",
-      "explorerTxLink": "https://florincoin.info/tx/{0}",
-      "explorerAccountLink": "https://florincoin.info/address/{0}"
+      "explorerBlockLink": "https://network.flo.cash/block/0",
+      "explorerTxLink": "https://network.flo.cash/tx/{0}",
+      "explorerAccountLink": "https://network.flo.cash/address/{0}"
     },
     "digibyte-sha256": {
       "name": "Digibyte-Sha256",
