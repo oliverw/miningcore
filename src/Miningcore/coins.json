@@ -96,7 +96,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/ltc/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/ltc/address.dws?{0}.htm"
@@ -144,7 +143,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://dogechain.info/block/$height$",
       "explorerTxLink": "https://dogechain.info/tx/{0}",
       "explorerAccountLink": "https://dogechain.info/address/{0}"
@@ -173,8 +171,7 @@
           }
         ]
       },
-      "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5
+      "shareMultiplier": 65536
     },
     "dash": {
       "name": "Dash",
@@ -248,7 +245,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://bchain.info/MONA/block/$height$",
       "explorerTxLink": "https://bchain.info/MONA/tx/{0}",
       "explorerAccountLink": "https://bchain.info/MONA/addr/{0}"
@@ -268,7 +264,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://chainz.cryptoid.info/vtc/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/vtc/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/vtc/address.dws?{0}.htm"
@@ -316,7 +311,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/moon/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/moon/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/moon/address.dws?{0}.htm"
@@ -346,7 +340,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/pak/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/pak/address.dws?{0}.htm"
@@ -452,7 +445,6 @@
       "coinbaseTxVersion": 2,
       "coinbaseTxAppendData": "Flo Miningcore",
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://florincoin.info/block/0",
       "explorerTxLink": "https://florincoin.info/tx/{0}",
       "explorerAccountLink": "https://florincoin.info/address/{0}"
@@ -491,7 +483,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://digiexplorer.info/block/$height$",
       "explorerTxLink": "https://digiexplorer.info/tx/{0}",
       "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -571,7 +562,6 @@
         ]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -597,7 +587,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -621,7 +610,6 @@
           }
         ]
       },
-      "hashrateMultiplier": 2.55,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
