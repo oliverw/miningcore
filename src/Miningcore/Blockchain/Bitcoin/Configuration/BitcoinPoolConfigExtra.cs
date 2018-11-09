@@ -38,6 +38,12 @@ namespace Miningcore.Blockchain.Bitcoin.Configuration
         public bool? HasLegacyDaemon { get; set; }
 
         /// <summary>
+        /// Arbitrary string appended at end of coinbase tx
+        /// Overrides property of same name from BitcoinTemplate
+        /// </summary>
+        public string CoinbaseTxComment { get; set; }
+
+        /// <summary>
         /// Blocktemplate stream published via ZMQ
         /// </summary>
         public ZmqPubSubEndpointConfig BtStream { get; set; }

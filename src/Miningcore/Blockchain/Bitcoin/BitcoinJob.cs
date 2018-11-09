@@ -24,6 +24,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Crypto;
@@ -47,6 +48,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected int extraNoncePlaceHolderLength;
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
+        protected string txComment;
 
         protected Network network;
         protected IDestination poolAddressDestination;
@@ -169,9 +171,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual void AppendCoinbaseFinal(BitcoinStream bs)
         {
-            if (!string.IsNullOrEmpty(coin.CoinbaseTxAppendData))
+            if (!string.IsNullOrEmpty(txComment))
             {
-                var data = Encoding.ASCII.GetBytes(coin.CoinbaseTxAppendData);
+                var data = Encoding.ASCII.GetBytes(txComment);
                 bs.ReadWriteAsVarString(ref data);
             }
         }
@@ -504,7 +506,8 @@ namespace Miningcore.Blockchain.Bitcoin
         public string JobId { get; protected set; }
 
         public void Init(BlockTemplate blockTemplate, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
+            PoolConfig poolConfig, BitcoinPoolConfigExtra extraPoolConfig,
+            ClusterConfig clusterConfig, IMasterClock clock,
             IDestination poolAddressDestination, Network network,
             bool isPoS, double shareMultiplier, IHashAlgorithm coinbaseHasher,
             IHashAlgorithm headerHasher, IHashAlgorithm blockHasher)
@@ -531,6 +534,9 @@ namespace Miningcore.Blockchain.Bitcoin
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
             this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
+
+            txComment = !string.IsNullOrEmpty(extraPoolConfig?.CoinbaseTxComment) ?
+                extraPoolConfig.CoinbaseTxComment : coin.CoinbaseTxComment;
 
             if (coin.HasMasterNodes)
                 masterNodeParameters = BlockTemplate.Extra.SafeExtensionDataAs<MasterNodeBlockTemplateExtra>();

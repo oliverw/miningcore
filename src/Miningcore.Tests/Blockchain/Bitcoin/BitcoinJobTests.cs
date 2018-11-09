@@ -50,7 +50,7 @@ namespace Miningcore.Tests.Blockchain.Bitcoin
             // set clock to job creation time
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
-            job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, Network.RegTest,
+            job.Init(bt, "1", poolConfig, null, clusterConfig, clock, poolAddressDestination, Network.RegTest,
                 false, 1, sha256d, sha256d, sha256dReverse);
 
             // set clock to submission time
@@ -85,7 +85,7 @@ namespace Miningcore.Tests.Blockchain.Bitcoin
             // set clock to job creation time
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
-            job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, Network.RegTest,
+            job.Init(bt, "1", poolConfig, null, clusterConfig, clock, poolAddressDestination, Network.RegTest,
                 false, 1, sha256d, sha256d, sha256dReverse);
 
             // set clock to submission time

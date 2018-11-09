@@ -132,7 +132,10 @@ namespace Miningcore.Configuration
         [DefaultValue(1u)]
         public uint CoinbaseTxVersion { get; set; }
 
-        public string CoinbaseTxAppendData { get; set; }
+        /// <summary>
+        /// Default transaction comment for coins that REQUIRE tx comments 
+        /// </summary>
+        public string CoinbaseTxComment { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
