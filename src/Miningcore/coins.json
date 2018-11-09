@@ -445,9 +445,9 @@
       "coinbaseTxVersion": 2,
       "coinbaseTxAppendData": "Flo Miningcore",
       "shareMultiplier": 65536,
-      "explorerBlockLink": "https://network.flo.cash/block/0",
-      "explorerTxLink": "https://network.flo.cash/tx/{0}",
-      "explorerAccountLink": "https://network.flo.cash/address/{0}"
+      "explorerBlockLink": "https://florincoin.info/block/$hash$",
+      "explorerTxLink": "https://florincoin.info/tx/{0}",
+      "explorerAccountLink": "https://florincoin.info/address/{0}"
     },
     "digibyte-sha256": {
       "name": "Digibyte-Sha256",
