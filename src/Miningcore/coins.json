@@ -443,7 +443,7 @@
         ]
       },
       "coinbaseTxVersion": 2,
-      "coinbaseTxAppendData": "Flo Miningcore",
+      "coinbaseTxAppendData": "FLO Miningcore",
       "shareMultiplier": 65536,
       "explorerBlockLink": "https://florincoin.info/block/$hash$",
       "explorerTxLink": "https://florincoin.info/tx/{0}",
