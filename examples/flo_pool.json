@@ -46,7 +46,7 @@
     {
       "id": "flo1",
       "enabled": true,
-      "coin": "florincoin",
+      "coin": "flo",
       "address": "FC3d6JT1Z3uZvKVNWjKt3qN8PX8knhAU7d",
       "rewardRecipients": [
         {
@@ -54,7 +54,6 @@
           "percentage": 1.0
         }
       ],
-      "floData": "Flo MiningCore",
       "maxActiveJobs": 10,
       "blockRefreshInterval": 500,
       "jobRebroadcastTimeout": 10,
