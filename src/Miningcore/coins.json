@@ -419,7 +419,7 @@
       "explorerAccountLink": "http://explorer.btcd.io/#/address?address={0}"
     },
     "flo": {
-      "name": "Flo",
+      "name": "FLO",
       "symbol": "FLO",
       "family": "bitcoin",
       "coinbaseHasher": {
