@@ -146,7 +146,7 @@ namespace Miningcore.Blockchain.Ethereum
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
 
-                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
+                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
                     // is it block mined by us?
                     if (blockInfo.Miner == poolConfig.Address)
@@ -176,18 +176,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                             logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                            // build explorer link
-                            string explorerLink = null;
-                            if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
-                            {
-                                if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
-                                    explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                                else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
-                                    explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
-                            }
-
-                            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink, block.Type));
+                            messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                         }
 
                         continue;
@@ -237,18 +226,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                                     logger.Info(() => $"[{LogCategory}] Unlocked uncle for block {blockInfo2.Height.Value} at height {uncle.Height.Value} worth {FormatAmount(block.Reward)}");
 
-                                    // build explorer link
-                                    string explorerLink = null;
-                                    if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
-                                    {
-                                        if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
-                                            explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                                        else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
-                                            explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
-                                    }
-
-                                    messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                        block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink, block.Type));
+                                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                                 }
 
                                 else
@@ -265,8 +243,7 @@ namespace Miningcore.Blockchain.Ethereum
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
+                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                     }
                 }
             }
