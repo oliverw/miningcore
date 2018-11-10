@@ -357,11 +357,6 @@ namespace Miningcore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
-        /// Validate SSL certificate (if SSL option is set to true) - default is false
-        /// </summary>
-        public bool ValidateCert { get; set; }
-
-        /// <summary>
         /// Optional endpoint category
         /// </summary>
         public string Category { get; set; }

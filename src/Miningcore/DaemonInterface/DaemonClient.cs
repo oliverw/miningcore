@@ -73,7 +73,7 @@ namespace Miningcore.DaemonInterface
         private readonly JsonSerializerSettings serializerSettings;
 
         protected DaemonEndpointConfig[] endPoints;
-        private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
+        private HttpClient httpClient;
         private readonly JsonSerializer serializer;
 
         // Telemetry
@@ -96,29 +96,14 @@ namespace Miningcore.DaemonInterface
 
             this.endPoints = endPoints;
 
-            // create one HttpClient instance per endpoint that carries the associated credentials
-            httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
+            httpClient = new HttpClient(new SocketsHttpHandler
             {
-                var handler = new SocketsHttpHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
-                };
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
 
-                if(!string.IsNullOrEmpty(endpoint.User))
+                SslOptions = new SslClientAuthenticationOptions
                 {
-                    handler.Credentials = new NetworkCredential(endpoint.User, endpoint.Password);
-                    handler.PreAuthenticate = true;
+                    RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
                 }
-
-                if ((endpoint.Ssl || endpoint.Http2) && !endpoint.ValidateCert)
-                {
-                    handler.SslOptions = new SslClientAuthenticationOptions
-                    {
-                        RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
-                    };
-                }
-
-                return new HttpClient(handler);
             });
         }
 
@@ -352,7 +337,7 @@ namespace Miningcore.DaemonInterface
                 logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
                 // send request
-                using (var response = await httpClients[endPoint].SendAsync(request, ct))
+                using (var response = await httpClient.SendAsync(request, ct))
                 {
                     // read response
                     var responseContent = await response.Content.ReadAsStringAsync();
@@ -410,7 +395,7 @@ namespace Miningcore.DaemonInterface
                 logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
                 // send request
-                using(var response = await httpClients[endPoint].SendAsync(request))
+                using(var response = await httpClient.SendAsync(request))
                 {
                     // deserialize response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -521,8 +506,7 @@ namespace Miningcore.DaemonInterface
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
 
-                                    if(!endPoint.ValidateCert)
-                                        client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                                    client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
                                     logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
