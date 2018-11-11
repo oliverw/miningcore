@@ -357,6 +357,11 @@ namespace Miningcore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
+        /// Set if the endpoint requires HTTP Digest Authentication (Cryptonote coins)
+        /// </summary>
+        public bool DigestAuth { get; set; }
+
+        /// <summary>
         /// Optional endpoint category
         /// </summary>
         public string Category { get; set; }

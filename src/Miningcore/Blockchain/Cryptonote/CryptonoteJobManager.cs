@@ -252,6 +252,9 @@ namespace Miningcore.Blockchain.Cryptonote
                         if (string.IsNullOrEmpty(x.HttpPath))
                             x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
 
+                        // cryptonote daemons only support digest auth
+                        x.DigestAuth = true;
+
                         return x;
                     })
                     .ToArray();
