@@ -122,7 +122,7 @@ namespace Miningcore.Mining
                     blockEntity.Status = BlockStatus.Pending;
                     await blockRepo.InsertAsync(con, tx, blockEntity);
 
-                    messageBus.NotifyBlockFound(share.PoolId, (ulong) share.BlockHeight, pools[share.PoolId].Template.Symbol);
+                    messageBus.NotifyBlockFound(share.PoolId, blockEntity, pools[share.PoolId].Template);
                 }
             });
         }

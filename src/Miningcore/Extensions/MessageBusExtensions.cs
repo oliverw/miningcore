@@ -9,14 +9,33 @@ namespace Miningcore.Extensions
 {
     public static class MessageBusExtensions
     {
-        public static void NotifyBlockFound(this IMessageBus messageBus, string poolId, ulong blockHeight, string symbol)
+        public static void NotifyBlockFound(this IMessageBus messageBus, string poolId, Block block, CoinTemplate coin)
         {
-            messageBus.SendMessage(new BlockFoundNotification(poolId, blockHeight, symbol));
+            // miner account explorer link
+            string minerExplorerLink = null;
+
+            if (!string.IsNullOrEmpty(coin.ExplorerAccountLink))
+                minerExplorerLink = string.Format(coin.ExplorerAccountLink, block.Miner);
+
+            messageBus.SendMessage(new BlockFoundNotification
+            {
+                PoolId = poolId,
+                BlockHeight = block.BlockHeight,
+                Symbol = coin.Symbol,
+                Miner = block.Miner,
+                MinerExplorerLink = minerExplorerLink,
+            });
         }
 
         public static void NotifyBlockConfirmationProgress(this IMessageBus messageBus, string poolId, Block block, CoinTemplate coin)
         {
-            messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolId, block.BlockHeight, coin.Symbol));
+            messageBus.SendMessage(new BlockConfirmationProgressNotification
+            {
+                PoolId = poolId,
+                BlockHeight = block.BlockHeight,
+                Symbol = coin.Symbol,
+                Progress = block.ConfirmationProgress,
+            });
         }
 
         public static void NotifyBlockUnlocked(this IMessageBus messageBus, string poolId, Block block, CoinTemplate coin)
@@ -41,8 +60,28 @@ namespace Miningcore.Extensions
                     minerExplorerLink = string.Format(coin.ExplorerAccountLink, block.Miner);
             }
 
-            messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolId,
-                block.BlockHeight, block.Hash, block.Miner, minerExplorerLink, coin.Symbol, blockExplorerLink, block.Type));
+            messageBus.SendMessage(new BlockUnlockedNotification
+            {
+                PoolId = poolId,
+                BlockHeight = block.BlockHeight,
+                BlockType = block.Type,
+                Symbol = coin.Symbol,
+                Status = block.Status,
+                BlockHash = block.Hash,
+                ExplorerLink = blockExplorerLink,
+                Miner = block.Miner,
+                MinerExplorerLink = minerExplorerLink,
+            });
+        }
+
+        public static void NotifyChainHeight(this IMessageBus messageBus, string poolId, ulong height, CoinTemplate coin)
+        {
+            messageBus.SendMessage(new NewChainHeightNotification
+            {
+                PoolId = poolId,
+                BlockHeight = height,
+                Symbol = coin.Symbol,
+            });
         }
     }
 }
