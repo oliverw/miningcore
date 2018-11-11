@@ -11,6 +11,7 @@ namespace Miningcore.Api.WebSocketNotifications
         NewChainHeight,
         Payment,
         BlockUnlocked,
-        BlockUnlockProgress
+        BlockUnlockProgress,
+        HashrateUpdated
     }
 }

@@ -11,6 +11,7 @@ using AutoMapper;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
+using Miningcore.Messaging;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -25,6 +26,7 @@ namespace Miningcore.Mining
         public StatsRecorder(IComponentContext ctx,
             IMasterClock clock,
             IConnectionFactory cf,
+            IMessageBus messageBus,
             IMapper mapper,
             IShareRepository shareRepo,
             IStatsRepository statsRepo)
@@ -32,6 +34,7 @@ namespace Miningcore.Mining
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(cf, nameof(cf));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(statsRepo, nameof(statsRepo));
@@ -40,6 +43,7 @@ namespace Miningcore.Mining
             this.clock = clock;
             this.cf = cf;
             this.mapper = mapper;
+            this.messageBus = messageBus;
             this.shareRepo = shareRepo;
             this.statsRepo = statsRepo;
 
@@ -50,6 +54,7 @@ namespace Miningcore.Mining
         private readonly IStatsRepository statsRepo;
         private readonly IConnectionFactory cf;
         private readonly IMapper mapper;
+        private readonly IMessageBus messageBus;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
@@ -163,6 +168,8 @@ namespace Miningcore.Mining
                         pool.PoolStats.ConnectedMiners = byMiner.Length;
                         pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
+
+                        messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
                     }
                 }
 
@@ -207,6 +214,8 @@ namespace Miningcore.Mining
 
                                 // persist
                                 await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+
+                                messageBus.NotifyHashrateUpdated(pool.Config.Id, hashrate, stats.Miner, item.Worker);
                             }
                         }
                     });

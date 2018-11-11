@@ -83,5 +83,16 @@ namespace Miningcore.Extensions
                 Symbol = coin.Symbol,
             });
         }
+
+        public static void NotifyHashrateUpdated(this IMessageBus messageBus, string poolId, double hashrate, string miner = null, string worker = null)
+        {
+            messageBus.SendMessage(new HashrateNotification
+            {
+                PoolId = poolId,
+                Hashrate = hashrate,
+                Miner = miner,
+                Worker = worker,
+            });
+        }
     }
 }
