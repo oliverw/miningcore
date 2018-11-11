@@ -24,6 +24,7 @@ namespace Miningcore.Extensions
                 Symbol = coin.Symbol,
                 Miner = block.Miner,
                 MinerExplorerLink = minerExplorerLink,
+                Source = block.Source,
             });
         }
 
@@ -66,6 +67,7 @@ namespace Miningcore.Extensions
                 BlockHeight = block.BlockHeight,
                 BlockType = block.Type,
                 Symbol = coin.Symbol,
+                Reward = block.Reward,
                 Status = block.Status,
                 BlockHash = block.Hash,
                 ExplorerLink = blockExplorerLink,

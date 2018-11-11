@@ -1,4 +1,6 @@
 using Miningcore.Persistence.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Miningcore.Notifications.Messages
 {
@@ -13,6 +15,7 @@ namespace Miningcore.Notifications.Messages
     {
         public string Miner { get; set; }
         public string MinerExplorerLink { get; set; }
+        public string Source { get; set; }
     }
 
     public class NewChainHeightNotification : BlockNotification
@@ -26,9 +29,12 @@ namespace Miningcore.Notifications.Messages
 
     public class BlockUnlockedNotification : BlockNotification
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public BlockStatus Status { get; set; }
+
         public string BlockType { get; set; }
         public string BlockHash { get; set; }
+        public decimal Reward { get; set; }
         public string Miner { get; set; }
         public string ExplorerLink { get; set; }
         public string MinerExplorerLink { get; set; }
