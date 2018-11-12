@@ -194,6 +194,8 @@ namespace Miningcore.Mining
                 // calculate & update miner, worker hashrates
                 foreach(var minerHashes in byMiner)
                 {
+                    double minerTotalHashrate = 0;
+
                     await cf.RunTx(async (con, tx) =>
                     {
                         stats.Miner = minerHashes.Key;
@@ -206,6 +208,7 @@ namespace Miningcore.Mining
                             if (windowActual >= MinHashrateCalculationWindow)
                             {
                                 var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
+                                minerTotalHashrate += hashrate;
 
                                 // update
                                 stats.Hashrate = hashrate;
@@ -219,6 +222,8 @@ namespace Miningcore.Mining
                             }
                         }
                     });
+
+                    messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
                 }
             }
         }
