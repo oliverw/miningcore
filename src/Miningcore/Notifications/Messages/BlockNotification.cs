@@ -25,6 +25,7 @@ namespace Miningcore.Notifications.Messages
     public class BlockConfirmationProgressNotification : BlockNotification
     {
         public double Progress { get; set; }
+        public double? Effort { get; set; }
     }
 
     public class BlockUnlockedNotification : BlockNotification
@@ -35,6 +36,7 @@ namespace Miningcore.Notifications.Messages
         public string BlockType { get; set; }
         public string BlockHash { get; set; }
         public decimal Reward { get; set; }
+        public double? Effort { get; set; }
         public string Miner { get; set; }
         public string ExplorerLink { get; set; }
         public string MinerExplorerLink { get; set; }

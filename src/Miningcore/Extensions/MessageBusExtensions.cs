@@ -35,6 +35,7 @@ namespace Miningcore.Extensions
                 PoolId = poolId,
                 BlockHeight = block.BlockHeight,
                 Symbol = coin.Symbol,
+                Effort = block.Effort,
                 Progress = block.ConfirmationProgress,
             });
         }
@@ -69,6 +70,7 @@ namespace Miningcore.Extensions
                 Symbol = coin.Symbol,
                 Reward = block.Reward,
                 Status = block.Status,
+                Effort = block.Effort,
                 BlockHash = block.Hash,
                 ExplorerLink = blockExplorerLink,
                 Miner = block.Miner,
