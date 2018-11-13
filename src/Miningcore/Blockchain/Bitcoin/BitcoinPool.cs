@@ -159,6 +159,7 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
+            var updateExtraNonce = false;
 
             try
             {
@@ -209,10 +210,13 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // send new extranonce if miner is getting close to exhausting available nonce-space
                 if (!share.IsBlockCandidate && context.HasExtraNonceSubscription && nonceSpaceUsed >= 0.9)
-                    await UpdateExtraNonceAsync(client, nonceSpaceUsed);
+                {
+                    logger.Info(() => $"[{client.ConnectionId}] Assigning new extra-nonce at {(int)(nonceSpaceUsed * 100)}% NS");
+                    updateExtraNonce = true;
+                }
             }
 
-            catch(StratumException ex)
+            catch (StratumException ex)
             {
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
@@ -221,10 +225,27 @@ namespace Miningcore.Blockchain.Bitcoin
                 context.Stats.InvalidShares++;
                 logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Message}");
 
+                // update extra-nonce
+                if (ex.Code == StratumError.DuplicateShare)
+                {
+                    logger.Info(() => $"[{client.ConnectionId}] Assigning new extra-nonce on duplicate share");
+                    updateExtraNonce = true;
+
+                    // make sure submit is answered before updating extra-nonce
+                    await client.RespondErrorAsync(ex.Code, ex.Message, request.Id, false);
+                }
+
                 // banning
                 ConsiderBan(client, context, poolConfig.Banning);
 
-                throw;
+                if(!updateExtraNonce)
+                    throw;
+            }
+
+            finally
+            {
+                if (updateExtraNonce)
+                    await UpdateExtraNonceAsync(client);
             }
         }
 
@@ -381,12 +402,10 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        private async Task UpdateExtraNonceAsync(StratumClient client, double nonceSpaceUsed)
+        private async Task UpdateExtraNonceAsync(StratumClient client)
         {
             var parameters = manager.UpdateSubscriberData(client);
             await client.NotifyAsync(BitcoinStratumMethods.SetExtraNonce, parameters);
-
-            logger.Info(() => $"[{client.ConnectionId}] Assigned new extra-nonce {parameters[0]} at {(int)(nonceSpaceUsed * 100)}% NS");
 
             // force work restart using new extra-nonce
             await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
