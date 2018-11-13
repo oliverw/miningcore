@@ -41,10 +41,10 @@ namespace Miningcore.Blockchain.Cryptonote
 
         public void AddJob(CryptonoteWorkerJob job)
         {
-            validJobs.Add(job);
+            validJobs.Insert(0, job);
 
             while(validJobs.Count > 4)
-                validJobs.RemoveAt(0);
+                validJobs.RemoveAt(validJobs.Count - 1);
         }
 
         public CryptonoteWorkerJob FindJob(string jobId)
