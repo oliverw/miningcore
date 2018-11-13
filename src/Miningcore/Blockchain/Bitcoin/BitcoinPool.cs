@@ -194,10 +194,6 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // publish
                 messageBus.SendMessage(new ClientShare(client, share));
-
-                // telemetry
-                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
-
                 logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
 
                 // update pool stats
@@ -214,6 +210,9 @@ namespace Miningcore.Blockchain.Bitcoin
                     logger.Info(() => $"[{client.ConnectionId}] Assigning new extra-nonce at {(int)(nonceSpaceUsed * 100)}% NS");
                     updateExtraNonce = true;
                 }
+
+                // telemetry
+                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
             }
 
             catch (StratumException ex)
