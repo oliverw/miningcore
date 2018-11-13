@@ -63,7 +63,7 @@ namespace Miningcore.Configuration
         /// <summary>
         /// Family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -8)]
         public CoinFamily Family { get; set; }
 
@@ -118,7 +118,7 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(BitcoinSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public BitcoinSubfamily Subfamily { get; set; }
 
         public JObject CoinbaseHasher { get; set; }
@@ -211,7 +211,7 @@ namespace Miningcore.Configuration
 
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EquihashSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EquihashSubfamily Subfamily { get; set; }
 
         public Dictionary<string, EquihashNetworkParams> Networks { get; set; }
@@ -245,13 +245,13 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(CryptonoteSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public CryptonoteSubfamily Subfamily { get; set; }
 
         /// <summary>
         /// Broader Cryptonight hash family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -5)]
         public CryptonightHashType Hash { get; set; }
 
@@ -308,7 +308,7 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EthereumSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EthereumSubfamily Subfamily { get; set; }
     }
 

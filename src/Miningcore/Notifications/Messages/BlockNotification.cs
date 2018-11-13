@@ -30,7 +30,7 @@ namespace Miningcore.Notifications.Messages
 
     public class BlockUnlockedNotification : BlockNotification
     {
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public BlockStatus Status { get; set; }
 
         public string BlockType { get; set; }
