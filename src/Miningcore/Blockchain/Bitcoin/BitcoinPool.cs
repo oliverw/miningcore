@@ -209,7 +209,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 await UpdateVarDiffAsync(client);
 
                 // send new extranonce if miner is getting close to exhausting available nonce-space
-                if (!share.IsBlockCandidate && context.HasExtraNonceSubscription && nonceSpaceUsed >= 0.9)
+                if (!share.IsBlockCandidate && context.HasExtraNonceSubscription && nonceSpaceUsed >= 0.95)
                 {
                     logger.Info(() => $"[{client.ConnectionId}] Assigning new extra-nonce at {(int)(nonceSpaceUsed * 100)}% NS");
                     updateExtraNonce = true;
