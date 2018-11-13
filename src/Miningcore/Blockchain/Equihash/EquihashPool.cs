@@ -141,7 +141,7 @@ namespace Miningcore.Blockchain.Equihash
                 {
                     client.ConnectionId,
                 }
-                .Concat(manager.UpdateSubscriberData(client))
+                .Concat(manager.GetSubscriberData(client))
                 .ToArray();
 
             await client.RespondAsync(data, request.Id);
@@ -247,7 +247,7 @@ namespace Miningcore.Blockchain.Equihash
                 var requestParams = request.ParamsAs<string[]>();
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var (share, _) = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty, ct);
+                var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty, ct);
 
                 await client.RespondAsync(true, request.Id);
 

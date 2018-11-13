@@ -56,7 +56,7 @@ namespace Miningcore.Tests.Blockchain.Bitcoin
             // set clock to submission time
             clock.CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869907).UtcDateTime;
 
-            var (share, blockHex, nonceSpaceUsed) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
+            var (share, blockHex) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
 
             Assert.NotNull(share);
             Assert.True(share.IsBlockCandidate);
@@ -95,7 +95,7 @@ namespace Miningcore.Tests.Blockchain.Bitcoin
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "02000000", "59ef86f2", "8d84ae6a"));
 
             // make sure we don't accept case-sensitive duplicate shares as basically 0xdeadbeaf = 0xDEADBEAF.
-            var (share, blockHex, nonceSpaceUsed) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
+            var (share, blockHex) = job.ProcessShare(worker, "01000000", "59ef86f2", "8d84ae6a");
             Assert.Throws<StratumException>(() => job.ProcessShare(worker, "01000000", "59ef86f2", "8D84AE6A"));
 
             // invalid time

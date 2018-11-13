@@ -214,7 +214,7 @@ namespace Miningcore.Blockchain.Equihash
             return result.Response != null && result.Response.IsValid;
         }
 
-        public override object[] UpdateSubscriberData(StratumClient worker)
+        public override object[] GetSubscriberData(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -232,7 +232,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async ValueTask<(Share Share, double NonceSpaceUsed)> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -315,7 +315,7 @@ namespace Miningcore.Blockchain.Equihash
             share.Difficulty = share.Difficulty;
             share.Created = clock.Now;
 
-            return (share, 0);
+            return share;
         }
 
 

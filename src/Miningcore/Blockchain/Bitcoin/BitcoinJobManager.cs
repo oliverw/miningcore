@@ -182,7 +182,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        public override object[] UpdateSubscriberData(StratumClient worker)
+        public override object[] GetSubscriberData(StratumClient worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -201,7 +201,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async ValueTask<(Share Share, double NonceSpaceUsed)> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -241,7 +241,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var workerName = split.Length > 1 ? split[1] : null;
 
             // validate & process
-            var (share, blockHex, nonceSpaceUsed) = job.ProcessShare(worker, extraNonce2, nTime, nonce, versionBits);
+            var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, nonce, versionBits);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
@@ -280,7 +280,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
             }
 
-            return (share, nonceSpaceUsed);
+            return share;
         }
 
         public double ShareMultiplier => coin.ShareMultiplier;

@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain
             {
                 counter++;
                 if (counter > nonceMax)
-                    counter = 1;
+                    counter = 0;
 
                 // encode to hex
                 var result = counter.ToString(stringFormat);
