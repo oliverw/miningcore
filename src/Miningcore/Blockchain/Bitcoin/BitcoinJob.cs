@@ -309,7 +309,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return blockHeader.ToBytes();
         }
 
-        protected virtual (Share Share, string BlockHex) ProcessShareInternal(
+        protected virtual (Share Share, string BlockHex, double NonceSpaceUsed) ProcessShareInternal(
             StratumClient worker, string extraNonce2, uint nTime, uint nonce, uint? versionBits)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -360,6 +360,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 Difficulty = stratumDifficulty / shareMultiplier,
             };
 
+            // calculate used none-space
+            var nonceSpaceUsed = (double) nonce / (double) uint.MaxValue;
+
             if (isBlockCandidate)
             {
                 result.IsBlockCandidate = true;
@@ -371,10 +374,10 @@ namespace Miningcore.Blockchain.Bitcoin
                 var blockBytes = SerializeBlock(headerBytes, coinbase);
                 var blockHex = blockBytes.ToHexString();
 
-                return (result, blockHex);
+                return (result, blockHex, nonceSpaceUsed);
             }
 
-            return (result, null);
+            return (result, null, nonceSpaceUsed);
         }
 
         protected virtual byte[] SerializeCoinbase(string extraNonce1, string extraNonce2)
@@ -581,13 +584,13 @@ namespace Miningcore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
-            string extraNonce2, string nTime, string nonce, string versionBits = null)
+        public virtual (Share Share, string BlockHex, double NonceSpaceHeight) ProcessShare(StratumClient worker,
+            string extraNonce2, string nTime, string nonceString, string versionBits = null)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nTime), $"{nameof(nTime)} must not be empty");
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonce), $"{nameof(nonce)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(nonceString), $"{nameof(nonceString)} must not be empty");
 
             var context = worker.ContextAs<BitcoinWorkerContext>();
 
@@ -600,10 +603,10 @@ namespace Miningcore.Blockchain.Bitcoin
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             // validate nonce
-            if (nonce.Length != 8)
+            if (nonceString.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of nonce");
 
-            var nonceInt = uint.Parse(nonce, NumberStyles.HexNumber);
+            var nonce = uint.Parse(nonceString, NumberStyles.HexNumber);
 
             // validate version-bits (overt ASIC boost)
             uint versionBitsInt = 0;
@@ -618,10 +621,10 @@ namespace Miningcore.Blockchain.Bitcoin
             }
 
             // dupe check
-            if (!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
+            if (!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonceString))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
-            return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonceInt, versionBitsInt);
+            return ProcessShareInternal(worker, extraNonce2, nTimeInt, nonce, versionBitsInt);
         }
 
         #endregion // API-Surface

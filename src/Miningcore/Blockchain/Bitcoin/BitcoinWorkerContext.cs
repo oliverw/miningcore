@@ -37,6 +37,11 @@ namespace Miningcore.Blockchain.Bitcoin
         public string ExtraNonce1 { get; set; }
 
         /// <summary>
+        /// Client has requested on-the-fly changes for ExtraNonce1
+        /// </summary>
+        public bool HasExtraNonceSubscription { get; internal set; }
+
+        /// <summary>
         /// Mask for version-rolling (Overt ASIC-Boost)
         /// </summary>
         public uint? VersionRollingMask { get; internal set; }

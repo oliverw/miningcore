@@ -81,7 +81,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         new object[] { BitcoinStratumMethods.MiningNotify, client.ConnectionId }
                     }
                 }
-                .Concat(manager.GetSubscriberData(client))
+                .Concat(manager.UpdateSubscriberData(client))
                 .ToArray();
 
             await client.RespondAsync(data, request.Id);
@@ -187,7 +187,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 var requestParams = request.ParamsAs<string[]>();
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty, ct);
+                var (share, nonceSpaceUsed) = await manager.SubmitShareAsync(client, requestParams, poolEndpoint.Difficulty, ct);
 
                 await client.RespondAsync(true, request.Id);
 
@@ -206,6 +206,10 @@ namespace Miningcore.Blockchain.Bitcoin
                 // update client stats
                 context.Stats.ValidShares++;
                 await UpdateVarDiffAsync(client);
+
+                // send new extranonce if miner is getting close to exhausting available nonce-space
+                if (!share.IsBlockCandidate && context.HasExtraNonceSubscription && nonceSpaceUsed >= 0.9)
+                    await UpdateExtraNonceAsync(client, nonceSpaceUsed);
             }
 
             catch(StratumException ex)
@@ -252,6 +256,17 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 logger.Error(ex, () => $"Unable to convert suggested difficulty {request.Params}");
             }
+        }
+
+        private async Task OnExtraNonceSubscribeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<BitcoinWorkerContext>();
+
+            context.HasExtraNonceSubscription = true;
+
+            // acknowledge
+            await client.RespondAsync(true, request.Id);
         }
 
         private async Task OnConfigureMiningAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
@@ -366,12 +381,21 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
+        private async Task UpdateExtraNonceAsync(StratumClient client, double nonceSpaceUsed)
+        {
+            var parameters = manager.UpdateSubscriberData(client);
+            await client.NotifyAsync(BitcoinStratumMethods.SetExtraNonce, parameters);
+
+            logger.Info(() => $"[{client.ConnectionId}] Assigned new extra-nonce {parameters[0]} at {(int)(nonceSpaceUsed * 100)}% NS");
+
+            // force work restart using new extra-nonce
+            await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+        }
+
         public override double HashrateFromShares(double shares, double interval)
         {
             var multiplier = BitcoinConstants.Pow2x32;
             var result = shares * multiplier / interval;
-
-            //result *= coin.HashrateMultiplier;
 
             return result;
         }
@@ -463,16 +487,16 @@ namespace Miningcore.Blockchain.Bitcoin
                         await OnSuggestDifficultyAsync(client, tsRequest);
                         break;
 
+                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                        await OnExtraNonceSubscribeAsync(client, tsRequest);
+                        break;
+
                     case BitcoinStratumMethods.MiningConfigure:
                         await OnConfigureMiningAsync(client, tsRequest);
                         // ignored
                         break;
 
                     case BitcoinStratumMethods.GetTransactions:
-                        // ignored
-                        break;
-
-                    case BitcoinStratumMethods.ExtraNonceSubscribe:
                         // ignored
                         break;
 
