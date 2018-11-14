@@ -37,6 +37,7 @@ namespace Miningcore.Api.Controllers
             mapper = ctx.Resolve<IMapper>();
             clock = ctx.Resolve<IMasterClock>();
             pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
+            enabledPools = new HashSet<string>(clusterConfig.Pools.Where(x => x.Enabled).Select(x => x.Id));
         }
 
         private readonly ClusterConfig clusterConfig;
@@ -47,6 +48,7 @@ namespace Miningcore.Api.Controllers
         private readonly IMapper mapper;
         private readonly IMasterClock clock;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
+        private readonly HashSet<string> enabledPools;
 
         #region Actions
 
@@ -54,8 +56,6 @@ namespace Miningcore.Api.Controllers
         public async Task<Responses.Block[]> PageBlocksPagedAsync(
             [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] BlockStatus[] state)
         {
-            var enabledPools = new HashSet<string>(clusterConfig.Pools.Where(x => x.Enabled).Select(x=> x.Id));
-
             var blockStates = state != null && state.Length > 0 ?
                 state :
                 new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
