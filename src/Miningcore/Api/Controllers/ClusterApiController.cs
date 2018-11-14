@@ -68,7 +68,7 @@ namespace Miningcore.Api.Controllers
             {
                 var pool = GetPoolNoThrow(poolBlocks.Key);
 
-                if (pool == null)
+                if (pool == null || !pool.Enabled)
                     continue;
 
                 var blockInfobaseDict = pool.Template.ExplorerBlockLinks;
