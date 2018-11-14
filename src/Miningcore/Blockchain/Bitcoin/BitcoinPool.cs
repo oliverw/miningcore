@@ -468,11 +468,11 @@ namespace Miningcore.Blockchain.Bitcoin
                         // ignored
                         break;
 
-                    case BitcoinStratumMethods.GetTransactions:
-                        // ignored
+                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                        await client.RespondAsync(true, request.Id);
                         break;
 
-                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                    case BitcoinStratumMethods.GetTransactions:
                         // ignored
                         break;
 

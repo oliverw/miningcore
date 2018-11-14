@@ -155,8 +155,6 @@ namespace Miningcore.Blockchain.Equihash
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                            validJobs.Clear();
-
                             // update stats
                             BlockchainStats.LastNetworkBlockTime = clock.Now;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
@@ -165,14 +163,11 @@ namespace Miningcore.Blockchain.Equihash
                             BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                         }
 
-                        else
-                        {
-                            // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
-                                validJobs.RemoveAt(0);
-                        }
+                        validJobs.Insert(0, job);
 
-                        validJobs.Add(job);
+                        // trim active jobs
+                        while (validJobs.Count > maxActiveJobs)
+                            validJobs.RemoveAt(validJobs.Count - 1);
                     }
 
                     currentJob = job;
