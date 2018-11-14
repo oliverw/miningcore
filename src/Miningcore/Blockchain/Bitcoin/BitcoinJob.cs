@@ -34,6 +34,7 @@ using Miningcore.Time;
 using Miningcore.Util;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
 
@@ -174,6 +175,12 @@ namespace Miningcore.Blockchain.Bitcoin
             if (!string.IsNullOrEmpty(txComment))
             {
                 var data = Encoding.ASCII.GetBytes(txComment);
+                bs.ReadWriteAsVarString(ref data);
+            }
+
+            if (coin.HasMasterNodes && !string.IsNullOrEmpty(masterNodeParameters.CoinbasePayload))
+            {
+                var data = masterNodeParameters.CoinbasePayload.HexToByteArray();
                 bs.ReadWriteAsVarString(ref data);
             }
         }
@@ -454,31 +461,42 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Money CreateMasternodeOutputs(Transaction tx, Money reward)
         {
-            if (masterNodeParameters.Masternode != null && masterNodeParameters.SuperBlocks != null)
+            if (masterNodeParameters.Masternode != null)
             {
-                if (!string.IsNullOrEmpty(masterNodeParameters.Masternode.Payee))
+                Masternode[] masternodes;
+
+                // Dash v13 Multi-Master-Nodes
+                if (masterNodeParameters.Masternode.Type == JTokenType.Array)
+                    masternodes = masterNodeParameters.Masternode.ToObject<Masternode[]>();
+                else
+                    masternodes = new[] { masterNodeParameters.Masternode.ToObject<Masternode>() };
+
+                foreach(var masterNode in masternodes)
                 {
-                    var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Masternode.Payee, network);
-                    var payeeReward = masterNodeParameters.Masternode.Amount;
-
-                    reward -= payeeReward;
-                    rewardToPool -= payeeReward;
-
-                    tx.Outputs.Add(payeeReward, payeeAddress);
-                }
-
-                else if (masterNodeParameters.SuperBlocks.Length > 0)
-                {
-                    foreach (var superBlock in masterNodeParameters.SuperBlocks)
+                    if (!string.IsNullOrEmpty(masterNode.Payee))
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee, network);
-                        var payeeReward = superBlock.Amount;
+                        var payeeAddress = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
+                        var payeeReward = masterNode.Amount;
 
                         reward -= payeeReward;
                         rewardToPool -= payeeReward;
 
                         tx.Outputs.Add(payeeReward, payeeAddress);
                     }
+                }
+            }
+
+            if (masterNodeParameters.SuperBlocks != null && masterNodeParameters.SuperBlocks.Length > 0)
+            {
+                foreach (var superBlock in masterNodeParameters.SuperBlocks)
+                {
+                    var payeeAddress = BitcoinUtils.AddressToDestination(superBlock.Payee, network);
+                    var payeeReward = superBlock.Amount;
+
+                    reward -= payeeReward;
+                    rewardToPool -= payeeReward;
+
+                    tx.Outputs.Add(payeeReward, payeeAddress);
                 }
             }
 
@@ -539,7 +557,16 @@ namespace Miningcore.Blockchain.Bitcoin
                 extraPoolConfig.CoinbaseTxComment : coin.CoinbaseTxComment;
 
             if (coin.HasMasterNodes)
+            {
                 masterNodeParameters = BlockTemplate.Extra.SafeExtensionDataAs<MasterNodeBlockTemplateExtra>();
+
+                if(!string.IsNullOrEmpty(masterNodeParameters.CoinbasePayload))
+                {
+                    txVersion = 3;
+                    var txType = 5;
+                    txVersion = txVersion + ((uint) (txType << 16));
+                }
+            }
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;

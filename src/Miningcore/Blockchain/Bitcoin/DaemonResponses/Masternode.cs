@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
 {
@@ -25,7 +26,7 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
         [JsonProperty("payee_amount")]
         public long? PayeeAmount { get; set; }
 
-        public Masternode Masternode { get; set; }
+        public JToken Masternode { get; set; }
 
         [JsonProperty("masternode_payments_started")]
         public bool MasternodePaymentsStarted { get; set; }
@@ -41,5 +42,8 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
 
         [JsonProperty("superblocks_enabled")]
         public bool SuperblocksEnabled { get; set; }
+
+        [JsonProperty("coinbase_payload")]
+        public string CoinbasePayload { get; set; }
     }
 }
