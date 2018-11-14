@@ -91,6 +91,21 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
+        public async Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize)
+        {
+            const string query = "SELECT * FROM blocks WHERE status = ANY(@status) " +
+                "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
+
+            return (await con.QueryAsync<Entities.Block>(query, new
+            {
+                status = status.Select(x => x.ToString().ToLower()).ToArray(),
+                offset = page * pageSize,
+                pageSize
+            }))
+                .Select(mapper.Map<Block>)
+                .ToArray();
+        }
+
         public async Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke(new[] { poolId });
