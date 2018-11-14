@@ -1131,6 +1131,51 @@
       "explorerTxLink": "https://explorer.bitcoingold.org/insight/tx/{0}",
       "explorerAccountLink": "https://explorer.bitcoingold.org/insight/address/{0}"
     },
+    "bithereum": {
+      "name": "Bithereum",
+      "symbol": "BTH",
+      "family": "equihash",
+      "networks": {
+        "main": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "main",
+          "payFoundersReward": false
+        },
+        "test": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "testnet",
+          "payFoundersReward": false
+        },
+        "regtest": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "regtest",
+          "payFoundersReward": false
+        }
+      },
+      "usesZCashAddressFormat": false,
+      "useBitcoinPayoutHandler": true,
+      "explorerBlockLink": "https://explorer.bithereum.network/block/$hash$",
+      "explorerTxLink": "https://explorer.bithereum.network/tx/{0}",
+      "explorerAccountLink": "https://explorer.bithereum.network/address/{0}"
+    },
     "minexcoin": {
       "name": "Minexcoin",
       "symbol": "MNX",
