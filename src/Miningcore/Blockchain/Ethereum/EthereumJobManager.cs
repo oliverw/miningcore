@@ -35,7 +35,6 @@ using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
 using Miningcore.Configuration;
-using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
@@ -706,7 +705,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if (isNew)
-                                    logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -749,7 +748,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if (isNew)
-                                    logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via WebSocket");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -768,7 +767,7 @@ namespace Miningcore.Blockchain.Ethereum
                         .Do(isNew =>
                         {
                             if (isNew)
-                                logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via RPC Polling");
+                                logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via RPC-Polling");
                         })
                         .Where(isNew => isNew)
                         .Select(_ => GetJobParamsForStratum(true))
@@ -788,7 +787,7 @@ namespace Miningcore.Blockchain.Ethereum
                     .Do(isNew =>
                     {
                         if (isNew)
-                            logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via BT-Stream");
+                            logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via BT-Stream");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))
