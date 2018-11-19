@@ -510,8 +510,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
 
             // Payment-processing setup
-            if (clusterConfig.PaymentProcessing?.Enabled == true &&
-                poolConfig.PaymentProcessing?.Enabled == true)
+            if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // ensure pool owns wallet
                 if (!validateAddressResponse.IsMine)
