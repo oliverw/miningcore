@@ -507,7 +507,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if (!isPoS)
                 poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
             else
-                poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
+                poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
             // Payment-processing setup
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
