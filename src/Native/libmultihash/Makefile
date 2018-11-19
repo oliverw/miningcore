@@ -11,7 +11,8 @@ OBJECTS = bcrypt.o blake.o blake2s.o c11.o dcrypt.o fresh.o \
     sha3/sph_echo.o sha3/sph_fugue.o sha3/sph_groestl.o sha3/sph_hefty1.o sha3/sph_jh.o sha3/sph_keccak.o \
     sha3/sph_luffa.o sha3/sph_shabal.o sha3/sph_shavite.o sha3/sph_simd.o sha3/sph_skein.o sha3/sph_whirlpool.o \
     sha3/sph_haval.o sha3/sph_sha2.o sha3/sph_sha2big.o sha3/sph_blake2s.o sha3/sm3.o \
-    shavite3.o skein.o x11.o x13.o x15.o x17.o x16r.o x16s.o \
+	gost_streebog.o sha3/sph_tiger.o SWIFFTX/SWIFFTX.o \
+    shavite3.o skein.o x11.o x13.o x15.o x17.o x16r.o x16s.o x22i.o \
     Lyra2.o Lyra2RE.o Sponge.o geek.o  \
     equi/util.o equi/support/cleanse.o equi/random.o \
     equi/uint256.o equi/arith_uint256.o equi/crypto/hmac_sha512.o \

@@ -194,6 +194,7 @@
     <ClInclude Include="fresh.h" />
     <ClInclude Include="fugue.h" />
     <ClInclude Include="geek.h" />
+    <ClInclude Include="gost_streebog.h" />
     <ClInclude Include="groestl.h" />
     <ClInclude Include="hefty1.h" />
     <ClInclude Include="jh.h" />
@@ -238,6 +239,7 @@
     <ClInclude Include="sha3\sph_simd.h" />
     <ClInclude Include="sha3\sph_skein.h" />
     <ClInclude Include="sha3\sph_sm3.h" />
+    <ClInclude Include="sha3\sph_tiger.h" />
     <ClInclude Include="sha3\sph_types.h" />
     <ClInclude Include="sha3\sph_whirlpool.h" />
     <ClInclude Include="shavite3.h" />
@@ -245,6 +247,7 @@
     <ClInclude Include="Sponge.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="stdint.h" />
+    <ClInclude Include="SWIFFTX\SWIFFTX.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="x11.h" />
     <ClInclude Include="x13.h" />
@@ -253,6 +256,7 @@
     <ClInclude Include="x16r.h" />
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
+    <ClInclude Include="x22i.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
@@ -278,6 +282,7 @@
     <ClCompile Include="fresh.c" />
     <ClCompile Include="fugue.c" />
     <ClCompile Include="geek.c" />
+    <ClCompile Include="gost_streebog.c" />
     <ClCompile Include="groestl.c" />
     <ClCompile Include="hefty1.c" />
     <ClCompile Include="jh.c" />
@@ -318,11 +323,13 @@
     <ClCompile Include="sha3\sph_shavite.c" />
     <ClCompile Include="sha3\sph_simd.c" />
     <ClCompile Include="sha3\sph_skein.c" />
+    <ClCompile Include="sha3\sph_tiger.c" />
     <ClCompile Include="sha3\sph_whirlpool.c" />
     <ClCompile Include="shavite3.c" />
     <ClCompile Include="skein.c" />
     <ClCompile Include="Sponge.c" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="SWIFFTX\SWIFFTX.c" />
     <ClCompile Include="x11.c" />
     <ClCompile Include="x13.c" />
     <ClCompile Include="x14.c" />
@@ -330,6 +337,7 @@
     <ClCompile Include="x16r.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
+    <ClCompile Include="x22i.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />
