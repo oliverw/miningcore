@@ -483,7 +483,7 @@ namespace Miningcore.Blockchain.Bitcoin
             }
 
             // extract results
-            var validateAddressResponse = results[0].Response.ToObject<ValidateAddressResponse>();
+            var validateAddressResponse = results[0].Error == null ? results[0].Response.ToObject<ValidateAddressResponse>() : null;
             var submitBlockResponse = results[1];
             var blockchainInfoResponse = !hasLegacyDaemon ? results[2].Response.ToObject<BlockchainInfo>() : null;
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
@@ -498,29 +498,26 @@ namespace Miningcore.Blockchain.Bitcoin
             PostChainIdentifyConfigure();
 
             // ensure pool owns wallet
-            if (!validateAddressResponse.IsValid)
+            if (validateAddressResponse == null || !validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
-
-            //if (clusterConfig.PaymentProcessing?.Enabled == true && !validateAddressResponse.IsMine)
-            //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
 
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
             if (!isPoS)
-            {
-                // bitcoincashd returns a different address than what was passed in
-                if (!validateAddressResponse.Address.StartsWith("bitcoincash:"))
-                    poolAddressDestination = AddressToDestination(validateAddressResponse.Address, extraPoolConfig?.AddressType);
-                else
-                    poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
-            }
-
+                poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
             else
-                poolAddressDestination = new PubKey(validateAddressResponse.PubKey);
+                poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
+            // Payment-processing setup
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                // ensure pool owns wallet
+                if (!validateAddressResponse.IsMine)
+                    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
+
                 ConfigureRewards();
+            }
 
             // update stats
             BlockchainStats.NetworkType = network.Name;
