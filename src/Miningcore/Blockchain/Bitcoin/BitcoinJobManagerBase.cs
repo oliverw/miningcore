@@ -513,8 +513,8 @@ namespace Miningcore.Blockchain.Bitcoin
             if (clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // ensure pool owns wallet
-                if (!validateAddressResponse.IsMine)
-                    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
+                //if (!validateAddressResponse.IsMine)
+                //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
 
                 ConfigureRewards();
             }
