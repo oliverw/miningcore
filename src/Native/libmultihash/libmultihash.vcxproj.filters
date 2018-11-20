@@ -266,18 +266,6 @@
     <ClInclude Include="sha3\sph_sm3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x22i.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gost_streebog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sha3\sph_tiger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SWIFFTX\SWIFFTX.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -503,18 +491,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sm3.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x22i.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gost_streebog.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sha3\sph_tiger.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SWIFFTX\SWIFFTX.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
