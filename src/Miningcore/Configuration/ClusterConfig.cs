@@ -138,6 +138,9 @@ namespace Miningcore.Configuration
         public string CoinbaseTxComment { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool HasPayee { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]

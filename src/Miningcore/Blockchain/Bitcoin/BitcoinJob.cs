@@ -50,6 +50,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected IHashAlgorithm headerHasher;
         protected bool isPoS;
         protected string txComment;
+        protected PayeeBlockTemplateExtra payeeParameters;
 
         protected Network network;
         protected IDestination poolAddressDestination;
@@ -112,7 +113,7 @@ namespace Miningcore.Blockchain.Bitcoin
             // output transaction
             txOut = coin.HasMasterNodes ?
                 CreateMasternodeOutputTransaction() :
-                CreateOutputTransaction();
+                (coin.HasPayee ? CreatePayeeOutputTransaction() : CreateOutputTransaction());
 
             // build coinbase initial
             using(var stream = new MemoryStream())
@@ -262,10 +263,26 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var tx = Transaction.Create(network);
 
-            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
+            tx.Outputs.Add(rewardToPool, poolAddressDestination);
+
+            return tx;
+        }
+
+        protected virtual Transaction CreatePayeeOutputTransaction()
+        {
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+
+            var tx = Transaction.Create(network);
+
+            if (payeeParameters?.PayeeAmount > 0)
             {
-                Value = rewardToPool
-            });
+                var payeeReward = new Money(payeeParameters.PayeeAmount.Value, MoneyUnit.Satoshi);
+                rewardToPool -= payeeReward;
+
+                tx.Outputs.Add(payeeReward, BitcoinUtils.AddressToDestination(payeeParameters.Payee, network));
+            }
+
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
 
             return tx;
         }
@@ -451,10 +468,7 @@ namespace Miningcore.Blockchain.Bitcoin
             rewardToPool = CreateMasternodeOutputs(tx, blockReward);
 
             // Finally distribute remaining funds to pool
-            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination)
-            {
-                Value = rewardToPool
-            });
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
 
             return tx;
         }
@@ -567,6 +581,9 @@ namespace Miningcore.Blockchain.Bitcoin
                     txVersion = txVersion + ((uint) (txType << 16));
                 }
             }
+
+            if(coin.HasPayee)
+                payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
 
             this.coinbaseHasher = coinbaseHasher;
             this.headerHasher = headerHasher;

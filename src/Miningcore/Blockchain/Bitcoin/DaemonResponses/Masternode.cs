@@ -19,13 +19,8 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
         public long Amount { get; set; }
     }
 
-    public class MasterNodeBlockTemplateExtra
+    public class MasterNodeBlockTemplateExtra : PayeeBlockTemplateExtra
     {
-        public string Payee { get; set; }
-
-        [JsonProperty("payee_amount")]
-        public long? PayeeAmount { get; set; }
-
         public JToken Masternode { get; set; }
 
         [JsonProperty("masternode_payments_started")]
