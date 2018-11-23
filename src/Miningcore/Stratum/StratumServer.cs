@@ -276,6 +276,17 @@ namespace Miningcore.Stratum
                     }
                     break;
 
+                case AuthenticationException authEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {authEx.Message}");
+
+                    if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                    {
+                        logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                    }
+                    break;
+
                 case ObjectDisposedException odEx:
                     // socket disposed
                     break;

@@ -119,6 +119,7 @@ namespace Miningcore.Stratum
 
                     // create stream
                     networkStream = new NetworkStream(socket, true);
+                    logger.Info(() => $"[{ConnectionId}] Accepting connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} ...");
 
                     using (var disposables = new CompositeDisposable(networkStream, cts))
                     {
