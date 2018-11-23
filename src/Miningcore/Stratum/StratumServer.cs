@@ -275,15 +275,29 @@ namespace Miningcore.Stratum
                         banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
                     }
                     break;
-
+                    
                 case AuthenticationException authEx:
                     // junk received (SSL handshake)
                     logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {authEx.Message}");
 
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
+                        logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
                         banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                    }
+                    break;
+
+                case IOException ioEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {ioEx.Message}");
+
+                    if (ioEx.Source == "System.Net.Security")
+                    {
+                        if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
+                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        }
                     }
                     break;
 
