@@ -93,6 +93,7 @@ namespace Miningcore
         private static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
+        private static MetricsPublisher metricsPublisher;
         private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
@@ -798,7 +799,11 @@ namespace Miningcore
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
+            {
                 StartApi();
+
+                metricsPublisher = container.Resolve<MetricsPublisher>();
+            }
 
             // start payment processor
             if (clusterConfig.PaymentProcessing?.Enabled == true &&
