@@ -272,7 +272,7 @@ namespace Miningcore.Stratum
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
                     break;
                     
@@ -283,7 +283,7 @@ namespace Miningcore.Stratum
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
                     break;
 
@@ -296,7 +296,7 @@ namespace Miningcore.Stratum
                         if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                         {
                             logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
-                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                         }
                     }
                     break;
