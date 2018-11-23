@@ -7,6 +7,7 @@ namespace Miningcore.Notifications.Messages
     public enum TelemetryCategory
     {
         Share = 1, // Share processed
+        BtStream, // Blocktemplate over BTStream
         RpcRequest // JsonRPC Request to Daemon
     }
 

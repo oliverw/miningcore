@@ -12,7 +12,6 @@ namespace Miningcore.Notifications
         {
             CreateMetrics();
 
-            messageBus.Listen<BtStreamMessage>().Subscribe(OnBtStreamMessage);
             messageBus.Listen<TelemetryEvent>().Subscribe(OnTelemetryEvent);
         }
 
@@ -24,25 +23,18 @@ namespace Miningcore.Notifications
         {
             btStreamLatencySummary = Metrics.CreateSummary("miningcore_btstream_latency", "Latency of streaming block-templates in ms", new SummaryConfiguration
             {
-                LabelNames = new[] { "topic" }
+                LabelNames = new[] { "pool" }
             });
 
             shareCounter = Metrics.CreateCounter("miningcore_valid_shares_total", "Valid received shares per pool", new CounterConfiguration
             {
-                LabelNames = new[] { "poolId" }
+                LabelNames = new[] { "pool" }
             });
 
             rpcRequestDurationSummary = Metrics.CreateSummary("miningcore_rpcrequest_execution_time", "Duration of RPC requests ms", new SummaryConfiguration
             {
-                LabelNames = new[] { "poolId", "method" }
+                LabelNames = new[] { "pool", "method" }
             });
-        }
-
-        private void OnBtStreamMessage(BtStreamMessage msg)
-        {
-            var latency = msg.Received - msg.Sent;
-
-            btStreamLatencySummary.WithLabels(msg.Topic).Observe(latency.TotalMilliseconds);
         }
 
         private void OnTelemetryEvent(TelemetryEvent msg)
@@ -51,6 +43,10 @@ namespace Miningcore.Notifications
             {
                 case TelemetryCategory.Share:
                     shareCounter.WithLabels(msg.PoolId).Inc();
+                    break;
+
+                case TelemetryCategory.BtStream:
+                    btStreamLatencySummary.WithLabels(msg.PoolId).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
 
                 case TelemetryCategory.RpcRequest:
