@@ -63,7 +63,7 @@ namespace Miningcore.Configuration
         /// <summary>
         /// Family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -8)]
         public CoinFamily Family { get; set; }
 
@@ -118,7 +118,7 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(BitcoinSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public BitcoinSubfamily Subfamily { get; set; }
 
         public JObject CoinbaseHasher { get; set; }
@@ -132,7 +132,13 @@ namespace Miningcore.Configuration
         [DefaultValue(1u)]
         public uint CoinbaseTxVersion { get; set; }
 
-        public string CoinbaseTxAppendData { get; set; }
+        /// <summary>
+        /// Default transaction comment for coins that REQUIRE tx comments 
+        /// </summary>
+        public string CoinbaseTxComment { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool HasPayee { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
@@ -140,10 +146,6 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
-
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public double HashrateMultiplier { get; set; } = 1.0d;
     }
 
     public enum EquihashSubfamily
@@ -212,7 +214,7 @@ namespace Miningcore.Configuration
 
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EquihashSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EquihashSubfamily Subfamily { get; set; }
 
         public Dictionary<string, EquihashNetworkParams> Networks { get; set; }
@@ -246,13 +248,13 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(CryptonoteSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public CryptonoteSubfamily Subfamily { get; set; }
 
         /// <summary>
         /// Broader Cryptonight hash family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -5)]
         public CryptonightHashType Hash { get; set; }
 
@@ -309,7 +311,7 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EthereumSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EthereumSubfamily Subfamily { get; set; }
     }
 
@@ -358,9 +360,9 @@ namespace Miningcore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
-        /// Validate SSL certificate (if SSL option is set to true) - default is false
+        /// Set if the endpoint requires HTTP Digest Authentication (Cryptonote coins)
         /// </summary>
-        public bool ValidateCert { get; set; }
+        public bool DigestAuth { get; set; }
 
         /// <summary>
         /// Optional endpoint category
@@ -634,6 +636,7 @@ namespace Miningcore.Configuration
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
+        public string PubKey { get; set; }  // POS coins only 
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }

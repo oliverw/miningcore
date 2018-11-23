@@ -177,12 +177,12 @@ namespace Miningcore.Stratum
             }
 
             // TLS cert loading
-            X509Certificate2 tlsCert = null;
+            X509Certificate2 cert = null;
 
             if (port.PoolEndpoint.Tls)
             {
-                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out tlsCert))
-                    tlsCert = AddCert(port);
+                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
+                    cert = AddCert(port);
             }
 
             // setup client
@@ -190,7 +190,7 @@ namespace Miningcore.Stratum
 
             RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-            client.Run(socket, port, tlsCert, OnRequestAsync, OnClientComplete, OnClientError);
+            client.Run(socket, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
         }
 
         public void StopListeners()
@@ -272,7 +272,32 @@ namespace Miningcore.Stratum
                     if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                    }
+                    break;
+                    
+                case AuthenticationException authEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {authEx.Message}");
+
+                    if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                    {
+                        logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                    }
+                    break;
+
+                case IOException ioEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {ioEx.Message}");
+
+                    if (ioEx.Source == "System.Net.Security")
+                    {
+                        if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
+                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                        }
                     }
                     break;
 

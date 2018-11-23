@@ -56,7 +56,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
             }
         }
 
-        public async Task GenerateAsync(string dagDir, ILogger logger)
+        public async ValueTask GenerateAsync(string dagDir, ILogger logger, CancellationToken ct)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
@@ -86,7 +86,8 @@ namespace Miningcore.Crypto.Hashing.Ethash
                             handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
                             {
                                 logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
-                                return 0;
+
+                                return !ct.IsCancellationRequested ? 0 : 1;
                             });
 
                             if (handle == IntPtr.Zero)
@@ -106,7 +107,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                     {
                         sem.Release();
                     }
-                });
+                }, ct);
             }
         }
 

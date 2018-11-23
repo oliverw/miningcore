@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.Extensions;
@@ -53,7 +54,8 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        public async Task<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
+        public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
+            StratumClient worker, string nonce, EthashFull ethash, CancellationToken ct)
         {
             // duplicate nonce?
             lock(workerNonces)
@@ -69,7 +71,7 @@ namespace Miningcore.Blockchain.Ethereum
                 throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
             // get dag for block
-            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger);
+            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger, ct);
 
             // compute
             if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))

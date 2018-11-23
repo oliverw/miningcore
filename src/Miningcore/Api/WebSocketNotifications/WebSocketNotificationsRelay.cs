@@ -38,6 +38,7 @@ namespace Miningcore.Api
             Relay<BlockConfirmationProgressNotification>(WsNotificationType.BlockUnlockProgress);
             Relay<NewChainHeightNotification>(WsNotificationType.NewChainHeight);
             Relay<PaymentNotification>(WsNotificationType.Payment);
+            Relay<HashrateNotification>(WsNotificationType.HashrateUpdated);
         }
 
         private IMessageBus messageBus;

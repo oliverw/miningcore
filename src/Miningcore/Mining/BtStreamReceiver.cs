@@ -52,32 +52,22 @@ namespace Miningcore.Mining
                 var timeout = TimeSpan.FromMilliseconds(1000);
                 var reconnectTimeout = TimeSpan.FromSeconds(300);
 
+                var relays = endpoints
+                    .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
+                    .ToArray();
+
                 while (!cts.IsCancellationRequested)
                 {
-                    var lastMessageReceived = clock.Now;
+                    // track last message received per endpoint
+                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
 
                     try
                     {
                         // setup sockets
-                        var sockets = endpoints
-                            .Select(endpoint =>
-                            {
-                                var subSocket = new ZSocket(ZSocketType.SUB);
-                                subSocket.SetupCurveTlsClient(endpoint.SharedEncryptionKey, logger);
-                                subSocket.Connect(endpoint.Url);
-                                subSocket.SubscribeAll();
-
-                                if (subSocket.CurveServerKey != null)
-                                    logger.Info($"Monitoring Bt-Stream source {endpoint.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-                                else
-                                    logger.Info($"Monitoring Bt-Stream source {endpoint.Url}");
-
-                                return subSocket;
-                            }).ToArray();
+                        var sockets = relays.Select(SetupSubSocket).ToArray();
 
                         using (new CompositeDisposable(sockets))
                         {
-                            var urls = endpoints.Select(x => x.Url).ToArray();
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
                             while (!cts.IsCancellationRequested)
@@ -90,26 +80,29 @@ namespace Miningcore.Mining
 
                                         if (msg != null)
                                         {
-                                            lastMessageReceived = clock.Now;
+                                            lastMessageReceived[i] = clock.Now;
 
                                             using (msg)
                                             {
                                                 ProcessMessage(msg);
                                             }
                                         }
+
+                                        else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        {
+                                            // re-create socket
+                                            sockets[i].Dispose();
+                                            sockets[i] = SetupSubSocket(relays[i]);
+
+                                            // reset clock
+                                            lastMessageReceived[i] = clock.Now;
+
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
+                                        }
                                     }
 
                                     if (error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
-                                }
-
-                                else
-                                {
-                                    if (clock.Now - lastMessageReceived > reconnectTimeout)
-                                    {
-                                        logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting ...");
-                                        break;
-                                    }
                                 }
                             }
                         }
@@ -124,6 +117,21 @@ namespace Miningcore.Mining
                     }
                 }
             }, cts.Token);
+        }
+
+        private static ZSocket SetupSubSocket(ZmqPubSubEndpointConfig relay)
+        {
+            var subSocket = new ZSocket(ZSocketType.SUB);
+            subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
+            subSocket.Connect(relay.Url);
+            subSocket.SubscribeAll();
+
+            if (subSocket.CurveServerKey != null)
+                logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+            else
+                logger.Info($"Monitoring Bt-Stream source {relay.Url}");
+
+            return subSocket;
         }
 
         private void ProcessMessage(ZMessage msg)

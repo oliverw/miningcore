@@ -21,6 +21,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -104,7 +105,21 @@ namespace Miningcore.Payments
                     logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
                 }
 
-                catch(Exception ex)
+                catch (AggregateException ex)
+                {
+                    switch (ex.InnerException)
+                    {
+                        case HttpRequestException httpEx:
+                            logger.Error(() => $"[{pool.Id}] Payment processing failed: {httpEx.Message}");
+                            break;
+
+                        default:
+                            logger.Error(ex.InnerException, () => $"[{pool.Id}] Payment processing failed");
+                            break;
+                    }
+                }
+
+                catch (Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }

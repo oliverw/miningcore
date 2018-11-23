@@ -166,12 +166,15 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/blocks")]
         public async Task<Responses.Block[]> PagePoolBlocksPagedAsync(
-            string poolId, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] BlockStatus[] state)
         {
             var pool = GetPool(poolId);
 
-            var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id,
-                    new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned }, page, pageSize)))
+            var blockStates = state != null && state.Length > 0 ?
+                state :
+                new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
+
+            var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
 

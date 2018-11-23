@@ -111,14 +111,14 @@ namespace Miningcore.Blockchain.Bitcoin
                     blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if(isNew)
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, coin.Symbol));
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                 if (isNew || forceUpdate)
                 {
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, clusterConfig, clock, poolAddressDestination, network, isPoS,
+                        poolConfig, extraPoolConfig, clusterConfig, clock, poolAddressDestination, network, isPoS,
                         ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue,
                         !isPoS ? coin.BlockHasherValue : coin.PoSBlockHasherValue ?? coin.BlockHasherValue);
 
@@ -131,8 +131,6 @@ namespace Miningcore.Blockchain.Bitcoin
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                            validJobs.Clear();
-
                             // update stats
                             BlockchainStats.LastNetworkBlockTime = clock.Now;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
@@ -141,14 +139,11 @@ namespace Miningcore.Blockchain.Bitcoin
                             BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                         }
 
-                        else
-                        {
-                            // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
-                                validJobs.RemoveAt(0);
-                        }
+                        validJobs.Insert(0, job);
 
-                        validJobs.Add(job);
+                        // trim active jobs
+                        while (validJobs.Count > maxActiveJobs)
+                            validJobs.RemoveAt(validJobs.Count - 1);
                     }
 
                     currentJob = job;
@@ -206,7 +201,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

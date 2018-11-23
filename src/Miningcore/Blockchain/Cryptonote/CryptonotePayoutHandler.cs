@@ -392,7 +392,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
                     result.Add(block);
 
-                    messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
+                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
                     // orphaned?
                     if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
@@ -400,9 +400,7 @@ namespace Miningcore.Blockchain.Cryptonote
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
-
+                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                         continue;
                     }
 
@@ -415,18 +413,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                        // build explorer link
-                        string explorerLink = null;
-                        if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
-                        {
-                            if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
-                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                            else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
-                                explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
-                        }
-
-                        messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id, 
-                            block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink));
+                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                     }
                 }
             }

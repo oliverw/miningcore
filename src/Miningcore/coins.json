@@ -96,7 +96,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/ltc/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/ltc/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/ltc/address.dws?{0}.htm"
@@ -144,7 +143,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://dogechain.info/block/$height$",
       "explorerTxLink": "https://dogechain.info/tx/{0}",
       "explorerAccountLink": "https://dogechain.info/address/{0}"
@@ -173,8 +171,7 @@
           }
         ]
       },
-      "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5
+      "shareMultiplier": 65536
     },
     "dash": {
       "name": "Dash",
@@ -194,6 +191,25 @@
       "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"
+    },
+    "paccoin": {
+      "name": "Paccoin",
+      "symbol": "PAC",
+      "family": "bitcoin",
+      "coinbaseHasher": {
+        "hash": "sha256d"
+      },
+      "headerHasher": {
+        "hash": "x11"
+      },
+      "blockHasher": {
+        "hash": "reverse",
+        "args": [{ "hash": "x11" }]
+      },
+      "hasMasterNodes": true,
+      "explorerBlockLink": "http://explorer.paccoin.net/block/$hash$",
+      "explorerTxLink": "http://explorer.paccoin.net/tx/{0}",
+      "explorerAccountLink": "http://explorer.paccoin.net/address/{0}"
     },
     "groestlcoin": {
       "name": "GroestlCoin",
@@ -229,7 +245,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://bchain.info/MONA/block/$height$",
       "explorerTxLink": "https://bchain.info/MONA/tx/{0}",
       "explorerAccountLink": "https://bchain.info/MONA/addr/{0}"
@@ -249,7 +264,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://chainz.cryptoid.info/vtc/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/vtc/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/vtc/address.dws?{0}.htm"
@@ -297,7 +311,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/moon/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/moon/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/moon/address.dws?{0}.htm"
@@ -327,7 +340,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://chainz.cryptoid.info/pak/block.dws?$height$.htm",
       "explorerTxLink": "https://chainz.cryptoid.info/pak/tx.dws?{0}.htm",
       "explorerAccountLink": "https://chainz.cryptoid.info/pak/address.dws?{0}.htm"
@@ -406,8 +418,8 @@
       "explorerTxLink": "http://explorer.btcd.io/#/TX?TX={0}",
       "explorerAccountLink": "http://explorer.btcd.io/#/address?address={0}"
     },
-    "florincoin": {
-      "name": "Florincoin",
+    "flo": {
+      "name": "FLO",
       "symbol": "FLO",
       "family": "bitcoin",
       "coinbaseHasher": {
@@ -431,12 +443,11 @@
         ]
       },
       "coinbaseTxVersion": 2,
-      "coinbaseTxAppendData": "Flo Miningcore",
+      "coinbaseTxComment": "FLO Miningcore",
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
-      "explorerBlockLink": "https://florincoin.info/block/0",
-      "explorerTxLink": "https://florincoin.info/tx/{0}",
-      "explorerAccountLink": "https://florincoin.info/address/{0}"
+      "explorerBlockLink": "http://network.flo.cash/block/$hash$",
+      "explorerTxLink": "http://network.flo.cash/tx/{0}",
+      "explorerAccountLink": "http://network.flo.cash/address/{0}"
     },
     "digibyte-sha256": {
       "name": "Digibyte-Sha256",
@@ -472,7 +483,6 @@
         "args": [{ "hash": "sha256d" }]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://digiexplorer.info/block/$height$",
       "explorerTxLink": "https://digiexplorer.info/tx/{0}",
       "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -552,7 +562,6 @@
         ]
       },
       "shareMultiplier": 256,
-      "hashrateMultiplier": 4,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -578,7 +587,6 @@
         ]
       },
       "shareMultiplier": 65536,
-      "hashrateMultiplier": 1.5,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -602,7 +610,6 @@
           }
         ]
       },
-      "hashrateMultiplier": 2.55,
       "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
       "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
       "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -1123,6 +1130,51 @@
       "explorerBlockLink": "https://explorer.bitcoingold.org/insight/block/$hash$",
       "explorerTxLink": "https://explorer.bitcoingold.org/insight/tx/{0}",
       "explorerAccountLink": "https://explorer.bitcoingold.org/insight/address/{0}"
+    },
+    "bithereum": {
+      "name": "Bithereum",
+      "symbol": "BTH",
+      "family": "equihash",
+      "networks": {
+        "main": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "main",
+          "payFoundersReward": false
+        },
+        "test": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "testnet",
+          "payFoundersReward": false
+        },
+        "regtest": {
+          "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "solutionSize": 100,
+          "solutionPreambleSize": 1,
+          "solver": {
+            "hash": "equihash",
+            "args": [ 144, 5, "BethdPoW" ]
+          },
+          "coinbaseTxNetwork": "regtest",
+          "payFoundersReward": false
+        }
+      },
+      "usesZCashAddressFormat": false,
+      "useBitcoinPayoutHandler": true,
+      "explorerBlockLink": "https://explorer.bithereum.network/block/$hash$",
+      "explorerTxLink": "https://explorer.bithereum.network/tx/{0}",
+      "explorerAccountLink": "https://explorer.bithereum.network/address/{0}"
     },
     "minexcoin": {
       "name": "Minexcoin",

@@ -18,34 +18,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using Miningcore.Configuration;
+using System;
+using Miningcore.Contracts;
+using Miningcore.Native;
 
-namespace Miningcore.Blockchain.Bitcoin.Configuration
+namespace Miningcore.Crypto.Hashing.Algorithms
 {
-    public class BitcoinPoolConfigExtra
+    public unsafe class X22I : IHashAlgorithm
     {
-        public BitcoinAddressType AddressType { get; set; } = BitcoinAddressType.Legacy;
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-        /// <summary>
-        /// Maximum number of tracked jobs.
-        /// Default: 12 - you should increase this value if your blockrefreshinterval is higher than 300ms
-        /// </summary>
-        public int? MaxActiveJobs { get; set; }
-
-        /// <summary>
-        /// Set to true to limit RPC commands to old Bitcoin command set
-        /// </summary>
-        public bool? HasLegacyDaemon { get; set; }
-
-        /// <summary>
-        /// Arbitrary string appended at end of coinbase tx
-        /// Overrides property of same name from BitcoinTemplate
-        /// </summary>
-        public string CoinbaseTxComment { get; set; }
-
-        /// <summary>
-        /// Blocktemplate stream published via ZMQ
-        /// </summary>
-        public ZmqPubSubEndpointConfig BtStream { get; set; }
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.x22i(input, output, (uint) data.Length);
+                }
+            }
+        }
     }
 }

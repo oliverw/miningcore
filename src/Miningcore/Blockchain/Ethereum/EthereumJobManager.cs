@@ -35,7 +35,6 @@ using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Blockchain.Ethereum.DaemonResponses;
 using Miningcore.Configuration;
-using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
@@ -125,7 +124,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if (isNew)
                 {
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                     var jobId = NextJobId("x8");
 
@@ -437,8 +436,7 @@ namespace Miningcore.Blockchain.Ethereum
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async Task<Share> SubmitShareAsync(StratumClient worker,
-            string[] request, double stratumDifficulty, double stratumDifficultyBase, CancellationToken ct)
+        public async ValueTask<Share> SubmitShareAsync(StratumClient worker, string[] request, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
@@ -459,7 +457,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
 
             // validate & process
-            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash);
+            var (share, fullNonceHex, headerHash, mixHash) = await job.ProcessShareAsync(worker, nonce, ethash, ct);
 
             // enrich share with common data
             share.PoolId = poolConfig.Id;
@@ -621,7 +619,7 @@ namespace Miningcore.Blockchain.Ethereum
                     {
                         logger.Info(() => $"Loading current DAG ...");
 
-                        await ethash.GetDagAsync(blockTemplate.Height, logger);
+                        await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
 
                         logger.Info(() => $"Loaded current DAG");
                         break;
@@ -707,7 +705,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if (isNew)
-                                    logger.Info(() => $"New block {currentJob.BlockTemplate.Height} detected");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -750,7 +748,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if (isNew)
-                                    logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via WebSocket");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -769,7 +767,7 @@ namespace Miningcore.Blockchain.Ethereum
                         .Do(isNew =>
                         {
                             if (isNew)
-                                logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via RPC Polling");
+                                logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via RPC-Polling");
                         })
                         .Where(isNew => isNew)
                         .Select(_ => GetJobParamsForStratum(true))
@@ -789,7 +787,7 @@ namespace Miningcore.Blockchain.Ethereum
                     .Do(isNew =>
                     {
                         if (isNew)
-                            logger.Info(() => $"Detected new block {currentJob.BlockTemplate.Height} via BT-Stream");
+                            logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via BT-Stream");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))

@@ -103,7 +103,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if (isNew)
                 {
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, poolConfig.Template.Symbol));
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                     if (via != null)
                         logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
@@ -252,6 +252,9 @@ namespace Miningcore.Blockchain.Cryptonote
                         if (string.IsNullOrEmpty(x.HttpPath))
                             x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
 
+                        // cryptonote daemons only support digest auth
+                        x.DigestAuth = true;
+
                         return x;
                     })
                     .ToArray();
@@ -307,7 +310,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        public async Task<Share> SubmitShareAsync(StratumClient worker,
+        public async ValueTask<Share> SubmitShareAsync(StratumClient worker,
             CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

@@ -61,16 +61,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected object currentJobParams;
         protected BitcoinJobManager manager;
-
-        public override double HashrateFromShares(double shares, double interval)
-        {
-            var multiplier = BitcoinConstants.Pow2x32;
-            var result = shares * multiplier / interval;
-
-            result *= poolConfig.Template.As<BitcoinTemplate>().HashrateMultiplier;
-
-            return result;
-        }
+        private BitcoinTemplate coin;
 
         protected virtual async Task OnSubscribeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
@@ -206,7 +197,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
@@ -375,7 +366,24 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
+        public override double HashrateFromShares(double shares, double interval)
+        {
+            var multiplier = BitcoinConstants.Pow2x32;
+            var result = shares * multiplier / interval;
+
+            //result *= coin.HashrateMultiplier;
+
+            return result;
+        }
+
         #region Overrides
+
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            coin = poolConfig.Template.As<BitcoinTemplate>();
+
+            base.Configure(poolConfig, clusterConfig);
+        }
 
         protected override async Task SetupJobManager(CancellationToken ct)
         {
@@ -460,11 +468,11 @@ namespace Miningcore.Blockchain.Bitcoin
                         // ignored
                         break;
 
-                    case BitcoinStratumMethods.GetTransactions:
-                        // ignored
+                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                        await client.RespondAsync(true, request.Id);
                         break;
 
-                    case BitcoinStratumMethods.ExtraNonceSubscribe:
+                    case BitcoinStratumMethods.GetTransactions:
                         // ignored
                         break;
 

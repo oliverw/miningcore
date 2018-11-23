@@ -136,7 +136,7 @@ namespace Miningcore.Blockchain.Equihash
                     blockTemplate.Height > job.BlockTemplate?.Height);
 
                 if (isNew)
-                    messageBus.SendMessage(new NewChainHeightNotification(poolConfig.Id, blockTemplate.Height, coin.Symbol));
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                 if (isNew || forceUpdate)
                 {
@@ -155,8 +155,6 @@ namespace Miningcore.Blockchain.Equihash
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                            validJobs.Clear();
-
                             // update stats
                             BlockchainStats.LastNetworkBlockTime = clock.Now;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
@@ -165,14 +163,11 @@ namespace Miningcore.Blockchain.Equihash
                             BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                         }
 
-                        else
-                        {
-                            // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
-                                validJobs.RemoveAt(0);
-                        }
+                        validJobs.Insert(0, job);
 
-                        validJobs.Add(job);
+                        // trim active jobs
+                        while (validJobs.Count > maxActiveJobs)
+                            validJobs.RemoveAt(validJobs.Count - 1);
                     }
 
                     currentJob = job;
@@ -237,7 +232,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

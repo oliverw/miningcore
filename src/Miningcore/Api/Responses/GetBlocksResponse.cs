@@ -24,6 +24,7 @@ namespace Miningcore.Api.Responses
 {
     public class Block
     {
+        public string PoolId { get; set; }
         public ulong BlockHeight { get; set; }
         public double NetworkDifficulty { get; set; }
         public string Status { get; set; }

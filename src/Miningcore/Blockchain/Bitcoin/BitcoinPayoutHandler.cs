@@ -166,7 +166,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockConfirmationProgressNotification(block.ConfirmationProgress, poolConfig.Id, block.BlockHeight, coin.Symbol));
+                                messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
                                 break;
 
                             case "generate":
@@ -178,18 +178,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
 
-                                // build explorer link
-                                string explorerLink = null;
-                                if (coin.ExplorerBlockLinks.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl))
-                                {
-                                    if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
-                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                                    else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
-                                        explorerLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
-                                }
-
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                    block.BlockHeight, block.Hash, block.Miner, coin.Symbol, explorerLink));
+                                messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                                 break;
 
                             default:
@@ -199,8 +188,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 block.Reward = 0;
                                 result.Add(block);
 
-                                messageBus.SendMessage(new BlockUnlockedNotification(block.Status, poolConfig.Id,
-                                    block.BlockHeight, block.Hash, block.Miner, coin.Symbol, null));
+                                messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                                 break;
                         }
                     }
@@ -224,7 +212,7 @@ namespace Miningcore.Blockchain.Bitcoin
             // build args
             var amounts = balances
                 .Where(x => x.Amount > 0)
-                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 8));
+                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
             if (amounts.Count == 0)
                 return;

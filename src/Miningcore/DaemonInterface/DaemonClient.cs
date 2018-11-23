@@ -76,6 +76,16 @@ namespace Miningcore.DaemonInterface
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
         private readonly JsonSerializer serializer;
 
+        private static readonly HttpClient defaultHttpClient = new HttpClient(new SocketsHttpHandler
+        {
+            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+
+            SslOptions = new SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
+            }
+        });
+
         // Telemetry
         private readonly IMessageBus messageBus;
 
@@ -99,26 +109,21 @@ namespace Miningcore.DaemonInterface
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
             {
-                var handler = new SocketsHttpHandler
+                if (string.IsNullOrEmpty(endpoint.User) || !endpoint.DigestAuth)
+                    return defaultHttpClient;
+
+                return new HttpClient(new SocketsHttpHandler
                 {
                     AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
-                };
 
-                if(!string.IsNullOrEmpty(endpoint.User))
-                {
-                    handler.Credentials = new NetworkCredential(endpoint.User, endpoint.Password);
-                    handler.PreAuthenticate = true;
-                }
+                    Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
+                    PreAuthenticate = true,
 
-                if ((endpoint.Ssl || endpoint.Http2) && !endpoint.ValidateCert)
-                {
-                    handler.SslOptions = new SslClientAuthenticationOptions
+                    SslOptions = new SslClientAuthenticationOptions
                     {
                         RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
-                    };
-                }
-
-                return new HttpClient(handler);
+                    }
+                });
             });
         }
 
@@ -342,7 +347,7 @@ namespace Miningcore.DaemonInterface
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
-                if (!string.IsNullOrEmpty(endPoint.User))
+                if (!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
                     var auth = $"{endPoint.User}:{endPoint.Password}";
                     var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
@@ -400,7 +405,7 @@ namespace Miningcore.DaemonInterface
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
-                if (!string.IsNullOrEmpty(endPoint.User))
+                if (!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
                     var auth = $"{endPoint.User}:{endPoint.Password}";
                     var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
@@ -520,9 +525,7 @@ namespace Miningcore.DaemonInterface
                                     // connect
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
-
-                                    if(!endPoint.ValidateCert)
-                                        client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                                    client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
                                     logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);

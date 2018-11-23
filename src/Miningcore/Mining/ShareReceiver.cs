@@ -74,33 +74,22 @@ namespace Miningcore.Mining
                 var timeout = TimeSpan.FromMilliseconds(1000);
                 var reconnectTimeout = TimeSpan.FromSeconds(60);
 
+                var relays = clusterConfig.ShareRelays
+                    .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
+                    .ToArray();
+
                 while (!cts.IsCancellationRequested)
                 {
-                    var lastMessageReceived = clock.Now;
+                    // track last message received per endpoint
+                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
 
                     try
                     {
                         // setup sockets
-                        var sockets = clusterConfig.ShareRelays
-                            .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
-                            .Select(relay =>
-                            {
-                                var subSocket = new ZSocket(ZSocketType.SUB);
-                                subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
-                                subSocket.Connect(relay.Url);
-                                subSocket.SubscribeAll();
-
-                                if (subSocket.CurveServerKey != null)
-                                    logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-                                else
-                                    logger.Info($"Monitoring external stratum {relay.Url}");
-
-                                return subSocket;
-                            }).ToArray();
+                        var sockets = relays.Select(SetupSubSocket).ToArray();
 
                         using (new CompositeDisposable(sockets))
                         {
-                            var urls = clusterConfig.ShareRelays.Select(x => x.Url).ToArray();
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
                             while (!cts.IsCancellationRequested)
@@ -113,23 +102,26 @@ namespace Miningcore.Mining
 
                                         if (msg != null)
                                         {
-                                            lastMessageReceived = clock.Now;
+                                            lastMessageReceived[i] = clock.Now;
 
-                                            queue.Post((urls[i], msg));
+                                            queue.Post((relays[i].Url, msg));
+                                        }
+
+                                        else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        {
+                                            // re-create socket
+                                            sockets[i].Dispose();
+                                            sockets[i] = SetupSubSocket(relays[i]);
+
+                                            // reset clock
+                                            lastMessageReceived[i] = clock.Now;
+
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
                                         }
                                     }
 
                                     if (error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
-                                }
-
-                                else
-                                {
-                                    if (clock.Now - lastMessageReceived > reconnectTimeout)
-                                    {
-                                        logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting ...");
-                                        break;
-                                    }
                                 }
                             }
                         }
@@ -144,6 +136,21 @@ namespace Miningcore.Mining
                     }
                 }
             }, cts.Token);
+        }
+
+        private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay)
+        {
+            var subSocket = new ZSocket(ZSocketType.SUB);
+            subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
+            subSocket.Connect(relay.Url);
+            subSocket.SubscribeAll();
+
+            if (subSocket.CurveServerKey != null)
+                logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+            else
+                logger.Info($"Monitoring external stratum {relay.Url}");
+
+            return subSocket;
         }
 
         private void StartMessageProcessors()
@@ -250,7 +257,11 @@ namespace Miningcore.Mining
             if (pools.TryGetValue(topic, out var poolContext))
             {
                 var pool = poolContext.Pool;
-                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+
+                var shareMultiplier = pool.Config.Template.Family == CoinFamily.Bitcoin ?
+                    pool.Config.Template.As<BitcoinTemplate>().ShareMultiplier : 1;
+
+                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 3)}");
 
                 if (pool.NetworkStats != null)
                 {

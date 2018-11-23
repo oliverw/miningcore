@@ -98,16 +98,16 @@ namespace Miningcore.Stratum
         #region API-Surface
 
         public void Run(Socket socket,
-            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) poolEndpoint,
-            X509Certificate2 tlsCert,
+            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpoint,
+            X509Certificate2 cert,
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumClient> onCompleted,
             Action<StratumClient, Exception> onError)
         {
-            PoolEndpoint = poolEndpoint.IPEndPoint;
+            PoolEndpoint = endpoint.IPEndPoint;
             RemoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
 
-            expectingProxyHeader = poolEndpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
+            expectingProxyHeader = endpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
             Task.Run(async () =>
             {
@@ -119,27 +119,30 @@ namespace Miningcore.Stratum
 
                     // create stream
                     networkStream = new NetworkStream(socket, true);
+                    logger.Info(() => $"[{ConnectionId}] Accepting connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} ...");
 
-                    using (new CompositeDisposable(networkStream, cts))
+                    using (var disposables = new CompositeDisposable(networkStream, cts))
                     {
-                        // TLS handshake
-                        if (poolEndpoint.PoolEndpoint.Tls)
+                        if (endpoint.PoolEndpoint.Tls)
                         {
                             var sslStream = new SslStream(networkStream, false);
-                            await sslStream.AuthenticateAsServerAsync(tlsCert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                            disposables.Add(sslStream);
 
+                            // TLS handshake
+                            await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
                             networkStream = sslStream;
-                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+
+                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                         }
 
                         else
-                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {poolEndpoint.IPEndPoint.Port}");
+                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
 
                         // Async I/O loop(s)
                         var tasks = new[]
                         {
                             FillReceivePipeAsync(),
-                            ProcessReceivePipeAsync(poolEndpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                            ProcessReceivePipeAsync(endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
                             ProcessSendQueueAsync()
                         };
 
@@ -196,39 +199,28 @@ namespace Miningcore.Stratum
             return (T)context;
         }
 
-        public Task RespondAsync<T>(T payload, object id)
+        public ValueTask RespondAsync<T>(T payload, object id)
         {
-            Contract.RequiresNonNull(payload, nameof(payload));
-            Contract.RequiresNonNull(id, nameof(id));
-
             return RespondAsync(new JsonRpcResponse<T>(payload, id));
         }
 
-        public Task RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
+        public ValueTask RespondErrorAsync(StratumError code, string message, object id, object result = null, object data = null)
         {
-            Contract.RequiresNonNull(message, nameof(message));
-
             return RespondAsync(new JsonRpcResponse(new JsonRpcException((int)code, message, null), id, result));
         }
 
-        public Task RespondAsync<T>(JsonRpcResponse<T> response)
+        public ValueTask RespondAsync<T>(JsonRpcResponse<T> response)
         {
-            Contract.RequiresNonNull(response, nameof(response));
-
             return SendAsync(response);
         }
 
-        public Task NotifyAsync<T>(string method, T payload)
+        public ValueTask NotifyAsync<T>(string method, T payload)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
-
             return NotifyAsync(new JsonRpcRequest<T>(method, payload, null));
         }
 
-        public Task NotifyAsync<T>(JsonRpcRequest<T> request)
+        public ValueTask NotifyAsync<T>(JsonRpcRequest<T> request)
         {
-            Contract.RequiresNonNull(request, nameof(request));
-
             return SendAsync(request);
         }
 
@@ -237,22 +229,12 @@ namespace Miningcore.Stratum
             networkStream.Close();
         }
 
-        private static JsonRpcRequest DeserializeRequest(ReadOnlySequence<byte> lineBuffer)
-        {
-            JsonRpcRequest request;
-
-            using (var jr = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
-            {
-                request = serializer.Deserialize<JsonRpcRequest>(jr);
-            }
-
-            return request;
-        }
-
         #endregion // API-Surface
 
-        private async Task SendAsync<T>(T payload)
+        private async ValueTask SendAsync<T>(T payload)
         {
+            Contract.RequiresNonNull(payload, nameof(payload));
+
             using (var ctsTimeout = new CancellationTokenSource())
             {
                 using (var ctsComposite = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, ctsTimeout.Token))
@@ -387,13 +369,16 @@ namespace Miningcore.Stratum
             Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
-            var request = DeserializeRequest(lineBuffer);
+            using (var reader = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
+            {
+                var request = serializer.Deserialize<JsonRpcRequest>(reader);
 
-            if (request == null)
-                throw new JsonException("Unable to deserialize request");
+                if (request == null)
+                    throw new JsonException("Unable to deserialize request");
 
-            // Dispatch
-            await onRequestAsync(this, request, cts.Token);
+                // Dispatch
+                await onRequestAsync(this, request, cts.Token);
+            }
         }
 
         /// <summary>

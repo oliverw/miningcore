@@ -184,15 +184,11 @@ namespace Miningcore.Payments
             var coin = poolConfig.Template.As<CoinTemplate>();
 
             // admin notifications
-            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
-                clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-            {
-                var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
-                    txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
-                    new string[0];
+            var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
+                txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
+                new string[0];
 
-                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
-            }
+            messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
         }
 
         protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
