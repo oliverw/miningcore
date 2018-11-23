@@ -625,7 +625,7 @@ namespace Miningcore
         private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
         {
             var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToList();
-            if (defaultToLoopback || ipList == null || ipList.Count == 0)
+            if (defaultToLoopback && (ipList == null || ipList.Count == 0))
                 ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
 
             if (ipList.Count > 0)
