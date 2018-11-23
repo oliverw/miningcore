@@ -631,7 +631,7 @@ namespace Miningcore
             {
                 logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x=> x.ToString()))}");
 
-                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList);
+                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
             }
         }
 
