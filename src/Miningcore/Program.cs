@@ -93,6 +93,7 @@ namespace Miningcore
         private static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
+        private static MetricsPublisher metricsPublisher;
         private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
@@ -623,12 +624,20 @@ namespace Miningcore
 
         private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
         {
-            var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToArray();
-            if (defaultToLoopback && (ipList == null || ipList.Length == 0))
-                ipList = new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 };
+            var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToList();
+            if (defaultToLoopback || ipList == null || ipList.Count == 0)
+                ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
 
-            if (ipList?.Length > 0)
+            if (ipList.Count > 0)
             {
+                // always allow access by localhost
+                if (!ipList.Any(x => x.Equals(IPAddress.Loopback)))
+                    ipList.Add(IPAddress.Loopback);
+                if (!ipList.Any(x => x.Equals(IPAddress.IPv6Loopback)))
+                    ipList.Add(IPAddress.IPv6Loopback);
+                if (!ipList.Any(x => x.Equals(IPUtils.IPv4LoopBackOnIPv6)))
+                    ipList.Add(IPUtils.IPv4LoopBackOnIPv6);
+
                 logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x=> x.ToString()))}");
 
                 app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
@@ -798,7 +807,11 @@ namespace Miningcore
 
             // start API
             if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
+            {
                 StartApi();
+
+                metricsPublisher = container.Resolve<MetricsPublisher>();
+            }
 
             // start payment processor
             if (clusterConfig.PaymentProcessing?.Enabled == true &&

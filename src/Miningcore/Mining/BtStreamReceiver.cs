@@ -140,6 +140,7 @@ namespace Miningcore.Mining
             var topic = msg[0].ToString(Encoding.UTF8);
             var flags = msg[1].ReadUInt32();
             var data = msg[2].Read();
+            var sent = DateTimeOffset.FromUnixTimeMilliseconds(msg[3].ReadInt64()).DateTime;
 
             // TMP FIX
             if (flags != 0 && ((flags & 1) == 0))
@@ -166,7 +167,7 @@ namespace Miningcore.Mining
             var content = Encoding.UTF8.GetString(data);
 
             // publish
-            messageBus.SendMessage(new BtStreamMessage(topic, content));
+            messageBus.SendMessage(new BtStreamMessage(topic, content, sent, DateTime.UtcNow));
         }
 
         #region API-Surface

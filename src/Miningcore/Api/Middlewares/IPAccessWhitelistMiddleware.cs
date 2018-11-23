@@ -33,7 +33,7 @@ namespace Miningcore.Api.Middlewares
                     logger.Info(() => $"Unauthorized request attempt to {context.Request.Path.Value} from {remoteAddress}");
 
                     context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    await context.Response.WriteAsync("You are not in my access list. Good Bye.");
+                    await context.Response.WriteAsync("You are not in my access list. Good Bye.\n");
                     return;
                 }
             }
