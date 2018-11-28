@@ -71,9 +71,8 @@ namespace Miningcore.Payments
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly IMessageBus messageBus;
-        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private ClusterConfig clusterConfig;
-        private Thread thread;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private async Task ProcessPoolsAsync()
@@ -250,14 +249,14 @@ namespace Miningcore.Payments
 
         public void Start()
         {
-            thread = new Thread(async () =>
+            Task.Run(async () =>
             {
                 logger.Info(() => "Online");
 
                 var interval = TimeSpan.FromSeconds(
                     clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
-                while(true)
+                while (!cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -269,25 +268,16 @@ namespace Miningcore.Payments
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
+                    await Task.Delay(interval, cts.Token);
                 }
             });
-
-            thread.Priority = ThreadPriority.Highest;
-            thread.Name = "Payment Processing";
-            thread.Start();
         }
 
         public void Stop()
         {
             logger.Info(() => "Stopping ..");
 
-            stopEvent.Set();
-            thread.Join();
+            cts.Cancel();
 
             logger.Info(() => "Stopped");
         }
