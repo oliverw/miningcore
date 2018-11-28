@@ -65,11 +65,11 @@
     <PackageReference Include="morelinq" Version="3.0.0" />
     <PackageReference Include="NBitcoin" Version="4.1.1.71" />
     <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="NLog" Version="4.5.11" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.3.0" />
     <PackageReference Include="Npgsql" Version="4.0.3" />
-    <PackageReference Include="Polly" Version="6.1.1" />
+    <PackageReference Include="Polly" Version="6.1.2" />
     <PackageReference Include="prometheus-net" Version="2.1.3" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="2.1.3" />
     <PackageReference Include="protobuf-net" Version="2.4.0" />
