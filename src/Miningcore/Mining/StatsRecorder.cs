@@ -59,6 +59,7 @@ namespace Miningcore.Mining
         private readonly IShareRepository shareRepo;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
+        private readonly TimeSpan interval = TimeSpan.FromMinutes(5);
         private const int HashrateCalculationWindow = 1200; // seconds
         private const int MinHashrateCalculationWindow = 300; // seconds
         private const double HashrateBoostFactor = 1.1d;
@@ -82,14 +83,12 @@ namespace Miningcore.Mining
 
         public void Start()
         {
-            logger.Info(() => "Online");
-
             Task.Run(async () =>
             {
+                logger.Info(() => "Online");
+
                 // warm-up delay
                 await Task.Delay(TimeSpan.FromSeconds(10));
-
-                var interval = TimeSpan.FromMinutes(5);
 
                 while(!cts.IsCancellationRequested)
                 {

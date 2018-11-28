@@ -72,6 +72,7 @@ namespace Miningcore.Payments
         private readonly IShareRepository shareRepo;
         private readonly IMessageBus messageBus;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private TimeSpan interval;
         private ClusterConfig clusterConfig;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -245,6 +246,9 @@ namespace Miningcore.Payments
         public void Configure(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
+
+            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ? 
+                clusterConfig.PaymentProcessing.Interval : 600);
         }
 
         public void Start()
@@ -252,9 +256,6 @@ namespace Miningcore.Payments
             Task.Run(async () =>
             {
                 logger.Info(() => "Online");
-
-                var interval = TimeSpan.FromSeconds(
-                    clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
 
                 while (!cts.IsCancellationRequested)
                 {
