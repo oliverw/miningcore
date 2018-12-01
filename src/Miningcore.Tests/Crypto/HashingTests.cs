@@ -214,6 +214,17 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
+        public void X21S_Hash()
+        {
+            var hasher = new X21S();
+            var hash = new byte[32];
+            hasher.Digest(testValue, hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("0bfd2e20a3656b5f92079ea5c6485223b00344f9f1005ab9ecedff3c42ccf76f", result);
+        }
+
+        [Fact]
         public void Skein_Hash()
         {
             var hasher = new Skein();
