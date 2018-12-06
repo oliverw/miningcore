@@ -36,7 +36,7 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig)
+            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -47,6 +47,7 @@ namespace Miningcore.Blockchain.Cryptonote
             coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
             BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
+            PrevHash = prevHash;
 
             switch (coin.Hash)
             {
@@ -120,6 +121,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         #region API-Surface
 
+        public string PrevHash { get; }
         public GetBlockTemplateResponse BlockTemplate { get; }
 
         public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
