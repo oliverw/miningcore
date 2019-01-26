@@ -150,7 +150,7 @@ namespace Miningcore.Payments
                                     Coin = coin.Symbol,
                                     Address = balance.Address,
                                     Amount = balance.Amount,
-                                    Created = clock.Now,
+                                    Created = clock.UtcNow,
                                     TransactionConfirmationData = transactionConfirmation
                                 };
 

@@ -139,7 +139,7 @@ namespace Miningcore.Mining
 
         private void EnsureNoZombieClient(StratumClient client)
         {
-            Observable.Timer(clock.Now.AddSeconds(10))
+            Observable.Timer(clock.UtcNow.AddSeconds(10))
                 .TakeUntil(client.Terminated)
                 .Where(_=> client.IsAlive)
                 .Subscribe(_ =>

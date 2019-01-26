@@ -131,7 +131,7 @@ namespace Miningcore.Mining
 
         private async Task UpdatePoolHashratesAsync()
         {
-            var start = clock.Now;
+            var start = clock.UtcNow;
             var target = start.AddSeconds(-HashrateCalculationWindow);
 
             var stats = new MinerWorkerPerformanceStats

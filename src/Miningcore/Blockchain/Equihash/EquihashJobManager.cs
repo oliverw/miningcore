@@ -116,7 +116,7 @@ namespace Miningcore.Blockchain.Equihash
             try
             {
                 if (forceUpdate)
-                    lastJobRebroadcast = clock.Now;
+                    lastJobRebroadcast = clock.UtcNow;
 
                 var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
@@ -156,7 +156,7 @@ namespace Miningcore.Blockchain.Equihash
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                             // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
+                            BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
                             BlockchainStats.NetworkDifficulty = job.Difficulty;
                             BlockchainStats.NextNetworkTarget = blockTemplate.Target;
@@ -313,7 +313,7 @@ namespace Miningcore.Blockchain.Equihash
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.Difficulty;
             share.Difficulty = share.Difficulty;
-            share.Created = clock.Now;
+            share.Created = clock.UtcNow;
 
             return share;
         }

@@ -55,7 +55,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             // get nFactor
-            var ts = ((DateTimeOffset)Clock.Now).ToUnixTimeSeconds();
+            var ts = ((DateTimeOffset)Clock.UtcNow).ToUnixTimeSeconds();
             var n = timetable.First(x => ts >= x.Item2).Item1;
             var nFactor = Math.Log(n) / Math.Log(2);
 

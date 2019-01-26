@@ -149,7 +149,7 @@ namespace Miningcore.Blockchain.Ethereum
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -171,7 +171,7 @@ namespace Miningcore.Blockchain.Ethereum
                     throw new StratumException(StratumError.MinusOne, "malformed PoW result");
 
                 // recognize activity
-                context.LastActivity = clock.Now;
+                context.LastActivity = clock.UtcNow;
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
@@ -183,14 +183,14 @@ namespace Miningcore.Blockchain.Ethereum
                 messageBus.SendMessage(new ClientShare(client, share));
 
                 // telemetry
-                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
+                PublishTelemetry(TelemetryCategory.Share, clock.UtcNow - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
                 await EnsureInitialWorkSent(client);
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.Now;
+                    poolStats.LastPoolBlockTime = clock.UtcNow;
 
                 // update client stats
                 context.Stats.ValidShares++;
@@ -200,7 +200,7 @@ namespace Miningcore.Blockchain.Ethereum
             catch(StratumException ex)
             {
                 // telemetry
-                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
+                PublishTelemetry(TelemetryCategory.Share, clock.UtcNow - tsRequest.Timestamp.UtcDateTime, false);
 
                 // update client stats
                 context.Stats.InvalidShares++;
@@ -251,7 +251,7 @@ namespace Miningcore.Blockchain.Ethereum
                 if (context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
                 {
                     // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var lastActivityAgo = clock.UtcNow - context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)

@@ -84,7 +84,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 #pragma warning restore 4014
                 }
 
-                result.LastUsed = DateTime.Now;
+                result.LastUsed = DateTime.UtcNow;
             }
 
             await result.GenerateAsync(dagDir, logger, ct);

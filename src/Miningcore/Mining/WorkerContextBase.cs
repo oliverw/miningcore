@@ -64,7 +64,7 @@ namespace Miningcore.Mining
         public void Init(PoolConfig poolConfig, double difficulty, VarDiffConfig varDiffConfig, IMasterClock clock)
         {
             Difficulty = difficulty;
-            LastActivity = clock.Now;
+            LastActivity = clock.UtcNow;
             Stats = new ShareStats();
 
             if (varDiffConfig != null)

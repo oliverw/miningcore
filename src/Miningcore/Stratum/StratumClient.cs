@@ -265,7 +265,7 @@ namespace Miningcore.Stratum
 
                 logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
 
-                LastReceive = clock.Now;
+                LastReceive = clock.UtcNow;
 
                 // hand off to pipe
                 receivePipe.Writer.Advance(cb);

@@ -74,7 +74,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
                         logger.Info(() => $"Generating DAG for epoch {Epoch}");
 
-                        var started = DateTime.Now;
+                        var started = DateTime.UtcNow;
                         var block = Epoch * EthereumConstants.EpochLength;
 
                         // Generate a temporary cache
@@ -93,7 +93,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                             if (handle == IntPtr.Zero)
                                 throw new OutOfMemoryException("ethash_full_new IO or memory error");
 
-                            logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
+                            logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.UtcNow - started}");
                         }
 
                         finally

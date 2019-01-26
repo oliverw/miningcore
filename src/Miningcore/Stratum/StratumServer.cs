@@ -247,7 +247,7 @@ namespace Miningcore.Stratum
 
             logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-            await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
+            await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow), ct);
         }
 
         protected virtual void OnClientError(StratumClient client, Exception ex)
