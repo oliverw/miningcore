@@ -13,7 +13,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
         public Cache(ulong epoch)
         {
             Epoch = epoch;
-            LastUsed = DateTime.Now;
+            LastUsed = DateTime.UtcNow;
         }
 
         private IntPtr handle = IntPtr.Zero;
@@ -40,13 +40,13 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 {
                     if (!isGenerated)
                     {
-                        var started = DateTime.Now;
+                        var started = DateTime.UtcNow;
                         logger.Debug(() => $"Generating cache for epoch {Epoch}");
 
                         var block = Epoch * EthereumConstants.EpochLength;
                         handle = LibMultihash.ethash_light_new(block);
 
-                        logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
+                        logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.UtcNow - started}");
                         isGenerated = true;
                     }
                 }

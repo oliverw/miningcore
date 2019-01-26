@@ -114,7 +114,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     currentJob = job;
 
                     // update stats
-                    BlockchainStats.LastNetworkBlockTime = clock.Now;
+                    BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                     BlockchainStats.BlockHeight = job.BlockTemplate.Height;
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                     BlockchainStats.NextNetworkTarget = "";
@@ -334,7 +334,7 @@ namespace Miningcore.Blockchain.Cryptonote
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
             share.NetworkDifficulty = job.BlockTemplate.Difficulty;
-            share.Created = clock.Now;
+            share.Created = clock.UtcNow;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)

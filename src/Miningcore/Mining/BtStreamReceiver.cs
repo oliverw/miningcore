@@ -59,7 +59,7 @@ namespace Miningcore.Mining
                 while (!cts.IsCancellationRequested)
                 {
                     // track last message received per endpoint
-                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
+                    var lastMessageReceived = relays.Select(_ => clock.UtcNow).ToArray();
 
                     try
                     {
@@ -80,7 +80,7 @@ namespace Miningcore.Mining
 
                                         if (msg != null)
                                         {
-                                            lastMessageReceived[i] = clock.Now;
+                                            lastMessageReceived[i] = clock.UtcNow;
 
                                             using (msg)
                                             {
@@ -88,14 +88,14 @@ namespace Miningcore.Mining
                                             }
                                         }
 
-                                        else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        else if (clock.UtcNow - lastMessageReceived[i] > reconnectTimeout)
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
                                             sockets[i] = SetupSubSocket(relays[i]);
 
                                             // reset clock
-                                            lastMessageReceived[i] = clock.Now;
+                                            lastMessageReceived[i] = clock.UtcNow;
 
                                             logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
                                         }

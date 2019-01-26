@@ -182,7 +182,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     var interval = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout - 0.1d));
 
                     triggers.Add(btStream
-                        .Select(json => (!lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval), "BT-Stream", json))
+                        .Select(json => (!lastJobRebroadcast.HasValue || (clock.UtcNow - lastJobRebroadcast >= interval), "BT-Stream", json))
                         .Publish()
                         .RefCount());
                 }

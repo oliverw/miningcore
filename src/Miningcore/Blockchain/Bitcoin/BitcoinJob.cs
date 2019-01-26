@@ -236,7 +236,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Script GenerateScriptSigInitial()
         {
-            var now = ((DateTimeOffset) clock.Now).ToUnixTimeSeconds();
+            var now = ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds();
 
             // script ops
             var ops = new List<Op>();
@@ -640,7 +640,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime, NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.Now).ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset) clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             // validate nonce

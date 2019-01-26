@@ -226,7 +226,7 @@ namespace Miningcore.Blockchain.Equihash
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
-                var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
+                var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
                 if (requestAge > maxShareAge)
                 {
@@ -235,7 +235,7 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 // check worker state
-                context.LastActivity = clock.Now;
+                context.LastActivity = clock.UtcNow;
 
                 // validate worker
                 if (!context.IsAuthorized)
@@ -255,13 +255,13 @@ namespace Miningcore.Blockchain.Equihash
                 messageBus.SendMessage(new ClientShare(client, share));
 
                 // telemetry
-                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
+                PublishTelemetry(TelemetryCategory.Share, clock.UtcNow - tsRequest.Timestamp.UtcDateTime, true);
 
                 logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if (share.IsBlockCandidate)
-                    poolStats.LastPoolBlockTime = clock.Now;
+                    poolStats.LastPoolBlockTime = clock.UtcNow;
 
                 // update client stats
                 context.Stats.ValidShares++;
@@ -271,7 +271,7 @@ namespace Miningcore.Blockchain.Equihash
             catch (StratumException ex)
             {
                 // telemetry
-                PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, false);
+                PublishTelemetry(TelemetryCategory.Share, clock.UtcNow - tsRequest.Timestamp.UtcDateTime, false);
 
                 // update client stats
                 context.Stats.InvalidShares++;
@@ -381,7 +381,7 @@ namespace Miningcore.Blockchain.Equihash
                 if (context.IsSubscribed && context.IsAuthorized)
                 {
                     // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                    var lastActivityAgo = clock.UtcNow - context.LastActivity;
 
                     if (poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)

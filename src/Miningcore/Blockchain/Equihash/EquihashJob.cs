@@ -441,7 +441,7 @@ namespace Miningcore.Blockchain.Equihash
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime.HexToReverseByteArray().ToHexString(), NumberStyles.HexNumber);
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.Now).ToUnixTimeSeconds() + 7200)
+            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = context.ExtraNonce1 + extraNonce2;

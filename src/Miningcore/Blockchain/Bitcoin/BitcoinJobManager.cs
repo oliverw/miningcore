@@ -91,7 +91,7 @@ namespace Miningcore.Blockchain.Bitcoin
             try
             {
                 if (forceUpdate)
-                    lastJobRebroadcast = clock.Now;
+                    lastJobRebroadcast = clock.UtcNow;
 
                 var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
@@ -132,7 +132,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                             // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
+                            BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                             BlockchainStats.BlockHeight = blockTemplate.Height;
                             BlockchainStats.NetworkDifficulty = job.Difficulty;
                             BlockchainStats.NextNetworkTarget = blockTemplate.Target;
@@ -250,7 +250,7 @@ namespace Miningcore.Blockchain.Bitcoin
             share.Worker = workerName;
             share.UserAgent = context.UserAgent;
             share.Source = clusterConfig.ClusterName;
-            share.Created = clock.Now;
+            share.Created = clock.UtcNow;
 
             // if block candidate, submit & check if accepted by network
             if (share.IsBlockCandidate)

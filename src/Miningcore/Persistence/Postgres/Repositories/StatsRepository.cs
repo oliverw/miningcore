@@ -153,7 +153,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 var lastUpdate = await con.QuerySingleOrDefaultAsync<DateTime?>(query, new { poolId, miner }, tx);
 
                 // ignore stale minerstats
-                if (lastUpdate.HasValue && (clock.Now - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
+                if (lastUpdate.HasValue && (clock.UtcNow - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
                     lastUpdate = null;
 
                 if (lastUpdate.HasValue)
