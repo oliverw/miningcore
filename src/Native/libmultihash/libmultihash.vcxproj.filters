@@ -38,6 +38,9 @@
     <ClInclude Include="fugue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="geek.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="groestl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -260,6 +263,24 @@
     <ClInclude Include="portable_endian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sha3\sph_sm3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\gost_streebog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\sph_tiger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\SWIFFTX.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x22i.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\extra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -284,6 +305,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="fugue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geek.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="groestl.c">
@@ -479,6 +503,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="equi\support\cleanse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sm3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\gost_streebog.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\SWIFFTX.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sph_tiger.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x22i.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\extra.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

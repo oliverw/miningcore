@@ -27,6 +27,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "blake.h"
 #include "blake2s.h"
 #include "fugue.h"
+#include "geek.h"
 #include "qubit.h"
 #include "s3.h"
 #include "hefty1.h"
@@ -44,6 +45,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
+#include "x22i.h"
 #include "equi/equihashverify.h"
 #include "libethash/sha3.h"
 #include "libethash/internal.h"
@@ -70,6 +72,16 @@ extern "C" MODULE_API void quark_export(const char* input, char* output, uint32_
 extern "C" MODULE_API void x11_export(const char* input, char* output, uint32_t input_len)
 {
 	x11_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x13_export(const char* input, char* output, uint32_t input_len)
+{
+    x13_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x13_bcd_export(const char* input, char* output)
+{
+    x13_bcd_hash(input, output);
 }
 
 extern "C" MODULE_API void x17_export(const char* input, char* output, uint32_t input_len)
@@ -139,6 +151,11 @@ extern "C" MODULE_API void fugue_export(const char* input, char* output, uint32_
 	fugue_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void geek_export(const char* input, char* output, uint32_t input_len)
+{
+	geek_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void qubit_export(const char* input, char* output, uint32_t input_len)
 {
 	qubit_hash(input, output, input_len);
@@ -194,12 +211,17 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
     x16r_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
+{
+	x22i_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)
 {
     x16s_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API bool equihash_verify_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
     if (header_length != 140) {
         return false;
@@ -207,10 +229,10 @@ extern "C" MODULE_API bool equihash_verify_export(const char* header, int header
 
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
-    return verifyEH_200_9(header, vecSolution, NULL);
+    return verifyEH_200_9(header, vecSolution, personalization);
 }
 
-extern "C" MODULE_API bool equihash_verify_btg_export(const char* header, int header_length, const char* solution, int solution_length)
+extern "C" MODULE_API bool equihash_verify_144_5_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
 {
     if (header_length != 140) {
         return false;
@@ -218,7 +240,18 @@ extern "C" MODULE_API bool equihash_verify_btg_export(const char* header, int he
 
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
-    return verifyEH_144_5(header, vecSolution, "BgoldPoW");
+    return verifyEH_144_5(header, vecSolution, personalization);
+}
+
+extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
+{
+    if (header_length != 140) {
+        return false;
+    }
+
+    std::vector<unsigned char> vecSolution(solution, solution + solution_length);
+
+    return verifyEH_96_5(header, vecSolution, personalization);
 }
 
 extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)

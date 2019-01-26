@@ -1,0 +1,129 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <AssemblyName>Miningcore</AssemblyName>
+    <RootNamespace>Miningcore</RootNamespace>
+    <Platforms>AnyCPU</Platforms>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Api\Notifications\**" />
+    <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
+    <Compile Remove="DataAccess\**" />
+    <Compile Remove="Maintenance\**" />
+    <EmbeddedResource Remove="Api\Notifications\**" />
+    <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
+    <EmbeddedResource Remove="DataAccess\**" />
+    <EmbeddedResource Remove="Maintenance\**" />
+    <None Remove="Api\Notifications\**" />
+    <None Remove="Blockchain\Bitcoin\Transactions\**" />
+    <None Remove="DataAccess\**" />
+    <None Remove="Maintenance\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="config.json" />
+    <None Remove="config2.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="2.1.0" />
+    <PackageReference Include="Autofac" Version="4.8.1" />
+    <PackageReference Include="AutoMapper" Version="8.0.0" />
+    <PackageReference Include="Dapper" Version="1.50.5" />
+    <PackageReference Include="FluentValidation" Version="8.0.101" />
+    <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.0.100" />
+    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
+    <PackageReference Include="MailKit" Version="2.1.0.1" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.2.5" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.5" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
+    <PackageReference Include="morelinq" Version="3.0.0" />
+    <PackageReference Include="NBitcoin" Version="4.1.1.72" />
+    <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="NLog" Version="4.5.11" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="1.3.0" />
+    <PackageReference Include="Npgsql" Version="4.0.3" />
+    <PackageReference Include="Polly" Version="6.1.2" />
+    <PackageReference Include="prometheus-net" Version="2.1.3" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="2.1.3" />
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
+    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
+    <PackageReference Include="System.Reactive" Version="4.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="WebSocketManager">
+      <HintPath>..\..\libs\WebSocketManager.dll</HintPath>
+    </Reference>
+    <Reference Include="WebSocketManager.Common">
+      <HintPath>..\..\libs\WebSocketManager.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="ZeroMQ">
+      <HintPath>..\..\libs\ZeroMQ.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="coins.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Copy pre-built library binaries on Windows  -->
+  <Target Name="BuildNativeLibsWin" AfterTargets="AfterBuild" Condition="'$(IsWindows)' == 'true'">
+    <ItemGroup>
+      <Libs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <!-- Build library binaries from source on Linux -->
+  <Target Name="BuildNativeLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
+    <Exec Command="(cd $(ProjectDir)../Native/libmultihash &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libmultihash/libmultihash.so $(OutDir)" />
+    <Exec Command="(cd $(ProjectDir)../Native/libcryptonote &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonote/libcryptonote.so $(OutDir)" />
+    <Exec Command="(cd $(ProjectDir)../Native/libcryptonight &amp;&amp; make clean &amp;&amp; make) &amp;&amp; mv $(ProjectDir)../Native/libcryptonight/libcryptonight.so $(OutDir)" />
+  </Target>
+
+  <!-- Include library binaries in publish on Windows -->
+  <Target Name="NativeLibsPublishIncludeWin" BeforeTargets="PrepareForPublish" Condition="'$(IsWindows)' == 'true'">
+    <ItemGroup>
+      <Libs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
+      <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Include library binaries in publish on Linux -->
+  <Target Name="NativeLibsPublishIncludeLinux" BeforeTargets="PrepareForPublish" Condition="'$(IsLinux)' == 'true'">
+    <ItemGroup>
+      <Libs Include="$(OutDir)libmultihash.so;$(OutDir)libcryptonote.so;$(OutDir)libcryptonight.so" />
+      <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+</Project>

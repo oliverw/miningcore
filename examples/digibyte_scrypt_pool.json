@@ -45,10 +45,7 @@
     "pools": [{
       "id": "dgb-scrypt-1",
       "enabled": true,
-      "coin": {
-        "type": "DGB",
-        "algorithm": "scrypt"
-      },
+      "coin": "digibyte-scrypt",
       "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
       "rewardRecipients": [
         {
