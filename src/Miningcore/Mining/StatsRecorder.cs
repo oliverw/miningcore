@@ -59,8 +59,10 @@ namespace Miningcore.Mining
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
+        private const int StatsInterval = 1; // minutes
+        private const int StatsCleanupInterval = 24; // hours
         private const int HashrateCalculationWindow = 1200; // seconds
-        private const int MinHashrateCalculationWindow = 300; // seconds
+        private const int MinHashrateCalculationWindow = 30; // seconds
         private const double HashrateBoostFactor = 1.1d;
         private ClusterConfig clusterConfig;
         private Thread thread1;
@@ -90,14 +92,22 @@ namespace Miningcore.Mining
                 // warm-up delay
                 Thread.Sleep(TimeSpan.FromSeconds(10));
 
-                var interval = TimeSpan.FromMinutes(5);
+                var poolStatsInterval = TimeSpan.FromMinutes(StatsInterval);
+                var performStatsGcInterval = DateTime.UtcNow;
 
-                while(true)
+                while (true)
                 {
                     try
                     {
                         await UpdatePoolHashratesAsync();
-                        await PerformStatsGcAsync();
+
+Console.WriteLine("[DEBUG] Next Stats cleanup at " + performStatsGcInterval);
+
+                        if (clock.UtcNow >= performStatsGcInterval)
+                        {
+                            await PerformStatsGcAsync();
+                            performStatsGcInterval = DateTime.UtcNow.AddHours(StatsCleanupInterval);
+                        }
                     }
 
                     catch(Exception ex)
@@ -105,7 +115,7 @@ namespace Miningcore.Mining
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
+                    var waitResult = stopEvent.WaitOne(poolStatsInterval);
 
                     // check if stop was signalled
                     if (waitResult)
@@ -153,24 +163,39 @@ namespace Miningcore.Mining
 
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
+Console.WriteLine("[DEBUG] Stats length is: " + result.Length);
+
+                // calculate & update pool, connected workers & hashrates
                 if (result.Length > 0)
                 {
-                    // calculate pool stats
-                    var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;
+                    double poolHashrate = 0;
+
+                    pool.PoolStats.ConnectedMiners = byMiner.Length;    // update connected miners
+                    var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;   // get share windows time
 
                     if (windowActual >= MinHashrateCalculationWindow)
                     {
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
-                        var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
+                        poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
 
-                        // update
-                        pool.PoolStats.ConnectedMiners = byMiner.Length;
+                        // update PoolHashrate
                         pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
-
-                        messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
                     }
+                    else
+                    {
+Console.WriteLine("[DEBUG] Minimum stats windows not met. No shares for the last " + MinHashrateCalculationWindow + " sec");
+Console.WriteLine("[DEBUG] windowsActual: " + windowActual);
+Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
+
+                        pool.PoolStats.ConnectedMiners = 0;
+                        pool.PoolStats.PoolHashrate = 0;
+                        pool.PoolStats.SharesPerSecond = 0;
+                    }
+
+                    messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
+
                 }
 
                 // persist
@@ -183,7 +208,7 @@ namespace Miningcore.Mining
                     };
 
                     mapper.Map(pool.PoolStats, mapped);
-                    mapper.Map(pool.NetworkStats, mapped);
+                    mapper.Map(pool.NetworkStats, mapped);    // ToDo: Get Network hashrate
 
                     await statsRepo.InsertPoolStatsAsync(con, tx, mapped);
                 });
@@ -230,7 +255,7 @@ namespace Miningcore.Mining
 
         private async Task PerformStatsGcAsync()
         {
-            logger.Info(() => $"Performing Stats GC");
+            logger.Info(() => $"Performing stats cleanup");
 
             await cf.Run(async con =>
             {
@@ -245,7 +270,7 @@ namespace Miningcore.Mining
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
 
-            logger.Info(() => $"Stats GC complete");
+            logger.Info(() => $"Stats cleanup complete");
         }
 
         private void BuildFaultHandlingPolicy()
