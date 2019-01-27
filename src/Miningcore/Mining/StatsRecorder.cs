@@ -61,7 +61,7 @@ namespace Miningcore.Mining
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
         private const int StatsInterval = 1; // minutes
         private const int StatsCleanupInterval = 24; // hours
-        private const int HashrateCalculationWindow = 1200; // seconds
+        private const int HashrateCalculationWindow = 20; // minutes
         private const int MinHashrateCalculationWindow = 30; // seconds
         private const double HashrateBoostFactor = 1.1d;
         private ClusterConfig clusterConfig;
@@ -99,10 +99,10 @@ namespace Miningcore.Mining
                 {
                     try
                     {
-                        await UpdatePoolHashratesAsync();
+                        await UpdatePoolHashratesAsync();    // Pool stats update
 
-Console.WriteLine("[DEBUG] Next Stats cleanup at " + performStatsGcInterval);
-
+                        // Stats cleanup at interval
+                        logger.Info(() => $"Next Stats DB cleanup at {performStatsGcInterval.ToLocalTime()}");
                         if (clock.UtcNow >= performStatsGcInterval)
                         {
                             await PerformStatsGcAsync();
@@ -142,7 +142,7 @@ Console.WriteLine("[DEBUG] Next Stats cleanup at " + performStatsGcInterval);
         private async Task UpdatePoolHashratesAsync()
         {
             var start = clock.UtcNow;
-            var target = start.AddSeconds(-HashrateCalculationWindow);
+            var target = start.AddMinutes(-HashrateCalculationWindow);
 
             var stats = new MinerWorkerPerformanceStats
             {
@@ -163,8 +163,6 @@ Console.WriteLine("[DEBUG] Next Stats cleanup at " + performStatsGcInterval);
 
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
-Console.WriteLine("[DEBUG] Stats length is: " + result.Length);
-
                 // calculate & update pool, connected workers & hashrates
                 if (result.Length > 0)
                 {
@@ -173,27 +171,23 @@ Console.WriteLine("[DEBUG] Stats length is: " + result.Length);
                     pool.PoolStats.ConnectedMiners = byMiner.Length;    // update connected miners
                     var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;   // get share windows time
 
+                    // Console.WriteLine("[DEBUG] Time between first and last share: " + windowActual + "sec");
+
                     if (windowActual >= MinHashrateCalculationWindow)
                     {
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
                         poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
-
-                        // update PoolHashrate
-                        pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
                         pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / windowActual);
                     }
                     else
                     {
-Console.WriteLine("[DEBUG] Minimum stats windows not met. No shares for the last " + MinHashrateCalculationWindow + " sec");
-Console.WriteLine("[DEBUG] windowsActual: " + windowActual);
-Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
-
-                        pool.PoolStats.ConnectedMiners = 0;
-                        pool.PoolStats.PoolHashrate = 0;
-                        pool.PoolStats.SharesPerSecond = 0;
+                        logger.Info(() => "Less then 2 shares to calculate hashrate");
                     }
 
+                    // update PoolHashrate
+                    pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
+                    logger.Info(() => $"Pool hashrate {poolId}: {pool.PoolStats.PoolHashrate} hashes/sec");
                     messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
 
                 }
@@ -214,7 +208,9 @@ Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
                 });
 
                 if (result.Length == 0)
+                {
                     continue;
+                }
 
                 // calculate & update miner, worker hashrates
                 foreach(var minerHashes in byMiner)
@@ -227,24 +223,27 @@ Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
 
                         foreach(var item in minerHashes)
                         {
+                            double hashrate = 0;
+                            stats.Worker = "Default_Miner";
+
                             // calculate miner/worker stats
                             var windowActual = (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds;
-
                             if (windowActual >= MinHashrateCalculationWindow)
                             {
-                                var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
+                                hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
                                 minerTotalHashrate += hashrate;
 
                                 // update
                                 stats.Hashrate = hashrate;
                                 stats.Worker = item.Worker;
                                 stats.SharesPerSecond = (double) item.Count / windowActual;
-
+                                
                                 // persist
                                 await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
-
-                                messageBus.NotifyHashrateUpdated(pool.Config.Id, hashrate, stats.Miner, item.Worker);
                             }
+
+                            logger.Info(() => $"Miner: {stats.Miner} Worker: {stats.Worker} Hashrate: {stats.Hashrate} Shares per sec: {stats.SharesPerSecond}");
+                            messageBus.NotifyHashrateUpdated(pool.Config.Id, stats.Hashrate, stats.Miner, stats.Worker);
                         }
                     });
 
@@ -255,7 +254,7 @@ Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
 
         private async Task PerformStatsGcAsync()
         {
-            logger.Info(() => $"Performing stats cleanup");
+            logger.Info(() => $"Performing stats DB cleanup");
 
             await cf.Run(async con =>
             {
@@ -270,7 +269,7 @@ Console.WriteLine("[DEBUG] MinCalcWindow: " + MinHashrateCalculationWindow);
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
 
-            logger.Info(() => $"Stats cleanup complete");
+            logger.Info(() => $"Stats cleanup DB complete");
         }
 
         private void BuildFaultHandlingPolicy()
