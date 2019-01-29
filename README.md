@@ -53,13 +53,13 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 
 ### Runtime Requirements on Windows
 
-- [.Net Core 2.1 Runtime](https://www.microsoft.com/net/download/core)
+- [.Net Core 2.2 Runtime](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 
 ### Runtime Requirements on Linux
 
-- [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+- [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
@@ -110,25 +110,25 @@ $ sudo dpkg -i packages-microsoft-prod.deb
 $ sudo apt-get update -y
 $ sudo apt-get install apt-transport-https -y
 $ sudo apt-get update -y
-$ sudo apt-get -y install dotnet-sdk-2.1 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+$ sudo apt-get -y install dotnet-sdk-2.2 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
 $ cd miningcore/src/Miningcore
-$ dotnet publish -c Release --framework netcoreapp2.1  -o ../../build
+$ dotnet publish -c Release --framework netcoreapp2.2  -o ../../build
 ```
 
 #### Building on Windows
 
-Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
 > cd miningcore/src/Miningcore
-> dotnet publish -c Release --framework netcoreapp2.1  -o ..\..\build
+> dotnet publish -c Release --framework netcoreapp2.2  -o ..\..\build
 ```
 
 #### Building on Windows - Visual Studio
 
-- Download and install the [.Net Core 2.1 SDK](https://www.microsoft.com/net/download/core)
+- Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
 - Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in VS 2017
 
