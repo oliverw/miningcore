@@ -207,6 +207,11 @@ extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
 	lyra2re2_hash(input, output);
 }
 
+extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output)
+{
+	lyra2re3_hash(input, output);
+}
+
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
 {
     x16r_hash(input, output, input_len);
