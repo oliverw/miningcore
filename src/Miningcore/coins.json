@@ -257,7 +257,7 @@
         "hash": "sha256d"
       },
       "headerHasher": {
-        "hash": "lyra2rev2"
+        "hash": "lyra2rev3"
       },
       "blockHasher": {
         "hash": "reverse",
