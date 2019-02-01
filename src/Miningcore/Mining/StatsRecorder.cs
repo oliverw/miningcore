@@ -1,11 +1,3 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Miningcore.Configuration;
@@ -18,6 +10,13 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using NLog;
 using Polly;
+using System;
+using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Linq;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Miningcore.Mining
 {
@@ -59,10 +58,10 @@ namespace Miningcore.Mining
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-        private const int StatsInterval = 1; // minutes
+        private const int StatsInterval = 2; // minutes
         private const int StatsCleanupInterval = 24; // hours
         private const int StatsDBCleanupHistory = 90;  // days
-        private const int HashrateCalculationWindow = 15; // minutes
+        private const int HashrateCalculationWindow = 30; // minutes
         private ClusterConfig clusterConfig;
         private Thread thread1;
         private const int RetryCount = 4;
@@ -142,7 +141,7 @@ namespace Miningcore.Mining
         {
             var CurrentTimeUtc = clock.UtcNow;
             var TimeFrom = CurrentTimeUtc.AddMinutes(-HashrateCalculationWindow);
-            var StatsInterval = TimeSpan.FromMinutes(HashrateCalculationWindow);
+            var StatsWindowsTimeFrame = TimeSpan.FromMinutes(HashrateCalculationWindow);
    
             var stats = new MinerWorkerPerformanceStats
             {
@@ -163,35 +162,45 @@ namespace Miningcore.Mining
 
                 // fetch stats from DB for the last X minutes
                 var result = await readFaultPolicy.ExecuteAsync(() =>
-                    cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, TimeFrom, CurrentTimeUtc)));
+                    cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, TimeFrom.AddMinutes(-(StatsInterval*2)), CurrentTimeUtc)));
 
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
-                
 
                 // calculate & update pool, connected workers & hashrates
                 if (result.Length > 0)
                 {
-                    pool.PoolStats.ConnectedMiners = byMiner.Length;    // update connected miners
-                                              
-                    var TimeFrameBeforeFirstShare = ((result.Min(x => x.FirstShare) - TimeFrom).TotalSeconds);
-                    var TimeFrameAfterLastShare = ((CurrentTimeUtc - result.Max(x => x.LastShare)).TotalSeconds);
-                    //var TimeFrameBetweenFirstLastShare = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;
-                   
-                    var poolHashTimeFrame = StatsInterval.TotalSeconds - TimeFrameBeforeFirstShare + TimeFrameAfterLastShare;
-                    var poolHashesAccumulated = result.Sum(x => x.Sum);
-                    var poolHashesCountAccumulated = result.Sum(x => x.Count);
+                    if (result.Max(x => x.LastShare) >= TimeFrom)
+                    {
+                        pool.PoolStats.ConnectedMiners = byMiner.Length; // update connected miners
 
-                    poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, poolHashTimeFrame);
-                    if (poolHashrate < 3000000) {poolHashrate = 0;}
-                    pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
-                    pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / poolHashTimeFrame);
+                        // Stats calc windows
+                        var TimeFrameBeforeFirstShare = ((result.Min(x => x.FirstShare) - TimeFrom).TotalSeconds)/2;
+                        var TimeFrameAfterLastShare = ((CurrentTimeUtc - result.Max(x => x.LastShare)).TotalSeconds);
+                        var poolHashTimeFrame = StatsWindowsTimeFrame.TotalSeconds - TimeFrameBeforeFirstShare + TimeFrameAfterLastShare;
+
+                        // pool hashrate
+                        var poolHashesAccumulated = result.Sum(x => x.Sum);
+                        poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, poolHashTimeFrame);
+                        poolHashrate = Math.Ceiling(poolHashrate);
+                        pool.PoolStats.PoolHashrate = poolHashrate;
+
+                        // pool shares
+                        var poolHashesCountAccumulated = 0;  // ToDo: beter calc
+                        pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / poolHashTimeFrame);
+                    }
+                    else
+                    {
+                        poolHashrate = 0;
+                    }
+
                 }
                 messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
 
                 logger.Info(() => $"Connected Miners {poolId}: {pool.PoolStats.ConnectedMiners} miners");
                 logger.Info(() => $"Pool hashrate {poolId}: {pool.PoolStats.PoolHashrate} hashes/sec");
+                logger.Info(() => $"Pool shares {poolId}: {pool.PoolStats.SharesPerSecond} shares/sec");
 
-                // persist
+                // persist. Save pool stats in DB.
                 await cf.RunTx(async (con, tx) =>
                 {
                     var mapped = new Persistence.Model.PoolStats
@@ -211,45 +220,65 @@ namespace Miningcore.Mining
                     continue;
                 }
 
-                // calculate & update miner, worker hashrates
-                foreach(var minerHashes in byMiner)
+                if (result.Length > 0)
                 {
-                    double minerTotalHashrate = 0;
-
-                    await cf.RunTx(async (con, tx) =>
+                    if (result.Max(x => x.LastShare) >= TimeFrom)
                     {
-                        stats.Miner = minerHashes.Key;
-                        foreach(var item in minerHashes)
+                        // calculate & update miner, worker hashrates
+                        foreach (var minerHashes in byMiner)
                         {
-                            double minerHashrate = 0;
-                            stats.Worker = "Default_Miner";
-                            stats.Hashrate = 0;
-                            stats.SharesPerSecond = 0;
+                            double minerTotalHashrate = 0;
 
-                            var TimeFrameBeforeFirstShare = ((minerHashes.Min(x => x.FirstShare) - TimeFrom).TotalSeconds);
-                            var TimeFrameAfterLastShare = ((CurrentTimeUtc - minerHashes.Max(x => x.LastShare)).TotalSeconds);
-                            //var TimeFrameBetweenFirstLastShare = (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds;
-                        
-                            var minerHashTimeFrame = StatsInterval.TotalSeconds - TimeFrameBeforeFirstShare + TimeFrameAfterLastShare;
-                        
-                            // calculate miner/worker stats
-                            minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
-                            if (minerHashrate < 3000000) {minerHashrate = 0;}
-                            minerTotalHashrate += minerHashrate;
-                            stats.Hashrate = minerHashrate;
-                            if (item.Worker != null) {stats.Worker = item.Worker;}
-                            stats.SharesPerSecond = (double) item.Count / minerHashTimeFrame;
-                                
-                            // persist
-                            await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+                            await cf.RunTx(async (con, tx) =>
+                            {
+                                stats.Miner = minerHashes.Key;
+                                foreach (var item in minerHashes)
+                                {
+                                    double minerHashrate = 0;
+                                    stats.Worker = "Default_Miner";
+                                    stats.Hashrate = 0;
+                                    stats.SharesPerSecond = 0;
 
-                            logger.Info(() => $"Miner: {stats.Miner}.{stats.Worker} | Hashrate: {minerHashrate} | Shares per sec: {stats.SharesPerSecond}");
-                            messageBus.NotifyHashrateUpdated(pool.Config.Id, minerHashrate, stats.Miner, stats.Worker);
+                                    var TimeFrameBeforeFirstShare = ((minerHashes.Min(x => x.FirstShare) - TimeFrom).TotalSeconds)/2;
+                                    var TimeFrameAfterLastShare = ((CurrentTimeUtc - minerHashes.Max(x => x.LastShare)).TotalSeconds);
+                                    var minerHashTimeFrame = StatsWindowsTimeFrame.TotalSeconds - TimeFrameBeforeFirstShare + TimeFrameAfterLastShare;
+
+                                    // calculate miner/worker stats
+                                    minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
+                                    minerHashrate = Math.Ceiling(minerHashrate);
+                                    minerTotalHashrate += minerHashrate;
+                                    stats.Hashrate = minerHashrate;
+                                    if (item.Worker != null) {stats.Worker = item.Worker;}
+                                    stats.SharesPerSecond = (double) item.Count / minerHashTimeFrame;
+
+                                    // persist. Save miner stats in DB.
+                                    await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+
+                                    logger.Info(() => $"Miner: {stats.Miner}.{stats.Worker} | Hashrate: {minerHashrate} | Shares per sec: {stats.SharesPerSecond}");
+                                    messageBus.NotifyHashrateUpdated(pool.Config.Id, minerHashrate, stats.Miner, stats.Worker);
+                                }
+                            });
+
+                            logger.Info(() => $"Total miner hashrate: {stats.Miner} | {minerTotalHashrate}");
+                            messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
                         }
-                    });
-
-                    logger.Info(() => $"Total miner hashrate: {stats.Miner} | {minerTotalHashrate}");
-                    messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
+                    }
+                    else
+                    {
+                        foreach (var minerHashes in byMiner)
+                        {
+                            await cf.RunTx(async (con, tx) =>
+                            {
+                                stats.Miner = minerHashes.Key;
+                                stats.Worker = "Default_Miner";
+                                stats.Hashrate = 0;
+                                stats.SharesPerSecond = 0;
+                                
+                                logger.Info(() => $"Miner: {stats.Miner}.{stats.Worker} | Hashrate: {stats.Hashrate} | Shares per sec: {stats.SharesPerSecond}");
+                                messageBus.NotifyHashrateUpdated(pool.Config.Id, stats.Hashrate, stats.Miner, stats.Worker);
+                            });
+                        }
+                    }
                 }
             }
         }

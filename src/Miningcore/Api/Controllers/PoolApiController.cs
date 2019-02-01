@@ -370,13 +370,6 @@ namespace Miningcore.Api.Controllers
             switch(mode)
             {
                 case SampleRange.Day:
-                    // set range
-                    if (end.Minute < 30)
-                        end = end.AddHours(-1);
-
-                    end = end.AddMinutes(-end.Minute);
-                    end = end.AddSeconds(-end.Second);
-
                     start = end.AddDays(-1);
 
                     stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(
@@ -384,17 +377,14 @@ namespace Miningcore.Api.Controllers
                     break;
 
                 case SampleRange.Month:
-                    if (end.Hour < 12)
-                        end = end.AddDays(-1);
-
-                    end = end.Date;
-
-                    // set range
                     start = end.AddMonths(-1);
 
                     stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(
                         con, pool.Id, address, start, end));
                     break;
+
+                default:
+                    throw new ApiException("invalid interval");
             }
 
             // map
