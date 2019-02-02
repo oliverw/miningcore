@@ -48,7 +48,7 @@ namespace Miningcore.Mining
 
             BuildFaultHandlingPolicy();
         }
-
+        
         private readonly IMasterClock clock;
         private readonly IStatsRepository statsRepo;
         private readonly IConnectionFactory cf;
@@ -58,10 +58,10 @@ namespace Miningcore.Mining
         private readonly IShareRepository shareRepo;
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-        private const int StatsInterval = 2; // minutes
+        private const int StatsInterval = 5; // minutes
         private const int StatsCleanupInterval = 24; // hours
         private const int StatsDBCleanupHistory = 90;  // days
-        private const int HashrateCalculationWindow = 30; // minutes
+        private const int HashrateCalculationWindow = 60; // minutes
         private ClusterConfig clusterConfig;
         private Thread thread1;
         private const int RetryCount = 4;
@@ -90,7 +90,8 @@ namespace Miningcore.Mining
                 // warm-up delay
                 Thread.Sleep(TimeSpan.FromSeconds(10));
 
-                var poolStatsInterval = TimeSpan.FromMinutes(StatsInterval);
+                var _StatsInterval = clusterConfig.Statistics?.StatsInterval ?? StatsInterval;
+                var poolStatsInterval = TimeSpan.FromMinutes(_StatsInterval);
                 var performStatsGcInterval = DateTime.UtcNow;
 
                 while (true)
@@ -104,7 +105,8 @@ namespace Miningcore.Mining
                         if (clock.UtcNow >= performStatsGcInterval)
                         {
                             await PerformStatsGcAsync();
-                            performStatsGcInterval = DateTime.UtcNow.AddHours(StatsCleanupInterval);
+                            var _StatsCleanupInterval = clusterConfig.Statistics?.StatsCleanupInterval ?? StatsCleanupInterval;
+                            performStatsGcInterval = DateTime.UtcNow.AddHours(_StatsCleanupInterval);
                         }
                     }
 
@@ -139,9 +141,10 @@ namespace Miningcore.Mining
 
         private async Task UpdatePoolHashratesAsync()
         {
+            var _HashrateCalculationWindow = clusterConfig.Statistics?.HashrateCalculationWindow ?? HashrateCalculationWindow;
             var CurrentTimeUtc = clock.UtcNow;
-            var TimeFrom = CurrentTimeUtc.AddMinutes(-HashrateCalculationWindow);
-            var StatsWindowsTimeFrame = TimeSpan.FromMinutes(HashrateCalculationWindow);
+            var TimeFrom = CurrentTimeUtc.AddMinutes(-_HashrateCalculationWindow);
+            var StatsWindowsTimeFrame = TimeSpan.FromMinutes(_HashrateCalculationWindow);
    
             var stats = new MinerWorkerPerformanceStats
             {
@@ -289,9 +292,11 @@ namespace Miningcore.Mining
 
             await cf.Run(async con =>
             {
-                logger.Info(() => $"Removing all stats older then {StatsDBCleanupHistory} days");
+                var _StatsInterval = clusterConfig.Statistics?.StatsInterval ?? StatsInterval;
+                var _StatsDBCleanupHistory = clusterConfig.Statistics?.StatsDBCleanupHistory ?? StatsDBCleanupHistory;
+                logger.Info(() => $"Removing all stats older then {_StatsDBCleanupHistory} days");
 
-                var cutOff = DateTime.UtcNow.AddDays(-StatsDBCleanupHistory);
+                var cutOff = DateTime.UtcNow.AddDays(-_StatsDBCleanupHistory);
                 
                 var rowCount = await statsRepo.DeletePoolStatsBeforeAsync(con, cutOff);
                 if(rowCount > 0)

@@ -580,6 +580,15 @@ namespace Miningcore.Configuration
         public string[] MetricsIpWhitelist { get; set; }
     }
 
+    public partial class Statistics
+    {
+        public int StatsInterval { get; set; }
+        public int HashrateCalculationWindow { get; set; }
+        public int StatsCleanupInterval { get; set; }
+        public int StatsDBCleanupHistory { get; set; }
+        
+    }
+
     public partial class ZmqPubSubEndpointConfig
     {
         public string Url { get; set; }
@@ -667,6 +676,7 @@ namespace Miningcore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
+        public Statistics Statistics { get; set; }
 
         /// <summary>
         /// If this is enabled, shares are not written to the database
