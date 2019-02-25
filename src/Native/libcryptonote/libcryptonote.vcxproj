@@ -225,7 +225,6 @@
     <ClCompile Include="crypto\oaes_lib.c" />
     <ClCompile Include="crypto\random.c" />
     <ClCompile Include="crypto\skein.c" />
-    <ClCompile Include="crypto\slow-hash-lite.c" />
     <ClCompile Include="crypto\slow-hash.c" />
     <ClCompile Include="crypto\tree-hash.c" />
     <ClCompile Include="dllmain.cpp" />

@@ -174,6 +174,14 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 switch(blobConverted[0])
                 {
+                    case 13:
+                        variant = CryptonightVariant.VARIANT_4;
+                        break;
+
+                    case 12:
+                        variant = CryptonightVariant.VARIANT_WOW;
+                        break;
+
                     case 9:
                     case 8:
                         variant = CryptonightVariant.VARIANT_2;
@@ -191,7 +199,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            hashFunc(blobConverted, headerHash, variant);
+            hashFunc(blobConverted, headerHash, variant, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
             if (headerHashString != workerHash)
