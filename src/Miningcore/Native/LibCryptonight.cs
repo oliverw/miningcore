@@ -33,7 +33,7 @@ namespace Miningcore.Native
 
         internal class CryptonightContextStore
         {
-            internal CryptonightContextStore(Func<IntPtr> allocator, int allocationSize, string logId)
+            internal CryptonightContextStore(Func<IntPtr> allocator, string logId)
             {
                 this.logId = logId.ToUpper();
 
@@ -43,9 +43,6 @@ namespace Miningcore.Native
                     contexts.Add(new Lazy<IntPtr>(()=>
                     {
                         var result = allocator();
-
-                        if(result != IntPtr.Zero)
-                            GC.AddMemoryPressure(allocationSize);
 
                         return result;
                     }));
@@ -73,22 +70,14 @@ namespace Miningcore.Native
             }
         }
 
-        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, cryptonight_get_context_size(), "cn");
-        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, cryptonight_get_context_lite_size(), "cn-lite");
-        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, cryptonight_get_context_heavy_size(), "cn-heavy");
+        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, "cn");
+        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
+        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
+        private static readonly CryptonightContextStore ctxsPico = new CryptonightContextStore(cryptonight_alloc_pico_context, "cn-pico");
 
         #endregion // Hashing context managment
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_size_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_get_context_size();
-
-        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_lite_size_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_get_context_lite_size();
-
-        [DllImport("libcryptonight", EntryPoint = "cryptonight_get_context_heavy_size_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_get_context_heavy_size();
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_context();
@@ -99,19 +88,25 @@ namespace Miningcore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_heavy_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_heavy_context();
 
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_pico_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr cryptonight_alloc_pico_context();
+
         [DllImport("libcryptonight", EntryPoint = "cryptonight_free_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern void cryptonight_free_context(IntPtr ptr);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
+        private static extern int cryptonight(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_light_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_light(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
+        private static extern int cryptonight_light(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
 
         [DllImport("libcryptonight", EntryPoint = "cryptonight_heavy_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant);
+        private static extern int cryptonight_heavy(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
 
-        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant);
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int cryptonight_pico(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
+
+        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height);
 
         // see https://github.com/xmrig/xmrig/blob/master/src/common/xmrig.h
         public enum CryptonightVariant
@@ -126,6 +121,11 @@ namespace Miningcore.Native
             VARIANT_XAO = 6,  // Modified CryptoNight variant 0 (Alloy only)
             VARIANT_RTO = 7,  // Modified CryptoNight variant 1 (Arto only)
             VARIANT_2 = 8,  // CryptoNight variant 2
+            VARIANT_HALF = 9,  // CryptoNight variant 2 with half iterations (Masari/Stellite)
+            VARIANT_TRTL = 10, // CryptoNight Turtle (TRTL)
+            VARIANT_GPU = 11, // CryptoNight-GPU (Ryo)
+            VARIANT_WOW = 12, // CryptoNightR (Wownero)
+            VARIANT_4 = 13, // CryptoNightR (Monero's variant 4)
             VARIANT_MAX
         };
 
@@ -133,7 +133,7 @@ namespace Miningcore.Native
         /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
+        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -145,7 +145,7 @@ namespace Miningcore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight(ctx.Value, input, output, (uint)data.Length, variant);
+                        cryptonight(ctx.Value, input, output, (uint)data.Length, variant, height);
                     }
                 }
             }
@@ -160,7 +160,7 @@ namespace Miningcore.Native
         /// Cryptonight Lite Hash (AEON etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
+        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -172,7 +172,7 @@ namespace Miningcore.Native
                 {
                     fixed(byte* output = result)
                     {
-                        cryptonight_light(ctx.Value, input, output, (uint) data.Length, variant);
+                        cryptonight_light(ctx.Value, input, output, (uint) data.Length, variant, height);
                     }
                 }
             }
@@ -187,7 +187,7 @@ namespace Miningcore.Native
         /// Cryptonight Heavy Hash (TUBE etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant)
+        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -199,7 +199,7 @@ namespace Miningcore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight_heavy(ctx.Value, input, output, (uint) data.Length, variant);
+                        cryptonight_heavy(ctx.Value, input, output, (uint) data.Length, variant, height);
                     }
                 }
             }
@@ -207,6 +207,33 @@ namespace Miningcore.Native
             finally
             {
                 ctxsHeavy.Return(ctx);
+            }
+        }
+
+        /// <summary>
+        /// Cryptonight Pico Hash (TUBE etc.)
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
+        public static void CryptonightPico(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+
+            var ctx = ctxsPico.Lease();
+
+            try
+            {
+                fixed (byte* input = data)
+                {
+                    fixed (byte* output = result)
+                    {
+                        cryptonight_pico(ctx.Value, input, output, (uint)data.Length, variant, height);
+                    }
+                }
+            }
+
+            finally
+            {
+                ctxsPico.Return(ctx);
             }
         }
     }

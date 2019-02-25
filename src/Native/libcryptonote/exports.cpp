@@ -28,8 +28,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace cryptonote;
 
-extern "C" void cn_slow_hash_lite(const void *data, size_t length, char *hash);
-
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)
 #else
@@ -117,17 +115,7 @@ extern "C" MODULE_API uint64_t decode_integrated_address_export(const char* inpu
     return prefix;
 }
 
-extern "C" MODULE_API void cn_slow_hash_export(const char* input, unsigned char *output, uint32_t inputSize, uint32_t variant)
-{
-	cn_slow_hash_old_sig((const void *) input, (const size_t) inputSize, (char *) output, variant);
-}
-
 extern "C" MODULE_API void cn_fast_hash_export(const char* input, unsigned char *output, uint32_t inputSize)
 {
 	cn_fast_hash_old_sig((const void *)input, (const size_t) inputSize, (char *) output);
-}
-
-extern "C" MODULE_API void cn_slow_hash_lite_export(const char* input, unsigned char *output, uint32_t inputSize)
-{
-    cn_slow_hash_lite((const void *)input, (const size_t)inputSize, (char *)output);
 }

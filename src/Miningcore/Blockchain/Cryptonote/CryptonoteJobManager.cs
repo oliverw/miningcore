@@ -44,6 +44,7 @@ using Miningcore.Payments;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
+using MoreLinq;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
@@ -98,8 +99,9 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 var blockTemplate = response.Response;
                 var job = currentJob;
+                var newHash = blockTemplate.Blob.HexToByteArray().Slice(7, 32).ToHexString();
 
-                var isNew = job == null || job.BlockTemplate.Height < blockTemplate.Height;
+                var isNew = job == null || newHash != job.PrevHash;
 
                 if (isNew)
                 {
@@ -110,7 +112,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig);
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash);
                     currentJob = job;
 
                     // update stats

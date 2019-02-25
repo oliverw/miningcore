@@ -168,7 +168,8 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 JobId = job.Id,
                 Blob = blob,
-                Target = target
+                Target = target,
+                Height = job.Height,
             };
 
             // update context

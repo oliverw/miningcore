@@ -284,7 +284,7 @@ namespace Miningcore.Blockchain.Bitcoin
         private void ConfigureVersionRolling(StratumClient client, BitcoinWorkerContext context, 
             Dictionary<string, JToken> extensionParams, Dictionary<string, object> result)
         {
-            var requestedBits = extensionParams[BitcoinStratumExtensions.VersionRollingBits].Value<int>();
+            //var requestedBits = extensionParams[BitcoinStratumExtensions.VersionRollingBits].Value<int>();
             uint requestedMask = BitcoinConstants.VersionRollingPoolMask;
 
             if (extensionParams.TryGetValue(BitcoinStratumExtensions.VersionRollingMask, out var requestedMaskValue))

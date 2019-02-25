@@ -57,13 +57,13 @@ namespace Miningcore.Mining
         private readonly IMessageBus messageBus;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
+        private readonly TimeSpan interval = TimeSpan.FromMinutes(5);
         private const int HashrateCalculationWindow = 1200; // seconds
         private const int MinHashrateCalculationWindow = 300; // seconds
         private const double HashrateBoostFactor = 1.1d;
         private ClusterConfig clusterConfig;
-        private Thread thread1;
         private const int RetryCount = 4;
         private IAsyncPolicy readFaultPolicy;
 
@@ -83,16 +83,14 @@ namespace Miningcore.Mining
 
         public void Start()
         {
-            logger.Info(() => "Online");
-
-            thread1 = new Thread(async () =>
+            Task.Run(async () =>
             {
+                logger.Info(() => "Online");
+
                 // warm-up delay
-                Thread.Sleep(TimeSpan.FromSeconds(10));
+                await Task.Delay(TimeSpan.FromSeconds(10));
 
-                var interval = TimeSpan.FromMinutes(5);
-
-                while(true)
+                while(!cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -105,24 +103,16 @@ namespace Miningcore.Mining
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
+                    await Task.Delay(interval, cts.Token);
                 }
             });
-
-            thread1.Name = "StatsRecorder";
-            thread1.Start();
         }
 
         public void Stop()
         {
             logger.Info(() => "Stopping ..");
 
-            stopEvent.Set();
-            thread1.Join();
+            cts.Cancel();
 
             logger.Info(() => "Stopped");
         }

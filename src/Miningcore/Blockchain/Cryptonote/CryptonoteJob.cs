@@ -36,7 +36,7 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig)
+            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -47,6 +47,7 @@ namespace Miningcore.Blockchain.Cryptonote
             coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
             BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
+            PrevHash = prevHash;
 
             switch (coin.Hash)
             {
@@ -120,6 +121,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         #region API-Surface
 
+        public string PrevHash { get; }
         public GetBlockTemplateResponse BlockTemplate { get; }
 
         public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
@@ -164,24 +166,26 @@ namespace Miningcore.Blockchain.Cryptonote
                 throw new StratumException(StratumError.MinusOne, "malformed blob");
 
             // determine variant
-            CryptonightVariant variant;
+            CryptonightVariant variant = CryptonightVariant.VARIANT_0;
 
             if (coin.HashVariant != 0)
-                variant = (CryptonightVariant)coin.HashVariant;
+                variant = (CryptonightVariant) coin.HashVariant;
             else
             {
-                switch(blobConverted[0])
+                switch (coin.Hash)
                 {
-                    case 9:
-                    case 8:
-                        variant = CryptonightVariant.VARIANT_2;
+                    case CryptonightHashType.Normal:
+                        variant = (blobConverted[0] >= 10) ? CryptonightVariant.VARIANT_4 : 
+                            ((blobConverted[0] >= 8) ? CryptonightVariant.VARIANT_2 :
+                            ((blobConverted[0] == 7) ? CryptonightVariant.VARIANT_1 : 
+                            CryptonightVariant.VARIANT_0));
                         break;
 
-                    case 7:
+                    case CryptonightHashType.Lite:
                         variant = CryptonightVariant.VARIANT_1;
                         break;
 
-                    default:
+                    case CryptonightHashType.Heavy:
                         variant = CryptonightVariant.VARIANT_0;
                         break;
                 }
@@ -189,7 +193,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            hashFunc(blobConverted, headerHash, variant);
+            hashFunc(blobConverted, headerHash, variant, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
             if (headerHashString != workerHash)

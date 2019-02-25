@@ -257,6 +257,7 @@
     <ClInclude Include="x16r.h" />
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
+    <ClInclude Include="x21s.h" />
     <ClInclude Include="x22i.h" />
   </ItemGroup>
   <ItemGroup>
@@ -339,6 +340,7 @@
     <ClCompile Include="x16r.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
+    <ClCompile Include="x21s.c" />
     <ClCompile Include="x22i.c" />
   </ItemGroup>
   <ItemGroup>
