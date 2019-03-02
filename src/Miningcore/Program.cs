@@ -716,6 +716,7 @@ namespace Miningcore
                         services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
                         services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
                         services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+                        services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
                     }
 
                     // MVC
@@ -726,7 +727,7 @@ namespace Miningcore
                     services.AddSingleton<AdminApiController, AdminApiController>();
 
                     services.AddMvc()
-                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                         .AddControllersAsServices()
                         .AddJsonOptions(options =>
                         {
