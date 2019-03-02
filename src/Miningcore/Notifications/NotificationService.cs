@@ -59,7 +59,7 @@ namespace Miningcore.Notifications
                         });
                     });
 
-                messageBus.Listen<BlockNotification>()
+                messageBus.Listen<BlockFoundNotification>()
                     .Subscribe(x =>
                     {
                         queue?.Add(new QueuedNotification
