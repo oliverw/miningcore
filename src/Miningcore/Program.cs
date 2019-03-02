@@ -719,12 +719,13 @@ namespace Miningcore
                         services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
                     }
 
-                    // MVC
-                    services.AddSingleton((IComponentContext) container);
-                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
+                    // Controllers
                     services.AddSingleton<PoolApiController, PoolApiController>();
                     services.AddSingleton<AdminApiController, AdminApiController>();
+
+                    // MVC
+                    services.AddSingleton((IComponentContext)container);
+                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                     services.AddMvc()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
