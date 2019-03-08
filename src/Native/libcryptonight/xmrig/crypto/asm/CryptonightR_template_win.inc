@@ -36,22 +36,22 @@ CryptonightR_template_part1:
 	mov	rax, QWORD PTR [rdx+48]
 	xor	rax, QWORD PTR [rdx+16]
 	movaps	XMMWORD PTR [rsp+48], xmm6
-	movd	xmm0, r12
+	movq	xmm0, r12
 	movaps	XMMWORD PTR [rsp+32], xmm7
 	movaps	XMMWORD PTR [rsp+16], xmm8
 	movaps	XMMWORD PTR [rsp], xmm9
 	mov	r12, QWORD PTR [rdx+88]
 	xor	r12, QWORD PTR [rdx+72]
-	movd	xmm6, rax
+	movq	xmm6, rax
 	mov	rax, QWORD PTR [rdx+80]
 	xor	rax, QWORD PTR [rdx+64]
 	punpcklqdq xmm6, xmm0
 	and	r9d, 2097136
-	movd	xmm0, r12
-	movd	xmm7, rax
+	movq	xmm0, r12
+	movq	xmm7, rax
 	punpcklqdq xmm7, xmm0
 	mov r10d, r9d
-	movd	xmm9, rsp
+	movq	xmm9, rsp
 	mov rsp, r8
 	mov	r8d, 524288
 
@@ -63,8 +63,8 @@ CryptonightR_template_part1:
 	ALIGN(64)
 CryptonightR_template_mainloop:
 	movdqa	xmm5, XMMWORD PTR [r9+r11]
-	movd	xmm0, r15
-	movd	xmm4, rsp
+	movq	xmm0, r15
+	movq	xmm4, rsp
 	punpcklqdq xmm4, xmm0
 	lea	rdx, QWORD PTR [r9+r11]
 
@@ -83,7 +83,7 @@ CryptonightR_template_mainloop:
 	pxor xmm5, xmm1
 	pxor xmm5, xmm0
 
-	movd	r12, xmm5
+	movq	r12, xmm5
 	movd	r10d, xmm5
 	and	r10d, 2097136
 
@@ -161,7 +161,7 @@ CryptonightR_template_part2:
 	jnz	CryptonightR_template_mainloop
 
 CryptonightR_template_part3:
-	movd	rsp, xmm9
+	movq	rsp, xmm9
 
 	mov	rbx, QWORD PTR [rsp+136]
 	mov	rbp, QWORD PTR [rsp+144]
@@ -206,7 +206,7 @@ CryptonightR_template_double_part1:
 	xor	rax, QWORD PTR [r8+16]
 	mov	r15, QWORD PTR [rdx+32]
 	xor	r15, QWORD PTR [rdx]
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	rcx, QWORD PTR [r8+88]
 	xor	rcx, QWORD PTR [r8+72]
 	mov	r13, QWORD PTR [rdx+40]
@@ -222,7 +222,7 @@ CryptonightR_template_double_part1:
 	movaps	XMMWORD PTR [rsp+272], xmm13
 	movaps	XMMWORD PTR [rsp+288], xmm14
 	movaps	XMMWORD PTR [rsp+304], xmm15
-	movd	xmm7, rax
+	movq	xmm7, rax
 	mov	rax, QWORD PTR [r8+80]
 	xor	rax, QWORD PTR [r8+64]
 
@@ -233,41 +233,41 @@ CryptonightR_template_double_part1:
 
 	mov	r8d, r15d
 	punpcklqdq xmm7, xmm0
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	rcx, QWORD PTR [rdx+56]
 	xor	rcx, QWORD PTR [rdx+24]
-	movd	xmm9, rax
+	movq	xmm9, rax
 	mov	QWORD PTR [rsp+128], rsi
 	mov	rax, QWORD PTR [rdx+48]
 	xor	rax, QWORD PTR [rdx+16]
 	punpcklqdq xmm9, xmm0
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	rcx, QWORD PTR [rdx+88]
 	xor	rcx, QWORD PTR [rdx+72]
-	movd	xmm8, rax
+	movq	xmm8, rax
 	mov	QWORD PTR [rsp+136], rdi
 	mov	rax, QWORD PTR [rdx+80]
 	xor	rax, QWORD PTR [rdx+64]
 	punpcklqdq xmm8, xmm0
 	and	r8d, 2097136
-	movd	xmm0, rcx
+	movq	xmm0, rcx
 	mov	r11d, 524288
-	movd	xmm10, rax
+	movq	xmm10, rax
 	punpcklqdq xmm10, xmm0
 	
-	movd xmm14, QWORD PTR [rsp+128]
-	movd xmm15, QWORD PTR [rsp+136]
+	movq xmm14, QWORD PTR [rsp+128]
+	movq xmm15, QWORD PTR [rsp+136]
 
 	ALIGN(64)
 CryptonightR_template_double_mainloop:
 	movdqu	xmm6, XMMWORD PTR [rbx+rsi]
-	movd	xmm0, r12
+	movq	xmm0, r12
 	mov	ecx, ebx
-	movd	xmm3, r14
+	movq	xmm3, r14
 	punpcklqdq xmm3, xmm0
 	xor	ebx, 16
 	aesenc	xmm6, xmm3
-	movd	xmm4, r15
+	movq	xmm4, r15
 	movdqu	xmm0, XMMWORD PTR [rbx+rsi]
 	pxor	xmm6, xmm0
 	xor	ebx, 48
@@ -281,7 +281,7 @@ CryptonightR_template_double_mainloop:
 	xor	rax, 32
 	movdqu	xmm0, XMMWORD PTR [rbx+rsi]
 	pxor	xmm6, xmm0
-	movd	rdx, xmm6
+	movq	rdx, xmm6
 	movdqu	XMMWORD PTR [rbx+rsi], xmm1
 	paddq	xmm0, xmm9
 	movdqu	XMMWORD PTR [rax+rsi], xmm0
@@ -292,7 +292,7 @@ CryptonightR_template_double_mainloop:
 	movdqu	xmm5, XMMWORD PTR [r8+rdi]
 	and	esi, 2097136
 	mov	ecx, r8d
-	movd	xmm0, r13
+	movq	xmm0, r13
 	punpcklqdq xmm4, xmm0
 	xor	r8d, 16
 	aesenc	xmm5, xmm4
@@ -315,20 +315,20 @@ CryptonightR_template_double_mainloop:
 	movdqa	xmm0, xmm5
 	pxor	xmm0, xmm8
 	movdqu	XMMWORD PTR [rcx+rdi], xmm0
-	movd	rdi, xmm5
-	movd	rcx, xmm14
+	movq	rdi, xmm5
+	movq	rcx, xmm14
 	mov	ebp, edi
 	mov	r8, QWORD PTR [rcx+rsi]
 	mov	r10, QWORD PTR [rcx+rsi+8]
 	lea	r9, QWORD PTR [rcx+rsi]
 	xor	esi, 16
 
-	movd xmm0, rsp
-	movd xmm1, rsi
-	movd xmm2, rdi
-	movd xmm11, rbp
-	movd xmm12, r15
-	movd xmm13, rdx
+	movq xmm0, rsp
+	movq xmm1, rsi
+	movq xmm2, rdi
+	movq xmm11, rbp
+	movq xmm12, r15
+	movq xmm13, rdx
 	mov [rsp+104], rcx
 	mov [rsp+112], r9
 
@@ -363,17 +363,17 @@ CryptonightR_template_double_part2:
 	or rax, rdx
 	xor r12, rax
 
-	movd rsp, xmm0
+	movq rsp, xmm0
 	mov DWORD PTR [rsp+16], ebx
 	mov DWORD PTR [rsp+20], esi
 	mov DWORD PTR [rsp+24], edi
 	mov DWORD PTR [rsp+28], ebp
 
-	movd rsi, xmm1
-	movd rdi, xmm2
-	movd rbp, xmm11
-	movd r15, xmm12
-	movd rdx, xmm13
+	movq rsi, xmm1
+	movq rdi, xmm2
+	movq rbp, xmm11
+	movq r15, xmm12
+	movq rdx, xmm13
 	mov rcx, [rsp+104]
 	mov r9, [rsp+112]
 
@@ -406,7 +406,7 @@ CryptonightR_template_double_part2:
 	mov	QWORD PTR [r9+8], r12
 	xor	r12, r10
 	mov	QWORD PTR [r9], r14
-	movd rcx, xmm15
+	movq rcx, xmm15
 	xor	r14, rbx
 	mov	r10d, ebp
 	mov	ebx, r14d
@@ -415,12 +415,12 @@ CryptonightR_template_double_part2:
 	mov	r8, QWORD PTR [r10+rcx]
 	mov	r9, QWORD PTR [r10+rcx+8]
 
-	movd xmm0, rsp
-	movd xmm1, rbx
-	movd xmm2, rsi
-	movd xmm11, rdi
-	movd xmm12, rbp
-	movd xmm13, r15
+	movq xmm0, rsp
+	movq xmm1, rbx
+	movq xmm2, rsi
+	movq xmm11, rdi
+	movq xmm12, rbp
+	movq xmm13, r15
 	mov [rsp+104], rcx
 	mov [rsp+112], r9
 
@@ -435,7 +435,7 @@ CryptonightR_template_double_part2:
 	or	rax, rdx
 
 	xor r8, rax
-	movd xmm3, r8
+	movq xmm3, r8
 
 	movd esp, xmm4
 	pextrd r15d, xmm4, 2
@@ -445,7 +445,7 @@ CryptonightR_template_double_part2:
 
 CryptonightR_template_double_part3:
 
-	movd r15, xmm13
+	movq r15, xmm13
 
 	mov eax, edi
 	mov edx, ebp
@@ -459,16 +459,16 @@ CryptonightR_template_double_part3:
 	or rax, rdx
 	xor r13, rax
 
-	movd rsp, xmm0
+	movq rsp, xmm0
 	mov DWORD PTR [rsp], ebx
 	mov DWORD PTR [rsp+4], esi
 	mov DWORD PTR [rsp+8], edi
 	mov DWORD PTR [rsp+12], ebp
 
-	movd rbx, xmm1
-	movd rsi, xmm2
-	movd rdi, xmm11
-	movd rbp, xmm12
+	movq rbx, xmm1
+	movq rsi, xmm2
+	movq rdi, xmm11
+	movq rbp, xmm12
 	mov rcx, [rsp+104]
 	mov r9, [rsp+112]
 
@@ -494,7 +494,7 @@ CryptonightR_template_double_part3:
 	movdqu	XMMWORD PTR [rbp+rcx], xmm2
 	paddq	xmm0, xmm10
 	movdqu	XMMWORD PTR [rax+rcx], xmm0
-	movd rax, xmm3
+	movq rax, xmm3
 	movdqa	xmm10, xmm8
 	mov	QWORD PTR [r10+rcx], r15
 	movdqa	xmm8, xmm5

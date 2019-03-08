@@ -126,6 +126,9 @@ namespace Miningcore.Native
             VARIANT_GPU = 11, // CryptoNight-GPU (Ryo)
             VARIANT_WOW = 12, // CryptoNightR (Wownero)
             VARIANT_4 = 13, // CryptoNightR (Monero's variant 4)
+            VARIANT_RWZ = 14, // CryptoNight variant 2 with 3/4 iterations and reversed shuffle operation (Graft)
+            VARIANT_ZLS = 15, // CryptoNight variant 2 with 3/4 iterations (Zelerius)
+            VARIANT_DOUBLE = 16, // CryptoNight variant 2 with double iterations (X-CASH)
             VARIANT_MAX
         };
 
