@@ -66,7 +66,7 @@
     <PackageReference Include="NBitcoin" Version="4.1.1.82" />
     <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="NLog" Version="4.5.11" />
+    <PackageReference Include="NLog" Version="4.6.0" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.4.0" />
     <PackageReference Include="Npgsql" Version="4.0.4" />
     <PackageReference Include="Polly" Version="7.0.3" />
