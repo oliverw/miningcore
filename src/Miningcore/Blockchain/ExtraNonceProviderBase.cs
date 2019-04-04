@@ -57,7 +57,7 @@ namespace Miningcore.Blockchain
             lock(counterLock)
             {
                 counter++;
-                if (counter > nonceMax)
+                if(counter > nonceMax)
                     counter = 0;
 
                 // encode to hex

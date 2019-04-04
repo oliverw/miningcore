@@ -113,9 +113,9 @@ namespace Miningcore.Mining
                 await shareRepo.BatchInsertAsync(con, tx, mapped);
 
                 // Insert blocks
-                foreach (var share in shares)
+                foreach(var share in shares)
                 {
-                    if (!share.IsBlockCandidate)
+                    if(!share.IsBlockCandidate)
                         continue;
 
                     var blockEntity = mapper.Map<Block>(share);
@@ -148,7 +148,7 @@ namespace Miningcore.Mining
                 {
                     using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                     {
-                        if (stream.Length == 0)
+                        if(stream.Length == 0)
                             WriteRecoveryFileheader(writer);
 
                         foreach(var share in shares)
@@ -164,7 +164,7 @@ namespace Miningcore.Mining
 
             catch(Exception ex)
             {
-                if (!hasLoggedPolicyFallbackFailure)
+                if(!hasLoggedPolicyFallbackFailure)
                 {
                     logger.Fatal(ex, "Fatal error during policy fallback execution. Share(s) will be lost!");
                     hasLoggedPolicyFallbackFailure = true;
@@ -201,11 +201,11 @@ namespace Miningcore.Mining
                             var line = reader.ReadLine().Trim();
 
                             // skip blank lines
-                            if (line.Length == 0)
+                            if(line.Length == 0)
                                 continue;
 
                             // skip comments
-                            if (line.StartsWith("#"))
+                            if(line.StartsWith("#"))
                                 continue;
 
                             // parse
@@ -224,7 +224,7 @@ namespace Miningcore.Mining
                             // import
                             try
                             {
-                                if (shares.Count == bufferSize)
+                                if(shares.Count == bufferSize)
                                 {
                                     await PersistSharesCoreAsync(shares);
 
@@ -241,7 +241,7 @@ namespace Miningcore.Mining
 
                             // progress
                             var now = DateTime.UtcNow;
-                            if (now - lastProgressUpdate > TimeSpan.FromSeconds(10))
+                            if(now - lastProgressUpdate > TimeSpan.FromSeconds(10))
                             {
                                 logger.Info($"{successCount} shares imported");
                                 lastProgressUpdate = now;
@@ -251,7 +251,7 @@ namespace Miningcore.Mining
                         // import remaining shares
                         try
                         {
-                            if (shares.Count > 0)
+                            if(shares.Count > 0)
                             {
                                 await PersistSharesCoreAsync(shares);
 
@@ -267,7 +267,7 @@ namespace Miningcore.Mining
                     }
                 }
 
-                if (failCount == 0)
+                if(failCount == 0)
                     logger.Info(() => $"Successfully imported {successCount} shares");
                 else
                     logger.Warn(() => $"Successfully imported {successCount} shares with {failCount} failures");
@@ -281,7 +281,7 @@ namespace Miningcore.Mining
 
         private void NotifyAdminOnPolicyFallback()
         {
-            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+            if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true &&
                 !notifiedAdminOnPolicyFallback)
             {
@@ -320,7 +320,7 @@ namespace Miningcore.Mining
         {
             queueSub = messageBus.Listen<ClientShare>()
                 .ObserveOn(TaskPoolScheduler.Default)
-                .Select(x=> x.Share)
+                .Select(x => x.Share)
                 .Buffer(TimeSpan.FromSeconds(5), 200)
                 .Where(shares => shares.Any())
                 .Select(shares => Observable.FromAsync(async () =>
@@ -330,16 +330,16 @@ namespace Miningcore.Mining
                         await PersistSharesAsync(shares);
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
                 }))
                 .Concat()
                 .Subscribe(
-                    _=> {},
-                    ex=> logger.Fatal(()=> $"{nameof(ShareRecorder)} queue terminated with {ex}"),
-                    ()=> logger.Info(()=> $"{nameof(ShareRecorder)} queue completed"));
+                    _ => { },
+                    ex => logger.Fatal(() => $"{nameof(ShareRecorder)} queue terminated with {ex}"),
+                    () => logger.Info(() => $"{nameof(ShareRecorder)} queue completed"));
         }
 
         private void ConfigureRecovery()

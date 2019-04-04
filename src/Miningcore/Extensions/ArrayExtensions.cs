@@ -71,20 +71,20 @@ namespace Miningcore.Extensions
 
         public static string ToHexString(this Span<byte> value, int? off, int? len, bool withPrefix = false)
         {
-            if (value == null || value.Length == 0)
+            if(value == null || value.Length == 0)
                 return string.Empty;
 
             var length = len ?? value.Length;
             var bufferSize = length * 2;
 
-            if (withPrefix)
+            if(withPrefix)
                 bufferSize += 2;
 
             Span<char> buffer = stackalloc char[bufferSize];
 
             var offset = 0;
 
-            if (withPrefix)
+            if(withPrefix)
             {
                 buffer[offset++] = '0';
                 buffer[offset++] = 'x';

@@ -121,7 +121,7 @@ namespace Miningcore.Api.Controllers
             var end = clock.Now;
             DateTime start;
 
-            switch (range)
+            switch(range)
             {
                 case SampleRange.Day:
                     start = end.AddDays(-1);
@@ -181,18 +181,18 @@ namespace Miningcore.Api.Controllers
             // enrich blocks
             var blockInfobaseDict = pool.Template.ExplorerBlockLinks;
 
-            foreach (var block in blocks)
+            foreach(var block in blocks)
             {
                 // compute infoLink
-                if (blockInfobaseDict != null)
+                if(blockInfobaseDict != null)
                 {
                     blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl);
 
-                    if (!string.IsNullOrEmpty(blockInfobaseUrl))
+                    if(!string.IsNullOrEmpty(blockInfobaseUrl))
                     {
-                        if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
                             block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                        else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
                             block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
                     }
                 }
@@ -216,14 +216,14 @@ namespace Miningcore.Api.Controllers
             var txInfobaseUrl = pool.Template.ExplorerTxLink;
             var addressInfobaseUrl = pool.Template.ExplorerTxLink;
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
-                if (!string.IsNullOrEmpty(txInfobaseUrl))
+                if(!string.IsNullOrEmpty(txInfobaseUrl))
                     payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
 
                 // pool wallet link
-                if (!string.IsNullOrEmpty(addressInfobaseUrl))
+                if(!string.IsNullOrEmpty(addressInfobaseUrl))
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
@@ -236,7 +236,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            if (string.IsNullOrEmpty(address))
+            if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var statsResult = await cf.RunTx((con, tx) =>
@@ -244,19 +244,19 @@ namespace Miningcore.Api.Controllers
 
             Responses.MinerStats stats = null;
 
-            if (statsResult != null)
+            if(statsResult != null)
             {
                 stats = mapper.Map<Responses.MinerStats>(statsResult);
 
                 // optional fields
-                if (statsResult.LastPayment != null)
+                if(statsResult.LastPayment != null)
                 {
                     // Set timestamp of last payment
                     stats.LastPayment = statsResult.LastPayment.Created;
 
                     // Compute info link
                     var baseUrl = pool.Template.ExplorerTxLink;
-                    if (!string.IsNullOrEmpty(baseUrl))
+                    if(!string.IsNullOrEmpty(baseUrl))
                         stats.LastPaymentLink = string.Format(baseUrl, statsResult.LastPayment.TransactionConfirmationData);
                 }
 
@@ -272,7 +272,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            if (string.IsNullOrEmpty(address))
+            if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
@@ -284,14 +284,14 @@ namespace Miningcore.Api.Controllers
             var txInfobaseUrl = pool.Template.ExplorerTxLink;
             var addressInfobaseUrl = pool.Template.ExplorerTxLink;
 
-            foreach (var payment in payments)
+            foreach(var payment in payments)
             {
                 // compute transaction infoLink
-                if (!string.IsNullOrEmpty(txInfobaseUrl))
+                if(!string.IsNullOrEmpty(txInfobaseUrl))
                     payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
 
                 // pool wallet link
-                if (!string.IsNullOrEmpty(addressInfobaseUrl))
+                if(!string.IsNullOrEmpty(addressInfobaseUrl))
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
 
@@ -304,7 +304,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            if (string.IsNullOrEmpty(address))
+            if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
@@ -321,7 +321,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            if (string.IsNullOrEmpty(address))
+            if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
@@ -337,7 +337,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            if (string.IsNullOrEmpty(address))
+            if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var result = await GetMinerPerformanceInternal(mode, pool, address);
@@ -349,12 +349,12 @@ namespace Miningcore.Api.Controllers
 
         private PoolConfig GetPool(string poolId)
         {
-            if (string.IsNullOrEmpty(poolId))
+            if(string.IsNullOrEmpty(poolId))
                 throw new ApiException($"Invalid pool id", HttpStatusCode.NotFound);
 
             var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
-            if (pool == null)
+            if(pool == null)
                 throw new ApiException($"Pool {poolId} is not known", HttpStatusCode.NotFound);
 
             return pool;
@@ -371,7 +371,7 @@ namespace Miningcore.Api.Controllers
             {
                 case SampleRange.Day:
                     // set range
-                    if (end.Minute < 30)
+                    if(end.Minute < 30)
                         end = end.AddHours(-1);
 
                     end = end.AddMinutes(-end.Minute);
@@ -384,7 +384,7 @@ namespace Miningcore.Api.Controllers
                     break;
 
                 case SampleRange.Month:
-                    if (end.Hour < 12)
+                    if(end.Hour < 12)
                         end = end.AddDays(-1);
 
                     end = end.Date;

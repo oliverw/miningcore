@@ -32,7 +32,7 @@ namespace Miningcore.Configuration
         {
             coinbaseHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (CoinbaseHasher == null)
+                if(CoinbaseHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, CoinbaseHasher);
@@ -40,7 +40,7 @@ namespace Miningcore.Configuration
 
             headerHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (HeaderHasher == null)
+                if(HeaderHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, HeaderHasher);
@@ -48,7 +48,7 @@ namespace Miningcore.Configuration
 
             blockHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (BlockHasher == null)
+                if(BlockHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, BlockHasher);
@@ -56,7 +56,7 @@ namespace Miningcore.Configuration
 
             posBlockHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (PoSBlockHasher == null)
+                if(PoSBlockHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, PoSBlockHasher);
@@ -81,8 +81,8 @@ namespace Miningcore.Configuration
         {
             var hash = HeaderHasherValue;
 
-            if (hash.GetType() == typeof(DigestReverser))
-                return ((DigestReverser)hash).Upstream.GetType().Name;
+            if(hash.GetType() == typeof(DigestReverser))
+                return ((DigestReverser) hash).Upstream.GetType().Name;
 
             return hash.GetType().Name;
         }
@@ -106,7 +106,7 @@ namespace Miningcore.Configuration
 
                 diff1BValue = new Lazy<BigInteger>(() =>
                 {
-                    if (string.IsNullOrEmpty(Diff1))
+                    if(string.IsNullOrEmpty(Diff1))
                         throw new InvalidOperationException("Diff1 has not yet been initialized");
 
                     return BigInteger.Parse(Diff1, NumberStyles.HexNumber);
@@ -161,7 +161,7 @@ namespace Miningcore.Configuration
 
         public override string GetAlgorithmName()
         {
-            switch (Hash)
+            switch(Hash)
             {
                 case CryptonightHashType.Normal:
                     return "Cryptonight";

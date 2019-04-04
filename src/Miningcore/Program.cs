@@ -110,7 +110,7 @@ namespace Miningcore
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
                 Console.CancelKeyPress += OnCancelKeyPress;
 
-                if (!HandleCommandLineOptions(args, out var configFile))
+                if(!HandleCommandLineOptions(args, out var configFile))
                     return;
 
                 isShareRecoveryMode = shareRecoveryOption.HasValue();
@@ -118,7 +118,7 @@ namespace Miningcore
                 Logo();
                 clusterConfig = ReadConfig(configFile);
 
-                if (dumpConfigOption.HasValue())
+                if(dumpConfigOption.HasValue())
                 {
                     DumpParsedConfig(clusterConfig);
                     return;
@@ -128,9 +128,9 @@ namespace Miningcore
                 Bootstrap();
                 LogRuntimeInfo();
 
-                if (!isShareRecoveryMode)
+                if(!isShareRecoveryMode)
                 {
-                    if (!cts.IsCancellationRequested)
+                    if(!cts.IsCancellationRequested)
                         Start().Wait(cts.Token);
                 }
 
@@ -140,7 +140,7 @@ namespace Miningcore
 
             catch(PoolStartupAbortException ex)
             {
-                if (!string.IsNullOrEmpty(ex.Message))
+                if(!string.IsNullOrEmpty(ex.Message))
                     Console.WriteLine(ex.Message);
 
                 Console.WriteLine("\nCluster cannot start. Good Bye!");
@@ -158,7 +158,7 @@ namespace Miningcore
 
             catch(AggregateException ex)
             {
-                if (!(ex.InnerExceptions.First() is PoolStartupAbortException))
+                if(!(ex.InnerExceptions.First() is PoolStartupAbortException))
                     Console.WriteLine(ex);
 
                 Console.WriteLine("Cluster cannot start. Good Bye!");
@@ -191,7 +191,7 @@ namespace Miningcore
             // set some defaults
             foreach(var config in clusterConfig.Pools)
             {
-                if (!config.EnableInternalStratum.HasValue)
+                if(!config.EnableInternalStratum.HasValue)
                     config.EnableInternalStratum = clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
             }
 
@@ -241,13 +241,13 @@ namespace Miningcore
 
             app.Execute(args);
 
-            if (versionOption.HasValue())
+            if(versionOption.HasValue())
             {
                 app.ShowVersion();
                 return false;
             }
 
-            if (!configFileOption.HasValue())
+            if(!configFileOption.HasValue())
             {
                 app.ShowHelp();
                 return false;
@@ -325,14 +325,14 @@ namespace Miningcore
         {
             var m = regexJsonTypeConversionError.Match(ex.Message);
 
-            if (m.Success)
+            if(m.Success)
             {
                 var value = m.Groups[1].Value;
                 var type = Type.GetType(m.Groups[2].Value);
                 var line = m.Groups[3].Value;
                 var col = m.Groups[4].Value;
 
-                if (type == typeof(PayoutScheme))
+                if(type == typeof(PayoutScheme))
                     Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
             }
 
@@ -345,11 +345,11 @@ namespace Miningcore
         private static void ValidateRuntimeEnvironment()
         {
             // root check
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
                 logger.Warn(() => "Running as root is discouraged!");
 
             // require 64-bit on Windows
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
                 throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
         }
 
@@ -362,7 +362,7 @@ namespace Miningcore
                 while(true)
                 {
                     var s = GC.WaitForFullGCApproach();
-                    if (s == GCNotificationStatus.Succeeded)
+                    if(s == GCNotificationStatus.Succeeded)
                     {
                         logger.Info(() => "FullGC soon");
                         sw.Start();
@@ -370,13 +370,13 @@ namespace Miningcore
 
                     s = GC.WaitForFullGCComplete();
 
-                    if (s == GCNotificationStatus.Succeeded)
+                    if(s == GCNotificationStatus.Succeeded)
                     {
                         logger.Info(() => "FullGC completed");
 
                         sw.Stop();
 
-                        if (sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
+                        if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
                             gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
 
                         sw.Reset();
@@ -415,7 +415,7 @@ namespace Miningcore
             var config = clusterConfig.Logging;
             var loggingConfig = new LoggingConfiguration();
 
-            if (config != null)
+            if(config != null)
             {
                 // parse level
                 var level = !string.IsNullOrEmpty(config.Level)
@@ -435,7 +435,7 @@ namespace Miningcore
                 loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
 
                 // Api Log
-                if (!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
+                if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
                 {
                     var target = new FileTarget("file")
                     {
@@ -448,9 +448,9 @@ namespace Miningcore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target, "Microsoft.AspNetCore.*", true);
                 }
 
-                if (config.EnableConsoleLog || isShareRecoveryMode)
+                if(config.EnableConsoleLog || isShareRecoveryMode)
                 {
-                    if (config.EnableConsoleColors)
+                    if(config.EnableConsoleColors)
                     {
                         var target = new ColoredConsoleTarget("console")
                         {
@@ -497,7 +497,7 @@ namespace Miningcore
                     }
                 }
 
-                if (!string.IsNullOrEmpty(config.LogFile) && !isShareRecoveryMode)
+                if(!string.IsNullOrEmpty(config.LogFile) && !isShareRecoveryMode)
                 {
                     var target = new FileTarget("file")
                     {
@@ -510,7 +510,7 @@ namespace Miningcore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
-                if (config.PerPoolLogFile && !isShareRecoveryMode)
+                if(config.PerPoolLogFile && !isShareRecoveryMode)
                 {
                     foreach(var poolConfig in clusterConfig.Pools)
                     {
@@ -534,7 +534,7 @@ namespace Miningcore
 
         private static Layout GetLogPath(ClusterLoggingConfig config, string name)
         {
-            if (string.IsNullOrEmpty(config.LogBaseDirectory))
+            if(string.IsNullOrEmpty(config.LogBaseDirectory))
                 return name;
 
             return Path.Combine(config.LogBaseDirectory, name);
@@ -543,18 +543,18 @@ namespace Miningcore
         private static void ConfigureMisc()
         {
             // Configure Equihash
-            if (clusterConfig.EquihashMaxThreads.HasValue)
+            if(clusterConfig.EquihashMaxThreads.HasValue)
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)
         {
-            if (clusterConfig.Persistence == null &&
+            if(clusterConfig.Persistence == null &&
                 clusterConfig.PaymentProcessing?.Enabled == true &&
                 clusterConfig.ShareRelay == null)
                 logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-            if (clusterConfig.Persistence?.Postgres != null)
+            if(clusterConfig.Persistence?.Postgres != null)
                 ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
             else
                 ConfigureDummyPersistence(builder);
@@ -563,16 +563,16 @@ namespace Miningcore
         private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
         {
             // validate config
-            if (string.IsNullOrEmpty(pgConfig.Host))
+            if(string.IsNullOrEmpty(pgConfig.Host))
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
 
-            if (pgConfig.Port == 0)
+            if(pgConfig.Port == 0)
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
 
-            if (string.IsNullOrEmpty(pgConfig.Database))
+            if(string.IsNullOrEmpty(pgConfig.Database))
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
 
-            if (string.IsNullOrEmpty(pgConfig.User))
+            if(string.IsNullOrEmpty(pgConfig.User))
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
             // build connection string
@@ -625,20 +625,20 @@ namespace Miningcore
         private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
         {
             var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToList();
-            if (defaultToLoopback && (ipList == null || ipList.Count == 0))
+            if(defaultToLoopback && (ipList == null || ipList.Count == 0))
                 ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
 
-            if (ipList.Count > 0)
+            if(ipList.Count > 0)
             {
                 // always allow access by localhost
-                if (!ipList.Any(x => x.Equals(IPAddress.Loopback)))
+                if(!ipList.Any(x => x.Equals(IPAddress.Loopback)))
                     ipList.Add(IPAddress.Loopback);
-                if (!ipList.Any(x => x.Equals(IPAddress.IPv6Loopback)))
+                if(!ipList.Any(x => x.Equals(IPAddress.IPv6Loopback)))
                     ipList.Add(IPAddress.IPv6Loopback);
-                if (!ipList.Any(x => x.Equals(IPUtils.IPv4LoopBackOnIPv6)))
+                if(!ipList.Any(x => x.Equals(IPUtils.IPv4LoopBackOnIPv6)))
                     ipList.Add(IPUtils.IPv4LoopBackOnIPv6);
 
-                logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x=> x.ToString()))}");
+                logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x => x.ToString()))}");
 
                 app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
             }
@@ -659,7 +659,7 @@ namespace Miningcore
             options.IpWhitelist = clusterConfig.Api?.RateLimiting?.IpWhitelist?.ToList();
 
             // default to whitelist localhost if whitelist absent
-            if (options.IpWhitelist == null || options.IpWhitelist.Count == 0)
+            if(options.IpWhitelist == null || options.IpWhitelist.Count == 0)
             {
                 options.IpWhitelist = new List<string>
                 {
@@ -672,7 +672,7 @@ namespace Miningcore
             // limits
             var rules = clusterConfig.Api?.RateLimiting?.Rules?.ToList();
 
-            if (rules == null || rules.Count == 0)
+            if(rules == null || rules.Count == 0)
             {
                 rules = new List<RateLimitRule>
                 {
@@ -711,7 +711,7 @@ namespace Miningcore
                 .ConfigureServices(services =>
                 {
                     // rate limiting
-                    if (enableApiRateLimiting)
+                    if(enableApiRateLimiting)
                     {
                         services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
                         services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
@@ -724,7 +724,7 @@ namespace Miningcore
                     services.AddSingleton<AdminApiController, AdminApiController>();
 
                     // MVC
-                    services.AddSingleton((IComponentContext)container);
+                    services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
                     services.AddMvc()
@@ -743,7 +743,7 @@ namespace Miningcore
                 })
                 .Configure(app =>
                 {
-                    if (enableApiRateLimiting)
+                    if(enableApiRateLimiting)
                         app.UseIpRateLimiting();
 
                     app.UseMiddleware<ApiExceptionHandlingMiddleware>();
@@ -773,10 +773,10 @@ namespace Miningcore
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
             // Populate pool configs with corresponding template
-            foreach (var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
+            foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
             {
                 // Lookup coin definition
-                if (!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
                     logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
                 poolConfig.Template = template;
@@ -789,7 +789,7 @@ namespace Miningcore
             btStreamReceiver = container.Resolve<BtStreamReceiver>();
             btStreamReceiver.Start(clusterConfig);
 
-            if (clusterConfig.ShareRelay == null)
+            if(clusterConfig.ShareRelay == null)
             {
                 // start share recorder
                 shareRecorder = container.Resolve<ShareRecorder>();
@@ -808,7 +808,7 @@ namespace Miningcore
             }
 
             // start API
-            if (clusterConfig.Api == null || clusterConfig.Api.Enabled)
+            if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
                 StartApi();
 
@@ -816,7 +816,7 @@ namespace Miningcore
             }
 
             // start payment processor
-            if (clusterConfig.PaymentProcessing?.Enabled == true &&
+            if(clusterConfig.PaymentProcessing?.Enabled == true &&
                 clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
             {
                 payoutManager = container.Resolve<PayoutManager>();
@@ -828,7 +828,7 @@ namespace Miningcore
             else
                 logger.Info("Payment processing is not enabled");
 
-            if (clusterConfig.ShareRelay == null)
+            if(clusterConfig.ShareRelay == null)
             {
                 // start pool stats updater
                 statsRecorder = container.Resolve<StatsRecorder>();
@@ -868,7 +868,7 @@ namespace Miningcore
 
         private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            if (logger != null)
+            if(logger != null)
             {
                 logger.Error(e.ExceptionObject);
                 LogManager.Flush(TimeSpan.Zero);

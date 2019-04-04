@@ -63,7 +63,7 @@ namespace Miningcore.JsonRpc
 
         public TParam ParamsAs<TParam>() where TParam : class
         {
-            if (Params is JToken)
+            if(Params is JToken)
                 return ((JToken) Params)?.ToObject<TParam>();
 
             return (TParam) Params;

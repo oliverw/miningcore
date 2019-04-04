@@ -67,7 +67,7 @@ namespace Miningcore.Mining
             LastActivity = clock.Now;
             Stats = new ShareStats();
 
-            if (varDiffConfig != null)
+            if(varDiffConfig != null)
                 VarDiff = new VarDiffContext { Config = varDiffConfig };
         }
 
@@ -78,7 +78,7 @@ namespace Miningcore.Mining
 
         public bool ApplyPendingDifficulty()
         {
-            if (pendingDifficulty.HasValue)
+            if(pendingDifficulty.HasValue)
             {
                 SetDifficulty(pendingDifficulty.Value);
                 pendingDifficulty = null;

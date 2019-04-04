@@ -95,7 +95,7 @@ namespace Miningcore.Payments.PaymentSchemes
             {
                 var amount = rewards[address];
 
-                if (amount > 0)
+                if(amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
                     await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for {FormatUtil.FormatQuantity(shares[address])} shares for block {block.BlockHeight}");
@@ -103,11 +103,11 @@ namespace Miningcore.Payments.PaymentSchemes
             }
 
             // delete discarded shares
-            if (shareCutOffDate.HasValue)
+            if(shareCutOffDate.HasValue)
             {
                 var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
-                if (cutOffCount > 0)
+                if(cutOffCount > 0)
                 {
                     await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
 
@@ -122,7 +122,7 @@ namespace Miningcore.Payments.PaymentSchemes
             var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
-            if (totalRewards > 0)
+            if(totalRewards > 0)
                 logger.Info(() => $"{FormatUtil.FormatQuantity((double) totalShareCount)} ({Math.Round(totalShareCount, 2)}) shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward) to {rewards.Keys.Count} addresses");
         }
 
@@ -148,19 +148,19 @@ namespace Miningcore.Payments.PaymentSchemes
                     var address = share.Miner;
 
                     // record attributed shares for diagnostic purposes
-                    if (!shares.ContainsKey(address))
+                    if(!shares.ContainsKey(address))
                         shares[address] = share.Difficulty;
                     else
                         shares[address] += share.Difficulty;
                 }
 
-                if (page.Length < pageSize)
+                if(page.Length < pageSize)
                     break;
 
                 before = page[page.Length - 1].Created;
             }
 
-            if (shares.Keys.Count > 0)
+            if(shares.Keys.Count > 0)
             {
                 // sort addresses by shares
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
@@ -205,7 +205,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     var address = share.Miner;
 
                     // record attributed shares for diagnostic purposes
-                    if (!shares.ContainsKey(address))
+                    if(!shares.ContainsKey(address))
                         shares[address] = share.Difficulty;
                     else
                         shares[address] += share.Difficulty;
@@ -213,7 +213,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
-                    if (accumulatedScore + score >= window)
+                    if(accumulatedScore + score >= window)
                     {
                         score = window - accumulatedScore;
                         shareCutOffDate = share.Created;
@@ -226,20 +226,20 @@ namespace Miningcore.Payments.PaymentSchemes
                     blockRewardRemaining -= reward;
 
                     // this should never happen
-                    if (blockRewardRemaining <= 0 && !done)
+                    if(blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-                    if (reward > 0)
+                    if(reward > 0)
                     {
                         // accumulate miner reward
-                        if (!rewards.ContainsKey(address))
+                        if(!rewards.ContainsKey(address))
                             rewards[address] = reward;
                         else
                             rewards[address] += reward;
                     }
                 }
 
-                if (page.Length < pageSize)
+                if(page.Length < pageSize)
                     break;
 
                 before = page[page.Length - 1].Created;

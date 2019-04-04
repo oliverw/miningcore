@@ -38,7 +38,7 @@ namespace Miningcore.Notifications
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
             //adminPhone = null;
 
-            if (clusterConfig.Notifications?.Enabled == true)
+            if(clusterConfig.Notifications?.Enabled == true)
             {
                 queue = new BlockingCollection<QueuedNotification>();
 
@@ -74,14 +74,14 @@ namespace Miningcore.Notifications
                 messageBus.Listen<PaymentNotification>()
                     .Subscribe(x =>
                     {
-                        if (string.IsNullOrEmpty(x.Error))
+                        if(string.IsNullOrEmpty(x.Error))
                         {
                             var coin = poolConfigs[x.PoolId].Template;
 
                             // prepare tx links
                             string[] txLinks = null;
 
-                            if (!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                            if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
                                 txLinks = x.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
                             queue?.Add(new QueuedNotification
@@ -150,19 +150,19 @@ namespace Miningcore.Notifications
                 switch(notification.Category)
                 {
                     case NotificationCategory.Admin:
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true)
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
                         break;
 
                     case NotificationCategory.Block:
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
                         break;
 
                     case NotificationCategory.PaymentSuccess:
                     case NotificationCategory.PaymentFailure:
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
                         break;

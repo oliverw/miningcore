@@ -110,7 +110,7 @@ namespace Miningcore.Payments
             var blockRewardRemaining = block.Reward;
 
             // Distribute funds to configured reward recipients
-            foreach (var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
             {
                 var amount = block.Reward * (recipient.Percentage / 100.0m);
                 var address = recipient.Address;
@@ -118,7 +118,7 @@ namespace Miningcore.Payments
                 blockRewardRemaining -= amount;
 
                 // skip transfers from pool wallet to pool wallet
-                if (address != poolConfig.Address)
+                if(address != poolConfig.Address)
                 {
                     logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
                     await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
@@ -140,7 +140,7 @@ namespace Miningcore.Payments
                     {
                         foreach(var balance in balances)
                         {
-                            if (!string.IsNullOrEmpty(transactionConfirmation) &&
+                            if(!string.IsNullOrEmpty(transactionConfirmation) &&
                                 !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
                             {
                                 // record payment

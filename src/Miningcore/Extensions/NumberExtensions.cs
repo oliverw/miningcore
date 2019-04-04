@@ -27,7 +27,7 @@ namespace Miningcore.Extensions
     {
         public static uint ToBigEndian(this uint value)
         {
-            if (BitConverter.IsLittleEndian)
+            if(BitConverter.IsLittleEndian)
                 return (uint) IPAddress.NetworkToHostOrder((int) value);
 
             return value;
@@ -35,7 +35,7 @@ namespace Miningcore.Extensions
 
         public static uint ToLittleEndian(this uint value)
         {
-            if (!BitConverter.IsLittleEndian)
+            if(!BitConverter.IsLittleEndian)
                 return (uint) IPAddress.HostToNetworkOrder((int) value);
 
             return value;

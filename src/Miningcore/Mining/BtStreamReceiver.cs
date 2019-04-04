@@ -56,7 +56,7 @@ namespace Miningcore.Mining
                     .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                     .ToArray();
 
-                while (!cts.IsCancellationRequested)
+                while(!cts.IsCancellationRequested)
                 {
                     // track last message received per endpoint
                     var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
@@ -66,29 +66,29 @@ namespace Miningcore.Mining
                         // setup sockets
                         var sockets = relays.Select(SetupSubSocket).ToArray();
 
-                        using (new CompositeDisposable(sockets))
+                        using(new CompositeDisposable(sockets))
                         {
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
-                            while (!cts.IsCancellationRequested)
+                            while(!cts.IsCancellationRequested)
                             {
-                                if (sockets.PollIn(pollItems, out var messages, out var error, timeout))
+                                if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
-                                    for (var i = 0; i < messages.Length; i++)
+                                    for(var i = 0; i < messages.Length; i++)
                                     {
                                         var msg = messages[i];
 
-                                        if (msg != null)
+                                        if(msg != null)
                                         {
                                             lastMessageReceived[i] = clock.Now;
 
-                                            using (msg)
+                                            using(msg)
                                             {
                                                 ProcessMessage(msg);
                                             }
                                         }
 
-                                        else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        else if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
@@ -101,18 +101,18 @@ namespace Miningcore.Mining
                                         }
                                     }
 
-                                    if (error != null)
+                                    if(error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
                                 }
                             }
                         }
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
 
-                        if (!cts.IsCancellationRequested)
+                        if(!cts.IsCancellationRequested)
                             Thread.Sleep(1000);
                     }
                 }
@@ -126,7 +126,7 @@ namespace Miningcore.Mining
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if (subSocket.CurveServerKey != null)
+            if(subSocket.CurveServerKey != null)
                 logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring Bt-Stream source {relay.Url}");
@@ -143,17 +143,17 @@ namespace Miningcore.Mining
             var sent = DateTimeOffset.FromUnixTimeMilliseconds(msg[3].ReadInt64()).DateTime;
 
             // TMP FIX
-            if (flags != 0 && ((flags & 1) == 0))
+            if(flags != 0 && ((flags & 1) == 0))
                 flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
             // compressed
-            if ((flags & 1) == 1)
+            if((flags & 1) == 1)
             {
-                using (var stm = new MemoryStream(data))
+                using(var stm = new MemoryStream(data))
                 {
-                    using (var stmOut = new MemoryStream())
+                    using(var stmOut = new MemoryStream())
                     {
-                        using (var ds = new DeflateStream(stm, CompressionMode.Decompress))
+                        using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
                         {
                             ds.CopyTo(stmOut);
                         }
@@ -177,14 +177,14 @@ namespace Miningcore.Mining
             this.clusterConfig = clusterConfig;
 
             var endpoints = clusterConfig.Pools.Select(x =>
-                    x.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>()?.BtStream ?? 
+                    x.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>()?.BtStream ??
                     x.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>()?.BtStream ??
                     x.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>()?.BtStream)
                 .Where(x => x != null)
-                .DistinctBy(x=> $"{x.Url}:{x.SharedEncryptionKey}")
+                .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                 .ToArray();
 
-            if (endpoints.Any())
+            if(endpoints.Any())
                 StartMessageReceiver(endpoints);
         }
 

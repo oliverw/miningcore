@@ -44,7 +44,7 @@ namespace Miningcore.Native
         {
             Contract.Requires<ArgumentException>(data.Length > 0, $"{nameof(data)} must not be empty");
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 // provide reasonable large output buffer
                 var outputBuffer = ArrayPool<byte>.Shared.Rent(0x100);
@@ -54,27 +54,27 @@ namespace Miningcore.Native
                     var outputBufferLength = outputBuffer.Length;
 
                     var success = false;
-                    fixed(byte* output = outputBuffer)
+                    fixed (byte* output = outputBuffer)
                     {
                         success = convert_blob(input, size, output, ref outputBufferLength);
                     }
 
-                    if (!success)
+                    if(!success)
                     {
                         // if we get false, the buffer might have been too small
-                        if (outputBufferLength == 0)
+                        if(outputBufferLength == 0)
                             return null; // nope, other error
 
                         // retry with correctly sized buffer
                         ArrayPool<byte>.Shared.Return(outputBuffer);
                         outputBuffer = ArrayPool<byte>.Shared.Rent(outputBufferLength);
 
-                        fixed(byte* output = outputBuffer)
+                        fixed (byte* output = outputBuffer)
                         {
                             success = convert_blob(input, size, output, ref outputBufferLength);
                         }
 
-                        if (!success)
+                        if(!success)
                             return null; // sorry
                     }
 
@@ -98,7 +98,7 @@ namespace Miningcore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 return decode_address(input, data.Length);
             }
@@ -110,7 +110,7 @@ namespace Miningcore.Native
 
             var data = Encoding.UTF8.GetBytes(address);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 return decode_integrated_address(input, data.Length);
             }
@@ -124,7 +124,7 @@ namespace Miningcore.Native
             {
                 fixed (byte* output = result)
                 {
-                    cn_fast_hash(input, output, (uint)data.Length);
+                    cn_fast_hash(input, output, (uint) data.Length);
                 }
             }
         }

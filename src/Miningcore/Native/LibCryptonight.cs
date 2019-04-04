@@ -40,7 +40,7 @@ namespace Miningcore.Native
                 // allocate context per CPU
                 for(var i = 0; i < contexts.BoundedCapacity; i++)
                 {
-                    contexts.Add(new Lazy<IntPtr>(()=>
+                    contexts.Add(new Lazy<IntPtr>(() =>
                     {
                         var result = allocator();
 
@@ -57,7 +57,7 @@ namespace Miningcore.Native
 
             internal Lazy<IntPtr> Lease()
             {
-                logger.Debug(()=> $"Leasing {logId} context ({contexts.Count})");
+                logger.Debug(() => $"Leasing {logId} context ({contexts.Count})");
 
                 return contexts.Take();
             }
@@ -148,7 +148,7 @@ namespace Miningcore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight(ctx.Value, input, output, (uint)data.Length, variant, height);
+                        cryptonight(ctx.Value, input, output, (uint) data.Length, variant, height);
                     }
                 }
             }
@@ -171,9 +171,9 @@ namespace Miningcore.Native
 
             try
             {
-                fixed(byte* input = data)
+                fixed (byte* input = data)
                 {
-                    fixed(byte* output = result)
+                    fixed (byte* output = result)
                     {
                         cryptonight_light(ctx.Value, input, output, (uint) data.Length, variant, height);
                     }
@@ -229,7 +229,7 @@ namespace Miningcore.Native
                 {
                     fixed (byte* output = result)
                     {
-                        cryptonight_pico(ctx.Value, input, output, (uint)data.Length, variant, height);
+                        cryptonight_pico(ctx.Value, input, output, (uint) data.Length, variant, height);
                     }
                 }
             }

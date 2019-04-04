@@ -62,33 +62,33 @@ namespace Miningcore.Api.Controllers
 
             var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, blockStates, page, pageSize)))
                 .Select(mapper.Map<Responses.Block>)
-                .Where(x=> enabledPools.Contains(x.PoolId))
+                .Where(x => enabledPools.Contains(x.PoolId))
                 .ToArray();
 
             // enrich blocks
             var blocksByPool = blocks.GroupBy(x => x.PoolId);
 
-            foreach (var poolBlocks in blocksByPool)
+            foreach(var poolBlocks in blocksByPool)
             {
                 var pool = GetPoolNoThrow(poolBlocks.Key);
 
-                if (pool == null)
+                if(pool == null)
                     continue;
 
                 var blockInfobaseDict = pool.Template.ExplorerBlockLinks;
-                
+
                 // compute infoLink
-                if (blockInfobaseDict != null)
+                if(blockInfobaseDict != null)
                 {
-                    foreach (var block in poolBlocks)
+                    foreach(var block in poolBlocks)
                     {
                         blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl);
 
-                        if (!string.IsNullOrEmpty(blockInfobaseUrl))
+                        if(!string.IsNullOrEmpty(blockInfobaseUrl))
                         {
-                            if (blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                            if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
                                 block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
-                            else if (blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                            else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
                                 block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
                         }
                     }
@@ -102,7 +102,7 @@ namespace Miningcore.Api.Controllers
 
         private PoolConfig GetPoolNoThrow(string poolId)
         {
-            if (string.IsNullOrEmpty(poolId))
+            if(string.IsNullOrEmpty(poolId))
                 return null;
 
             var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);

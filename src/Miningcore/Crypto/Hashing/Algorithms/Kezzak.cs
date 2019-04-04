@@ -41,13 +41,13 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             Span<byte> dataEx = stackalloc byte[data.Length + nTimeHex.Length];
             data.CopyTo(dataEx);
 
-            if (nTimeHex.Length > 0)
+            if(nTimeHex.Length > 0)
             {
                 var dest = dataEx.Slice(data.Length);
                 nTimeHex.CopyTo(dest);
             }
 
-            fixed(byte* input = dataEx)
+            fixed (byte* input = dataEx)
             {
                 fixed (byte* output = result)
                 {

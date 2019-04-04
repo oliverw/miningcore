@@ -21,7 +21,7 @@ namespace Miningcore.Api
 {
     public class WebSocketNotificationsRelay : WebSocketHandler
     {
-        public WebSocketNotificationsRelay(WebSocketConnectionManager webSocketConnectionManager, IComponentContext ctx) : 
+        public WebSocketNotificationsRelay(WebSocketConnectionManager webSocketConnectionManager, IComponentContext ctx) :
             base(webSocketConnectionManager, new StringMethodInvocationStrategy())
         {
             messageBus = ctx.Resolve<IMessageBus>();
@@ -78,7 +78,7 @@ namespace Miningcore.Api
                 await SendMessageToAllAsync(msg);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex);
             }
