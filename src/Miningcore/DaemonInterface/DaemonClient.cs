@@ -109,7 +109,7 @@ namespace Miningcore.DaemonInterface
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
             {
-                if (string.IsNullOrEmpty(endpoint.User) || !endpoint.DigestAuth)
+                if(string.IsNullOrEmpty(endpoint.User) || !endpoint.DigestAuth)
                     return defaultHttpClient;
 
                 return new HttpClient(new SocketsHttpHandler
@@ -331,15 +331,15 @@ namespace Miningcore.DaemonInterface
             // build request url
             var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+            if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
-            using (var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
+            using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-                if (endPoint.Http2)
+                if(endPoint.Http2)
                     request.Version = new Version(2, 0);
 
                 // build request content
@@ -347,7 +347,7 @@ namespace Miningcore.DaemonInterface
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
-                if (!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
+                if(!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
                     var auth = $"{endPoint.User}:{endPoint.Password}";
                     var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
@@ -357,13 +357,13 @@ namespace Miningcore.DaemonInterface
                 logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
 
                 // send request
-                using (var response = await httpClients[endPoint].SendAsync(request, ct))
+                using(var response = await httpClients[endPoint].SendAsync(request, ct))
                 {
                     // read response
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     // deserialize response
-                    using (var jreader = new JsonTextReader(new StringReader(responseContent)))
+                    using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -389,7 +389,7 @@ namespace Miningcore.DaemonInterface
             // build request url
             var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+            if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
@@ -397,7 +397,7 @@ namespace Miningcore.DaemonInterface
             {
                 request.Headers.ConnectionClose = false;    // enable keep-alive
 
-                if (endPoint.Http2)
+                if(endPoint.Http2)
                     request.Version = new Version(2, 0);
 
                 // build request content
@@ -405,7 +405,7 @@ namespace Miningcore.DaemonInterface
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // build auth header
-                if (!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
+                if(!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
                     var auth = $"{endPoint.User}:{endPoint.Password}";
                     var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
@@ -420,7 +420,7 @@ namespace Miningcore.DaemonInterface
                     // deserialize response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
 
-                    using (var jreader = new JsonTextReader(new StringReader(jsonResponse)))
+                    using(var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
@@ -448,22 +448,22 @@ namespace Miningcore.DaemonInterface
                 Instance = endPoints[i]
             };
 
-            if (x.IsFaulted)
+            if(x.IsFaulted)
             {
                 Exception inner;
 
-                if (x.Exception.InnerExceptions.Count == 1)
+                if(x.Exception.InnerExceptions.Count == 1)
                     inner = x.Exception.InnerException;
                 else
                     inner = x.Exception;
 
-                if (throwOnError)
+                if(throwOnError)
                     throw inner;
 
                 resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
-            else if (x.IsCanceled)
+            else if(x.IsCanceled)
             {
                 resp.Error = new JsonRpcException(-500, "Cancelled", null);
             }
@@ -472,7 +472,7 @@ namespace Miningcore.DaemonInterface
             {
                 Debug.Assert(x.IsCompletedSuccessfully);
 
-                if (x.Result?.Result is JToken token)
+                if(x.Result?.Result is JToken token)
                     resp.Response = token?.ToObject<TResponse>(serializer);
                 else
                     resp.Response = (TResponse) x.Result?.Result;
@@ -485,7 +485,7 @@ namespace Miningcore.DaemonInterface
 
         private DaemonResponse<JToken>[] MapDaemonBatchResponse(int i, Task<JsonRpcResponse<JToken>[]> x)
         {
-            if (x.IsFaulted)
+            if(x.IsFaulted)
                 return x.Result?.Select(y => new DaemonResponse<JToken>
                 {
                     Instance = endPoints[i],
@@ -516,7 +516,7 @@ namespace Miningcore.DaemonInterface
                     {
                         var buf = new byte[0x10000];
 
-                        while (!cts.IsCancellationRequested)
+                        while(!cts.IsCancellationRequested)
                         {
                             try
                             {
@@ -541,7 +541,7 @@ namespace Miningcore.DaemonInterface
                                     // stream response
                                     var stream = new MemoryStream();
 
-                                    while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                    while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                     {
                                         stream.SetLength(0);
                                         var complete = false;
@@ -557,7 +557,7 @@ namespace Miningcore.DaemonInterface
 
                                                     var response = await client.ReceiveAsync(buf, ctsComposite.Token);
 
-                                                    if (response.MessageType == WebSocketMessageType.Binary)
+                                                    if(response.MessageType == WebSocketMessageType.Binary)
                                                         throw new InvalidDataException("expected text, received binary data");
 
                                                     stream.Write(buf, 0, response.Count);
@@ -567,7 +567,7 @@ namespace Miningcore.DaemonInterface
                                             }
                                         } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
-                                        logger.Debug(()=> $"Received WebSocket message with length {stream.Length}");
+                                        logger.Debug(() => $"Received WebSocket message with length {stream.Length}");
 
                                         // publish
                                         obs.OnNext(stream.ToArray());

@@ -20,7 +20,7 @@ namespace Miningcore.Api.Middlewares
                 await next(context);
             }
 
-            catch (ApiException ex)
+            catch(ApiException ex)
             {
                 await HandleResponseOverrideExceptionAsync(context, ex);
             }
@@ -31,7 +31,7 @@ namespace Miningcore.Api.Middlewares
             var response = context.Response;
             response.ContentType = "application/json";
 
-            if (ex.ResponseStatusCode.HasValue)
+            if(ex.ResponseStatusCode.HasValue)
                 response.StatusCode = ex.ResponseStatusCode.Value;
 
             await response.WriteAsync(ex.Message).ConfigureAwait(false);

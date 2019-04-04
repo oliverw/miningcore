@@ -57,7 +57,7 @@ namespace Miningcore.Mining
 
             pubSocket = new ZSocket(ZSocketType.PUB);
 
-            if (!clusterConfig.ShareRelay.Connect)
+            if(!clusterConfig.ShareRelay.Connect)
             {
                 pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
 
@@ -111,7 +111,7 @@ namespace Miningcore.Mining
                     {
                         var flags = (int) WireFormat.ProtocolBuffers;
 
-                        using (var msg = new ZMessage())
+                        using(var msg = new ZMessage())
                         {
                             // Topic frame
                             msg.Add(new ZFrame(share.PoolId));
@@ -139,16 +139,16 @@ namespace Miningcore.Mining
 
         private void CheckQueueBacklog()
         {
-            if (queue.Count > QueueSizeWarningThreshold)
+            if(queue.Count > QueueSizeWarningThreshold)
             {
-                if (!hasWarnedAboutBacklogSize)
+                if(!hasWarnedAboutBacklogSize)
                 {
                     logger.Warn(() => $"Share relay queue backlog has crossed {QueueSizeWarningThreshold}");
                     hasWarnedAboutBacklogSize = true;
                 }
             }
 
-            else if (hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
+            else if(hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
             {
                 hasWarnedAboutBacklogSize = false;
             }

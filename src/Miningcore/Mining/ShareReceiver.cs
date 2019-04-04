@@ -78,7 +78,7 @@ namespace Miningcore.Mining
                     .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                     .ToArray();
 
-                while (!cts.IsCancellationRequested)
+                while(!cts.IsCancellationRequested)
                 {
                     // track last message received per endpoint
                     var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
@@ -88,26 +88,26 @@ namespace Miningcore.Mining
                         // setup sockets
                         var sockets = relays.Select(SetupSubSocket).ToArray();
 
-                        using (new CompositeDisposable(sockets))
+                        using(new CompositeDisposable(sockets))
                         {
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
-                            while (!cts.IsCancellationRequested)
+                            while(!cts.IsCancellationRequested)
                             {
-                                if (sockets.PollIn(pollItems, out var messages, out var error, timeout))
+                                if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
-                                    for (var i = 0; i < messages.Length; i++)
+                                    for(var i = 0; i < messages.Length; i++)
                                     {
                                         var msg = messages[i];
 
-                                        if (msg != null)
+                                        if(msg != null)
                                         {
                                             lastMessageReceived[i] = clock.Now;
 
                                             queue.Post((relays[i].Url, msg));
                                         }
 
-                                        else if (clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        else if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
@@ -120,18 +120,18 @@ namespace Miningcore.Mining
                                         }
                                     }
 
-                                    if (error != null)
+                                    if(error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
                                 }
                             }
                         }
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
 
-                        if (!cts.IsCancellationRequested)
+                        if(!cts.IsCancellationRequested)
                             Thread.Sleep(5000);
                     }
                 }
@@ -145,7 +145,7 @@ namespace Miningcore.Mining
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if (subSocket.CurveServerKey != null)
+            if(subSocket.CurveServerKey != null)
                 logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring external stratum {relay.Url}");
@@ -155,7 +155,7 @@ namespace Miningcore.Mining
 
         private void StartMessageProcessors()
         {
-            for (var i = 0; i < Environment.ProcessorCount; i++)
+            for(var i = 0; i < Environment.ProcessorCount; i++)
                 ProcessMessages();
         }
 
@@ -163,19 +163,19 @@ namespace Miningcore.Mining
         {
             Task.Run(async () =>
             {
-                while (!cts.IsCancellationRequested)
+                while(!cts.IsCancellationRequested)
                 {
                     try
                     {
                         var (url, msg) = await queue.ReceiveAsync(cts.Token);
 
-                        using (msg)
+                        using(msg)
                         {
                             ProcessMessage(url, msg);
                         }
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
@@ -191,35 +191,35 @@ namespace Miningcore.Mining
             var data = msg[2].Read();
 
             // validate
-            if (string.IsNullOrEmpty(topic) || !pools.ContainsKey(topic))
+            if(string.IsNullOrEmpty(topic) || !pools.ContainsKey(topic))
             {
                 logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
                 return;
             }
 
-            if (data?.Length == 0)
+            if(data?.Length == 0)
             {
                 logger.Warn(() => $"Received empty data from {url}/{topic}. Ignoring ...");
                 return;
             }
 
             // TMP FIX
-            if ((flags & ShareRelay.WireFormatMask) == 0)
+            if((flags & ShareRelay.WireFormatMask) == 0)
                 flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
 
             // deserialize
-            var wireFormat = (ShareRelay.WireFormat)(flags & ShareRelay.WireFormatMask);
+            var wireFormat = (ShareRelay.WireFormat) (flags & ShareRelay.WireFormatMask);
 
             Share share = null;
 
-            switch (wireFormat)
+            switch(wireFormat)
             {
                 case ShareRelay.WireFormat.Json:
-                    using (var stream = new MemoryStream(data))
+                    using(var stream = new MemoryStream(data))
                     {
-                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        using(var reader = new StreamReader(stream, Encoding.UTF8))
                         {
-                            using (var jreader = new JsonTextReader(reader))
+                            using(var jreader = new JsonTextReader(reader))
                             {
                                 share = serializer.Deserialize<Share>(jreader);
                             }
@@ -229,10 +229,10 @@ namespace Miningcore.Mining
                     break;
 
                 case ShareRelay.WireFormat.ProtocolBuffers:
-                    using (var stream = new MemoryStream(data))
+                    using(var stream = new MemoryStream(data))
                     {
                         share = Serializer.Deserialize<Share>(stream);
-                        share.BlockReward = (decimal)share.BlockRewardDouble;
+                        share.BlockReward = (decimal) share.BlockRewardDouble;
                     }
 
                     break;
@@ -242,7 +242,7 @@ namespace Miningcore.Mining
                     break;
             }
 
-            if (share == null)
+            if(share == null)
             {
                 logger.Error(() => $"Unable to deserialize share received from {url}/{topic}");
                 return;
@@ -254,7 +254,7 @@ namespace Miningcore.Mining
             messageBus.SendMessage(new ClientShare(null, share));
 
             // update poolstats from shares
-            if (pools.TryGetValue(topic, out var poolContext))
+            if(pools.TryGetValue(topic, out var poolContext))
             {
                 var pool = poolContext.Pool;
 
@@ -263,12 +263,12 @@ namespace Miningcore.Mining
 
                 poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 3)}");
 
-                if (pool.NetworkStats != null)
+                if(pool.NetworkStats != null)
                 {
-                    pool.NetworkStats.BlockHeight = (ulong)share.BlockHeight;
+                    pool.NetworkStats.BlockHeight = (ulong) share.BlockHeight;
                     pool.NetworkStats.NetworkDifficulty = share.NetworkDifficulty;
 
-                    if (poolContext.BlockHeight != share.BlockHeight)
+                    if(poolContext.BlockHeight != share.BlockHeight)
                     {
                         pool.NetworkStats.LastNetworkBlockTime = clock.Now;
                         poolContext.BlockHeight = share.BlockHeight;
@@ -295,7 +295,7 @@ namespace Miningcore.Mining
         {
             this.clusterConfig = clusterConfig;
 
-            if (clusterConfig.ShareRelays != null)
+            if(clusterConfig.ShareRelays != null)
             {
                 StartMessageReceiver();
                 StartMessageProcessors();

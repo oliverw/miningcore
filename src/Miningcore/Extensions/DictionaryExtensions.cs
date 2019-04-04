@@ -35,7 +35,7 @@ namespace Miningcore.Extensions
 
             var keyActual = dict.Keys.FirstOrDefault(x => x.ToLower(CultureInfo.InvariantCulture) == key);
 
-            if (keyActual != null)
+            if(keyActual != null)
             {
                 var result = dict.Remove(keyActual);
                 Debug.Assert(result);

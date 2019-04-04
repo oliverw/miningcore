@@ -143,12 +143,12 @@ namespace Miningcore.Mining
 
                 var byMiner = result.GroupBy(x => x.Miner).ToArray();
 
-                if (result.Length > 0)
+                if(result.Length > 0)
                 {
                     // calculate pool stats
                     var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;
 
-                    if (windowActual >= MinHashrateCalculationWindow)
+                    if(windowActual >= MinHashrateCalculationWindow)
                     {
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
@@ -178,7 +178,7 @@ namespace Miningcore.Mining
                     await statsRepo.InsertPoolStatsAsync(con, tx, mapped);
                 });
 
-                if (result.Length == 0)
+                if(result.Length == 0)
                     continue;
 
                 // calculate & update miner, worker hashrates
@@ -195,7 +195,7 @@ namespace Miningcore.Mining
                             // calculate miner/worker stats
                             var windowActual = (minerHashes.Max(x => x.LastShare) - minerHashes.Min(x => x.FirstShare)).TotalSeconds;
 
-                            if (windowActual >= MinHashrateCalculationWindow)
+                            if(windowActual >= MinHashrateCalculationWindow)
                             {
                                 var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
                                 minerTotalHashrate += hashrate;
@@ -231,7 +231,7 @@ namespace Miningcore.Mining
                     logger.Info(() => $"Deleted {rowCount} old poolstats records");
 
                 rowCount = await statsRepo.DeleteMinerStatsBeforeAsync(con, cutOff);
-                if (rowCount > 0)
+                if(rowCount > 0)
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
 

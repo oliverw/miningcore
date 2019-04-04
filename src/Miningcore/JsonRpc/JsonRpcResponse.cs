@@ -60,7 +60,7 @@ namespace Miningcore.JsonRpc
             Error = ex;
             Id = id;
 
-            if (result != null)
+            if(result != null)
                 Result = JToken.FromObject(result);
         }
 
@@ -78,7 +78,7 @@ namespace Miningcore.JsonRpc
 
         public TParam ResultAs<TParam>() where TParam : class
         {
-            if (Result is JToken)
+            if(Result is JToken)
                 return ((JToken) Result)?.ToObject<TParam>();
 
             return (TParam) Result;

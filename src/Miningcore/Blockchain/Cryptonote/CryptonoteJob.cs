@@ -49,7 +49,7 @@ namespace Miningcore.Blockchain.Cryptonote
             PrepareBlobTemplate(instanceId);
             PrevHash = prevHash;
 
-            switch (coin.Hash)
+            switch(coin.Hash)
             {
                 case CryptonightHashType.Normal:
                     hashFunc = LibCryptonight.Cryptonight;
@@ -100,7 +100,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             var padLength = padded.Length - bytes.Length;
 
-            if (padLength > 0)
+            if(padLength > 0)
                 bytes.CopyTo(padded.Slice(padLength, bytes.Length));
 
             padded = padded.Slice(0, 4);
@@ -129,7 +129,7 @@ namespace Miningcore.Blockchain.Cryptonote
             workerJob.Height = BlockTemplate.Height;
             workerJob.ExtraNonce = (uint) Interlocked.Increment(ref extraNonce);
 
-            if (extraNonce < 0)
+            if(extraNonce < 0)
                 extraNonce = 0;
 
             blob = EncodeBlob(workerJob.ExtraNonce);
@@ -145,7 +145,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var context = worker.ContextAs<CryptonoteWorkerContext>();
 
             // validate nonce
-            if (!CryptonoteConstants.RegexValidNonce.IsMatch(nonce))
+            if(!CryptonoteConstants.RegexValidNonce.IsMatch(nonce))
                 throw new StratumException(StratumError.MinusOne, "malformed nonce");
 
             // clone template
@@ -162,22 +162,22 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // convert
             var blobConverted = LibCryptonote.ConvertBlob(blob, blobTemplate.Length);
-            if (blobConverted == null)
+            if(blobConverted == null)
                 throw new StratumException(StratumError.MinusOne, "malformed blob");
 
             // determine variant
             CryptonightVariant variant = CryptonightVariant.VARIANT_0;
 
-            if (coin.HashVariant != 0)
+            if(coin.HashVariant != 0)
                 variant = (CryptonightVariant) coin.HashVariant;
             else
             {
-                switch (coin.Hash)
+                switch(coin.Hash)
                 {
                     case CryptonightHashType.Normal:
-                        variant = (blobConverted[0] >= 10) ? CryptonightVariant.VARIANT_4 : 
+                        variant = (blobConverted[0] >= 10) ? CryptonightVariant.VARIANT_4 :
                             ((blobConverted[0] >= 8) ? CryptonightVariant.VARIANT_2 :
-                            ((blobConverted[0] == 7) ? CryptonightVariant.VARIANT_1 : 
+                            ((blobConverted[0] == 7) ? CryptonightVariant.VARIANT_1 :
                             CryptonightVariant.VARIANT_0));
                         break;
 
@@ -196,7 +196,7 @@ namespace Miningcore.Blockchain.Cryptonote
             hashFunc(blobConverted, headerHash, variant, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
-            if (headerHashString != workerHash)
+            if(headerHashString != workerHash)
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // check difficulty
@@ -207,14 +207,14 @@ namespace Miningcore.Blockchain.Cryptonote
             var isBlockCandidate = shareDiff >= BlockTemplate.Difficulty;
 
             // test if share meets at least workers current difficulty
-            if (!isBlockCandidate && ratio < 0.99)
+            if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
                     ratio = shareDiff / context.PreviousDifficulty.Value;
 
-                    if (ratio < 0.99)
+                    if(ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty

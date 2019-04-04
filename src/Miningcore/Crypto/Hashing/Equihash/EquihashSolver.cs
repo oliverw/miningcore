@@ -35,7 +35,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
             get => maxThreads;
             set
             {
-                if (sem.IsValueCreated)
+                if(sem.IsValueCreated)
                     throw new InvalidOperationException("Too late: semaphore already created");
 
                 maxThreads = value;
@@ -55,7 +55,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
         /// <param name="header">header including nonce (140 bytes)</param>
         /// <param name="solution">equihash solution without size-preamble</param>
         /// <returns></returns>
-        public abstract bool Verify(Span<byte> header, Span<byte> solution);
+        public abstract bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution);
     }
 
     public unsafe class EquihashSolver_200_9 : EquihashSolver
@@ -65,7 +65,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        public override bool Verify(Span<byte> header, Span<byte> solution)
+        public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
             try
             {
@@ -94,7 +94,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        public override bool Verify(Span<byte> header, Span<byte> solution)
+        public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
             try
             {
@@ -123,7 +123,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
             this.personalization = personalization;
         }
 
-        public override bool Verify(Span<byte> header, Span<byte> solution)
+        public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
             try
             {

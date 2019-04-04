@@ -89,7 +89,7 @@ namespace Miningcore.Blockchain
             Interlocked.Increment(ref jobId);
             var value = Interlocked.CompareExchange(ref jobId, 0, Int32.MinValue);
 
-            if (format != null)
+            if(format != null)
                 return value.ToString(format);
 
             return value.ToStringHex8();

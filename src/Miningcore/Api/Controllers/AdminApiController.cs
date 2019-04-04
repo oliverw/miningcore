@@ -70,7 +70,7 @@ namespace Miningcore.Api.Controllers
         {
             request.Usage = request.Usage?.Trim();
 
-            if (string.IsNullOrEmpty(request.Usage))
+            if(string.IsNullOrEmpty(request.Usage))
                 request.Usage = $"Admin balance change from {Request.HttpContext.Connection.RemoteIpAddress}";
 
             var oldBalance = await cf.Run(con => balanceRepo.GetBalanceAsync(con, request.PoolId, request.Address));

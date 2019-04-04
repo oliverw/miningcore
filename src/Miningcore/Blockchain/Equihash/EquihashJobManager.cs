@@ -64,7 +64,7 @@ namespace Miningcore.Blockchain.Equihash
             var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
                 BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
 
-            if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
+            if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
             else if(subsidyResponse.Error?.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
                 result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
@@ -86,7 +86,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected override IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
         {
-            if (!coin.UsesZCashAddressFormat)
+            if(!coin.UsesZCashAddressFormat)
                 return base.AddressToDestination(address, addressType);
 
             var decoded = Encoders.Base58.DecodeData(address);
@@ -115,13 +115,13 @@ namespace Miningcore.Blockchain.Equihash
 
             try
             {
-                if (forceUpdate)
+                if(forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
                 var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
-                if (response.Error != null)
+                if(response.Error != null)
                 {
                     logger.Warn(() => $"Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
                     return (false, forceUpdate);
@@ -135,10 +135,10 @@ namespace Miningcore.Blockchain.Equihash
                     job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
                     blockTemplate.Height > job.BlockTemplate?.Height);
 
-                if (isNew)
+                if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
-                if (isNew || forceUpdate)
+                if(isNew || forceUpdate)
                 {
                     job = CreateJob();
 
@@ -146,11 +146,11 @@ namespace Miningcore.Blockchain.Equihash
                         poolConfig, clusterConfig, clock, poolAddressDestination, network,
                         solver);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
-                        if (isNew)
+                        if(isNew)
                         {
-                            if (via != null)
+                            if(via != null)
                                 logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
@@ -166,7 +166,7 @@ namespace Miningcore.Blockchain.Equihash
                         validJobs.Insert(0, job);
 
                         // trim active jobs
-                        while (validJobs.Count > maxActiveJobs)
+                        while(validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(validJobs.Count - 1);
                     }
 
@@ -176,7 +176,7 @@ namespace Miningcore.Blockchain.Equihash
                 return (isNew, forceUpdate);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
@@ -204,7 +204,7 @@ namespace Miningcore.Blockchain.Equihash
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             // handle t-addr
-            if (await base.ValidateAddressAsync(address, ct))
+            if(await base.ValidateAddressAsync(address, ct))
                 return true;
 
             // handle z-addr
@@ -240,7 +240,7 @@ namespace Miningcore.Blockchain.Equihash
 
             logger.LogInvoke(new[] { worker.ConnectionId });
 
-            if (!(submission is object[] submitParams))
+            if(!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -252,10 +252,10 @@ namespace Miningcore.Blockchain.Equihash
             var extraNonce2 = submitParams[3] as string;
             var solution = submitParams[4] as string;
 
-            if (string.IsNullOrEmpty(workerValue))
+            if(string.IsNullOrEmpty(workerValue))
                 throw new StratumException(StratumError.Other, "missing or invalid workername");
 
-            if (string.IsNullOrEmpty(solution))
+            if(string.IsNullOrEmpty(solution))
                 throw new StratumException(StratumError.Other, "missing or invalid solution");
 
             EquihashJob job;
@@ -265,7 +265,7 @@ namespace Miningcore.Blockchain.Equihash
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
 
-            if (job == null)
+            if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
             // extract worker/miner/payoutid
@@ -277,7 +277,7 @@ namespace Miningcore.Blockchain.Equihash
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, solution);
 
             // if block candidate, submit & check if accepted by network
-            if (share.IsBlockCandidate)
+            if(share.IsBlockCandidate)
             {
                 logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
@@ -286,7 +286,7 @@ namespace Miningcore.Blockchain.Equihash
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;
 
-                if (share.IsBlockCandidate)
+                if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 

@@ -67,14 +67,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
             // NOTE: Even though the tx parameter is completely ignored here,
             // the COPY command still honors a current ambient transaction
 
-            var pgCon = (NpgsqlConnection)con;
+            var pgCon = (NpgsqlConnection) con;
 
             const string query = "COPY shares (poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-            using (var writer = pgCon.BeginBinaryImport(query))
+            using(var writer = pgCon.BeginBinaryImport(query))
             {
-                foreach (var share in shares)
+                foreach(var share in shares)
                 {
                     writer.StartRow();
 
@@ -157,9 +157,9 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var whereClause = "poolid = @poolId AND miner = @miner";
 
-            if (start.HasValue)
+            if(start.HasValue)
                 whereClause += " AND created >= @start ";
-            if (end.HasValue)
+            if(end.HasValue)
                 whereClause += " AND created <= @end";
 
             var query = $"SELECT count(*) FROM shares WHERE {whereClause}";

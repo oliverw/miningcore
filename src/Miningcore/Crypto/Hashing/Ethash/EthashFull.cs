@@ -38,10 +38,10 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
             lock(cacheLock)
             {
-                if (numCaches == 0)
+                if(numCaches == 0)
                     numCaches = 3;
 
-                if (!caches.TryGetValue(epoch, out result))
+                if(!caches.TryGetValue(epoch, out result))
                 {
                     // No cached DAG, evict the oldest if the cache limit was reached
                     while(caches.Count >= numCaches)
@@ -56,7 +56,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                     }
 
                     // If we have the new DAG pre-generated, use that, otherwise create a new one
-                    if (future != null && future.Epoch == epoch)
+                    if(future != null && future.Epoch == epoch)
                     {
                         logger.Debug(() => $"Using pre-generated DAG for epoch {epoch}");
 
@@ -74,7 +74,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 }
 
                 // If we used up the future cache, or need a refresh, regenerate
-                else if (future == null || future.Epoch <= epoch)
+                else if(future == null || future.Epoch <= epoch)
                 {
                     logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
                     future = new Dag(epoch + 1);

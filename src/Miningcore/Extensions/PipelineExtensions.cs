@@ -7,7 +7,7 @@ namespace Miningcore.Extensions
     {
         public static ReadOnlySpan<byte> ToSpan(this ReadOnlySequence<byte> buffer)
         {
-            if (buffer.IsSingleSegment)
+            if(buffer.IsSingleSegment)
                 return buffer.First.Span;
 
             return buffer.ToArray();

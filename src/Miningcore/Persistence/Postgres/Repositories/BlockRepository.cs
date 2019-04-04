@@ -81,12 +81,12 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
             return (await con.QueryAsync<Entities.Block>(query, new
-                {
-                    poolId,
-                    status = status.Select(x => x.ToString().ToLower()).ToArray(),
-                    offset = page * pageSize,
-                    pageSize
-                }))
+            {
+                poolId,
+                status = status.Select(x => x.ToString().ToLower()).ToArray(),
+                offset = page * pageSize,
+                pageSize
+            }))
                 .Select(mapper.Map<Block>)
                 .ToArray();
         }
@@ -125,11 +125,11 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "ORDER BY created DESC FETCH NEXT (1) ROWS ONLY";
 
             return (await con.QueryAsync<Entities.Block>(query, new
-                {
-                    poolId,
-                    before,
-                    status = status.Select(x => x.ToString().ToLower()).ToArray()
-                }))
+            {
+                poolId,
+                before,
+                status = status.Select(x => x.ToString().ToLower()).ToArray()
+            }))
                 .Select(mapper.Map<Block>)
                 .FirstOrDefault();
         }

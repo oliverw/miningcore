@@ -17,8 +17,8 @@ namespace Miningcore.Tests.Crypto
             LibCryptonight.Cryptonight(blobConverted, buf, CryptonightVariant.VARIANT_0, 0);
             var result = buf.ToHexString();
             Assert.Equal("a845ffbdf83ae9a8ffa504a1011efbd5ed2294bb9da591d3b583740568402c00", result);
-            
-            Array.Clear(buf,0, buf.Length);
+
+            Array.Clear(buf, 0, buf.Length);
 
             LibCryptonight.Cryptonight(blobConverted, buf, CryptonightVariant.VARIANT_0, 0);
             result = buf.ToHexString();

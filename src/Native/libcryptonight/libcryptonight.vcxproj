@@ -211,18 +211,15 @@
     <ClCompile Include="xmrig\crypto\c_jh.c" />
     <ClCompile Include="xmrig\crypto\c_skein.c" />
     <ClCompile Include="xmrig\extra.cpp" />
+    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="xmrig\crypto\asm\win64\cnv2_double_main_loop_sandybridge.inc" />
     <MASM Include="xmrig\crypto\asm\win64\cn_main_loop.asm">
       <FileType>Document</FileType>
     </MASM>
     <MASM Include="xmrig\crypto\asm\win64\CryptonightR_template.asm">
       <FileType>Document</FileType>
     </MASM>
-    <None Include="xmrig\crypto\asm\win64\cnv2_main_loop_ivybridge.inc" />
-    <None Include="xmrig\crypto\asm\win64\cnv2_main_loop_ryzen.inc" />
-    <None Include="Makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

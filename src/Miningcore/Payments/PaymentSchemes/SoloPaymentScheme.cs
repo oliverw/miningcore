@@ -79,7 +79,7 @@ namespace Miningcore.Payments.PaymentSchemes
             {
                 var amount = rewards[address];
 
-                if (amount > 0)
+                if(amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
                     await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
@@ -87,11 +87,11 @@ namespace Miningcore.Payments.PaymentSchemes
             }
 
             // delete discarded shares
-            if (shareCutOffDate.HasValue)
+            if(shareCutOffDate.HasValue)
             {
                 var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
-                if (cutOffCount > 0)
+                if(cutOffCount > 0)
                 {
 #if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
@@ -111,7 +111,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 .Select(x => x.Address)
                 .ToArray();
 
-            if (recipients.Length == 0)
+            if(recipients.Length == 0)
                 throw new Exception("No reward-recipients of type = 'solo' configured");
 
             // split reward evenly between configured solo-recipients

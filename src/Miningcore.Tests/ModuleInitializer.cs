@@ -25,9 +25,9 @@ namespace Miningcore.Tests
         /// </summary>
         public static void Initialize()
         {
-            lock (initLock)
+            lock(initLock)
             {
-                if (isInitialized)
+                if(isInitialized)
                     return;
 
                 var builder = new ContainerBuilder();

@@ -155,10 +155,10 @@ namespace Miningcore.Util
 
         public override bool Equals(object obj)
         {
-            if (obj == null)
+            if(obj == null)
                 return false;
 
-            if (!(obj is BigRational))
+            if(!(obj is BigRational))
                 return false;
             return Equals((BigRational) obj);
         }
@@ -171,9 +171,9 @@ namespace Miningcore.Util
         // IComparable
         int IComparable.CompareTo(object obj)
         {
-            if (obj == null)
+            if(obj == null)
                 return 1;
-            if (!(obj is BigRational))
+            if(!(obj is BigRational))
                 throw new ArgumentException("Argument must be of type BigRational", "obj");
             return Compare(this, (BigRational) obj);
         }
@@ -198,7 +198,7 @@ namespace Miningcore.Util
         // a/b = c/d, iff ad = bc
         public bool Equals(BigRational other)
         {
-            if (Denominator == other.Denominator)
+            if(Denominator == other.Denominator)
                 return m_numerator == other.m_numerator;
             return m_numerator * other.Denominator == Denominator * other.m_numerator;
         }
@@ -218,14 +218,14 @@ namespace Miningcore.Util
         // BigRational(Double)
         public BigRational(double value)
         {
-            if (double.IsNaN(value))
+            if(double.IsNaN(value))
                 throw new ArgumentException("Argument is not a number", nameof(value));
-            if (double.IsInfinity(value))
+            if(double.IsInfinity(value))
                 throw new ArgumentException("Argument is infinity", nameof(value));
 
             SplitDoubleIntoParts(value, out var sign, out var exponent, out var significand, out _);
 
-            if (significand == 0)
+            if(significand == 0)
             {
                 this = Zero;
                 return;
@@ -234,11 +234,11 @@ namespace Miningcore.Util
             m_numerator = significand;
             Denominator = 1 << 52;
 
-            if (exponent > 0)
+            if(exponent > 0)
                 m_numerator = BigInteger.Pow(m_numerator, exponent);
-            else if (exponent < 0)
+            else if(exponent < 0)
                 Denominator = BigInteger.Pow(Denominator, -exponent);
-            if (sign < 0)
+            if(sign < 0)
                 m_numerator = BigInteger.Negate(m_numerator);
             Simplify();
         }
@@ -251,11 +251,11 @@ namespace Miningcore.Util
         public BigRational(decimal value)
         {
             var bits = decimal.GetBits(value);
-            if (bits == null || bits.Length != 4 || (bits[3] & ~(DecimalSignMask | DecimalScaleMask)) != 0 ||
+            if(bits == null || bits.Length != 4 || (bits[3] & ~(DecimalSignMask | DecimalScaleMask)) != 0 ||
                 (bits[3] & DecimalScaleMask) > 28 << 16)
                 throw new ArgumentException("invalid Decimal", nameof(value));
 
-            if (value == decimal.Zero)
+            if(value == decimal.Zero)
             {
                 this = Zero;
                 return;
@@ -266,7 +266,7 @@ namespace Miningcore.Util
             m_numerator = (new BigInteger(ul) << 32) | (uint) bits[0]; // (hiMid << 32) | (low)
 
             var isNegative = (bits[3] & DecimalSignMask) != 0;
-            if (isNegative)
+            if(isNegative)
                 m_numerator = BigInteger.Negate(m_numerator);
 
             // build up the denominator
@@ -278,15 +278,15 @@ namespace Miningcore.Util
 
         public BigRational(BigInteger numerator, BigInteger denominator)
         {
-            if (denominator.Sign == 0)
+            if(denominator.Sign == 0)
                 throw new DivideByZeroException();
-            if (numerator.Sign == 0)
+            if(numerator.Sign == 0)
             {
                 // 0/m -> 0/1
                 m_numerator = BigInteger.Zero;
                 Denominator = BigInteger.One;
             }
-            else if (denominator.Sign < 0)
+            else if(denominator.Sign < 0)
             {
                 m_numerator = BigInteger.Negate(numerator);
                 Denominator = BigInteger.Negate(denominator);
@@ -302,14 +302,14 @@ namespace Miningcore.Util
 
         public BigRational(BigInteger whole, BigInteger numerator, BigInteger denominator)
         {
-            if (denominator.Sign == 0)
+            if(denominator.Sign == 0)
                 throw new DivideByZeroException();
-            if (numerator.Sign == 0 && whole.Sign == 0)
+            if(numerator.Sign == 0 && whole.Sign == 0)
             {
                 m_numerator = BigInteger.Zero;
                 Denominator = BigInteger.One;
             }
-            else if (denominator.Sign < 0)
+            else if(denominator.Sign < 0)
             {
                 Denominator = BigInteger.Negate(denominator);
                 m_numerator = BigInteger.Negate(whole) * Denominator + BigInteger.Negate(numerator);
@@ -385,11 +385,11 @@ namespace Miningcore.Util
 
         public static BigRational Pow(BigRational baseValue, BigInteger exponent)
         {
-            if (exponent.Sign == 0)
+            if(exponent.Sign == 0)
                 return One;
-            if (exponent.Sign < 0)
+            if(exponent.Sign < 0)
             {
-                if (baseValue == Zero)
+                if(baseValue == Zero)
                     throw new ArgumentException("cannot raise zero to a negative power", nameof(baseValue));
                 // n^(-e) -> (1/n)^e
                 baseValue = Invert(baseValue);
@@ -584,12 +584,12 @@ namespace Miningcore.Util
             // The Double value type represents a double-precision 64-bit number with
             // values ranging from -1.79769313486232e308 to +1.79769313486232e308
             // values that do not fit into this range are returned as +/-Infinity
-            if (SafeCastToDouble(value.m_numerator) && SafeCastToDouble(value.Denominator))
+            if(SafeCastToDouble(value.m_numerator) && SafeCastToDouble(value.Denominator))
                 return (double) value.m_numerator / (double) value.Denominator;
 
             // scale the numerator to preseve the fraction part through the integer division
             var denormalized = value.m_numerator * s_bnDoublePrecision / value.Denominator;
-            if (denormalized.IsZero)
+            if(denormalized.IsZero)
                 return value.Sign < 0
                     ? BitConverter.Int64BitsToDouble(unchecked((long) 0x8000000000000000))
                     : 0d; // underflow to -+0
@@ -600,8 +600,8 @@ namespace Miningcore.Util
 
             while(scale > 0)
             {
-                if (!isDouble)
-                    if (SafeCastToDouble(denormalized))
+                if(!isDouble)
+                    if(SafeCastToDouble(denormalized))
                     {
                         result = (double) denormalized;
                         isDouble = true;
@@ -615,7 +615,7 @@ namespace Miningcore.Util
                 scale--;
             }
 
-            if (!isDouble)
+            if(!isDouble)
                 return value.Sign < 0 ? double.NegativeInfinity : double.PositiveInfinity;
             return result;
         }
@@ -625,15 +625,15 @@ namespace Miningcore.Util
             // The Decimal value type represents decimal numbers ranging
             // from +79,228,162,514,264,337,593,543,950,335 to -79,228,162,514,264,337,593,543,950,335
             // the binary representation of a Decimal value is of the form, ((-2^96 to 2^96) / 10^(0 to 28))
-            if (SafeCastToDecimal(value.m_numerator) && SafeCastToDecimal(value.Denominator))
+            if(SafeCastToDecimal(value.m_numerator) && SafeCastToDecimal(value.Denominator))
                 return (decimal) value.m_numerator / (decimal) value.Denominator;
 
             // scale the numerator to preseve the fraction part through the integer division
             var denormalized = value.m_numerator * s_bnDecimalPrecision / value.Denominator;
-            if (denormalized.IsZero)
+            if(denormalized.IsZero)
                 return decimal.Zero; // underflow - fraction is too small to fit in a decimal
             for(var scale = DecimalMaxScale; scale >= 0; scale--)
-                if (!SafeCastToDecimal(denormalized))
+                if(!SafeCastToDecimal(denormalized))
                 {
                     denormalized = denormalized / 10;
                 }
@@ -729,14 +729,14 @@ namespace Miningcore.Util
             try
             {
                 // verify that the deserialized number is well formed
-                if (Denominator.Sign == 0 || m_numerator.Sign == 0)
+                if(Denominator.Sign == 0 || m_numerator.Sign == 0)
                 {
                     // n/0 -> 0/1
                     // 0/m -> 0/1
                     m_numerator = BigInteger.Zero;
                     Denominator = BigInteger.One;
                 }
-                else if (Denominator.Sign < 0)
+                else if(Denominator.Sign < 0)
                 {
                     m_numerator = BigInteger.Negate(m_numerator);
                     Denominator = BigInteger.Negate(Denominator);
@@ -753,7 +753,7 @@ namespace Miningcore.Util
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            if (info == null)
+            if(info == null)
                 throw new ArgumentNullException(nameof(info));
 
             info.AddValue("Numerator", m_numerator);
@@ -762,7 +762,7 @@ namespace Miningcore.Util
 
         private BigRational(SerializationInfo info, StreamingContext context)
         {
-            if (info == null)
+            if(info == null)
                 throw new ArgumentNullException(nameof(info));
 
             m_numerator = (BigInteger) info.GetValue("Numerator", typeof(BigInteger));
@@ -779,11 +779,11 @@ namespace Miningcore.Util
         {
             // * if the numerator is {0, +1, -1} then the fraction is already reduced
             // * if the denominator is {+1} then the fraction is already reduced
-            if (m_numerator == BigInteger.Zero)
+            if(m_numerator == BigInteger.Zero)
                 Denominator = BigInteger.One;
 
             var gcd = BigInteger.GreatestCommonDivisor(m_numerator, Denominator);
-            if (gcd > BigInteger.One)
+            if(gcd > BigInteger.One)
             {
                 m_numerator = m_numerator / gcd;
                 Denominator = Denominator / gcd;
@@ -816,14 +816,14 @@ namespace Miningcore.Util
             sign = 1 - ((int) (du.uu >> 62) & 2);
             man = du.uu & 0x000FFFFFFFFFFFFF;
             exp = (int) (du.uu >> 52) & 0x7FF;
-            if (exp == 0)
+            if(exp == 0)
             {
                 // Denormalized number.
                 isFinite = true;
-                if (man != 0)
+                if(man != 0)
                     exp = -1074;
             }
-            else if (exp == 0x7FF)
+            else if(exp == 0x7FF)
             {
                 // NaN or Infinite.
                 isFinite = false;
@@ -842,7 +842,7 @@ namespace Miningcore.Util
             DoubleUlong du;
             du.dbl = 0;
 
-            if (man == 0)
+            if(man == 0)
             {
                 du.uu = 0;
             }
@@ -850,7 +850,7 @@ namespace Miningcore.Util
             {
                 // Normalize so that 0x0010 0000 0000 0000 is the highest bit set
                 var cbitShift = CbitHighZero(man) - 11;
-                if (cbitShift < 0)
+                if(cbitShift < 0)
                     man >>= -cbitShift;
                 else
                     man <<= cbitShift;
@@ -859,16 +859,16 @@ namespace Miningcore.Util
                 // (52 bits) and skew the exponent (by 0x3FF == 1023)
                 exp += 1075;
 
-                if (exp >= 0x7FF)
+                if(exp >= 0x7FF)
                 {
                     // Infinity
                     du.uu = 0x7FF0000000000000;
                 }
-                else if (exp <= 0)
+                else if(exp <= 0)
                 {
                     // Denormalized
                     exp--;
-                    if (exp < -52)
+                    if(exp < -52)
                         du.uu = 0;
                     else
                         du.uu = man >> -exp;
@@ -880,7 +880,7 @@ namespace Miningcore.Util
                 }
             }
 
-            if (sign < 0)
+            if(sign < 0)
                 du.uu |= 0x8000000000000000;
 
             return du.dbl;
@@ -888,42 +888,42 @@ namespace Miningcore.Util
 
         private static int CbitHighZero(ulong uu)
         {
-            if ((uu & 0xFFFFFFFF00000000) == 0)
+            if((uu & 0xFFFFFFFF00000000) == 0)
                 return 32 + CbitHighZero((uint) uu);
             return CbitHighZero((uint) (uu >> 32));
         }
 
         private static int CbitHighZero(uint u)
         {
-            if (u == 0)
+            if(u == 0)
                 return 32;
 
             var cbit = 0;
-            if ((u & 0xFFFF0000) == 0)
+            if((u & 0xFFFF0000) == 0)
             {
                 cbit += 16;
                 u <<= 16;
             }
 
-            if ((u & 0xFF000000) == 0)
+            if((u & 0xFF000000) == 0)
             {
                 cbit += 8;
                 u <<= 8;
             }
 
-            if ((u & 0xF0000000) == 0)
+            if((u & 0xF0000000) == 0)
             {
                 cbit += 4;
                 u <<= 4;
             }
 
-            if ((u & 0xC0000000) == 0)
+            if((u & 0xC0000000) == 0)
             {
                 cbit += 2;
                 u <<= 2;
             }
 
-            if ((u & 0x80000000) == 0)
+            if((u & 0x80000000) == 0)
                 cbit += 1;
             return cbit;
         }

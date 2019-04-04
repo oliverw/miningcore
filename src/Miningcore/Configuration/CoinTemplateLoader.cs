@@ -16,26 +16,26 @@ namespace Miningcore.Configuration
 
         private static IEnumerable<KeyValuePair<string, CoinTemplate>> LoadTemplates(string filename, JsonSerializer serializer, IComponentContext ctx)
         {
-            using (var jreader = new JsonTextReader(File.OpenText(filename)))
+            using(var jreader = new JsonTextReader(File.OpenText(filename)))
             {
                 var jo = serializer.Deserialize<JObject>(jreader);
 
-                foreach (var o in jo)
+                foreach(var o in jo)
                 {
-                    if (o.Value.Type != JTokenType.Object)
+                    if(o.Value.Type != JTokenType.Object)
                         logger.ThrowLogPoolStartupException("Invalid coin-template file: dictionary of coin-templates expected");
 
                     var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
-                    if (value == null)
+                    if(value == null)
                         logger.ThrowLogPoolStartupException("Invalid coin-template: missing 'family' property");
 
                     var family = value.ToObject<CoinFamily>();
-                    var result = (CoinTemplate)o.Value.ToObject(CoinTemplate.Families[family]);
+                    var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);
 
                     ctx.InjectProperties(result);
 
                     // Patch explorer links
-                    if ((result.ExplorerBlockLinks == null || result.ExplorerBlockLinks.Count == 0) &&
+                    if((result.ExplorerBlockLinks == null || result.ExplorerBlockLinks.Count == 0) &&
                         !string.IsNullOrEmpty(result.ExplorerBlockLink))
                     {
                         result.ExplorerBlockLinks = new Dictionary<string, string>
@@ -63,16 +63,16 @@ namespace Miningcore.Configuration
 
             var result = new Dictionary<string, CoinTemplate>();
 
-            foreach (var filename in coinDefs)
+            foreach(var filename in coinDefs)
             {
                 var definitions = LoadTemplates(filename, serializer, ctx).ToArray();
 
-                foreach (var definition in definitions)
+                foreach(var definition in definitions)
                 {
                     var coinId = definition.Key;
 
                     // log redefinitions
-                    if (result.ContainsKey(coinId))
+                    if(result.ContainsKey(coinId))
                         logger.Warn($"Redefinition of coin '{coinId}' in file {filename}. First seen in {result[coinId].Source}");
 
                     result[coinId] = definition.Value;

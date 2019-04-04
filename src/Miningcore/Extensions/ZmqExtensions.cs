@@ -20,7 +20,7 @@ namespace Miningcore.Extensions
 
         private static readonly Lazy<(byte[] PubKey, byte[] SecretKey)> ownKey = new Lazy<(byte[] PubKey, byte[] SecretKey)>(() =>
         {
-            if (!ZContext.Has("curve"))
+            if(!ZContext.Has("curve"))
                 throw new NotSupportedException("ZMQ library does not support curve");
 
             Z85.CurveKeypair(out var pubKey, out var secretKey);
@@ -32,7 +32,7 @@ namespace Miningcore.Extensions
 
         private static byte[] DeriveKey(string password, int length = 32)
         {
-            using (var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), NoSalt, PasswordIterations))
+            using(var kbd = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(password), NoSalt, PasswordIterations))
             {
                 var block = kbd.GetBytes(length);
                 return block;
@@ -43,7 +43,7 @@ namespace Miningcore.Extensions
 
         public static IObservable<ZMonitorEventArgs> MonitorAsObservable(this ZSocket socket)
         {
-            return Observable.Defer(() => Observable.Create<ZMonitorEventArgs>(obs=>
+            return Observable.Defer(() => Observable.Create<ZMonitorEventArgs>(obs =>
             {
                 var url = $"inproc://monitor{Interlocked.Increment(ref monitorSocketIndex)}";
                 var monitor = ZMonitor.Create(socket.Context, url);
@@ -72,7 +72,7 @@ namespace Miningcore.Extensions
 
         public static void LogMonitorEvent(ILogger logger, ZMonitorEventArgs e)
         {
-            logger.Info(()=> $"[ZMQ] [{e.Event.Address}] {Enum.GetName(typeof(ZMonitorEvents), e.Event.Event)} [{e.Event.EventValue}]");
+            logger.Info(() => $"[ZMQ] [{e.Event.Address}] {Enum.GetName(typeof(ZMonitorEvents), e.Event.Event)} [{e.Event.EventValue}]");
         }
 
         /// <summary>
@@ -82,17 +82,17 @@ namespace Miningcore.Extensions
         {
             keyPlain = keyPlain?.Trim();
 
-            if (string.IsNullOrEmpty(keyPlain))
+            if(string.IsNullOrEmpty(keyPlain))
                 return;
 
-            if (!ZContext.Has("curve"))
+            if(!ZContext.Has("curve"))
                 logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
             // Get server's public key
             byte[] keyBytes = null;
             byte[] serverPubKey = null;
 
-            if (!knownKeys.TryGetValue(keyPlain, out var serverKeys))
+            if(!knownKeys.TryGetValue(keyPlain, out var serverKeys))
             {
                 keyBytes = DeriveKey(keyPlain, 32);
 
@@ -120,16 +120,16 @@ namespace Miningcore.Extensions
         {
             keyPlain = keyPlain?.Trim();
 
-            if (string.IsNullOrEmpty(keyPlain))
+            if(string.IsNullOrEmpty(keyPlain))
                 return;
 
-            if (!ZContext.Has("curve"))
+            if(!ZContext.Has("curve"))
                 logger.ThrowLogPoolStartupException("Unable to initialize ZMQ Curve Transport-Layer-Security. Your ZMQ library was compiled without Curve support!");
 
             // Get server's public key
             byte[] serverPubKey = null;
 
-            if (!knownKeys.TryGetValue(keyPlain, out var serverKeys))
+            if(!knownKeys.TryGetValue(keyPlain, out var serverKeys))
             {
                 var keyBytes = DeriveKey(keyPlain, 32);
 
