@@ -62,7 +62,7 @@ namespace Miningcore.Blockchain.Equihash
             var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy);
 
             var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
             if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;

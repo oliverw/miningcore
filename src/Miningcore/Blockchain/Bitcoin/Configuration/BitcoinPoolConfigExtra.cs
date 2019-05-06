@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Miningcore.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Bitcoin.Configuration
 {
@@ -47,5 +48,10 @@ namespace Miningcore.Blockchain.Bitcoin.Configuration
         /// Blocktemplate stream published via ZMQ
         /// </summary>
         public ZmqPubSubEndpointConfig BtStream { get; set; }
+
+        /// <summary>
+        /// Custom Arguments for getblocktemplate RPC
+        /// </summary>
+        public JToken GBTArgs { get; set; }
     }
 }

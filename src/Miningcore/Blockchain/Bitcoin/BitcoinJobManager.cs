@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
             return result;
         }
