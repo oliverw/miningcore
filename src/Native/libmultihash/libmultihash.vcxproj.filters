@@ -284,6 +284,18 @@
     <ClInclude Include="x21s.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hashodo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KeccakP-800-SnP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="odocrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brg_endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -527,6 +539,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x21s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="odocrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeccakP-800-reference.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

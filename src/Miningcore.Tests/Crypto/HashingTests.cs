@@ -243,6 +243,17 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
+        public void Odocrypt_Hash()
+        {
+            var hasher = new OdoCrypt();
+            var hash = new byte[32];
+            hasher.Digest(testValue2, hash, 1u);
+            var result = hash.ToHexString();
+
+            Assert.Equal("0dcb8c6df9f2ee261668a3048b48ac39cf3ec9b07d10de886f50b962c0535768", result);
+        }
+
+        [Fact]
         public void Skein_Hash()
         {
             var hasher = new Skein();
