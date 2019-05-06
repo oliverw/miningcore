@@ -85,11 +85,10 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Network network;
         protected IDestination poolAddressDestination;
 
-        protected object[] getBlockTemplateParams =
+        protected object[] getBlockTemplateParams = 
         {
             new
             {
-                capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
                 rules = new[] { "segwit" }
             }
         };
