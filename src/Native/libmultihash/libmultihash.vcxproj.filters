@@ -275,9 +275,6 @@
     <ClInclude Include="sha3\SWIFFTX.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x22i.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="sha3\extra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -530,9 +527,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\sph_tiger.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x22i.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\extra.c">

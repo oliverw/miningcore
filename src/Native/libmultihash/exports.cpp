@@ -45,7 +45,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
-#include "x22i.h"
 #include "x21s.h"
 #include "hashodo.h"
 #include "equi/equihashverify.h"
@@ -216,11 +215,6 @@ extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output)
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
 {
     x16r_hash(input, output, input_len);
-}
-
-extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
-{
-	x22i_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
