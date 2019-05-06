@@ -214,7 +214,7 @@ namespace Miningcore.Api.Controllers
 
             // enrich payments
             var txInfobaseUrl = pool.Template.ExplorerTxLink;
-            var addressInfobaseUrl = pool.Template.ExplorerTxLink;
+            var addressInfobaseUrl = pool.Template.ExplorerAccountLink;
 
             foreach(var payment in payments)
             {
@@ -282,7 +282,7 @@ namespace Miningcore.Api.Controllers
 
             // enrich payments
             var txInfobaseUrl = pool.Template.ExplorerTxLink;
-            var addressInfobaseUrl = pool.Template.ExplorerTxLink;
+            var addressInfobaseUrl = pool.Template.ExplorerAccountLink;
 
             foreach(var payment in payments)
             {
