@@ -56,6 +56,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected IDestination poolAddressDestination;
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
+        private BitcoinTemplate.BitcoinNetworkParams networkParams;
         protected readonly HashSet<string> submissions = new HashSet<string>();
         protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
@@ -347,7 +348,7 @@ namespace Miningcore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce, context.VersionRollingMask, versionBits);
             Span<byte> headerHash = stackalloc byte[32];
-            headerHasher.Digest(headerBytes, headerHash, (ulong) nTime);
+            headerHasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -556,6 +557,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
+            networkParams = coin.GetNetwork(network.NetworkType);
             txVersion = coin.CoinbaseTxVersion;
             this.network = network;
             this.clock = clock;

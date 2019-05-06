@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Numerics;
 using Autofac;
@@ -75,7 +75,25 @@ namespace Miningcore.Configuration
         public IHashAlgorithm BlockHasherValue => blockHasherValue.Value;
         public IHashAlgorithm PoSBlockHasherValue => posBlockHasherValue.Value;
 
-        #region Overrides of CoinDefinition
+        public BitcoinNetworkParams GetNetwork(NetworkType networkType)
+        {
+            if(Networks == null || Networks.Count == 0)
+                return null;
+
+            switch(networkType)
+            {
+                case NetworkType.Mainnet:
+                    return Networks["main"];
+                case NetworkType.Testnet:
+                    return Networks["test"];
+                case NetworkType.Regtest:
+                    return Networks["regtest"];
+            }
+
+            throw new NotSupportedException("unsupported network type");
+        }
+
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
@@ -144,7 +162,7 @@ namespace Miningcore.Configuration
             throw new NotSupportedException("unsupported network type");
         }
 
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
@@ -157,7 +175,7 @@ namespace Miningcore.Configuration
 
     public partial class CryptonoteCoinTemplate
     {
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
@@ -179,7 +197,7 @@ namespace Miningcore.Configuration
 
     public partial class EthereumCoinTemplate
     {
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {

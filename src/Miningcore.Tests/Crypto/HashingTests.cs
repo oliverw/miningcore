@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Miningcore.Crypto.Hashing.Algorithms;
@@ -6,6 +7,7 @@ using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
 using Miningcore.Tests.Util;
 using Xunit;
+using static Miningcore.Configuration.BitcoinTemplate;
 
 namespace Miningcore.Tests.Crypto
 {
@@ -236,10 +238,19 @@ namespace Miningcore.Tests.Crypto
         {
             var hasher = new OdoCrypt();
             var hash = new byte[32];
-            hasher.Digest(testValue2, hash, 1u);
+
+            var bnp = new BitcoinNetworkParams
+            {
+                Extra = new Dictionary<string, object>
+                {
+                    [nameof(OdoCryptConfig.OdoCryptShapeChangeInterval)] = 864000
+                }
+            };
+
+            hasher.Digest(testValue2, hash, (ulong) 0x59ef86f2, null, null, bnp);
             var result = hash.ToHexString();
 
-            Assert.Equal("0dcb8c6df9f2ee261668a3048b48ac39cf3ec9b07d10de886f50b962c0535768", result);
+            Assert.Equal("93164a82a79fba784dcf04c0b0f8537cc43821e7518bf513f296de50aefee4cf", result);
         }
 
         [Fact]
