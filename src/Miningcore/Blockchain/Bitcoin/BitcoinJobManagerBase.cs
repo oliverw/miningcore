@@ -79,7 +79,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Network network;
         protected IDestination poolAddressDestination;
 
-        protected object[] getBlockTemplateParams = 
+        protected object[] getBlockTemplateParams =
         {
             new
             {
