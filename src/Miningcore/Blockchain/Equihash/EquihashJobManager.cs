@@ -121,12 +121,12 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 var blockTemplate = response.Response;
-
                 var job = currentJob;
+
                 var isNew = job == null ||
-                (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                    (blockTemplate != null &&
+                        (job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                        blockTemplate.Height > job.BlockTemplate?.Height));
 
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
