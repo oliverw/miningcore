@@ -60,7 +60,7 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 ### Runtime Requirements on Linux
 
 - [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
-- [PostgreSQL 11 (or higher) Database](https://www.postgresql.org/)
+- [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
 

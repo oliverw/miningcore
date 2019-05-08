@@ -12,11 +12,11 @@ CREATE TABLE shares
 	ipaddress TEXT NOT NULL,
     source TEXT NULL,
 	created TIMESTAMP NOT NULL
-) PARTITION BY LIST (poolid);
+);
 
-CREATE INDEX IDX_SHARES_MINER on shares(poolid, miner);
-CREATE INDEX IDX_SHARES_CREATED ON shares(poolid, created);
-CREATE INDEX IDX_SHARES_MINER_DIFFICULTY on shares(poolid, miner, difficulty);
+CREATE INDEX IDX_SHARES_POOL_MINER on shares(poolid, miner);
+CREATE INDEX IDX_SHARES_POOL_CREATED ON shares(poolid, created);
+CREATE INDEX IDX_SHARES_POOL_MINER_DIFFICULTY on shares(poolid, miner, difficulty);
 
 CREATE TABLE blocks
 (
