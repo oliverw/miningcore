@@ -95,7 +95,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
             {
-                blockSubmission.Select(x => (false, "Block-submission", (string) null))
+                blockSubmission.Select(x => (false, JobRefreshBy.BlockSubmission, (string) null))
             };
 
             if(extraPoolConfig?.BtStream == null)
@@ -127,7 +127,7 @@ namespace Miningcore.Blockchain.Bitcoin
                             }
                         })
                         .DistinctUntilChanged()
-                        .Select(_ => (false, "ZMQ pub/sub", (string) null))
+                        .Select(_ => (false, JobRefreshBy.PubSub, (string) null))
                         .Publish()
                         .RefCount();
 
@@ -147,7 +147,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                     triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
                         .TakeUntil(pollTimerRestart)
-                        .Select(_ => (false, "RPC polling", (string) null))
+                        .Select(_ => (false, JobRefreshBy.Poll, (string) null))
                         .Repeat());
                 }
 
@@ -155,14 +155,14 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     // get initial blocktemplate
                     triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                        .Select(_ => (false, "Initial template", (string) null))
+                        .Select(_ => (false, JobRefreshBy.Initial, (string) null))
                         .TakeWhile(_ => !hasInitialBlockTemplate));
                 }
 
                 // periodically update transactions for current template
                 triggers.Add(Observable.Timer(jobRebroadcastTimeout)
                     .TakeUntil(pollTimerRestart)
-                    .Select(_ => (true, "Job-Refresh", (string) null))
+                    .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
                     .Repeat());
             }
 
@@ -175,7 +175,11 @@ namespace Miningcore.Blockchain.Bitcoin
                     var interval = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout - 0.1d));
 
                     triggers.Add(btStream
-                        .Select(json => (!lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval), "BT-Stream", json))
+                        .Select(json =>
+                        {
+                            var force = !lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval);
+                            return (force, !force ? JobRefreshBy.BlockTemplateStream : JobRefreshBy.BlockTemplateStreamRefresh, json);
+                        })
                         .Publish()
                         .RefCount());
                 }
@@ -183,14 +187,14 @@ namespace Miningcore.Blockchain.Bitcoin
                 else
                 {
                     triggers.Add(btStream
-                        .Select(json => (false, "BT-Stream", json))
+                        .Select(json => (false, JobRefreshBy.BlockTemplateStream, json))
                         .Publish()
                         .RefCount());
                 }
 
                 // get initial blocktemplate
                 triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => (false, "Initial template", (string) null))
+                    .Select(_ => (false, JobRefreshBy.Initial, (string) null))
                     .TakeWhile(_ => !hasInitialBlockTemplate));
             }
 

@@ -127,7 +127,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         if(isNew)
                         {
                             if(via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height} via [{via}]");
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
