@@ -144,7 +144,7 @@ namespace Miningcore.Blockchain.Equihash
                         if(isNew)
                         {
                             if(via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} via [{via}]");
+                                logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
                             else
                                 logger.Info(() => $"Detected new block {blockTemplate.Height}");
 

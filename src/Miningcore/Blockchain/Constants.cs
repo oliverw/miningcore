@@ -8,6 +8,7 @@ namespace Miningcore.Blockchain
         public const string PubSub = "ZMQ";
         public const string BlockTemplateStream = "BTS";
         public const string BlockTemplateStreamRefresh = "BTS-R";
+        public const string WebSocket = "WS";
         public const string BlockSubmission = "BLOCK";
     }
 }
