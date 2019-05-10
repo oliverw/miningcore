@@ -283,7 +283,7 @@ namespace Miningcore.Blockchain.Equihash
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
-                    blockSubmissionSubject.OnNext(Unit.Default);
+                    OnBlockFound();
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

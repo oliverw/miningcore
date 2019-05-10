@@ -90,12 +90,12 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual void SetupJobUpdates()
         {
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
-            var blockSubmission = blockSubmissionSubject.Synchronize();
-            var pollTimerRestart = blockSubmissionSubject.Synchronize();
+            var blockFound = blockFoundSubject.Synchronize();
+            var pollTimerRestart = blockFoundSubject.Synchronize();
 
             var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
             {
-                blockSubmission.Select(x => (false, JobRefreshBy.BlockSubmission, (string) null))
+                blockFound.Select(x => (false, JobRefreshBy.BlockFound, (string) null))
             };
 
             if(extraPoolConfig?.BtStream == null)
@@ -132,7 +132,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         .RefCount();
 
                     pollTimerRestart = Observable.Merge(
-                            blockSubmission,
+                            blockFound,
                             blockNotify.Select(_ => Unit.Default))
                         .Publish()
                         .RefCount();

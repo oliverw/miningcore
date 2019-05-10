@@ -348,7 +348,8 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
-                    blockSubmissionSubject.OnNext(Unit.Default);
+
+                    OnBlockFound();
 
                     share.TransactionConfirmationData = share.BlockHash;
                 }
@@ -544,12 +545,12 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected virtual void SetupJobUpdates()
         {
-            var blockSubmission = blockSubmissionSubject.Synchronize();
-            var pollTimerRestart = blockSubmissionSubject.Synchronize();
+            var blockSubmission = blockFoundSubject.Synchronize();
+            var pollTimerRestart = blockFoundSubject.Synchronize();
 
             var triggers = new List<IObservable<(string Via, string Data)>>
             {
-                blockSubmission.Select(x => (JobRefreshBy.BlockSubmission, (string) null))
+                blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
             };
 
             if(extraPoolConfig?.BtStream == null)

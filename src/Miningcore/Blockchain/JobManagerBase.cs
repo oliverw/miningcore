@@ -56,7 +56,7 @@ namespace Miningcore.Blockchain
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
 
         protected abstract void ConfigureDaemons();
 
@@ -99,6 +99,11 @@ namespace Miningcore.Blockchain
                 .Select(x => x.Payload)
                 .Publish()
                 .RefCount();
+        }
+
+        protected virtual void OnBlockFound()
+        {
+            blockFoundSubject.OnNext(Unit.Default);
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

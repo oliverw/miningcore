@@ -9,6 +9,6 @@ namespace Miningcore.Blockchain
         public const string BlockTemplateStream = "BTS";
         public const string BlockTemplateStreamRefresh = "BTS-R";
         public const string WebSocket = "WS";
-        public const string BlockSubmission = "BLOCK";
+        public const string BlockFound = "BLOCK";
     }
 }
