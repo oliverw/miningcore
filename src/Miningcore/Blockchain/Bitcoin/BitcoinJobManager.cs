@@ -93,7 +93,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if(response.Error != null)
@@ -124,26 +126,26 @@ namespace Miningcore.Blockchain.Bitcoin
 
                     lock(jobLock)
                     {
-                        if(isNew)
-                        {
-                            if(via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
-                            else
-                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
-
-                            // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
-                            BlockchainStats.BlockHeight = blockTemplate.Height;
-                            BlockchainStats.NetworkDifficulty = job.Difficulty;
-                            BlockchainStats.NextNetworkTarget = blockTemplate.Target;
-                            BlockchainStats.NextNetworkBits = blockTemplate.Bits;
-                        }
-
                         validJobs.Insert(0, job);
 
                         // trim active jobs
                         while(validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(validJobs.Count - 1);
+                    }
+
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Detected new block {blockTemplate.Height}");
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     currentJob = job;
