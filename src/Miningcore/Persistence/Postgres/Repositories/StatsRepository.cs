@@ -199,19 +199,23 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            const string query = 
-                "WITH cte AS " +
-                "( " +
-                "    SELECT " +
-                "        ROW_NUMBER() OVER(partition BY miner, worker ORDER BY created DESC) as rk, " +
-                "        miner, worker " +
-                "    FROM minerstats " +
-                "    WHERE poolid = @poolId AND hashrate > 0 " +
-                ") " +
-                "SELECT miner, worker " +
-                "FROM cte " +
-                "WHERE rk = 1";
-
+            const string query =
+                "SELECT s.miner, s.worker, s.hashrate FROM " +
+                "(" +
+                "    WITH cte AS" +
+                "    (" +
+                "        SELECT" +
+                "            ROW_NUMBER() OVER (partition BY miner, worker ORDER BY created DESC) as rk," +
+                "            miner, worker, hashrate" +
+                "        FROM minerstats" +
+                "        WHERE poolid = @poolId" +
+                "    )" +
+                "    SELECT miner, worker, hashrate" +
+                "    FROM cte" +
+                "    WHERE rk = 1" +
+                ") s" +
+                "WHERE s.hashrate > 0;";
+                
             return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
                 .ToArray();
         }
