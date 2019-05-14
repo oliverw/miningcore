@@ -213,7 +213,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "    SELECT miner, worker, hashrate" +
                 "    FROM cte" +
                 "    WHERE rk = 1" +
-                ") s" +
+                ") s " +
                 "WHERE s.hashrate > 0;";
                 
             return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
