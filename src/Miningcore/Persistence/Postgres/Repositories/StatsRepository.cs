@@ -195,6 +195,27 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return result;
         }
 
+        public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, IDbTransaction tx, string poolId)
+        {
+            logger.LogInvoke();
+
+            const string query = 
+                "WITH cte AS " +
+                "( " +
+                "    SELECT " +
+                "        ROW_NUMBER() OVER(partition BY miner, worker ORDER BY created DESC) as rk, " +
+                "        miner, worker " +
+                "    FROM minerstats " +
+                "    WHERE poolid = @poolId AND hashrate > 0 " +
+                ") " +
+                "SELECT miner, worker " +
+                "FROM cte " +
+                "WHERE rk = 1";
+
+            return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
+                .ToArray();
+        }
+
         public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });

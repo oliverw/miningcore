@@ -163,6 +163,16 @@ namespace Miningcore.Mining
                     }
                 }
 
+                else
+                {
+                    // reset
+                    pool.PoolStats.ConnectedMiners = 0;
+                    pool.PoolStats.PoolHashrate = 0;
+                    pool.PoolStats.SharesPerSecond = 0;
+
+                    messageBus.NotifyHashrateUpdated(pool.Config.Id, 0);
+                }
+
                 // persist
                 await cf.RunTx(async (con, tx) =>
                 {

@@ -31,4 +31,11 @@ namespace Miningcore.Persistence.Model.Projections
         public DateTime FirstShare { get; set; }
         public DateTime LastShare { get; set; }
     }
+
+    public class MinerWorkerHashrate
+    {
+        public string Miner { get; set; }
+        public string Worker { get; set; }
+        public double Hashrate { get; set; }
+    }
 }
