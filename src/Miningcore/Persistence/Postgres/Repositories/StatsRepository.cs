@@ -195,7 +195,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return result;
         }
 
-        public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, IDbTransaction tx, string poolId)
+        public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke();
 

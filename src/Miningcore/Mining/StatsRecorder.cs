@@ -191,6 +191,22 @@ namespace Miningcore.Mining
                 if(result.Length == 0)
                     continue;
 
+                // retrieve most recent miner/worker hashrate sample, if non-zero
+                var previousMinerWorkerHashrates = await cf.Run(async (con) =>
+                {
+                    return await statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId);
+                });
+
+                string buildKey(string miner, string worker = null)
+                {
+                    return !string.IsNullOrEmpty(worker) ? $"{miner}:{worker}" : miner;
+                }
+
+                var previousNonZeroMinerWorkers = new HashSet<string>(
+                    previousMinerWorkerHashrates.Select(x => buildKey(x.Miner, x.Worker)));
+
+                var currentNonZeroMinerWorkers = new HashSet<string>();
+
                 // calculate & update miner, worker hashrates
                 foreach(var minerHashes in byMiner)
                 {
@@ -199,6 +215,9 @@ namespace Miningcore.Mining
                     await cf.RunTx(async (con, tx) =>
                     {
                         stats.Miner = minerHashes.Key;
+
+                        // book keeping
+                        currentNonZeroMinerWorkers.Add(buildKey(stats.Miner));
 
                         foreach(var item in minerHashes)
                         {
@@ -218,13 +237,43 @@ namespace Miningcore.Mining
                                 // persist
                                 await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
 
+                                // broadcast
                                 messageBus.NotifyHashrateUpdated(pool.Config.Id, hashrate, stats.Miner, item.Worker);
+
+                                // book keeping
+                                currentNonZeroMinerWorkers.Add(buildKey(stats.Miner, stats.Worker));
                             }
                         }
                     });
 
                     messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
                 }
+
+                // identify and reset "orphaned" hashrates
+                var orphanedHashrateForMinerWorker = previousNonZeroMinerWorkers.Except(currentNonZeroMinerWorkers).ToArray();
+
+                await cf.RunTx(async (con, tx) =>
+                {
+                    // reset
+                    stats.Hashrate = 0;
+                    stats.SharesPerSecond = 0;
+
+                    foreach(var item in orphanedHashrateForMinerWorker)
+                    {
+                        var parts = item.Split(":");
+                        var miner = parts[0];
+                        var worker = parts.Length > 1 ? parts[1] : null;
+
+                        stats.Miner = parts[0];
+                        stats.Worker = worker;
+
+                        // persist
+                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+
+                        // broadcast
+                        messageBus.NotifyHashrateUpdated(pool.Config.Id, 0, stats.Miner, stats.Worker);
+                    }
+                });
             }
         }
 
