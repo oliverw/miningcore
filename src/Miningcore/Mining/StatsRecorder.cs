@@ -171,6 +171,8 @@ namespace Miningcore.Mining
                     pool.PoolStats.SharesPerSecond = 0;
 
                     messageBus.NotifyHashrateUpdated(pool.Config.Id, 0);
+
+                    logger.Info(() => $"Reset performance stats for pool {poolId}");
                 }
 
                 // persist
@@ -272,6 +274,11 @@ namespace Miningcore.Mining
 
                         // broadcast
                         messageBus.NotifyHashrateUpdated(pool.Config.Id, 0, stats.Miner, stats.Worker);
+
+                        if(string.IsNullOrEmpty(stats.Worker))
+                            logger.Info(() => $"Reset performance stats for miner {stats.Miner} on pool {poolId}");
+                        else
+                            logger.Info(() => $"Reset performance stats for worker {stats.Worker} of miner {stats.Miner} on pool {poolId}");
                     }
                 });
             }
