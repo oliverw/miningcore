@@ -149,7 +149,7 @@ namespace Miningcore.Blockchain.Ethereum
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
                     // is it block mined by us?
-                    if(blockInfo.Miner == poolConfig.Address)
+                    if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
                         // additional check
                         // NOTE: removal of first character of both sealfields caused by
@@ -211,7 +211,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                             var uncle = uncleResponses.Where(x => x.Error == null && x.Response != null)
                                 .Select(x => x.Response.ToObject<DaemonResponses.Block>())
-                                .FirstOrDefault(x => x.Miner == poolConfig.Address);
+                                .FirstOrDefault(x => string.Equals(x.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase));
 
                             if(uncle != null)
                             {
