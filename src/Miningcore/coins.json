@@ -470,6 +470,7 @@
     },
     "digibyte-scrypt": {
         "name": "Digibyte-Scrypt",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -509,6 +510,7 @@
     },
     "digibyte-qubit": {
         "name": "Digibyte-Qubit",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
