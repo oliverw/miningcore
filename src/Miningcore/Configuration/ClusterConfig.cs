@@ -55,6 +55,12 @@ namespace Miningcore.Configuration
         public string Name { get; set; }
 
         /// <summary>
+        /// Canonical Name
+        /// </summary>
+        [JsonProperty(Order = -10)]
+        public string CanonicalName { get; set; }
+
+        /// <summary>
         /// Trade Symbol
         /// </summary>
         [JsonProperty(Order = -9)]

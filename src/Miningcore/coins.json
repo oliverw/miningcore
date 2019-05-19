@@ -451,6 +451,7 @@
     },
     "digibyte-sha256": {
         "name": "Digibyte-Sha256",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -489,6 +490,7 @@
     },
     "digibyte-skein": {
         "name": "Digibyte-Skein",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -525,6 +527,7 @@
     },
     "digibyte-groestl": {
         "name": "Digibyte-Groestl",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -544,6 +547,7 @@
     },
     "digibyte-odo": {
         "name": "Digibyte-Odo",
+        "canonicalName": "Digibyte",
         "symbol": "DGB",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -574,6 +578,7 @@
     },
     "verge-lyra": {
         "name": "Verge-Lyra",
+        "canonicalName": "Verge",
         "symbol": "XVG",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -598,6 +603,7 @@
     },
     "verge-scrypt": {
         "name": "Verge-Scrypt",
+        "canonicalName": "Verge",
         "symbol": "XVG",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -623,6 +629,7 @@
     },
     "verge-x17": {
         "name": "Verge-X17",
+        "canonicalName": "Verge",
         "symbol": "XVG",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -646,6 +653,7 @@
     },
     "verge-blake": {
         "name": "Verge-Blake",
+        "canonicalName": "Verge",
         "symbol": "XVG",
         "family": "bitcoin",
         "coinbaseHasher": {
@@ -669,6 +677,7 @@
     },
     "verge-groestl": {
         "name": "Verge-Groestl",
+        "canonicalName": "Verge",
         "symbol": "XVG",
         "family": "bitcoin",
         "coinbaseHasher": {
