@@ -57,7 +57,6 @@ namespace Miningcore.Configuration
         /// <summary>
         /// Canonical Name
         /// </summary>
-        [JsonProperty(Order = -10)]
         public string CanonicalName { get; set; }
 
         /// <summary>
