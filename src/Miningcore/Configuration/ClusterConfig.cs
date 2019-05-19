@@ -57,6 +57,7 @@ namespace Miningcore.Configuration
         /// <summary>
         /// Canonical Name
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string CanonicalName { get; set; }
 
         /// <summary>
