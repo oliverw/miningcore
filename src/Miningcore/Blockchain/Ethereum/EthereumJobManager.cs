@@ -705,7 +705,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if(isNew)
-                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [{JobRefreshBy.WebSocket}]");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -748,7 +748,7 @@ namespace Miningcore.Blockchain.Ethereum
                             .Do(isNew =>
                             {
                                 if(isNew)
-                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via WebSocket");
+                                    logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [WS]");
                             })
                             .Where(isNew => isNew)
                             .Select(_ => GetJobParamsForStratum(true))
@@ -767,7 +767,7 @@ namespace Miningcore.Blockchain.Ethereum
                         .Do(isNew =>
                         {
                             if(isNew)
-                                logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via RPC-Polling");
+                                logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [{JobRefreshBy.Poll}]");
                         })
                         .Where(isNew => isNew)
                         .Select(_ => GetJobParamsForStratum(true))
@@ -787,7 +787,7 @@ namespace Miningcore.Blockchain.Ethereum
                     .Do(isNew =>
                     {
                         if(isNew)
-                            logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected via BT-Stream");
+                            logger.Info(() => $"New work at height {currentJob.BlockTemplate.Height} and header {currentJob.BlockTemplate.Header} detected [{JobRefreshBy.BlockTemplateStream}]");
                     })
                     .Where(isNew => isNew)
                     .Select(_ => GetJobParamsForStratum(true))

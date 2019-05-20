@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Equihash.Configuration
 {
@@ -29,5 +30,10 @@ namespace Miningcore.Blockchain.Equihash.Configuration
         /// </summary>
         [JsonProperty("z-address")]
         public string ZAddress { get; set; }
+
+        /// <summary>
+        /// Custom Arguments for getblocktemplate RPC
+        /// </summary>
+        public JToken GBTArgs { get; set; }
     }
 }

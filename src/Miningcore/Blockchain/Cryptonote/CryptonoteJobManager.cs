@@ -108,7 +108,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                     if(via != null)
-                        logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
+                        logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
@@ -348,7 +348,8 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
-                    blockSubmissionSubject.OnNext(Unit.Default);
+
+                    OnBlockFound();
 
                     share.TransactionConfirmationData = share.BlockHash;
                 }
@@ -544,12 +545,12 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected virtual void SetupJobUpdates()
         {
-            var blockSubmission = blockSubmissionSubject.Synchronize();
-            var pollTimerRestart = blockSubmissionSubject.Synchronize();
+            var blockSubmission = blockFoundSubject.Synchronize();
+            var pollTimerRestart = blockFoundSubject.Synchronize();
 
             var triggers = new List<IObservable<(string Via, string Data)>>
             {
-                blockSubmission.Select(x => ("Block-submission", (string) null))
+                blockSubmission.Select(x => (JobRefreshBy.BlockFound, (string) null))
             };
 
             if(extraPoolConfig?.BtStream == null)
@@ -581,7 +582,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             }
                         })
                         .DistinctUntilChanged()
-                        .Select(_ => ("ZMQ pub/sub", (string) null))
+                        .Select(_ => (JobRefreshBy.PubSub, (string) null))
                         .Publish()
                         .RefCount();
 
@@ -601,7 +602,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                     triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
                         .TakeUntil(pollTimerRestart)
-                        .Select(_ => ("RPC polling", (string) null))
+                        .Select(_ => (JobRefreshBy.Poll, (string) null))
                         .Repeat());
                 }
 
@@ -609,7 +610,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     // get initial blocktemplate
                     triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                        .Select(_ => ("Initial template", (string) null))
+                        .Select(_ => (JobRefreshBy.Initial, (string) null))
                         .TakeWhile(_ => !hasInitialBlockTemplate));
                 }
             }
@@ -617,13 +618,13 @@ namespace Miningcore.Blockchain.Cryptonote
             else
             {
                 triggers.Add(BtStreamSubscribe(extraPoolConfig.BtStream)
-                    .Select(json => ("BT-Stream", json))
+                    .Select(json => (JobRefreshBy.BlockTemplateStream, json))
                     .Publish()
                     .RefCount());
 
                 // get initial blocktemplate
                 triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
-                    .Select(_ => ("Initial template", (string) null))
+                    .Select(_ => (JobRefreshBy.Initial, (string) null))
                     .TakeWhile(_ => !hasInitialBlockTemplate));
             }
 

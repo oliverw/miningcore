@@ -19,13 +19,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.IO;
-using System.IO.Compression;
 using System.Reactive;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -35,7 +31,6 @@ using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Util;
 using NLog;
-using ZeroMQ;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain
@@ -61,7 +56,7 @@ namespace Miningcore.Blockchain
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
 
         protected abstract void ConfigureDaemons();
 
@@ -104,6 +99,11 @@ namespace Miningcore.Blockchain
                 .Select(x => x.Payload)
                 .Publish()
                 .RefCount();
+        }
+
+        protected virtual void OnBlockFound()
+        {
+            blockFoundSubject.OnNext(Unit.Default);
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

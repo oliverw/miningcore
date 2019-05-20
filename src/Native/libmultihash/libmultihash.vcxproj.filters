@@ -275,13 +275,31 @@
     <ClInclude Include="sha3\SWIFFTX.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x22i.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="sha3\extra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x21s.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hashodo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KeccakP-800-SnP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="odocrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="brg_endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x25x.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\sph_panama.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -520,13 +538,25 @@
     <ClCompile Include="sha3\sph_tiger.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x22i.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sha3\extra.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x21s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="odocrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeccakP-800-reference.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x25x.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lane.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\panama.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
             return result;
         }
@@ -93,7 +93,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if(response.Error != null)
@@ -103,12 +105,12 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
 
                 var blockTemplate = response.Response;
-
                 var job = currentJob;
+
                 var isNew = job == null ||
-                (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                    (blockTemplate != null &&
+                        (job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                        blockTemplate.Height > job.BlockTemplate?.Height));
 
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
@@ -124,26 +126,26 @@ namespace Miningcore.Blockchain.Bitcoin
 
                     lock(jobLock)
                     {
-                        if(isNew)
-                        {
-                            if(via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
-                            else
-                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
-
-                            // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
-                            BlockchainStats.BlockHeight = blockTemplate.Height;
-                            BlockchainStats.NetworkDifficulty = job.Difficulty;
-                            BlockchainStats.NextNetworkTarget = blockTemplate.Target;
-                            BlockchainStats.NextNetworkBits = blockTemplate.Bits;
-                        }
-
                         validJobs.Insert(0, job);
 
                         // trim active jobs
                         while(validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(validJobs.Count - 1);
+                    }
+
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Detected new block {blockTemplate.Height}");
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     currentJob = job;
@@ -266,7 +268,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
-                    blockSubmissionSubject.OnNext(Unit.Default);
+                    OnBlockFound();
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

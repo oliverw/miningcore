@@ -23,33 +23,33 @@
     <ProjectGuid>{2DE74E14-BF6D-4046-951B-8EBC8A1BA009}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>netmultihashnative</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>libmultihash</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -172,6 +172,7 @@
     <ClInclude Include="blake.h" />
     <ClInclude Include="blake2s.h" />
     <ClInclude Include="boolberry.h" />
+    <ClInclude Include="brg_endian.h" />
     <ClInclude Include="c11.h" />
     <ClInclude Include="dcrypt.h" />
     <ClInclude Include="equi\arith_uint256.h" />
@@ -195,9 +196,12 @@
     <ClInclude Include="fugue.h" />
     <ClInclude Include="geek.h" />
     <ClInclude Include="groestl.h" />
+    <ClInclude Include="hashodo.h" />
     <ClInclude Include="hefty1.h" />
     <ClInclude Include="jh.h" />
     <ClInclude Include="keccak.h" />
+    <ClInclude Include="KeccakP-800-SnP.h" />
+    <ClInclude Include="lane.h" />
     <ClInclude Include="libethash\compiler.h" />
     <ClInclude Include="libethash\data_sizes.h" />
     <ClInclude Include="libethash\endian.h" />
@@ -212,6 +216,7 @@
     <ClInclude Include="Lyra2RE.h" />
     <ClInclude Include="neoscrypt.h" />
     <ClInclude Include="nist5.h" />
+    <ClInclude Include="odocrypt.h" />
     <ClInclude Include="portable_endian.h" />
     <ClInclude Include="quark.h" />
     <ClInclude Include="qubit.h" />
@@ -234,6 +239,7 @@
     <ClInclude Include="sha3\sph_jh.h" />
     <ClInclude Include="sha3\sph_keccak.h" />
     <ClInclude Include="sha3\sph_luffa.h" />
+    <ClInclude Include="sha3\sph_panama.h" />
     <ClInclude Include="sha3\sph_sha2.h" />
     <ClInclude Include="sha3\sph_shabal.h" />
     <ClInclude Include="sha3\sph_shavite.h" />
@@ -258,7 +264,7 @@
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
-    <ClInclude Include="x22i.h" />
+    <ClInclude Include="x25x.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
@@ -288,6 +294,8 @@
     <ClCompile Include="hefty1.c" />
     <ClCompile Include="jh.c" />
     <ClCompile Include="keccak.c" />
+    <ClCompile Include="KeccakP-800-reference.c" />
+    <ClCompile Include="lane.c" />
     <ClCompile Include="libethash\internal.c" />
     <ClCompile Include="libethash\io.c" />
     <ClCompile Include="libethash\io_win32.c" />
@@ -299,6 +307,7 @@
     <ClCompile Include="neoscrypt.c" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="nist5.c" />
+    <ClCompile Include="odocrypt.cpp" />
     <ClCompile Include="quark.c" />
     <ClCompile Include="qubit.c" />
     <ClCompile Include="s3.c" />
@@ -307,6 +316,7 @@
     <ClCompile Include="sha3\extra.c" />
     <ClCompile Include="sha3\gost_streebog.c" />
     <ClCompile Include="sha3\hamsi.c" />
+    <ClCompile Include="sha3\panama.c" />
     <ClCompile Include="sha3\sm3.c" />
     <ClCompile Include="sha3\sph_blake.c" />
     <ClCompile Include="sha3\sph_blake2s.c" />
@@ -341,7 +351,7 @@
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
-    <ClCompile Include="x22i.c" />
+    <ClCompile Include="x25x.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />

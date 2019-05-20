@@ -16,7 +16,6 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
-using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using NBitcoin;
@@ -34,13 +33,7 @@ namespace Miningcore.Blockchain.Equihash
             IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
-            getBlockTemplateParams = new object[]
-            {
-                new
-                {
-                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
-                }
-            };
+            getBlockTemplateParams = null;
         }
 
         private EquihashCoinTemplate coin;
@@ -62,7 +55,7 @@ namespace Miningcore.Blockchain.Equihash
             var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy);
 
             var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
             if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
@@ -118,7 +111,9 @@ namespace Miningcore.Blockchain.Equihash
                 if(forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if(response.Error != null)
@@ -128,12 +123,12 @@ namespace Miningcore.Blockchain.Equihash
                 }
 
                 var blockTemplate = response.Response;
-
                 var job = currentJob;
+
                 var isNew = job == null ||
-                (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                    (blockTemplate != null &&
+                        (job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                        blockTemplate.Height > job.BlockTemplate?.Height));
 
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
@@ -143,31 +138,30 @@ namespace Miningcore.Blockchain.Equihash
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, clusterConfig, clock, poolAddressDestination, network,
-                        solver);
+                        poolConfig, clusterConfig, clock, poolAddressDestination, network, solver);
 
                     lock(jobLock)
                     {
-                        if(isNew)
-                        {
-                            if(via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
-                            else
-                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
-
-                            // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
-                            BlockchainStats.BlockHeight = blockTemplate.Height;
-                            BlockchainStats.NetworkDifficulty = job.Difficulty;
-                            BlockchainStats.NextNetworkTarget = blockTemplate.Target;
-                            BlockchainStats.NextNetworkBits = blockTemplate.Bits;
-                        }
-
                         validJobs.Insert(0, job);
 
                         // trim active jobs
                         while(validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(validJobs.Count - 1);
+                    }
+
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Detected new block {blockTemplate.Height}");
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     currentJob = job;
@@ -290,7 +284,7 @@ namespace Miningcore.Blockchain.Equihash
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
-                    blockSubmissionSubject.OnNext(Unit.Default);
+                    OnBlockFound();
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

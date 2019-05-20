@@ -1,4 +1,4 @@
-﻿using Autofac;
+using Autofac;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Miningcore.Api.Extensions;
@@ -148,7 +148,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/miners")]
         public async Task<MinerPerformanceStats[]> PagePoolMinersAsync(
-            string poolId, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
         {
             var pool = GetPool(poolId);
 
@@ -166,7 +166,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/blocks")]
         public async Task<Responses.Block[]> PagePoolBlocksPagedAsync(
-            string poolId, [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] BlockStatus[] state)
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
         {
             var pool = GetPool(poolId);
 
@@ -203,7 +203,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/payments")]
         public async Task<Responses.Payment[]> PagePoolPaymentsAsync(
-            string poolId, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
         {
             var pool = GetPool(poolId);
 
@@ -268,7 +268,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/miners/{address}/payments")]
         public async Task<Responses.Payment[]> PageMinerPaymentsAsync(
-            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
         {
             var pool = GetPool(poolId);
 
@@ -300,7 +300,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/miners/{address}/balancechanges")]
         public async Task<Responses.BalanceChange[]> PageMinerBalanceChangesAsync(
-            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
         {
             var pool = GetPool(poolId);
 
@@ -317,7 +317,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("{poolId}/miners/{address}/earnings/daily")]
         public async Task<AmountByDate[]> PageMinerEarningsByDayAsync(
-            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize)
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
         {
             var pool = GetPool(poolId);
 

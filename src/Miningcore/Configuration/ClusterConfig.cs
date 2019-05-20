@@ -55,6 +55,12 @@ namespace Miningcore.Configuration
         public string Name { get; set; }
 
         /// <summary>
+        /// Canonical Name
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string CanonicalName { get; set; }
+
+        /// <summary>
         /// Trade Symbol
         /// </summary>
         [JsonProperty(Order = -9)]
@@ -93,6 +99,12 @@ namespace Miningcore.Configuration
         public string ExplorerAccountLink { get; set; }
 
         /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
+
+        /// <summary>
         /// Coin Family associciations
         /// </summary>
         [JsonIgnore]
@@ -116,6 +128,15 @@ namespace Miningcore.Configuration
 
     public partial class BitcoinTemplate : CoinTemplate
     {
+        public partial class BitcoinNetworkParams
+        {
+            /// <summary>
+            /// Arbitrary extension data
+            /// </summary>
+            [JsonExtensionData]
+            public IDictionary<string, object> Extra { get; set; }
+        }
+
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(BitcoinSubfamily.None)]
         [JsonConverter(typeof(StringEnumConverter), true)]
@@ -146,6 +167,9 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
     }
 
     public enum EquihashSubfamily
@@ -377,6 +401,9 @@ namespace Miningcore.Configuration
         /// </summary>
         public string HttpPath { get; set; }
 
+        /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
     }
@@ -494,6 +521,9 @@ namespace Miningcore.Configuration
         public PayoutScheme PayoutScheme { get; set; }
         public JToken PayoutSchemeConfig { get; set; }
 
+        /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
     }
@@ -551,7 +581,7 @@ namespace Miningcore.Configuration
         public RateLimitRule[] Rules { get; set; }
         public string[] IpWhitelist { get; set; }
     }
-    
+
     public class ApiSSLConfig
     {
         public bool Enabled { get; set; }
@@ -566,7 +596,7 @@ namespace Miningcore.Configuration
         public int Port { get; set; }
 
         public ApiSSLConfig SSLConfig { get; set; }
-        
+
         public ApiRateLimitConfig RateLimiting { get; set; }
 
         /// <summary>
@@ -659,7 +689,7 @@ namespace Miningcore.Configuration
         public bool? EnableInternalStratum { get; set; }
 
         /// <summary>
-        /// Extension data
+        /// Arbitrary extension data
         /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }

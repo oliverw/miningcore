@@ -1,24 +1,18 @@
-﻿using Autofac;
+using Autofac;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Miningcore.Api.Extensions;
-using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
-using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace Miningcore.Api.Controllers
@@ -54,7 +48,7 @@ namespace Miningcore.Api.Controllers
 
         [HttpGet("blocks")]
         public async Task<Responses.Block[]> PageBlocksPagedAsync(
-            [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] BlockStatus[] state)
+            [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
         {
             var blockStates = state != null && state.Length > 0 ?
                 state :

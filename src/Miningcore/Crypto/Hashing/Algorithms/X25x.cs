@@ -24,7 +24,7 @@ using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms
 {
-    public unsafe class X22I : IHashAlgorithm
+    public unsafe class X25X : IHashAlgorithm
     {
         public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
@@ -34,7 +34,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.x22i(input, output, (uint) data.Length);
+                    LibMultihash.x25x(input, output, (uint) data.Length);
                 }
             }
         }
