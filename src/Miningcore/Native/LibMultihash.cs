@@ -49,6 +49,9 @@ namespace Miningcore.Native
         [DllImport("libmultihash", EntryPoint = "x21s_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int x21s(byte* input, void* output, uint inputLength);
 
+        [DllImport("libmultihash", EntryPoint = "x25x_export", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int x25x(byte* input, void* output, uint inputLength);
+
         [DllImport("libmultihash", EntryPoint = "odocrypt_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int odocrypt(byte* input, void* output, uint inputLength, uint key);
 

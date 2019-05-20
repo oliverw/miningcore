@@ -46,6 +46,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x16r.h"
 #include "x16s.h"
 #include "x21s.h"
+#include "x25x.h"
 #include "hashodo.h"
 #include "equi/equihashverify.h"
 #include "libethash/sha3.h"
@@ -220,6 +221,11 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
 {
 	x21s_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)
+{
+    x25x_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void odocrypt_export(const char* input, char* output, uint32_t input_len, uint32_t key)

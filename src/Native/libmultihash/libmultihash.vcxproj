@@ -201,6 +201,7 @@
     <ClInclude Include="jh.h" />
     <ClInclude Include="keccak.h" />
     <ClInclude Include="KeccakP-800-SnP.h" />
+    <ClInclude Include="lane.h" />
     <ClInclude Include="libethash\compiler.h" />
     <ClInclude Include="libethash\data_sizes.h" />
     <ClInclude Include="libethash\endian.h" />
@@ -238,6 +239,7 @@
     <ClInclude Include="sha3\sph_jh.h" />
     <ClInclude Include="sha3\sph_keccak.h" />
     <ClInclude Include="sha3\sph_luffa.h" />
+    <ClInclude Include="sha3\sph_panama.h" />
     <ClInclude Include="sha3\sph_sha2.h" />
     <ClInclude Include="sha3\sph_shabal.h" />
     <ClInclude Include="sha3\sph_shavite.h" />
@@ -262,6 +264,7 @@
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
+    <ClInclude Include="x25x.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
@@ -292,6 +295,7 @@
     <ClCompile Include="jh.c" />
     <ClCompile Include="keccak.c" />
     <ClCompile Include="KeccakP-800-reference.c" />
+    <ClCompile Include="lane.c" />
     <ClCompile Include="libethash\internal.c" />
     <ClCompile Include="libethash\io.c" />
     <ClCompile Include="libethash\io_win32.c" />
@@ -312,6 +316,7 @@
     <ClCompile Include="sha3\extra.c" />
     <ClCompile Include="sha3\gost_streebog.c" />
     <ClCompile Include="sha3\hamsi.c" />
+    <ClCompile Include="sha3\panama.c" />
     <ClCompile Include="sha3\sm3.c" />
     <ClCompile Include="sha3\sph_blake.c" />
     <ClCompile Include="sha3\sph_blake2s.c" />
@@ -346,6 +351,7 @@
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
+    <ClCompile Include="x25x.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />
