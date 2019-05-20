@@ -22,7 +22,7 @@
 #include "sha3/sph_sha2.h"
 #include "sha3/sph_haval.h"
 #include "sha3/sph_tiger.h"
-#include "lyra2.h"
+#include "Lyra2.h"
 #include "sha3/gost_streebog.h"
 #include "sha3/SWIFFTX.h"
 #include "sha3/sph_panama.h"
