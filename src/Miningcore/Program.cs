@@ -740,6 +740,9 @@ namespace Miningcore
 
                     // WebSockets
                     services.AddWebSocketManager();
+                    
+                    // Gzip Compression
+                    services.AddResponseCompression();
                 })
                 .Configure(app =>
                 {
@@ -751,6 +754,9 @@ namespace Miningcore
                     UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
                     UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
 
+                    // Gzip Compression
+                    app.UseResponseCompression();
+                    
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
