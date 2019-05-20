@@ -735,14 +735,14 @@ namespace Miningcore
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
 
+                    // Gzip Compression
+                    services.AddResponseCompression();
+
                     // Cors
                     services.AddCors();
 
                     // WebSockets
                     services.AddWebSocketManager();
-                    
-                    // Gzip Compression
-                    services.AddResponseCompression();
                 })
                 .Configure(app =>
                 {
@@ -754,9 +754,7 @@ namespace Miningcore
                     UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
                     UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
 
-                    // Gzip Compression
                     app.UseResponseCompression();
-                    
                     app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
@@ -765,14 +763,11 @@ namespace Miningcore
                 })
                  .UseKestrel(options =>
                 {
-                    if (clusterConfig.Api.SSLConfig?.Enabled == true)
-                        options.Listen(address, clusterConfig.Api.Port, listenOptions =>
-                        {
+                    options.Listen(address, clusterConfig.Api.Port, listenOptions =>
+                    {
+                        if(clusterConfig.Api.SSLConfig?.Enabled == true)
                             listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
-                        });
-                    else
-                        options.Listen(address, clusterConfig.Api.Port);
-
+                    });
                 })
                 .Build();
 

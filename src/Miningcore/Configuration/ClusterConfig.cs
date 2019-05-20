@@ -581,7 +581,7 @@ namespace Miningcore.Configuration
         public RateLimitRule[] Rules { get; set; }
         public string[] IpWhitelist { get; set; }
     }
-    
+
     public class ApiSSLConfig
     {
         public bool Enabled { get; set; }
@@ -596,7 +596,7 @@ namespace Miningcore.Configuration
         public int Port { get; set; }
 
         public ApiSSLConfig SSLConfig { get; set; }
-        
+
         public ApiRateLimitConfig RateLimiting { get; set; }
 
         /// <summary>
