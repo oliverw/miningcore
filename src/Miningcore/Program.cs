@@ -757,7 +757,17 @@ namespace Miningcore
                     app.UseMetricServer();
                     app.UseMvc();
                 })
-                .UseKestrel(options => { options.Listen(address, port); })
+                 .UseKestrel(options =>
+                {
+                    if (clusterConfig.Api.SSLConfig?.Enabled == true)
+                        options.Listen(address, clusterConfig.Api.Port, listenOptions =>
+                        {
+                            listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
+                        });
+                    else
+                        options.Listen(address, clusterConfig.Api.Port);
+
+                })
                 .Build();
 
             webHost.Start();
