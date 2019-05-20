@@ -100,7 +100,7 @@ $ psql -d miningcore -U miningcore -f createdb.sql
 
 If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
 
-**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool!
+**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your <code>shares</code> table using <code>pg_backup</code> first!
 
 ```console
 $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
@@ -114,6 +114,8 @@ The following step needs to performed **once for every new pool** you add to you
 ```sql
 CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 ```
+
+Once you have done this for all of your existing pools you should now restore your shares from backup.
 
 ### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
