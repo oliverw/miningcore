@@ -72,7 +72,7 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 - Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 - Run <code>dotnet Miningcore.dll -c config.json</code>
 
-### PostgreSQL Database setup
+### Basic PostgreSQL Database setup
 
 Create the database:
 
@@ -82,7 +82,7 @@ $ createdb miningcore
 $ psql (enter the password for postgres)
 ```
 
-Run the query after login:
+Inside psql execute:
 
 ```sql
 alter user miningcore with encrypted password 'some-secure-password';
@@ -94,6 +94,25 @@ Import the database schema:
 ```console
 $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 $ psql -d miningcore -U miningcore -f createdb.sql
+```
+
+### Advanced PostgreSQL Database setup
+
+If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
+
+**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool!
+
+```console
+$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+$ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
+```
+
+After executing the command, your <code>shares</code> table is now a list-partitioned table which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool. 
+
+The following step needs to performed **once for every new pool*** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
+
+```sql
+CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 ```
 
 ### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
