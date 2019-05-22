@@ -263,10 +263,10 @@ namespace Miningcore.Blockchain.Bitcoin
             var tx = Transaction.Create(network);
 
             if(coin.HasMasterNodes)
-                rewardToPool = CreateMasternodeOutputs(txOut, rewardToPool);
+                rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
 
             if(coin.HasPayee)
-                rewardToPool = CreatePayeeOutput(txOut, rewardToPool);
+                rewardToPool = CreatePayeeOutput(tx, rewardToPool);
 
             // Remaining amount goes to pool
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
