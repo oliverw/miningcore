@@ -484,13 +484,16 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     if(!string.IsNullOrEmpty(masterNode.Payee))
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
+                        var payeeDestination = !coin.MasterNodesPayToScript ?
+                            BitcoinUtils.AddressToDestination(masterNode.Payee, network) :
+                            (IDestination) new Script(masterNode.Payee);
+
                         var payeeReward = masterNode.Amount;
 
                         reward -= payeeReward;
                         rewardToPool -= payeeReward;
 
-                        tx.Outputs.Add(payeeReward, payeeAddress);
+                        tx.Outputs.Add(payeeReward, payeeDestination);
                     }
                 }
             }
