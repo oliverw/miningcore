@@ -141,6 +141,8 @@ namespace Miningcore.Blockchain.Equihash
                 tx.Outputs.Add(rewardToPool, poolAddressDestination);
             }
 
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+
             return tx;
         }
 
@@ -157,7 +159,6 @@ namespace Miningcore.Blockchain.Equihash
         {
             // output transaction
             txOut = CreateOutputTransaction();
-            txOut.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
             using(var stream = new MemoryStream())
             {

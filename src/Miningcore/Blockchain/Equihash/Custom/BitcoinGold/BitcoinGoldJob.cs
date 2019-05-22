@@ -52,6 +52,8 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             // pool reward (t-addr)
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+
             return tx;
         }
 

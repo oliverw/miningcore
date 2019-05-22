@@ -47,6 +47,8 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
             // bank reward
             tx.Outputs.Add(bankReward, bankScript);
 
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+
             return tx;
         }
 
