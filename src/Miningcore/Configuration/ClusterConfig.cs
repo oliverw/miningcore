@@ -164,12 +164,6 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
 
-        /// <summary>
-        /// True if Masternode.Payee is a script, rather than an address
-        /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public bool MasterNodesPayToScript { get; set; }
-
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
