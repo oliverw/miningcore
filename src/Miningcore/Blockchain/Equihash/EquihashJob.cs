@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -50,7 +51,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly HashSet<string> submissions = new HashSet<string>();
+        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>();
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
@@ -299,15 +300,9 @@ namespace Miningcore.Blockchain.Equihash
 
         private bool RegisterSubmit(string nonce, string solution)
         {
-            lock(submissions)
-            {
-                var key = nonce.ToLower() + solution.ToLower();
-                if(submissions.Contains(key))
-                    return false;
+            var key = nonce.ToLower() + solution.ToLower();
 
-                submissions.Add(key);
-                return true;
-            }
+            return submissions.TryAdd(key, true);
         }
 
         #region API-Surface

@@ -223,13 +223,8 @@ namespace Miningcore.Blockchain.Cryptonote
                 // dupe check
                 var nonceLower = submitRequest.Nonce.ToLower();
 
-                lock(job)
-                {
-                    if(job.Submissions.Contains(nonceLower))
-                        throw new StratumException(StratumError.MinusOne, "duplicate share");
-
-                    job.Submissions.Add(nonceLower);
-                }
+                if(!job.Submissions.TryAdd(nonceLower, true))
+                    throw new StratumException(StratumError.MinusOne, "duplicate share");
 
                 var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 

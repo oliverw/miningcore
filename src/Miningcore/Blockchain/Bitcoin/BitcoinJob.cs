@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -57,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
         private BitcoinTemplate.BitcoinNetworkParams networkParams;
-        protected readonly HashSet<string> submissions = new HashSet<string>();
+        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>();
         protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
@@ -297,14 +298,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
-            lock(submissions)
-            {
-                if(submissions.Contains(key))
-                    return false;
-
-                submissions.Add(key);
-                return true;
-            }
+            return submissions.TryAdd(key, true);
         }
 
         protected byte[] SerializeHeader(Span<byte> coinbaseHash, uint nTime, uint nonce, uint? versionMask, uint? versionBits)
