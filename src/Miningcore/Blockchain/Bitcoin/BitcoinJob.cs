@@ -262,11 +262,11 @@ namespace Miningcore.Blockchain.Bitcoin
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
             var tx = Transaction.Create(network);
 
-            if(coin.HasMasterNodes)
-                rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
-
             if(coin.HasPayee)
                 rewardToPool = CreatePayeeOutput(tx, rewardToPool);
+
+            if(coin.HasMasterNodes)
+                rewardToPool = CreateMasternodeOutputs(tx, rewardToPool);
 
             // Remaining amount goes to pool
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
