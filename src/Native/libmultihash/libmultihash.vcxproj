@@ -264,6 +264,7 @@
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
+    <ClInclude Include="x22i.h" />
     <ClInclude Include="x25x.h" />
   </ItemGroup>
   <ItemGroup>
@@ -351,6 +352,9 @@
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
+    <ClCompile Include="x22i.c">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
+    </ClCompile>
     <ClCompile Include="x25x.c" />
   </ItemGroup>
   <ItemGroup>

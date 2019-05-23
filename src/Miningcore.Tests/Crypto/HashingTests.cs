@@ -234,6 +234,17 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
+        public void X22I_Hash()
+        {
+            var hasher = new X22I();
+            var hash = new byte[32];
+            hasher.Digest(testValue, hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("616c341e79417e6623dacff834c5c480d8d7d43ba6ae60fcee99f69343fd7c99", result);
+        }
+
+        [Fact]
         public void X25X_Hash()
         {
             var hasher = new X25X();

@@ -204,7 +204,7 @@ namespace Miningcore.Mining
 
                 if(newDiff != null)
                 {
-                    logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
+                    logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
 
                     await OnVarDiffUpdateAsync(client, newDiff.Value);
                 }

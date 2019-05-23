@@ -701,6 +701,26 @@
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
     },
+    "sin": {
+        "name": "Sinovate",
+        "symbol": "SIN",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x25x"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x22i" } ]
+        },
+        "hasMasterNodes": true,
+        "hasPayee": true,
+        "explorerBlockLink": "http://suqaexplorer.com/block/$hash$",
+        "explorerTxLink": "http://suqaexplorer.com/tx/{0}",
+        "explorerAccountLink": "http://suqaexplorer.com/address/{0}"
+    },
     "geekcash": {
         "name": "GeekCash",
         "symbol": "GEEK",

@@ -302,6 +302,9 @@
     <ClInclude Include="sha3\sph_panama.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x22i.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -557,6 +560,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\panama.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x22i.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
