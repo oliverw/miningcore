@@ -276,7 +276,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Money CreatePayeeOutput(Transaction tx, Money reward)
         {
-            if(payeeParameters?.PayeeAmount > 0)
+            if(payeeParameters?.PayeeAmount != null && payeeParameters.PayeeAmount.Value > 0)
             {
                 var payeeReward = new Money(payeeParameters.PayeeAmount.Value, MoneyUnit.Satoshi);
                 reward -= payeeReward;
