@@ -206,6 +206,9 @@
     <ClInclude Include="x16r.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x16rt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="x16s.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -481,6 +484,9 @@
     <ClCompile Include="x16r.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="x16rt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>     
     <ClCompile Include="x16s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
