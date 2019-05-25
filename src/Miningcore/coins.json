@@ -400,6 +400,26 @@
         "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",
         "explorerAccountLink": "http://explorer.pigeoncoin.org/address/{0}"
     },
+    "gincoin": {
+        "name": "GINcoin",
+        "symbol": "GIN",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16rt"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16rt" } ]
+        },
+        "shareMultiplier": 256,
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://explorer.gincoin.io/block/$hash$",
+        "explorerTxLink": "https://explorer.gincoin.io/tx/{0}",
+        "explorerAccountLink": "https://explorer.gincoin.io/address/{0}"
+    },
     "bitcoin-diamond": {
         "name": "Bitcoin Diamond",
         "symbol": "BCD",
