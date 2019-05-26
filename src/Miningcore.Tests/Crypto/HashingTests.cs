@@ -210,6 +210,17 @@ namespace Miningcore.Tests.Crypto
 
             Assert.Equal("4f048b3d333cb55227ed1f596cacc614459b7820d5007c5de721994d0313fa41", result);
         }
+        
+        [Fact]
+        public void X16RT_Hash()
+        {
+            var hasher = new X16RT();
+            var hash = new byte[32];
+            hasher.Digest(testValue, hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("ce9e64ee2f9832f9ff6a8b042d0aa66f2e0aca6e8a5958051c141f27b5e68a3b", result); 
+        }
 
         [Fact]
         public void X16S_Hash()
