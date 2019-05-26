@@ -219,7 +219,7 @@ namespace Miningcore.Tests.Crypto
             hasher.Digest(testValue, hash);
             var result = hash.ToHexString();
 
-            Assert.Equal("ce9e64ee2f9832f9ff6a8b042d0aa66f2e0aca6e8a5958051c141f27b5e68a3b", result); 
+            Assert.Equal("5ef7d66548446d1e71190ff06358b1f63169434e8820af738b32ada4a91f1fe2", result); 
         }
 
         [Fact]
