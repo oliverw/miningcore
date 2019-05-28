@@ -18,6 +18,7 @@
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
+- [Gitter Channel](https://gitter.im/miningcore/Lobby)
 
 ### Supported Coins
 
@@ -165,4 +166,4 @@ dotnet Miningcore.dll -c config.json
 
 ## Running a production pool
 
-A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point. Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
