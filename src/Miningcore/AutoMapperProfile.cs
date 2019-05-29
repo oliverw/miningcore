@@ -58,6 +58,7 @@ namespace Miningcore
             CreateMap<CoinTemplate, Api.Responses.ApiCoinConfig>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Symbol))
                 .ForMember(dest => dest.Family, opt => opt.MapFrom(src => src.Family.ToString().ToLower()))
+                .ForMember(dest => dest.Symbol, opt => opt.MapFrom(src => src.Symbol))
                 .ForMember(dest => dest.Algorithm, opt => opt.MapFrom(src => src.GetAlgorithmName()));
 
             CreateMap<PoolConfig, Api.Responses.PoolInfo>()
