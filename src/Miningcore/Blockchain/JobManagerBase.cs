@@ -96,9 +96,7 @@ namespace Miningcore.Blockchain
                 .Where(x => x.Topic == config.Topic)
                 .DoSafe(x => messageBus.SendMessage(new TelemetryEvent(
                     clusterConfig.ClusterName, poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
-                .Select(x => x.Payload)
-                .Publish()
-                .RefCount();
+                .Select(x => x.Payload);
         }
 
         protected virtual void OnBlockFound()
