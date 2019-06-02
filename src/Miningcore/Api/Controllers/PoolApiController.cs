@@ -103,7 +103,7 @@ namespace Miningcore.Api.Controllers
                 });
 
             // convert curly braces
-            var result = string.Join("\n", tmp).Replace("{", "<").Replace("}", ">");
+            var result = string.Join("\n", tmp).Replace("{", "<").Replace("}", ">") + "\n";
 
             return Content(result);
         }
