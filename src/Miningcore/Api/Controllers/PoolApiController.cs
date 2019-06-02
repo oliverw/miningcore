@@ -67,6 +67,9 @@ namespace Miningcore.Api.Controllers
 
                     // enrich
                     result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
+                    result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id));
+                    result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+
                     var from = clock.Now.AddDays(-1);
 
                     result.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
@@ -99,6 +102,8 @@ namespace Miningcore.Api.Controllers
 
             // enrich
             response.Pool.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, pool.Id));
+            response.Pool.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, pool.Id));
+            response.Pool.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, pool.Id));
 
             var from = clock.Now.AddDays(-1);
 
