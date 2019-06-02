@@ -1,6 +1,8 @@
 using Autofac;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Internal;
 using Miningcore.Api.Extensions;
 using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
@@ -14,6 +16,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
@@ -26,7 +29,7 @@ namespace Miningcore.Api.Controllers
     [ApiController]
     public class PoolApiController : ControllerBase
     {
-        public PoolApiController(IComponentContext ctx)
+        public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp)
         {
             clusterConfig = ctx.Resolve<ClusterConfig>();
             cf = ctx.Resolve<IConnectionFactory>();
@@ -36,6 +39,7 @@ namespace Miningcore.Api.Controllers
             mapper = ctx.Resolve<IMapper>();
             clock = ctx.Resolve<IMasterClock>();
             pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
+            adcp = _adcp;
         }
 
         private readonly ClusterConfig clusterConfig;
@@ -45,6 +49,7 @@ namespace Miningcore.Api.Controllers
         private readonly IPaymentRepository paymentsRepo;
         private readonly IMapper mapper;
         private readonly IMasterClock clock;
+        private readonly IActionDescriptorCollectionProvider adcp;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
 
         #region Actions
@@ -82,6 +87,25 @@ namespace Miningcore.Api.Controllers
             };
 
             return response;
+        }
+
+        [HttpGet("/api/help")]
+        public ActionResult GetHelp()
+        {
+            var tmp = adcp.ActionDescriptors.Items
+                .Select(x =>
+                {
+                    // Get and pad http method
+                    var method = x?.ActionConstraints?.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.First();
+                    method = String.Format("{0,-5}", method);
+
+                    return $"{method} -> {x.AttributeRouteInfo.Template}";
+                });
+
+            // convert curly braces
+            var result = string.Join("\n", tmp).Replace("{", "<").Replace("}", ">");
+
+            return Content(result);
         }
 
         [HttpGet("{poolId}")]
