@@ -170,7 +170,7 @@ namespace Miningcore.Api.Controllers
         }
 
         [HttpGet("{poolId}/blocks")]
-        public async Task<Responses.Block[]> PagePoolBlocksPagedAsync(
+        public async Task<Responses.Block[]> PagePoolBlocksAsync(
             string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
         {
             var pool = GetPool(poolId);
@@ -206,6 +206,46 @@ namespace Miningcore.Api.Controllers
             return blocks;
         }
 
+        [HttpGet("/api/v2/pools/{poolId}/blocks")]
+        public async Task<PagedResultResponse<Responses.Block[]>> PagePoolBlocksV2Async(
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
+        {
+            var pool = GetPool(poolId);
+
+            var blockStates = state != null && state.Length > 0 ?
+                state :
+                new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
+
+            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, poolId))) / (double) pageSize);
+
+            var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
+                .Select(mapper.Map<Responses.Block>)
+                .ToArray();
+
+            // enrich blocks
+            var blockInfobaseDict = pool.Template.ExplorerBlockLinks;
+
+            foreach(var block in blocks)
+            {
+                // compute infoLink
+                if(blockInfobaseDict != null)
+                {
+                    blockInfobaseDict.TryGetValue(!string.IsNullOrEmpty(block.Type) ? block.Type : "block", out var blockInfobaseUrl);
+
+                    if(!string.IsNullOrEmpty(blockInfobaseUrl))
+                    {
+                        if(blockInfobaseUrl.Contains(CoinMetaData.BlockHeightPH))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHeightPH, block.BlockHeight.ToString(CultureInfo.InvariantCulture));
+                        else if(blockInfobaseUrl.Contains(CoinMetaData.BlockHashPH) && !string.IsNullOrEmpty(block.Hash))
+                            block.InfoLink = blockInfobaseUrl.Replace(CoinMetaData.BlockHashPH, block.Hash);
+                    }
+                }
+            }
+
+            var response = new PagedResultResponse<Responses.Block[]>(blocks, pageCount);
+            return response;
+        }
+
         [HttpGet("{poolId}/payments")]
         public async Task<Responses.Payment[]> PagePoolPaymentsAsync(
             string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
@@ -233,6 +273,38 @@ namespace Miningcore.Api.Controllers
             }
 
             return payments;
+        }
+
+        [HttpGet("/api/v2/pools/{poolId}/payments")]
+        public async Task<PagedResultResponse<Responses.Payment[]>> PagePoolPaymentsV2Async(
+            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        {
+            var pool = GetPool(poolId);
+
+            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId))) / (double) pageSize);
+
+            var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
+                    con, pool.Id, null, page, pageSize)))
+                .Select(mapper.Map<Responses.Payment>)
+                .ToArray();
+
+            // enrich payments
+            var txInfobaseUrl = pool.Template.ExplorerTxLink;
+            var addressInfobaseUrl = pool.Template.ExplorerAccountLink;
+
+            foreach(var payment in payments)
+            {
+                // compute transaction infoLink
+                if(!string.IsNullOrEmpty(txInfobaseUrl))
+                    payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
+
+                // pool wallet link
+                if(!string.IsNullOrEmpty(addressInfobaseUrl))
+                    payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
+            }
+
+            var response = new PagedResultResponse<Responses.Payment[]>(payments, pageCount);
+            return response;
         }
 
         [HttpGet("{poolId}/miners/{address}")]
@@ -303,6 +375,41 @@ namespace Miningcore.Api.Controllers
             return payments;
         }
 
+        [HttpGet("/api/v2/pools/{poolId}/miners/{address}/payments")]
+        public async Task<PagedResultResponse<Responses.Payment[]>> PageMinerPaymentsV2Async(
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        {
+            var pool = GetPool(poolId);
+
+            if(string.IsNullOrEmpty(address))
+                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+
+            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address))) / (double) pageSize);
+
+            var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
+                    con, pool.Id, address, page, pageSize)))
+                .Select(mapper.Map<Responses.Payment>)
+                .ToArray();
+
+            // enrich payments
+            var txInfobaseUrl = pool.Template.ExplorerTxLink;
+            var addressInfobaseUrl = pool.Template.ExplorerAccountLink;
+
+            foreach(var payment in payments)
+            {
+                // compute transaction infoLink
+                if(!string.IsNullOrEmpty(txInfobaseUrl))
+                    payment.TransactionInfoLink = string.Format(txInfobaseUrl, payment.TransactionConfirmationData);
+
+                // pool wallet link
+                if(!string.IsNullOrEmpty(addressInfobaseUrl))
+                    payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
+            }
+
+            var response = new PagedResultResponse<Responses.Payment[]>(payments, pageCount);
+            return response;
+        }
+
         [HttpGet("{poolId}/miners/{address}/balancechanges")]
         public async Task<Responses.BalanceChange[]> PageMinerBalanceChangesAsync(
             string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
@@ -320,6 +427,26 @@ namespace Miningcore.Api.Controllers
             return balanceChanges;
         }
 
+        [HttpGet("/api/v2/pools/{poolId}/miners/{address}/balancechanges")]
+        public async Task<PagedResultResponse<Responses.BalanceChange[]>> PageMinerBalanceChangesV2Async(
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        {
+            var pool = GetPool(poolId);
+
+            if(string.IsNullOrEmpty(address))
+                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+
+            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
+
+            var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
+                    con, pool.Id, address, page, pageSize)))
+                .Select(mapper.Map<Responses.BalanceChange>)
+                .ToArray();
+
+            var response = new PagedResultResponse<Responses.BalanceChange[]>(balanceChanges, pageCount);
+            return response;
+        }
+
         [HttpGet("{poolId}/miners/{address}/earnings/daily")]
         public async Task<AmountByDate[]> PageMinerEarningsByDayAsync(
             string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
@@ -334,6 +461,25 @@ namespace Miningcore.Api.Controllers
                 .ToArray();
 
             return earnings;
+        }
+
+        [HttpGet("/api/v2/pools/{poolId}/miners/{address}/earnings/daily")]
+        public async Task<PagedResultResponse<AmountByDate[]>> PageMinerEarningsByDayV2Async(
+            string poolId, string address, [FromQuery] int page, [FromQuery] int pageSize = 15)
+        {
+            var pool = GetPool(poolId);
+
+            if(string.IsNullOrEmpty(address))
+                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+
+            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetMinerPaymentsByDayCountAsync(con, poolId, address))) / (double) pageSize);
+
+            var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
+                    con, pool.Id, address, page, pageSize)))
+                .ToArray();
+
+            var response = new PagedResultResponse<AmountByDate[]>(earnings, pageCount);
+            return response;
         }
 
         [HttpGet("{poolId}/miners/{address}/performance")]

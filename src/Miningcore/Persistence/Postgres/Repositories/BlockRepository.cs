@@ -138,7 +138,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            const string query = "SELECT count(*) FROM blocks WHERE poolid = @poolId";
+            const string query = "SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
 
             return con.ExecuteScalarAsync<uint>(query, new { poolId });
         }
