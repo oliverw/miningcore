@@ -240,7 +240,7 @@ namespace Miningcore.Api.Controllers
                 state :
                 new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
 
-            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, poolId))) / (double) pageSize);
+            uint pageCount = (uint) Math.Floor((await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, poolId))) / (double) pageSize);
 
             var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
                 .Select(mapper.Map<Responses.Block>)
@@ -305,7 +305,7 @@ namespace Miningcore.Api.Controllers
         {
             var pool = GetPool(poolId);
 
-            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId))) / (double) pageSize);
+            uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId))) / (double) pageSize);
 
             var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
                     con, pool.Id, null, page, pageSize)))
@@ -408,7 +408,7 @@ namespace Miningcore.Api.Controllers
             if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
-            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address))) / (double) pageSize);
+            uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address))) / (double) pageSize);
 
             var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
                     con, pool.Id, address, page, pageSize)))
@@ -460,7 +460,7 @@ namespace Miningcore.Api.Controllers
             if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
-            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
+            uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
 
             var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
                     con, pool.Id, address, page, pageSize)))
@@ -496,7 +496,7 @@ namespace Miningcore.Api.Controllers
             if(string.IsNullOrEmpty(address))
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
-            uint pageCount = (uint) Math.Ceiling((await cf.Run(con => paymentsRepo.GetMinerPaymentsByDayCountAsync(con, poolId, address))) / (double) pageSize);
+            uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetMinerPaymentsByDayCountAsync(con, poolId, address))) / (double) pageSize);
 
             var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
                     con, pool.Id, address, page, pageSize)))
