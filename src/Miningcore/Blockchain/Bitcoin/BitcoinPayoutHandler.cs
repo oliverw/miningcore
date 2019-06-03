@@ -139,6 +139,8 @@ namespace Miningcore.Blockchain.Bitcoin
                             block.Status = BlockStatus.Orphaned;
                             block.Reward = 0;
                             result.Add(block);
+
+                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to daemon error {cmdResult.Error.Code}");
                         }
 
                         else
@@ -153,6 +155,8 @@ namespace Miningcore.Blockchain.Bitcoin
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
                         result.Add(block);
+
+                        logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to missing tx details");
                     }
 
                     else
