@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace Miningcore.Persistence.Dummy
 {
@@ -33,7 +34,7 @@ namespace Miningcore.Persistence.Dummy
         /// This implementation ensures that Glimpse.ADO is able to collect data
         /// </summary>
         /// <returns></returns>
-        public IDbConnection OpenConnection()
+        public Task<IDbConnection> OpenConnectionAsync()
         {
             throw new NotImplementedException();
         }

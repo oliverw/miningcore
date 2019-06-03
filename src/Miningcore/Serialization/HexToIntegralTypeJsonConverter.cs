@@ -18,7 +18,7 @@ namespace Miningcore.Serialization
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value == null)
+            if(value == null)
                 writer.WriteValue("null");
             else
                 writer.WriteValue($"0x{value:x}");
@@ -28,17 +28,17 @@ namespace Miningcore.Serialization
         {
             var str = (string) reader.Value;
 
-            if (string.IsNullOrEmpty(str))
+            if(string.IsNullOrEmpty(str))
                 return default(T);
 
-            if (str.StartsWith("0x"))
+            if(str.StartsWith("0x"))
                 str = str.Substring(2);
 
-            if (typeof(T) == typeof(BigInteger))
+            if(typeof(T) == typeof(BigInteger))
                 return BigInteger.Parse("0" + str, NumberStyles.HexNumber);
 
-            if (typeof(T) == typeof(uint256))
-                return new uint256(str.HexToByteArray().ReverseArray());
+            if(typeof(T) == typeof(uint256))
+                return new uint256(str.HexToReverseByteArray());
 
             var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             return Convert.ChangeType(val, underlyingType ?? typeof(T));

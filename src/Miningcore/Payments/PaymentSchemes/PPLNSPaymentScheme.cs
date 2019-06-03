@@ -68,7 +68,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private static readonly ILogger logger = LogManager.GetLogger("PPLNS Payment", typeof(PPLNSPaymentScheme));
 
         private const int RetryCount = 4;
-        private Policy shareReadFaultPolicy;
+        private IAsyncPolicy shareReadFaultPolicy;
 
         private class Config
         {
@@ -77,7 +77,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
             IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
@@ -88,32 +88,32 @@ namespace Miningcore.Payments.PaymentSchemes
             // calculate rewards
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculateRewards(poolConfig, window, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(poolConfig, window, block, blockReward, shares, rewards);
 
             // update balances
             foreach(var address in rewards.Keys)
             {
                 var amount = rewards[address];
 
-                if (amount > 0)
+                if(amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for {FormatUtil.FormatQuantity(shares[address])} ({shares[address]}) shares for block {block.BlockHeight}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for {FormatUtil.FormatQuantity(shares[address])} shares for block {block.BlockHeight}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for {FormatUtil.FormatQuantity(shares[address])} shares for block {block.BlockHeight}");
                 }
             }
 
             // delete discarded shares
-            if (shareCutOffDate.HasValue)
+            if(shareCutOffDate.HasValue)
             {
-                var cutOffCount = shareRepo.CountSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 
-                if (cutOffCount > 0)
+                if(cutOffCount > 0)
                 {
-                    LogDiscardedShares(poolConfig, block, shareCutOffDate.Value);
+                    await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
 
 #if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                    shareRepo.DeleteSharesBeforeCreated(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                    await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
 #endif
                 }
             }
@@ -122,13 +122,11 @@ namespace Miningcore.Payments.PaymentSchemes
             var totalShareCount = shares.Values.ToList().Sum(x => new decimal(x));
             var totalRewards = rewards.Values.ToList().Sum(x => x);
 
-            if (totalRewards > 0)
+            if(totalRewards > 0)
                 logger.Info(() => $"{FormatUtil.FormatQuantity((double) totalShareCount)} ({Math.Round(totalShareCount, 2)}) shares contributed to a total payout of {payoutHandler.FormatAmount(totalRewards)} ({totalRewards / blockReward * 100:0.00}% of block reward) to {rewards.Keys.Count} addresses");
-
-            return Task.FromResult(true);
         }
 
-        private void LogDiscardedShares(PoolConfig poolConfig, Block block, DateTime value)
+        private async Task LogDiscardedSharesAsync(PoolConfig poolConfig, Block block, DateTime value)
         {
             var before = value;
             var pageSize = 50000;
@@ -139,8 +137,8 @@ namespace Miningcore.Payments.PaymentSchemes
             {
                 logger.Info(() => $"Fetching page {currentPage} of discarded shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
-                var page = shareReadFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, false, pageSize)));
+                var page = await shareReadFaultPolicy.ExecuteAsync(() =>
+                    cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, false, pageSize)));
 
                 currentPage++;
 
@@ -150,19 +148,19 @@ namespace Miningcore.Payments.PaymentSchemes
                     var address = share.Miner;
 
                     // record attributed shares for diagnostic purposes
-                    if (!shares.ContainsKey(address))
+                    if(!shares.ContainsKey(address))
                         shares[address] = share.Difficulty;
                     else
                         shares[address] += share.Difficulty;
                 }
 
-                if (page.Length < pageSize)
+                if(page.Length < pageSize)
                     break;
 
                 before = page[page.Length - 1].Created;
             }
 
-            if (shares.Keys.Count > 0)
+            if(shares.Keys.Count > 0)
             {
                 // sort addresses by shares
                 var addressesByShares = shares.Keys.OrderByDescending(x => shares[x]);
@@ -176,7 +174,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculateRewards(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
+        private async Task<DateTime?> CalculateRewardsAsync(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
@@ -193,8 +191,8 @@ namespace Miningcore.Payments.PaymentSchemes
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
-                var page = shareReadFaultPolicy.Execute(() =>
-                    cf.Run(con => shareRepo.ReadSharesBeforeCreated(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
+                var page = await shareReadFaultPolicy.ExecuteAsync(() =>
+                    cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
 
                 inclusive = false;
                 currentPage++;
@@ -207,7 +205,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     var address = share.Miner;
 
                     // record attributed shares for diagnostic purposes
-                    if (!shares.ContainsKey(address))
+                    if(!shares.ContainsKey(address))
                         shares[address] = share.Difficulty;
                     else
                         shares[address] += share.Difficulty;
@@ -215,7 +213,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
-                    if (accumulatedScore + score >= window)
+                    if(accumulatedScore + score >= window)
                     {
                         score = window - accumulatedScore;
                         shareCutOffDate = share.Created;
@@ -228,20 +226,20 @@ namespace Miningcore.Payments.PaymentSchemes
                     blockRewardRemaining -= reward;
 
                     // this should never happen
-                    if (blockRewardRemaining <= 0 && !done)
+                    if(blockRewardRemaining <= 0 && !done)
                         throw new OverflowException("blockRewardRemaining < 0");
 
-                    if (reward > 0)
+                    if(reward > 0)
                     {
                         // accumulate miner reward
-                        if (!rewards.ContainsKey(address))
+                        if(!rewards.ContainsKey(address))
                             rewards[address] = reward;
                         else
                             rewards[address] += reward;
                     }
                 }
 
-                if (page.Length < pageSize)
+                if(page.Length < pageSize)
                     break;
 
                 before = page[page.Length - 1].Created;
@@ -258,7 +256,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .Retry(RetryCount, OnPolicyRetry);
+                .RetryAsync(RetryCount, OnPolicyRetry);
 
             shareReadFaultPolicy = retry;
         }

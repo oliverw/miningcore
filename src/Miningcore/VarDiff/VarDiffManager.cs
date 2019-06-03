@@ -55,7 +55,7 @@ namespace Miningcore.VarDiff
                 var ts = DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000.0;
 
                 // For the first time, won't change diff.
-                if (!ctx.LastTs.HasValue)
+                if(!ctx.LastTs.HasValue)
                 {
                     ctx.LastRtc = ts;
                     ctx.LastTs = ts;
@@ -73,41 +73,41 @@ namespace Miningcore.VarDiff
                 var avg = (timeTotal + sinceLast) / (timeCount + 1);
 
                 // Once there is a share submitted, store the time into the buffer and update the last time.
-                if (!isIdleUpdate)
+                if(!isIdleUpdate)
                 {
                     ctx.TimeBuffer.PushBack(sinceLast);
                     ctx.LastTs = ts;
                 }
 
                 // Check if we need to change the difficulty
-                if (ts - ctx.LastRtc < options.RetargetTime || avg >= tMin && avg <= tMax)
+                if(ts - ctx.LastRtc < options.RetargetTime || avg >= tMin && avg <= tMax)
                     return null;
 
                 // Possible New Diff
                 var newDiff = difficulty * options.TargetTime / avg;
 
                 // Max delta
-                if (options.MaxDelta.HasValue && options.MaxDelta > 0)
+                if(options.MaxDelta.HasValue && options.MaxDelta > 0)
                 {
                     var delta = Math.Abs(newDiff - difficulty);
 
-                    if (delta > options.MaxDelta)
+                    if(delta > options.MaxDelta)
                     {
-                        if (newDiff > difficulty)
+                        if(newDiff > difficulty)
                             newDiff -= delta - options.MaxDelta.Value;
-                        else if (newDiff < difficulty)
+                        else if(newDiff < difficulty)
                             newDiff += delta - options.MaxDelta.Value;
                     }
                 }
 
                 // Clamp to valid range
-                if (newDiff < minDiff)
+                if(newDiff < minDiff)
                     newDiff = minDiff;
-                if (newDiff > maxDiff)
+                if(newDiff > maxDiff)
                     newDiff = maxDiff;
 
                 // RTC if the Diff is changed
-                if (newDiff < difficulty || newDiff > difficulty)
+                if(newDiff < difficulty || newDiff > difficulty)
                 {
                     ctx.LastRtc = ts;
                     ctx.LastUpdate = clock.Now;

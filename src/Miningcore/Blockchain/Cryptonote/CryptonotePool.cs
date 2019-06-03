@@ -66,12 +66,12 @@ namespace Miningcore.Blockchain.Cryptonote
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
-            if (request.Id == null)
+            if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var loginRequest = request.ParamsAs<CryptonoteLoginRequest>();
 
-            if (string.IsNullOrEmpty(loginRequest?.Login))
+            if(string.IsNullOrEmpty(loginRequest?.Login))
                 throw new StratumException(StratumError.MinusOne, "missing login");
 
             // extract worker/miner/paymentid
@@ -84,12 +84,12 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // extract paymentid
             var index = context.Miner.IndexOf('#');
-            if (index != -1)
+            if(index != -1)
             {
                 var paymentId = context.Miner.Substring(index + 1).Trim();
 
                 // validate
-                if (!string.IsNullOrEmpty(paymentId) && paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
+                if(!string.IsNullOrEmpty(paymentId) && paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
                     throw new StratumException(StratumError.MinusOne, "invalid payment id");
 
                 // re-append to address
@@ -99,7 +99,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // validate login
             var result = manager.ValidateAddress(addressToValidate);
-            if (!result)
+            if(!result)
                 throw new StratumException(StratumError.MinusOne, "invalid login");
 
             context.IsSubscribed = result;
@@ -108,7 +108,7 @@ namespace Miningcore.Blockchain.Cryptonote
             // extract control vars from password
             var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
             var staticDiff = GetStaticDiffFromPassparts(passParts);
-            if (staticDiff.HasValue &&
+            if(staticDiff.HasValue &&
                 (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
                     context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
@@ -139,13 +139,13 @@ namespace Miningcore.Blockchain.Cryptonote
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
-            if (request.Id == null)
+            if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var getJobRequest = request.ParamsAs<CryptonoteGetJobRequest>();
 
             // validate worker
-            if (client.ConnectionId != getJobRequest?.WorkerId || !context.IsAuthorized)
+            if(client.ConnectionId != getJobRequest?.WorkerId || !context.IsAuthorized)
                 throw new StratumException(StratumError.MinusOne, "unauthorized");
 
             // respond
@@ -161,14 +161,15 @@ namespace Miningcore.Blockchain.Cryptonote
             manager.PrepareWorkerJob(job, out var blob, out var target);
 
             // should never happen
-            if (string.IsNullOrEmpty(blob) || string.IsNullOrEmpty(blob))
+            if(string.IsNullOrEmpty(blob) || string.IsNullOrEmpty(blob))
                 return null;
 
             var result = new CryptonoteJobParams
             {
                 JobId = job.Id,
                 Blob = blob,
-                Target = target
+                Target = target,
+                Height = job.Height,
             };
 
             // update context
@@ -187,13 +188,13 @@ namespace Miningcore.Blockchain.Cryptonote
 
             try
             {
-                if (request.Id == null)
+                if(request.Id == null)
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
                 var requestAge = clock.Now - tsRequest.Timestamp.UtcDateTime;
 
-                if (requestAge > maxShareAge)
+                if(requestAge > maxShareAge)
                 {
                     logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
@@ -203,7 +204,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 var submitRequest = request.ParamsAs<CryptonoteSubmitShareRequest>();
 
                 // validate worker
-                if (client.ConnectionId != submitRequest?.WorkerId || !context.IsAuthorized)
+                if(client.ConnectionId != submitRequest?.WorkerId || !context.IsAuthorized)
                     throw new StratumException(StratumError.MinusOne, "unauthorized");
 
                 // recognize activity
@@ -215,7 +216,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     var jobId = submitRequest?.JobId;
 
-                    if ((job = context.FindJob(jobId)) == null)
+                    if((job = context.FindJob(jobId)) == null)
                         throw new StratumException(StratumError.MinusOne, "invalid jobid");
                 }
 
@@ -224,7 +225,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 lock(job)
                 {
-                    if (job.Submissions.Contains(nonceLower))
+                    if(job.Submissions.Contains(nonceLower))
                         throw new StratumException(StratumError.MinusOne, "duplicate share");
 
                     job.Submissions.Add(nonceLower);
@@ -244,7 +245,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
-                if (share.IsBlockCandidate)
+                if(share.IsBlockCandidate)
                     poolStats.LastPoolBlockTime = clock.Now;
 
                 // update client stats
@@ -279,17 +280,17 @@ namespace Miningcore.Blockchain.Cryptonote
 
             var tasks = ForEachClient(async client =>
             {
-                if (!client.IsAlive)
+                if(!client.IsAlive)
                     return;
 
                 var context = client.ContextAs<CryptonoteWorkerContext>();
 
-                if (context.IsSubscribed && context.IsAuthorized)
+                if(context.IsSubscribed && context.IsAuthorized)
                 {
                     // check alive
                     var lastActivityAgo = clock.Now - context.LastActivity;
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
+                    if(poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
                         logger.Info(() => $"[[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
@@ -304,7 +305,7 @@ namespace Miningcore.Blockchain.Cryptonote
             });
 
             return Task.WhenAll(tasks);
-       }
+        }
 
         #region Overrides
 
@@ -315,7 +316,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             await manager.StartAsync(ct);
 
-            if (poolConfig.EnableInternalStratum == true)
+            if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Blocks
                     .Select(_ => Observable.FromAsync(async () =>
@@ -325,7 +326,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             await OnNewJobAsync();
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
                         }
@@ -347,9 +348,9 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        protected override void InitStats()
+        protected override async Task InitStatsAsync()
         {
-            base.InitStats();
+            await base.InitStatsAsync();
 
             blockchainStats = manager.BlockchainStats;
         }
@@ -413,7 +414,7 @@ namespace Miningcore.Blockchain.Cryptonote
             // apply immediately and notify client
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
-            if (context.HasPendingDifficulty)
+            if(context.HasPendingDifficulty)
             {
                 context.ApplyPendingDifficulty();
 

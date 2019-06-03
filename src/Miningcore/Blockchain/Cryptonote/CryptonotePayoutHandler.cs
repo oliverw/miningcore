@@ -42,6 +42,9 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
+using Miningcore.Notifications.Messages;
+using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -75,20 +78,20 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonotePoolPaymentProcessingConfigExtra extraConfig;
         private bool walletSupportsTransferSplit;
 
-        protected override string LogCategory => "Monero Payout Handler";
+        protected override string LogCategory => "Cryptonote Payout Handler";
 
-        private bool HandleTransferResponse(DaemonResponse<TransferResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-            if (response.Error == null)
+            if(response.Error == null)
             {
                 var txHash = response.Response.TxHash;
                 var txFee = (decimal) response.Response.Fee / coin.SmallestUnit;
 
-                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee was {FormatAmount(txFee)}");
+                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
 
-                PersistPayments(balances, txHash);
+                await PersistPaymentsAsync(balances, txHash);
                 NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
                 return true;
             }
@@ -102,18 +105,18 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        private bool HandleTransferResponse(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
+        private async Task<bool> HandleTransferResponseAsync(DaemonResponse<TransferSplitResponse> response, params Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-            if (response.Error == null)
+            if(response.Error == null)
             {
                 var txHashes = response.Response.TxHashList;
                 var txFees = response.Response.FeeList.Select(x => (decimal) x / coin.SmallestUnit).ToArray();
 
                 logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
-                PersistPayments(balances, txHashes.First());
+                await PersistPaymentsAsync(balances, txHashes.First());
                 NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
                 return true;
             }
@@ -129,7 +132,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private async Task<CryptonoteNetworkType> GetNetworkTypeAsync()
         {
-            if (!networkType.HasValue)
+            if(!networkType.HasValue)
             {
                 var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
@@ -140,9 +143,36 @@ namespace Miningcore.Blockchain.Cryptonote
             return networkType.Value;
         }
 
+        private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin)
+        {
+            var response = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance);
+
+            if(response.Error != null)
+            {
+                logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.GetBalance}' returned error: {response.Error.Message} code {response.Error.Code}");
+                return false;
+            }
+
+            var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
+            var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
+
+            if(response.Response.UnlockedBalance < requiredAmount)
+            {
+                logger.Error(() => $"[{LogCategory}] Need {FormatAmount(requiredAmount)} unlocked balance, but only have {FormatAmount(unlockedBalance)} ({FormatAmount(balance)})");
+                return false;
+            }
+
+            logger.Error(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
+            return true;
+        }
+
         private async Task<bool> PayoutBatch(Balance[] balances)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+
+            // ensure there's enough balance
+            if(!await EnsureBalance(balances.Sum(x => x.Amount), coin))
+                return false;
 
             // build request
             var request = new TransferRequest
@@ -163,29 +193,29 @@ namespace Miningcore.Blockchain.Cryptonote
                 GetTxKey = true
             };
 
-            if (request.Destinations.Length == 0)
+            if(request.Destinations.Length == 0)
                 return true;
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
 
             // send command
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, request);
 
             // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-            if (transferResponse.Error?.Code == -4)
+            if(transferResponse.Error?.Code == -4)
             {
-                if (walletSupportsTransferSplit)
+                if(walletSupportsTransferSplit)
                 {
                     logger.Error(() => $"[{LogCategory}] Daemon command '{CryptonoteWalletCommands.Transfer}' returned error: {transferResponse.Error.Message} code {transferResponse.Error.Code}");
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
 
                     var transferSplitResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferSplitResponse>(logger, CryptonoteWalletCommands.TransferSplit, request);
 
-                    return HandleTransferResponse(transferSplitResponse, balances);
+                    return await HandleTransferResponseAsync(transferSplitResponse, balances);
                 }
             }
 
-            return HandleTransferResponse(transferResponse, balances);
+            return await HandleTransferResponseAsync(transferResponse, balances);
         }
 
         private void ExtractAddressAndPaymentId(string input, out string address, out string paymentId)
@@ -193,16 +223,16 @@ namespace Miningcore.Blockchain.Cryptonote
             paymentId = null;
             var index = input.IndexOf(PayoutConstants.PayoutInfoSeperator);
 
-            if (index != -1)
+            if(index != -1)
             {
                 address = input.Substring(0, index);
 
-                if (index + 1 < input.Length)
+                if(index + 1 < input.Length)
                 {
                     paymentId = input.Substring(index + 1);
 
                     // ignore invalid payment ids
-                    if (paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
+                    if(paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
                         paymentId = null;
                 }
             }
@@ -211,13 +241,16 @@ namespace Miningcore.Blockchain.Cryptonote
                 address = input;
         }
 
-        private async Task PayoutToPaymentId(Balance balance)
+        private async Task<bool> PayoutToPaymentId(Balance balance)
         {
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
             ExtractAddressAndPaymentId(balance.Address, out var address, out var paymentId);
-
             var isIntegratedAddress = string.IsNullOrEmpty(paymentId);
+
+            // ensure there's enough balance
+            if(!await EnsureBalance(balance.Amount, coin))
+                return false;
 
             // build request
             var request = new TransferRequest
@@ -234,10 +267,10 @@ namespace Miningcore.Blockchain.Cryptonote
                 GetTxKey = true
             };
 
-            if (!isIntegratedAddress)
+            if(!isIntegratedAddress)
                 request.PaymentId = paymentId;
 
-            if (!isIntegratedAddress)
+            if(!isIntegratedAddress)
                 logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
             else
                 logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
@@ -245,10 +278,10 @@ namespace Miningcore.Blockchain.Cryptonote
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, request);
 
-            if (walletSupportsTransferSplit)
+            if(walletSupportsTransferSplit)
             {
                 // gracefully handle error -4 (transaction would be too large. try /transfer_split)
-                if (result.Error?.Code == -4)
+                if(result.Error?.Code == -4)
                 {
                     logger.Info(() => $"[{LogCategory}] Retrying transfer using {CryptonoteWalletCommands.TransferSplit}");
 
@@ -256,7 +289,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 }
             }
 
-            HandleTransferResponse(result, balance);
+            return await HandleTransferResponseAsync(result, balance);
         }
 
         #region IPayoutHandler
@@ -278,7 +311,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Where(x => string.IsNullOrEmpty(x.Category))
                 .Select(x =>
                 {
-                    if (string.IsNullOrEmpty(x.HttpPath))
+                    if(string.IsNullOrEmpty(x.HttpPath))
                         x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
 
                     return x;
@@ -293,7 +326,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Where(x => x.Category?.ToLower() == CryptonoteConstants.WalletDaemonCategory)
                 .Select(x =>
                 {
-                    if (string.IsNullOrEmpty(x.HttpPath))
+                    if(string.IsNullOrEmpty(x.HttpPath))
                         x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
 
                     return x;
@@ -341,13 +374,13 @@ namespace Miningcore.Blockchain.Cryptonote
                             Height = block.BlockHeight
                         });
 
-                    if (rpcResult.Error != null)
+                    if(rpcResult.Error != null)
                     {
                         logger.Debug(() => $"[{LogCategory}] Daemon reports error '{rpcResult.Error.Message}' (Code {rpcResult.Error.Code}) for block {block.BlockHeight}");
                         continue;
                     }
 
-                    if (rpcResult.Response?.BlockHeader == null)
+                    if(rpcResult.Response?.BlockHeader == null)
                     {
                         logger.Debug(() => $"[{LogCategory}] Daemon returned no header for block {block.BlockHeight}");
                         continue;
@@ -359,22 +392,28 @@ namespace Miningcore.Blockchain.Cryptonote
                     block.ConfirmationProgress = Math.Min(1.0d, (double) blockHeader.Depth / CryptonoteConstants.PayoutMinBlockConfirmations);
                     result.Add(block);
 
+                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
+
                     // orphaned?
-                    if (blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
+                    if(blockHeader.IsOrphaned || blockHeader.Hash != block.TransactionConfirmationData)
                     {
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
+
+                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                         continue;
                     }
 
                     // matured and spendable?
-                    if (blockHeader.Depth >= CryptonoteConstants.PayoutMinBlockConfirmations)
+                    if(blockHeader.Depth >= CryptonoteConstants.PayoutMinBlockConfirmations)
                     {
                         block.Status = BlockStatus.Confirmed;
                         block.ConfirmationProgress = 1;
                         block.Reward = ((decimal) blockHeader.Reward / coin.SmallestUnit) * coin.BlockrewardMultiplier;
 
                         logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                        messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                     }
                 }
             }
@@ -389,30 +428,14 @@ namespace Miningcore.Blockchain.Cryptonote
             return Task.FromResult(true);
         }
 
-        public Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
         {
-            var blockRewardRemaining = block.Reward;
-
-            // Distribute funds to configured reward recipients
-            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
-            {
-                var amount = block.Reward * (recipient.Percentage / 100.0m);
-                var address = recipient.Address;
-
-                blockRewardRemaining -= amount;
-
-                // skip transfers from pool wallet to pool wallet
-                if (address != poolConfig.Address)
-                {
-                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
-                    balanceRepo.AddAmount(con, tx, poolConfig.Id, poolConfig.Template.Symbol, address, amount, $"Reward for block {block.BlockHeight}");
-                }
-            }
+            var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
             // Deduct static reserve for tx fees
             blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;
 
-            return Task.FromResult(blockRewardRemaining);
+            return blockRewardRemaining;
         }
 
         public async Task PayoutAsync(Balance[] balances)
@@ -442,7 +465,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     switch(networkType)
                     {
                         case CryptonoteNetworkType.Main:
-                            if (addressPrefix != coin.AddressPrefix &&
+                            if(addressPrefix != coin.AddressPrefix &&
                                 addressIntegratedPrefix != coin.AddressPrefixIntegrated)
                             {
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
@@ -452,7 +475,7 @@ namespace Miningcore.Blockchain.Cryptonote
                             break;
 
                         case CryptonoteNetworkType.Test:
-                            if (addressPrefix != coin.AddressPrefixTestnet &&
+                            if(addressPrefix != coin.AddressPrefixTestnet &&
                                 addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
                             {
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
@@ -479,26 +502,27 @@ namespace Miningcore.Blockchain.Cryptonote
                     switch(networkType)
                     {
                         case CryptonoteNetworkType.Main:
-                            if (addressIntegratedPrefix == coin.AddressPrefixIntegrated)
+                            if(addressIntegratedPrefix == coin.AddressPrefixIntegrated)
                                 isIntegratedAddress = true;
                             break;
 
                         case CryptonoteNetworkType.Test:
-                            if (addressIntegratedPrefix == coin.AddressPrefixIntegratedTestnet)
+                            if(addressIntegratedPrefix == coin.AddressPrefixIntegratedTestnet)
                                 isIntegratedAddress = true;
                             break;
                     }
 
                     return !hasPaymentId && !isIntegratedAddress;
                 })
+                .OrderByDescending(x => x.Amount)
                 .ToArray();
 
-            if (simpleBalances.Length > 0)
+            if(simpleBalances.Length > 0)
 #if false
                 await PayoutBatch(simpleBalances);
 #else
             {
-                var maxBatchSize = 28;
+                var maxBatchSize = 15;  // going over 15 yields "sv/gamma are too large"
                 var pageSize = maxBatchSize;
                 var pageCount = (int) Math.Ceiling((double) simpleBalances.Length / pageSize);
 
@@ -509,7 +533,7 @@ namespace Miningcore.Blockchain.Cryptonote
                         .Take(pageSize)
                         .ToArray();
 
-                    if (!await PayoutBatch(page))
+                    if(!await PayoutBatch(page))
                         break;
                 }
             }
@@ -522,7 +546,13 @@ namespace Miningcore.Blockchain.Cryptonote
                 .ToArray();
 
             foreach(var balance in paymentIdBalances)
-                await PayoutToPaymentId(balance);
+            {
+                if(!await PayoutToPaymentId(balance))
+                    break;
+            }
+
+            // save wallet
+            await walletDaemon.ExecuteCmdSingleAsync<JToken>(logger, CryptonoteWalletCommands.Store);
         }
 
         #endregion // IPayoutHandler

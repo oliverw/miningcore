@@ -19,22 +19,18 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.IO;
-using System.IO.Compression;
 using System.Reactive;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Util;
 using NLog;
-using ZeroMQ;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain
@@ -60,7 +56,7 @@ namespace Miningcore.Blockchain
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
 
         protected abstract void ConfigureDaemons();
 
@@ -88,7 +84,7 @@ namespace Miningcore.Blockchain
             Interlocked.Increment(ref jobId);
             var value = Interlocked.CompareExchange(ref jobId, 0, Int32.MinValue);
 
-            if (format != null)
+            if(format != null)
                 return value.ToString(format);
 
             return value.ToStringHex8();
@@ -96,92 +92,18 @@ namespace Miningcore.Blockchain
 
         protected IObservable<string> BtStreamSubscribe(ZmqPubSubEndpointConfig config)
         {
-            return Observable.Defer(() => Observable.Create<string>(obs =>
-            {
-                var tcs = new CancellationTokenSource();
+            return messageBus.Listen<BtStreamMessage>()
+                .Where(x => x.Topic == config.Topic)
+                .DoSafe(x => messageBus.SendMessage(new TelemetryEvent(
+                    clusterConfig.ClusterName, poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
+                .Select(x => x.Payload)
+                .Publish()
+                .RefCount();
+        }
 
-                Task.Factory.StartNew(() =>
-                {
-                    using(tcs)
-                    {
-                        while(!tcs.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                using(var subSocket = new ZSocket(ZSocketType.SUB))
-                                {
-                                    //subSocket.Options.ReceiveHighWatermark = 1000;
-                                    subSocket.SetupCurveTlsClient(config.SharedEncryptionKey, logger);
-                                    subSocket.Connect(config.Url);
-                                    subSocket.Subscribe(config.Topic);
-
-                                    logger.Debug($"Subscribed to {config.Url}/{config.Topic}");
-
-                                    while(!tcs.IsCancellationRequested)
-                                    {
-                                        // string topic;
-                                        uint flags;
-                                        byte[] data;
-                                        // long timestamp;
-
-                                        using (var msg = subSocket.ReceiveMessage())
-                                        {
-                                            // extract frames
-                                            // topic = msg[0].ToString(Encoding.UTF8);
-                                            flags = msg[1].ReadUInt32();
-                                            data = msg[2].Read();
-                                            // timestamp = msg[3].ReadInt64();
-                                        }
-
-                                        // TMP FIX
-                                        if (flags != 0 && ((flags & 1) == 0))
-                                            flags = BitConverter.ToUInt32(BitConverter.GetBytes(flags).ToNewReverseArray());
-
-                                        // compressed
-                                        if ((flags & 1) == 1)
-                                        {
-                                            using(var stm = new MemoryStream(data))
-                                            {
-                                                using(var stmOut = new MemoryStream())
-                                                {
-                                                    using(var ds = new DeflateStream(stm, CompressionMode.Decompress))
-                                                    {
-                                                        ds.CopyTo(stmOut);
-                                                    }
-
-                                                    data = stmOut.ToArray();
-                                                }
-                                            }
-                                        }
-
-                                        // convert
-                                        var json = Encoding.UTF8.GetString(data);
-
-                                        // publish
-                                        obs.OnNext(json);
-
-                                        // telemetry
-                                        //messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id,
-                                        //    TelemetryCategory.BtStream, DateTime.UtcNow - DateTimeOffset.FromUnixTimeSeconds(timestamp)));
-                                    }
-                                }
-                            }
-
-                            catch(Exception ex)
-                            {
-                                logger.Error(ex);
-                            }
-
-                            // do not consume all CPU cycles in case of a long lasting error condition
-                            Thread.Sleep(1000);
-                        }
-                    }
-                }, tcs.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-                return Disposable.Create(() => { tcs.Cancel(); });
-            }))
-            .Publish()
-            .RefCount();
+        protected virtual void OnBlockFound()
+        {
+            blockFoundSubject.OnNext(Unit.Default);
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

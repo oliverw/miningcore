@@ -19,15 +19,18 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System.Data;
+using System.Threading.Tasks;
 using Miningcore.Persistence.Model;
+using Miningcore.Persistence.Model.Projections;
 
 namespace Miningcore.Persistence.Repositories
 {
     public interface IPaymentRepository
     {
-        void Insert(IDbConnection con, IDbTransaction tx, Payment payment);
+        Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment);
 
-        Payment[] PagePayments(IDbConnection con, string poolId, string address, int page, int pageSize);
-        BalanceChange[] PageBalanceChanges(IDbConnection con, string poolId, string address, int page, int pageSize);
+        Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
+        Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
+        Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
     }
 }

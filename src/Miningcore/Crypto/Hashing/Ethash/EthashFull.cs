@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
@@ -30,17 +31,17 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 value.Dispose();
         }
 
-        public async Task<Dag> GetDagAsync(ulong block, ILogger logger)
+        public async Task<Dag> GetDagAsync(ulong block, ILogger logger, CancellationToken ct)
         {
             var epoch = block / EthereumConstants.EpochLength;
             Dag result;
 
             lock(cacheLock)
             {
-                if (numCaches == 0)
+                if(numCaches == 0)
                     numCaches = 3;
 
-                if (!caches.TryGetValue(epoch, out result))
+                if(!caches.TryGetValue(epoch, out result))
                 {
                     // No cached DAG, evict the oldest if the cache limit was reached
                     while(caches.Count >= numCaches)
@@ -55,7 +56,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                     }
 
                     // If we have the new DAG pre-generated, use that, otherwise create a new one
-                    if (future != null && future.Epoch == epoch)
+                    if(future != null && future.Epoch == epoch)
                     {
                         logger.Debug(() => $"Using pre-generated DAG for epoch {epoch}");
 
@@ -73,20 +74,20 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 }
 
                 // If we used up the future cache, or need a refresh, regenerate
-                else if (future == null || future.Epoch <= epoch)
+                else if(future == null || future.Epoch <= epoch)
                 {
                     logger.Info(() => $"Pre-generating DAG for epoch {epoch + 1}");
                     future = new Dag(epoch + 1);
 
 #pragma warning disable 4014
-                    future.GenerateAsync(dagDir, logger);
+                    future.GenerateAsync(dagDir, logger, ct);
 #pragma warning restore 4014
                 }
 
                 result.LastUsed = DateTime.Now;
             }
 
-            await result.GenerateAsync(dagDir, logger);
+            await result.GenerateAsync(dagDir, logger, ct);
             return result;
         }
     }

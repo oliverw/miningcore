@@ -21,13 +21,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
-using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Persistence.Postgres.Repositories
@@ -42,74 +41,89 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public void AddAmount(IDbConnection con, IDbTransaction tx, string poolId, string coin, string address, decimal amount, string usage)
+        public async Task<int> AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount, string usage)
         {
             logger.LogInvoke();
 
             var now = DateTime.UtcNow;
 
             // record balance change
-            var query = "INSERT INTO balance_changes(poolid, coin, address, amount, usage, created) " +
-                "VALUES(@poolid, @coin, @address, @amount, @usage, @created)";
+            var query = "INSERT INTO balance_changes(poolid, address, amount, usage, created) " +
+                "VALUES(@poolid, @address, @amount, @usage, @created)";
 
             var balanceChange = new Entities.BalanceChange
             {
                 PoolId = poolId,
-                Coin = coin.ToString(),
                 Created = now,
                 Address = address,
                 Amount = amount,
                 Usage = usage,
             };
 
-            con.Execute(query, balanceChange, tx);
+            await con.ExecuteAsync(query, balanceChange, tx);
 
             // update balance
-            query = "SELECT * FROM balances WHERE poolid = @poolId AND coin = @coin AND address = @address";
+            query = "SELECT * FROM balances WHERE poolid = @poolId AND address = @address";
 
-            var balance = con.Query<Entities.Balance>(query, new { poolId, coin = coin.ToString(), address }, tx)
+            var balance = (await con.QueryAsync<Entities.Balance>(query, new { poolId, address }, tx))
                 .FirstOrDefault();
 
-            if (balance == null)
+            if(balance == null)
             {
                 balance = new Entities.Balance
                 {
                     PoolId = poolId,
-                    Coin = coin.ToString(),
                     Created = now,
                     Address = address,
                     Amount = amount,
                     Updated = now
                 };
 
-                query = "INSERT INTO balances(poolid, coin, address, amount, created, updated) " +
-                    "VALUES(@poolid, @coin, @address, @amount, @created, @updated)";
+                query = "INSERT INTO balances(poolid, address, amount, created, updated) " +
+                    "VALUES(@poolid, @address, @amount, @created, @updated)";
 
-                con.Execute(query, balance, tx);
+                return await con.ExecuteAsync(query, balance, tx);
             }
 
             else
             {
                 query = "UPDATE balances SET amount = amount + @amount, updated = now() at time zone 'utc' " +
-                    "WHERE poolid = @poolId AND coin = @coin AND address = @address";
+                    "WHERE poolid = @poolId AND address = @address";
 
-                con.Execute(query, new
+                return await con.ExecuteAsync(query, new
                 {
                     poolId,
                     address,
-                    coin = coin.ToString().ToUpper(),
                     amount
                 }, tx);
             }
         }
 
-        public Balance[] GetPoolBalancesOverThreshold(IDbConnection con, string poolId, decimal minimum)
+        public async Task<decimal> GetBalanceAsync(IDbConnection con, IDbTransaction tx, string poolId, string address)
         {
             logger.LogInvoke();
 
-            var query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
+            const string query = "SELECT amount FROM balances WHERE poolid = @poolId AND address = @address";
 
-            return con.Query<Entities.Balance>(query, new { poolId, minimum })
+            return await con.QuerySingleOrDefaultAsync<decimal>(query, new { poolId, address }, tx);
+        }
+
+        public async Task<decimal> GetBalanceAsync(IDbConnection con, string poolId, string address)
+        {
+            logger.LogInvoke();
+
+            const string query = "SELECT amount FROM balances WHERE poolid = @poolId AND address = @address";
+
+            return await con.QuerySingleOrDefaultAsync<decimal>(query, new { poolId, address });
+        }
+
+        public async Task<Balance[]> GetPoolBalancesOverThresholdAsync(IDbConnection con, string poolId, decimal minimum)
+        {
+            logger.LogInvoke();
+
+            const string query = "SELECT * FROM balances WHERE poolid = @poolId AND amount >= @minimum";
+
+            return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
                 .Select(mapper.Map<Balance>)
                 .ToArray();
         }

@@ -29,14 +29,14 @@ namespace Miningcore.Crypto.Hashing.Ethash
         {
             var chars = new byte[512];
 
-            fixed(byte* data = chars)
+            fixed (byte* data = chars)
             {
-                if (LibMultihash.ethash_get_default_dirname(data, chars.Length))
+                if(LibMultihash.ethash_get_default_dirname(data, chars.Length))
                 {
                     int length;
                     for(length = 0; length < chars.Length; length++)
                     {
-                        if (data[length] == 0)
+                        if(data[length] == 0)
                             break;
                     }
 
@@ -49,18 +49,18 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
         public void Dispose()
         {
-            if (handle != IntPtr.Zero)
+            if(handle != IntPtr.Zero)
             {
                 LibMultihash.ethash_full_delete(handle);
                 handle = IntPtr.Zero;
             }
         }
 
-        public async Task GenerateAsync(string dagDir, ILogger logger)
+        public async ValueTask GenerateAsync(string dagDir, ILogger logger, CancellationToken ct)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(dagDir), $"{nameof(dagDir)} must not be empty");
 
-            if (handle == IntPtr.Zero)
+            if(handle == IntPtr.Zero)
             {
                 await Task.Run(() =>
                 {
@@ -69,7 +69,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                         sem.WaitOne();
 
                         // re-check after obtaining lock
-                        if (handle != IntPtr.Zero)
+                        if(handle != IntPtr.Zero)
                             return;
 
                         logger.Info(() => $"Generating DAG for epoch {Epoch}");
@@ -86,10 +86,11 @@ namespace Miningcore.Crypto.Hashing.Ethash
                             handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
                             {
                                 logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
-                                return 0;
+
+                                return !ct.IsCancellationRequested ? 0 : 1;
                             });
 
-                            if (handle == IntPtr.Zero)
+                            if(handle == IntPtr.Zero)
                                 throw new OutOfMemoryException("ethash_full_new IO or memory error");
 
                             logger.Info(() => $"Done generating DAG for epoch {Epoch} after {DateTime.Now - started}");
@@ -97,7 +98,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
                         finally
                         {
-                            if (light != IntPtr.Zero)
+                            if(light != IntPtr.Zero)
                                 LibMultihash.ethash_light_delete(light);
                         }
                     }
@@ -106,7 +107,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                     {
                         sem.Release();
                     }
-                });
+                }, ct);
             }
         }
 
@@ -121,12 +122,12 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
             var value = new LibMultihash.ethash_return_value();
 
-            fixed(byte* input = hash)
+            fixed (byte* input = hash)
             {
                 LibMultihash.ethash_full_compute(handle, input, nonce, ref value);
             }
 
-            if (value.success)
+            if(value.success)
             {
                 mixDigest = value.mix_hash.value;
                 result = value.result.value;

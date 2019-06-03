@@ -47,7 +47,7 @@ namespace Miningcore.Banning
             Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
 
             // don't ban 127.0.0.1
-            if (address.Equals(IPAddress.Loopback) || address.Equals(IPAddress.IPv6Loopback))
+            if(address.Equals(IPAddress.Loopback) || address.Equals(IPAddress.IPv6Loopback))
                 return;
 
             cache.Set(address.ToString(), string.Empty, duration);

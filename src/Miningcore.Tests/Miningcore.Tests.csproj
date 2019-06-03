@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <IsPackable>false</IsPackable>
     <Platforms>AnyCPU</Platforms>
     <AssemblyName>Miningcore.Tests</AssemblyName>
@@ -33,10 +33,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
-    <PackageReference Include="Microsoft.Reactive.Testing" Version="3.1.1" />
-    <PackageReference Include="xunit" Version="2.3.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="Microsoft.Reactive.Testing" Version="4.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.All" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -52,7 +56,7 @@
   <!-- Copy library binaries from Miningcore build output on Windows  -->
   <Target Name="CopyLibsWin" AfterTargets="AfterBuild" Condition="'$(IsWindows)' == 'true'">
     <ItemGroup>
-      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.1\lib*.dll" />
+      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.2\lib*.dll" />
     </ItemGroup>
 
     <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
@@ -61,7 +65,7 @@
   <!-- Copy library binaries from Miningcore build output on Linux  -->
   <Target Name="CopyLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
     <ItemGroup>
-      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.1\lib*.so" />
+      <Libs Include="$(ProjectDir)..\Miningcore\bin\$(Configuration)\netcoreapp2.2\lib*.so" />
     </ItemGroup>
 
     <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />

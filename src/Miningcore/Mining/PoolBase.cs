@@ -96,17 +96,17 @@ namespace Miningcore.Mining
 
         protected double? GetStaticDiffFromPassparts(string[] parts)
         {
-            if (parts == null || parts.Length == 0)
+            if(parts == null || parts.Length == 0)
                 return null;
 
             foreach(var part in parts)
             {
                 var m = regexStaticDiff.Match(part);
 
-                if (m.Success)
+                if(m.Success)
                 {
                     var str = m.Groups[1].Value.Trim();
-                    if (double.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff) &&
+                    if(double.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out var diff) &&
                         !double.IsNaN(diff) && !double.IsInfinity(diff))
                         return diff;
                 }
@@ -125,7 +125,7 @@ namespace Miningcore.Mining
             client.SetContext(context);
 
             // varDiff setup
-            if (context.VarDiff != null)
+            if(context.VarDiff != null)
             {
                 lock(context.VarDiff)
                 {
@@ -141,12 +141,12 @@ namespace Miningcore.Mining
         {
             Observable.Timer(clock.Now.AddSeconds(10))
                 .TakeUntil(client.Terminated)
-                .Where(_=> client.IsAlive)
+                .Where(_ => client.IsAlive)
                 .Subscribe(_ =>
                 {
                     try
                     {
-                        if (client.LastReceive == null)
+                        if(client.LastReceive == null)
                         {
                             logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
@@ -154,7 +154,7 @@ namespace Miningcore.Mining
                         }
                     }
 
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
@@ -175,7 +175,7 @@ namespace Miningcore.Mining
         {
             var context = client.ContextAs<WorkerContextBase>();
 
-            if (context.VarDiff != null)
+            if(context.VarDiff != null)
             {
                 logger.Debug(() => $"[{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
 
@@ -185,7 +185,7 @@ namespace Miningcore.Mining
 
                 lock(varDiffManagers)
                 {
-                    if (!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
+                    if(!varDiffManagers.TryGetValue(poolEndpoint, out varDiffManager))
                     {
                         varDiffManager = new VarDiffManager(poolEndpoint.VarDiff, clock);
                         varDiffManagers[poolEndpoint] = varDiffManager;
@@ -202,7 +202,7 @@ namespace Miningcore.Mining
                     newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, isIdleUpdate);
                 }
 
-                if (newDiff != null)
+                if(newDiff != null)
                 {
                     logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 2)}");
 
@@ -223,7 +223,7 @@ namespace Miningcore.Mining
 
             var shareReceived = messageBus.Listen<ClientShare>()
                 .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
-                .Select(_=> Unit.Default)
+                .Select(_ => Unit.Default)
                 .Take(1);
 
             var timeout = poolEndpoint.VarDiff.TargetTime;
@@ -251,28 +251,28 @@ namespace Miningcore.Mining
 
         protected void SetupBanning(ClusterConfig clusterConfig)
         {
-            if (poolConfig.Banning?.Enabled == true)
+            if(poolConfig.Banning?.Enabled == true)
             {
                 var managerType = clusterConfig.Banning?.Manager ?? BanManagerKind.Integrated;
                 banManager = ctx.ResolveKeyed<IBanManager>(managerType);
             }
         }
 
-        protected virtual void InitStats()
+        protected virtual async Task InitStatsAsync()
         {
-            if (clusterConfig.ShareRelay == null)
-                LoadStats();
+            if(clusterConfig.ShareRelay == null)
+                await LoadStatsAsync();
         }
 
-        private void LoadStats()
+        private async Task LoadStatsAsync()
         {
             try
             {
                 logger.Debug(() => $"Loading pool stats");
 
-                var stats = cf.Run(con => statsRepo.GetLastPoolStats(con, poolConfig.Id));
+                var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id));
 
-                if (stats != null)
+                if(stats != null)
                 {
                     poolStats = mapper.Map<PoolStats>(stats);
                     blockchainStats = mapper.Map<BlockchainStats>(stats);
@@ -289,11 +289,11 @@ namespace Miningcore.Mining
         {
             var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 
-            if (totalShares > config.CheckThreshold)
+            if(totalShares > config.CheckThreshold)
             {
                 var ratioBad = (double) context.Stats.InvalidShares / totalShares;
 
-                if (ratioBad < config.InvalidPercent / 100.0)
+                if(ratioBad < config.InvalidPercent / 100.0)
                 {
                     // reset stats
                     context.Stats.ValidShares = 0;
@@ -302,7 +302,7 @@ namespace Miningcore.Mining
 
                 else
                 {
-                    if (poolConfig.Banning?.Enabled == true &&
+                    if(poolConfig.Banning?.Enabled == true &&
                         (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
                             clusterConfig.Banning?.BanOnInvalidShares == true))
                     {
@@ -319,7 +319,7 @@ namespace Miningcore.Mining
         private (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
         {
             var listenAddress = IPAddress.Parse("127.0.0.1");
-            if (!string.IsNullOrEmpty(pep.ListenAddress))
+            if(!string.IsNullOrEmpty(pep.ListenAddress))
                 listenAddress = pep.ListenAddress != "*" ? IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
 
             return (new IPEndPoint(listenAddress, port), pep);
@@ -338,7 +338,7 @@ Current Connect Peers:  {blockchainStats.ConnectedPeers}
 Network Difficulty:     {blockchainStats.NetworkDifficulty}
 Network Hash Rate:      {FormatUtil.FormatHashrate(blockchainStats.NetworkHashrate)}
 Stratum Port(s):        {(poolConfig.Ports?.Any() == true ? string.Join(", ", poolConfig.Ports.Keys) : string.Empty)}
-Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0)}%
+Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfig.RewardRecipients.Where(x => x.Type != "dev").Sum(x => x.Percentage) : 0)}%
 ";
 
             logger.Info(() => msg);
@@ -372,9 +372,9 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
             {
                 SetupBanning(clusterConfig);
                 await SetupJobManager(ct);
-                InitStats();
+                await InitStatsAsync();
 
-                if (poolConfig.EnableInternalStratum == true)
+                if(poolConfig.EnableInternalStratum == true)
                 {
                     var ipEndpoints = poolConfig.Ports.Keys
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))

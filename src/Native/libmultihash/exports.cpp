@@ -27,6 +27,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "blake.h"
 #include "blake2s.h"
 #include "fugue.h"
+#include "geek.h"
 #include "qubit.h"
 #include "s3.h"
 #include "hefty1.h"
@@ -44,6 +45,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Lyra2.h"
 #include "x16r.h"
 #include "x16s.h"
+#include "x21s.h"
+#include "x25x.h"
+#include "hashodo.h"
 #include "equi/equihashverify.h"
 #include "libethash/sha3.h"
 #include "libethash/internal.h"
@@ -149,6 +153,11 @@ extern "C" MODULE_API void fugue_export(const char* input, char* output, uint32_
 	fugue_hash(input, output, input_len);
 }
 
+extern "C" MODULE_API void geek_export(const char* input, char* output, uint32_t input_len)
+{
+	geek_hash(input, output, input_len);
+}
+
 extern "C" MODULE_API void qubit_export(const char* input, char* output, uint32_t input_len)
 {
 	qubit_hash(input, output, input_len);
@@ -199,9 +208,29 @@ extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
 	lyra2re2_hash(input, output);
 }
 
+extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output)
+{
+	lyra2re3_hash(input, output);
+}
+
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
 {
     x16r_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
+{
+	x21s_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)
+{
+    x25x_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void odocrypt_export(const char* input, char* output, uint32_t input_len, uint32_t key)
+{
+    odocrypt_hash(input, output, input_len, key);
 }
 
 extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)

@@ -45,24 +45,24 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
         protected override Transaction CreateOutputTransaction()
         {
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue * coin.BlockrewardMultiplier, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(network);
 
             // pool reward (t-addr)
-            tx.AddOutput(rewardToPool, poolAddressDestination);
+            tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
             return tx;
         }
 
         protected override void BuildCoinbase()
         {
-            var script = TxIn.CreateCoinbase((int)BlockTemplate.Height).ScriptSig;
+            var script = TxIn.CreateCoinbase((int) BlockTemplate.Height).ScriptSig;
 
             // output transaction
             txOut = CreateOutputTransaction();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -94,11 +94,11 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
         {
             var withDefaultWitnessCommitment = !string.IsNullOrEmpty(BlockTemplate.DefaultWitnessCommitment);
 
-            var outputCount = (uint)tx.Outputs.Count;
-            if (withDefaultWitnessCommitment)
+            var outputCount = (uint) tx.Outputs.Count;
+            if(withDefaultWitnessCommitment)
                 outputCount++;
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -110,11 +110,11 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
                 uint rawLength;
 
                 // serialize witness (segwit)
-                if (withDefaultWitnessCommitment)
+                if(withDefaultWitnessCommitment)
                 {
                     amount = 0;
                     raw = BlockTemplate.DefaultWitnessCommitment.HexToByteArray();
-                    rawLength = (uint)raw.Length;
+                    rawLength = (uint) raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
@@ -122,12 +122,12 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
                 }
 
                 // serialize outputs
-                foreach (var output in tx.Outputs)
+                foreach(var output in tx.Outputs)
                 {
                     amount = output.Value.Satoshi;
                     var outScript = output.ScriptPubKey;
                     raw = outScript.ToBytes(true);
-                    rawLength = (uint)raw.Length;
+                    rawLength = (uint) raw.Length;
 
                     bs.ReadWrite(ref amount);
                     bs.ReadWriteAsVarInt(ref rawLength);
@@ -146,7 +146,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
             var blockHeader = new EquihashBlockHeader
             {
-                Version = (int)BlockTemplate.Version,
+                Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -160,7 +160,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
         public override void Init(EquihashBlockTemplate blockTemplate, string jobId,
             PoolConfig poolConfig, ClusterConfig clusterConfig, IMasterClock clock,
-            IDestination poolAddressDestination, BitcoinNetworkType networkType,
+            IDestination poolAddressDestination, Network network,
             EquihashSolver solver)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
@@ -173,16 +173,16 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
-            network = networkType.ToNetwork();
+            this.network = network;
             var equihashTemplate = poolConfig.Template.As<EquihashCoinTemplate>();
-            equihashTemplate.Networks.TryGetValue(networkType.ToString().ToLower(), out chainConfig);
+            networkParams = coin.GetNetwork(network.NetworkType);
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double)new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToByteArray().ReverseArray().AsSpan().ToBigInteger());
+            Difficulty = (double) new BigRational(networkParams.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());
 
             this.solver = solver;
 
-            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+            if(!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {
@@ -192,18 +192,18 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
 
             previousBlockHashReversedHex = BlockTemplate.PreviousBlockhash
                 .HexToByteArray()
-                .ReverseArray()
+                .ReverseInPlace()
                 .ToHexString();
 
             BuildCoinbase();
 
             // build tx hashes
             var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
-            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToByteArray().ReverseArray())));
+            txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToReverseByteArray())));
 
             // build merkle root
-            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseArray();
-            merkleRootReversed = merkleRoot.ReverseArray();
+            merkleRoot = MerkleNode.GetRoot(txHashes).Hash.ToBytes().ReverseInPlace();
+            merkleRootReversed = merkleRoot.ReverseInPlace();
             merkleRootReversedHex = merkleRootReversed.ToHexString();
 
             jobParams = new object[]
@@ -214,7 +214,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
                 merkleRootReversedHex,
                 BlockTemplate.Height.ReverseByteOrder().ToStringHex8() + sha256Empty.Take(28).ToHexString(), // height + hashReserved
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
-                BlockTemplate.Bits.HexToByteArray().ReverseArray().ToHexString(),
+                BlockTemplate.Bits.HexToReverseByteArray().ToHexString(),
                 false
             };
         }

@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
@@ -16,7 +15,6 @@ using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
-using Miningcore.Notifications.Slack;
 using Newtonsoft.Json;
 using NLog;
 
@@ -40,7 +38,7 @@ namespace Miningcore.Notifications
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
             //adminPhone = null;
 
-            if (clusterConfig.Notifications?.Enabled == true)
+            if(clusterConfig.Notifications?.Enabled == true)
             {
                 queue = new BlockingCollection<QueuedNotification>();
 
@@ -61,7 +59,7 @@ namespace Miningcore.Notifications
                         });
                     });
 
-                messageBus.Listen<BlockNotification>()
+                messageBus.Listen<BlockFoundNotification>()
                     .Subscribe(x =>
                     {
                         queue?.Add(new QueuedNotification
@@ -76,14 +74,22 @@ namespace Miningcore.Notifications
                 messageBus.Listen<PaymentNotification>()
                     .Subscribe(x =>
                     {
-                        if (string.IsNullOrEmpty(x.Error))
+                        if(string.IsNullOrEmpty(x.Error))
                         {
+                            var coin = poolConfigs[x.PoolId].Template;
+
+                            // prepare tx links
+                            string[] txLinks = null;
+
+                            if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                                txLinks = x.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
+
                             queue?.Add(new QueuedNotification
                             {
                                 Category = NotificationCategory.PaymentSuccess,
                                 PoolId = x.PoolId,
                                 Subject = "Payout Success Notification",
-                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {x.TxInfo}."
+                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {txLinks}."
                             });
                         }
 
@@ -110,14 +116,7 @@ namespace Miningcore.Notifications
 
         //private readonly string adminPhone;
         private readonly BlockingCollection<QueuedNotification> queue;
-
-        private readonly Regex regexStripHtml = new Regex(@"<[^>]*>", RegexOptions.Compiled);
         private IDisposable queueSub;
-
-        private readonly HttpClient httpClient = new HttpClient(new SocketsHttpHandler
-        {
-            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-        });
 
         enum NotificationCategory
         {
@@ -151,47 +150,19 @@ namespace Miningcore.Notifications
                 switch(notification.Category)
                 {
                     case NotificationCategory.Admin:
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true)
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
                         break;
 
                     case NotificationCategory.Block:
-                        // notify admin
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
-
-                        // notify slack
-                        if (poolConfig?.SlackNotifications?.Enabled == true &&
-                            poolConfig?.SlackNotifications?.NotifyBlockFound == true)
-                        {
-                            await SendSlackNotificationAsync(poolConfig.SlackNotifications.WebHookUrl, notification.Subject, notification.Msg,
-                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.BlockFoundUsername,
-                                poolConfig.SlackNotifications.BlockFoundEmoji);
-                        }
-
                         break;
 
                     case NotificationCategory.PaymentSuccess:
-                        // notify admin
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
-                            clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                            await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
-
-                        // notify slack
-                        if (poolConfig?.SlackNotifications?.Enabled == true &&
-                            poolConfig?.SlackNotifications?.NotifyBlockFound == true)
-                        {
-                            await SendSlackNotificationAsync(poolConfig.SlackNotifications.WebHookUrl, notification.Subject, notification.Msg,
-                                poolConfig.SlackNotifications.Channel, poolConfig.SlackNotifications.PaymentSuccessUsername,
-                                poolConfig.SlackNotifications.PaymentSuccessEmoji);
-                        }
-
-                        break;
-
                     case NotificationCategory.PaymentFailure:
-                        // notify admin
-                        if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+                        if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                             clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
                             await SendEmailAsync(adminEmail, notification.Subject, notification.Msg);
                         break;
@@ -225,25 +196,6 @@ namespace Miningcore.Notifications
             }
 
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
-        }
-
-        private async Task SendSlackNotificationAsync(string webHookUrl, string subject, string msg, string channel, string username, string emoji)
-        {
-            var notification = new SlackNotification
-            {
-                Channel = channel,
-                Body = regexStripHtml.Replace(msg, string.Empty),
-                Username = username,
-                Emoji = emoji
-            };
-
-            // build http request
-            var request = new HttpRequestMessage(HttpMethod.Post, webHookUrl);
-            var json = JsonConvert.SerializeObject(notification, serializerSettings);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            // send request
-            await httpClient.SendAsync(request);
         }
     }
 }

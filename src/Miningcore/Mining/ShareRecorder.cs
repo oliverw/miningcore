@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -28,17 +27,17 @@ using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
-using Miningcore.Notifications;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
-using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Polly;
@@ -87,43 +86,43 @@ namespace Miningcore.Mining
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
+        private Dictionary<string, PoolConfig> pools;
         private readonly IMapper mapper;
-        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
 
-        private readonly int QueueSizeWarningThreshold = 1024;
-        private Policy faultPolicy;
+        private IAsyncPolicy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
-        private bool hasWarnedAboutBacklogSize;
         private IDisposable queueSub;
         private string recoveryFilename;
         private const int RetryCount = 3;
         private const string PolicyContextKeyShares = "share";
         private bool notifiedAdminOnPolicyFallback = false;
 
-        private void PersistSharesFaulTolerant(IList<Share> shares)
+        private async Task PersistSharesAsync(IList<Share> shares)
         {
             var context = new Dictionary<string, object> { { PolicyContextKeyShares, shares } };
 
-            faultPolicy.Execute(ctx => PersistShares((IList<Share>) ctx[PolicyContextKeyShares]), context);
+            await faultPolicy.ExecuteAsync(ctx => PersistSharesCoreAsync((IList<Share>) ctx[PolicyContextKeyShares]), context);
         }
 
-        private void PersistShares(IList<Share> shares)
+        private async Task PersistSharesCoreAsync(IList<Share> shares)
         {
-            cf.RunTx((con, tx) =>
+            await cf.RunTx(async (con, tx) =>
             {
+                // Insert shares
+                var mapped = shares.Select(mapper.Map<Persistence.Model.Share>).ToArray();
+                await shareRepo.BatchInsertAsync(con, tx, mapped);
+
+                // Insert blocks
                 foreach(var share in shares)
                 {
-                    var shareEntity = mapper.Map<Persistence.Model.Share>(share);
-                    shareRepo.Insert(con, tx, shareEntity);
+                    if(!share.IsBlockCandidate)
+                        continue;
 
-                    if (share.IsBlockCandidate)
-                    {
-                        var blockEntity = mapper.Map<Block>(share);
-                        blockEntity.Status = BlockStatus.Pending;
-                        blockRepo.Insert(con, tx, blockEntity);
+                    var blockEntity = mapper.Map<Block>(share);
+                    blockEntity.Status = BlockStatus.Pending;
+                    await blockRepo.InsertAsync(con, tx, blockEntity);
 
-                        messageBus.SendMessage(new BlockNotification(share.PoolId, share.BlockHeight));
-                    }
+                    messageBus.NotifyBlockFound(share.PoolId, blockEntity, pools[share.PoolId].Template);
                 }
             });
         }
@@ -133,12 +132,13 @@ namespace Miningcore.Mining
             logger.Warn(() => $"Retry {retry} in {timeSpan} due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
         }
 
-        private void OnPolicyFallback(Exception ex, Context context)
+        private Task OnPolicyFallbackAsync(Exception ex, Context context)
         {
             logger.Warn(() => $"Fallback due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
+            return Task.FromResult(true);
         }
 
-        private void OnExecutePolicyFallback(Context context)
+        private async Task OnExecutePolicyFallbackAsync(Context context, CancellationToken ct)
         {
             var shares = (IList<Share>) context[PolicyContextKeyShares];
 
@@ -148,13 +148,13 @@ namespace Miningcore.Mining
                 {
                     using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                     {
-                        if (stream.Length == 0)
+                        if(stream.Length == 0)
                             WriteRecoveryFileheader(writer);
 
                         foreach(var share in shares)
                         {
                             var json = JsonConvert.SerializeObject(share, jsonSerializerSettings);
-                            writer.WriteLine(json);
+                            await writer.WriteLineAsync(json);
                         }
                     }
                 }
@@ -164,7 +164,7 @@ namespace Miningcore.Mining
 
             catch(Exception ex)
             {
-                if (!hasLoggedPolicyFallbackFailure)
+                if(!hasLoggedPolicyFallbackFailure)
                 {
                     logger.Fatal(ex, "Fatal error during policy fallback execution. Share(s) will be lost!");
                     hasLoggedPolicyFallbackFailure = true;
@@ -179,7 +179,7 @@ namespace Miningcore.Mining
             writer.WriteLine("# miningcore -c <path-to-config> -rs <path-to-this-file>\n");
         }
 
-        public void RecoverShares(ClusterConfig clusterConfig, string recoveryFilename)
+        public async Task RecoverSharesAsync(ClusterConfig clusterConfig, string recoveryFilename)
         {
             logger.Info(() => $"Recovering shares using {recoveryFilename} ...");
 
@@ -187,7 +187,7 @@ namespace Miningcore.Mining
             {
                 var successCount = 0;
                 var failCount = 0;
-                const int bufferSize = 20;
+                const int bufferSize = 100;
 
                 using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
                 {
@@ -201,11 +201,11 @@ namespace Miningcore.Mining
                             var line = reader.ReadLine().Trim();
 
                             // skip blank lines
-                            if (line.Length == 0)
+                            if(line.Length == 0)
                                 continue;
 
                             // skip comments
-                            if (line.StartsWith("#"))
+                            if(line.StartsWith("#"))
                                 continue;
 
                             // parse
@@ -224,12 +224,12 @@ namespace Miningcore.Mining
                             // import
                             try
                             {
-                                if (shares.Count == bufferSize)
+                                if(shares.Count == bufferSize)
                                 {
-                                    PersistShares(shares);
+                                    await PersistSharesCoreAsync(shares);
 
-                                    shares.Clear();
                                     successCount += shares.Count;
+                                    shares.Clear();
                                 }
                             }
 
@@ -241,7 +241,7 @@ namespace Miningcore.Mining
 
                             // progress
                             var now = DateTime.UtcNow;
-                            if (now - lastProgressUpdate > TimeSpan.FromMinutes(1))
+                            if(now - lastProgressUpdate > TimeSpan.FromSeconds(10))
                             {
                                 logger.Info($"{successCount} shares imported");
                                 lastProgressUpdate = now;
@@ -251,9 +251,9 @@ namespace Miningcore.Mining
                         // import remaining shares
                         try
                         {
-                            if (shares.Count > 0)
+                            if(shares.Count > 0)
                             {
-                                PersistShares(shares);
+                                await PersistSharesCoreAsync(shares);
 
                                 successCount += shares.Count;
                             }
@@ -267,10 +267,10 @@ namespace Miningcore.Mining
                     }
                 }
 
-                if (failCount == 0)
-                    logger.Info(() => $"Successfully recovered {successCount} shares");
+                if(failCount == 0)
+                    logger.Info(() => $"Successfully imported {successCount} shares");
                 else
-                    logger.Warn(() => $"Successfully {successCount} shares with {failCount} failures");
+                    logger.Warn(() => $"Successfully imported {successCount} shares with {failCount} failures");
             }
 
             catch(FileNotFoundException)
@@ -281,7 +281,7 @@ namespace Miningcore.Mining
 
         private void NotifyAdminOnPolicyFallback()
         {
-            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
+            if(clusterConfig.Notifications?.Admin?.Enabled == true &&
                 clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true &&
                 !notifiedAdminOnPolicyFallback)
             {
@@ -297,9 +297,10 @@ namespace Miningcore.Mining
         public void Start(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
+            pools = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
             ConfigureRecovery();
-            InitializeQueue();
+            StartQueue();
 
             logger.Info(() => "Online");
         }
@@ -308,35 +309,37 @@ namespace Miningcore.Mining
         {
             logger.Info(() => "Stopping ..");
 
-            queueSub.Dispose();
-            queue.Dispose();
+            queueSub?.Dispose();
 
             logger.Info(() => "Stopped");
         }
 
         #endregion // API-Surface
 
-        private void InitializeQueue()
+        private void StartQueue()
         {
-            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
-
-            queueSub = queue.GetConsumingEnumerable()
-                .ToObservable(TaskPoolScheduler.Default)
-                .Do(_ => CheckQueueBacklog())
-                .Buffer(TimeSpan.FromSeconds(1), 100)
+            queueSub = messageBus.Listen<ClientShare>()
+                .ObserveOn(TaskPoolScheduler.Default)
+                .Select(x => x.Share)
+                .Buffer(TimeSpan.FromSeconds(5), 200)
                 .Where(shares => shares.Any())
-                .Subscribe(shares =>
+                .Select(shares => Observable.FromAsync(async () =>
                 {
                     try
                     {
-                        PersistSharesFaulTolerant(shares);
+                        await PersistSharesAsync(shares);
                     }
 
                     catch(Exception ex)
                     {
                         logger.Error(ex);
                     }
-                });
+                }))
+                .Concat()
+                .Subscribe(
+                    _ => { },
+                    ex => logger.Fatal(() => $"{nameof(ShareRecorder)} queue terminated with {ex}"),
+                    () => logger.Info(() => $"{nameof(ShareRecorder)} queue completed"));
         }
 
         private void ConfigureRecovery()
@@ -346,23 +349,6 @@ namespace Miningcore.Mining
                 : "recovered-shares.txt";
         }
 
-        private void CheckQueueBacklog()
-        {
-            if (queue.Count > QueueSizeWarningThreshold)
-            {
-                if (!hasWarnedAboutBacklogSize)
-                {
-                    logger.Warn(() => $"Share persistence queue backlog has crossed {QueueSizeWarningThreshold}");
-                    hasWarnedAboutBacklogSize = true;
-                }
-            }
-
-            else if (hasWarnedAboutBacklogSize && queue.Count <= QueueSizeWarningThreshold / 2)
-            {
-                hasWarnedAboutBacklogSize = false;
-            }
-        }
-
         private void BuildFaultHandlingPolicy()
         {
             // retry with increasing delay (1s, 2s, 4s etc)
@@ -370,7 +356,7 @@ namespace Miningcore.Mining
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                .WaitAndRetryAsync(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     OnPolicyRetry);
 
             // after retries failed several times, break the circuit and fall through to
@@ -379,21 +365,21 @@ namespace Miningcore.Mining
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .CircuitBreaker(2, TimeSpan.FromMinutes(1));
+                .CircuitBreakerAsync(2, TimeSpan.FromMinutes(1));
 
             var fallback = Policy
                 .Handle<DbException>()
                 .Or<SocketException>()
                 .Or<TimeoutException>()
-                .Fallback(OnExecutePolicyFallback, OnPolicyFallback);
+                .FallbackAsync(OnExecutePolicyFallbackAsync, OnPolicyFallbackAsync);
 
             var fallbackOnBrokenCircuit = Policy
                 .Handle<BrokenCircuitException>()
-                .Fallback(OnExecutePolicyFallback, (ex, context) => { });
+                .FallbackAsync(OnExecutePolicyFallbackAsync, (ex, context) => Task.FromResult(true));
 
-            faultPolicy = Policy.Wrap(
+            faultPolicy = Policy.WrapAsync(
                 fallbackOnBrokenCircuit,
-                Policy.Wrap(fallback, breaker, retry));
+                Policy.WrapAsync(fallback, breaker, retry));
         }
     }
 }

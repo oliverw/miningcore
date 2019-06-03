@@ -29,6 +29,11 @@ namespace Miningcore.Blockchain.Cryptonote.StratumResponses
 
         public string Blob { get; set; }
         public string Target { get; set; }
+
+        /// <summary>
+        /// Introduced for CNv4 (aka CryptonightR)
+        /// </summary>
+        public ulong Height { get; set; }
     }
 
     public class CryptonoteLoginResponse : CryptonoteResponseBase

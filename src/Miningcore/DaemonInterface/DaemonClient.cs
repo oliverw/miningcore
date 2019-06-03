@@ -76,6 +76,16 @@ namespace Miningcore.DaemonInterface
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
         private readonly JsonSerializer serializer;
 
+        private static readonly HttpClient defaultHttpClient = new HttpClient(new SocketsHttpHandler
+        {
+            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+
+            SslOptions = new SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
+            }
+        });
+
         // Telemetry
         private readonly IMessageBus messageBus;
 
@@ -99,22 +109,21 @@ namespace Miningcore.DaemonInterface
             // create one HttpClient instance per endpoint that carries the associated credentials
             httpClients = endPoints.ToDictionary(endpoint => endpoint, endpoint =>
             {
-                var handler = new SocketsHttpHandler
+                if(string.IsNullOrEmpty(endpoint.User) || !endpoint.DigestAuth)
+                    return defaultHttpClient;
+
+                return new HttpClient(new SocketsHttpHandler
                 {
+                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+
                     Credentials = new NetworkCredential(endpoint.User, endpoint.Password),
                     PreAuthenticate = true,
-                    AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
-                };
 
-                if (endpoint.Ssl && !endpoint.ValidateCert)
-                {
-                    handler.SslOptions = new SslClientAuthenticationOptions
+                    SslOptions = new SslClientAuthenticationOptions
                     {
                         RemoteCertificateValidationCallback = ((sender, certificate, chain, errors) => true),
-                    };
-                }
-
-                return new HttpClient(handler);
+                    }
+                });
             });
         }
 
@@ -236,7 +245,7 @@ namespace Miningcore.DaemonInterface
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(logger, endPoints.First(), method, payload, CancellationToken.None, payloadJsonSerializerSettings);
-            await task;
+            await Task.WhenAny(new[] { task });
 
             var result = MapDaemonResponse<TResponse>(0, task);
             return result;
@@ -258,7 +267,7 @@ namespace Miningcore.DaemonInterface
             logger.LogInvoke(new[] { "\"" + method + "\"" });
 
             var task = BuildRequestTask(logger, endPoints.First(), method, payload, ct, payloadJsonSerializerSettings);
-            await task;
+            await Task.WhenAny(new[] { task });
 
             var result = MapDaemonResponse<TResponse>(0, task);
             return result;
@@ -295,12 +304,12 @@ namespace Miningcore.DaemonInterface
                 .RefCount();
         }
 
-        public IObservable<ZMessage> ZmqSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap, int numMsgSegments = 2)
+        public IObservable<ZMessage> ZmqSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig, (string Socket, string Topic)> portMap)
         {
             logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic, numMsgSegments)))
+                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic)))
                 .Publish()
                 .RefCount();
         }
@@ -322,36 +331,39 @@ namespace Miningcore.DaemonInterface
             // build request url
             var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+            if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
-            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-            var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            if (endPoint.Http2)
-                request.Version = new Version(2, 0);
-
-            // build auth header
-            if (!string.IsNullOrEmpty(endPoint.User))
+            using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
-                var auth = $"{endPoint.User}:{endPoint.Password}";
-                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
-            }
+                request.Headers.ConnectionClose = false;    // enable keep-alive
 
-            logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+                if(endPoint.Http2)
+                    request.Version = new Version(2, 0);
 
-            // send request
-            using(var response = await httpClients[endPoint].SendAsync(request, ct))
-            {
-                // deserialize response
-                var jsonResponse = await response.Content.ReadAsStringAsync();
+                // build request content
+                var json = JsonConvert.SerializeObject(rpcRequest, payloadJsonSerializerSettings ?? serializerSettings);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                using (var reader = new StringReader(jsonResponse))
+                // build auth header
+                if(!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
-                    using(var jreader = new JsonTextReader(reader))
+                    var auth = $"{endPoint.User}:{endPoint.Password}";
+                    var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+                }
+
+                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+
+                // send request
+                using(var response = await httpClients[endPoint].SendAsync(request, ct))
+                {
+                    // read response
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    // deserialize response
+                    using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
@@ -377,20 +389,23 @@ namespace Miningcore.DaemonInterface
             // build request url
             var protocol = (endPoint.Ssl || endPoint.Http2) ? "https" : "http";
             var requestUrl = $"{protocol}://{endPoint.Host}:{endPoint.Port}";
-            if (!string.IsNullOrEmpty(endPoint.HttpPath))
+            if(!string.IsNullOrEmpty(endPoint.HttpPath))
                 requestUrl += $"{(endPoint.HttpPath.StartsWith("/") ? string.Empty : "/")}{endPoint.HttpPath}";
 
             // build http request
             using(var request = new HttpRequestMessage(HttpMethod.Post, requestUrl))
             {
+                request.Headers.ConnectionClose = false;    // enable keep-alive
+
+                if(endPoint.Http2)
+                    request.Version = new Version(2, 0);
+
+                // build request content
                 var json = JsonConvert.SerializeObject(rpcRequests, serializerSettings);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                if (endPoint.Http2)
-                    request.Version = new Version(2, 0);
-
                 // build auth header
-                if (!string.IsNullOrEmpty(endPoint.User))
+                if(!string.IsNullOrEmpty(endPoint.User) && !endPoint.DigestAuth)
                 {
                     var auth = $"{endPoint.User}:{endPoint.Password}";
                     var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(auth));
@@ -402,31 +417,18 @@ namespace Miningcore.DaemonInterface
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request))
                 {
-                    // check success
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), false, response.StatusCode.ToString());
-
-                        throw new DaemonClientException(response.StatusCode, response.ReasonPhrase);
-                    }
-
                     // deserialize response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
 
-                    using(var reader = new StringReader(jsonResponse))
+                    using(var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
-                        using(var jreader = new JsonTextReader(reader))
-                        {
-                            var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
+                        var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
-                            // telemetry
-                            sw.Stop();
-                            PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+                        // telemetry
+                        sw.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
 
-                            return result;
-                        }
+                        return result;
                     }
                 }
             }
@@ -446,22 +448,22 @@ namespace Miningcore.DaemonInterface
                 Instance = endPoints[i]
             };
 
-            if (x.IsFaulted)
+            if(x.IsFaulted)
             {
                 Exception inner;
 
-                if (x.Exception.InnerExceptions.Count == 1)
+                if(x.Exception.InnerExceptions.Count == 1)
                     inner = x.Exception.InnerException;
                 else
                     inner = x.Exception;
 
-                if (throwOnError)
+                if(throwOnError)
                     throw inner;
 
                 resp.Error = new JsonRpcException(-500, x.Exception.Message, null, inner);
             }
 
-            else if (x.IsCanceled)
+            else if(x.IsCanceled)
             {
                 resp.Error = new JsonRpcException(-500, "Cancelled", null);
             }
@@ -470,7 +472,7 @@ namespace Miningcore.DaemonInterface
             {
                 Debug.Assert(x.IsCompletedSuccessfully);
 
-                if (x.Result?.Result is JToken token)
+                if(x.Result?.Result is JToken token)
                     resp.Response = token?.ToObject<TResponse>(serializer);
                 else
                     resp.Response = (TResponse) x.Result?.Result;
@@ -483,7 +485,7 @@ namespace Miningcore.DaemonInterface
 
         private DaemonResponse<JToken>[] MapDaemonBatchResponse(int i, Task<JsonRpcResponse<JToken>[]> x)
         {
-            if (x.IsFaulted)
+            if(x.IsFaulted)
                 return x.Result?.Select(y => new DaemonResponse<JToken>
                 {
                     Instance = endPoints[i],
@@ -514,7 +516,7 @@ namespace Miningcore.DaemonInterface
                     {
                         var buf = new byte[0x10000];
 
-                        while (!cts.IsCancellationRequested)
+                        while(!cts.IsCancellationRequested)
                         {
                             try
                             {
@@ -523,8 +525,9 @@ namespace Miningcore.DaemonInterface
                                     // connect
                                     var protocol = conf.Ssl ? "wss" : "ws";
                                     var uri = new Uri($"{protocol}://{endPoint.Host}:{conf.Port}{conf.HttpPath}");
+                                    client.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
-                                    logger.Info(() => $"Establishing WebSocket connection to {uri}");
+                                    logger.Debug(() => $"Establishing WebSocket connection to {uri}");
                                     await client.ConnectAsync(uri, cts.Token);
 
                                     // subscribe
@@ -538,7 +541,7 @@ namespace Miningcore.DaemonInterface
                                     // stream response
                                     var stream = new MemoryStream();
 
-                                    while (!cts.IsCancellationRequested && client.State == WebSocketState.Open)
+                                    while(!cts.IsCancellationRequested && client.State == WebSocketState.Open)
                                     {
                                         stream.SetLength(0);
                                         var complete = false;
@@ -554,7 +557,7 @@ namespace Miningcore.DaemonInterface
 
                                                     var response = await client.ReceiveAsync(buf, ctsComposite.Token);
 
-                                                    if (response.MessageType == WebSocketMessageType.Binary)
+                                                    if(response.MessageType == WebSocketMessageType.Binary)
                                                         throw new InvalidDataException("expected text, received binary data");
 
                                                     stream.Write(buf, 0, response.Count);
@@ -564,7 +567,7 @@ namespace Miningcore.DaemonInterface
                                             }
                                         } while(!complete && !cts.IsCancellationRequested && client.State == WebSocketState.Open);
 
-                                        logger.Debug(()=> $"Received WebSocket message with length {stream.Length}");
+                                        logger.Debug(() => $"Received WebSocket message with length {stream.Length}");
 
                                         // publish
                                         obs.OnNext(stream.ToArray());
@@ -577,7 +580,8 @@ namespace Miningcore.DaemonInterface
                                 logger.Error(() => $"{ex.GetType().Name} '{ex.Message}' while streaming websocket responses. Reconnecting in 5s");
                             }
 
-                            await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
+                            if(!cts.IsCancellationRequested)
+                                await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
                 });
@@ -586,7 +590,7 @@ namespace Miningcore.DaemonInterface
             }));
         }
 
-        private IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint, string url, string topic, int numMsgSegments = 2)
+        private IObservable<ZMessage> ZmqSubscribeEndpoint(ILogger logger, DaemonEndpointConfig endPoint, string url, string topic)
         {
             return Observable.Defer(() => Observable.Create<ZMessage>(obs =>
             {

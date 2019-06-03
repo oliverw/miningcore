@@ -19,8 +19,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
@@ -80,7 +82,7 @@ namespace Miningcore.Payments
         protected readonly IMasterClock clock;
         protected readonly IMessageBus messageBus;
         protected ClusterConfig clusterConfig;
-        private Policy faultPolicy;
+        private IAsyncPolicy faultPolicy;
 
         protected ILogger logger;
         protected PoolConfig poolConfig;
@@ -93,7 +95,7 @@ namespace Miningcore.Payments
             var retry = Policy
                 .Handle<DbException>()
                 .Or<TimeoutException>()
-                .WaitAndRetry(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
+                .WaitAndRetryAsync(RetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), OnRetry);
 
             faultPolicy = retry;
         }
@@ -103,19 +105,42 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
-        protected virtual void PersistPayments(Balance[] balances, string transactionConfirmation)
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        {
+            var blockRewardRemaining = block.Reward;
+
+            // Distribute funds to configured reward recipients
+            foreach(var recipient in poolConfig.RewardRecipients.Where(x => x.Percentage > 0))
+            {
+                var amount = block.Reward * (recipient.Percentage / 100.0m);
+                var address = recipient.Address;
+
+                blockRewardRemaining -= amount;
+
+                // skip transfers from pool wallet to pool wallet
+                if(address != poolConfig.Address)
+                {
+                    logger.Info(() => $"Adding {FormatAmount(amount)} to balance of {address}");
+                    await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
+                }
+            }
+
+            return blockRewardRemaining;
+        }
+
+        protected virtual async Task PersistPaymentsAsync(Balance[] balances, string transactionConfirmation)
         {
             var coin = poolConfig.Template.As<CoinTemplate>();
 
             try
             {
-                faultPolicy.Execute(() =>
+                await faultPolicy.ExecuteAsync(async () =>
                 {
-                    cf.RunTx((con, tx) =>
+                    await cf.RunTx(async (con, tx) =>
                     {
                         foreach(var balance in balances)
                         {
-                            if (!string.IsNullOrEmpty(transactionConfirmation) &&
+                            if(!string.IsNullOrEmpty(transactionConfirmation) &&
                                 !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
                             {
                                 // record payment
@@ -129,12 +154,12 @@ namespace Miningcore.Payments
                                     TransactionConfirmationData = transactionConfirmation
                                 };
 
-                                paymentRepo.Insert(con, tx, payment);
+                                await paymentRepo.InsertAsync(con, tx, payment);
                             }
 
                             // reset balance
                             logger.Debug(() => $"[{LogCategory}] Resetting balance of {balance.Address}");
-                            balanceRepo.AddAmount(con, tx, poolConfig.Id, coin.Symbol, balance.Address, -balance.Amount, $"Balance reset after payment");
+                            await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, balance.Address, -balance.Amount, $"Balance reset after payment");
                         }
                     });
                 });
@@ -159,23 +184,18 @@ namespace Miningcore.Payments
             var coin = poolConfig.Template.As<CoinTemplate>();
 
             // admin notifications
-            if (clusterConfig.Notifications?.Admin?.Enabled == true &&
-                clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-            {
-                // prepare tx link
-                var txInfo = string.Join(", ", txHashes);
-                var baseUrl = coin.ExplorerTxLink;
+            var explorerLinks = !string.IsNullOrEmpty(coin.ExplorerTxLink) ?
+                txHashes.Select(x => string.Format(coin.ExplorerTxLink, x)).ToArray() :
+                new string[0];
 
-                if(!string.IsNullOrEmpty(baseUrl))
-                    txInfo = string.Join(", ", txHashes.Select(txHash => $"<a href=\"{string.Format(baseUrl, txHash)}\">{txHash}</a>"));
-
-                messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), balances.Length, txInfo, txFee));
-            }
+            messageBus.SendMessage(new PaymentNotification(poolId, null, balances.Sum(x => x.Amount), coin.Symbol, balances.Length, txHashes, explorerLinks, txFee));
         }
 
         protected virtual void NotifyPayoutFailure(string poolId, Balance[] balances, string error, Exception ex)
         {
-            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount)));
+            var coin = poolConfig.Template.As<CoinTemplate>();
+
+            messageBus.SendMessage(new PaymentNotification(poolId, error ?? ex?.Message, balances.Sum(x => x.Amount), coin.Symbol));
         }
     }
 }

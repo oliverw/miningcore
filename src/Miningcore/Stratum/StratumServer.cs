@@ -59,7 +59,7 @@ namespace Miningcore.Stratum
 
         static StratumServer()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 ignoredSocketErrors = new HashSet<int>
                 {
@@ -69,7 +69,7 @@ namespace Miningcore.Stratum
                 };
             }
 
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 // see: http://www.virtsync.com/c-error-codes-include-errno
                 ignoredSocketErrors = new HashSet<int>
@@ -86,7 +86,7 @@ namespace Miningcore.Stratum
         protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new ConcurrentDictionary<string, X509Certificate2>();
         protected static readonly HashSet<int> ignoredSocketErrors;
-        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new []{ typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
+        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
@@ -110,7 +110,7 @@ namespace Miningcore.Stratum
                     server.Bind(port.IPEndPoint);
                     server.Listen(512);
 
-                    lock (ports)
+                    lock(ports)
                     {
                         ports[port.IPEndPoint.Port] = server;
                     }
@@ -123,7 +123,7 @@ namespace Miningcore.Stratum
                 // Setup accept tasks
                 var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
 
-                while (true)
+                while(true)
                 {
                     try
                     {
@@ -137,11 +137,11 @@ namespace Miningcore.Stratum
                             var port = stratumPorts[i];
 
                             // skip running tasks
-                            if (!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
+                            if(!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
                                 continue;
 
                             // accept connection if successful
-                            if (task.IsCompletedSuccessfully)
+                            if(task.IsCompletedSuccessfully)
                                 AcceptConnection(task.Result, port);
 
                             // Refresh task
@@ -169,7 +169,7 @@ namespace Miningcore.Stratum
             var connectionId = CorrelationIdGenerator.GetNextId();
 
             // get rid of banned clients as early as possible
-            if (banManager?.IsBanned(remoteEndpoint.Address) == true)
+            if(banManager?.IsBanned(remoteEndpoint.Address) == true)
             {
                 logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
                 socket.Close();
@@ -177,12 +177,12 @@ namespace Miningcore.Stratum
             }
 
             // TLS cert loading
-            X509Certificate2 tlsCert = null;
+            X509Certificate2 cert = null;
 
-            if (port.PoolEndpoint.Tls)
+            if(port.PoolEndpoint.Tls)
             {
-                if (!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out tlsCert))
-                    tlsCert = AddCert(port);
+                if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
+                    cert = AddCert(port);
             }
 
             // setup client
@@ -190,7 +190,7 @@ namespace Miningcore.Stratum
 
             RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-            client.Run(socket, port, tlsCert, OnRequestAsync, OnClientComplete, OnClientError);
+            client.Run(socket, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
         }
 
         public void StopListeners()
@@ -212,7 +212,7 @@ namespace Miningcore.Stratum
         {
             Contract.RequiresNonNull(client, nameof(client));
 
-            lock (clients)
+            lock(clients)
             {
                 clients[connectionId] = client;
             }
@@ -224,9 +224,9 @@ namespace Miningcore.Stratum
 
             var subscriptionId = client.ConnectionId;
 
-            if (!string.IsNullOrEmpty(subscriptionId))
+            if(!string.IsNullOrEmpty(subscriptionId))
             {
-                lock (clients)
+                lock(clients)
                 {
                     clients.Remove(subscriptionId);
                 }
@@ -238,7 +238,7 @@ namespace Miningcore.Stratum
         protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request, CancellationToken ct)
         {
             // boot pre-connected clients
-            if (banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+            if(banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
             {
                 logger.Info(() => $"[{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
                 DisconnectClient(client);
@@ -252,16 +252,16 @@ namespace Miningcore.Stratum
 
         protected virtual void OnClientError(StratumClient client, Exception ex)
         {
-            if (ex is AggregateException)
+            if(ex is AggregateException)
                 ex = ex.InnerException;
 
-            if (ex is IOException && ex.InnerException != null)
+            if(ex is IOException && ex.InnerException != null)
                 ex = ex.InnerException;
 
-            switch (ex)
+            switch(ex)
             {
                 case SocketException sockEx:
-                    if (!ignoredSocketErrors.Contains(sockEx.ErrorCode))
+                    if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
                         logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
                     break;
 
@@ -269,10 +269,35 @@ namespace Miningcore.Stratum
                     // junk received (invalid json)
                     logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
-                    if (clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                    if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(30));
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                    }
+                    break;
+
+                case AuthenticationException authEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {authEx.Message}");
+
+                    if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                    {
+                        logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
+                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                    }
+                    break;
+
+                case IOException ioEx:
+                    // junk received (SSL handshake)
+                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {ioEx.Message}");
+
+                    if(ioEx.Source == "System.Net.Security")
+                    {
+                        if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
+                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                        }
                     }
                     break;
 
@@ -321,7 +346,7 @@ namespace Miningcore.Stratum
                 return tlsCert;
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
                 throw;
@@ -355,7 +380,7 @@ namespace Miningcore.Stratum
         {
             StratumClient[] tmp;
 
-            lock (clients)
+            lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }

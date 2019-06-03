@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.Extensions;
@@ -20,10 +21,10 @@ namespace Miningcore.Blockchain.Ethereum
             this.logger = logger;
 
             var target = blockTemplate.Target;
-            if (target.StartsWith("0x"))
+            if(target.StartsWith("0x"))
                 target = target.Substring(2);
 
-            blockTarget = new uint256(target.HexToByteArray().ReverseArray());
+            blockTarget = new uint256(target.HexToReverseByteArray());
         }
 
         private readonly Dictionary<StratumClient, HashSet<string>> workerNonces =
@@ -38,7 +39,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             var nonceLower = nonce.ToLower();
 
-            if (!workerNonces.TryGetValue(worker, out var nonces))
+            if(!workerNonces.TryGetValue(worker, out var nonces))
             {
                 nonces = new HashSet<string>(new[] { nonceLower });
                 workerNonces[worker] = nonces;
@@ -46,14 +47,15 @@ namespace Miningcore.Blockchain.Ethereum
 
             else
             {
-                if (nonces.Contains(nonceLower))
+                if(nonces.Contains(nonceLower))
                     throw new StratumException(StratumError.MinusOne, "duplicate share");
 
                 nonces.Add(nonceLower);
             }
         }
 
-        public async Task<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(StratumClient worker, string nonce, EthashFull ethash)
+        public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
+            StratumClient worker, string nonce, EthashFull ethash, CancellationToken ct)
         {
             // duplicate nonce?
             lock(workerNonces)
@@ -65,18 +67,18 @@ namespace Miningcore.Blockchain.Ethereum
             var context = worker.ContextAs<EthereumWorkerContext>();
             var fullNonceHex = context.ExtraNonce1 + nonce;
 
-            if (!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
+            if(!ulong.TryParse(fullNonceHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var fullNonce))
                 throw new StratumException(StratumError.MinusOne, "bad nonce " + fullNonceHex);
 
             // get dag for block
-            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger);
+            var dag = await ethash.GetDagAsync(BlockTemplate.Height, logger, ct);
 
             // compute
-            if (!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
+            if(!dag.Compute(logger, BlockTemplate.Header.HexToByteArray(), fullNonce, out var mixDigest, out var resultBytes))
                 throw new StratumException(StratumError.MinusOne, "bad hash");
 
             // test if share meets at least workers current difficulty
-            resultBytes.ReverseArray();
+            resultBytes.ReverseInPlace();
             var resultValue = new uint256(resultBytes);
             var resultValueBig = resultBytes.AsSpan().ToBigInteger();
             var shareDiff = (double) BigInteger.Divide(EthereumConstants.BigMaxValue, resultValueBig) / EthereumConstants.Pow2x32;
@@ -84,14 +86,14 @@ namespace Miningcore.Blockchain.Ethereum
             var ratio = shareDiff / stratumDifficulty;
             var isBlockCandidate = resultValue <= blockTarget;
 
-            if (!isBlockCandidate && ratio < 0.99)
+            if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
                     ratio = shareDiff / context.PreviousDifficulty.Value;
 
-                    if (ratio < 0.99)
+                    if(ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
@@ -115,7 +117,7 @@ namespace Miningcore.Blockchain.Ethereum
                 BlockHash = mixDigest.ToHexString(true)
             };
 
-            if (share.IsBlockCandidate)
+            if(share.IsBlockCandidate)
             {
                 fullNonceHex = "0x" + fullNonceHex;
                 var headerHash = BlockTemplate.Header;

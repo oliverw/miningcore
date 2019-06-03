@@ -41,6 +41,8 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
+using Microsoft.AspNetCore.Mvc;
+using Miningcore.Api.WebSocketNotifications;
 
 namespace Miningcore
 {
@@ -84,16 +86,19 @@ namespace Miningcore
             builder.RegisterType<ShareReceiver>()
                 .SingleInstance();
 
+            builder.RegisterType<BtStreamReceiver>()
+                .SingleInstance();
+
             builder.RegisterType<ShareRelay>()
                 .SingleInstance();
 
-            builder.RegisterType<ApiServer>()
+            builder.RegisterType<StatsRecorder>()
                 .SingleInstance();
 
-            builder.RegisterType<StatsRecorder>()
-                .AsSelf();
-
             builder.RegisterType<NotificationService>()
+                .SingleInstance();
+
+            builder.RegisterType<MetricsPublisher>()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
@@ -115,6 +120,16 @@ namespace Miningcore
                 .PropertiesAutowired()
                 .AsSelf();
 
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t => t.IsAssignableTo<ControllerBase>())
+                .PropertiesAutowired()
+                .AsSelf();
+
+            builder.RegisterType<WebSocketNotificationsRelay>()
+                .PropertiesAutowired()
+                .AsSelf()
+                .SingleInstance();
+
             //////////////////////
             // Payment Schemes
 
@@ -133,9 +148,7 @@ namespace Miningcore
                 .AsSelf();
 
             //////////////////////
-            // Flo
-            //////////////////////
-            // Monero
+            // Cryptonote
 
             builder.RegisterType<CryptonoteJobManager>()
                 .AsSelf();

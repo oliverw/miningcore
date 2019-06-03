@@ -19,8 +19,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Dapper;
 using Miningcore.Extensions;
@@ -29,6 +31,8 @@ using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Util;
 using NLog;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace Miningcore.Persistence.Postgres.Repositories
 {
@@ -42,33 +46,69 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public void Insert(IDbConnection con, IDbTransaction tx, Share share)
+        public async Task InsertAsync(IDbConnection con, IDbTransaction tx, Share share)
         {
             logger.LogInvoke();
 
             var mapped = mapper.Map<Entities.Share>(share);
 
-            var query = "INSERT INTO shares(poolid, blockheight, difficulty, " +
+            const string query = "INSERT INTO shares(poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) " +
                 "VALUES(@poolid, @blockheight, @difficulty, " +
                 "@networkdifficulty, @miner, @worker, @useragent, @ipaddress, @source, @created)";
 
-            con.Execute(query, mapped, tx);
+            await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public Share[] ReadSharesBeforeCreated(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
+        public Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
+        {
+            logger.LogInvoke();
+
+            // NOTE: Even though the tx parameter is completely ignored here,
+            // the COPY command still honors a current ambient transaction
+
+            var pgCon = (NpgsqlConnection) con;
+
+            const string query = "COPY shares (poolid, blockheight, difficulty, " +
+                "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
+
+            using(var writer = pgCon.BeginBinaryImport(query))
+            {
+                foreach(var share in shares)
+                {
+                    writer.StartRow();
+
+                    writer.Write(share.PoolId);
+                    writer.Write((long) share.BlockHeight, NpgsqlDbType.Bigint);
+                    writer.Write(share.Difficulty, NpgsqlDbType.Double);
+                    writer.Write(share.NetworkDifficulty, NpgsqlDbType.Double);
+                    writer.Write(share.Miner);
+                    writer.Write(share.Worker);
+                    writer.Write(share.UserAgent);
+                    writer.Write(share.IpAddress);
+                    writer.Write(share.Source);
+                    writer.Write(share.Created, NpgsqlDbType.Timestamp);
+                }
+
+                writer.Complete();
+            }
+
+            return Task.FromResult(true);
+        }
+
+        public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
             var query = $"SELECT * FROM shares WHERE poolid = @poolId AND created {(inclusive ? " <= " : " < ")} @before " +
                 "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Share>(query, new { poolId, before, pageSize })
+            return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, pageSize }))
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
 
-        public Share[] ReadSharesBeforeAndAfterCreated(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
+        public async Task<Share[]> ReadSharesBeforeAndAfterCreatedAsync(IDbConnection con, string poolId, DateTime before, DateTime after, bool inclusive, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -76,85 +116,85 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 $"AND created {(inclusive ? " >= " : " > ")} @after" +
                 "ORDER BY created DESC FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Share>(query, new { poolId, before, after, pageSize })
+            return (await con.QueryAsync<Entities.Share>(query, new { poolId, before, after, pageSize }))
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
 
-        public Share[] PageSharesBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
+        public async Task<Share[]> PageSharesBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end, int page, int pageSize)
         {
             logger.LogInvoke(new[] { poolId });
 
             var query = "SELECT * FROM shares WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                 "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";
 
-            return con.Query<Entities.Share>(query, new { poolId, start, end, offset = page * pageSize, pageSize })
+            return (await con.QueryAsync<Entities.Share>(query, new { poolId, start, end, offset = page * pageSize, pageSize }))
                 .Select(mapper.Map<Share>)
                 .ToArray();
         }
 
-        public long CountSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
+            const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
-            return con.QuerySingle<long>(query, new { poolId, before }, tx);
+            return con.QuerySingleAsync<long>(query, new { poolId, before }, tx);
         }
 
-        public void DeleteSharesBeforeCreated(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
+        public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
+            const string query = "DELETE FROM shares WHERE poolid = @poolId AND created < @before";
 
-            con.Execute(query, new { poolId, before }, tx);
+            await con.ExecuteAsync(query, new { poolId, before }, tx);
         }
 
-        public long CountSharesBetweenCreated(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
+        public Task<long> CountSharesBetweenCreatedAsync(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end)
         {
             logger.LogInvoke(new[] { poolId });
 
             var whereClause = "poolid = @poolId AND miner = @miner";
 
-            if (start.HasValue)
+            if(start.HasValue)
                 whereClause += " AND created >= @start ";
-            if (end.HasValue)
+            if(end.HasValue)
                 whereClause += " AND created <= @end";
 
             var query = $"SELECT count(*) FROM shares WHERE {whereClause}";
 
-            return con.QuerySingle<long>(query, new { poolId, miner, start, end });
+            return con.QuerySingleAsync<long>(query, new { poolId, miner, start, end });
         }
 
-        public double? GetAccumulatedShareDifficultyBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
+            const string query = "SELECT SUM(difficulty) FROM shares WHERE poolid = @poolId AND created > @start AND created < @end";
 
-            return con.QuerySingle<double?>(query, new { poolId, start, end });
+            return con.QuerySingleAsync<double?>(query, new { poolId, start, end });
         }
 
-        public MinerWorkerHashes[] GetAccumulatedShareDifficultyTotal(IDbConnection con, string poolId)
+        public async Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId)
         {
             logger.LogInvoke(new[] { (object) poolId });
 
-            var query = "SELECT SUM(difficulty) AS sum, COUNT(difficulty) AS count, miner, worker FROM shares WHERE poolid = @poolid group by miner, worker";
+            const string query = "SELECT SUM(difficulty) AS sum, COUNT(difficulty) AS count, miner, worker FROM shares WHERE poolid = @poolid group by miner, worker";
 
-            return con.Query<MinerWorkerHashes>(query, new { poolId })
+            return (await con.QueryAsync<MinerWorkerHashes>(query, new { poolId }))
                 .ToArray();
         }
 
-        public MinerWorkerHashes[] GetHashAccumulationBetweenCreated(IDbConnection con, string poolId, DateTime start, DateTime end)
+        public async Task<MinerWorkerHashes[]> GetHashAccumulationBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
-            var query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares " +
+            const string query = "SELECT SUM(difficulty), COUNT(difficulty), MIN(created) AS firstshare, MAX(created) AS lastshare, miner, worker FROM shares " +
                 "WHERE poolid = @poolId AND created >= @start AND created <= @end " +
                 "GROUP BY miner, worker";
 
-            return con.Query<MinerWorkerHashes>(query, new { poolId, start, end })
+            return (await con.QueryAsync<MinerWorkerHashes>(query, new { poolId, start, end }))
                 .ToArray();
         }
     }

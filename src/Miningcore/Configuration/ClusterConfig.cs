@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
+using AspNetCoreRateLimit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -54,6 +55,12 @@ namespace Miningcore.Configuration
         public string Name { get; set; }
 
         /// <summary>
+        /// Canonical Name
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string CanonicalName { get; set; }
+
+        /// <summary>
         /// Trade Symbol
         /// </summary>
         [JsonProperty(Order = -9)]
@@ -62,7 +69,7 @@ namespace Miningcore.Configuration
         /// <summary>
         /// Family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -8)]
         public CoinFamily Family { get; set; }
 
@@ -92,6 +99,12 @@ namespace Miningcore.Configuration
         public string ExplorerAccountLink { get; set; }
 
         /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
+        [JsonExtensionData]
+        public IDictionary<string, object> Extra { get; set; }
+
+        /// <summary>
         /// Coin Family associciations
         /// </summary>
         [JsonIgnore]
@@ -115,9 +128,18 @@ namespace Miningcore.Configuration
 
     public partial class BitcoinTemplate : CoinTemplate
     {
+        public partial class BitcoinNetworkParams
+        {
+            /// <summary>
+            /// Arbitrary extension data
+            /// </summary>
+            [JsonExtensionData]
+            public IDictionary<string, object> Extra { get; set; }
+        }
+
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(BitcoinSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public BitcoinSubfamily Subfamily { get; set; }
 
         public JObject CoinbaseHasher { get; set; }
@@ -131,25 +153,23 @@ namespace Miningcore.Configuration
         [DefaultValue(1u)]
         public uint CoinbaseTxVersion { get; set; }
 
-        public string CoinbaseTxAppendData { get; set; }
+        /// <summary>
+        /// Default transaction comment for coins that REQUIRE tx comments 
+        /// </summary>
+        public string CoinbaseTxComment { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool HasPayee { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
-
-        /// <summary>
-        /// Fraction of block reward, the pool really gets to keep
-        /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public decimal BlockrewardMultiplier { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
 
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public double HashrateMultiplier { get; set; } = 1.0d;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
     }
 
     public enum EquihashSubfamily
@@ -218,7 +238,7 @@ namespace Miningcore.Configuration
 
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EquihashSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EquihashSubfamily Subfamily { get; set; }
 
         public Dictionary<string, EquihashNetworkParams> Networks { get; set; }
@@ -228,13 +248,6 @@ namespace Miningcore.Configuration
         /// Force use of BitcoinPayoutHandler instead of EquihashPayoutHandler
         /// </summary>
         public bool UseBitcoinPayoutHandler { get; set; }
-
-        /// <summary>
-        /// Fraction of block reward, the pool really gets to keep
-        /// </summary>
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(1.0d)]
-        public decimal BlockrewardMultiplier { get; set; }
     }
 
     public enum CryptonoteSubfamily
@@ -252,20 +265,23 @@ namespace Miningcore.Configuration
         Lite,
 
         [EnumMember(Value = "cryptonight-heavy")]
-        Heavy
+        Heavy,
+
+        [EnumMember(Value = "cryptonight-pico")]
+        Pico
     }
 
     public partial class CryptonoteCoinTemplate : CoinTemplate
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(CryptonoteSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public CryptonoteSubfamily Subfamily { get; set; }
 
         /// <summary>
         /// Broader Cryptonight hash family
         /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         [JsonProperty(Order = -5)]
         public CryptonightHashType Hash { get; set; }
 
@@ -322,7 +338,7 @@ namespace Miningcore.Configuration
     {
         [JsonProperty(Order = -7, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(EthereumSubfamily.None)]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(StringEnumConverter), true)]
         public EthereumSubfamily Subfamily { get; set; }
     }
 
@@ -341,6 +357,7 @@ namespace Miningcore.Configuration
         public bool EnableConsoleLog { get; set; }
         public bool EnableConsoleColors { get; set; }
         public string LogFile { get; set; }
+        public string ApiLogFile { get; set; }
         public bool PerPoolLogFile { get; set; }
         public string LogBaseDirectory { get; set; }
     }
@@ -370,9 +387,9 @@ namespace Miningcore.Configuration
         public bool Http2 { get; set; }
 
         /// <summary>
-        /// Validate SSL certificate (if SSL option is set to true) - default is false
+        /// Set if the endpoint requires HTTP Digest Authentication (Cryptonote coins)
         /// </summary>
-        public bool ValidateCert { get; set; }
+        public bool DigestAuth { get; set; }
 
         /// <summary>
         /// Optional endpoint category
@@ -384,6 +401,9 @@ namespace Miningcore.Configuration
         /// </summary>
         public string HttpPath { get; set; }
 
+        /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
     }
@@ -501,6 +521,9 @@ namespace Miningcore.Configuration
         public PayoutScheme PayoutScheme { get; set; }
         public JToken PayoutSchemeConfig { get; set; }
 
+        /// <summary>
+        /// Arbitrary extension data
+        /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }
     }
@@ -543,40 +566,6 @@ namespace Miningcore.Configuration
         public bool NotifyPaymentSuccess { get; set; }
     }
 
-    public partial class SlackNotifications
-    {
-        public bool Enabled { get; set; }
-        public string WebHookUrl { get; set; }
-
-        /// <summary>
-        /// Optional default channel override - must start with '#'
-        /// </summary>
-        public string Channel { get; set; }
-
-        public bool NotifyBlockFound { get; set; }
-        public bool NotifyPaymentSuccess { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for block found notifications - optional
-        /// </summary>
-        public string BlockFoundUsername { get; set; }
-
-        /// <summary>
-        /// Override slack bot name for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessUsername { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for block found notifications - optional
-        /// </summary>
-        public string BlockFoundEmoji { get; set; }
-
-        /// <summary>
-        /// Override slack Emoji for payment notifications- optional
-        /// </summary>
-        public string PaymentSuccessEmoji { get; set; }
-    }
-
     public partial class NotificationsConfig
     {
         public bool Enabled { get; set; }
@@ -585,16 +574,52 @@ namespace Miningcore.Configuration
         public AdminNotifications Admin { get; set; }
     }
 
+    public partial class ApiRateLimitConfig
+    {
+        public bool Disabled { get; set; }
+
+        public RateLimitRule[] Rules { get; set; }
+        public string[] IpWhitelist { get; set; }
+    }
+
+    public class ApiSSLConfig
+    {
+        public bool Enabled { get; set; }
+        public string SSLPath { get; set; }
+        public string SSLPassword { get; set; }
+    }
+
     public partial class ApiConfig
     {
         public bool Enabled { get; set; }
         public string ListenAddress { get; set; }
         public int Port { get; set; }
 
+        public ApiSSLConfig SSLConfig { get; set; }
+
+        public ApiRateLimitConfig RateLimiting { get; set; }
+
         /// <summary>
         /// Port for admin-apis
         /// </summary>
         public int? AdminPort { get; set; }
+
+        /// <summary>
+        /// Port for prometheus compatible metrics endpoint /metrics
+        /// </summary>
+        public int? MetricsPort { get; set; }
+
+        /// <summary>
+        /// Restricts access to the admin API to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] AdminIpWhitelist { get; set; }
+
+        /// <summary>
+        /// Restricts access to the /metrics endpoint to these IP addresses
+        /// If this list null or empty, the default is 127.0.0.1
+        /// </summary>
+        public string[] MetricsIpWhitelist { get; set; }
     }
 
     public partial class ZmqPubSubEndpointConfig
@@ -652,8 +677,8 @@ namespace Miningcore.Configuration
         public PoolPaymentProcessingConfig PaymentProcessing { get; set; }
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
-        public SlackNotifications SlackNotifications { get; set; }
         public string Address { get; set; }
+        public string PubKey { get; set; }  // POS coins only 
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
@@ -664,7 +689,7 @@ namespace Miningcore.Configuration
         public bool? EnableInternalStratum { get; set; }
 
         /// <summary>
-        /// Extension data
+        /// Arbitrary extension data
         /// </summary>
         [JsonExtensionData]
         public IDictionary<string, object> Extra { get; set; }

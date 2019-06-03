@@ -30,7 +30,7 @@ namespace Miningcore.Tests.Blockchain.Equihash
         readonly PoolConfig poolConfig;
 
         readonly ClusterConfig clusterConfig = new ClusterConfig();
-        private readonly IDestination poolAddressDestination = BitcoinUtils.AddressToDestination("tmUEUSYYGQY3G5KMNkxAqkYYNfstaCsRCM5");
+        private readonly IDestination poolAddressDestination = BitcoinUtils.AddressToDestination("tmUEUSYYGQY3G5KMNkxAqkYYNfstaCsRCM5", ZcashNetworks.Instance.Mainnet);
 
         protected readonly IHashAlgorithm sha256d = new Sha256D();
         protected readonly IHashAlgorithm sha256dReverse = new DigestReverser(new Sha256D());
@@ -39,7 +39,7 @@ namespace Miningcore.Tests.Blockchain.Equihash
         public void ZCashUtils_EncodeTarget()
         {
             var equihashCoin = poolConfig.Template.As<EquihashCoinTemplate>();
-            var chainConfig = equihashCoin.GetNetwork(BitcoinNetworkType.Main);
+            var chainConfig = equihashCoin.GetNetwork(ZcashNetworks.Instance.Mainnet.NetworkType);
 
             var result = EquihashUtils.EncodeTarget(0.5, chainConfig);
             Assert.Equal(result, "0010102040810204081020408102040810204081020408102040810204080fe0");
@@ -69,10 +69,10 @@ namespace Miningcore.Tests.Blockchain.Equihash
             var clock = new MockMasterClock { CurrentTime = DateTimeOffset.FromUnixTimeSeconds(1508869874).UtcDateTime };
 
             var equihashCoin = poolConfig.Template.As<EquihashCoinTemplate>();
-            var chainConfig = equihashCoin.GetNetwork(BitcoinNetworkType.Main);
+            var chainConfig = equihashCoin.GetNetwork(ZcashNetworks.Instance.Mainnet.NetworkType);
             var solver = EquihashSolverFactory.GetSolver(ModuleInitializer.Container, chainConfig.Solver);
 
-            job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, BitcoinNetworkType.Test, solver);
+            job.Init(bt, "1", poolConfig, clusterConfig, clock, poolAddressDestination, ZcashNetworks.Instance.Testnet, solver);
 
             bt.Height = 1;
             Assert.Equal(job.GetFoundersRewardAddress(), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");

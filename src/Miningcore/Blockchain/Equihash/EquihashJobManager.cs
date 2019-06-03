@@ -33,13 +33,7 @@ namespace Miningcore.Blockchain.Equihash
             IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
-            getBlockTemplateParams = new object[]
-            {
-                new
-                {
-                    capabilities = new[] { "coinbasetxn", "workid", "coinbase/append" },
-                }
-            };
+            getBlockTemplateParams = null;
         }
 
         private EquihashCoinTemplate coin;
@@ -48,7 +42,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected override void PostChainIdentifyConfigure()
         {
-            ChainConfig = coin.GetNetwork(networkType);
+            ChainConfig = coin.GetNetwork(network.NetworkType);
             solver = EquihashSolverFactory.GetSolver(ctx, ChainConfig.Solver);
 
             base.PostChainIdentifyConfigure();
@@ -61,9 +55,9 @@ namespace Miningcore.Blockchain.Equihash
             var subsidyResponse = await daemon.ExecuteCmdAnyAsync<ZCashBlockSubsidy>(logger, BitcoinCommands.GetBlockSubsidy);
 
             var result = await daemon.ExecuteCmdAnyAsync<EquihashBlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
-            if (subsidyResponse.Error == null && result.Error == null && result.Response != null)
+            if(subsidyResponse.Error == null && result.Error == null && result.Response != null)
                 result.Response.Subsidy = subsidyResponse.Response;
             else if(subsidyResponse.Error?.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND)
                 result.Error = new JsonRpcException(-1, $"{BitcoinCommands.GetBlockSubsidy} failed", null);
@@ -83,10 +77,10 @@ namespace Miningcore.Blockchain.Equihash
             };
         }
 
-        protected override IDestination AddressToDestination(string address)
+        protected override IDestination AddressToDestination(string address, BitcoinAddressType? addressType)
         {
-            if (!coin.UsesZCashAddressFormat)
-                return base.AddressToDestination(address);
+            if(!coin.UsesZCashAddressFormat)
+                return base.AddressToDestination(address, addressType);
 
             var decoded = Encoders.Base58.DecodeData(address);
             var hash = decoded.Skip(2).Take(20).ToArray();
@@ -114,59 +108,60 @@ namespace Miningcore.Blockchain.Equihash
 
             try
             {
-                if (forceUpdate)
+                if(forceUpdate)
                     lastJobRebroadcast = clock.Now;
 
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
-                if (response.Error != null)
+                if(response.Error != null)
                 {
                     logger.Warn(() => $"Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
                     return (false, forceUpdate);
                 }
 
                 var blockTemplate = response.Response;
-
                 var job = currentJob;
-                var isNew = job == null ||
-                (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
 
-                if (isNew || forceUpdate)
+                var isNew = job == null ||
+                    (blockTemplate != null &&
+                        (job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                        blockTemplate.Height > job.BlockTemplate?.Height));
+
+                if(isNew)
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
+
+                if(isNew || forceUpdate)
                 {
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, clusterConfig, clock, poolAddressDestination, networkType,
-                        solver);
+                        poolConfig, clusterConfig, clock, poolAddressDestination, network, solver);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
-                        if (isNew)
-                        {
-                            if (via != null)
-                                logger.Info(() => $"Detected new block {blockTemplate.Height} via {via}");
-                            else
-                                logger.Info(() => $"Detected new block {blockTemplate.Height}");
+                        validJobs.Insert(0, job);
 
-                            validJobs.Clear();
+                        // trim active jobs
+                        while(validJobs.Count > maxActiveJobs)
+                            validJobs.RemoveAt(validJobs.Count - 1);
+                    }
 
-                            // update stats
-                            BlockchainStats.LastNetworkBlockTime = clock.Now;
-                            BlockchainStats.BlockHeight = blockTemplate.Height;
-                            BlockchainStats.NetworkDifficulty = job.Difficulty;
-                        }
-
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
                         else
-                        {
-                            // trim active jobs
-                            while (validJobs.Count > maxActiveJobs - 1)
-                                validJobs.RemoveAt(0);
-                        }
+                            logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                        validJobs.Add(job);
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     currentJob = job;
@@ -175,7 +170,7 @@ namespace Miningcore.Blockchain.Equihash
                 return (isNew, forceUpdate);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
@@ -203,7 +198,7 @@ namespace Miningcore.Blockchain.Equihash
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
             // handle t-addr
-            if (await base.ValidateAddressAsync(address, ct))
+            if(await base.ValidateAddressAsync(address, ct))
                 return true;
 
             // handle z-addr
@@ -231,7 +226,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async Task<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -239,7 +234,7 @@ namespace Miningcore.Blockchain.Equihash
 
             logger.LogInvoke(new[] { worker.ConnectionId });
 
-            if (!(submission is object[] submitParams))
+            if(!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -251,10 +246,10 @@ namespace Miningcore.Blockchain.Equihash
             var extraNonce2 = submitParams[3] as string;
             var solution = submitParams[4] as string;
 
-            if (string.IsNullOrEmpty(workerValue))
+            if(string.IsNullOrEmpty(workerValue))
                 throw new StratumException(StratumError.Other, "missing or invalid workername");
 
-            if (string.IsNullOrEmpty(solution))
+            if(string.IsNullOrEmpty(solution))
                 throw new StratumException(StratumError.Other, "missing or invalid solution");
 
             EquihashJob job;
@@ -264,7 +259,7 @@ namespace Miningcore.Blockchain.Equihash
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
 
-            if (job == null)
+            if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
             // extract worker/miner/payoutid
@@ -276,7 +271,7 @@ namespace Miningcore.Blockchain.Equihash
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, solution);
 
             // if block candidate, submit & check if accepted by network
-            if (share.IsBlockCandidate)
+            if(share.IsBlockCandidate)
             {
                 logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
@@ -285,11 +280,11 @@ namespace Miningcore.Blockchain.Equihash
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;
 
-                if (share.IsBlockCandidate)
+                if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
-                    blockSubmissionSubject.OnNext(Unit.Default);
+                    OnBlockFound();
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

@@ -18,6 +18,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Miningcore.Configuration;
+
 namespace Miningcore.Blockchain.Ethereum.Configuration
 {
     public class EthereumPoolConfigExtra
@@ -36,5 +38,10 @@ namespace Miningcore.Blockchain.Ethereum.Configuration
         /// Useful to specify the real chain type when running geth
         /// </summary>
         public string ChainTypeOverride { get; set; }
+
+        /// <summary>
+        /// getWork stream published via ZMQ
+        /// </summary>
+        public ZmqPubSubEndpointConfig BtStream { get; set; }
     }
 }

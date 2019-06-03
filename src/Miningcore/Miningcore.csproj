@@ -1,11 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Miningcore</AssemblyName>
     <RootNamespace>Miningcore</RootNamespace>
     <Platforms>AnyCPU</Platforms>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,12 +29,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Api\Notifications\**" />
     <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
     <Compile Remove="DataAccess\**" />
     <Compile Remove="Maintenance\**" />
+    <EmbeddedResource Remove="Api\Notifications\**" />
     <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
     <EmbeddedResource Remove="DataAccess\**" />
     <EmbeddedResource Remove="Maintenance\**" />
+    <None Remove="Api\Notifications\**" />
     <None Remove="Blockchain\Bitcoin\Transactions\**" />
     <None Remove="DataAccess\**" />
     <None Remove="Maintenance\**" />
@@ -41,33 +45,45 @@
 
   <ItemGroup>
     <None Remove="config.json" />
+    <None Remove="config2.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.8.1" />
-    <PackageReference Include="AutoMapper" Version="7.0.1" />
-    <PackageReference Include="Dapper" Version="1.50.5" />
-    <PackageReference Include="FluentValidation" Version="8.0.100" />
-    <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.0.100" />
-    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
-    <PackageReference Include="MailKit" Version="2.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.4" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.1.2" />
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
-    <PackageReference Include="NBitcoin" Version="4.1.1.46" />
+    <PackageReference Include="AspNetCoreRateLimit" Version="3.0.4" />
+    <PackageReference Include="Autofac" Version="4.9.2" />
+    <PackageReference Include="AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Dapper" Version="1.60.6" />
+    <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.4.0" />
+    <PackageReference Include="FluentValidation" Version="8.4.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
+    <PackageReference Include="MailKit" Version="2.1.4" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
+    <PackageReference Include="Microsoft.AspNetCore.All" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
+    <PackageReference Include="morelinq" Version="3.1.1" />
+    <PackageReference Include="NBitcoin" Version="4.1.2.22" />
     <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="NLog" Version="5.0.0-beta09" />
-    <PackageReference Include="Npgsql" Version="4.0.3" />
-    <PackageReference Include="Polly" Version="6.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="NLog" Version="4.6.3" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="1.5.0" />
+    <PackageReference Include="Npgsql" Version="4.0.6" />
+    <PackageReference Include="Polly" Version="7.1.0" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="3.1.2" />
+    <PackageReference Include="prometheus-net" Version="3.1.2" />
     <PackageReference Include="protobuf-net" Version="2.4.0" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
-    <PackageReference Include="System.Reactive" Version="4.1.0" />
+    <PackageReference Include="System.Reactive" Version="4.1.5" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="WebSocketManager">
+      <HintPath>..\..\libs\WebSocketManager.dll</HintPath>
+    </Reference>
+    <Reference Include="WebSocketManager.Common">
+      <HintPath>..\..\libs\WebSocketManager.Common.dll</HintPath>
+    </Reference>
     <Reference Include="ZeroMQ">
       <HintPath>..\..\libs\ZeroMQ.dll</HintPath>
     </Reference>
