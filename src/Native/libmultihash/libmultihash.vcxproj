@@ -349,7 +349,7 @@
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
     <ClCompile Include="x16r.c" />
-    <ClCompile Include="x16rt.c" />  
+    <ClCompile Include="x16rt.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />

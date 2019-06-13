@@ -486,7 +486,7 @@
     </ClCompile>
     <ClCompile Include="x16rt.c">
       <Filter>Source Files</Filter>
-    </ClCompile>     
+    </ClCompile>
     <ClCompile Include="x16s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
