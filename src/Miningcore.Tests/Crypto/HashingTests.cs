@@ -210,7 +210,7 @@ namespace Miningcore.Tests.Crypto
 
             Assert.Equal("4f048b3d333cb55227ed1f596cacc614459b7820d5007c5de721994d0313fa41", result);
         }
-        
+
         [Fact]
         public void X16RT_Hash()
         {
