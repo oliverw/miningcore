@@ -302,6 +302,12 @@
     <ClInclude Include="sha3\sph_panama.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x16rt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha3\sha2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -559,9 +565,16 @@
     <ClCompile Include="sha3\panama.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="x16rt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha3\sha2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
     <None Include="equi\crypto\equihash.tcc" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

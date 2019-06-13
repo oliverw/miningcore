@@ -226,6 +226,7 @@
     <ClInclude Include="sha256.h" />
     <ClInclude Include="sha3\extra.h" />
     <ClInclude Include="sha3\gost_streebog.h" />
+    <ClInclude Include="sha3\sha2.h" />
     <ClInclude Include="sha3\sph_blake.h" />
     <ClInclude Include="sha3\sph_blake2s.h" />
     <ClInclude Include="sha3\sph_bmw.h" />
@@ -261,6 +262,7 @@
     <ClInclude Include="x14.h" />
     <ClInclude Include="x15.h" />
     <ClInclude Include="x16r.h" />
+    <ClInclude Include="x16rt.h" />
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
@@ -317,6 +319,7 @@
     <ClCompile Include="sha3\gost_streebog.c" />
     <ClCompile Include="sha3\hamsi.c" />
     <ClCompile Include="sha3\panama.c" />
+    <ClCompile Include="sha3\sha2.c" />
     <ClCompile Include="sha3\sm3.c" />
     <ClCompile Include="sha3\sph_blake.c" />
     <ClCompile Include="sha3\sph_blake2s.c" />
@@ -348,6 +351,7 @@
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
     <ClCompile Include="x16r.c" />
+    <ClCompile Include="x16rt.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
@@ -356,8 +360,16 @@
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />
     <None Include="Makefile" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\boost.1.70.0.0\build\boost.targets" Condition="Exists('packages\boost.1.70.0.0\build\boost.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\boost.1.70.0.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.70.0.0\build\boost.targets'))" />
+  </Target>
 </Project>
