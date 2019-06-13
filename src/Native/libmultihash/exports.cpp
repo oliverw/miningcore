@@ -219,9 +219,9 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
     x16r_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void x16rt_export(const char* input, char* output, uint32_t input_len)
+extern "C" MODULE_API void x16rt_export(const char *input, char *output, uint32_t input_len)
 {
-    x16rt_hash(input, output, input_len);
+	x16rt_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
