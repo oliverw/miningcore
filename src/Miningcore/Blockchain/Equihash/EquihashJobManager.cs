@@ -33,7 +33,6 @@ namespace Miningcore.Blockchain.Equihash
             IMessageBus messageBus,
             IExtraNonceProvider extraNonceProvider) : base(ctx, clock, messageBus, extraNonceProvider)
         {
-            getBlockTemplateParams = null;
         }
 
         private EquihashCoinTemplate coin;
