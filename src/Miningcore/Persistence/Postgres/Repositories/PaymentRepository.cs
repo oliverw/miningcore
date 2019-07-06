@@ -59,7 +59,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var query = "SELECT * FROM payments WHERE poolid = @poolid ";
 
-            if (!string.IsNullOrEmpty(address))
+            if(!string.IsNullOrEmpty(address))
                 query += " AND address = @address ";
 
             query += "ORDER BY created DESC OFFSET @offset FETCH NEXT (@pageSize) ROWS ONLY";

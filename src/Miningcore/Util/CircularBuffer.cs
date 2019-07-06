@@ -61,12 +61,12 @@ namespace Miningcore.Util
         /// </param>
         public CircularBuffer(int capacity, T[] items)
         {
-            if (capacity < 1)
+            if(capacity < 1)
                 throw new ArgumentException(
                     "Circular buffer cannot have negative or zero capacity.", nameof(capacity));
-            if (items == null)
+            if(items == null)
                 throw new ArgumentNullException(nameof(items));
-            if (items.Length > capacity)
+            if(items.Length > capacity)
                 throw new ArgumentException(
                     "Too many items to fit circular buffer", nameof(items));
 
@@ -115,10 +115,10 @@ namespace Miningcore.Util
         {
             get
             {
-                if (IsEmpty)
+                if(IsEmpty)
                     throw new IndexOutOfRangeException(
                         string.Format("Cannot access index {0}. Buffer is empty", index));
-                if (index >= size)
+                if(index >= size)
                     throw new IndexOutOfRangeException(
                         string.Format("Cannot access index {0}. Buffer size is {1}", index, size));
                 var actualIndex = InternalIndex(index);
@@ -126,10 +126,10 @@ namespace Miningcore.Util
             }
             set
             {
-                if (IsEmpty)
+                if(IsEmpty)
                     throw new IndexOutOfRangeException(
                         string.Format("Cannot access index {0}. Buffer is empty", index));
-                if (index >= size)
+                if(index >= size)
                     throw new IndexOutOfRangeException(
                         string.Format("Cannot access index {0}. Buffer size is {1}", index, size));
                 var actualIndex = InternalIndex(index);
@@ -187,7 +187,7 @@ namespace Miningcore.Util
         /// <param name="item">Item to push to the back of the buffer</param>
         public void PushBack(T item)
         {
-            if (IsFull)
+            if(IsFull)
             {
                 buffer[end] = item;
                 Increment(ref end);
@@ -210,7 +210,7 @@ namespace Miningcore.Util
         /// <param name="item">Item to push to the front of the buffer</param>
         public void PushFront(T item)
         {
-            if (IsFull)
+            if(IsFull)
             {
                 Decrement(ref start);
                 end = start;
@@ -270,7 +270,7 @@ namespace Miningcore.Util
 
         private void ThrowIfEmpty(string message = "Cannot access an empty buffer.")
         {
-            if (IsEmpty)
+            if(IsEmpty)
                 throw new InvalidOperationException(message);
         }
 
@@ -281,7 +281,7 @@ namespace Miningcore.Util
         /// <param name="index"></param>
         private void Increment(ref int index)
         {
-            if (++index == Capacity)
+            if(++index == Capacity)
                 index = 0;
         }
 
@@ -292,7 +292,7 @@ namespace Miningcore.Util
         /// <param name="index"></param>
         private void Decrement(ref int index)
         {
-            if (index == 0)
+            if(index == 0)
                 index = Capacity;
             index--;
         }
@@ -323,14 +323,14 @@ namespace Miningcore.Util
 
         private ArraySegment<T> ArrayOne()
         {
-            if (start < end)
+            if(start < end)
                 return new ArraySegment<T>(buffer, start, end - start);
             return new ArraySegment<T>(buffer, start, buffer.Length - start);
         }
 
         private ArraySegment<T> ArrayTwo()
         {
-            if (start < end)
+            if(start < end)
                 return new ArraySegment<T>(buffer, end, 0);
             return new ArraySegment<T>(buffer, 0, end);
         }

@@ -62,8 +62,8 @@ namespace Miningcore.Mining
         private const int StatsCleanupInterval = 24; // hours
         private const int StatsDBCleanupHistory = 90;  // days
         private const int HashrateCalculationWindow = 60; // minutes
+
         private ClusterConfig clusterConfig;
-        private Thread thread1;
         private const int RetryCount = 4;
         private IAsyncPolicy readFaultPolicy;
 
@@ -83,10 +83,10 @@ namespace Miningcore.Mining
 
         public void Start()
         {
-            logger.Info(() => "Online");
-
-            thread1 = new Thread(async () =>
+            Task.Run(async () =>
             {
+                logger.Info(() => "Online");
+
                 // warm-up delay
                 Thread.Sleep(TimeSpan.FromSeconds(10));
 
@@ -95,6 +95,10 @@ namespace Miningcore.Mining
                 var performStatsGcInterval = DateTime.UtcNow;
 
                 while (true)
+					
+                // ORG cf-master
+				// await Task.Delay(TimeSpan.FromSeconds(10));
+                // while(!cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -120,19 +124,19 @@ namespace Miningcore.Mining
                     // check if stop was signalled
                     if (waitResult)
                         break;
+
+                    // ORG cf-master
+					//await Task.Delay(interval, cts.Token);
+
                 }
             });
-
-            thread1.Name = "StatsRecorder";
-            thread1.Start();
         }
 
         public void Stop()
         {
             logger.Info(() => "Stopping ..");
 
-            stopEvent.Set();
-            thread1.Join();
+            cts.Cancel();
 
             logger.Info(() => "Stopped");
         }
@@ -173,6 +177,14 @@ namespace Miningcore.Mining
                 if (result.Length > 0)
                 {
                     if (result.Max(x => x.LastShare) >= TimeFrom)
+
+                // ORG cf-master
+				// if(result.Length > 0)
+                // {
+                //    // calculate pool stats
+                //    var windowActual = (result.Max(x => x.LastShare) - result.Min(x => x.FirstShare)).TotalSeconds;
+                //    if(windowActual >= MinHashrateCalculationWindow)
+
                     {
                         pool.PoolStats.ConnectedMiners = byMiner.Length; // update connected miners
 
@@ -203,6 +215,18 @@ namespace Miningcore.Mining
                 logger.Info(() => $"Pool hashrate {poolId}: {pool.PoolStats.PoolHashrate} hashes/sec");
                 logger.Info(() => $"Pool shares {poolId}: {pool.PoolStats.SharesPerSecond} shares/sec");
 
+                else
+                {
+                    // reset
+                    pool.PoolStats.ConnectedMiners = 0;
+                    pool.PoolStats.PoolHashrate = 0;
+                    pool.PoolStats.SharesPerSecond = 0;
+
+                    messageBus.NotifyHashrateUpdated(pool.Config.Id, 0);
+
+                    logger.Info(() => $"Reset performance stats for pool {poolId}");
+                }
+
                 // persist. Save pool stats in DB.
                 await cf.RunTx(async (con, tx) =>
                 {
@@ -223,15 +247,49 @@ namespace Miningcore.Mining
                     continue;
                 }
 
+		// diff start
                 if (result.Length > 0)
                 {
                     if (result.Max(x => x.LastShare) >= TimeFrom)
                     {
                         // calculate & update miner, worker hashrates
                         foreach (var minerHashes in byMiner)
-                        {
+		
+		// diff end. below is new code to test
+        //        // retrieve most recent miner/worker hashrate sample, if non-zero
+        //        var previousMinerWorkerHashrates = await cf.Run(async (con) =>
+        //        {
+        //            return await statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId);
+        //        });
+
+        //        string buildKey(string miner, string worker = null)
+        //        {
+        //            return !string.IsNullOrEmpty(worker) ? $"{miner}:{worker}" : miner;
+        //        }
+
+        //        var previousNonZeroMinerWorkers = new HashSet<string>(
+        //            previousMinerWorkerHashrates.Select(x => buildKey(x.Miner, x.Worker)));
+
+        //        var currentNonZeroMinerWorkers = new HashSet<string>();
+
+        //        // calculate & update miner, worker hashrates
+        //        foreach(var minerHashes in byMiner)
+        //        {
+        //            double minerTotalHashrate = 0;
+
+        //            await cf.RunTx(async (con, tx) =>
+        //            {
+        //                stats.Miner = minerHashes.Key;
+
+        //                // book keeping
+        //                currentNonZeroMinerWorkers.Add(buildKey(stats.Miner));
+
+        //               foreach(var item in minerHashes)
+        // end new code
+						{
                             double minerTotalHashrate = 0;
 
+		// start diff code
                             await cf.RunTx(async (con, tx) =>
                             {
                                 stats.Miner = minerHashes.Key;
@@ -282,7 +340,64 @@ namespace Miningcore.Mining
                             });
                         }
                     }
+		// end diff code. code to check
+        //                    if(windowActual >= MinHashrateCalculationWindow)
+        //                    {
+        //                        var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
+        //                        minerTotalHashrate += hashrate;
+
+        //                        // update
+        //                        stats.Hashrate = hashrate;
+        //                        stats.Worker = item.Worker;
+        //                        stats.SharesPerSecond = (double) item.Count / windowActual;
+
+        //                        // persist
+        //                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+
+        //                        // broadcast
+        //                        messageBus.NotifyHashrateUpdated(pool.Config.Id, hashrate, stats.Miner, item.Worker);
+
+        //                        // book keeping
+        //                        currentNonZeroMinerWorkers.Add(buildKey(stats.Miner, stats.Worker));
+        //                    }
+        //                }
+        //            });
+
+        //            messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
+		// end diff code
+		
                 }
+
+                // identify and reset "orphaned" hashrates
+                var orphanedHashrateForMinerWorker = previousNonZeroMinerWorkers.Except(currentNonZeroMinerWorkers).ToArray();
+
+                await cf.RunTx(async (con, tx) =>
+                {
+                    // reset
+                    stats.Hashrate = 0;
+                    stats.SharesPerSecond = 0;
+
+                    foreach(var item in orphanedHashrateForMinerWorker)
+                    {
+                        var parts = item.Split(":");
+                        var miner = parts[0];
+                        var worker = parts.Length > 1 ? parts[1] : null;
+
+                        stats.Miner = parts[0];
+                        stats.Worker = worker;
+
+                        // persist
+                        await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
+
+                        // broadcast
+                        messageBus.NotifyHashrateUpdated(pool.Config.Id, 0, stats.Miner, stats.Worker);
+
+                        if(string.IsNullOrEmpty(stats.Worker))
+                            logger.Info(() => $"Reset performance stats for miner {stats.Miner} on pool {poolId}");
+                        else
+                            logger.Info(() => $"Reset performance stats for worker {stats.Worker} of miner {stats.Miner} on pool {poolId}");
+                    }
+                });
             }
         }
 
@@ -303,7 +418,7 @@ namespace Miningcore.Mining
                     logger.Info(() => $"Deleted {rowCount} old poolstats records");
 
                 rowCount = await statsRepo.DeleteMinerStatsBeforeAsync(con, cutOff);
-                if (rowCount > 0)
+                if(rowCount > 0)
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
 

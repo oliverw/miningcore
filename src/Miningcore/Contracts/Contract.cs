@@ -33,7 +33,7 @@ namespace Miningcore.Contracts
         public static void Requires<TException>(bool predicate, string message = null)
             where TException : Exception, new()
         {
-            if (!predicate)
+            if(!predicate)
             {
                 var constructor = constructors.GetOrAdd(typeof(TException), CreateConstructor);
                 throw constructor(new object[] { message });
@@ -43,7 +43,7 @@ namespace Miningcore.Contracts
         [ContractAnnotation("parameter:null => halt")]
         public static void RequiresNonNull(object parameter, string paramName)
         {
-            if (parameter == null)
+            if(parameter == null)
                 throw new ArgumentNullException(paramName);
         }
 
@@ -64,7 +64,7 @@ namespace Miningcore.Contracts
             // To feed the constructor with the right parameters, we need to generate an array 
             // of parameters that will be read from the initialize object array argument.
             var constructorParameters = parameters.Select((paramType, index) =>
-                // convert the object[index] to the right constructor parameter type.
+                    // convert the object[index] to the right constructor parameter type.
                     Expression.Convert(
                         // read a value from the object[index]
                         Expression.ArrayAccess(

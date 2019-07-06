@@ -71,9 +71,9 @@ namespace Miningcore.Payments
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly IMessageBus messageBus;
-        private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private TimeSpan interval;
         private ClusterConfig clusterConfig;
-        private Thread thread;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private async Task ProcessPoolsAsync()
@@ -100,14 +100,14 @@ namespace Miningcore.Payments
                     await PayoutPoolBalancesAsync(pool, handler);
                 }
 
-                catch (InvalidOperationException ex)
+                catch(InvalidOperationException ex)
                 {
                     logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
                 }
 
-                catch (AggregateException ex)
+                catch(AggregateException ex)
                 {
-                    switch (ex.InnerException)
+                    switch(ex.InnerException)
                     {
                         case HttpRequestException httpEx:
                             logger.Error(() => $"[{pool.Id}] Payment processing failed: {httpEx.Message}");
@@ -119,7 +119,7 @@ namespace Miningcore.Payments
                     }
                 }
 
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
                 }
@@ -133,7 +133,7 @@ namespace Miningcore.Payments
                 case CoinFamily.Equihash:
                     var equihashTemplate = pool.Template.As<EquihashCoinTemplate>();
 
-                    if (equihashTemplate.UseBitcoinPayoutHandler)
+                    if(equihashTemplate.UseBitcoinPayoutHandler)
                         return CoinFamily.Bitcoin;
 
                     break;
@@ -150,7 +150,7 @@ namespace Miningcore.Payments
             // classify
             var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
 
-            if (updatedBlocks.Any())
+            if(updatedBlocks.Any())
             {
                 foreach(var block in updatedBlocks.OrderBy(x => x.Created))
                 {
@@ -158,10 +158,10 @@ namespace Miningcore.Payments
 
                     await cf.RunTx(async (con, tx) =>
                     {
-                        if (!block.Effort.HasValue)  // fill block effort if empty
+                        if(!block.Effort.HasValue)  // fill block effort if empty
                             await CalculateBlockEffortAsync(pool, block, handler);
 
-                        switch (block.Status)
+                        switch(block.Status)
                         {
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
@@ -190,7 +190,7 @@ namespace Miningcore.Payments
             var poolBalancesOverMinimum = await cf.Run(con =>
                 balanceRepo.GetPoolBalancesOverThresholdAsync(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
 
-            if (poolBalancesOverMinimum.Length > 0)
+            if(poolBalancesOverMinimum.Length > 0)
             {
                 try
                 {
@@ -229,7 +229,7 @@ namespace Miningcore.Payments
                 BlockStatus.Pending,
             }, block.Created));
 
-            if (lastBlock != null)
+            if(lastBlock != null)
                 from = lastBlock.Created;
 
             // get combined diff of all shares for block
@@ -237,7 +237,7 @@ namespace Miningcore.Payments
                 shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, from, to));
 
             // handler has the final say
-            if (accumulatedShareDiffForBlock.HasValue)
+            if(accumulatedShareDiffForBlock.HasValue)
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
@@ -246,18 +246,18 @@ namespace Miningcore.Payments
         public void Configure(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
+
+            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ?
+                clusterConfig.PaymentProcessing.Interval : 600);
         }
 
         public void Start()
         {
-            thread = new Thread(async () =>
+            Task.Run(async () =>
             {
                 logger.Info(() => "Online");
 
-                var interval = TimeSpan.FromSeconds(
-                    clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
-
-                while(true)
+                while(!cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -269,25 +269,16 @@ namespace Miningcore.Payments
                         logger.Error(ex);
                     }
 
-                    var waitResult = stopEvent.WaitOne(interval);
-
-                    // check if stop was signalled
-                    if (waitResult)
-                        break;
+                    await Task.Delay(interval, cts.Token);
                 }
             });
-
-            thread.Priority = ThreadPriority.Highest;
-            thread.Name = "Payment Processing";
-            thread.Start();
         }
 
         public void Stop()
         {
             logger.Info(() => "Stopping ..");
 
-            stopEvent.Set();
-            thread.Join();
+            cts.Cancel();
 
             logger.Info(() => "Stopped");
         }

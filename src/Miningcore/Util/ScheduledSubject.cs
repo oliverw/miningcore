@@ -15,7 +15,7 @@ namespace Miningcore.Util
             _defaultObserver = defaultObserver;
             _subject = defaultSubject ?? new Subject<T>();
 
-            if (defaultObserver != null)
+            if(defaultObserver != null)
                 _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
         }
 
@@ -51,14 +51,14 @@ namespace Miningcore.Util
                 _subject.ObserveOn(_scheduler).Subscribe(observer),
                 Disposable.Create(() =>
                 {
-                    if (Interlocked.Decrement(ref _observerRefCount) <= 0 && _defaultObserver != null)
+                    if(Interlocked.Decrement(ref _observerRefCount) <= 0 && _defaultObserver != null)
                         _defaultObserverSub = _subject.ObserveOn(_scheduler).Subscribe(_defaultObserver);
                 }));
         }
 
         public void Dispose()
         {
-            if (_subject is IDisposable)
+            if(_subject is IDisposable)
                 ((IDisposable) _subject).Dispose();
         }
     }

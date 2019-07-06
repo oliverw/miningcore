@@ -80,7 +80,7 @@ namespace Miningcore.Tests.Crypto
         {
 
             List<byte[]> hashesList = new List<byte[]>();
-            for (int i = 0; i < 100; i++)
+            for(int i = 0; i < 100; i++)
             {
                 byte[] value = Encoding.ASCII.GetBytes(i.ToString());
                 byte[] hash = MerkelHash(value);
@@ -94,7 +94,7 @@ namespace Miningcore.Tests.Crypto
                 .ToArray();
 
 
-            foreach (var hex in output)
+            foreach(var hex in output)
                 this.output.WriteLine(hex);
 
             string[] expectedOutput = {
@@ -114,7 +114,7 @@ namespace Miningcore.Tests.Crypto
 
         private static byte[] MerkelHash(byte[] input)
         {
-            using (var hash = SHA256.Create())
+            using(var hash = SHA256.Create())
             {
                 var first = hash.ComputeHash(input, 0, input.Length);
                 return hash.ComputeHash(first);

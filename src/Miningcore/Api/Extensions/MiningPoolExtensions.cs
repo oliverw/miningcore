@@ -21,14 +21,14 @@ namespace Miningcore.Api.Extensions
 
             // pool wallet link
             var addressInfobaseUrl = poolConfig.Template.ExplorerAccountLink;
-            if (!string.IsNullOrEmpty(addressInfobaseUrl))
+            if(!string.IsNullOrEmpty(addressInfobaseUrl))
                 poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
 
             // pool fees
             poolInfo.PoolFeePercent = (float) poolConfig.RewardRecipients.Sum(x => x.Percentage);
 
             // strip security critical stuff
-            if (poolInfo.PaymentProcessing.Extra != null)
+            if(poolInfo.PaymentProcessing.Extra != null)
             {
                 var extra = poolInfo.PaymentProcessing.Extra;
 

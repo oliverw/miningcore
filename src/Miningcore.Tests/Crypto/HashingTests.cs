@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Miningcore.Crypto.Hashing.Algorithms;
@@ -6,6 +7,7 @@ using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
 using Miningcore.Tests.Util;
 using Xunit;
+using static Miningcore.Configuration.BitcoinTemplate;
 
 namespace Miningcore.Tests.Crypto
 {
@@ -115,6 +117,24 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
+        public void Lyra2Rev3_Hash()
+        {
+            var hasher = new Lyra2Rev3();
+            var hash = new byte[32];
+            hasher.Digest(Enumerable.Repeat((byte) 5, 80).ToArray(), hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("c56ec425ada2c8ddcb8d5a79a3a0c9d79f66318193049fb81f875c537a4f963d", result);
+        }
+
+        [Fact]
+        public void Lyra2Rev3_Hash_Should_Throw_On_Short_Input()
+        {
+            var hasher = new Lyra2Rev3();
+            Assert.Throws<ArgumentException>(() => hasher.Digest(new byte[20], null));
+        }
+
+        [Fact]
         public void Sha256D_Hash()
         {
             var hasher = new Sha256D();
@@ -203,14 +223,45 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
-        public void X22I_Hash()
+        public void X21S_Hash()
         {
-            var hasher = new X22I();
+            var hasher = new X21S();
             var hash = new byte[32];
             hasher.Digest(testValue, hash);
             var result = hash.ToHexString();
 
-            Assert.Equal("616c341e79417e6623dacff834c5c480d8d7d43ba6ae60fcee99f69343fd7c99", result);
+            Assert.Equal("0bfd2e20a3656b5f92079ea5c6485223b00344f9f1005ab9ecedff3c42ccf76f", result);
+        }
+
+        [Fact]
+        public void X25X_Hash()
+        {
+            var hasher = new X25X();
+            var hash = new byte[32];
+            hasher.Digest(testValue, hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("fe2a3d0e45eb5afbf007055c2605590db4167169dc03d1d5a070885771e51846", result);
+        }
+
+        [Fact]
+        public void Odocrypt_Hash()
+        {
+            var hasher = new OdoCrypt();
+            var hash = new byte[32];
+
+            var bnp = new BitcoinNetworkParams
+            {
+                Extra = new Dictionary<string, object>
+                {
+                    [nameof(OdoCryptConfig.OdoCryptShapeChangeInterval)] = 864000
+                }
+            };
+
+            hasher.Digest(testValue2, hash, (ulong) 0x59ef86f2, null, null, bnp);
+            var result = hash.ToHexString();
+
+            Assert.Equal("93164a82a79fba784dcf04c0b0f8537cc43821e7518bf513f296de50aefee4cf", result);
         }
 
         [Fact]

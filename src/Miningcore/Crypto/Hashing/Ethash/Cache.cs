@@ -25,7 +25,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
         public void Dispose()
         {
-            if (handle != IntPtr.Zero)
+            if(handle != IntPtr.Zero)
             {
                 LibMultihash.ethash_light_delete(handle);
                 handle = IntPtr.Zero;
@@ -38,7 +38,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
             {
                 lock(genLock)
                 {
-                    if (!isGenerated)
+                    if(!isGenerated)
                     {
                         var started = DateTime.UtcNow;
                         logger.Debug(() => $"Generating cache for epoch {Epoch}");
@@ -64,12 +64,12 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
             var value = new LibMultihash.ethash_return_value();
 
-            fixed(byte* input = hash)
+            fixed (byte* input = hash)
             {
                 LibMultihash.ethash_light_compute(handle, input, nonce, ref value);
             }
 
-            if (value.success)
+            if(value.success)
             {
                 mixDigest = value.mix_hash.value;
                 result = value.result.value;

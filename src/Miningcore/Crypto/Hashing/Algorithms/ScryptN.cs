@@ -59,7 +59,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             var n = timetable.First(x => ts >= x.Item2).Item1;
             var nFactor = Math.Log(n) / Math.Log(2);
 
-            fixed(byte* input = data)
+            fixed (byte* input = data)
             {
                 fixed (byte* output = result)
                 {

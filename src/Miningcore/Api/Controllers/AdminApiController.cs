@@ -1,18 +1,15 @@
-﻿using Autofac;
+using Autofac;
 using Microsoft.AspNetCore.Mvc;
 using Miningcore.Api.Requests;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Util;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace Miningcore.Api.Controllers
@@ -70,7 +67,7 @@ namespace Miningcore.Api.Controllers
         {
             request.Usage = request.Usage?.Trim();
 
-            if (string.IsNullOrEmpty(request.Usage))
+            if(string.IsNullOrEmpty(request.Usage))
                 request.Usage = $"Admin balance change from {Request.HttpContext.Connection.RemoteIpAddress}";
 
             var oldBalance = await cf.Run(con => balanceRepo.GetBalanceAsync(con, request.PoolId, request.Address));

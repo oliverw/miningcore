@@ -67,7 +67,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.MinerWorkerPerformanceStats>(stats);
 
-            if (string.IsNullOrEmpty(mapped.Worker))
+            if(string.IsNullOrEmpty(mapped.Worker))
                 mapped.Worker = string.Empty;
 
             const string query = "INSERT INTO minerstats(poolid, miner, worker, hashrate, sharespersecond, created) " +
@@ -83,7 +83,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "SELECT * FROM poolstats WHERE poolid = @poolId ORDER BY created DESC FETCH NEXT 1 ROWS ONLY";
 
             var entity = await con.QuerySingleOrDefaultAsync<Entities.PoolStats>(query, new { poolId });
-            if (entity == null)
+            if(entity == null)
                 return null;
 
             return mapper.Map<PoolStats>(entity);
@@ -139,7 +139,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var result = await con.QuerySingleOrDefaultAsync<MinerStats>(query, new { poolId, miner }, tx);
 
-            if (result != null)
+            if(result != null)
             {
                 query = "SELECT * FROM payments WHERE poolid = @poolId AND address = @miner" +
                     " ORDER BY created DESC LIMIT 1";
@@ -154,9 +154,10 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
                 // ignore stale minerstats
                 if (lastUpdate.HasValue && (clock.UtcNow - DateTime.SpecifyKind(lastUpdate.Value, DateTimeKind.Utc) > MinerStatsMaxAge))
+
                     lastUpdate = null;
 
-                if (lastUpdate.HasValue)
+                if(lastUpdate.HasValue)
                 {
                     // load rows rows by timestamp
                     query = "SELECT * FROM minerstats WHERE poolid = @poolId AND miner = @miner AND created = @created";
@@ -165,12 +166,12 @@ namespace Miningcore.Persistence.Postgres.Repositories
                         .Select(mapper.Map<MinerWorkerPerformanceStats>)
                         .ToArray();
 
-                    if (stats.Any())
+                    if(stats.Any())
                     {
                         // replace null worker with empty string
                         foreach(var stat in stats)
                         {
-                            if (stat.Worker == null)
+                            if(stat.Worker == null)
                             {
                                 stat.Worker = string.Empty;
                                 break;
@@ -195,6 +196,31 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return result;
         }
 
+        public async Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke();
+
+            const string query =
+                "SELECT s.miner, s.worker, s.hashrate FROM " +
+                "(" +
+                "    WITH cte AS" +
+                "    (" +
+                "        SELECT" +
+                "            ROW_NUMBER() OVER (partition BY miner, worker ORDER BY created DESC) as rk," +
+                "            miner, worker, hashrate" +
+                "        FROM minerstats" +
+                "        WHERE poolid = @poolId" +
+                "    )" +
+                "    SELECT miner, worker, hashrate" +
+                "    FROM cte" +
+                "    WHERE rk = 1" +
+                ") s " +
+                "WHERE s.hashrate > 0;";
+
+            return (await con.QueryAsync<MinerWorkerHashrate>(query, new { poolId }))
+                .ToArray();
+        }
+
         public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
@@ -217,14 +243,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .GroupBy(x => x.Created);
 
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
-                    Created = x.Key,
-                    Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
-                    {
-                        Hashrate = y.Hashrate,
-                        SharesPerSecond = y.SharesPerSecond
-                    })
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
                 })
+            })
                 .ToArray();
             //.ToDictionary(x=> x.Created.ToUniversalTime().ToUnixTimestamp(), x=> x);
 
@@ -260,14 +286,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .GroupBy(x => x.Created);
 
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
                 {
-                    Created = x.Key,
-                    Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
-                    {
-                        Hashrate = y.Hashrate,
-                        SharesPerSecond = y.SharesPerSecond
-                    })
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
                 })
+            })
                 .ToArray();
             //.ToDictionary(x => x.Created.ToUniversalTime().ToUnixTimestamp(), x => x);
 

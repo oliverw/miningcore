@@ -52,7 +52,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
 
         private Money ComputeBankReward(uint blockHeight, Money totalReward)
         {
-            if (blockHeight <= 4500000)
+            if(blockHeight <= 4500000)
             {
                 /**
                  *       1- 900000 20%

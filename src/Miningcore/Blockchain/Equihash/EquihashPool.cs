@@ -70,8 +70,8 @@ namespace Miningcore.Blockchain.Equihash
 
             extraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
 
-            if (poolConfig.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
-				string.IsNullOrEmpty(extraConfig?.ZAddress))
+            if(poolConfig.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
+                string.IsNullOrEmpty(extraConfig?.ZAddress))
                 logger.ThrowLogPoolStartupException($"Pool z-address is not configured");
         }
 
@@ -86,7 +86,7 @@ namespace Miningcore.Blockchain.Equihash
 
             await manager.StartAsync(ct);
 
-            if (poolConfig.EnableInternalStratum == true)
+            if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
                     .Select(job => Observable.FromAsync(async () =>
@@ -96,7 +96,7 @@ namespace Miningcore.Blockchain.Equihash
                             await OnNewJobAsync(job);
                         }
 
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
                         }
@@ -132,7 +132,7 @@ namespace Miningcore.Blockchain.Equihash
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
-            if (request.Id == null)
+            if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
@@ -155,7 +155,7 @@ namespace Miningcore.Blockchain.Equihash
         {
             var request = tsRequest.Value;
 
-            if (request.Id == null)
+            if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var context = client.ContextAs<BitcoinWorkerContext>();
@@ -174,7 +174,7 @@ namespace Miningcore.Blockchain.Equihash
             context.Miner = minerName;
             context.Worker = workerName;
 
-            if (context.IsAuthorized)
+            if(context.IsAuthorized)
             {
                 // respond
                 await client.RespondAsync(context.IsAuthorized, request.Id);
@@ -184,7 +184,7 @@ namespace Miningcore.Blockchain.Equihash
 
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
-                if (staticDiff.HasValue &&
+                if(staticDiff.HasValue &&
                     (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
                         context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
@@ -222,13 +222,13 @@ namespace Miningcore.Blockchain.Equihash
 
             try
             {
-                if (request.Id == null)
+                if(request.Id == null)
                     throw new StratumException(StratumError.MinusOne, "missing request id");
 
                 // check age of submission (aged submissions are usually caused by high server load)
                 var requestAge = clock.UtcNow - tsRequest.Timestamp.UtcDateTime;
 
-                if (requestAge > maxShareAge)
+                if(requestAge > maxShareAge)
                 {
                     logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
@@ -238,9 +238,9 @@ namespace Miningcore.Blockchain.Equihash
                 context.LastActivity = clock.UtcNow;
 
                 // validate worker
-                if (!context.IsAuthorized)
+                if(!context.IsAuthorized)
                     throw new StratumException(StratumError.UnauthorizedWorker, "unauthorized worker");
-                else if (!context.IsSubscribed)
+                else if(!context.IsSubscribed)
                     throw new StratumException(StratumError.NotSubscribed, "not subscribed");
 
                 // submit
@@ -268,7 +268,7 @@ namespace Miningcore.Blockchain.Equihash
                 await UpdateVarDiffAsync(client);
             }
 
-            catch (StratumException ex)
+            catch(StratumException ex)
             {
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.UtcNow - tsRequest.Timestamp.UtcDateTime, false);
@@ -289,20 +289,20 @@ namespace Miningcore.Blockchain.Equihash
             var request = tsRequest.Value;
             var context = client.ContextAs<BitcoinWorkerContext>();
 
-            if (request.Id == null)
+            if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
             var target = requestParams.FirstOrDefault();
 
-            if (!string.IsNullOrEmpty(target))
+            if(!string.IsNullOrEmpty(target))
             {
-                if (System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
+                if(System.Numerics.BigInteger.TryParse(target, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var targetBig))
                 {
                     var newDiff = (double) new BigRational(manager.ChainConfig.Diff1BValue, targetBig);
                     var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
 
-                    if (newDiff >= poolEndpoint.Difficulty)
+                    if(newDiff >= poolEndpoint.Difficulty)
                     {
                         context.EnqueueNewDifficulty(newDiff);
                         context.ApplyPendingDifficulty();
@@ -373,17 +373,17 @@ namespace Miningcore.Blockchain.Equihash
 
             var tasks = ForEachClient(async client =>
             {
-                if (!client.IsAlive)
+                if(!client.IsAlive)
                     return;
 
                 var context = client.ContextAs<BitcoinWorkerContext>();
 
-                if (context.IsSubscribed && context.IsAuthorized)
+                if(context.IsSubscribed && context.IsAuthorized)
                 {
                     // check alive
                     var lastActivityAgo = clock.UtcNow - context.LastActivity;
 
-                    if (poolConfig.ClientConnectionTimeout > 0 &&
+                    if(poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
@@ -392,7 +392,7 @@ namespace Miningcore.Blockchain.Equihash
                     }
 
                     // varDiff: if the client has a pending difficulty change, apply it now
-                    if (context.ApplyPendingDifficulty())
+                    if(context.ApplyPendingDifficulty())
                         await client.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
 
                     // send job
@@ -419,7 +419,7 @@ namespace Miningcore.Blockchain.Equihash
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client
-            if (context.HasPendingDifficulty)
+            if(context.HasPendingDifficulty)
             {
                 context.ApplyPendingDifficulty();
 

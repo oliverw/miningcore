@@ -54,7 +54,7 @@ namespace Miningcore.Blockchain.Equihash
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
-        protected EquihashCoinTemplate.EquihashNetworkParams chainConfig;
+        protected EquihashCoinTemplate.EquihashNetworkParams networkParams;
         protected decimal blockReward;
         protected decimal rewardFees;
 
@@ -88,46 +88,46 @@ namespace Miningcore.Blockchain.Equihash
 
         protected virtual Transaction CreateOutputTransaction()
         {
-            var txNetwork = Network.GetNetwork(chainConfig.CoinbaseTxNetwork);
+            var txNetwork = Network.GetNetwork(networkParams.CoinbaseTxNetwork);
             var tx = Transaction.Create(txNetwork);
 
             // set versions
             tx.Version = txVersion;
 
-            if (isOverwinterActive)
+            if(isOverwinterActive)
             {
                 overwinterField.SetValue(tx, true);
                 versionGroupField.SetValue(tx, txVersionGroupId);
             }
 
             // calculate outputs
-            if (chainConfig.PayFoundersReward &&
-                (chainConfig.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
-                    chainConfig.TreasuryRewardStartBlockHeight > 0))
+            if(networkParams.PayFoundersReward &&
+                (networkParams.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
+                    networkParams.TreasuryRewardStartBlockHeight > 0))
             {
                 // founders or treasury reward?
-                if (chainConfig.TreasuryRewardStartBlockHeight > 0 &&
-                    BlockTemplate.Height >= chainConfig.TreasuryRewardStartBlockHeight)
+                if(networkParams.TreasuryRewardStartBlockHeight > 0 &&
+                    BlockTemplate.Height >= networkParams.TreasuryRewardStartBlockHeight)
                 {
                     // pool reward (t-addr)
-                    rewardToPool = new Money(Math.Round(blockReward * (1m - (chainConfig.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (networkParams.PercentTreasuryReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
                     tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
                     // treasury reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetTreasuryRewardAddress());
-                    var amount = new Money(Math.Round(blockReward * (chainConfig.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (networkParams.PercentTreasuryReward / 100m)), MoneyUnit.Satoshi);
                     tx.Outputs.Add(amount, destination);
                 }
 
                 else
                 {
                     // pool reward (t-addr)
-                    rewardToPool = new Money(Math.Round(blockReward * (1m - (chainConfig.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                    rewardToPool = new Money(Math.Round(blockReward * (1m - (networkParams.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
                     tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
                     // founders reward (t-addr)
                     var destination = FoundersAddressToScriptDestination(GetFoundersRewardAddress());
-                    var amount = new Money(Math.Round(blockReward * (chainConfig.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
+                    var amount = new Money(Math.Round(blockReward * (networkParams.PercentFoundersReward / 100m)), MoneyUnit.Satoshi);
                     tx.Outputs.Add(amount, destination);
                 }
             }
@@ -145,10 +145,10 @@ namespace Miningcore.Blockchain.Equihash
 
         private string GetTreasuryRewardAddress()
         {
-            var index = (int)Math.Floor((BlockTemplate.Height - chainConfig.TreasuryRewardStartBlockHeight) /
-                chainConfig.TreasuryRewardAddressChangeInterval % chainConfig.TreasuryRewardAddresses.Length);
+            var index = (int) Math.Floor((BlockTemplate.Height - networkParams.TreasuryRewardStartBlockHeight) /
+                networkParams.TreasuryRewardAddressChangeInterval % networkParams.TreasuryRewardAddresses.Length);
 
-            var address = chainConfig.TreasuryRewardAddresses[index];
+            var address = networkParams.TreasuryRewardAddresses[index];
             return address;
         }
 
@@ -176,7 +176,7 @@ namespace Miningcore.Blockchain.Equihash
         {
             var blockHeader = new EquihashBlockHeader
             {
-                Version = (int)BlockTemplate.Version,
+                Version = (int) BlockTemplate.Version,
                 Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
@@ -184,7 +184,7 @@ namespace Miningcore.Blockchain.Equihash
                 Nonce = nonce
             };
 
-            if (isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
+            if(isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
                 blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToReverseByteArray();
 
             return blockHeader.ToBytes();
@@ -192,9 +192,9 @@ namespace Miningcore.Blockchain.Equihash
 
         private byte[] BuildRawTransactionBuffer()
         {
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                foreach (var tx in BlockTemplate.Transactions)
+                foreach(var tx in BlockTemplate.Transactions)
                 {
                     var txRaw = tx.Data.HexToByteArray();
                     stream.Write(txRaw);
@@ -206,10 +206,10 @@ namespace Miningcore.Blockchain.Equihash
 
         private byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
         {
-            var transactionCount = (uint)BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
+            var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
                 var bs = new BitcoinStream(stream, true);
 
@@ -233,7 +233,7 @@ namespace Miningcore.Blockchain.Equihash
             var headerBytes = SerializeHeader(nTime, nonce);
 
             // verify solution
-            if (!solver.Verify(headerBytes, solutionBytes.Slice(chainConfig.SolutionPreambleSize)))
+            if(!solver.Verify(headerBytes, solutionBytes.Slice(networkParams.SolutionPreambleSize)))
                 throw new StratumException(StratumError.Other, "invalid solution");
 
             // concat header and solution
@@ -243,11 +243,11 @@ namespace Miningcore.Blockchain.Equihash
 
             // hash block-header
             Span<byte> headerHash = stackalloc byte[32];
-            headerHasher.Digest(headerSolutionBytes, headerHash, (ulong)nTime);
+            headerHasher.Digest(headerSolutionBytes, headerHash, (ulong) nTime);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
-            var shareDiff = (double)new BigRational(chainConfig.Diff1BValue, headerHash.ToBigInteger());
+            var shareDiff = (double) new BigRational(networkParams.Diff1BValue, headerHash.ToBigInteger());
             var stratumDifficulty = context.Difficulty;
             var ratio = shareDiff / stratumDifficulty;
 
@@ -255,14 +255,14 @@ namespace Miningcore.Blockchain.Equihash
             var isBlockCandidate = headerValue <= blockTargetValue;
 
             // test if share meets at least workers current difficulty
-            if (!isBlockCandidate && ratio < 0.99)
+            if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
                     ratio = shareDiff / context.PreviousDifficulty.Value;
 
-                    if (ratio < 0.99)
+                    if(ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
                     // use previous difficulty
@@ -280,7 +280,7 @@ namespace Miningcore.Blockchain.Equihash
                 Difficulty = stratumDifficulty,
             };
 
-            if (isBlockCandidate)
+            if(isBlockCandidate)
             {
                 var headerHashReversed = headerHash.ToNewReverseArray();
 
@@ -299,10 +299,10 @@ namespace Miningcore.Blockchain.Equihash
 
         private bool RegisterSubmit(string nonce, string solution)
         {
-            lock (submissions)
+            lock(submissions)
             {
                 var key = nonce.ToLower() + solution.ToLower();
-                if (submissions.Contains(key))
+                if(submissions.Contains(key))
                     return false;
 
                 submissions.Add(key);
@@ -328,42 +328,42 @@ namespace Miningcore.Blockchain.Equihash
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
-            chainConfig = coin.GetNetwork(network.NetworkType);
+            networkParams = coin.GetNetwork(network.NetworkType);
             this.network = network;
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            Difficulty = (double) new BigRational(chainConfig.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());
+            Difficulty = (double) new BigRational(networkParams.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());
 
             // ZCash Sapling & Overwinter support
-            isSaplingActive = chainConfig.SaplingActivationHeight.HasValue &&
-                chainConfig.SaplingTxVersion.HasValue &&
-                chainConfig.SaplingTxVersionGroupId.HasValue &&
-                chainConfig.SaplingActivationHeight.Value > 0 &&
-                blockTemplate.Height >= chainConfig.SaplingActivationHeight.Value;
+            isSaplingActive = networkParams.SaplingActivationHeight.HasValue &&
+                networkParams.SaplingTxVersion.HasValue &&
+                networkParams.SaplingTxVersionGroupId.HasValue &&
+                networkParams.SaplingActivationHeight.Value > 0 &&
+                blockTemplate.Height >= networkParams.SaplingActivationHeight.Value;
 
             isOverwinterActive = isSaplingActive ||
-                chainConfig.OverwinterTxVersion.HasValue &&
-                chainConfig.OverwinterTxVersionGroupId.HasValue &&
-                chainConfig.OverwinterActivationHeight.HasValue &&
-                chainConfig.OverwinterActivationHeight.Value > 0 &&
-                blockTemplate.Height >= chainConfig.OverwinterActivationHeight.Value;
+                networkParams.OverwinterTxVersion.HasValue &&
+                networkParams.OverwinterTxVersionGroupId.HasValue &&
+                networkParams.OverwinterActivationHeight.HasValue &&
+                networkParams.OverwinterActivationHeight.Value > 0 &&
+                blockTemplate.Height >= networkParams.OverwinterActivationHeight.Value;
 
-            if (isSaplingActive)
+            if(isSaplingActive)
             {
-                txVersion = chainConfig.SaplingTxVersion.Value;
-                txVersionGroupId = chainConfig.SaplingTxVersionGroupId.Value;
+                txVersion = networkParams.SaplingTxVersion.Value;
+                txVersionGroupId = networkParams.SaplingTxVersionGroupId.Value;
             }
 
-            else if (isOverwinterActive)
+            else if(isOverwinterActive)
             {
-                txVersion = chainConfig.OverwinterTxVersion.Value;
-                txVersionGroupId = chainConfig.OverwinterTxVersionGroupId.Value;
+                txVersion = networkParams.OverwinterTxVersion.Value;
+                txVersionGroupId = networkParams.OverwinterTxVersionGroupId.Value;
             }
 
             // Misc
             this.solver = solver;
 
-            if (!string.IsNullOrEmpty(BlockTemplate.Target))
+            if(!string.IsNullOrEmpty(BlockTemplate.Target))
                 blockTargetValue = new uint256(BlockTemplate.Target);
             else
             {
@@ -376,16 +376,16 @@ namespace Miningcore.Blockchain.Equihash
                 .ReverseInPlace()
                 .ToHexString();
 
-            if (blockTemplate.Subsidy != null)
+            if(blockTemplate.Subsidy != null)
                 blockReward = blockTemplate.Subsidy.Miner * BitcoinConstants.SatoshisPerBitcoin;
             else
                 blockReward = BlockTemplate.CoinbaseValue;
 
-            if (chainConfig?.PayFoundersReward == true)
+            if(networkParams?.PayFoundersReward == true)
             {
                 var founders = blockTemplate.Subsidy.Founders ?? blockTemplate.Subsidy.Community;
 
-                if (!founders.HasValue)
+                if(!founders.HasValue)
                     throw new Exception("Error, founders reward missing for block template");
 
                 blockReward = (blockTemplate.Subsidy.Miner + founders.Value) * BitcoinConstants.SatoshisPerBitcoin;
@@ -437,25 +437,26 @@ namespace Miningcore.Blockchain.Equihash
             var context = worker.ContextAs<BitcoinWorkerContext>();
 
             // validate nTime
-            if (nTime.Length != 8)
+            if(nTime.Length != 8)
                 throw new StratumException(StratumError.Other, "incorrect size of ntime");
 
             var nTimeInt = uint.Parse(nTime.HexToReverseByteArray().ToHexString(), NumberStyles.HexNumber);
+
             if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = context.ExtraNonce1 + extraNonce2;
 
             // validate nonce
-            if (nonce.Length != 64)
+            if(nonce.Length != 64)
                 throw new StratumException(StratumError.Other, "incorrect size of extraNonce2");
 
             // validate solution
-            if (solution.Length != (chainConfig.SolutionSize + chainConfig.SolutionPreambleSize) * 2)
+            if(solution.Length != (networkParams.SolutionSize + networkParams.SolutionPreambleSize) * 2)
                 throw new StratumException(StratumError.Other, "incorrect size of solution");
 
             // dupe check
-            if (!RegisterSubmit(nonce, solution))
+            if(!RegisterSubmit(nonce, solution))
                 throw new StratumException(StratumError.DuplicateShare, "duplicate share");
 
             return ProcessShareInternal(worker, nonce, nTimeInt, solution);
@@ -469,12 +470,12 @@ namespace Miningcore.Blockchain.Equihash
 
         public string GetFoundersRewardAddress()
         {
-            var maxHeight = chainConfig.LastFoundersRewardBlockHeight;
+            var maxHeight = networkParams.LastFoundersRewardBlockHeight;
 
-            var addressChangeInterval = (maxHeight + (ulong) chainConfig.FoundersRewardAddresses.Length) / (ulong) chainConfig.FoundersRewardAddresses.Length;
+            var addressChangeInterval = (maxHeight + (ulong) networkParams.FoundersRewardAddresses.Length) / (ulong) networkParams.FoundersRewardAddresses.Length;
             var index = BlockTemplate.Height / addressChangeInterval;
 
-            var address = chainConfig.FoundersRewardAddresses[index];
+            var address = networkParams.FoundersRewardAddresses[index];
             return address;
         }
 

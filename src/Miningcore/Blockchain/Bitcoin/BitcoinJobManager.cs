@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
 
             return result;
         }
@@ -93,27 +93,29 @@ namespace Miningcore.Blockchain.Bitcoin
                 if (forceUpdate)
                     lastJobRebroadcast = clock.UtcNow;
 
-                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
-                if (response.Error != null)
+                if(response.Error != null)
                 {
                     logger.Warn(() => $"Unable to update job. Daemon responded with: {response.Error.Message} Code {response.Error.Code}");
                     return (false, forceUpdate);
                 }
 
                 var blockTemplate = response.Response;
-
                 var job = currentJob;
+
                 var isNew = job == null ||
-                (blockTemplate != null &&
-                    job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash &&
-                    blockTemplate.Height > job.BlockTemplate?.Height);
+                    (blockTemplate != null &&
+                        (job.BlockTemplate?.PreviousBlockhash != blockTemplate.PreviousBlockhash ||
+                        blockTemplate.Height > job.BlockTemplate?.Height));
 
                 if(isNew)
                     messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
-                if (isNew || forceUpdate)
+                if(isNew || forceUpdate)
                 {
                     job = CreateJob();
 
@@ -122,7 +124,7 @@ namespace Miningcore.Blockchain.Bitcoin
                         ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue,
                         !isPoS ? coin.BlockHasherValue : coin.PoSBlockHasherValue ?? coin.BlockHasherValue);
 
-                    lock (jobLock)
+                    lock(jobLock)
                     {
                         if (isNew)
                         {
@@ -142,8 +144,23 @@ namespace Miningcore.Blockchain.Bitcoin
                         validJobs.Insert(0, job);
 
                         // trim active jobs
-                        while (validJobs.Count > maxActiveJobs)
+                        while(validJobs.Count > maxActiveJobs)
                             validJobs.RemoveAt(validJobs.Count - 1);
+                    }
+
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Detected new block {blockTemplate.Height}");
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = blockTemplate.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     currentJob = job;
@@ -152,7 +169,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 return (isNew, forceUpdate);
             }
 
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
             }
@@ -174,7 +191,7 @@ namespace Miningcore.Blockchain.Bitcoin
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>();
             extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing?.Extra?.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
-            if (extraPoolConfig?.MaxActiveJobs.HasValue == true)
+            if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
                 maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
             hasLegacyDaemon = extraPoolConfig?.HasLegacyDaemon == true;
@@ -209,7 +226,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             logger.LogInvoke(new[] { worker.ConnectionId });
 
-            if (!(submission is object[] submitParams))
+            if(!(submission is object[] submitParams))
                 throw new StratumException(StratumError.Other, "invalid params");
 
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -222,7 +239,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var nonce = submitParams[4] as string;
             var versionBits = context.VersionRollingMask.HasValue ? submitParams[5] as string : null;
 
-            if (string.IsNullOrEmpty(workerValue))
+            if(string.IsNullOrEmpty(workerValue))
                 throw new StratumException(StratumError.Other, "missing or invalid workername");
 
             BitcoinJob job;
@@ -232,7 +249,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 job = validJobs.FirstOrDefault(x => x.JobId == jobId);
             }
 
-            if (job == null)
+            if(job == null)
                 throw new StratumException(StratumError.JobNotFound, "job not found");
 
             // extract worker/miner/payoutid
@@ -253,7 +270,7 @@ namespace Miningcore.Blockchain.Bitcoin
             share.Created = clock.UtcNow;
 
             // if block candidate, submit & check if accepted by network
-            if (share.IsBlockCandidate)
+            if(share.IsBlockCandidate)
             {
                 logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
 
@@ -262,11 +279,11 @@ namespace Miningcore.Blockchain.Bitcoin
                 // is it still a block candidate?
                 share.IsBlockCandidate = acceptResponse.Accepted;
 
-                if (share.IsBlockCandidate)
+                if(share.IsBlockCandidate)
                 {
                     logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
 
-                    blockSubmissionSubject.OnNext(Unit.Default);
+                    OnBlockFound();
 
                     // persist the coinbase transaction-hash to allow the payment processor
                     // to verify later on that the pool has received the reward for the block

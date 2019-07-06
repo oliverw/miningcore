@@ -32,7 +32,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
         private static EquihashSolver InstantiateSolver(IComponentContext ctx, object[] args)
         {
             var key = string.Join("-", args);
-            if (cache.TryGetValue(key, out var result))
+            if(cache.TryGetValue(key, out var result))
                 return result;
 
             var n = (int) Convert.ChangeType(args[0], typeof(int));
@@ -49,7 +49,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
                 result = (EquihashSolver) ctx.Resolve(hashType, new PositionalParameter(0, personalization));
             }
 
-            catch (ComponentNotRegisteredException)
+            catch(ComponentNotRegisteredException)
             {
                 throw new NotSupportedException($"Equihash variant {n}_{k} is currently not implemented");
             }

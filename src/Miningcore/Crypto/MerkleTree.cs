@@ -87,15 +87,15 @@ namespace Miningcore.Crypto
             var startL = 2;
             var Ll = L.Count;
 
-            if (Ll > 1)
+            if(Ll > 1)
                 while(true)
                 {
-                    if (Ll == 1)
+                    if(Ll == 1)
                         break;
 
                     steps.Add(L[1]);
 
-                    if (Ll % 2 == 1)
+                    if(Ll % 2 == 1)
                         L.Add(L[L.Count - 1]);
 
                     var Ld = new List<byte[]>();

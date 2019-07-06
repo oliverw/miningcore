@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Numerics;
 using Autofac;
@@ -32,7 +32,7 @@ namespace Miningcore.Configuration
         {
             coinbaseHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (CoinbaseHasher == null)
+                if(CoinbaseHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, CoinbaseHasher);
@@ -40,7 +40,7 @@ namespace Miningcore.Configuration
 
             headerHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (HeaderHasher == null)
+                if(HeaderHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, HeaderHasher);
@@ -48,7 +48,7 @@ namespace Miningcore.Configuration
 
             blockHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (BlockHasher == null)
+                if(BlockHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, BlockHasher);
@@ -56,7 +56,7 @@ namespace Miningcore.Configuration
 
             posBlockHasherValue = new Lazy<IHashAlgorithm>(() =>
             {
-                if (PoSBlockHasher == null)
+                if(PoSBlockHasher == null)
                     return null;
 
                 return HashAlgorithmFactory.GetHash(ComponentContext, PoSBlockHasher);
@@ -75,14 +75,32 @@ namespace Miningcore.Configuration
         public IHashAlgorithm BlockHasherValue => blockHasherValue.Value;
         public IHashAlgorithm PoSBlockHasherValue => posBlockHasherValue.Value;
 
-        #region Overrides of CoinDefinition
+        public BitcoinNetworkParams GetNetwork(NetworkType networkType)
+        {
+            if(Networks == null || Networks.Count == 0)
+                return null;
+
+            switch(networkType)
+            {
+                case NetworkType.Mainnet:
+                    return Networks["main"];
+                case NetworkType.Testnet:
+                    return Networks["test"];
+                case NetworkType.Regtest:
+                    return Networks["regtest"];
+            }
+
+            throw new NotSupportedException("unsupported network type");
+        }
+
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
             var hash = HeaderHasherValue;
 
-            if (hash.GetType() == typeof(DigestReverser))
-                return ((DigestReverser)hash).Upstream.GetType().Name;
+            if(hash.GetType() == typeof(DigestReverser))
+                return ((DigestReverser) hash).Upstream.GetType().Name;
 
             return hash.GetType().Name;
         }
@@ -106,7 +124,7 @@ namespace Miningcore.Configuration
 
                 diff1BValue = new Lazy<BigInteger>(() =>
                 {
-                    if (string.IsNullOrEmpty(Diff1))
+                    if(string.IsNullOrEmpty(Diff1))
                         throw new InvalidOperationException("Diff1 has not yet been initialized");
 
                     return BigInteger.Parse(Diff1, NumberStyles.HexNumber);
@@ -144,7 +162,7 @@ namespace Miningcore.Configuration
             throw new NotSupportedException("unsupported network type");
         }
 
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
@@ -157,11 +175,11 @@ namespace Miningcore.Configuration
 
     public partial class CryptonoteCoinTemplate
     {
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
-            switch (Hash)
+            switch(Hash)
             {
                 case CryptonightHashType.Normal:
                     return "Cryptonight";
@@ -179,7 +197,7 @@ namespace Miningcore.Configuration
 
     public partial class EthereumCoinTemplate
     {
-        #region Overrides of CoinDefinition
+        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {

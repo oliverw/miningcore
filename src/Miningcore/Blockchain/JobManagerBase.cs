@@ -19,13 +19,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.IO;
-using System.IO.Compression;
 using System.Reactive;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -35,7 +31,6 @@ using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Miningcore.Util;
 using NLog;
-using ZeroMQ;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain
@@ -61,7 +56,7 @@ namespace Miningcore.Blockchain
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockSubmissionSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
 
         protected abstract void ConfigureDaemons();
 
@@ -89,7 +84,7 @@ namespace Miningcore.Blockchain
             Interlocked.Increment(ref jobId);
             var value = Interlocked.CompareExchange(ref jobId, 0, Int32.MinValue);
 
-            if (format != null)
+            if(format != null)
                 return value.ToString(format);
 
             return value.ToStringHex8();
@@ -99,9 +94,16 @@ namespace Miningcore.Blockchain
         {
             return messageBus.Listen<BtStreamMessage>()
                 .Where(x => x.Topic == config.Topic)
+                .DoSafe(x => messageBus.SendMessage(new TelemetryEvent(
+                    clusterConfig.ClusterName, poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
                 .Select(x => x.Payload)
                 .Publish()
                 .RefCount();
+        }
+
+        protected virtual void OnBlockFound()
+        {
+            blockFoundSubject.OnNext(Unit.Default);
         }
 
         protected abstract Task<bool> AreDaemonsHealthyAsync();

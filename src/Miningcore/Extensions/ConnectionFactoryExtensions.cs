@@ -34,7 +34,7 @@ namespace Miningcore.Extensions
         public static async Task Run(this IConnectionFactory factory,
             Func<IDbConnection, Task> action)
         {
-            using (var con = await factory.OpenConnectionAsync())
+            using(var con = await factory.OpenConnectionAsync())
             {
                 await action(con);
             }
@@ -69,7 +69,7 @@ namespace Miningcore.Extensions
                     {
                         await action(con, tx);
 
-                        if (autoCommit)
+                        if(autoCommit)
                             tx.Commit();
                     }
 
@@ -99,7 +99,7 @@ namespace Miningcore.Extensions
                     {
                         var result = await func(con, tx);
 
-                        if (autoCommit)
+                        if(autoCommit)
                             tx.Commit();
 
                         return result;

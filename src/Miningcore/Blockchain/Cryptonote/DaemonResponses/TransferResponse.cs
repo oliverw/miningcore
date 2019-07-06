@@ -52,7 +52,7 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         /// </summary>
         [JsonProperty("do_not_relay")]
         public string DoNotRelay { get; set; }
-        
+
         public string Status { get; set; }
     }
 }

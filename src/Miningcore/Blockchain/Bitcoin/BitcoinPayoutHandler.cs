@@ -131,10 +131,10 @@ namespace Miningcore.Blockchain.Bitcoin
                     var block = page[j];
 
                     // check error
-                    if (cmdResult.Error != null)
+                    if(cmdResult.Error != null)
                     {
                         // Code -5 interpreted as "orphaned"
-                        if (cmdResult.Error.Code == -5)
+                        if(cmdResult.Error.Code == -5)
                         {
                             block.Status = BlockStatus.Orphaned;
                             block.Reward = 0;
@@ -148,7 +148,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     }
 
                     // missing transaction details are interpreted as "orphaned"
-                    else if (transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
+                    else if(transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
                     {
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
@@ -214,19 +214,19 @@ namespace Miningcore.Blockchain.Bitcoin
                 .Where(x => x.Amount > 0)
                 .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
-            if (amounts.Count == 0)
+            if(amounts.Count == 0)
                 return;
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             object[] args;
 
-            if (extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
+            if(extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
             {
                 var comment = (poolConfig.PoolName ?? clusterConfig.ClusterName ?? "MiningCore").Trim() + " Payment";
                 var subtractFeesFrom = amounts.Keys.ToArray();
 
-                if (!poolConfig.Template.As<BitcoinTemplate>().HasMasterNodes)
+                if(!poolConfig.Template.As<BitcoinTemplate>().HasMasterNodes)
                 {
                     args = new object[]
                     {
@@ -265,13 +265,13 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var didUnlockWallet = false;
 
-            // send command
-            tryTransfer:
+        // send command
+        tryTransfer:
             var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
 
-            if (result.Error == null)
+            if(result.Error == null)
             {
-                if (didUnlockWallet)
+                if(didUnlockWallet)
                 {
                     // lock wallet
                     logger.Info(() => $"[{LogCategory}] Locking wallet");
@@ -281,7 +281,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 // check result
                 var txId = result.Response;
 
-                if (string.IsNullOrEmpty(txId))
+                if(string.IsNullOrEmpty(txId))
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
                     logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
@@ -293,9 +293,9 @@ namespace Miningcore.Blockchain.Bitcoin
 
             else
             {
-                if (result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                if(result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
                 {
-                    if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
+                    if(!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                     {
                         logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
@@ -305,7 +305,7 @@ namespace Miningcore.Blockchain.Bitcoin
                             (object) 5 // unlock for N seconds
                         });
 
-                        if (unlockResult.Error == null)
+                        if(unlockResult.Error == null)
                         {
                             didUnlockWallet = true;
                             goto tryTransfer;

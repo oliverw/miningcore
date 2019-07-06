@@ -2,6 +2,10 @@
 #include "crypto/equihash.h"
 #include "equihashverify.h"
 
+#ifdef _WIN32
+#include <stdexcept>
+#endif
+
 static const char *default_personalization = "ZcashPoW";
 
 bool verifyEH_96_5(const char *hdr, const std::vector<unsigned char> &soln, const char *personalization)

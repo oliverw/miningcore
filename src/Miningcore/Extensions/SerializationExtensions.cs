@@ -28,7 +28,7 @@ namespace Miningcore.Extensions
     {
         public static T SafeExtensionDataAs<T>(this IDictionary<string, object> extra)
         {
-            if (extra != null)
+            if(extra != null)
             {
                 try
                 {

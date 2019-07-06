@@ -33,6 +33,9 @@ namespace Miningcore.Api.Responses
         public string Name { get; set; }
         public string Family { get; set; }
         public string Algorithm { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string CanonicalName { get; set; }
     }
 
     public class ApiPoolPaymentProcessingConfig

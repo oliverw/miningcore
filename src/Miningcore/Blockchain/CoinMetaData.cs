@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Miningcore.Blockchain
 {
-    public class DevDonation
+    public static class DevDonation
     {
         public const decimal Percent = 0.1m;
 
@@ -25,7 +25,7 @@ namespace Miningcore.Blockchain
             { "ZEN", "znigQacfTvRiwD2TRhwkBHLNchQ2AZisD94" },
             { "BTG", "GRao6KHQ8a4GUjAZRVbeCLfRbSkJQQaeMg" },
             { "XVG", "D5xPoHLM6HPkwWSqAweECTSQirJBmRjS8i" },
-            { "XMR", "475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH" },
+            { "XMR", "46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46" },
             { "ETN", "etnkQJwBCjmR1MfkU8D355ZWxxLMhs8miPrtKHWN4U3uUowq9ugeKccVBoEG3n13n74us5AkT8tEoTog46w4HBgn8sMuBRhm9h" },
             { "RVN", "RQPJF65UoodQ2aZUkfnXoeX6gib3GNwm9u" },
             { "TUBE", "bxdAFKYA5sJYKM3zcn3SLaLRjsFF582VE1Uv5NChrVLm6o6UF4SdbZBZLrTBD6yEFZDzuTQGBCa8FLpX8charjxH2G3iMRX6R" },

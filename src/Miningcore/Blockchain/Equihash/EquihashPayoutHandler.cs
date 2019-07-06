@@ -92,7 +92,7 @@ namespace Miningcore.Blockchain.Equihash
             Contract.RequiresNonNull(balances, nameof(balances));
 
             // Shield first
-            if (supportsNativeShielding)
+            if(supportsNativeShielding)
                 await ShieldCoinbaseAsync();
             else
                 await ShieldCoinbaseEmulatedAsync();
@@ -119,7 +119,7 @@ namespace Miningcore.Blockchain.Equihash
                     .Select(x => new ZSendManyRecipient { Address = x.Address, Amount = Math.Round(x.Amount, 8) })
                     .ToList();
 
-                if (amounts.Count == 0)
+                if(amounts.Count == 0)
                     return;
 
                 var pageAmount = amounts.Sum(x => x.Amount);
@@ -131,7 +131,7 @@ namespace Miningcore.Blockchain.Equihash
                     ZMinConfirmations, // only spend funds covered by this many confirmations
                 });
 
-                if (balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
+                if(balanceResult.Error != null || (decimal) (double) balanceResult.Response - TransferFee < pageAmount)
                 {
                     logger.Info(() => $"[{LogCategory}] Insufficient shielded balance for payment of {FormatAmount(pageAmount)}");
                     return;
@@ -147,16 +147,16 @@ namespace Miningcore.Blockchain.Equihash
                     TransferFee
                 };
 
-                // send command
-                tryTransfer:
+            // send command
+            tryTransfer:
                 var result = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, args);
 
-                if (result.Error == null)
+                if(result.Error == null)
                 {
                     var operationId = result.Response;
 
                     // check result
-                    if (string.IsNullOrEmpty(operationId))
+                    if(string.IsNullOrEmpty(operationId))
                         logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} did not return a operation id!");
                     else
                     {
@@ -169,12 +169,12 @@ namespace Miningcore.Blockchain.Equihash
                             var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                                 EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
-                            if (operationResultResponse.Error == null &&
+                            if(operationResultResponse.Error == null &&
                                 operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                             {
                                 var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                                if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                                if(!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
                                 {
                                     logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
                                     break;
@@ -210,9 +210,9 @@ namespace Miningcore.Blockchain.Equihash
 
                 else
                 {
-                    if (result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
+                    if(result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
                     {
-                        if (!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
+                        if(!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
                         {
                             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
@@ -222,7 +222,7 @@ namespace Miningcore.Blockchain.Equihash
                                 (object) 5 // unlock for N seconds
                             });
 
-                            if (unlockResult.Error == null)
+                            if(unlockResult.Error == null)
                             {
                                 didUnlockWallet = true;
                                 goto tryTransfer;
@@ -277,9 +277,9 @@ namespace Miningcore.Blockchain.Equihash
 
             var result = await daemon.ExecuteCmdSingleAsync<ZCashShieldingResponse>(logger, EquihashCommands.ZShieldCoinbase, args);
 
-            if (result.Error != null)
+            if(result.Error != null)
             {
-                if (result.Error.Code == -6)
+                if(result.Error.Code == -6)
                     logger.Info(() => $"[{LogCategory}] No funds to shield");
                 else
                     logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZShieldCoinbase} returned error: {result.Error.Message} code {result.Error.Code}");
@@ -298,12 +298,12 @@ namespace Miningcore.Blockchain.Equihash
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                     EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
-                if (operationResultResponse.Error == null &&
+                if(operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                 {
                     var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                    if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                    if(!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
                     {
                         logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
                         break;
@@ -338,7 +338,7 @@ namespace Miningcore.Blockchain.Equihash
             // get t-addr unspent balance for just the coinbase address (pool wallet)
             var unspentResult = await daemon.ExecuteCmdSingleAsync<Utxo[]>(logger, BitcoinCommands.ListUnspent);
 
-            if (unspentResult.Error != null)
+            if(unspentResult.Error != null)
             {
                 logger.Error(() => $"[{LogCategory}] {BitcoinCommands.ListUnspent} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
                 return;
@@ -349,7 +349,7 @@ namespace Miningcore.Blockchain.Equihash
                 .Sum(x => x.Amount);
 
             // make sure there's enough balance to shield after reserves
-            if (balance - TransferFee <= TransferFee)
+            if(balance - TransferFee <= TransferFee)
             {
                 logger.Info(() => $"[{LogCategory}] Balance {FormatAmount(balance)} too small for emulated shielding");
                 return;
@@ -378,7 +378,7 @@ namespace Miningcore.Blockchain.Equihash
             // send command
             var sendResult = await daemon.ExecuteCmdSingleAsync<string>(logger, EquihashCommands.ZSendMany, args);
 
-            if (sendResult.Error != null)
+            if(sendResult.Error != null)
             {
                 logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} returned error: {unspentResult.Error.Message} code {unspentResult.Error.Code}");
                 return;
@@ -395,12 +395,12 @@ namespace Miningcore.Blockchain.Equihash
                 var operationResultResponse = await daemon.ExecuteCmdSingleAsync<ZCashAsyncOperationStatus[]>(logger,
                     EquihashCommands.ZGetOperationResult, new object[] { new object[] { operationId } });
 
-                if (operationResultResponse.Error == null &&
+                if(operationResultResponse.Error == null &&
                     operationResultResponse.Response?.Any(x => x.OperationId == operationId) == true)
                 {
                     var operationResult = operationResultResponse.Response.First(x => x.OperationId == operationId);
 
-                    if (!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
+                    if(!Enum.TryParse(operationResult.Status, true, out ZOperationStatus status))
                     {
                         logger.Error(() => $"Unrecognized operation status: {operationResult.Status}");
                         break;

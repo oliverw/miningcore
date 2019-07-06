@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using NLog;
 using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -56,6 +57,22 @@ namespace Miningcore.Extensions
                 finally
                 {
                     Console.WriteLine("{0}: Subscription completed.", opName);
+                }
+            });
+        }
+
+        public static IObservable<T> DoSafe<T>(this IObservable<T> source, Action<T> action, ILogger logger)
+        {
+            return source.Do(x =>
+            {
+                try
+                {
+                    action(x);
+                }
+
+                catch(Exception ex)
+                {
+                    logger.Error(ex);
                 }
             });
         }

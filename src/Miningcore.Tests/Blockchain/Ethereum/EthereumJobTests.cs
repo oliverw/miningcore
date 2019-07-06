@@ -8,15 +8,15 @@ using Xunit;
 
 namespace Miningcore.Tests.Blockchain.Ethereum
 {
-	/// <summary>
-	/// These tests take ages to complete (> 10 min. on modern hardware)
-	/// due to the time it takes to generate the DAG for EthashFull
-	/// </summary>
-	public class EthereumJobTests : TestBase
+    /// <summary>
+    /// These tests take ages to complete (> 10 min. on modern hardware)
+    /// due to the time it takes to generate the DAG for EthashFull
+    /// </summary>
+    public class EthereumJobTests : TestBase
     {
         static readonly EthashFull ethash = new EthashFull(3, Path.GetTempPath());
 
-		/*
+        /*
         [Fact]
         public async Task EthereumJob_Should_Accept_Valid_Share()
         {

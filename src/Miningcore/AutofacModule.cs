@@ -93,9 +93,12 @@ namespace Miningcore
                 .SingleInstance();
 
             builder.RegisterType<StatsRecorder>()
-                .AsSelf();
+                .SingleInstance();
 
             builder.RegisterType<NotificationService>()
+                .SingleInstance();
+
+            builder.RegisterType<MetricsPublisher>()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
@@ -126,7 +129,7 @@ namespace Miningcore
                 .PropertiesAutowired()
                 .AsSelf()
                 .SingleInstance();
-            
+
             //////////////////////
             // Payment Schemes
 
