@@ -338,6 +338,8 @@ namespace Miningcore.Blockchain.Ethereum
             switch(chainType)
             {
                 case ParityChainType.Mainnet:
+                    if (height >= EthereumConstants.ConstantinopleHardForkHeight)
+                        return EthereumConstants.ConstantinopleReward;
                     if(height >= EthereumConstants.ByzantiumHardForkHeight)
                         return EthereumConstants.ByzantiumBlockReward;
 
