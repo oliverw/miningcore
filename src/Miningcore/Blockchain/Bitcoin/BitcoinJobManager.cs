@@ -156,7 +156,7 @@ namespace Miningcore.Blockchain.Bitcoin
                             logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
                         // update stats
-                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.LastNetworkBlockTime = clock.UtcNow;
                         BlockchainStats.BlockHeight = blockTemplate.Height;
                         BlockchainStats.NetworkDifficulty = job.Difficulty;
                         BlockchainStats.NextNetworkTarget = blockTemplate.Target;
