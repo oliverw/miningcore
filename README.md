@@ -7,6 +7,7 @@
 
 ### Changes
 - added stats setting in config.json
+```config
 	"statistics": {
 		// Stats broadcast (seconds)
 		"statsInterval": 30,
@@ -17,7 +18,7 @@
 		// Stats history to cleanup is DB. older then x (days)
 		"statsDBCleanupHistory": 365
 	},
-
+```
 
 ### Features
 
