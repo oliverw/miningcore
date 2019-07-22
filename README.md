@@ -4,6 +4,22 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
+
+### Changes
+- added stats setting in config.json
+```config
+	"statistics": {
+		// Stats broadcast (seconds)
+		"statsInterval": 30,
+		// Stats calculation window (minutes)
+		"hashrateCalculationWindow": 5,
+		// Stats DB cleanup interval (hours)
+		"statsCleanupInterval": 48,
+		// Stats history to cleanup is DB. older then x (days)
+		"statsDBCleanupHistory": 365
+	},
+```
+
 ### Features
 
 - Supports clusters of pools each running individual currencies

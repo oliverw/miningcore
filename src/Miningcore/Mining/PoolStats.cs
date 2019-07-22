@@ -27,6 +27,6 @@ namespace Miningcore.Mining
         public DateTime? LastPoolBlockTime { get; set; }
         public int ConnectedMiners { get; set; }
         public double PoolHashrate { get; set; }
-        public double SharesPerSecond { get; set; }
+        public int SharesPerSecond { get; set; }
     }
 }

@@ -348,7 +348,9 @@ namespace Miningcore.Configuration
     {
         // ReSharper disable once InconsistentNaming
         PPLNS = 1,
-        Solo
+        Solo = 2,
+        PPS = 3,
+        PPBS = 4
     }
 
     public partial class ClusterLoggingConfig
@@ -688,7 +690,7 @@ namespace Miningcore.Configuration
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
         public string PubKey { get; set; }  // POS coins only 
-        public int ClientConnectionTimeout { get; set; }
+        public int ClientConnectionTimeout { get; set; }  // Disconnect worker if timeout exceeded
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
 

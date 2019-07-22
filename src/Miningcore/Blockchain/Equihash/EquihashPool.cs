@@ -383,8 +383,7 @@ namespace Miningcore.Blockchain.Equihash
                     // check alive
                     var lastActivityAgo = clock.UtcNow - context.LastActivity;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
+                    if(poolConfig.ClientConnectionTimeout > 0 && lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
                         DisconnectClient(client);
