@@ -32,8 +32,10 @@ namespace Miningcore.Blockchain.Ethereum
         public static readonly Regex WorkerPattern = new Regex("^[0-9a-zA-Z-_]{1,8}$", RegexOptions.Compiled);
 
         public const ulong ByzantiumHardForkHeight = 4370000;
+        public const ulong  ConstantinopleHardForkHeight = 7280000;
         public const decimal HomesteadBlockReward = 5.0m;
         public const decimal ByzantiumBlockReward = 3.0m;
+        public const decimal ConstantinopleReward = 2.0m;
         public const decimal TestnetBlockReward = 3.0m;
         public const decimal ExpanseBlockReward = 8.0m;
         public const decimal EllaismBlockReward = 5.0m;
