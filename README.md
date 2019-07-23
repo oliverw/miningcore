@@ -4,9 +4,15 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/coinfoundry/miningcore-docker.svg)]()
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
+MinerNL - Miningcore Stratum Pool
+=================================
 
-### Changes
-- added stats setting in config.json
+### Changes in this Miningcore fork
+- Added nice Web frontend [MinerNL - Miningcore.Web](https://github.com/minernl/Miningcore.WebUI)
+- Pool time set to UTC time zone
+  Local time convertion should be used in the web frondend as that can be anyone on the globe
+- Faster statistics calculation
+- Added stats setting in config.json
 ```config
 	"statistics": {
 		// Stats broadcast (seconds)
@@ -182,4 +188,7 @@ dotnet Miningcore.dll -c config.json
 
 ## Running a production pool
 
-A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point. Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
+You can use the web frontend that come with this fork [MinerNL - Miningcore.Web](https://github.com/minernl/Miningcore.WebUI)
+
+Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
