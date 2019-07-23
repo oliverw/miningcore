@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html style="height: auto; min-height: 100%;"><head>
+  
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <meta name="msapplication-TileImage" content="img/pool-icon.png">
+  
+  <title>Miningcore.WebUI</title>
+  
+  <link rel="apple-touch-icon" href="img/pool-icon.png">  
+  <link rel="apple-touch-icon" sizes="76x76" href="img/pool-icon.png">
+  
+  <!-- 
+    AdminLTE & Skins. We have chosen the skin-purple for this website page. 
+    However, you can choose any other skin from the css/skins/ folder. 
+	Make sure you apply the skin class to the body tag so the changes take effect. 
+  -->
+
+  
+  <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">-->
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">-->
+  <link rel="stylesheet" href="css/skins/skin-purple.css">
+  <link rel="stylesheet" href="css/chartist.min.css">
+  <link rel="stylesheet" href="css/font-awesome-all.css">
+  <link rel="stylesheet" href="css/themify-icons.css">
+  <link rel="stylesheet" href="css/font-awesome-icons.css">
+  <link rel="stylesheet" href="css/miningcore.css">
+  <link rel="stylesheet" href="css/miningcore-colors.css">
+  <link rel="stylesheet" href="css/bootstrap-toggle.css">  
+  <link rel="stylesheet" href="css/bootstrap-notify.css">
+  
+  <script src="js/jquery.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
+  <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>-->
+  <script src="js/adminlte.min.js"></script>
+  <script src="js/bootstrap-toggle.js"></script>
+  <script src="js/chartist.min.js"></script>
+  <script src="js/miningcore.js"></script>
+
+  
+</head>
+
+<!--
+BODY TAG OPTIONS:
+=================
+Apply one or more of the following classes to get the desired effect
+===========================================================
+| SKINS         | skin-blue                               |
+|               | skin-black                              |
+|               | skin-purple                             |
+|               | skin-yellow                             |
+|               | skin-red                                |
+|               | skin-green                              |
+===========================================================
+-->
+<body class="skin-purple" style="height: auto; min-height: 100%;" onhashchange="loadIndex()">
+
+
+<!-- COIN TABLE TEMPLATE -->
+		<div class="index-coin-table-template" style="display:none;">
+		  <div class="row">
+			<div class="col-12">
+              <div class="card">
+                <div class="card-header card-header-warning">
+                  <h3 class="card-title "><p><i class="fas fa-users"></i> Pool Coins </p></h3>
+                  <p class="card-category"> Top 20 contributors</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class=" text-primary">
+						<tr>
+							<th>Address</th>
+                            <th>Hashrate</th>
+                            <th>Share Rate</th>
+                        </tr>
+					  </thead>
+                      <tbody id="CoinList"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+			</div>
+		  </div>
+		</div>
+
+
+<!-- SIDEBAR TEMPLATE -->	
+	  <div class="sidebar-template" style="display:none;">
+		
+		<div class="logo">
+          <a href="#" class="simple-text logo-normal">
+			<p>{{ coinLogo }} {{ coinName }}</p>
+		  </a>
+        </div>
+
+		<ul class="sidebar-menu tree" data-widget="tree">
+		  <li class="divider">
+		  </li>
+		  <li class="nav-home">
+            <a class="nav-link" href="#">
+              <i class="fas fa-home"></i><span>Home</span>
+            </a>
+          </li>
+		  <li class="nav-stats">
+            <a class="nav-link" href="#{{ coinId }}/stats">
+              <i class="fas fa-chart-line"></i><span>Stats</span>
+            </a>
+          </li>
+          <li class="nav-dashboard">
+            <a class="nav-link" href="#{{ coinId }}/dashboard">
+              <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-miners">
+            <a class="nav-link" href="#{{ coinId }}/miners">
+              <i class="fas fa-users"></i></i><span>Miners</span>
+            </a>
+          </li>
+          <li class="nav-blocks">
+            <a class="nav-link"  href="#{{ coinId }}/blocks">
+              <i class="fas fa-cubes"></i><span>Blocks</span>
+            </a>
+          </li>
+          <li class="nav-payments">
+            <a class="nav-link" href="#{{ coinId }}/payments">
+             <i class="fas fa-wallet"></i><span>Payments</span>
+            </a>
+          </li>
+          <li class="nav-connect">
+            <a class="nav-link" href="#{{ coinId }}/connect">
+              <i class="fas fa-plug"></i><span>Connect</span>
+            </a>
+          </li>
+          <li class="nav-faq">
+            <a class="nav-link" href="#{{ coinId }}/faq">
+              <i class="fas fa-comment-dots"></i><span>FAQ</span>
+            </a>
+          </li>
+          <li class="nav-support">
+            <a class="nav-link" href="#{{ coinId }}/support">
+              <i class="ti-headphone-alt"></i><span>Support</span>
+            </a>
+          </li>
+        </ul>
+		
+	  </div>
+
+
+
+<div class="wrapper" style="height: auto; min-height: 100%;">
+
+<!-- MAIN INDEX -->
+  <div class="main-index" style="display:none;" >
+
+<!-- INDEX HEADER -->
+    <header class="main-index-header fixed">
+
+      <nav class="navbar" >
+        <a>  </a>
+        <span class="header-text"><b>Miningcore</b> - making mining easy</span>
+        <!-- Navbar Right Menu -->
+        <div class="navbar-custom-menu">
+          <ul class="nav navbar-nav">
+			<!--
+			<li><a href="#"><i class="fa fa-user-plus"></i> link1</a></li>
+			<li><a href="#"><i class="fa fa-sign-in"></i> link2</a></li>
+			<li><a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a></li> 
+			-->
+          </ul>
+        </div>
+      </nav>
+    </header>
+	
+<!-- INDEX HOME PAGE -->
+	<div class="page page-index">
+		<section class="content-header">
+			<h1>MININGCORE<small>coins to mine</small></h1>
+		</section>
+		<div class="content container-fluid " >	
+			
+			<div class="col-12">
+				<div class="card card-shadow card-body">
+					<center><h5> Welcome to Miningcore Mining Pool</h5></center>
+					<hr>
+					<p>Low fee, high performance and a nice design. </br> Pick a coin, connect you miner and make some coins.</p>
+					</br>
+				</div>
+			</div>
+			</br>
+			<div class="col-12">
+				<div class="card card-shadow">
+					<h5 class="card-header bg-green"><i class="fas fa-coins"></i> Pool Coins</h5>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table id="pool-coins" class="table table-striped table-hover ">
+								<thead class="bg-light">
+									<tr class="border-0">
+										<th class="coin border-0">Pool coin</th>
+										<th class="algo border-0">Algorithm</th>
+										<th class="miniers border-0">Miners</th>
+										<th class="pool-hash border-0">Pool Hashrate</th>
+										<th class="fee border-0">Fee</th>
+										<th class="net-hash border-0">Network Hashrate</th>
+										<th class="net-diff border-0">Network Difficulty</th>
+										<th class="col-hide border-0"></th>
+									</tr>
+								</thead>
+								<tbody class="pool-coin-table"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+	</div>	
+
+<!-- INDEX FOOTER --> 
+    <footer class="main-index-footer">
+      <strong><a target="_blank" href="https://github.com/minernl/Miningcore.WebUI">&copy; <script>document.write(new Date().getFullYear())</script> made by COINStoMINE.eu</a> - Version 1.02</strong>
+    </footer>
+
+  </div>
+
+
+
+<!-- MAIN POOL -->
+  <div class="main-pool" style="display:none;">
+  
+<!-- POOL SIDEBAR -->
+    <aside id="main-sidebar" class="main-sidebar">
+      <!-- sidebar: style can be found in sidebar.less -->
+      <section class="sidebar">
+		<div class="sidebar-wrapper"></div>
+      </section>
+    </aside>
+
+  
+
+<!-- POOL HEADER -->
+    <header class="main-header fixed">
+
+      <nav class="navbar navbar-static-top" role="navigation">
+        <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button"><i class="fas fa-bars"></i></a>
+
+        <span class="header-text"><b>Miningcore</b> - making mining easy</span>
+	  
+        <!-- Navbar Right Menu -->
+        <div class="navbar-custom-menu">
+          <ul class="nav navbar-nav">
+			<!--
+			<li><a href="#"><i class="fa fa-user-plus"></i> link1</a></li>
+			<li><a href="#"><i class="fa fa-sign-in"></i> link2</a></li>
+			<li><a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a></li> 
+			-->
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+
+  <div id="page-scroll-top" class="content-wrapper" style="min-height: 864px;">
+
+<!-- POOL STATS PAGE -->
+	<div class="page page-stats" style="display:none;">
+		<section class="content-header">
+			<h1>POOL &  NETWORK<small>statistics</small></h1>
+		</section>
+		<div class="content container-fluid">
+
+			<div class="row">
+				<div class="col-lg-6 col-md-12">
+					<div class="card card-chart">
+						<div class="card-header bg-green">
+							<div class="ct-chart" id="chartStatsHashRatePool"></div>
+						</div>
+						<div class="card-body">
+							<h3 class="card-title"><div id="poolHashRate"></div></h3>
+							<p class="card-category"><i class="fas fa-wave-square"></i> Pool Hashrate</p>
+						</div>
+						<div class="card-footer">
+							<div class="stats">
+								
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-6 col-md-12">
+					<div class="card card-chart">
+						<div class="card-header bg-green">
+							<div class="ct-chart" id="chartStatsMiners"></div>
+						</div>
+						<div class="card-body">
+							<h3 class="card-title"><div id="poolMiners"></div></h3>
+							<p class="card-category"><i class="fas fa-user"></i> Miners (Workers)</p>
+						</div>
+						<div class="card-footer">
+							<div class="stats">
+								
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+				
+			<div class="row">
+	
+				<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-aqua"><i class="fas fa-bars"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">blockchain height</span>
+							<span class="info-box-number"><div id="blockchainHeight"></div></span>
+						</div>
+					</div>
+				</div>
+			
+				<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-yellow"><i class="fas fa-code-branch"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">connected peers</span>
+							<span class="info-box-number"><div id="connectedPeers"></div></span>
+						</div>
+					</div>
+				</div>
+			
+				<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-red"><i class="fas fa-trophy"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">payment threshold</span>
+							<span class="info-box-number"><div id="minimumPayment"></div></span>
+							<span class="info-box-number"><div id="payoutScheme"></div></span>
+						</div>
+					</div>
+				</div>
+			
+				<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+					<div class="info-box">
+						<span class="info-box-icon bg-green"><i class="fas fa-chart-pie"></i></span>
+						<div class="info-box-content">
+							<span class="info-box-text">pool fee</span>
+							<span class="info-box-number"><div id="poolFeePercent"></div></span>
+						</div>
+					</div>
+				</div>
+
+			</div><!-- /.row -->
+				
+				
+				
+				
+			<div class="row">
+				<div class="col-lg-6 col-md-12">
+					<div class="card card-chart">
+						<div class="card-header bg-yellow">
+							<div class="ct-chart" id="chartStatsHashRate"></div>
+						</div>
+						<div class="card-body">
+							<h3 class="card-title"><div id="networkHashRate"></div></h3>
+							<p class="card-category"><i class="fas fa-wave-square"></i> Network Hashrate</p>
+						</div>
+						<div class="card-footer">
+							<div class="stats">
+								
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-6 col-md-12">
+					<div class="card card-chart">
+						<div class="card-header bg-yellow">
+							<div class="ct-chart" id="chartStatsDiff"></div>
+						</div>
+						<div class="card-body">
+							<h3 class="card-title"><div id="networkDifficulty"></div></h3>
+							<p class="card-category"><i class="fas fa-hammer"></i> Network Difficulty</p>
+						</div>
+						<div class="card-footer">
+							<div class="stats">
+								
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>			
+
+	</div>
+	
+<!-- POOL DASHBOARD PAGE -->
+    <div class="page page-dashboard" style="display:none;">
+		<section class="content-header">
+			<h1>MINER<small>dashboard</small></h1>
+		</section>
+		<div class="content container-fluid">
+		  
+		  <div class="row">
+
+            <div class="col-md-12 col-sm-12 col-xs-12">
+				<div class="card">
+					<div class="card-header card-shadow bg-green">
+						<h3 class="card-title">Wallet Address</h3>
+						<p class="card-category">enter your coin wallet address</p>
+					</div>
+					<div class="card-body">
+					<form>
+						<div class="row">
+							<div class="col-md-12 col-sm-12 col-xs-12">
+								<div class="card-input input-group form-group bmd-form-group">
+									
+									<input class="form-control" type="text" id="walletAddress" placeholder="Wallet Address">
+								</div>
+							</div>
+						</div>
+						<button id="load-wallet" onClick="loadWallet(this.id)" type="submit" class="btn btn-info btn-fill btn-wd">Load wallet stats</button>	
+						<div class="clearfix"></div>
+					</form>
+					</div>
+				</div>
+			</div>
+			
+		  </div>
+
+		  <div class="row">
+	
+			<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+				<div class="info-box">
+					<span class="info-box-icon bg-aqua"><i class="fas fa-receipt"></i></span>
+					<div class="info-box-content">
+						<span class="info-box-text">Pending Shares</span>
+						<span class="info-box-number"><div id="pendingShares"></div></span>
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+				<div class="info-box">
+					<span class="info-box-icon bg-red"><i class="fas fa-hand-holding-usd"></i></span>
+					<div class="info-box-content">
+						<span class="info-box-text">Pending Balance</span>
+						<span class="info-box-number"><div id="pendingBalance"></div></span>
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+				<div class="info-box">
+					<span class="info-box-icon bg-green"><i class="far fa-money-bill-alt"></i></span>
+					<div class="info-box-content">
+						<span class="info-box-text">Paid Balance Today</span>
+						<span class="info-box-number"><div id="paidBalance"></div></span>
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12">
+				<div class="info-box">
+					<span class="info-box-icon bg-yellow"><i class="fas fa-piggy-bank"></i></span>
+					<div class="info-box-content">
+						<span class="info-box-text">Lifetime Balance</span>
+						<span class="info-box-number"><div id="lifetimeBalance"></div></span>
+					</div>
+				</div>
+			</div>
+			
+
+		  </div><!-- /.row -->
+		
+		  <div class="row equal h-100">
+
+			<div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                <div class="card">
+					
+					<div class="card-header card-chart bg-yellow">
+						<div class="ct-chart" id="chartDashboardHashRate"></div>
+					</div>
+					
+                    <div class="card-body">
+						<h3 class="card-title"><div id="minerHashRate"></div></h3>
+						<p class="card-category"><i class="fas fa-wave-square"></i> Miner's Hash Rate</p>
+					</div>
+					
+					<div class="card-footer">
+						<div class="stats">
+							
+						</div>
+					</div>
+					
+				</div>
+			</div>
+
+			<div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
+			
+              <div class="card card-table">
+                <div class="card-header bg-aqua">
+                  <h3 class="card-title "><p><i class="fas fa-users"></i> Workers (<span id="workerCount"></span>)</p></h3>
+                  <p class="card-category"> List of miners working for you</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table id="miner-workers" class="table miner-workers">
+                      <thead class=" text-primary">
+                        
+						<tr class="miner-workers">
+						<th>Index</th>
+                        <th>Name</th>
+                        <th>Hashrate</th>
+                        <th>Share Rate</th>
+                        </tr>
+					  
+					  </thead>
+                      <tbody id="workerList"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+			</div>
+			
+		  </div>
+
+	    </div>
+	
+	</div>
+	
+<!-- POOL MINERS PAGE -->	
+      <div class="page page-miners" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>Top miners</small></h1>
+		</section>
+		<div class="content container-fluid">
+		  <div class="row">
+		
+			<div class="col-lg-12 col-md-12">
+			
+              <div class="card">
+                <div class="card-header bg-red">
+                  <h3 class="card-title "><p><i class="fas fa-users"></i> Best Miners</p></h3>
+                  <p class="card-category"> Top 20 contributors</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table id="miners" class="table miners">
+                      <thead class=" text-primary">
+                        
+						<tr class="miners">
+							<th>Address</th>
+                            <th>Hashrate</th>
+                            <th>Share Rate</th>
+                        </tr>
+					  
+					  </thead>
+                      <tbody id="minerList"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+			</div>
+
+		  </div>
+		</div>	
+	</div>
+	
+<!-- POOL BLOCKS PAGE -->
+    <div class="page page-blocks" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>blocks found</small></h1>
+		</section>
+		<div class="content container-fluid">
+		
+		  <div class="row">
+			<div class="col-lg-12 col-md-12">
+              <div class="card">
+                <div class="card-header bg-green-gradient">
+                  <h3 class="card-title "><p><i class="fas fa-cubes"></i> Blocks Mined</p></h3>
+                  <p class="card-category"> Last 100 blocks</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table id="blocks" class="table blocks">
+                      <thead class=" text-primary">
+                        
+						<tr class="blocks">
+							<th>Found</th>
+                            <th>Height</th>
+                            <th>Effort</th>
+                            <th>Status</th>
+                            <th>Reward</th>
+                            <th>Confirmation</th>
+                        </tr>
+					  
+					  </thead>
+                      <tbody id="blockList"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+			</div>
+		  </div>
+		</div>
+	</div>
+	
+<!-- POOL PAYMENTS PAGE -->
+    <div class="page page-payments" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>payments</small></h1>
+		</section>
+		<div class="content container-fluid">
+		
+		  <div class="row">
+			<div class="col-lg-12 col-md-12">
+              <div class="card">
+                <div class="card-header bg-aqua">
+                  <h3 class="card-title "><p><i class="fas fa-wallet"></i> Payments Rewarded</p></h3>
+                  <p class="card-category"> Last 500 payments</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table id="payments" class="table payments">
+                      <thead class=" text-primary">
+                        
+						<tr class="payments">
+							<th>Sent</th>
+                            <th>Address</th>
+                            <th>Amount</th>
+                            <th colspan="2">Confirmation</th>
+                        </tr>
+					  
+					  </thead>
+                      <tbody id="paymentList"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+			</div>
+		  </div>
+		</div>	
+	</div>
+		
+<!-- POOL CONNECT PAGE -->
+    <div class="page page-connect" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>connection</small></h1>
+		</section>
+		<div class="content container-fluid">
+		
+		  <div class="row">
+			<div class="col-lg-12 col-md-12">
+              <div class="card">
+                <div class="card-header bg-maroon-gradient">
+                  <h3 class="card-title "><p><i class="fas fa-plug"></i> Pool Configuration</p></h3>
+                  <p class="card-category"> All you need to connect your miners</p>
+                </div>
+                <div class="card-body table-hover">
+                  <div class="table-responsive">
+                    <table id="pool-config" class="table pool-config">
+                      <thead class=" text-primary">
+						<tr class="pool-config">
+							<th>Item</th>
+                            <th>Value</th>
+                        </tr>
+					  </thead>
+                      <tbody id="connectPoolConfig"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+			</div>
+		  </div>
+		  
+		  <div class="row">
+			<div class="col-lg-12 col-md-12">
+				<div id="miner-config"></div>
+			</div>
+		  </div>
+		  
+		</div>
+	</div>
+	
+<!-- POOL FAQ PAGE -->	  
+    <div class="page page-faq" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>questions & answers</small></h1>
+		</section>
+		<div class="content container-fluid">
+		
+		  <div class="row">
+                <div class="col-lg-12 col-sm-12">
+                  <div class="card">
+                    <div class="card-header bg-black-gradient">
+						<h4 class="card-title"><i class="fas fa-comment-dots"></i> FAQ</h4>
+						<p class="card-category">
+							How does the pool work?
+						</p>
+					</div>
+                    <div class="card-body table-responsive faq">
+                      <h4>Do I need to register an account to mine?</h4>
+                      <p>
+                        Registration is not required. Just configure your miner
+                        according to our instructions and start mining. Your
+                        first submitted share will automatically register you
+                        with our pool. Good Luck!
+                      </p>
+                      <h4>
+                        Why is my reported hashrate zero or different from what
+                        my miner reports?
+                      </h4>
+                      <p>
+                        Pool and miner hashrates are re-calculated every ten
+                        minutes. Therefore it can take a maximum of ten minutes
+                        for your hashrate to update depending on the submission
+                        time of your first valid share. The hashrate we display
+                        at the pool is a rough approximation of your hashrate
+                        based on your submitted shares and can therefore differ
+                        significantly from the hashrate displayed locally. When
+                        in doubt always consider the value displayed by your
+                        miner as the correct one.
+                      </p>
+                      <h4>How will I get paid?</h4>
+                      <p>
+                        All of our pools utilize the PPLNS payment system. PPLNS
+                        is short for "Pay Per Last N Shares". The image below
+                        illustrates the system. One round has an arbitrary
+                        number of shares which is solely based on sheer luck.
+                        Proportional reward systems only consider shares of one
+                        round when calculating rewards. PPLNS however, uses a
+                        quite constant number N of shares for calculating
+                        rewards. This number N changes only with the difficulty:
+                      </p>
+                      <img alt="PPLNS" src="img/shares_round.png" style="width:100%;max-width: 500px;">
+                      <p>&nbsp;</p>
+
+                      <p>
+                        As you know the number of shares needed to solve a block
+                        within a round is different. Round one and three needed
+                        (difficulty * 2) shares to be solved. Round two and four
+                        are quite short rounds. There were less than (difficulty
+                        * 2) shares necessary to solve them. Round five however
+                        is a very long round which means the pool needed more
+                        than (difficulty * 2) shares to solve the block. From
+                        this follows that:
+                      </p>
+                      <ul>
+                        <li>
+                          Rounds one and three are like proportional rounds. All
+                          of your shares from the given round are considered for
+                          reward calculations
+                        </li>
+                        <li>
+                          For rounds two and four, shares from the previous
+                          rounds are considered for calculations as well (marked
+                          green). In other words: regardless of round boundaries
+                          we always consider the last
+                          <em>(difficulty * 2)</em> shares. Your portion of the
+                          amount of shares is used to calculate your reward.
+                        </li>
+                        <li>
+                          Round five however is very long. In this round your
+                          lowermost shares (within the marked red part) are
+                          silently dropped if they are not within the last
+                          <em>(difficulty * 2)</em> shares.
+                        </li>
+                      </ul>
+                      <p>
+                        <strong>PPLNS favors constant and/or occasional loyal pool
+                          members over pool hoppers.
+                        </strong>
+                        Pool hoppers are betting for a "quick win" (like round
+                        two above) with low shares per round. If the round
+                        exceeds a certain amount of shares they "hop" to another
+                        proportional pool which started a new round more
+                        recently. This assures better rewards for pool hoppers
+                        over occasional or constant miners which are loyal to
+                        their pool. Pool hopping however implies that pool
+                        hoppers need to know when a round is started and how
+                        much shares are considered for reward. This is very easy
+                        with proportional reward system. While using PPLNS, this
+                        is no longer true. On long rounds (like round five
+                        above) the pool hoppers shares won’t be considered for
+                        reward calculations in favor of loyal miners. This is
+                        due to the fact that pool hoppers only mine on the
+                        beginning of rounds. On short and normal rounds pool
+                        hoppers won’t lose their shares. Due to the fact that
+                        shares from previous rounds from loyal miners are
+                        considered twice (or even more often on extremely short
+                        rounds) the pool hopper won’t get the same reward as
+                        from proportional reward system.
+                      </p>
+                      <p>
+                        Assuming blocks have been found, payouts are processed
+                        and send every 10 minutes. This process is fully automated.
+                      </p>
+                      <h4>When will I get paid?</h4>
+                      <p>
+                        You won't see any balance in your account until a block
+                        has been found by the pool and after the block has
+                        reached a mature status. This may take a couple hours,
+                        depending on the coin. As soon as a block can be
+                        considered 'mature' by the pool, your shares will be
+                        used to calculate your contribution towards finding the
+                        block. The more you've contributed, the higher your cut
+                        of the block reward will be. Your cut of the block
+                        reward will then be credited to your pending balance. If
+                        your balance reaches or exceeds the pool's minimum
+                        payout amount, the pool will transfer your
+                        <b>entire</b> balance to your wallet and
+                        <b>reset</b> your pending balance to zero. The minimum
+                        payout for each pool is listed in its 'Pool Stats' area.
+                      </p>
+                      <p>
+                        We are a small pool for the time being, and as such it
+                        may take some time to find a block. On larger pools you
+                        would see some balance earlier because they will find
+                        blocks faster, but you will get a smaller share of the
+                        reward than what you would in a smaller pool. Over time
+                        you will earn more or less the same amount when mining
+                        on a large pool or on a small one.
+                      </p>
+                      <p>
+                        In other words, the rewards you get on average are
+                        exactly proportional to your part in the total work done
+                        by the pool. If you mine in a pool
+                        <strong>twice as large</strong>, the pool will collect
+                        twice as much rewards but your share in them will be
+                        <strong>cut by half</strong>, meaning you get the same
+                        on average.
+                      </p>
+                      <p>
+                        Trustworthiness, reliability, support and low latency
+                        are the things you should consider when choosing a pool.
+                        By avoiding the largest pools you contribute to the
+                        network health by spreading the hash power.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+		</div>
+
+	</div>
+
+<!-- POOL SUPPORT PAGE -->	  
+    <div class="page page-support" style="display:none;">
+		<section class="content-header">
+			<h1>POOL<small>support</small></h1>
+		</section>
+		<div class="content container-fluid">
+		  <div class="row">
+            <div class="col-lg-12 col-sm-12">
+                <div class="card">
+                   <div class="card-header bg-teal-gradient"><h4 class="title"><i class="ti-headphone-alt"></i> Support</h4></div>
+                    <div class="content table-responsive table-full-width">
+                      <a href="https://discord.gg/" target="_blank"> <img style="width:300px;" src="img/discord.png" alt="Discord"> </a>
+                      <a href="https://t.me/joinchat/" target="_blank"> <img style="width:300px;" src="img/telegram.png" alt="Telegram"> </a>
+                    </div>
+                </div>
+            </div>
+          </div>
+		</div>
+	</div>
+				
+  </div> 
+
+  <footer class="main-footer">
+	<strong><a target="_blank" href="https://github.com/minernl/Miningcore.WebUI">&copy; <script>document.write(new Date().getFullYear())</script> made by COINStoMINE.eu</a></strong>    
+  </footer>
+ 
+  </div> <!-- end main-pool -->
+  
+</div> <!-- end wrapper -->
+
+  <!-- Miningcore JS -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      loadIndex();
+    });
+  </script>
+
+</body>
+</html>
