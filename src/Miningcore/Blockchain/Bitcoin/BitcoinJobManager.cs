@@ -93,9 +93,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 if (forceUpdate)
                     lastJobRebroadcast = clock.UtcNow;
 
-                var response = string.IsNullOrEmpty(json) ?
-                    await GetBlockTemplateAsync() :
-                    GetBlockTemplateFromJson(json);
+                var response = string.IsNullOrEmpty(json) ? await GetBlockTemplateAsync() : GetBlockTemplateFromJson(json);
 
                 // may happen if daemon is currently not connected to peers
                 if(response.Error != null)

@@ -62,11 +62,11 @@ namespace Miningcore.Mining
 
         // MinerNL Stats calculation variables
         private readonly AutoResetEvent stopEvent = new AutoResetEvent(false);
-		private const int statsInterval = 60;             // seconds. Default setting if not in config.json
+		private const int statsUpdateInterval = 60;       // seconds. Default setting if not in config.json
         private const int hashrateCalculationWindow = 10; // minutes. Default setting if not in config.json
         private const int statsCleanupInterval = 96;      // hours.   Default setting if not in config.json
         private const int statsDBCleanupHistory = 180;    // days.    Default setting if not in config.json
-        private int _StatsInterval;
+        private int _StatsUpdateInterval;
         private int _HashrateCalculationWindow;
         private int _StatsCleanupInterval;
         // MinerNL end
@@ -99,11 +99,11 @@ namespace Miningcore.Mining
 
                 // MinerNL read variables from config.json
                 // Stats broadcast interval
-                _StatsInterval = clusterConfig.Statistics?.StatsInterval ?? statsInterval;
-                if(_StatsInterval == 0)
+                _StatsUpdateInterval = clusterConfig.Statistics?.StatsUpdateInterval ?? statsUpdateInterval;
+                if(_StatsUpdateInterval == 0)
                 {
-                    _StatsInterval = statsInterval;
-                    logger.Info(() => $"statistics -> statsInterval not found in config.json. using default : {_StatsInterval} seconds");
+                    _StatsUpdateInterval = statsUpdateInterval;
+                    logger.Warn(() => $"statistics -> statsUpdateInterval not found in config.json. using default : {_StatsUpdateInterval} seconds");
                 }
 
                 // Stats calculation window
@@ -111,7 +111,7 @@ namespace Miningcore.Mining
                 if(_HashrateCalculationWindow == 0)
                 {
                     _HashrateCalculationWindow = hashrateCalculationWindow;
-                    logger.Info(() => $"statistics -> hashrateCalculationWindow not found in config.json. using default : {_HashrateCalculationWindow} minutes");
+                    logger.Warn(() => $"statistics -> hashrateCalculationWindow not found in config.json. using default : {_HashrateCalculationWindow} minutes");
                 }
 
                 // Stats DB cleanup interval
@@ -119,7 +119,7 @@ namespace Miningcore.Mining
                 if(_StatsCleanupInterval == 0)
                 {
                     _StatsCleanupInterval = statsCleanupInterval;
-                    logger.Info(() => $"statistics -> statsCleanupInterval not found in config.json. using default : {_StatsCleanupInterval} minutes");
+                    logger.Warn(() => $"statistics -> statsCleanupInterval not found in config.json. using default : {_StatsCleanupInterval} minutes");
                 }
                 
                 // Set DB Cleanup time
@@ -147,7 +147,7 @@ namespace Miningcore.Mining
                         logger.Error(ex);
                     }
 
-					await Task.Delay(TimeSpan.FromSeconds(_StatsInterval), cts.Token);
+					await Task.Delay(TimeSpan.FromSeconds(_StatsUpdateInterval), cts.Token);
                     
                 }
             });
@@ -171,9 +171,10 @@ namespace Miningcore.Mining
             var StatsWindowsTimeFrame = TimeSpan.FromMinutes(_HashrateCalculationWindow);
 
             logger.Info(() => "--------------------------------------------------------------------------------------------");
-            logger.Info(() => $"CurrentTimeUtc        : {CurrentTimeUtc}");
-            logger.Info(() => $"TimeFrom              : {TimeFrom}");
-            logger.Info(() => $"StatsWindowsTimeFrame : {StatsWindowsTimeFrame}");
+            logger.Info(() => $"Stats Update Interval  : {_StatsUpdateInterval} seconds");
+            logger.Info(() => $"Hashrate Calc Windows  : {_HashrateCalculationWindow} minutes");
+            logger.Info(() => $"Current Time UTC       : {CurrentTimeUtc}");
+            logger.Info(() => $"Getting Stats from UTC : {TimeFrom}");
             logger.Info(() => "--------------------------------------------------------------------------------------------");
             // MinerNL
 
@@ -332,8 +333,6 @@ namespace Miningcore.Mining
                             var TimeFrameAfterLastShare   = ((CurrentTimeUtc - minerHashes.Max(x => x.LastShare)).TotalSeconds);
                             var TimeFrameFirstLastShare   = (StatsWindowsTimeFrame.TotalSeconds - TimeFrameBeforeFirstShare - TimeFrameAfterLastShare);
 
-                            //var minerHashTimeFrame        = Math.Floor(TimeFrameFirstLastShare + (TimeFrameBeforeFirstShare / 2) + (TimeFrameAfterLastShare * 2)) ;
-
                             var minerHashTimeFrame = StatsWindowsTimeFrame.TotalSeconds;
 
                             if(TimeFrameBeforeFirstShare >= (StatsWindowsTimeFrame.TotalSeconds * 0.1) )
@@ -344,9 +343,10 @@ namespace Miningcore.Mining
 
                             if( (TimeFrameBeforeFirstShare >= (StatsWindowsTimeFrame.TotalSeconds * 0.1)) && (TimeFrameAfterLastShare >= (StatsWindowsTimeFrame.TotalSeconds * 0.1)) )
                                 minerHashTimeFrame = (StatsWindowsTimeFrame.TotalSeconds - TimeFrameBeforeFirstShare + TimeFrameAfterLastShare);
-                           
 
-                            logger.Info(() => $"[{poolId}] StatsWindowsTimeFrame : {StatsWindowsTimeFrame.TotalSeconds} | minerHashTimeFrame : {minerHashTimeFrame} |  TimeFrameFirstLastShare : {TimeFrameFirstLastShare} | TimeFrameBeforeFirstShare: {TimeFrameBeforeFirstShare} | TimeFrameAfterLastShare: {TimeFrameAfterLastShare}");
+                            if(minerHashTimeFrame < 1) { minerHashTimeFrame = 1; };
+
+                            // logger.Info(() => $"[{poolId}] StatsWindowsTimeFrame : {StatsWindowsTimeFrame.TotalSeconds} | minerHashTimeFrame : {minerHashTimeFrame} |  TimeFrameFirstLastShare : {TimeFrameFirstLastShare} | TimeFrameBeforeFirstShare: {TimeFrameBeforeFirstShare} | TimeFrameAfterLastShare: {TimeFrameAfterLastShare}");
 
                             // calculate miner/worker stats
                             minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);

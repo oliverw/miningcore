@@ -98,6 +98,7 @@ namespace Miningcore.Blockchain.Ethereum
         public const string GetAccounts = "eth_accounts";
         public const string GetPeerCount = "net_peerCount";
         public const string GetSyncState = "eth_syncing";
+        public const string GetBlockNumber = "eth_blockNumber";      // MinerNL added
         public const string GetBlockByNumber = "eth_getBlockByNumber";
         public const string GetBlockByHash = "eth_getBlockByHash";
         public const string GetUncleByBlockNumberAndIndex = "eth_getUncleByBlockNumberAndIndex";
