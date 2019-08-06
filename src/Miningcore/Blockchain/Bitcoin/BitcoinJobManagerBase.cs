@@ -233,6 +233,8 @@ namespace Miningcore.Blockchain.Bitcoin
                     var peerInfo = await daemon.ExecuteCmdAnyAsync<PeerInfo[]>(logger, BitcoinCommands.GetPeerInfo);
                     var peers = peerInfo.Response;
 
+                    logger.Info(() => $"Daemons has [{peers.Length}] peers connected");
+
                     if(peers != null && peers.Length > 0)
                     {
                         var totalBlocks = peers.Max(x => x.StartingHeight);

@@ -626,7 +626,7 @@ namespace Miningcore.Configuration
 
     public partial class Statistics
     {
-        public int StatsInterval { get; set; }
+        public int StatsUpdateInterval { get; set; }
         public int HashrateCalculationWindow { get; set; }
         public int StatsCleanupInterval { get; set; }
         public int StatsDBCleanupHistory { get; set; }

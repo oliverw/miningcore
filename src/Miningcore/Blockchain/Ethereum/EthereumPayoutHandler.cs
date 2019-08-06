@@ -45,7 +45,6 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Block = Miningcore.Persistence.Model.Block;
 using Contract = Miningcore.Contracts.Contract;
-using EC = Miningcore.Blockchain.Ethereum.EthCommands;
 
 namespace Miningcore.Blockchain.Ethereum
 {
@@ -127,7 +126,7 @@ namespace Miningcore.Blockchain.Ethereum
                     .ToArray();
 
                 // get latest block
-                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) "latest", true });
+                var latestBlockResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EthCommands.GetBlockByNumber, new[] { (object) "latest", true });
                 var latestBlockHeight = latestBlockResponses.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
 
                 // execute batch
@@ -199,7 +198,7 @@ namespace Miningcore.Blockchain.Ethereum
                         if(blockInfo2.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
-                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EC.GetUncleByBlockNumberAndIndex,
+                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EthCommands.GetUncleByBlockNumberAndIndex,
                                     new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
                                 .ToArray();
 
@@ -271,7 +270,7 @@ namespace Miningcore.Blockchain.Ethereum
         public async Task PayoutAsync(Balance[] balances)
         {
             // ensure we have peers
-            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.GetPeerCount);
+            var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EthCommands.GetPeerCount);
 
             if(networkType == EthereumNetworkType.Main &&
                 (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
@@ -311,7 +310,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             if(cacheMisses.Any())
             {
-                var blockBatch = cacheMisses.Select(height => new DaemonCmd(EC.GetBlockByNumber,
+                var blockBatch = cacheMisses.Select(height => new DaemonCmd(EthCommands.GetBlockByNumber,
                     new[]
                     {
                         (object) height.ToStringHexWithPrefix(),
@@ -372,7 +371,7 @@ namespace Miningcore.Blockchain.Ethereum
         private async Task<decimal> GetTxRewardAsync(DaemonResponses.Block blockInfo)
         {
             // fetch all tx receipts in a single RPC batch request
-            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EC.GetTxReceipt, new[] { tx.Hash }))
+            var batch = blockInfo.Transactions.Select(tx => new DaemonCmd(EthCommands.GetTxReceipt, new[] { tx.Hash }))
                 .ToArray();
 
             var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
@@ -414,8 +413,8 @@ namespace Miningcore.Blockchain.Ethereum
         {
             var commands = new[]
             {
-                new DaemonCmd(EC.GetNetVersion),
-                new DaemonCmd(EC.ParityChain),
+                new DaemonCmd(EthCommands.GetNetVersion),
+                new DaemonCmd(EthCommands.ParityChain),
             };
 
             var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
@@ -446,7 +445,7 @@ namespace Miningcore.Blockchain.Ethereum
             // unlock account
             if(extraConfig.CoinbasePassword != null)
             {
-                var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EC.UnlockAccount, new[]
+                var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EthCommands.UnlockAccount, new[]
                 {
                     poolConfig.Address,
                     extraConfig.CoinbasePassword,
@@ -467,13 +466,13 @@ namespace Miningcore.Blockchain.Ethereum
                 Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
-            var response = await daemon.ExecuteCmdSingleAsync<string>(logger, EC.SendTx, new[] { request });
+            var response = await daemon.ExecuteCmdSingleAsync<string>(logger, EthCommands.SendTx, new[] { request });
 
             if(response.Error != null)
-                throw new Exception($"{EC.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");
+                throw new Exception($"{EthCommands.SendTx} returned error: {response.Error.Message} code {response.Error.Code}");
 
             if(string.IsNullOrEmpty(response.Response) || EthereumConstants.ZeroHashPattern.IsMatch(response.Response))
-                throw new Exception($"{EC.SendTx} did not return a valid transaction hash");
+                throw new Exception($"{EthCommands.SendTx} did not return a valid transaction hash");
 
             var txHash = response.Response;
             logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");

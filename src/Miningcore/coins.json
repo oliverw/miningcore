@@ -740,6 +740,46 @@
         "explorerTxLink": "http://explorer.hthcoin.world/tx/{0}",
         "explorerAccountLink": "http://explorer.hthcoin.world/address/{0}"
     },
+	"jinycoin": {
+        "name": "Jinycoin",
+        "symbol": "JINY",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16r"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r" } ]
+        },
+		"shareMultiplier": 256,
+		"hasMasterNodes": true,
+        "explorerBlockLink": "https://www.blockseek.io/jiny/block/$height$",
+        "explorerTxLink": "https://www.blockseek.io/jiny/tx/{0}",
+        "explorerAccountLink": "https://www.blockseek.io/jiny/address/{0}"
+    },
+	"exosis": {
+        "name": "Exosis",
+        "symbol": "EXO",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16r"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r" } ]
+        },
+        "shareMultiplier": 256,
+		"hasMasterNodes": true,
+        "explorerBlockLink": "https://www.blockseek.io/exo/block/$hash$",
+        "explorerTxLink": "https://www.blockseek.io/exo/tx/{0}",
+        "explorerAccountLink": "https://www.blockseek.io/exo/address/{0}"
+    },	
     "zcash": {
         "name": "ZCash",
         "symbol": "ZEC",

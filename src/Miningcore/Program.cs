@@ -397,8 +397,15 @@ namespace Miningcore
  ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine($" MININGCORE - multi mining pool");
+            Console.WriteLine($" https://github.com/minernl/miningcore\n");
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($" Part off all donation goes to the core developers");
+            Console.WriteLine($" Oliver Weichhold (oliverw)\n")
             Console.WriteLine($" https://github.com/coinfoundry/miningcore\n");
-            Console.WriteLine($" Please contribute to the development of the project by donating:\n");
+            Console.WriteLine($" If you want to donate to him yourself:\n");
             Console.WriteLine($" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
             Console.WriteLine($" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
             Console.WriteLine($" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
@@ -408,6 +415,7 @@ namespace Miningcore
             Console.WriteLine($" ETC  - 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0");
             Console.WriteLine($" XMR  - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
             Console.WriteLine();
+            Console.ResetColor();
         }
 
         private static void ConfigureLogging()
