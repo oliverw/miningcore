@@ -609,7 +609,7 @@ namespace Miningcore.Blockchain.Ethereum
             await UpdateNetworkStatsAsync();
 
             // Periodically update network stats
-            Observable.Interval(TimeSpan.FromMinutes(1))
+            Observable.Interval(TimeSpan.FromMinutes(10))
                 .Select(via => Observable.FromAsync(async () =>
                 {
                     try
