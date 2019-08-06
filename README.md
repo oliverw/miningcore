@@ -11,12 +11,12 @@ MinerNL - Miningcore Stratum Pool
 - Added nice Web frontend [MinerNL - Miningcore.Web](https://github.com/minernl/Miningcore.WebUI)
 - Pool time set to UTC time zone
   Local time convertion should be used in the web frondend as that can be anyone on the globe
-- Faster statistics calculation
+- Faster mining statistics calculation
 - Added stats setting in config.json
 ```config
 	"statistics": {
 		// Stats broadcast (seconds)
-		"statsInterval": 30,
+		"statsUpdateInterval": 60,
 		// Stats calculation window (minutes)
 		"hashrateCalculationWindow": 5,
 		// Stats DB cleanup interval (hours)
@@ -44,7 +44,7 @@ MinerNL - Miningcore Stratum Pool
 
 ### Supported Coins
 
-Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Refer to [this file](https://github.com/minernl/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 #### Ethereum
 
@@ -62,7 +62,7 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 
 ### Donations
 
-This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
+This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to Oliver Weichhold (oliverw) using the following accounts:
 
 * BTC:  `17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm`
 * LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
@@ -115,7 +115,7 @@ grant all privileges on database miningcore to miningcore;
 Import the database schema:
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+$ wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
@@ -126,7 +126,7 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your <code>shares</code> table using <code>pg_backup</code> first!
 
 ```console
-$ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+$ wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
 $ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
@@ -155,7 +155,7 @@ $ sudo apt-get update -y
 $ sudo apt-get install apt-transport-https -y
 $ sudo apt-get update -y
 $ sudo apt-get -y install dotnet-sdk-2.2 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-$ git clone https://github.com/coinfoundry/miningcore
+$ git clone https://github.com/minernl/miningcore
 $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework netcoreapp2.2  -o ../../build
 ```
@@ -165,7 +165,7 @@ $ dotnet publish -c Release --framework netcoreapp2.2  -o ../../build
 Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
-> git clone https://github.com/coinfoundry/miningcore
+> git clone https://github.com/minernl/miningcore
 > cd miningcore/src/Miningcore
 > dotnet publish -c Release --framework netcoreapp2.2  -o ..\..\build
 ```
