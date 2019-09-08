@@ -95,14 +95,14 @@
     </None>
   </ItemGroup>
 
-  <!-- Copy pre-built library binaries on Windows  -->
-  <Target Name="BuildNativeLibsWin" AfterTargets="AfterBuild" Condition="'$(IsWindows)' == 'true'">
-    <ItemGroup>
-      <Libs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(Libs)" DestinationFolder="$(OutDir)" />
-  </Target>
+  <!-- Reference pre-built library binaries on Windows  -->
+  <ItemGroup Condition="'$(IsWindows)' == 'true'">
+    <NativeLibs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
+    <None Include="@(NativeLibs)" Visible="False">
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
   <!-- Build library binaries from source on Linux -->
   <Target Name="BuildNativeLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
