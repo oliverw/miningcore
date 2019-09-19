@@ -1371,5 +1371,27 @@
         },
         "explorerTxLink": "https://gastracker.io/tx/{0}",
         "explorerAccountLink": "https://gastracker.io/addr/{0}"
+    },
+    "bitcoin-sv": {
+        "name": "Bitcoin SV",
+        "symbol": "BSV",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "sha256d"
+                }
+            ]
+        },
+        "explorerBlockLink": "https://whatsonchain.com/block-height/$height$",
+        "explorerTxLink": "https://whatsonchain.com/tx/{0}",
+        "explorerAccountLink": "https://whatsonchain.com/address/{0}"
     }
 }
