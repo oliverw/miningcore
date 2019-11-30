@@ -1,5 +1,5 @@
 CC = gcc
-INC_DIRS = -Ixmrig-override -Ixmrig -IIxmrig/3rdparty/argon2/include -IIxmrig/3rdparty/argon2/lib
+INC_DIRS = -Ixmrig-override -Ixmrig -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib
 
 # Temporarily disable optimizations to debug crashes
 CFLAGS = -g -Wall -c -fPIC -maes -O2 -fpermissive -Wno-fpermissive -Wno-strict-aliasing -Wno-sign-compare -DCPU_INTEL $(INC_DIRS)
