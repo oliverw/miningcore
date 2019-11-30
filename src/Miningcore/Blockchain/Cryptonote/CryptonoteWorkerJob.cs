@@ -35,6 +35,7 @@ namespace Miningcore.Blockchain.Cryptonote
         public uint Height { get; set; }
         public uint ExtraNonce { get; set; }
         public double Difficulty { get; set; }
+        public string SeedHash { get; set; }
 
         public readonly ConcurrentDictionary<string, bool> Submissions = new ConcurrentDictionary<string, bool>();
     }

@@ -80,7 +80,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)xmrig;$(IncludePath);$(ProjectDir)xmrig\3rdparty</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)xmrig-override;$(ProjectDir)xmrig;$(IncludePath);$(ProjectDir)xmrig/3rdparty/argon2/lib;$(ProjectDir)xmrig/3rdparty/argon2/include;$(ProjectDir)xmrig\3rdparty</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,7 +90,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(ProjectDir)xmrig;$(IncludePath);$(ProjectDir)xmrig\3rdparty</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(ProjectDir)xmrig-override;$(ProjectDir)xmrig;$(ProjectDir)xmrig/3rdparty/argon2/lib;$(ProjectDir)xmrig/3rdparty/argon2/include;$(ProjectDir)xmrig\3rdparty</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -169,57 +169,73 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="xmrig\Mem_win.cpp" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClInclude Include="xmrig\3rdparty\aligned_malloc.h" />
-    <ClInclude Include="xmrig\common\cpu\BasicCpuInfo.h" />
-    <ClInclude Include="xmrig\common\cpu\Cpu.h" />
-    <ClInclude Include="xmrig\common\crypto\keccak.h" />
-    <ClInclude Include="xmrig\common\interfaces\ICpuInfo.h" />
-    <ClInclude Include="xmrig\common\utils\mm_malloc.h" />
-    <ClInclude Include="xmrig\common\xmrig.h" />
-    <ClCompile Include="xmrig\Mem.cpp" />
-    <ClInclude Include="xmrig\crypto\CryptoNight.h" />
-    <ClInclude Include="xmrig\crypto\CryptoNight_arm.h" />
-    <ClInclude Include="xmrig\crypto\CryptoNight_constants.h" />
-    <ClInclude Include="xmrig\crypto\CryptoNight_monero.h" />
-    <ClInclude Include="xmrig\crypto\CryptoNight_x86.h" />
-    <ClInclude Include="xmrig\crypto\c_blake256.h" />
-    <ClInclude Include="xmrig\crypto\c_groestl.h" />
-    <ClInclude Include="xmrig\crypto\c_jh.h" />
-    <ClInclude Include="xmrig\crypto\c_skein.h" />
-    <ClInclude Include="xmrig\crypto\groestl_tables.h" />
-    <ClInclude Include="xmrig\crypto\hash.h" />
-    <ClInclude Include="xmrig\crypto\skein_port.h" />
-    <ClInclude Include="xmrig\crypto\soft_aes.h" />
-    <ClInclude Include="xmrig\crypto\SSE2NEON.h" />
-    <ClInclude Include="xmrig\crypto\variant4_random_math.h" />
-    <ClInclude Include="xmrig\extra.h" />
-    <ClInclude Include="xmrig\Mem.h" />
-    <ClCompile Include="xmrig\common\cpu\BasicCpuInfo.cpp" />
-    <ClCompile Include="xmrig\common\cpu\Cpu.cpp" />
-    <ClCompile Include="xmrig\common\crypto\keccak.cpp" />
-    <ClCompile Include="xmrig\crypto\cn_gpu_avx.cpp" />
-    <ClCompile Include="xmrig\crypto\cn_gpu_ssse3.cpp" />
-    <ClCompile Include="xmrig\crypto\CryptonightR_gen.cpp" />
-    <ClCompile Include="xmrig\crypto\c_blake256.c" />
-    <ClCompile Include="xmrig\crypto\c_groestl.c" />
-    <ClCompile Include="xmrig\crypto\c_jh.c" />
-    <ClCompile Include="xmrig\crypto\c_skein.c" />
-    <ClCompile Include="xmrig\extra.cpp" />
+    <ClCompile Include="xmrig/crypto/cn/c_blake256.c" />
+    <ClCompile Include="xmrig/crypto/cn/c_groestl.c" />
+    <ClCompile Include="xmrig/crypto/cn/c_jh.c" />
+    <ClCompile Include="xmrig/crypto/cn/c_skein.c" />
+    <ClCompile Include="xmrig/crypto/common/keccak.cpp" />
+    <ClCompile Include="xmrig-override/crypto/common/Algorithm.cpp" />
+    <ClCompile Include="xmrig/crypto/cn/CnCtx.cpp" />
+    <ClCompile Include="xmrig/crypto/cn/CnHash.cpp" />
+    <ClCompile Include="xmrig/crypto/common/MemoryPool.cpp" />
+    <ClCompile Include="xmrig/crypto/common/VirtualMemory.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/aes_hash.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/argon2_ref.c" />
+    <ClCompile Include="xmrig/crypto/randomx/bytecode_machine.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/dataset.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/soft_aes.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/virtual_memory.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/vm_interpreted.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/allocator.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/randomx.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/superscalar.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/vm_compiled.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/vm_interpreted_light.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/argon2_core.c" />
+    <ClCompile Include="xmrig/crypto/randomx/blake2_generator.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/instructions_portable.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/reciprocal.c" />
+    <ClCompile Include="xmrig/crypto/randomx/virtual_machine.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/vm_compiled_light.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/blake2/blake2b.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/argon2.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/core.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/encoding.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/genkat.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/impl-select.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/lib/blake2/blake2.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-arch.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx2.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-avx512f.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-sse2.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-ssse3.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-xop.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/x86_64/lib/cpu-flags.c" />
+    <ClCompile Include="xmrig/3rdparty/argon2/arch/generic/lib/argon2-arch.c" />
+    <ClCompile Include="xmrig/crypto/defyx/defyx.cpp" />
+    <ClCompile Include="xmrig/crypto/defyx/KangarooTwelve.c" />
+    <ClCompile Include="xmrig/crypto/defyx/KeccakP-1600-reference.c" />
+    <ClCompile Include="xmrig/crypto/defyx/KeccakSpongeWidth1600.c" />
+    <ClCompile Include="xmrig/crypto/defyx/yescrypt-best.c" />
+    <ClCompile Include="xmrig/crypto/defyx/sha256.c" />
+    <ClCompile Include="xmrig/crypto/cn/r/CryptonightR_gen.cpp" />
+    <ClCompile Include="xmrig/crypto/cn/gpu/cn_gpu_avx.cpp" />
+    <ClCompile Include="xmrig/crypto/cn/gpu/cn_gpu_ssse3.cpp" />
+    <ClCompile Include="xmrig/crypto/randomx/jit_compiler_x86.cpp" />
+    <ClCompile Include="xmrig\crypto\common\VirtualMemory_win.cpp" />
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="xmrig\crypto\asm\win64\cn_main_loop.asm">
-      <FileType>Document</FileType>
-    </MASM>
-    <MASM Include="xmrig\crypto\asm\win64\CryptonightR_template.asm">
-      <FileType>Document</FileType>
-    </MASM>
+    <MASM Include="xmrig/crypto/cn/asm/cn_main_loop.asm" />
+    <MASM Include="xmrig/crypto/cn/asm/CryptonightR_template.asm" />
+    <MASM Include="xmrig/crypto/randomx/jit_compiler_x86_static.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

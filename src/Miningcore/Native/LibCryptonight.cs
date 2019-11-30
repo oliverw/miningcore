@@ -20,7 +20,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Miningcore.Contracts;
 using NLog;
@@ -31,49 +34,12 @@ namespace Miningcore.Native
     {
         #region Hashing context managment
 
-        internal class CryptonightContextStore
-        {
-            internal CryptonightContextStore(Func<IntPtr> allocator, string logId)
-            {
-                this.logId = logId.ToUpper();
-
-                // allocate context per CPU
-                for(var i = 0; i < contexts.BoundedCapacity; i++)
-                {
-                    contexts.Add(new Lazy<IntPtr>(() =>
-                    {
-                        var result = allocator();
-
-                        return result;
-                    }));
-                }
-            }
-
-            private readonly string logId;
-
-            // this holds a finite number of contexts for the cryptonight hashing functions
-            // if no context is currently available because all are in use, the thread waits
-            private readonly BlockingCollection<Lazy<IntPtr>> contexts = new BlockingCollection<Lazy<IntPtr>>(Environment.ProcessorCount);
-
-            internal Lazy<IntPtr> Lease()
-            {
-                logger.Debug(() => $"Leasing {logId} context ({contexts.Count})");
-
-                return contexts.Take();
-            }
-
-            internal void Return(Lazy<IntPtr> ctx)
-            {
-                contexts.Add(ctx);
-
-                logger.Debug(() => $"Returned {logId} context ({contexts.Count})");
-            }
-        }
-
         private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, "cn");
         private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
         private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
         private static readonly CryptonightContextStore ctxsPico = new CryptonightContextStore(cryptonight_alloc_pico_context, "cn-pico");
+
+        private static Dictionary<string, IntPtr> vmCache = new Dictionary<string, IntPtr>();
 
         #endregion // Hashing context managment
 
@@ -106,7 +72,16 @@ namespace Miningcore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_pico(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
 
-        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height);
+        [DllImport("libcryptonight", EntryPoint = "randomx_create_vm_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr randomx_create_vm(int variant, byte* seedHash, uint seedHashSize);
+
+        [DllImport("libcryptonight", EntryPoint = "randomx_free_vm_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void randomx_free_vm(IntPtr ptr);
+
+        [DllImport("libcryptonight", EntryPoint = "randomx_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int randomx(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
+
+        public delegate void CryptonightHash(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height);
 
         // see https://github.com/xmrig/xmrig/blob/master/src/common/xmrig.h
         public enum CryptonightVariant
@@ -136,7 +111,7 @@ namespace Miningcore.Native
         /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void Cryptonight(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -163,7 +138,7 @@ namespace Miningcore.Native
         /// Cryptonight Lite Hash (AEON etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void CryptonightLight(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -190,7 +165,7 @@ namespace Miningcore.Native
         /// Cryptonight Heavy Hash (TUBE etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void CryptonightHeavy(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -237,6 +212,49 @@ namespace Miningcore.Native
             finally
             {
                 ctxsPico.Return(ctx);
+            }
+        }
+
+        /// <summary>
+        /// RandomX Hash
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
+        public static void RandomX(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+
+            lock(vmCache)
+            {
+                if(!vmCache.TryGetValue(seedHash, out var vm))
+                {
+                    // Housekeeping
+                    while(vmCache.Count + 1 > 8)
+                    {
+                        var key = vmCache.Keys.First(x => x != seedHash);
+                        var old = vmCache[key];
+
+                        randomx_free_vm(old);
+                        vmCache.Remove(key);
+                    }
+
+                    var seedBytes = Encoding.UTF8.GetBytes(seedHash);
+
+                    // Create new VM
+                    fixed(byte* seedBytesPtr = seedBytes)
+                    {
+                        vm = randomx_create_vm((int) variant, seedBytesPtr, (uint) seedBytes.Length);
+                    }
+
+                    vmCache[seedHash] = vm;
+                }
+
+                fixed(byte* input = data)
+                {
+                    fixed(byte* output = result)
+                    {
+                        randomx(vm, input, output, (uint) data.Length, variant, height);
+                    }
+                }
             }
         }
     }

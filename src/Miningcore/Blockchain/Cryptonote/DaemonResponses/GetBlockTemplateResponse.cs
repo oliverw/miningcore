@@ -33,6 +33,9 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         [JsonProperty("prev_hash")]
         public string PreviousBlockhash { get; set; }
 
+        [JsonProperty("seed_hash")]
+        public string SeedHash { get; set; }
+
         [JsonProperty("reserved_offset")]
         public int ReservedOffset { get; set; }
 
