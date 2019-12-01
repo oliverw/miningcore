@@ -2,8 +2,8 @@ CC = gcc
 INC_DIRS = -Ixmrig-override -Ixmrig -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib
 
 # Temporarily disable optimizations to debug crashes
-CFLAGS = -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w -DHAVE_SSE2 -DHAVE_SSSE3 -DHAVE_AVX2 -DHAVE_AVX512F -DCPU_INTEL $(INC_DIRS)
-CXXFLAGS = -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w -DCPU_INTEL $(INC_DIRS)
+CFLAGS = -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w -DHAVE_SSE2 -DHAVE_SSSE3 -DHAVE_AVX2 -DHAVE_AVX512F -msse4.1 -maes -DCPU_INTEL $(INC_DIRS)
+CXXFLAGS = -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w -msse4.1 -maes -DCPU_INTEL $(INC_DIRS)
 
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
