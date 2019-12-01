@@ -243,7 +243,10 @@ extern "C" MODULE_API RandomXCacheWrapper *randomx_create_cache_export(int varia
     memcpy(seedHashCopy, seedHash, seedHashSize);
 
     // Alloc cache
-    auto cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT));
+    auto cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES));
+
+    if (!cache)
+        cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT));
 
     switch (variant) {
         case 0:
@@ -280,10 +283,13 @@ extern "C" MODULE_API void randomx_free_cache_export(RandomXCacheWrapper *wrappe
 
 extern "C" MODULE_API RandomXVmWrapper *randomx_create_vm_export(randomx_cache *cache)
 {
-    int flags = RANDOMX_FLAG_JIT;
+    int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_JIT;
 
     auto mem = new xmrig::VirtualMemory(max_mem_size, false, false, 0, 4096);
     auto vm = randomx_create_vm(static_cast<randomx_flags>(flags), cache, nullptr, mem->scratchpad());
+
+    if (!vm)
+        vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), cache, nullptr, mem->scratchpad());
 
     if (!vm)
         return nullptr;

@@ -2,8 +2,8 @@ CC = gcc
 INC_DIRS = -Ixmrig-override -Ixmrig -Ixmrig/3rdparty/argon2/include -Ixmrig/3rdparty/argon2/lib
 
 # Temporarily disable optimizations to debug crashes
-CFLAGS = -std=gnu11 -g -Wall -c -fPIC -maes -Ofast -fno-fast-math -fpermissive -Wno-fpermissive -Wno-strict-aliasing -Wno-sign-compare -DCPU_INTEL -DHAVE_SSE2 $(INC_DIRS)
-CXXFLAGS =  -std=gnu++11 -g -Wall -maes -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -Wno-unused-function -fPIC -fpermissive -Wno-strict-aliasing -Wno-sign-compare -DCPU_INTEL $(INC_DIRS)
+CFLAGS = -std=gnu11 -fPIC -DNDEBUG -Ofast -fno-fast-math -w -DHAVE_SSE2 -DHAVE_SSSE3 -DHAVE_AVX2 -DHAVE_AVX512F -DCPU_INTEL $(INC_DIRS)
+CXXFLAGS = -std=gnu++11 -s -fPIC -DNDEBUG -Ofast -fno-fast-math -fexceptions -fno-rtti -Wno-class-memaccess -w -DCPU_INTEL $(INC_DIRS)
 
 LDFLAGS = -shared
 TARGET  = libcryptonight.so
@@ -59,6 +59,7 @@ OBJECTS =	xmrig/crypto/cn/asm/cn_main_loop.o \
 			xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-ssse3.o \
 			xmrig/3rdparty/argon2/arch/x86_64/lib/argon2-xop.o \
 			xmrig/3rdparty/argon2/arch/x86_64/lib/cpu-flags.o \
+			xmrig/3rdparty/argon2/arch/generic/lib/argon2-arch.o \
 			 \
 			xmrig/crypto/defyx/defyx.o \
 			xmrig/crypto/defyx/KangarooTwelve.o \
