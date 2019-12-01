@@ -193,38 +193,57 @@ extern "C" MODULE_API void cryptonight_pico_export(CryptonightContextWrapper* wr
     fn(reinterpret_cast<const uint8_t*>(input), inputSize, reinterpret_cast<uint8_t*>(output), &ctx, height);
 }
 
-class RandomXContextWrapper
+class RandomXVmWrapper
 {
 public:
-    RandomXContextWrapper(xmrig::VirtualMemory *mem, randomx_vm *vm, randomx_cache *cache)
+    RandomXVmWrapper(xmrig::VirtualMemory *mem, randomx_vm *vm)
     {
         this->vm = vm;
         this->mem = mem;
-        this->cache = cache;
     }
 
-    ~RandomXContextWrapper()
+    ~RandomXVmWrapper()
     {
         if(vm)
             randomx_destroy_vm(vm);
-
-        if(cache)
-            randomx_release_cache(cache);
 
         delete mem;
     }
 
     xmrig::VirtualMemory *mem;
-    randomx_cache *cache;
     randomx_vm *vm;
 };
 
-extern "C" MODULE_API RandomXContextWrapper *randomx_create_vm_export(int variant, const char* seedHash, size_t seedHashSize)
+class RandomXCacheWrapper
 {
-    auto cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES));
+public:
+    RandomXCacheWrapper(randomx_cache *cache, void *seedHash)
+    {
+        this->cache = cache;
+        this->seedHash = seedHash;
+    }
 
-    if(!cache)
-        cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT));
+    ~RandomXCacheWrapper()
+    {
+        if(cache)
+            randomx_release_cache(cache);
+
+        if(seedHash)
+            free(seedHash);
+    }
+
+    void *seedHash;
+    randomx_cache *cache;
+};
+
+extern "C" MODULE_API RandomXCacheWrapper *randomx_create_cache_export(int variant, const char* seedHash, size_t seedHashSize)
+{
+    // Copy seed
+    auto seedHashCopy = malloc(seedHashSize);
+    memcpy(seedHashCopy, seedHash, seedHashSize);
+
+    // Alloc cache
+    auto cache = randomx_alloc_cache(static_cast<randomx_flags>(RANDOMX_FLAG_JIT));
 
     switch (variant) {
         case 0:
@@ -246,29 +265,44 @@ extern "C" MODULE_API RandomXContextWrapper *randomx_create_vm_export(int varian
             throw std::domain_error("Unknown RandomX algo");
     }
 
-    randomx_init_cache(cache, seedHash, seedHashSize);
+    // Init cache
+    randomx_init_cache(cache, seedHashCopy, seedHashSize);
 
-    int flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_JIT;
-
-#if !SOFT_AES
-        flags |= RANDOMX_FLAG_HARD_AES;
-#endif
-
-    auto mem = new xmrig::VirtualMemory(max_mem_size, true, false, 0, 4096);
-    auto vm = randomx_create_vm(static_cast<randomx_flags>(flags), cache, nullptr, mem->scratchpad());
-
-    if (!vm)
-        vm = randomx_create_vm(static_cast<randomx_flags>(flags - RANDOMX_FLAG_LARGE_PAGES), cache, nullptr, mem->scratchpad());
-
-    auto wrapper = new RandomXContextWrapper(mem, vm, cache);
+    // Wrap it
+    auto wrapper = new RandomXCacheWrapper(cache, seedHashCopy);
     return wrapper;
 }
 
-extern "C" MODULE_API void randomx_free_vm_export(randomx_vm *vm)
+extern "C" MODULE_API void randomx_free_cache_export(RandomXCacheWrapper *wrapper)
 {
+    delete wrapper;
 }
 
-extern "C" MODULE_API void randomx_export(RandomXContextWrapper* wrapper, const char* input, unsigned char *output, size_t inputSize, uint32_t variant, uint64_t height)
+extern "C" MODULE_API RandomXVmWrapper *randomx_create_vm_export(randomx_cache *cache)
+{
+    int flags = RANDOMX_FLAG_JIT;
+
+    auto mem = new xmrig::VirtualMemory(max_mem_size, false, false, 0, 4096);
+    auto vm = randomx_create_vm(static_cast<randomx_flags>(flags), cache, nullptr, mem->scratchpad());
+
+    if (!vm)
+        return nullptr;
+
+    auto wrapper = new RandomXVmWrapper(mem, vm);
+    return wrapper;
+}
+
+extern "C" MODULE_API void randomx_free_vm_export(RandomXVmWrapper *wrapper)
+{
+    delete wrapper;
+}
+
+extern "C" MODULE_API void randomx_set_vm_cache_export(RandomXVmWrapper *wrapper, RandomXCacheWrapper *cacheWrapper)
+{
+    randomx_vm_set_cache(wrapper->vm, cacheWrapper->cache);
+}
+
+extern "C" MODULE_API void randomx_export(RandomXVmWrapper* wrapper, const char* input, unsigned char *output, size_t inputSize, uint32_t variant, uint64_t height)
 {
     auto vm = wrapper->vm;
 

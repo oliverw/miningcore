@@ -432,7 +432,9 @@ extern "C" {
 
 			vm->setScratchpad(scratchpad);
 		}
+
 		catch (std::exception &ex) {
+            printf(ex.what());
 			delete vm;
 			vm = nullptr;
 		}
