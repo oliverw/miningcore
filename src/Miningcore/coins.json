@@ -1311,7 +1311,7 @@
         "name": "Monero",
         "symbol": "XMR",
         "family": "cryptonote",
-        "hash": "cryptonight",
+        "hash": "randomx",
         "hashVariant": 0,
         "smallestUnit": 1000000000000,
         "addressPrefix": 18,

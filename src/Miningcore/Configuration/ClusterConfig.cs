@@ -268,7 +268,10 @@ namespace Miningcore.Configuration
         Heavy,
 
         [EnumMember(Value = "cryptonight-pico")]
-        Pico
+        Pico,
+
+        [EnumMember(Value = "randomx")]
+        RandomX,
     }
 
     public partial class CryptonoteCoinTemplate : CoinTemplate
