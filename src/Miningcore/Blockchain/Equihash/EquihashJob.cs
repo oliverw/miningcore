@@ -51,7 +51,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>();
+        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
@@ -301,7 +301,7 @@ namespace Miningcore.Blockchain.Equihash
 
         private bool RegisterSubmit(string nonce, string solution)
         {
-            var key = nonce.ToLower() + solution.ToLower();
+            var key = nonce + solution;
 
             return submissions.TryAdd(key, true);
         }

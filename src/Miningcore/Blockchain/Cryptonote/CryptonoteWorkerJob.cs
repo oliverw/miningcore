@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -37,6 +38,6 @@ namespace Miningcore.Blockchain.Cryptonote
         public double Difficulty { get; set; }
         public string SeedHash { get; set; }
 
-        public readonly ConcurrentDictionary<string, bool> Submissions = new ConcurrentDictionary<string, bool>();
+        public readonly ConcurrentDictionary<string, bool> Submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
     }
 }

@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
         private BitcoinTemplate.BitcoinNetworkParams networkParams;
-        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>();
+        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
@@ -291,9 +291,9 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             var key = new StringBuilder()
                 .Append(extraNonce1)
-                .Append(extraNonce2.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(extraNonce2) // lowercase as we don't want to accept case-sensitive values as valid.
                 .Append(nTime)
-                .Append(nonce.ToLower()) // lowercase as we don't want to accept case-sensitive values as valid.
+                .Append(nonce) // lowercase as we don't want to accept case-sensitive values as valid.
                 .ToString();
 
             return submissions.TryAdd(key, true);
