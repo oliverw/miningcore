@@ -50,7 +50,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly HashSet<string> submissions = new HashSet<string>();
+        protected readonly HashSet<string> submissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 

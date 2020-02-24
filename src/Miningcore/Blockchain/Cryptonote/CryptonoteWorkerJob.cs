@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
 
 namespace Miningcore.Blockchain.Cryptonote
@@ -35,6 +36,6 @@ namespace Miningcore.Blockchain.Cryptonote
         public uint ExtraNonce { get; set; }
         public double Difficulty { get; set; }
 
-        public HashSet<string> Submissions { get; } = new HashSet<string>();
+        public HashSet<string> Submissions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
 }

@@ -57,7 +57,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
         private BitcoinTemplate.BitcoinNetworkParams networkParams;
-        protected readonly HashSet<string> submissions = new HashSet<string>();
+        protected readonly HashSet<string> submissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
