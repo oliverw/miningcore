@@ -286,6 +286,26 @@
         "explorerTxLink": "https://bchain.info/GLT/tx/{0}",
         "explorerAccountLink": "https://bchain.info/GLT/addr/{0}"
     },
+    "indexchain": {
+        "name": "IndexChain",
+        "symbol": "IDX",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16r"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16r" } ]
+        },
+        "hasMasterNodes": true,
+        "shareMultiplier": 256,
+        "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"
+    },
     "mooncoin": {
         "name": "MoonCoin",
         "symbol": "MOON",
