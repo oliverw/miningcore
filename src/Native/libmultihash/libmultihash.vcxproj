@@ -261,6 +261,7 @@
     <ClInclude Include="x14.h" />
     <ClInclude Include="x15.h" />
     <ClInclude Include="x16r.h" />
+    <ClInclude Include="x16rv2.h" />
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
@@ -348,6 +349,7 @@
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
     <ClCompile Include="x16r.c" />
+    <ClCompile Include="x16rv2.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
