@@ -294,11 +294,11 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "x16r"
+            "hash": "x16rv2"
         },
         "blockHasher": {
             "hash": "reverse",
-            "args": [ { "hash": "x16r" } ]
+            "args": [ { "hash": "x16rv2" } ]
         },
         "hasMasterNodes": true,
         "shareMultiplier": 256,
