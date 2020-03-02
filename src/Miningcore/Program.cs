@@ -730,7 +730,7 @@ namespace Miningcore
                     services.AddMvc()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                         .AddControllersAsServices()
-                        .AddJsonOptions(options =>
+                        .AddNewtonsoftJson(options =>
                         {
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
