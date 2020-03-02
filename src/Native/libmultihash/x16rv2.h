@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 
-void x16rv2_hash(const char* input, char* output, uint32_t len);
+void x16rv2_hash(const char* input, char* output);
 
 #ifdef __cplusplus
 }

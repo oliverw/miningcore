@@ -300,6 +300,14 @@
             "hash": "reverse",
             "args": [ { "hash": "x16rv2" } ]
         },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "x16rv2"                
+                }
+            ]
+        },
         "hasMasterNodes": true,
         "shareMultiplier": 256,
         "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",

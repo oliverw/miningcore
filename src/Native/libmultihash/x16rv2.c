@@ -57,7 +57,7 @@ static void getAlgoString(const uint8_t* prevblock, char *output)
     }
     *sptr = '\0';
 }
-void x16rv2_hash(const char* input, char* output,uint32_t len)
+void x16rv2_hash(const char* input, char* output)
 {
     uint32_t hash[64/4];
     char hashOrder[HASH_FUNC_COUNT + 1] = { 0 };
