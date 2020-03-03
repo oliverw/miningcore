@@ -734,6 +734,7 @@ namespace Miningcore
                         {
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
+                    services.AddMvc(option => option.EnableEndpointRouting = false);
 
                     // Gzip Compression
                     services.AddResponseCompression();
@@ -755,10 +756,11 @@ namespace Miningcore
                     UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
 
                     app.UseResponseCompression();
-                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
+
                     app.UseMvc();
                 })
                  .UseKestrel(options =>

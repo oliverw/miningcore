@@ -220,7 +220,7 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
 }
 extern "C" MODULE_API void x16rv2_export(const char* input, char* output, uint32_t input_len)
 {
-    x16rv2_hash(input, output);
+    x16rv2_hash(input, output,input_len);
 }
 
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)

@@ -124,7 +124,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 // version
                 bs.ReadWrite(ref txVersion);
 
-                // timestamp for POS coins
+                // // timestamp for POS coins
                 if(isPoS)
                 {
                     var timestamp = BlockTemplate.CurTime;
@@ -320,7 +320,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 version = (version & ~versionMask.Value) | (versionBits.Value & versionMask.Value);
 
 #pragma warning disable 618
-            var blockHeader = new BlockHeader
+            var blockHeader = new IndexBlockHeader
 #pragma warning restore 618
             {
                 Version = unchecked((int) version),
@@ -328,7 +328,8 @@ namespace Miningcore.Blockchain.Bitcoin
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
                 BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
-                Nonce = nonce
+                Nonce = nonce,
+                ProofOfStake = false
             };
 
             return blockHeader.ToBytes();
@@ -432,9 +433,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref coinbase);
                 bs.ReadWrite(ref rawTransactionBuffer);
 
-                // POS coins require a zero byte appended to block which the daemon replaces with the signature
-                if(isPoS)
-                    bs.ReadWrite((byte) 0);
+                // // POS coins require a zero byte appended to block which the daemon replaces with the signature
+                // if(isPoS)
+                    // bs.ReadWrite((byte) 0);
 
                 return stream.ToArray();
             }
@@ -566,7 +567,7 @@ namespace Miningcore.Blockchain.Bitcoin
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
-            this.isPoS = isPoS;
+            this.isPoS = false;
             this.shareMultiplier = shareMultiplier;
 
             txComment = !string.IsNullOrEmpty(extraPoolConfig?.CoinbaseTxComment) ?
