@@ -498,13 +498,13 @@ namespace Miningcore.Blockchain.Bitcoin
             if(validateAddressResponse == null || !validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            // isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // // Create pool address script from response
-            // if(!isPoS)
+            if(!isPoS)
                 poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
-            // else
-                // poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
+            else
+                poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
             // Payment-processing setup
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)

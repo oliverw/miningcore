@@ -37,7 +37,7 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
-
+using Miningcore.Crypto.Hashing.Algorithms;
 namespace Miningcore.Blockchain.Bitcoin
 {
     public class BitcoinJob
@@ -329,7 +329,8 @@ namespace Miningcore.Blockchain.Bitcoin
                 HashMerkleRoot = new uint256(merkleRoot),
                 BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
                 Nonce = nonce,
-                ProofOfStake = false
+                ProofOfStake = false,
+                PosBlockSig = Array.Empty<byte>()
             };
 
             return blockHeader.ToBytes();
@@ -349,7 +350,9 @@ namespace Miningcore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce, context.VersionRollingMask, versionBits);
             Span<byte> headerHash = stackalloc byte[32];
-            headerHasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
+                        var hasher = new X16RV2();
+
+            hasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -434,8 +437,8 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref rawTransactionBuffer);
 
                 // // POS coins require a zero byte appended to block which the daemon replaces with the signature
-                // if(isPoS)
-                    // bs.ReadWrite((byte) 0);
+                if(isPoS)
+                    bs.ReadWrite((byte) 0);
 
                 return stream.ToArray();
             }
@@ -567,7 +570,7 @@ namespace Miningcore.Blockchain.Bitcoin
             JobId = jobId;
             Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
             extraNoncePlaceHolderLength = BitcoinConstants.ExtranoncePlaceHolderLength;
-            this.isPoS = false;
+            this.isPoS = isPoS;
             this.shareMultiplier = shareMultiplier;
 
             txComment = !string.IsNullOrEmpty(extraPoolConfig?.CoinbaseTxComment) ?

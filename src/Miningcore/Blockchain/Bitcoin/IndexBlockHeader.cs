@@ -208,18 +208,18 @@ namespace NBitcoin
 				fProofOfStake = value;
 			}
 		}
-		// protected byte[] posBlockSig;
-		// 	public byte[] PosBlockSig
-		// 	{
-		// 		get
-		// 		{
-		// 			return posBlockSig;
-		// 		}
-		// 		set
-		// 		{
-		// 			posBlockSig = value;
-		// 		}
-		// 	}
+		protected byte[] posBlockSig;
+			public byte[] PosBlockSig
+			{
+				get
+				{
+					return posBlockSig;
+				}
+				set
+				{
+					posBlockSig = value;
+				}
+			}
 
 		protected internal virtual void SetNull()
 		{
@@ -230,7 +230,7 @@ namespace NBitcoin
 			nBits = 0;
 			nNonce = 0;
             fProofOfStake = false;
-            // posBlockSig = Array.Empty<byte>();
+            posBlockSig = Array.Empty<byte>();
 		}
 
 		public virtual bool IsNull
@@ -251,7 +251,7 @@ namespace NBitcoin
 			stream.ReadWrite(ref nBits);
 			stream.ReadWrite(ref nNonce);
 			stream.ReadWrite(ref fProofOfStake);
-			// stream.ReadWrite(ref posBlockSig);
+			stream.ReadWrite(ref posBlockSig);
 
 		}
 
