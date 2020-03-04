@@ -329,8 +329,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 HashMerkleRoot = new uint256(merkleRoot),
                 BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
                 Nonce = nonce,
-                ProofOfStake = false,
-                PosBlockSig = Array.Empty<byte>()
+                ProofOfStake = false
             };
 
             return blockHeader.ToBytes();
@@ -350,9 +349,8 @@ namespace Miningcore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce, context.VersionRollingMask, versionBits);
             Span<byte> headerHash = stackalloc byte[32];
-                        var hasher = new X16RV2();
 
-            hasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
+            headerHasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -372,7 +370,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if(ratio < 0.99)
-                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share given  ({shareDiff})");
 
                     // use previous difficulty
                     stratumDifficulty = context.PreviousDifficulty.Value;
