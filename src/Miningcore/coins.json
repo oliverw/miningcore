@@ -309,7 +309,7 @@
             ]
         },
         "hasMasterNodes": true,
-        "shareMultiplier": 256,
+        "shareMultiplier": 4096,
         "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",
         "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"

@@ -320,7 +320,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 version = (version & ~versionMask.Value) | (versionBits.Value & versionMask.Value);
 
 #pragma warning disable 618
-            var blockHeader = new IndexBlockHeader
+            var blockHeader = new BlockHeader
 #pragma warning restore 618
             {
                 Version = unchecked((int) version),
@@ -328,8 +328,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
                 HashMerkleRoot = new uint256(merkleRoot),
                 BlockTime = DateTimeOffset.FromUnixTimeSeconds(nTime),
-                Nonce = nonce,
-                ProofOfStake = false
+                Nonce = nonce
             };
 
             return blockHeader.ToBytes();
