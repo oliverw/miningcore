@@ -160,28 +160,37 @@ namespace Miningcore.Api.Controllers
                     con, pool.Id, start, page, pageSize)))
                 .Select(mapper.Map<MinerPerformanceStats>)
                 .ToArray();
-
+            Response.Headers.Add("x-total-count",miners.Length.ToString());
             return miners;
         }
 
         [HttpGet("{poolId}/blocks")]
         public async Task<Responses.Block[]> PagePoolBlocksPagedAsync(
-            string poolId, [FromQuery] int page, [FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
+            string poolId, [FromQuery] int page, [FromQuery] int _start ,[FromQuery] int _end ,[FromQuery] String _order ,[FromQuery] String _sort,[FromQuery] int perPage = 0,[FromQuery] int pageSize = 15, [FromQuery] BlockStatus[] state = null)
         {
+            //http://192.168.2.2:4000/api/pools/indexchain/blocks?_end=10&_order=ASC&_sort=id&_start=0
             var pool = GetPool(poolId);
+            if(perPage != 0){
+                pageSize = perPage;
+            }
+            bool shouldlimitbyid = _end > 0;
 
             var blockStates = state != null && state.Length > 0 ?
                 state :
                 new[] { BlockStatus.Confirmed, BlockStatus.Pending, BlockStatus.Orphaned };
 
-            var blocks = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
+            var blocks = shouldlimitbyid ? (await cf.Run(con => blocksRepo.PageBlocksAsyncPaged(con, pool.Id, blockStates, page, pageSize,_start,_end,_order,_sort)))
+                .Select(mapper.Map<Responses.Block>)
+                .ToArray():(await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, pageSize)))
                 .Select(mapper.Map<Responses.Block>)
                 .ToArray();
-
+            var totalcount = (await cf.Run(con => blocksRepo.PageBlocksAsync(con, pool.Id, blockStates, page, 100000000)))
+                .Select(mapper.Map<Responses.Block>)
+                .ToArray().Length;
             // enrich blocks
             var blockInfobaseDict = pool.Template.ExplorerBlockLinks;
-
-            foreach(var block in blocks)
+            if (_start == 0 && _end < _start)
+                foreach(var block in blocks)
             {
                 // compute infoLink
                 if(blockInfobaseDict != null)
@@ -197,6 +206,8 @@ namespace Miningcore.Api.Controllers
                     }
                 }
             }
+            
+            Response.Headers.Add("x-total-count",totalcount.ToString());
 
             return blocks;
         }
@@ -226,6 +237,7 @@ namespace Miningcore.Api.Controllers
                 if(!string.IsNullOrEmpty(addressInfobaseUrl))
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
+            Response.Headers.Add("x-total-count",payments.Length.ToString());
 
             return payments;
         }
@@ -294,6 +306,7 @@ namespace Miningcore.Api.Controllers
                 if(!string.IsNullOrEmpty(addressInfobaseUrl))
                     payment.AddressInfoLink = string.Format(addressInfobaseUrl, payment.Address);
             }
+            Response.Headers.Add("x-total-count",payments.Length.ToString());
 
             return payments;
         }
@@ -311,6 +324,7 @@ namespace Miningcore.Api.Controllers
                     con, pool.Id, address, page, pageSize)))
                 .Select(mapper.Map<Responses.BalanceChange>)
                 .ToArray();
+            Response.Headers.Add("x-total-count",balanceChanges.Length.ToString());
 
             return balanceChanges;
         }
@@ -327,6 +341,7 @@ namespace Miningcore.Api.Controllers
             var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
                     con, pool.Id, address, page, pageSize)))
                 .ToArray();
+            Response.Headers.Add("x-total-count",earnings.Length.ToString());
 
             return earnings;
         }
@@ -341,6 +356,7 @@ namespace Miningcore.Api.Controllers
                 throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var result = await GetMinerPerformanceInternal(mode, pool, address);
+            Response.Headers.Add("x-total-count",result.Length.ToString());
 
             return result;
         }
