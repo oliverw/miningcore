@@ -49,9 +49,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "extraPoolConfig":{
-            "AddressType":"BechSegwit"
-        },
+        "hasCoinbasePayload" : true,
         "explorerBlockLink": "https://devault.llama.network/block/$height$",
         "explorerTxLink": "https://devault.llama.network/tx/{0}",
         "explorerAccountLink": "https://www.blocktrail.com/address/devault:{0}"
