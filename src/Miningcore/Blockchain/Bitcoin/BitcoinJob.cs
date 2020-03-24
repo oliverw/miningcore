@@ -578,17 +578,6 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
             }
 
-            if(!string.IsNullOrEmpty(coinbasepayloadParameters.Payee))
-            {
-                var payeeAddress = BitcoinUtils.CashAddrToDestination(coinbasepayloadParameters.Payee, network);
-                var payeeReward = coinbasepayloadParameters.PayeeAmount ?? (reward / 5);
-
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
-
-                tx.Outputs.Add(payeeReward, payeeAddress);
-            }
-
             return reward;
         }
 
