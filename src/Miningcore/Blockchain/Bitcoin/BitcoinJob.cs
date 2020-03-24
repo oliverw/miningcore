@@ -567,7 +567,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     if(!string.IsNullOrEmpty(CoinbasePayee.Payee))
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(CoinbasePayee.Payee, network);
+                        var payeeAddress = BitcoinUtils.CashAddrToDestination(CoinbasePayee.Payee, network);
                         var payeeReward = CoinbasePayee.Amount;
 
                         reward -= payeeReward;
@@ -580,7 +580,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             if(!string.IsNullOrEmpty(coinbasepayloadParameters.Payee))
             {
-                var payeeAddress = BitcoinUtils.AddressToDestination(coinbasepayloadParameters.Payee, network);
+                var payeeAddress = BitcoinUtils.CashAddrToDestination(coinbasepayloadParameters.Payee, network);
                 var payeeReward = coinbasepayloadParameters.PayeeAmount ?? (reward / 5);
 
                 reward -= payeeReward;
