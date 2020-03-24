@@ -23,6 +23,8 @@ using System.Diagnostics;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using static Miningcore.Blockchain.Bitcoin.CashAddr;
+using static Miningcore.Blockchain.Bitcoin.BchAddr;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
@@ -54,6 +56,12 @@ namespace Miningcore.Blockchain.Bitcoin
             var result = new WitKeyId(decoded);
 
             Debug.Assert(result.GetAddress(expectedNetwork).ToString() == address);
+            return result;
+        }
+        public static IDestination CashAddrToDestination(string address, Network expectedNetwork)
+        {
+            BchAddr.BchAddrData bchAddr = BchAddr.DecodeCashAddressWithPrefix(address);
+            var result = new KeyId(bchAddr.Hash);
             return result;
         }
     }

@@ -502,7 +502,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // // Create pool address script from response
             //if(!isPoS)
-                poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
+                poolAddressDestination = AddressToDestination(poolConfig.Address, poolConfig.Template.Symbol == "DVT" ? BitcoinAddressType.CashAddr  : extraPoolConfig?.AddressType);
             // else
             //     poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
@@ -563,6 +563,9 @@ namespace Miningcore.Blockchain.Bitcoin
             {
                 case BitcoinAddressType.BechSegwit:
                     return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
+
+                case BitcoinAddressType.CashAddr:
+                    return BitcoinUtils.CashAddrToDestination(poolConfig.Address, network);
 
                 default:
                     return BitcoinUtils.AddressToDestination(poolConfig.Address, network);

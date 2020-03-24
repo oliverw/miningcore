@@ -196,9 +196,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
                 submitcount+=1;
-                if(submitcount % 1000 == 0){
-                logger.Info(() => $"[{client.ConnectionId}] {submitcount} Shares accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
-                }
+                logger.Info(() => $"[{client.ConnectionId}] Total Shares:{submitcount} Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
