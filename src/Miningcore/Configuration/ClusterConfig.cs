@@ -164,6 +164,9 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
 
+        [JsonProperty("hasCoinbasePayload")]
+        public bool HasCoinbasePayload { get; set; }
+
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;

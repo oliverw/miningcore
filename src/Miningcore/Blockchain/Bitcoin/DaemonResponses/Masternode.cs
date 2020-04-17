@@ -23,6 +23,9 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
     {
         public JToken Masternode { get; set; }
 
+        [JsonProperty("indexnode")]
+        private JToken Indexnode { set { Masternode = value; } }
+
         [JsonProperty("masternode_payments_started")]
         public bool MasternodePaymentsStarted { get; set; }
 

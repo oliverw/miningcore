@@ -35,6 +35,25 @@
         "explorerTxLink": "https://www.blocktrail.com/BCC/tx/{0}",
         "explorerAccountLink": "https://www.blocktrail.com/BCC/address/{0}"
     },
+    "devault": {
+        "name": "DeVault",
+        "symbol": "DVT",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasCoinbasePayload" : true,
+        "explorerBlockLink": "https://devault.llama.network/block/$height$",
+        "explorerTxLink": "https://devault.llama.network/tx/{0}",
+        "explorerAccountLink": "https://www.blocktrail.com/address/devault:{0}"
+    },
     "namecoin": {
         "name": "Namecoin",
         "symbol": "NMC",
@@ -308,11 +327,12 @@
                 }
             ]
         },
+        "hasPayees":true,
         "hasMasterNodes": true,
-        "shareMultiplier": 256,
-        "explorerBlockLink": "https://chainz.cryptoid.info/dash/block.dws?$height$.htm",
-        "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
-        "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"
+        "shareMultiplier": 4096,
+        "explorerBlockLink": "http://202.182.107.84/block/$hash$",
+        "explorerTxLink": "http://202.182.107.84/tx/{0}",
+        "explorerAccountLink": "http://202.182.107.84/address/{0}"
     },
     "mooncoin": {
         "name": "MoonCoin",
@@ -417,12 +437,32 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "x16s"
+            "hash": "x21s"
         },
         "blockHasher": {
             "hash": "reverse",
-            "args": [ { "hash": "x16s" } ]
+            "args": [ { "hash": "x21s" } ]
         },
+        "shareMultiplier": 256,
+        "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",
+        "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",
+        "explorerAccountLink": "http://explorer.pigeoncoin.org/address/{0}"
+    },
+    "pigeoncoin-testnet": {
+        "name": "Pigeoncoin",
+        "symbol": "PGN",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x21s"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x21s" } ]
+        },
+        "hasMasterNodes":true,
         "shareMultiplier": 256,
         "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",
         "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",

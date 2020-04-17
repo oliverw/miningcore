@@ -25,6 +25,7 @@ namespace Miningcore.Api.Responses
 {
     public class Payment
     {
+        public long Id { get; set; }
         public string Coin { get; set; }
         public string Address { get; set; }
         public string AddressInfoLink { get; set; }

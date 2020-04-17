@@ -19,23 +19,24 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
-using System.Threading.Tasks;
-using Miningcore.Persistence.Model;
+using Miningcore.Contracts;
+using Miningcore.Native;
 
-namespace Miningcore.Persistence.Repositories
+namespace Miningcore.Crypto.Hashing.Algorithms
 {
-    public interface IBlockRepository
+    public unsafe class Quark : IHashAlgorithm
     {
-        Task InsertAsync(IDbConnection con, IDbTransaction tx, Block block);
-        Task DeleteBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
-        Task UpdateBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-        Task<Block[]> PageBlocksAsync(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
-        Task<Block[]> PageBlocksAsyncPaged(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize,int _start,int _end,string _order,string _sort);
-
-        Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize);
-        Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId);
-        Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.quark(input, output, (uint) data.Length);
+                }
+            }
+        }
     }
 }

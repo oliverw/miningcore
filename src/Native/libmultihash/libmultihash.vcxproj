@@ -256,6 +256,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="stdint.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="yespower_sugarchain.h" />
     <ClInclude Include="x11.h" />
     <ClInclude Include="x13.h" />
     <ClInclude Include="x14.h" />
@@ -344,6 +345,8 @@
     <ClCompile Include="skein.c" />
     <ClCompile Include="Sponge.c" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="yespower_sugarchain.c" />
+    <ClCompile Include="yespower_ref.c" />
     <ClCompile Include="x11.c" />
     <ClCompile Include="x13.c" />
     <ClCompile Include="x14.c" />

@@ -37,7 +37,7 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
-
+using Miningcore.Crypto.Hashing.Algorithms;
 namespace Miningcore.Blockchain.Bitcoin
 {
     public class BitcoinJob
@@ -112,10 +112,11 @@ namespace Miningcore.Blockchain.Bitcoin
                 scriptSigFinalBytes.Length);
 
             // output transaction
-            txOut = coin.HasMasterNodes ?
-                CreateMasternodeOutputTransaction() :
-                (coin.HasPayee ? CreatePayeeOutputTransaction() : CreateOutputTransaction());
-
+            txOut = coin.HasMasterNodes ? CreateMasternodeOutputTransaction() : (coin.HasPayee ? CreatePayeeOutputTransaction() : CreateOutputTransaction());
+            if(coin.HasCoinbasePayload){
+                //Build txOut with superblock and cold reward payees for DVT
+                txOut = CreatePayloadOutputTransaction();
+            }
             // build coinbase initial
             using(var stream = new MemoryStream())
             {
@@ -124,7 +125,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 // version
                 bs.ReadWrite(ref txVersion);
 
-                // timestamp for POS coins
+                // // timestamp for POS coins
                 if(isPoS)
                 {
                     var timestamp = BlockTemplate.CurTime;
@@ -348,6 +349,7 @@ namespace Miningcore.Blockchain.Bitcoin
             // hash block-header
             var headerBytes = SerializeHeader(coinbaseHash, nTime, nonce, context.VersionRollingMask, versionBits);
             Span<byte> headerHash = stackalloc byte[32];
+
             headerHasher.Digest(headerBytes, headerHash, (ulong) nTime, BlockTemplate, coin, networkParams);
             var headerValue = new uint256(headerHash);
 
@@ -368,7 +370,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     ratio = shareDiff / context.PreviousDifficulty.Value;
 
                     if(ratio < 0.99)
-                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share given  ({shareDiff})");
 
                     // use previous difficulty
                     stratumDifficulty = context.PreviousDifficulty.Value;
@@ -432,7 +434,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref coinbase);
                 bs.ReadWrite(ref rawTransactionBuffer);
 
-                // POS coins require a zero byte appended to block which the daemon replaces with the signature
+                // // POS coins require a zero byte appended to block which the daemon replaces with the signature
                 if(isPoS)
                     bs.ReadWrite((byte) 0);
 
@@ -492,10 +494,10 @@ namespace Miningcore.Blockchain.Bitcoin
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
-
-                        reward -= payeeReward;
-                        rewardToPool -= payeeReward;
-
+                        if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
+                            reward -= payeeReward;
+                            rewardToPool -= payeeReward;
+                        }
                         tx.Outputs.Add(payeeReward, payeeAddress);
                     }
                 }
@@ -518,10 +520,11 @@ namespace Miningcore.Blockchain.Bitcoin
             if(!string.IsNullOrEmpty(masterNodeParameters.Payee))
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
-                var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
-
+                var payeeReward = masterNodeParameters.PayeeAmount;
+                if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
+                }
 
                 tx.Outputs.Add(payeeReward, payeeAddress);
             }
@@ -530,6 +533,56 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         #endregion // Masternodes
+
+        #region DevaultCoinbasePayload
+
+        protected CoinbasePayloadBlockTemplateExtra coinbasepayloadParameters;
+
+        protected virtual Transaction CreatePayloadOutputTransaction()
+        {
+            var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+
+            var tx = Transaction.Create(network);
+
+            // outputs
+            rewardToPool = CreatePayloadOutputs(tx, blockReward);
+
+            // Finally distribute remaining funds to pool
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
+
+            return tx;
+        }
+
+        protected virtual Money CreatePayloadOutputs(Transaction tx, Money reward)
+        {
+            if(coinbasepayloadParameters.CoinbasePayload != null)
+            {
+                CoinbasePayload[] coinbasepayloads;
+                if(coinbasepayloadParameters.CoinbasePayload.Type == JTokenType.Array)
+                    coinbasepayloads = coinbasepayloadParameters.CoinbasePayload.ToObject<CoinbasePayload[]>();
+                else
+                    coinbasepayloads = new[] { coinbasepayloadParameters.CoinbasePayload.ToObject<CoinbasePayload>() };
+
+                foreach(var CoinbasePayee in coinbasepayloads)
+                {
+                    if(!string.IsNullOrEmpty(CoinbasePayee.Payee))
+                    {
+                        var payeeAddress = BitcoinUtils.CashAddrToDestination(CoinbasePayee.Payee, network);
+                        var payeeReward = CoinbasePayee.Amount;
+
+                        reward -= payeeReward;
+                        rewardToPool -= payeeReward;
+
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                    }
+                }
+            }
+
+            return reward;
+        }
+
+        #endregion // DevaultCoinbasePayload
 
         #region API-Surface
 
@@ -582,6 +635,12 @@ namespace Miningcore.Blockchain.Bitcoin
                     var txType = 5;
                     txVersion = txVersion + ((uint) (txType << 16));
                 }
+            }
+            if(coin.HasCoinbasePayload){
+
+                coinbasepayloadParameters = BlockTemplate.Extra.SafeExtensionDataAs<CoinbasePayloadBlockTemplateExtra>();
+
+
             }
 
             if(coin.HasPayee)
