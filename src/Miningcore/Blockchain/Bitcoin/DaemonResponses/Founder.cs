@@ -15,8 +15,6 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
 
     public class FounderBlockTemplateExtra : PayeeBlockTemplateExtra
     {
-
-        [JsonProperty("founder")]
-        public Founder Founder { get; set; }
+        public JToken Founder { get; set; }
     }
 }

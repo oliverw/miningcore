@@ -327,7 +327,6 @@
                 }
             ]
         },
-        "hasPayees":true,
         "hasMasterNodes": true,
         "shareMultiplier": 4096,
         "explorerBlockLink": "http://202.182.107.84/block/$hash$",
@@ -449,8 +448,8 @@
         "explorerAccountLink": "http://explorer.pigeoncoin.org/address/{0}"
     },
     "pigeoncoin-testnet": {
-        "name": "Pigeoncoin",
-        "symbol": "PGN",
+        "name": "PigeoncoinTest",
+        "symbol": "PGNt",
         "family": "bitcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
@@ -462,6 +461,7 @@
             "hash": "reverse",
             "args": [ { "hash": "x21s" } ]
         },
+        "hasFounderFee":true,
         "hasMasterNodes":true,
         "shareMultiplier": 256,
         "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",

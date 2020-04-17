@@ -167,6 +167,9 @@ namespace Miningcore.Configuration
         [JsonProperty("hasCoinbasePayload")]
         public bool HasCoinbasePayload { get; set; }
 
+        [JsonProperty("hasFounderFee")]
+        public bool HasFounderFee { get; set; }
+
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
