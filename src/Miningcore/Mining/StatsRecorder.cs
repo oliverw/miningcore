@@ -59,7 +59,7 @@ namespace Miningcore.Mining
         private readonly IShareRepository shareRepo;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-        private readonly TimeSpan interval = TimeSpan.FromMinutes(5);
+        private readonly TimeSpan interval = TimeSpan.FromMinutes(1);
         private const int HashrateCalculationWindow = 1200; // seconds
         private const int MinHashrateCalculationWindow = 300; // seconds
         private const double HashrateBoostFactor = 1.1d;
@@ -153,7 +153,9 @@ namespace Miningcore.Mining
                         var poolHashesAccumulated = result.Sum(x => x.Sum);
                         var poolHashesCountAccumulated = result.Sum(x => x.Count);
                         var poolHashrate = pool.HashrateFromShares(poolHashesAccumulated, windowActual) * HashrateBoostFactor;
-
+                        if(poolId == "indexchain"){
+                            poolHashrate *= 11.2;
+                        }
                         // update
                         pool.PoolStats.ConnectedMiners = byMiner.Length;
                         pool.PoolStats.PoolHashrate = (ulong) Math.Ceiling(poolHashrate);
@@ -229,6 +231,9 @@ namespace Miningcore.Mining
                             if(windowActual >= MinHashrateCalculationWindow)
                             {
                                 var hashrate = pool.HashrateFromShares(item.Sum, windowActual) * HashrateBoostFactor;
+                                if(poolId == "indexchain"){
+                                    hashrate *= 11.2;
+                                }
                                 minerTotalHashrate += hashrate;
 
                                 // update

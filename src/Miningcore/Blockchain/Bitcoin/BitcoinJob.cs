@@ -494,10 +494,10 @@ namespace Miningcore.Blockchain.Bitcoin
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
-
-                        reward -= payeeReward;
-                        rewardToPool -= payeeReward;
-
+                        if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
+                            reward -= payeeReward;
+                            rewardToPool -= payeeReward;
+                        }
                         tx.Outputs.Add(payeeReward, payeeAddress);
                     }
                 }
@@ -520,10 +520,11 @@ namespace Miningcore.Blockchain.Bitcoin
             if(!string.IsNullOrEmpty(masterNodeParameters.Payee))
             {
                 var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
-                var payeeReward = masterNodeParameters.PayeeAmount ?? (reward / 5);
-
+                var payeeReward = masterNodeParameters.PayeeAmount;
+                if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
                 reward -= payeeReward;
                 rewardToPool -= payeeReward;
+                }
 
                 tx.Outputs.Add(payeeReward, payeeAddress);
             }

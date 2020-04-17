@@ -163,7 +163,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // update progress
                                 var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
-                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
+                                block.Reward = transactionInfo.Details[0].Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
@@ -173,7 +173,7 @@ namespace Miningcore.Blockchain.Bitcoin
                                 // matured and spendable coinbase transaction
                                 block.Status = BlockStatus.Confirmed;
                                 block.ConfirmationProgress = 1;
-                                block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
+                                block.Reward = transactionInfo.Details[0].Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);
 
                                 logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
@@ -242,14 +242,14 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     args = new object[]
                     {
-                        string.Empty, // default account
+                        "", // default account
                         amounts, // addresses and associated amounts
                         1, // only spend funds covered by this many confirmations
                         false, // Whether to add confirmations to transactions locked via InstantSend
                         comment, // tx comment
-                        subtractFeesFrom, // distribute transaction fee equally over all recipients
-                        false, // use_is: Send this transaction as InstantSend
-                        false, // Use anonymized funds only
+                        subtractFeesFrom // distribute transaction fee equally over all recipients
+                        // false, // use_is: Send this transaction as InstantSend
+                        // false, // Use anonymized funds only
                     };
                 }
             }
