@@ -263,11 +263,11 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual Transaction CreateOutputTransaction()
         {
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
+            
+            var tx = Transaction.Create(network);
             //Now check if we need to pay founder fees Re PGN pre-dash fork
             if(coin.HasFounderFee)
                 rewardToPool = CreateFounderOutputs(tx,rewardToPool);
-            
-            var tx = Transaction.Create(network);
 
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
