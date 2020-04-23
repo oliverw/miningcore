@@ -442,6 +442,7 @@
             "hash": "reverse",
             "args": [ { "hash": "x21s" } ]
         },
+        "hasFounderFee":true,
         "shareMultiplier": 256,
         "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",
         "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",
