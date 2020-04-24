@@ -502,7 +502,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // // Create pool address script from response
             //if(!isPoS)
-                poolAddressDestination = AddressToDestination(poolConfig.Address, (poolConfig.Template.Symbol == "DVT" || poolConfig.Template.Symbol == "BCHABC"  || poolConfig.Template.Symbol == "BCH" ) ? BitcoinAddressType.CashAddr  : extraPoolConfig?.AddressType);
+                poolAddressDestination = AddressToDestination(poolConfig.Address,extraPoolConfig?.AddressType);
             // else
             //     poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
@@ -510,8 +510,8 @@ namespace Miningcore.Blockchain.Bitcoin
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
                 // ensure pool owns wallet
-                //if (!validateAddressResponse.IsMine)
-                //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
+                if (!validateAddressResponse.IsMine)
+                   logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'");
 
                 ConfigureRewards();
             }
