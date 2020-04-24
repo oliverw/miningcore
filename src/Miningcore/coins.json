@@ -62,11 +62,19 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "sha256d"
+            "hash": "yespower_sugarchain"
         },
         "blockHasher": {
             "hash": "reverse",
-            "args": [ { "hash": "yespower_sugarchain" } ]
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "yespower_sugarchain"
+                }
+            ]
         },
         "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
         "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
