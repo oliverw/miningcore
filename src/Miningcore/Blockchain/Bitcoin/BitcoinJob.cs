@@ -582,7 +582,7 @@ namespace Miningcore.Blockchain.Bitcoin
             }
             if(!string.IsNullOrEmpty(coinbasepayloadParameters.Payee))
             {
-                var payeeAddress = BitcoinUtils.AddressToDestination(coinbasepayloadParameters.Payee, network);
+                var payeeAddress = BitcoinUtils.CashAddrToDestination(coinbasepayloadParameters.Payee, network);
                 var payeeReward = coinbasepayloadParameters.PayeeAmount;
 
                 tx.Outputs.Add(payeeReward, payeeAddress);
