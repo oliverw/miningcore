@@ -59,7 +59,7 @@
         "symbol": "SUGAR",
         "family": "bitcoin",
         "coinbaseHasher": {
-            "hash": "yespower_sugarchain"
+            "hash": "sha256d"
         },
         "headerHasher": {
             "hash": "sha256d"
