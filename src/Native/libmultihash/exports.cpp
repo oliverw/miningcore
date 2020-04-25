@@ -43,7 +43,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "c11.h"
 #include "Lyra2RE.h"
 #include "Lyra2.h"
-#include "yespower_sugarchain.h"
+#include "yespower/yespower_sugarchain.h"
 #include "x16r.h"
 #include "x16rv2.h"
 #include "x16s.h"

@@ -76,6 +76,7 @@
                 }
             ]
         },
+        "shareMultipler":4194304,
         "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
         "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
         "explorerAccountLink": "https://1explorer.sugarchain.org/address/{0}"
@@ -102,6 +103,7 @@
                 }
             ]
         },
+        "shareMultipler":4194304,
         "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
         "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
         "explorerAccountLink": "https://1explorer.sugarchain.org/address/{0}"
