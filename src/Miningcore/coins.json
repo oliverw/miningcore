@@ -80,6 +80,32 @@
         "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
         "explorerAccountLink": "https://1explorer.sugarchain.org/address/{0}"
     },
+    "sugarchain-testnet": {
+        "name": "TSugarchain",
+        "symbol": "tSUGAR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "yespower_sugarchain"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "yespower_sugarchain"
+                }
+            ]
+        },
+        "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
+        "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
+        "explorerAccountLink": "https://1explorer.sugarchain.org/address/{0}"
+    },
     "namecoin": {
         "name": "Namecoin",
         "symbol": "NMC",
