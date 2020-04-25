@@ -28,6 +28,11 @@ namespace Miningcore.Blockchain.Bitcoin.Configuration
         public BitcoinAddressType AddressType { get; set; } = BitcoinAddressType.Legacy;
 
         /// <summary>
+        /// Set bech32 prefix if it is not the standard bech prefix of btc
+        /// </summary>
+        public string BechPrefix {get;set;} = "bc";
+
+        /// <summary>
         /// Maximum number of tracked jobs.
         /// Default: 12 - you should increase this value if your blockrefreshinterval is higher than 300ms
         /// </summary>

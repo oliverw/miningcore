@@ -562,7 +562,7 @@ namespace Miningcore.Blockchain.Bitcoin
             switch(addressType.Value)
             {
                 case BitcoinAddressType.BechSegwit:
-                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
+                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network,extraPoolConfig?.BechPrefix);
 
                 case BitcoinAddressType.CashAddr:
                     return BitcoinUtils.CashAddrToDestination(poolConfig.Address, network);
