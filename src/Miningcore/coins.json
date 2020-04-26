@@ -482,6 +482,25 @@
         "explorerTxLink": "https://ravencoin.network/tx/{0}",
         "explorerAccountLink": "https://ravencoin.network/address/{0}"
     },
+    "pexacoin": {
+        "name": "Pexacoin",
+        "symbol": "PEXA",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16rv2"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x16rv2" } ]
+        },
+        "shareMultiplier": 256,
+        "explorerBlockLink": "$hash$",
+        "explorerTxLink": "{0}",
+        "explorerAccountLink": "{0}"
+    },
     "pigeoncoin": {
         "name": "Pigeoncoin",
         "symbol": "PGN",

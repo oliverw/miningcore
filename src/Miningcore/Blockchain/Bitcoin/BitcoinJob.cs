@@ -500,8 +500,8 @@ namespace Miningcore.Blockchain.Bitcoin
                         var payeeAddress = BitcoinUtils.AddressToDestination(masterNode.Payee, network);
                         var payeeReward = masterNode.Amount;
                         if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
-                            reward -= payeeReward;
-                            rewardToPool -= payeeReward;
+                                reward -= payeeReward;
+                                rewardToPool -= payeeReward;
                         }
                         tx.Outputs.Add(payeeReward, payeeAddress);
                     }
@@ -527,8 +527,8 @@ namespace Miningcore.Blockchain.Bitcoin
                 var payeeAddress = BitcoinUtils.AddressToDestination(masterNodeParameters.Payee, network);
                 var payeeReward = masterNodeParameters.PayeeAmount;
                 if(!(poolConfig.Template.Symbol == "IDX" ||poolConfig.Template.Symbol == "XZC")){
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
+                    reward -= payeeReward;
+                    rewardToPool -= payeeReward;
                 }
 
                 tx.Outputs.Add(payeeReward, payeeAddress);
@@ -546,20 +546,15 @@ namespace Miningcore.Blockchain.Bitcoin
         protected virtual Transaction CreatePayloadOutputTransaction()
         {
             var blockReward = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
-            rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
-
             var tx = Transaction.Create(network);
-
-            // outputs
-            rewardToPool = CreatePayloadOutputs(tx, blockReward);
-
-            // Finally distribute remaining funds to pool
-            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
-
+            // Firstly pay coins to pool addr
+            tx.Outputs.Insert(0, new TxOut(blockReward, poolAddressDestination));
+            // then create payloads incase there is any coinbase_payload in gbt
+            CreatePayloadOutputs(tx, rewardToPool);
             return tx;
         }
 
-        protected virtual Money CreatePayloadOutputs(Transaction tx, Money reward)
+        protected virtual void CreatePayloadOutputs(Transaction tx, Money reward)
         {
             if(coinbasepayloadParameters.CoinbasePayload != null)
             {
@@ -580,14 +575,6 @@ namespace Miningcore.Blockchain.Bitcoin
                     }
                 }
             }
-            if(!string.IsNullOrEmpty(coinbasepayloadParameters.Payee))
-            {
-                var payeeAddress = BitcoinUtils.CashAddrToDestination(coinbasepayloadParameters.Payee, network);
-                var payeeReward = coinbasepayloadParameters.PayeeAmount;
-
-                tx.Outputs.Add(payeeReward, payeeAddress);
-            }
-            return reward;
         }
 
         #endregion // DevaultCoinbasePayload
