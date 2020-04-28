@@ -68,14 +68,6 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "posBlockHasher": {
-            "hash": "reverse",
-            "args": [
-                {
-                    "hash": "yespower_sugarchain"
-                }
-            ]
-        },
         "shareMultipler":4194304,
         "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
         "explorerTxLink": "https://1explorer.sugarchain.org/tx/{0}",
@@ -94,14 +86,6 @@
         "blockHasher": {
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
-        },
-        "posBlockHasher": {
-            "hash": "reverse",
-            "args": [
-                {
-                    "hash": "yespower_sugarchain"
-                }
-            ]
         },
         "shareMultipler":4194304,
         "explorerBlockLink": "https://1explorer.sugarchain.org/block/$hash$",
@@ -386,6 +370,46 @@
         "explorerBlockLink": "http://202.182.107.84/block/$hash$",
         "explorerTxLink": "http://202.182.107.84/tx/{0}",
         "explorerAccountLink": "http://202.182.107.84/address/{0}"
+    },
+    "5gcash": {
+        "name": "5gCash",
+        "symbol": "FIVEG",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x16r"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasMasterNodes": true,
+        "shareMultiplier": 256,
+        "explorerBlockLink": "https://explorer.fiveg.be/block/$hash$",
+        "explorerTxLink": "https://explorer.fiveg.be/tx/{0}",
+        "explorerAccountLink": "https://explorer.fiveg.be/address/{0}"
+    },
+    "minerium": {
+        "name": "Minerium",
+        "symbol": "MINR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasMasterNodes": true,
+        "shareMultiplier": 256,
+        "explorerBlockLink": "https://mineriumexplorer.com/block/$hash$",
+        "explorerTxLink": "https://mineriumexplorer.com/tx/{0}",
+        "explorerAccountLink": "https://mineriumexplorer.com/address/{0}"
     },
     "mooncoin": {
         "name": "MoonCoin",
