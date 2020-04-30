@@ -43,7 +43,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "c11.h"
 #include "Lyra2RE.h"
 #include "Lyra2.h"
-#include "yespower/yespower_sugarchain.h"
 #include "x16r.h"
 #include "x16rv2.h"
 #include "x16s.h"
@@ -213,11 +212,6 @@ extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
 extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output)
 {
 	lyra2re3_hash(input, output);
-}
-
-extern "C" MODULE_API void yespower_sugarchain_export(const char* input, char* output, uint32_t input_len)
-{
-    yespower_hash(input, output);
 }
 
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
