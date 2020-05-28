@@ -71,6 +71,25 @@
         "explorerTxLink": "https://chainz.cryptoid.info/ppc/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/ppc/address.dws?{0}.htm"
     },
+        "freecash": {
+        "name": "FreeCash",
+        "symbol": "FCH",
+         "family": "bitcoin",
+         "coinbaseHasher": {
+              "hash": "sha256d"
+         },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+         "hash": "reverse",
+         "args": [ { "hash": "sha256d" } ]
+         },
+        "hasCoinbaseDevReward":true,
+        "explorerBlockLink": "https://freecash.info/block?height=%7B0%7D",
+        "explorerTxLink": "https://freecash.info/transaction?hash=%7B0%7D",
+        "explorerAccountLink": "https://freecash.info/address?address=%7B0%7D"
+    },
     "litecoin": {
         "name": "Litecoin",
         "symbol": "LTC",
