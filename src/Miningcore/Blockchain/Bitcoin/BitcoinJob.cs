@@ -264,10 +264,6 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var tx = Transaction.Create(network);
             
-            //Now check if we need to pay founder fees Re PGN pre-dash fork
-            if(coin.HasFounderFee)
-                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
-
             //CoinbaseDevReward check for Freecash
             if(coin.HasCoinbaseDevReward)
                 rewardToPool = CreateCoinbaseDevRewardOutputs(tx,rewardToPool);
@@ -475,9 +471,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
              // outputs
             rewardToPool = CreateMasternodeOutputs(tx, blockReward);
-            //Now check if we need to pay founder fees Re PGN
-            if(coin.HasFounderFee)
-                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
+            
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
 
@@ -624,12 +618,6 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
             }
             
-            if(coin.HasCoinbasePayload)
-                coinbasepayloadParameters = BlockTemplate.Extra.SafeExtensionDataAs<CoinbasePayloadBlockTemplateExtra>();
-
-            if(coin.HasFounderFee)
-                FounderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
-
             if(coin.HasCoinbaseDevReward)
                 CoinbaseDevRewardParams = BlockTemplate.Extra.SafeExtensionDataAs<CoinbaseDevRewardTemplateExtra>();
 
