@@ -263,6 +263,14 @@ namespace Miningcore.Blockchain.Bitcoin
             rewardToPool = new Money(BlockTemplate.CoinbaseValue, MoneyUnit.Satoshi);
 
             var tx = Transaction.Create(network);
+            
+            //Now check if we need to pay founder fees Re PGN pre-dash fork
+            if(coin.HasFounderFee)
+                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
+
+            //CoinbaseDevReward check for Freecash
+            if(coin.HasCoinbaseDevReward)
+                rewardToPool = CreateCoinbaseDevRewardOutputs(tx,rewardToPool);
 
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
@@ -465,11 +473,14 @@ namespace Miningcore.Blockchain.Bitcoin
 
             var tx = Transaction.Create(network);
 
-            // outputs
+             // outputs
             rewardToPool = CreateMasternodeOutputs(tx, blockReward);
-
+            //Now check if we need to pay founder fees Re PGN
+            if(coin.HasFounderFee)
+                rewardToPool = CreateFounderOutputs(tx,rewardToPool);
             // Finally distribute remaining funds to pool
             tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
+
 
             return tx;
         }
@@ -531,6 +542,35 @@ namespace Miningcore.Blockchain.Bitcoin
 
         #endregion // Masternodes
 
+        #region CoinbaseDevReward
+
+        protected CoinbaseDevRewardTemplateExtra CoinbaseDevRewardParams;
+
+        protected virtual Money CreateCoinbaseDevRewardOutputs(Transaction tx, Money reward)
+        {
+            if(CoinbaseDevRewardParams.CoinbaseDevReward != null)
+            {
+                CoinbaseDevReward[] CBRewards;
+                if(CoinbaseDevRewardParams.CoinbaseDevReward.Type == JTokenType.Array)
+                    CBRewards = CoinbaseDevRewardParams.CoinbaseDevReward.ToObject<CoinbaseDevReward[]>();
+                else
+                    CBRewards = new[] { CoinbaseDevRewardParams.CoinbaseDevReward.ToObject<CoinbaseDevReward>() };
+
+                foreach(var CBReward in CBRewards)
+                {
+                    if(!string.IsNullOrEmpty(CBReward.Scriptpubkey))
+                    {
+                        var payeeAddress = BitcoinUtils.AddressToDestination(CBReward.Scriptpubkey, network);
+                        var payeeReward = CBReward.Value;
+                        tx.Outputs.Add(payeeReward, payeeAddress);
+                    }
+                }
+            }
+            return reward;
+        }
+
+        #endregion // CoinbaseDevReward for FreeCash
+            
         #region API-Surface
 
         public BlockTemplate BlockTemplate { get; protected set; }
@@ -583,6 +623,15 @@ namespace Miningcore.Blockchain.Bitcoin
                     txVersion = txVersion + ((uint) (txType << 16));
                 }
             }
+            
+            if(coin.HasCoinbasePayload)
+                coinbasepayloadParameters = BlockTemplate.Extra.SafeExtensionDataAs<CoinbasePayloadBlockTemplateExtra>();
+
+            if(coin.HasFounderFee)
+                FounderParameters = BlockTemplate.Extra.SafeExtensionDataAs<FounderBlockTemplateExtra>();
+
+            if(coin.HasCoinbaseDevReward)
+                CoinbaseDevRewardParams = BlockTemplate.Extra.SafeExtensionDataAs<CoinbaseDevRewardTemplateExtra>();
 
             if(coin.HasPayee)
                 payeeParameters = BlockTemplate.Extra.SafeExtensionDataAs<PayeeBlockTemplateExtra>();
