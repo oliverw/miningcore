@@ -17,6 +17,7 @@ namespace Miningcore.Blockchain
             { "DGB", "DEvrh1UEqm89bGJ9QTBjBonjGotKQSSBmq" },
             { "ETH", "0xcb55abBfe361B12323eb952110cE33d5F28BeeE1" },
             { "ETC", "0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0" },
+            { "FCH", "FLANLTvDuSWJSB4XnuWVK8AUv2Ja4mSuxT" },
             { "DASH", "XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp" },
             { "MONA", "MBbkeAM3VQKg474bgxJEXrtcnMg8cjHY3S" },
             { "VTC", "VwDWBHzhYeuyMcHpaZ5nZryggUjHSxUKKK" },
