@@ -49,6 +49,16 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
+        public static IDestination MultiSigAddressToDestination(string address, Network expectedNetwork)
+        {
+            var decoded = Encoders.Base58Check.DecodeData(address);
+            var networkVersionBytes = expectedNetwork.GetVersionBytes(Base58Type.SCRIPT_ADDRESS, true);
+            decoded = decoded.Skip(networkVersionBytes.Length).ToArray();
+            var result = new ScriptId(decoded);
+
+            return result;
+        }
+
         public static IDestination BechSegwitAddressToDestination(string address, Network expectedNetwork,string bechPrefix)
         {
             var encoder = Encoders.Bech32(bechPrefix);

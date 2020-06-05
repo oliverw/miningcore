@@ -648,6 +648,7 @@
             "args": [ { "hash": "x21s" } ]
         },
         "hasFounderFee":true,
+        "isFounderPayeeMultisig":true,
         "shareMultiplier": 256,
         "explorerBlockLink": "https://pgn-explorer.urgo.org/block/$height$",
         "explorerTxLink": "https://pgn-explorer.urgo.org/tx/{0}",

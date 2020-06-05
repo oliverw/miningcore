@@ -587,6 +587,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected virtual Money CreateFounderOutputs(Transaction tx, Money reward)
         {
+
             if(FounderParameters.Founder != null)
             {
                 Founder[] founders = new[] { FounderParameters.Founder.ToObject<Founder>() };
@@ -594,8 +595,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     if(!string.IsNullOrEmpty(Founder.Payee))
                     {
-                        var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
-                        
+                        var payeeAddress = coin.IsFounderPayeeMultisig ? BitcoinUtils.MultiSigAddressToDestination(Founder.Payee, network) : BitcoinUtils.AddressToDestination(Founder.Payee, network);
                         var payeeReward = Founder.Amount;
                         reward -= payeeReward;
                         rewardToPool -= payeeReward;

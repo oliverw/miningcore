@@ -170,6 +170,9 @@ namespace Miningcore.Configuration
         [JsonProperty("hasFounderFee")]
         public bool HasFounderFee { get; set; }
 
+        [JsonProperty("isFounderPayeeMultisig")]
+        public bool IsFounderPayeeMultisig { get; set; }
+
         [JsonProperty("hasCoinbaseDevReward")]
         public bool HasCoinbaseDevReward { get; set; }
 
