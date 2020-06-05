@@ -267,11 +267,11 @@ namespace Miningcore.Blockchain.Bitcoin
             if(coin.HasFounderFee)
                 rewardToPool = CreateFounderOutputs(tx,rewardToPool);
 
-            //CoinbaseDevReward check for Freecash
-            if(coin.HasCoinbaseDevReward)
-                rewardToPool = CreateCoinbaseDevRewardOutputs(tx,rewardToPool);
 
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
+            //CoinbaseDevReward check for Freecash
+            if(coin.HasCoinbaseDevReward)
+                CreateCoinbaseDevRewardOutputs(tx);
 
             return tx;
         }
@@ -612,7 +612,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         protected CoinbaseDevRewardTemplateExtra CoinbaseDevRewardParams;
 
-        protected virtual Money CreateCoinbaseDevRewardOutputs(Transaction tx, Money reward)
+        protected virtual void CreateCoinbaseDevRewardOutputs(Transaction tx)
         {
             if(CoinbaseDevRewardParams.CoinbaseDevReward != null)
             {
@@ -629,7 +629,6 @@ namespace Miningcore.Blockchain.Bitcoin
                     }
                 }
             }
-            return reward;
         }
 
         #endregion // CoinbaseDevReward for FreeCash
