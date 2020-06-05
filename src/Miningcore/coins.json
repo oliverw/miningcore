@@ -249,6 +249,25 @@
         "explorerTxLink": "https://chainz.cryptoid.info/dash/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/dash/address.dws?{0}.htm"
     },
+    "axe": {
+        "name": "Axe",
+        "symbol": "AXE",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x11"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x11" } ]
+        },
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://insight.axecore.net/block/$height$",
+        "explorerTxLink": "https://insight.axecore.net/tx/{0}",
+        "explorerAccountLink": "https://insight.axecore.net/address/{0}"
+    },
     "paccoin": {
         "name": "Paccoin",
         "symbol": "PAC",
@@ -391,6 +410,77 @@
         "explorerTxLink": "https://explorer.fiveg.be/tx/{0}",
         "explorerAccountLink": "https://explorer.fiveg.be/address/{0}"
     },
+    "pyrk-sha256": {
+        "name": "Pyrk Sha256",
+        "canonicalName": "Pyrk",
+        "symbol": "PYRK",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://explorer.pyrk.org/blockheight/$height$",
+        "explorerTxLink": "https://explorer.pyrk.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.pyrk.org/address/{0}"
+    },
+    "pyrk-scrypt": {
+        "name": "Pyrk Scrypt",
+        "canonicalName": "Pyrk",
+        "symbol": "PYRK",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://explorer.pyrk.org/blockheight/$height$",
+        "explorerTxLink": "https://explorer.pyrk.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.pyrk.org/address/{0}"
+    },
+    "pyrk-x11": {
+        "name": "Pyrk X11",
+        "canonicalName": "Pyrk",
+        "symbol": "PYRK",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x11"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://explorer.pyrk.org/blockheight/$height$",
+        "explorerTxLink": "https://explorer.pyrk.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.pyrk.org/address/{0}"
+    },
     "minerium": {
         "name": "Minerium",
         "symbol": "MINR",
@@ -406,7 +496,6 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "hasMasterNodes": true,
-        "shareMultiplier": 256,
         "explorerBlockLink": "https://mineriumexplorer.com/block/$hash$",
         "explorerTxLink": "https://mineriumexplorer.com/tx/{0}",
         "explorerAccountLink": "https://mineriumexplorer.com/address/{0}"
@@ -541,9 +630,9 @@
         },
         "hasFounderFee":true,
         "shareMultiplier": 256,
-        "explorerBlockLink": "http://explorer.pigeoncoin.org/block/$hash$",
-        "explorerTxLink": "http://explorer.pigeoncoin.org/tx/{0}",
-        "explorerAccountLink": "http://explorer.pigeoncoin.org/address/{0}"
+        "explorerBlockLink": "https://pgn-explorer.urgo.org/block/$height$",
+        "explorerTxLink": "https://pgn-explorer.urgo.org/tx/{0}",
+        "explorerAccountLink": "https://pgn-explorer.urgo.org/address/{0}"
     },
     "pigeoncoin-testnet": {
         "name": "PigeoncoinTest",

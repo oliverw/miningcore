@@ -37,8 +37,6 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using Transaction = NBitcoin.Transaction;
-using Miningcore.Crypto.Hashing.Algorithms;
-
 namespace Miningcore.Blockchain.Bitcoin
 {
     public class BitcoinJob
@@ -76,7 +74,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Transaction txOut;
 
         // serialization constants
-        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/Mineit/"))).ToBytes();
 
         protected static byte[] sha256Empty = new byte[32];
         protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
@@ -269,7 +267,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(coin.HasFounderFee)
                 rewardToPool = CreateFounderOutputs(tx,rewardToPool);
 
-            tx.Outputs.Add(rewardToPool, poolAddressDestination);
+            tx.Outputs.Insert(0, new TxOut(rewardToPool, poolAddressDestination));
 
             return tx;
         }
@@ -587,34 +585,20 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             if(FounderParameters.Founder != null)
             {
-                Founder[] founders;
-                if(FounderParameters.Founder.Type == JTokenType.Array)
-                    founders = FounderParameters.Founder.ToObject<Founder[]>();
-                else
-                    founders = new[] { FounderParameters.Founder.ToObject<Founder>() };
-
+                Founder[] founders = new[] { FounderParameters.Founder.ToObject<Founder>() };
                 foreach(var Founder in founders)
                 {
                     if(!string.IsNullOrEmpty(Founder.Payee))
                     {
                         var payeeAddress = BitcoinUtils.AddressToDestination(Founder.Payee, network);
+                        
                         var payeeReward = Founder.Amount;
                         reward -= payeeReward;
                         rewardToPool -= payeeReward;
-                        tx.Outputs.Add(payeeReward, payeeAddress);
+                        tx.Outputs.Add(payeeReward,payeeAddress);
                     }
                 }
             }
-
-            if(!string.IsNullOrEmpty(FounderParameters.Payee))
-            {
-                var payeeAddress = BitcoinUtils.AddressToDestination(FounderParameters.Payee, network);
-                var payeeReward = FounderParameters.PayeeAmount;
-                reward -= payeeReward;
-                rewardToPool -= payeeReward;
-                tx.Outputs.Add(payeeReward, payeeAddress);
-            }
-
             return reward;
         }
 

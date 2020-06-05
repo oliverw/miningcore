@@ -13,7 +13,7 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
         public long Amount { get; set; }
     }
 
-    public class FounderBlockTemplateExtra : PayeeBlockTemplateExtra
+    public class FounderBlockTemplateExtra
     {
         public JToken Founder { get; set; }
     }

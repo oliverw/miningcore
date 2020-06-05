@@ -247,9 +247,9 @@ namespace Miningcore.Blockchain.Bitcoin
                         1, // only spend funds covered by this many confirmations
                         false, // Whether to add confirmations to transactions locked via InstantSend
                         comment, // tx comment
-                        subtractFeesFrom // distribute transaction fee equally over all recipients
-                        // false, // use_is: Send this transaction as InstantSend
-                        // false, // Use anonymized funds only
+                        subtractFeesFrom, // distribute transaction fee equally over all recipients
+                        false, // use_is: Send this transaction as InstantSend
+                        false, // Use anonymized funds only
                     };
                 }
             }

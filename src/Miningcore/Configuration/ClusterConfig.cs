@@ -164,7 +164,7 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasMasterNodes { get; set; }
 
-        [JsonProperty("hasCoinbasePayload")]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool HasCoinbasePayload { get; set; }
 
         [JsonProperty("hasFounderFee")]
