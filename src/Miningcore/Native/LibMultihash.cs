@@ -112,9 +112,6 @@ namespace Miningcore.Native
         [DllImport("libmultihash", EntryPoint = "c11_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int c11(byte* input, void* output, uint inputLength);
 
-        [DllImport("libmultihash", EntryPoint = "yespower_sugarchain_export", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int yespower_sugarchain(byte* input, void* output, uint inputLength);
-
         [DllImport("libmultihash", EntryPoint = "x16r_export", CallingConvention = CallingConvention.Cdecl)]
         public static extern int x16r(byte* input, void* output, uint inputLength);
 

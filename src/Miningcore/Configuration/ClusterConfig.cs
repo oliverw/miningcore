@@ -154,7 +154,7 @@ namespace Miningcore.Configuration
         public uint CoinbaseTxVersion { get; set; }
 
         /// <summary>
-        /// Default transaction comment for coins that REQUIRE tx comments 
+        /// Default transaction comment for coins that REQUIRE tx comments
         /// </summary>
         public string CoinbaseTxComment { get; set; }
 
@@ -169,6 +169,9 @@ namespace Miningcore.Configuration
 
         [JsonProperty("hasFounderFee")]
         public bool HasFounderFee { get; set; }
+
+        [JsonProperty("hasCoinbaseDevReward")]
+        public bool HasCoinbaseDevReward { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
@@ -684,7 +687,7 @@ namespace Miningcore.Configuration
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
-        public string PubKey { get; set; }  // POS coins only 
+        public string PubKey { get; set; }  // POS coins only
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }

@@ -256,8 +256,6 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="stdint.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="yespower\yespower_sugarchain.h" />
-    <ClInclude Include="yespower\sysendian.h" />
     <ClInclude Include="x11.h" />
     <ClInclude Include="x13.h" />
     <ClInclude Include="x14.h" />
@@ -315,7 +313,6 @@
     <ClCompile Include="qubit.c" />
     <ClCompile Include="s3.c" />
     <ClCompile Include="scryptn.c" />
-    <ClCompile Include="sha256.c" />
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\extra.c" />
     <ClCompile Include="sha3\gost_streebog.c" />
@@ -347,9 +344,6 @@
     <ClCompile Include="skein.c" />
     <ClCompile Include="Sponge.c" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="yespower\yespower_sugarchain.c" />
-    <ClCompile Include="yespower\yespower-opt.c" />
-    <ClCompile Include="yespower\yespower-platform.c" />
     <ClCompile Include="x11.c" />
     <ClCompile Include="x13.c" />
     <ClCompile Include="x14.c" />
