@@ -500,11 +500,14 @@ namespace Miningcore.Blockchain.Bitcoin
 
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
-            // // Create pool address script from response
-            //if(!isPoS)
+            // Create pool address script from response
+            if(!isPoS || !poolConfig.UseP2PK){
                 poolAddressDestination = AddressToDestination(poolConfig.Address,extraPoolConfig?.AddressType);
-            // else
-            //     poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
+            }
+    
+            else {
+                poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
+            }
 
             // Payment-processing setup
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
@@ -518,7 +521,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // update stats
             BlockchainStats.NetworkType = network.Name;
-            BlockchainStats.RewardType =  "POW";
+            BlockchainStats.RewardType = isPoS ? "POS":"POW";
 
             // block submission RPC method
             if(submitBlockResponse.Error?.Message?.ToLower() == "method not found")

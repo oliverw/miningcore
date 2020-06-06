@@ -694,7 +694,12 @@ namespace Miningcore.Configuration
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }
-
+        /// <summary>
+        //Set this to false for hybrid coins that do not use pay to pubkey for coinbase,for example IDX
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(false)]
+        public bool UseP2PK { get; set; }
         /// <summary>
         /// If true, internal stratum ports are not initialized
         /// </summary>
