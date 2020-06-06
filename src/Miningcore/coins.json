@@ -50,9 +50,9 @@
          "args": [ { "hash": "sha256d" } ]
          },
         "hasCoinbaseDevReward":true,
-        "explorerBlockLink": "https://freecash.info/block?height=%7B0%7D",
-        "explorerTxLink": "https://freecash.info/transaction?hash=%7B0%7D",
-        "explorerAccountLink": "https://freecash.info/address?address=%7B0%7D"
+        "explorerBlockLink": "https://freecash.info/block?height=$height$",
+        "explorerTxLink": "https://freecash.info/transaction?hash={0}",
+        "explorerAccountLink": "https://freecash.info/address?address={0}"
     },
     "devault": {
         "name": "DeVault",
