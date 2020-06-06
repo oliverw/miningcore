@@ -74,7 +74,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Transaction txOut;
 
         // serialization constants
-        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/Mineit/"))).ToBytes();
+        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
 
         protected static byte[] sha256Empty = new byte[32];
         protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
