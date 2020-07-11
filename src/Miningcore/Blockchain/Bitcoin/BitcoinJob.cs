@@ -125,7 +125,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref txVersion);
 
                 // // timestamp for POS coins
-                if(isPoS)
+                if(isPoS && poolConfig.UseP2PK)
                 {
                     var timestamp = BlockTemplate.CurTime;
                     bs.ReadWrite(ref timestamp);
@@ -441,7 +441,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref rawTransactionBuffer);
 
                 // // POS coins require a zero byte appended to block which the daemon replaces with the signature
-                if(isPoS)
+                if(isPoS && poolConfig.UseP2PK)
                     bs.ReadWrite((byte) 0);
 
                 return stream.ToArray();

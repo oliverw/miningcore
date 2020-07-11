@@ -120,7 +120,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     job = CreateJob();
 
                     job.Init(blockTemplate, NextJobId(),
-                        poolConfig, extraPoolConfig, clusterConfig, clock, poolAddressDestination, network, false,
+                        poolConfig, extraPoolConfig, clusterConfig, clock, poolAddressDestination, network, isPoS,
                         ShareMultiplier, coin.CoinbaseHasherValue, coin.HeaderHasherValue,
                         coin.BlockHasherValue);
 
