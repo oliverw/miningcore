@@ -464,7 +464,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
@@ -485,7 +485,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "shareMultiplier": 65536,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
@@ -504,7 +504,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
@@ -523,7 +523,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
@@ -543,7 +543,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "shareMultiplier": 256,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
@@ -574,7 +574,7 @@
             }
         },
         "shareMultiplier": 256,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
+        "explorerBlockLink": "https://digiexplorer.info/block/$hash$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
