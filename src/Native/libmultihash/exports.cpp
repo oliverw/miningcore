@@ -352,7 +352,7 @@ extern "C" MODULE_API bool ethash_get_default_dirname_export(char *buf, size_t b
 	return ethash_get_default_dirname(buf, buf_size);
 }
 
-extern "C" MODULE_API void verushash2_2(const char* input, char* output, uint32_t input_len)
+extern "C" MODULE_API void verushash_export(const char* input, char* output, uint32_t input_len)
 {
     CVerusHashV2* vh2b2;
     vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
