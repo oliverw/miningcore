@@ -46,6 +46,7 @@ namespace Miningcore.Blockchain.Equihash
     {
         protected IMasterClock clock;
         protected static IHashAlgorithm headerHasher = new Sha256D();
+        protected static IHashAlgorithm headerHasherverus = new Verushash();
         protected EquihashCoinTemplate coin;
         protected Network network;
 
@@ -204,7 +205,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
+        protected byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
         {
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
@@ -223,7 +224,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
