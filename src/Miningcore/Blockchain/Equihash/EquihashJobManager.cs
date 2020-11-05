@@ -36,7 +36,7 @@ namespace Miningcore.Blockchain.Equihash
         {
             getBlockTemplateParams = null;
         }
-
+        
         private EquihashCoinTemplate coin;
         public EquihashCoinTemplate.EquihashNetworkParams ChainConfig { get; private set; }
         private EquihashSolver solver;
@@ -88,7 +88,6 @@ namespace Miningcore.Blockchain.Equihash
             var result = new KeyId(hash);
             return result;
         }
-
         private EquihashJob CreateJob()
         {
             switch(coin.Symbol)

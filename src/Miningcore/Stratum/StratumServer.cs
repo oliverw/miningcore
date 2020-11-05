@@ -43,6 +43,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+using Miningcore.Blockchain.Equihash;
 
 namespace Miningcore.Stratum
 {
@@ -166,7 +167,7 @@ namespace Miningcore.Stratum
         private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
-            var connectionId = CorrelationIdGenerator.GetNextId();
+            var connectionId = CorrelationIdGenerator.GetNextId(); 
 
             // get rid of banned clients as early as possible
             if(banManager?.IsBanned(remoteEndpoint.Address) == true)

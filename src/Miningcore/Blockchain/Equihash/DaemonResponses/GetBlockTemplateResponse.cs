@@ -51,5 +51,7 @@ namespace Miningcore.Blockchain.Equihash.DaemonResponses
 
         [JsonProperty("finalsaplingroothash")]
         public string FinalSaplingRootHash { get; set; }
+        [JsonProperty("solution")]
+        public string Solution { get; set; }
     }
 }

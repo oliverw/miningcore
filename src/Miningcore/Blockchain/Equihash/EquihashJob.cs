@@ -187,6 +187,9 @@ namespace Miningcore.Blockchain.Equihash
 
             if(isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
                 blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToReverseByteArray();
+            
+            if(!string.IsNullOrEmpty(BlockTemplate.Solution))
+                blockHeader.SolutionIn = BlockTemplate.Solution.HexToReverseByteArray();
 
             return blockHeader.ToBytes();
         }
@@ -342,8 +345,7 @@ namespace Miningcore.Blockchain.Equihash
                 networkParams.SaplingActivationHeight.Value > 0 &&
                 blockTemplate.Height >= networkParams.SaplingActivationHeight.Value;
 
-            isOverwinterActive = isSaplingActive ||
-                networkParams.OverwinterTxVersion.HasValue &&
+            isOverwinterActive = networkParams.OverwinterTxVersion.HasValue &&
                 networkParams.OverwinterTxVersionGroupId.HasValue &&
                 networkParams.OverwinterActivationHeight.HasValue &&
                 networkParams.OverwinterActivationHeight.Value > 0 &&
@@ -410,6 +412,10 @@ namespace Miningcore.Blockchain.Equihash
                 blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() :
                 sha256Empty.ToHexString();
 
+            var solutionIn = !string.IsNullOrEmpty(blockTemplate.Solution) ?
+                blockTemplate.Solution.HexToByteArray().ToHexString() :
+                null;
+
             jobParams = new object[]
             {
                 JobId,
@@ -419,7 +425,8 @@ namespace Miningcore.Blockchain.Equihash
                 hashReserved,
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
                 BlockTemplate.Bits.HexToReverseByteArray().ToHexString(),
-                false
+                false,
+                solutionIn
             };
         }
 
@@ -464,7 +471,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public object GetJobParams(bool isNew)
         {
-            jobParams[jobParams.Length - 1] = isNew;
+            jobParams[jobParams.Length - 2] = isNew;
             return jobParams;
         }
 
