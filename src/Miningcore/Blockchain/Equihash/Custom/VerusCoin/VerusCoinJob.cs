@@ -39,6 +39,27 @@ namespace Miningcore.Blockchain.Equihash.Custom.VerusCoin
 {
     public class VerusCoinJob : EquihashJob
     {
+        protected override byte[] SerializeHeader(uint nTime, string nonce)
+        {
+            var blockHeader = new EquihashBlockHeader
+            {
+                Version = (int) BlockTemplate.Version,
+                Bits = new Target(Encoders.Hex.DecodeData(BlockTemplate.Bits)),
+                HashPrevBlock = uint256.Parse(BlockTemplate.PreviousBlockhash),
+                HashMerkleRoot = new uint256(merkleRoot),
+                NTime = nTime,
+                Nonce = nonce
+            };
+
+            if(isSaplingActive && !string.IsNullOrEmpty(BlockTemplate.FinalSaplingRootHash))
+                blockHeader.HashReserved = BlockTemplate.FinalSaplingRootHash.HexToReverseByteArray();
+            
+            if(!string.IsNullOrEmpty(BlockTemplate.Solution))
+                blockHeader.SolutionIn = BlockTemplate.Solution.HexToReverseByteArray();
+
+            return blockHeader.ToBytes();
+        }
+
         protected override (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
@@ -53,9 +74,9 @@ namespace Miningcore.Blockchain.Equihash.Custom.VerusCoin
             //     throw new StratumException(StratumError.Other, "invalid solution");
 
             // concat header and solution
-            Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length + solutionBytes.Length];
+            Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length+3];
             headerBytes.CopyTo(headerSolutionBytes);
-            solutionBytes.CopyTo(headerSolutionBytes.Slice(headerBytes.Length));
+            solutionBytes.CopyTo(headerSolutionBytes.Slice(140));
 
             // hash block-header
             Span<byte> headerHash = stackalloc byte[32];
