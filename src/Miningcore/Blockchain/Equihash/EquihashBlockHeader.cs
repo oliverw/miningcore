@@ -29,7 +29,7 @@ namespace Miningcore.Blockchain.Equihash
         private string nNonce;
         private uint nTime;
         private int nVersion;
-        private byte[] nSolution = new byte[1344];
+        private string nSolution;
 
         // header
         private const int CURRENT_VERSION = 4;
@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Equihash
             set => nNonce = value;
         }
 
-        public byte[] SolutionIn
+        public string SolutionIn
         {
             get => nSolution;
             set => nSolution = value;
@@ -95,7 +95,7 @@ namespace Miningcore.Blockchain.Equihash
         public void ReadWrite(BitcoinStream stream)
         {
             var nonceBytes = nNonce.HexToByteArray();
-        
+            var solutionBytes = nSolution.HexToByteArray();
 
             stream.ReadWrite(ref nVersion);
             stream.ReadWrite(ref hashPrevBlock);
@@ -104,7 +104,7 @@ namespace Miningcore.Blockchain.Equihash
             stream.ReadWrite(ref nTime);
             stream.ReadWrite(ref nBits);
             stream.ReadWrite(ref nonceBytes);
-            stream.ReadWrite(ref nSolution);
+            stream.ReadWrite(ref solutionBytes);
         }
 
         #endregion
@@ -123,7 +123,7 @@ namespace Miningcore.Blockchain.Equihash
             nTime = 0;
             nBits = 0;
             nNonce = string.Empty;
-            nSolution = new byte[1344];
+            nSolution = string.Empty;
         }
     }
 }
