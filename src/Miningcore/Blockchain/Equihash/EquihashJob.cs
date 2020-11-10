@@ -300,7 +300,7 @@ namespace Miningcore.Blockchain.Equihash
                 var headertemp = headerBytes.Take(140).ToArray();
                 var blockBytes = SerializeBlock(headertemp, coinbaseInitial, solutionBytes);
                 var blockHex = blockBytes.ToHexString();
-
+            
                 return (result, blockHex);
             }
 
