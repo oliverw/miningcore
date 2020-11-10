@@ -1142,6 +1142,9 @@
                 },
                 "coinbaseTxNetwork": "main",
                 "payFoundersReward": false,
+                "overwinterActivationHeight": 1,
+                "overwinterTxVersion": 3,
+                "overwinterTxVersionGroupId": 63210096,
                 "saplingActivationHeight": 1,
                 "saplingTxVersion": 4,
                 "saplingTxVersionGroupId": 2301567109

@@ -1,0 +1,213 @@
+{
+
+    "logging": {
+
+        "level": "Info",
+
+        "enableConsoleLog": true,
+
+        "enableConsoleColors": true,
+
+        "logFile": "core.log",
+
+        "apiLogFile": "api.log",
+
+        "logBaseDirectory": "",
+
+        "perPoolLogFile": false
+
+    },
+
+
+
+    "banning": {
+
+        "manager": "integrated",
+
+        "banOnJunkReceive": false,
+
+        "banOnInvalidShares": false
+
+    },
+
+
+
+     "notifications": {
+
+        "enabled": false,
+
+        "email": {
+
+            "host": "smtp.gmail.com",
+
+            "port": 587,
+
+            "user": "adbelmix@gmail.com",
+
+            "password": "Password",
+
+            "fromAddress": "adbelmix@gmail.com",
+
+            "fromName": "support"
+
+        },
+
+
+
+        "admin": {
+
+            "enabled": false,
+
+            "emailAddress": "adbelmix@gmail.com",
+
+            "notifyBlockFound": true,
+
+            "notifyPayoutSuccess": true,
+
+            "notifyPaymentSuccess": true,
+
+            "notifyPayoutFailure": true
+
+        }
+
+    },
+
+
+
+    "persistence": {
+
+        "postgres": {
+
+            "host": "127.0.0.1",
+
+            "port": 5432,
+
+            "user": "miningcore",
+
+            "password": "password",
+
+            "database": "miningcore"
+
+        }
+
+    },
+
+
+
+    "paymentProcessing": {
+
+        "enabled": false,
+
+        "interval": 4000,
+
+        "shareRecoveryFile": "recovered-shares.txt"
+
+    },
+
+
+
+	"api": {
+
+        "enabled": true,
+
+"ssl": false,
+	"tls": false,
+ "tlsPfxFile": "",
+        "listenAddress": "127.0.0.1",
+
+        "port": 4000,
+
+        "metricsIpWhitelist": ["127.0.0.1"],
+
+        "rateLimiting": {
+
+            "disabled": true,
+
+            "rules": [
+
+                {
+
+                    "Endpoint": "*",
+
+                    "Period": "60s",
+
+                    "Limit": 1000000
+
+                }
+
+            ],
+
+            "ipWhitelist": []
+
+        }
+
+
+
+    },
+
+
+
+	
+
+
+
+    "pools": [
+
+{
+        "id": "VerusCoin",
+        "enabled": true,
+        "coin": "VerusCoin",
+        "address": "RE9v8tCKiALVmkWbirTKc5cZpSJtuXswJ8",
+	    "z-address": "zs10lh6jvugelexk8ejvu0uyyw9tt4u9zz38m6q9s8wmdcn70qltufc4h9w9hpj2mhkej8uukx9t9n",
+        "rewardRecipients": [
+            {
+                "address": "RE9v8tCKiALVmkWbirTKc5cZpSJtuXswJ8",
+                "percentage": 1.0
+            }
+        ],
+        "blockRefreshInterval": 250,
+        "jobRebroadcastTimeout": 300,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3052": {
+
+		"listenAddress": "0.0.0.0",
+                "difficulty": 10,
+                "varDiff": {
+                    "minDiff": 6,
+                    "maxDiff": 2147483648,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+		},
+        "daemons": [
+            {
+                "host": "ip",
+                "port": 27486,
+                    "user": "user",
+                    "password": "pass"
+					
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.05,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            }
+        }
+    },
+
+
+]
+
+}

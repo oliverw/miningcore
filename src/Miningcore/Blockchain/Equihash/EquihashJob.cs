@@ -90,7 +90,8 @@ namespace Miningcore.Blockchain.Equihash
         protected virtual Transaction CreateOutputTransaction()
         {
             var txNetwork = Network.GetNetwork(networkParams.CoinbaseTxNetwork);
-            var tx = Transaction.Create(txNetwork);
+            var tx1 = Transaction.Create(txNetwork);
+            var tx = new ZcashTransaction(tx1.ToHex());
 
             // set versions
             tx.Version = txVersion;
@@ -227,7 +228,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
+        private (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -235,19 +236,24 @@ namespace Miningcore.Blockchain.Equihash
 
             // serialize block-header
             var headerBytes = SerializeHeader(nTime, nonce);
-
-            // verify solution
-            if(!solver.Verify(headerBytes, solutionBytes.Slice(networkParams.SolutionPreambleSize)))
-                throw new StratumException(StratumError.Other, "invalid solution");
-
+            if(coin.Symbol != "VRSC")
+            {
+             //verify solution
+              if(!solver.Verify(headerBytes, solutionBytes.Slice(networkParams.SolutionPreambleSize)))
+                 throw new StratumException(StratumError.Other, "invalid solution");
+            }
             // concat header and solution
-            Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length + solutionBytes.Length];
+            var length = (coin.Symbol != "VRSC") ? headerBytes.Length + solutionBytes.Length : headerBytes.Length+3 ;
+           // if(coin.Symbol != "Verus")
+            Span<byte> headerSolutionBytes = stackalloc byte[length];
             headerBytes.CopyTo(headerSolutionBytes);
-            solutionBytes.CopyTo(headerSolutionBytes.Slice(headerBytes.Length));
+            var length_slice = (coin.Symbol != "VRSC") ? headerBytes.Length : 140 ;
+            solutionBytes.CopyTo(headerSolutionBytes.Slice(length_slice));
 
             // hash block-header
             Span<byte> headerHash = stackalloc byte[32];
-            headerHasher.Digest(headerSolutionBytes, headerHash, (ulong) nTime);
+            var length_digest = (coin.Symbol != "VRSC") ? (ulong) nTime :  (ulong)headerSolutionBytes.Length ;
+            headerHasherverus.Digest(headerSolutionBytes, headerHash, length_digest);
             var headerValue = new uint256(headerHash);
 
             // calc share-diff
@@ -291,8 +297,8 @@ namespace Miningcore.Blockchain.Equihash
                 result.IsBlockCandidate = true;
                 result.BlockReward = rewardToPool.ToDecimal(MoneyUnit.BTC);
                 result.BlockHash = headerHashReversed.ToHexString();
-
-                var blockBytes = SerializeBlock(headerBytes, coinbaseInitial, solutionBytes);
+                var headertemp = headerBytes.Take(140).ToArray();
+                var blockBytes = SerializeBlock(headertemp, coinbaseInitial, solutionBytes);
                 var blockHex = blockBytes.ToHexString();
 
                 return (result, blockHex);
@@ -345,7 +351,8 @@ namespace Miningcore.Blockchain.Equihash
                 networkParams.SaplingActivationHeight.Value > 0 &&
                 blockTemplate.Height >= networkParams.SaplingActivationHeight.Value;
 
-            isOverwinterActive = networkParams.OverwinterTxVersion.HasValue &&
+            isOverwinterActive = isSaplingActive ||
+                networkParams.OverwinterTxVersion.HasValue &&
                 networkParams.OverwinterTxVersionGroupId.HasValue &&
                 networkParams.OverwinterActivationHeight.HasValue &&
                 networkParams.OverwinterActivationHeight.Value > 0 &&
