@@ -1172,8 +1172,8 @@
                 "payFoundersReward": false
             }
         },
-        "usesZCashAddressFormat": true,
-        "useBitcoinPayoutHandler": false,
+        "usesZCashAddressFormat": false,
+        "useBitcoinPayoutHandler": true,
         "explorerBlockLink": "https://explorer.veruscoin.io/block/$height$",
         "explorerTxLink": "https://explorer.veruscoin.io/tx/%7B0%7D",
         "explorerAccountLink": "https://explorer.veruscoin.io/address/%7B0%7D"
