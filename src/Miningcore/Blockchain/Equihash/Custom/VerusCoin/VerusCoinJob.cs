@@ -238,9 +238,9 @@ namespace Miningcore.Blockchain.Equihash.Custom.VerusCoin
             var hashReserved = isSaplingActive && !string.IsNullOrEmpty(blockTemplate.FinalSaplingRootHash) ?
                 blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() :
                 sha256Empty.ToHexString();
-
+            char[] charsToTrim = {'0'};
             var solutionIn = !string.IsNullOrEmpty(blockTemplate.Solution) ?
-                blockTemplate.Solution.HexToByteArray().ToHexString() :
+                blockTemplate.Solution.HexToByteArray().ToHexString().TrimEnd(charsToTrim) :
                 null;
 
             jobParams = new object[]
