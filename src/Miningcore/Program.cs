@@ -718,10 +718,13 @@ namespace Miningcore
                 })
                 .ConfigureServices(services =>
                 {
+                    // Memory Cache
+                    services.AddMemoryCache();
+
                     // rate limiting
                     if(enableApiRateLimiting)
                     {
-                        services.AddMemoryCache();
+                        
                         services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
                         services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
                         services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
@@ -750,12 +753,16 @@ namespace Miningcore
                     services.AddResponseCompression();
 
                     // Cors
+                    // ToDo: Test if Admin portal is working without .credentials()
+                    // .AllowAnyOrigin(_ => true)
+                    // .AllowCredentials()
                     services.AddCors(options =>
                     {
                         options.AddPolicy("CorsPolicy",
                             builder => builder.AllowAnyOrigin()
                                               .AllowAnyMethod()
-                                              .AllowAnyHeader() );
+                                              .AllowAnyHeader()
+                                          );
                     }
                     );
 
