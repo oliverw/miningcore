@@ -721,6 +721,7 @@ namespace Miningcore
                     // rate limiting
                     if(enableApiRateLimiting)
                     {
+                        services.AddMemoryCache();
                         services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
                         services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
                         services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
