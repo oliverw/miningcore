@@ -755,6 +755,7 @@ namespace Miningcore
                             builder => builder.AllowAnyOrigin()
                                               .AllowAnyMethod()
                                               .AllowAnyHeader()
+
                             );
                     }
                     );
