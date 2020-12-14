@@ -67,7 +67,7 @@ You can also send donations directly to the developemers using the following acc
 
 * BTC:  `3QT2WreQtanPHcMneg9LT2aH3s5nrSZsxr`
 * LTC:  `LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg`
-* DASH: `Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw
+* DASH: `Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw`
 * ETH:  `0xBfD360CDd9014Bc5B348B65cBf79F78381694f4E`
 * ETC:  `0xF4BFFC324bbeB63348F137B84f8d1Ade17B507E4`
 * XMR: `44riGcQcDp4EsboDJP284CFCnJ2qP7y8DAqGC4D9WtVbEqzxQ3qYXAUST57u5FkrVF7CXhsEc63QNWazJ5b9ygwBJBtB2kT`
@@ -166,19 +166,19 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 
 #### Building on Windows
 
-Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
+Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
 > git clone https://github.com/minernl/miningcore
 > cd miningcore/src/Miningcore
-> dotnet publish -c Release --framework netcoreapp2.2  -o ..\..\build
+> dotnet publish -c Release --framework netcoreapp3.1  -o ..\..\build
 ```
 
-#### Building on Windows - Visual Studio
+#### Building on Windows - VISUAL STUDIO
 
-- Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
-- Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
-- Open `Miningcore.sln` in VS 2017
+- Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
+- Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
+- Open `Miningcore.sln` in VS 2019
 
 
 #### Running Miningcore (after build)
@@ -193,6 +193,6 @@ dotnet Miningcore.dll -c config.json
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
-You can use the web frontend that come with this fork [MinerNL - Miningcore.Web](https://github.com/minernl/Miningcore.WebUI)
+You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
 
 Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
