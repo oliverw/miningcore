@@ -398,22 +398,22 @@ namespace Miningcore
  ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
 ");
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($" MININGCORE - multi mining pool");
+            Console.WriteLine($" MININGCORE - making mining easy");
             Console.WriteLine($" https://github.com/minernl/miningcore\n");
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($" Part off all donation goes to the core developers");
-            Console.WriteLine($" Oliver Weichhold (oliverw)\n")
-            Console.WriteLine($" https://github.com/coinfoundry/miningcore\n");
-            Console.WriteLine($" If you want to donate to him yourself:\n");
-            Console.WriteLine($" BTC  - 17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm");
-            Console.WriteLine($" LTC  - LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC");
-            Console.WriteLine($" DASH - XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp");
-            Console.WriteLine($" ZEC  - t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7");
-            Console.WriteLine($" ZCL  - t1MFU1vD3YKgsK6Uh8hW7UTY8mKAV2xVqBr");
-            Console.WriteLine($" ETH  - 0xcb55abBfe361B12323eb952110cE33d5F28BeeE1");
-            Console.WriteLine($" ETC  - 0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0");
-            Console.WriteLine($" XMR  - 475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH");
+            Console.WriteLine($" If you want to donate to them yourself:\n");
+            Console.WriteLine($" BTC  - 3QT2WreQtanPHcMneg9LT2aH3s5nrSZsxr");
+            Console.WriteLine($" LTC  - LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg");
+            Console.WriteLine($" DASH - Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtwTh");
+            Console.WriteLine($" ETH  - 0xBfD360CDd9014Bc5B348B65cBf79F78381694f4E");
+            Console.WriteLine($" ETC  - 0xF4BFFC324bbeB63348F137B84f8d1Ade17B507E4");
+            Console.WriteLine($" UMA  - 0x10c42769a8a07421C168c19612A434A72D460d08");
+            Console.WriteLine($" XLM  - GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37:::ucl:::864367071");
+            Console.WriteLine($" XMR  - 44riGcQcDp4EsboDJP284CFCnJ2qP7y8DAqGC4D9WtVbEqzxQ3qYXAUST57u5FkrVF7CXhsEc63QNWazJ5b9ygwBJBtB2kT");
+            Console.WriteLine($" XPR  - rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg:::ucl:::2242232925");
+            Console.WriteLine($" ZEC  - t1JtJtxTdgXCaYm1wzRfMRkGTJM4qLcm4FQ");
             Console.WriteLine();
             Console.ResetColor();
         }
@@ -735,13 +735,15 @@ namespace Miningcore
                     services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-                    services.AddMvc()
-                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                    services.AddControllers()
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
                         .AddControllersAsServices()
-                        .AddJsonOptions(options =>
+                        .AddNewtonsoftJson(options =>
                         {
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
+
+                    // .ContractResolver = new DefaultContractResolver());
 
                     // Gzip Compression
                     services.AddResponseCompression();
@@ -767,7 +769,12 @@ namespace Miningcore
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
-                    app.UseMvc();
+                    //app.UseMvc();
+                    app.UseRouting();
+                    app.UseEndpoints(endpoints => {
+                        endpoints.MapDefaultControllerRoute();
+                        endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                    });
                 })
                  .UseKestrel(options =>
                 {
