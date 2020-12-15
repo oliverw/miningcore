@@ -181,6 +181,8 @@ Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/downl
 - Open `Miningcore.sln` in VS 2019
 
 
+## Running a production pool
+
 #### Running Miningcore (after build)
 
 Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
@@ -189,8 +191,6 @@ Create a configuration file <code>config.json</code> as described [here](https:/
 cd ../../build
 dotnet Miningcore.dll -c config.json
 ```
-
-## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
 You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
