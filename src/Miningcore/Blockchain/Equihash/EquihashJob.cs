@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,11 +26,12 @@ namespace Miningcore.Blockchain.Equihash
     {
         protected IMasterClock clock;
         protected static IHashAlgorithm headerHasher = new Sha256D();
+		protected static IHashAlgorithm headerHasherverus = new Verushash();
         protected EquihashCoinTemplate coin;
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly HashSet<string> submissions = new HashSet<string>();
+        protected readonly HashSet<string> submissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
@@ -171,7 +152,6 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-
         protected virtual byte[] SerializeHeader(uint nTime, string nonce)
         {
             var blockHeader = new EquihashBlockHeader
@@ -204,7 +184,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
+        protected byte[] SerializeBlock(Span<byte> header, Span<byte> coinbase, Span<byte> solution)
         {
             var transactionCount = (uint) BlockTemplate.Transactions.Length + 1; // +1 for prepended coinbase tx
             var rawTransactionBuffer = BuildRawTransactionBuffer();
@@ -223,8 +203,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
-            uint nTime, string solution)
+        protected virtual (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce, uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
             var solutionBytes = (Span<byte>) solution.HexToByteArray();
@@ -409,6 +388,10 @@ namespace Miningcore.Blockchain.Equihash
                 blockTemplate.FinalSaplingRootHash.HexToReverseByteArray().ToHexString() :
                 sha256Empty.ToHexString();
 
+			var solutionIn = !string.IsNullOrEmpty(blockTemplate.Solution) ?
+                blockTemplate.Solution.HexToByteArray().ToHexString() :
+                null;
+				
             jobParams = new object[]
             {
                 JobId,
@@ -418,7 +401,8 @@ namespace Miningcore.Blockchain.Equihash
                 hashReserved,
                 BlockTemplate.CurTime.ReverseByteOrder().ToStringHex8(),
                 BlockTemplate.Bits.HexToReverseByteArray().ToHexString(),
-                false
+                false,
+                solutionIn
             };
         }
 
@@ -442,7 +426,7 @@ namespace Miningcore.Blockchain.Equihash
 
             var nTimeInt = uint.Parse(nTime.HexToReverseByteArray().ToHexString(), NumberStyles.HexNumber);
 
-            if (nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
+            if(nTimeInt < BlockTemplate.CurTime || nTimeInt > ((DateTimeOffset)clock.UtcNow).ToUnixTimeSeconds() + 7200)
                 throw new StratumException(StratumError.Other, "ntime out of range");
 
             var nonce = context.ExtraNonce1 + extraNonce2;
@@ -462,9 +446,10 @@ namespace Miningcore.Blockchain.Equihash
             return ProcessShareInternal(worker, nonce, nTimeInt, solution);
         }
 
+		// jobParams[jobParams.Length - 1] = isNew;
         public object GetJobParams(bool isNew)
         {
-            jobParams[jobParams.Length - 1] = isNew;
+            jobParams[jobParams.Length - 2] = isNew;
             return jobParams;
         }
 
