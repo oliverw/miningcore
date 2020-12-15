@@ -10,7 +10,7 @@ MinerNL - Miningcore Stratum Pool
 ### Changes in this Miningcore fork
 - Added nice Web frontend [https://miningcore.com](https://miningcore.com)
 - Pool time set to UTC time zone
-  Local time convertion should be used in the web frondend as that can be anyone on the globe
+  Local time conversion should be used in the web frontend as that can be anyone on the globe
 - Faster mining statistics calculation
 - Added stats setting in config.json
 ```config
