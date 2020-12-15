@@ -8,6 +8,7 @@ using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Blockchain.Equihash.Custom.BitcoinGold;
 using Miningcore.Blockchain.Equihash.Custom.Minexcoin;
+using Miningcore.Blockchain.Equihash.Custom.VerusCoin;
 using Miningcore.Blockchain.Equihash.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
@@ -97,6 +98,9 @@ namespace Miningcore.Blockchain.Equihash
 
                 case "MNX":
                     return new MinexcoinJob();
+
+                case "VRSC":
+                    return new VerusCoinJob();
             }
 
             return new EquihashJob();

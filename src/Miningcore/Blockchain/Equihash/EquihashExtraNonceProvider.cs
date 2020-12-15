@@ -7,7 +7,7 @@ namespace Miningcore.Blockchain.Equihash
 {
     public class EquihashExtraNonceProvider : ExtraNonceProviderBase
     {
-        public EquihashExtraNonceProvider() : base(3)
+        public EquihashExtraNonceProvider() : base(4)
         {
         }
     }

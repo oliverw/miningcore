@@ -1167,6 +1167,57 @@
         "explorerTxLink": "http://explorer.zensystem.io/transactions/{0}",
         "explorerAccountLink": "http://explorer.zensystem.io/accounts/{0}"
     },
+	"VerusCoin": {
+        "name": "Verus",
+        "symbol": "VRSC",
+        "family": "equihash",
+        "networks": {
+            "main": {
+                "diff1": "00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
+                "solutionSize": 1344,
+                "solutionPreambleSize": 3,
+                "solver": {
+                    "hash": "equihash",
+                    "args": [ 200, 9, "Verushash" ]
+                },
+                "coinbaseTxNetwork": "main",
+                "payFoundersReward": false,
+                "overwinterActivationHeight": 1,
+                "overwinterTxVersion": 3,
+                "overwinterTxVersionGroupId": 63210096,
+                "saplingActivationHeight": 1,
+                "saplingTxVersion": 4,
+                "saplingTxVersionGroupId": 2301567109
+            },
+            "test": {
+                "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "solutionSize": 1344,
+                "solutionPreambleSize": 3,
+                "solver": {
+                    "hash": "equihash",
+                    "args": [ 200, 9, "ZcashPoW" ]
+                },
+                "coinbaseTxNetwork": "testnet",
+                "payFoundersReward": false
+            },
+            "regtest": {
+                "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "solutionSize": 1344,
+                "solutionPreambleSize": 3,
+                "solver": {
+                    "hash": "equihash",
+                    "args": [ 200, 9, "ZcashPoW" ]
+                },
+                "coinbaseTxNetwork": "regtest",
+                "payFoundersReward": false
+            }
+        },
+        "usesZCashAddressFormat": false,
+        "useBitcoinPayoutHandler": false,
+        "explorerBlockLink": "https://explorer.veruscoin.io/block/$height$",
+        "explorerTxLink": "https://explorer.veruscoin.io/tx/%7B0%7D",
+        "explorerAccountLink": "https://explorer.veruscoin.io/address/%7B0%7D"
+    },
     "bitcoin-gold": {
         "name": "Bitcoin Gold",
         "symbol": "BTG",

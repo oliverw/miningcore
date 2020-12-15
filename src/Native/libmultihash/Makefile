@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -g -Wall -c -fPIC -O2 -Wno-pointer-sign -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable
-CXXFLAGS = -g -Wall -fPIC -fpermissive -O2 -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-sign-compare -std=c++11
+CFLAGS = -g -Wall -c -fPIC -O2 -Wno-pointer-sign -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-discarded-qualifiers -Wno-unused-const-variable -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -mpclmul -maes
+CXXFLAGS = -g -Wall -fPIC -fpermissive -O2 -Wno-char-subscripts -Wno-unused-variable -Wno-unused-function -Wno-strict-aliasing -Wno-sign-compare -std=c++11 -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -mpclmul -maes
 LDFLAGS = -shared
 LDLIBS = -lsodium
 TARGET  = libmultihash.so
@@ -19,7 +19,9 @@ OBJECTS = bcrypt.o blake.o blake2s.o c11.o dcrypt.o fresh.o lane.o \
     equi/crypto/sha1.o equi/crypto/sha512.o equi/crypto/sha256.o \
     equi/crypto/hmac_sha256.o equi/crypto/equihash.o equi/crypto/ripemd160.o \
     equi/equihashverify.o \
-    libethash/internal.o libethash/io.o libethash/io_posix.o libethash/sha3.o
+    libethash/internal.o libethash/io.o libethash/io_posix.o libethash/sha3.o \
+    verushash/haraka.o verushash/haraka_portable.o verushash/utilstrencodings.o \
+    verushash/verus_hash.o verushash/verus_clhash.o verushash/verus_clhash_portable.o
 
 all: $(TARGET)
 
