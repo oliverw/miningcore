@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -41,18 +47,18 @@
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
-        "shareRecoveryFile": "recovered-shares.txt"
+        "shareRecoveryFile": "mc-recovered-shares.txt"
     },
     "pools": [{
         "id": "zec1",
         "enabled": true,
         "coin": "zcash",
-        "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
-        "z-address": "zca7tCyUqn6axyZTWfiFTufI28sJNOnC2p3PHV4txH1XdDGsAjw1AKM8qiHznMTSw5GXUbWqS7P7Qc1sDw93CQePCLuPXXr",
+        "address": "t1JtJtxTdgXCaYm1wzRfMRkGTJM4qLcm4FQ",
+        "z-address": "",
         "rewardRecipients": [
             {
                 "type": "op",
-                "address": "t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7",
+                "address": "t1JtJtxTdgXCaYm1wzRfMRkGTJM4qLcm4FQ",
                 "percentage": 1.5
             }
         ],
