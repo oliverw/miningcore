@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -46,10 +52,10 @@
       "id": "ltc1",
       "enabled": true,
       "coin": "litecoin",
-      "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
+      "address": "LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg",
       "rewardRecipients": [
         {
-          "address": "LUWYwkz6DQLVeqJqHRtGjNhWUxBvBmE3SX",
+          "address": "LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg",
           "percentage": 1.0
         }
       ],
