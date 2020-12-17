@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    }, 
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -46,10 +52,10 @@
         "id": "eth1",
         "enabled": true,
         "coin": "ethereum",
-        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+        "address": "0xBfD360CDd9014Bc5B348B65cBf79F78381694f4E",
         "rewardRecipients": [{
                 "type": "op",
-                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+                "address": "0xBfD360CDd9014Bc5B348B65cBf79F78381694f4E",
                 "percentage": 0
         }],
         "blockRefreshInterval": 500,
