@@ -111,8 +111,10 @@ $RECYCLE.BIN/
 #############
 ## Ignore Logs
 #############
-
 logs/
 
+###########################
+## Ignore Miningcore config
+###########################
 src/Miningcore/config.json
 src/Miningcore/config2.json
