@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -40,17 +46,17 @@
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
-        "shareRecoveryFile": "recovered-shares.txt"
+        "shareRecoveryFile": "mc-recovered-shares.txt"
     },
     "pools": [{
       "id": "pak1",
       "enabled": true,
       "coin": "pakcoin",
       "hasLegacyDaemon": true,
-      "address": "PSWsdRBXui6nnhV9FJ4NduC2KdFkeudtEz",
+      "address": "",
       "rewardRecipients": [
         {
-          "address": "PSWsdRBXui6nnhV9FJ4NduC2KdFkeudtEz",
+          "address": "",
           "percentage": 1.0
         }
       ],
