@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	"statsUpdateInterval": 60,
+	"hashrateCalculationWindow": 5,
+	"statsCleanupInterval": 48,
+	"statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -40,15 +46,15 @@
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
-        "shareRecoveryFile": "recovered-shares.txt"
+        "shareRecoveryFile": "mc-recovered-shares.txt"
     },
     "pools": [{
         "id": "dash1",
         "enabled": true,
         "coin": "dash",
-        "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
+        "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
         "rewardRecipients": [{
-            "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
+            "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
             "percentage": 0
         }],
         "blockRefreshInterval": 500,
