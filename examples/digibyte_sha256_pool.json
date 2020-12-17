@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -40,16 +46,16 @@
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
-        "shareRecoveryFile": "recovered-shares.txt"
+        "shareRecoveryFile": "mc-recovered-shares.txt"
     },
     "pools": [{
       "id": "dgb-sha256-1",
       "enabled": true,
       "coin": "digibyte-sha256",
-      "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
+      "address": "dgb1qyg8gclh7pymgqyckjx463np05m2g5whend0l3j",
       "rewardRecipients": [
         {
-          "address": "DAFtYMGVdNtqHJoBGg2xqZZwSuYAaEs2Bn",
+          "address": "dgb1qyg8gclh7pymgqyckjx463np05m2g5whend0l3j",
           "percentage": 1
         }
       ],
