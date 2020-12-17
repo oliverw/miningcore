@@ -93,5 +93,51 @@
                 "factor": 2.0
             }
         }
+    },
+    {
+        "id": "dash1",
+        "enabled": true,
+        "coin": "dash",
+        "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
+        "rewardRecipients": [{
+            "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
+            "percentage": 0
+        }],
+        "blockRefreshInterval": 500,
+        "jobRebroadcastTimeout": 10,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3062": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 1024,
+                "name": "ASIC Mining",
+                "varDiff": {
+                    "minDiff": 512,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            }
+        },
+        "daemons": [{
+            "host": "127.0.0.1",
+            "port": 9998,
+            "user": "user",
+            "password": "password"
+        }],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.5,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            }
+        }
     }]
 }
