@@ -7,6 +7,12 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+    "statistics": {
+	    "statsUpdateInterval": 60,
+	    "hashrateCalculationWindow": 5,
+	    "statsCleanupInterval": 48,
+	    "statsDBCleanupHistory": 365
+    },
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": true,
@@ -40,15 +46,15 @@
     "paymentProcessing": {
         "enabled": true,
         "interval": 600,
-        "shareRecoveryFile": "recovered-shares.txt"
+        "shareRecoveryFile": "mc-recovered-shares.txt"
     },
     "pools": [{
         "id": "ltc1",
         "enabled": true,
         "coin": "litecoin",
-        "address": "LNDA11u4HWzbJaBGiHDvs6SmA8M6avB3wH",
+        "address": "LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg",
         "rewardRecipients": [{
-            "address": "LUWYwkz6DQLVeqJqHRtGjNhWUxBvBmE3SX",
+            "address": "LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg",
             "percentage": 1
         }],
         "blockRefreshInterval": 500,
@@ -76,53 +82,6 @@
         "daemons": [{
             "host": "127.0.0.1",
             "port": 9332,
-            "user": "user",
-            "password": "password"
-        }],
-        "paymentProcessing": {
-            "enabled": true,
-            "minimumPayment": 0.5,
-            "payoutScheme": "PPLNS",
-            "payoutSchemeConfig": {
-                "factor": 2.0
-            }
-        }
-    },
-    {
-        "id": "dash1",
-        "enabled": true,
-        "coin": "dash",
-        "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
-        "rewardRecipients": [{
-            "type": "op",
-            "address": "XgmfWd5DXWGcYhxPcDPUJk44Cnh2e8tZk7",
-            "percentage": 0
-        }],
-        "blockRefreshInterval": 1000,
-        "jobRebroadcastTimeout": 55,
-        "clientConnectionTimeout": 600,
-        "banning": {
-            "enabled": true,
-            "time": 600,
-            "invalidPercent": 50,
-            "checkThreshold": 50
-        },
-        "ports": {
-            "3062": {
-                "listenAddress": "0.0.0.0",
-                "difficulty": 1024,
-                "name": "ASIC Mining",
-                "varDiff": {
-                    "minDiff": 512,
-                    "targetTime": 15,
-                    "retargetTime": 90,
-                    "variancePercent": 30
-                }
-            }
-        },
-        "daemons": [{
-            "host": "127.0.0.1",
-            "port": 9998,
             "user": "user",
             "password": "password"
         }],
