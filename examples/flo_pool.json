@@ -7,6 +7,12 @@
     "logBaseDirectory": "",
     "perPoolLogFile": false
   },
+  "statistics": {
+	   "statsUpdateInterval": 60,
+	   "hashrateCalculationWindow": 5,
+	   "statsCleanupInterval": 48,
+	   "statsDBCleanupHistory": 365
+  },
   "banning": {
     "manager": "integrated",
     "banOnJunkReceive": true,
@@ -47,10 +53,10 @@
       "id": "flo1",
       "enabled": true,
       "coin": "flo",
-      "address": "FC3d6JT1Z3uZvKVNWjKt3qN8PX8knhAU7d",
+      "address": "",
       "rewardRecipients": [
         {
-          "address": "FCH4uesFJADBGK85gW74Cqmka54dpZk4ZH",
+          "address": "",
           "percentage": 1.0
         }
       ],
