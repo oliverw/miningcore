@@ -147,24 +147,24 @@ $ exit									(<- exit user postgres)
 
 ```
 - Import Miningcore database tables
-```console
+````console
 $ sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 
 $ sudo -u postgres -i
 $ psql -d miningcore -f createdb.sql
 $ exit
-```
+````
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux.
 
   Example Ubuntu 20.04:
-```console
+````console
 $ sudo apt-get update -y
 $ sudo apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ sudo git clone https://github.com/minernl/miningcore
 $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework netcoreapp3.1  -o ../../build
-```
+````
 - Running Miningcore
 
   Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
