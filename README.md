@@ -7,6 +7,8 @@
 MinerNL - Miningcore Stratum Pool
 =================================
 
+![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
+
 ### Changes in this Miningcore fork
 - Added nice Web frontend [https://miningcore.com](https://miningcore.com)
 - Pool time set to UTC time zone
