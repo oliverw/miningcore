@@ -92,7 +92,7 @@ You can also send donations directly to the developemers using the following acc
 
 - Install [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
 
-Example Ubuntu 20.04:
+  Example Ubuntu 20.04:
 ````console
 wget https://packages.microsoft.com/config/ubuntu/20.10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
@@ -103,7 +103,7 @@ sudo apt-get update; \
 ````
 - Install [PostgreSQL Database v12 or higher](https://www.postgresql.org/)
 
-Example Ubuntu 20.04:
+  Example Ubuntu 20.04:
 ````console
 # Create the file repository configuration:
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -155,26 +155,22 @@ $ psql -d miningcore -f createdb.sql
 ```
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux.
-  (example below is used on Ubuntu 20.04. Change the microsoft.com package line to you own OS)
+
+  Example Ubuntu 20.04:
 ```console
-$ sudo wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-$ sudo dpkg -i packages-microsoft-prod.deb
-$ sudo apt-get update -y
-$ sudo apt-get install apt-transport-https -y
 $ sudo apt-get update -y
 $ sudo apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ sudo git clone https://github.com/minernl/miningcore
 $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework netcoreapp3.1  -o ../../build
 ```
-- Running Miningcore (after build)
-Create a configuration file config.json as described here
+- Running Miningcore
+
+  Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
 ```console
 cd ../../build
 dotnet Miningcore.dll -c config.json
 ```
-
-
 
 ### Advanced PostgreSQL Database setup
 
@@ -183,7 +179,6 @@ The following step needs to performed **once for every new pool** you add to you
 ```sql
 CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 ```
-
 
 ### [Configuration](https://github.com/minernl/miningcore/wiki/Configuration)
 
@@ -209,7 +204,7 @@ Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/downl
 
 ## Running a production pool
 
-#### Running Miningcore (after build)
+#### Running Miningcore
 
 Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
 
