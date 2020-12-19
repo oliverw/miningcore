@@ -90,8 +90,35 @@ You can also send donations directly to the developemers using the following acc
 
 ### Running Miningcore on Linux
 
-- [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
-- [PostgreSQL Database v12 or higher](https://www.postgresql.org/)
+- Install [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
+
+Example Ubuntu 20.04:
+````console
+wget https://packages.microsoft.com/config/ubuntu/20.10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt-get update; \
+  sudo apt-get install -y apt-transport-https && \
+  sudo apt-get update && \
+  sudo apt-get install -y dotnet-sdk-3.1
+````
+- Install [PostgreSQL Database v12 or higher](https://www.postgresql.org/)
+
+Example Ubuntu 20.04:
+````console
+# Create the file repository configuration:
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+# Import the repository signing key:
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# Update the package lists:
+sudo apt-get update
+
+# Install the latest version of PostgreSQL.
+# If you want a specific version, use 'postgresql-12' or similar instead of 'postgresql':
+sudo apt-get -y install postgresql-12
+````
+
 - Create the database config:
 ```console
 $ sudo -i -u postgres							(<- you should see your logged in as postgres user)
