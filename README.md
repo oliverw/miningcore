@@ -152,6 +152,7 @@ $ sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Mini
 
 $ sudo -u postgres -i
 $ psql -d miningcore -f createdb.sql
+$ exit
 ```
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux.
