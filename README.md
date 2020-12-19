@@ -131,15 +131,14 @@ postgres=# grant all privileges on database miningcore to miningcore;
 postgres=# \list							(<- show databases and privileges)
 
                                List of databases
-    Name    |  Owner   | Encoding | Collate |  Ctype  |    Access privileges
-------------+----------+----------+---------+---------+-------------------------
- miningcore | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =Tc/postgres           +
-            |          |          |         |         | postgres=CTc/postgres  +
-            |          |          |         |         | miningcore=CTc/postgres
+    Name    |  Owner   | Encoding | Collate |  Ctype  |     Access privileges
+------------+----------+----------+---------+---------+---------------------------
+ miningcore | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =Tc/miningcore           +
+            |          |          |         |         | miningcore=CTc/miningcore
  postgres   | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
- template0  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres            +
+ template0  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres              +
             |          |          |         |         | postgres=CTc/postgres
- template1  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres            +
+ template1  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres              +
             |          |          |         |         | postgres=CTc/postgres
 (4 rows)
 
