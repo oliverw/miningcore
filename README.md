@@ -200,11 +200,11 @@ dotnet Miningcore.dll -c config.json
 
 Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
 
-```dosbatch
+````console
 git clone https://github.com/minernl/miningcore
 cd miningcore/src/Miningcore
 dotnet publish -c Release --framework netcoreapp3.1  -o ..\..\build
-```
+````
 
 #### Building on Windows - VISUAL STUDIO
 
