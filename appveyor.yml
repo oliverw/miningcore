@@ -34,16 +34,16 @@ build_script:
 #---------------------------------#
 
 # to run tests again only selected assemblies and/or categories
-test_script:
- - dotnet test -c Release --no-build
+#test_script:
+# - dotnet test -c Release --no-build
 
 #---------------------------------#
 #         notifications           #
 #---------------------------------#
 
-notifications:
+#notifications:
   # Webhook
-  - provider: Webhook
-    url: https://registry.hub.docker.com/u/coinfoundry/miningcore-docker/trigger/5cea19ab-b489-4f7c-9fb2-da4112c51e66/
-    on_build_success: true
-    on_build_failure: false
+  #- provider: Webhook
+  #  url: https://registry.hub.docker.com/u/coinfoundry/miningcore-docker/trigger/5cea19ab-b489-4f7c-9fb2-da4112c51e66/
+  #  on_build_success: true
+  #  on_build_failure: false
