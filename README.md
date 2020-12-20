@@ -122,16 +122,21 @@ sudo apt-get -y install postgresql-12
 ````
 
 - Create the database config:
-```console
-$ sudo -i -u postgres							(<- you should see your logged in as postgres user)
-$ psql
-postgres=# CREATE USER miningcore WITH ENCRYPTED PASSWORD 'some-secure-password';
-postgres=# CREATE DATABASE miningcore;
-postgres=# ALTER DATABASE miningcore OWNER TO miningcore;
-postgres=# ALTER USER postgres WITH PASSWORD 'new_password';
-postgres=# grant all privileges on database miningcore to miningcore;
-postgres=# \list							(<- show databases and privileges)
-
+````console
+# login as postgres user
+sudo -i -u postgres
+psql
+````
+````sql
+CREATE USER miningcore WITH ENCRYPTED PASSWORD 'some-secure-password';
+CREATE DATABASE miningcore;
+ALTER DATABASE miningcore OWNER TO miningcore;
+ALTER USER postgres WITH PASSWORD 'new_password';
+GRANT ALL privileges ON DATABASE miningcore TO miningcore;
+````
+list shows the databases and privileges like below:
+````console
+\list
                                List of databases
     Name    |  Owner   | Encoding | Collate |  Ctype  |     Access privileges
 ------------+----------+----------+---------+---------+---------------------------
@@ -144,44 +149,47 @@ postgres=# \list							(<- show databases and privileges)
             |          |          |         |         | postgres=CTc/postgres
 (4 rows)
 
-postgres-# \quit
-$ exit									(<- exit user postgres)
+# exit PostgresDB
+\quit
 
-```
+# exit user postgres
+$ exit					
+````
+
 - Import Miningcore database tables
 ````console
-$ sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 
-$ sudo -u postgres -i
-$ psql -d miningcore -f createdb.sql
-$ exit
+sudo -u postgres -i
+psql -d miningcore -f createdb.sql
+exit
 ````
+- Advanced PostgreSQL Database setup
+
+The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
+
+````sql
+CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
+````
+
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux.
 
   Example Ubuntu 20.04:
 ````console
-$ sudo apt-get update -y
-$ sudo apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-$ sudo git clone https://github.com/minernl/miningcore
-$ cd miningcore/src/Miningcore
-$ dotnet publish -c Release --framework netcoreapp3.1  -o ../../build
+sudo apt-get update -y
+sudo apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+sudo git clone https://github.com/minernl/miningcore
+cd miningcore/src/Miningcore
+dotnet publish -c Release --framework netcoreapp3.1  -o ../../build
 ````
 - Running Miningcore
 
   Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
-```console
+````console
 cd ../../build
 dotnet Miningcore.dll -c config.json
-```
-
-### Advanced PostgreSQL Database setup
-
-The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
-
-```sql
-CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
-```
+````
 
 ### [Configuration](https://github.com/minernl/miningcore/wiki/Configuration)
 
@@ -193,9 +201,9 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/download/core)
 
 ```dosbatch
-> git clone https://github.com/minernl/miningcore
-> cd miningcore/src/Miningcore
-> dotnet publish -c Release --framework netcoreapp3.1  -o ..\..\build
+git clone https://github.com/minernl/miningcore
+cd miningcore/src/Miningcore
+dotnet publish -c Release --framework netcoreapp3.1  -o ..\..\build
 ```
 
 #### Building on Windows - VISUAL STUDIO
@@ -211,10 +219,10 @@ Download and install the [.Net Core 3.1 SDK](https://www.microsoft.com/net/downl
 
 Create a configuration file <code>config.json</code> as described [here](https://github.com/minernl/miningcore/wiki/Configuration)
 
-```
+````console
 cd ../../build
 dotnet Miningcore.dll -c config.json
-```
+````
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
 You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
