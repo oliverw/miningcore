@@ -24,6 +24,7 @@ namespace Miningcore.Blockchain
             { "MONA", "mona1qejrhuj83zxwrsjuvpd89ylt2nh4sjccux4uh0q" },
             { "RVN", "REYo1axeDk7V8BAJZ9JYyChpFWFZDp8dgJ" },
             { "TUBE", "bxcBHCGkPubPLMX5bHk3HGU83sMB6nmWTfmHBqmHLq2ZPECUCXtCBcxJFpmWgEadDu1xy26ECQ1RRgQcV4BeoGGv2YeZWJmWk" },
+			{ "VRSC", "RGJt1Ti3LS9J1Zp4Z7xAZGTXiCRTVWiB9a" },
             { "VTC", "RGJt1Ti3LS9J1Zp4Z7xAZGTXiCRTVWiB9a" },
             { "XVG", "DGSwZ64uu1aVAoopiSEGa6iRChDWy6QTQD" },
             { "XMR", "44riGcQcDp4EsboDJP284CFCnJ2qP7y8DAqGC4D9WtVbEqzxQ3qYXAUST57u5FkrVF7CXhsEc63QNWazJ5b9ygwBJBtB2kT" },

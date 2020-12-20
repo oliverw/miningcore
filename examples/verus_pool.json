@@ -8,12 +8,15 @@
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
+<<<<<<< Updated upstream
     "statistics": {
 	"statsUpdateInterval": 60,
 	"hashrateCalculationWindow": 5,
 	"statsCleanupInterval": 48,
 	"statsDBCleanupHistory": 365
     },
+=======
+>>>>>>> Stashed changes
     "banning": {
         "manager": "integrated",
         "banOnJunkReceive": false,
@@ -52,15 +55,23 @@
         "interval": 4000,
         "shareRecoveryFile": "recovered-shares.txt"
     },
+<<<<<<< Updated upstream
     "api": {
         "enabled": true,
         "ssl": false,
 	"tls": false,
+=======
+	"api": {
+        "enabled": true,
+        "ssl": false,
+	    "tls": false,
+>>>>>>> Stashed changes
         "tlsPfxFile": "",
         "listenAddress": "127.0.0.1",
         "port": 4000,
         "metricsIpWhitelist": ["127.0.0.1"],
         "rateLimiting": {
+<<<<<<< Updated upstream
             "disabled": true,
             "rules": [
                 {
@@ -79,9 +90,29 @@
         "coin": "VerusCoin",
         "address": "RE9v8tCKiALVmkWbirTKc5cZpSJtuXswJ8",
 	"z-address": "zs10lh6jvugelexk8ejvu0uyyw9tt4u9zz38m6q9s8wmdcn70qltufc4h9w9hpj2mhkej8uukx9t9n",
+=======
+        "disabled": true,
+        "rules": [
+           {
+            "Endpoint": "*",
+            "Period": "60s",
+            "Limit": 1000000
+           }
+           ],
+           "ipWhitelist": []
+        }
+    },
+    "pools": [
+    {
+        "id": "VerusCoin",
+        "enabled": true,
+        "coin": "VerusCoin",
+        "address": "RGJt1Ti3LS9J1Zp4Z7xAZGTXiCRTVWiB9a",
+	    "z-address": "zs1ul2cuw5rmu70t76q5qp4ahzs8s8ah00gy4cgfz2rgpglvdlnhf0cj8xgsmyecrdlnw69zyrckfx",
+>>>>>>> Stashed changes
         "rewardRecipients": [
             {
-                "address": "RE9v8tCKiALVmkWbirTKc5cZpSJtuXswJ8",
+                "address": "RGJt1Ti3LS9J1Zp4Z7xAZGTXiCRTVWiB9a",
                 "percentage": 1.0
             }
         ],
@@ -96,6 +127,7 @@
         },
         "ports": {
             "3052": {
+<<<<<<< Updated upstream
 		"listenAddress": "0.0.0.0",
                 "difficulty": 20,
                 "varDiff": {
@@ -105,6 +137,17 @@
                     "retargetTime": 90,
                     "variancePercent": 10
                 }
+=======
+            "listenAddress": "0.0.0.0",
+            "difficulty": 20,
+            "varDiff": {
+                "minDiff": 6,
+                "maxDiff": null,
+                "targetTime": 15,
+                "retargetTime": 90,
+                "variancePercent": 10
+               }
+>>>>>>> Stashed changes
             }
 	},
         "daemons": [
@@ -123,5 +166,10 @@
                 "factor": 0.5
             }
         }
+<<<<<<< Updated upstream
     }]
+=======
+    }
+    ]
+>>>>>>> Stashed changes
 }
