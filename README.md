@@ -177,7 +177,7 @@ CREATE TABLE shares_pools_id PARTITION OF shares FOR VALUES IN ('pools_id');
 ````
 <b>!!! Do this for every Coin you add to you server. If you have multiple server, add it on every server !!!</b>
 
-EXAMPLE:
+<b>EXAMPLE:</b>
 
 lookup for the pools id in you config.json file. In this example pools id is VerusCoin
 ```
