@@ -166,11 +166,31 @@ exit
 ````
 - Advanced PostgreSQL Database setup
 
-The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
-
-````sql
-CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
+The following step needs to performed **once for every new coin** you add to your server or cluster. 
+Be sure to **replace all occurences** of <code>pools_id</code> in the statement below with the id of your pool from your <code>config.json</code> file:
+````console
+sudo -u postgres -i
+psql -d miningcore
 ````
+````sql
+CREATE TABLE shares_pools_id PARTITION OF shares FOR VALUES IN ('pools_id');
+````
+<b>!!! Do this for every Coin you add to you server. If you have multiple server, add it on every server !!!</b>
+
+EXAMPLE:
+
+lookup for the pools id in you config.json file. In this example pools id is VerusCoin
+```
+  CREATE TABLE shares_VerusCoin PARTITION OF shares FOR VALUES IN ('VerusCoin');
+  
+  config.json:
+  "pools": [
+      {
+        "id": "VerusCoin",
+        "enabled": true,
+        "coin": "VerusCoin",
+        "address": "RE9v8tCKiALVmkWbirTKc5cZpSJtuXswJ8",
+```	
 
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux.
