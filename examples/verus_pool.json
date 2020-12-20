@@ -96,21 +96,20 @@
         },
         "ports": {
             "3052": {
-
 		"listenAddress": "0.0.0.0",
-                "difficulty": 10,
+                "difficulty": 20,
                 "varDiff": {
-                    "minDiff": 6,
-                    "maxDiff": 2147483648,
+                    "minDiff": 15,
+                    "maxDiff": null,
                     "targetTime": 15,
                     "retargetTime": 90,
-                    "variancePercent": 30
+                    "variancePercent": 10
                 }
             }
 	},
         "daemons": [
             {
-                "host": "ip",
+                "host": "127.0.0.1",
                 "port": 27486,
                 "user": "user",
                 "password": "pass"		
@@ -118,7 +117,7 @@
         ],
         "paymentProcessing": {
             "enabled": true,
-            "minimumPayment": 0.05,
+            "minimumPayment": 0.5,
             "payoutScheme": "PPLNS",
             "payoutSchemeConfig": {
                 "factor": 0.5
