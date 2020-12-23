@@ -1,0 +1,99 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": true,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "pools": [{
+        "id": "eth1",
+        "enabled": true,
+        "coin": "ethereum",
+        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+        "rewardRecipients": [{
+                "type": "op",
+                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
+                "percentage": 0
+        }],
+        "blockRefreshInterval": 500,
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3072": {
+                "difficulty": 0.1,
+                "varDiff": {
+                    "minDiff": 0.05,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30
+                }
+            },
+            "3073": {
+                "difficulty": 5000
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 8545,
+                "user": "user",
+                "password": "password"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 0.01,
+            "minimumPaymentToPaymentId": 5.0,
+            "payoutScheme": "SOLO",
+            "payoutSchemeConfig": {
+                "factor": 2.0
+            },
+            "coinbasePassword": "<your wallet password if you are running parity with wallet locked>",
+            "keepUncles": false,
+            "keepTransactionFees": false
+        }
+    }]
+}
