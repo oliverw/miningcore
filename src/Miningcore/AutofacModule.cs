@@ -137,8 +137,8 @@ namespace Miningcore
                 .Keyed<IPayoutScheme>(PayoutScheme.PPLNS)
                 .SingleInstance();
 
-            builder.RegisterType<SoloPaymentScheme>()
-                .Keyed<IPayoutScheme>(PayoutScheme.Solo)
+            builder.RegisterType<SOLOPaymentScheme>()
+                .Keyed<IPayoutScheme>(PayoutScheme.SOLO)
                 .SingleInstance();
 
             //////////////////////
