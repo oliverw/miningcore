@@ -33,7 +33,7 @@ using Contract = Miningcore.Contracts.Contract;
 namespace Miningcore.Payments.PaymentSchemes
 {
     /// <summary>
-    /// PPLNS payout scheme implementation
+    /// SOLO payout scheme implementation
     /// </summary>
     // ReSharper disable once InconsistentNaming
     public class SOLOPaymentScheme : IPayoutScheme
