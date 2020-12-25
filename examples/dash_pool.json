@@ -48,6 +48,26 @@
         "interval": 600,
         "shareRecoveryFile": "mc-recovered-shares.txt"
     },
+    "api": {
+        "enabled": true,
+        "ssl": false,
+	    "tls": false,
+        "tlsPfxFile": "",
+        "listenAddress": "127.0.0.1",
+        "port": 4000,
+        "metricsIpWhitelist": ["127.0.0.1"],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "60s",
+                    "Limit": 1000000
+                }
+            ],
+            "ipWhitelist": []
+        }
+    },
     "pools": [{
         "id": "dash1",
         "enabled": true,
