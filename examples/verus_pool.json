@@ -52,7 +52,7 @@
         "interval": 4000,
         "shareRecoveryFile": "recovered-shares.txt"
     },
-	"api": {
+    "api": {
         "enabled": true,
         "ssl": false,
 	    "tls": false,
