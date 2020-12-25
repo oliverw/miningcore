@@ -1,5 +1,4 @@
-{
-    "logging": {
+// Logging level "info" or "debug"
         "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
@@ -14,35 +13,35 @@
         "perPoolLogFile": false
     },
     "banning": {
-        // "integrated" or "iptables" (linux only - not yet implemented)
+        // "integrated" or "iptables" (linux only)
         "manager": "integrated",
         "banOnJunkReceive": true,
         "banOnInvalidShares": false
     },
     "notifications": {
-        "enabled": true,
+        "enabled": false,
         "email": {
             "host": "smtp.example.com",
             "port": 587,
             "user": "user",
             "password": "password",
-            "fromAddress": "info@yourpool.org",
-            "fromName": "pool support"
+            "fromAddress": "info@domain.com",
+            "fromName": "Miningcore pool support"
         },
         "admin": {
-            "enabled": false,
-            "emailAddress": "user@example.com",
+            "enabled": true,
+            "emailAddress": "user@domain.com",
             "notifyBlockFound": true
         }
     },
-    // Where to persist shares and blocks to
+    // Database connection
     "persistence": {
         // Persist to postgresql database
         "postgres": {
             "host": "127.0.0.1",
             "port": 5432,
             "user": "miningcore",
-            "password": "yourpassword",
+            "password": "some-secure-password",
             "database": "miningcore"
         }
     },
@@ -66,29 +65,32 @@
         "metricsIpWhitelist": [],
         // Limit rate of requests to API on a per-IP basis
         "rateLimiting": {
-            "disabled": false, // disable rate-limiting all-together, be careful
-            // override default rate-limit rules, refer to https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#defining-rate-limit-rules
+		    // disable rate-limiting all-together, be careful, do not disable in production
+            "disabled": false, 
+            // override default rate-limit rules, refer to
+            // https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#defining-rate-limit-rules
             "rules": [
                 {
                     "Endpoint": "*",
                     "Period": "1s",
-                    "Limit": 5
+                    "Limit": 10
                 }
             ],
-            // List of IP addresses excempt from rate-limiting (default: none)
+            // List of IP addresses excluded from rate-limiting (default: 127.0.0.1)
+			// localhost 127.0.0.1 is always excluded even not mentioned here.
             "ipWhitelist": []
         }
     },
 	// Pool & Miner performance Statistics
 	"statistics": {
-		// Interval to calculatate the statistics (minutes)
-		"statsInterval": 1,
+		// Interval to calculate the statistics (seconds)
+		"statsUpdateInterval": 60,
 		// Over what time windows we will calculate the stats (minutes)
 		"hashrateCalculationWindow": 60,
 		// Interval to cleanup the stats DB (hours)
 		"statsCleanupInterval": 48,
 		// How much history we will keep in DB (days)
-		"statsDBCleanupHistory": 90
+		"statsDBCleanupHistory": 365
 	},
     "pools": [
         {
@@ -97,7 +99,7 @@
             "enabled": true,
             "coin": "dash",
             // Address to where block rewards are given (pool wallet)
-            "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
+            "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
             // Block rewards go to the configured pool wallet address to later be paid out
             // to miners, except for a percentage that can go to, for examples,
             // pool operator(s) as pool fees or or to donations address. Addresses or hashed
@@ -106,8 +108,8 @@
             "rewardRecipients": [
                 {
                     // Pool wallet
-                    "address": "yiZodEgQLbYDrWzgBXmfUUHeBVXBNr8rwR",
-                    "percentage": 1.5
+                    "address": "Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtw",
+                    "percentage": 0.1
                 }
             ],
             // How often to poll RPC daemons for new blocks, in milliseconds
@@ -179,8 +181,8 @@
                 {
                     "host": "127.0.0.1",
                     "port": 15001,
-                    "user": "user",
-                    "password": "pass",
+                    "user": "rpc-user",
+                    "password": "rpc-pass",
                     // Enable streaming Block Notifications via ZeroMQ messaging from Bitcoin
                     // Family daemons. Using this is highly recommended. The value of this option
                     // is a string that should match the value of the -zmqpubhashblock parameter
@@ -205,7 +207,7 @@
                 "minimumPayment": 0.01,
                 "payoutScheme": "PPLNS",
                 "payoutSchemeConfig": {
-                    "factor": 2.0
+                    "factor": 0.5
                 }
             }
         }
