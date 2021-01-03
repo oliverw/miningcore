@@ -1,4 +1,6 @@
-// Logging level "info" or "debug"
+{
+    "logging": {
+        // Logging level "info" or "debug"
         "level": "info",
         "enableConsoleLog": true,
         "enableConsoleColors": true,
@@ -65,8 +67,8 @@
         "metricsIpWhitelist": [],
         // Limit rate of requests to API on a per-IP basis
         "rateLimiting": {
-		    // disable rate-limiting all-together, be careful, do not disable in production
-            "disabled": false, 
+            // disable rate-limiting all-together, be careful, do not disable in production
+            "disabled": false,
             // override default rate-limit rules, refer to
             // https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#defining-rate-limit-rules
             "rules": [
@@ -77,21 +79,21 @@
                 }
             ],
             // List of IP addresses excluded from rate-limiting (default: 127.0.0.1)
-			// localhost 127.0.0.1 is always excluded even not mentioned here.
+            // localhost 127.0.0.1 is always excluded even not mentioned here.
             "ipWhitelist": []
         }
     },
-	// Pool & Miner performance Statistics
-	"statistics": {
-		// Interval to calculate the statistics (seconds)
-		"statsUpdateInterval": 60,
-		// Over what time windows we will calculate the stats (minutes)
-		"hashrateCalculationWindow": 60,
-		// Interval to cleanup the stats DB (hours)
-		"statsCleanupInterval": 48,
-		// How much history we will keep in DB (days)
-		"statsDBCleanupHistory": 365
-	},
+    // Pool & Miner performance Statistics
+    "statistics": {
+        // Interval to calculate the statistics (seconds)
+        "statsUpdateInterval": 60,
+        // Over what time windows we will calculate the stats (minutes)
+        "hashrateCalculationWindow": 60,
+        // Interval to cleanup the stats DB (hours)
+        "statsCleanupInterval": 48,
+        // How much history we will keep in DB (days)
+        "statsDBCleanupHistory": 365
+    },
     "pools": [
         {
             // DON'T change the id after a production pool has begun collecting shares!
@@ -212,4 +214,5 @@
             }
         }
     ]
-}
+} 
+
