@@ -464,9 +464,9 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "digibyte-scrypt": {
         "name": "Digibyte-Scrypt",
@@ -485,9 +485,9 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "shareMultiplier": 65536,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "digibyte-skein": {
         "name": "Digibyte-Skein",
@@ -504,9 +504,9 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "digibyte-qubit": {
         "name": "Digibyte-Qubit",
@@ -523,9 +523,9 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "digibyte-groestl": {
         "name": "Digibyte-Groestl",
@@ -543,9 +543,9 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "shareMultiplier": 256,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "digibyte-odo": {
         "name": "Digibyte-Odo",
@@ -574,9 +574,9 @@
             }
         },
         "shareMultiplier": 256,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
+        "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
     },
     "verge-lyra": {
         "name": "Verge-Lyra",
