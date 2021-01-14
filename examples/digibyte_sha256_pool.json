@@ -72,6 +72,7 @@
       "id": "dgb-sha256-1",
       "enabled": true,
       "coin": "digibyte-sha256",
+      "enableInternalStratum": false,
       "address": "dgb1qyg8gclh7pymgqyckjx463np05m2g5whend0l3j",
       "rewardRecipients": [
         {
