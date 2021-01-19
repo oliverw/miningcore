@@ -18,6 +18,13 @@ before_build:
   - cd src
   - dotnet restore
 
+-
+  branches:
+    only:
+      - master
+
+  configuration: Release
+  
 for:
 -
   matrix:
