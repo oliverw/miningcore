@@ -37,10 +37,6 @@ for:
   #- dotnet build -c Release --framework netcoreapp3.1
     
 
-for:
--
-  matrix:
-    only:
     - image: Visual Studio 2019
   
   build_script:
