@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/sm8t6xesfctr879i?svg=true)](https://ci.appveyor.com/project/minernl/miningcore)
+[![Build status](https://ci.appveyor.com/api/projects/status/sm8t6xesfctr879i/branch/master?svg=true)](https://ci.appveyor.com/project/minernl/miningcore)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 MinerNL - Miningcore Stratum Pool
