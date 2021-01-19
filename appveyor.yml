@@ -15,7 +15,7 @@ build:
   verbosity: minimal
   
 before_build:
-#  - cd src
+  - cd src
   - dotnet restore
 
 for:
