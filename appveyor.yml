@@ -18,6 +18,9 @@ before_build:
   - cd src
   - dotnet restore
 
+
+  
+for:
 -
   branches:
     only:
@@ -25,8 +28,6 @@ before_build:
 
   configuration: Release
   
-for:
--
   matrix:
     only:
       - image: Ubuntu
