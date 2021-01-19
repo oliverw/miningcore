@@ -36,7 +36,9 @@ for:
   #- cd ../Miningcore.Tests
   #- dotnet build -c Release --framework netcoreapp3.1
     
-
+-
+  matrix:
+    only:
     - image: Visual Studio 2019
   
   build_script:
