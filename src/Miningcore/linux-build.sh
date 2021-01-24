@@ -1,7 +1,7 @@
 #!/bin/bash
 echo ""
 echo "The following dev-dependencies must be installed"
-echo "Ubuntu: apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev"
+echo "Ubuntu: apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5"
 echo ""
 BUILDIR=${1:-../../build}
 echo "Building into $BUILDIR"
