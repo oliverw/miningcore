@@ -194,6 +194,7 @@ namespace Miningcore.Mining
             logger.Info(() => "Stopping ..");
 
             cts.Cancel();
+            cts.Dispose();
             disposables.Dispose();
 
             logger.Info(() => "Stopped");

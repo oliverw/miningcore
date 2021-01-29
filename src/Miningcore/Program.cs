@@ -86,17 +86,28 @@ namespace Miningcore
         {
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
-                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-                Console.CancelKeyPress += OnCancelKeyPress;
+                // log unhandled program exception errors
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MC_UnhandledException);
+                currentDomain.ProcessExit += OnProcessExit;
+                Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKeyPress);
 
+                // Check args for config.json
                 if(!HandleCommandLineOptions(args, out var configFile))
                     return;
 
-                isShareRecoveryMode = shareRecoveryOption.HasValue();
+                // Check valid OS and user
+                ValidateRuntimeEnvironment();
 
+                // Miningcore logo
                 Logo();
+
+                // Read config.json file
                 clusterConfig = ReadConfig(configFile);
+                ValidateConfig();
+
+                // Check if shares need to be restored from file to database
+                isShareRecoveryMode = shareRecoveryOption.HasValue();
 
                 if(dumpConfigOption.HasValue())
                 {
@@ -104,16 +115,16 @@ namespace Miningcore
                     return;
                 }
 
-                ValidateConfig();
+                
                 Bootstrap();
                 LogRuntimeInfo();
 
+                // If not 
                 if(!isShareRecoveryMode)
                 {
                     if(!cts.IsCancellationRequested)
-                        Start().Wait(cts.Token);
+                        StartMiningcorePool().Wait(cts.Token);
                 }
-
                 else
                     RecoverSharesAsync(shareRecoveryOption.Value()).Wait();
             }
@@ -258,8 +269,7 @@ namespace Miningcore
             container = builder.Build();
             ConfigureLogging();
             ConfigureMisc();
-            ValidateRuntimeEnvironment();
-            MonitorGc();
+            MonitorGarbageCollection();
         }
 
         private static ClusterConfig ReadConfig(string file)
@@ -333,7 +343,7 @@ namespace Miningcore
                 throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
         }
 
-        private static void MonitorGc()
+        private static void MonitorGarbageCollection()
         {
             var thread = new Thread(() =>
             {
@@ -344,7 +354,7 @@ namespace Miningcore
                     var s = GC.WaitForFullGCApproach();
                     if(s == GCNotificationStatus.Succeeded)
                     {
-                        logger.Info(() => "FullGC soon");
+                        logger.Info(() => "Garbage Collection bin Full soon");
                         sw.Start();
                     }
 
@@ -352,7 +362,7 @@ namespace Miningcore
 
                     if(s == GCNotificationStatus.Succeeded)
                     {
-                        logger.Info(() => "FullGC completed");
+                        logger.Info(() => "Garbage Collection bin Full!!");
 
                         sw.Stop();
 
@@ -771,7 +781,7 @@ namespace Miningcore
                         endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                     });
                 })
-                 .UseKestrel(options =>
+                .UseKestrel(options =>
                 {
                     options.Listen(address, clusterConfig.Api.Port, listenOptions =>
                     {
@@ -788,7 +798,7 @@ namespace Miningcore
             logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
         }
 
-        private static async Task Start()
+        private static async Task StartMiningcorePool()
         {
             var coinTemplates = LoadCoinTemplates();
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
@@ -796,7 +806,7 @@ namespace Miningcore
             // Populate pool configs with corresponding template
             foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
             {
-                // Lookup coin definition
+                // Foreach coin definition
                 if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
                     logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
@@ -820,7 +830,6 @@ namespace Miningcore
                 shareReceiver = container.Resolve<ShareReceiver>();
                 shareReceiver.Start(clusterConfig);
             }
-
             else
             {
                 // start share relay
@@ -831,7 +840,7 @@ namespace Miningcore
             // start API
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
-                StartApi();
+                await Task.Run(() => StartApi() );
 
                 metricsPublisher = container.Resolve<MetricsPublisher>();
             }
@@ -842,10 +851,8 @@ namespace Miningcore
             {
                 payoutManager = container.Resolve<PayoutManager>();
                 payoutManager.Configure(clusterConfig);
-
                 payoutManager.Start();
             }
-
             else
                 logger.Info("Payment processing is not enabled");
 
@@ -887,21 +894,24 @@ namespace Miningcore
             return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
         }
 
-        private static void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        // log unhandled program exception errors
+        private static void MC_UnhandledException(object sender, UnhandledExceptionEventArgs args )
         {
             if(logger != null)
             {
-                logger.Error(e.ExceptionObject);
+                logger.Error(args.ExceptionObject);
                 LogManager.Flush(TimeSpan.Zero);
             }
-
-            Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
+            Exception e = (Exception) args.ExceptionObject;
+            Console.WriteLine("----------------------------------------------------------------------------------------");
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
         }
 
-        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        protected static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args )
         {
-            logger?.Info(() => "SIGINT received. Exiting.");
-            Console.WriteLine("SIGINT received. Exiting.");
+            logger?.Info(() => $"Miningcore is stopping because exit key [{args.SpecialKey}] recieved. Exiting.");
+            Console.WriteLine($"Miningcore is stopping because exit key  [{args.SpecialKey}] recieved. Exiting.");
 
             try
             {
@@ -911,13 +921,13 @@ namespace Miningcore
             {
             }
 
-            e.Cancel = true;
+            args.Cancel = true;
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
-            logger?.Info(() => "SIGTERM received. Exiting.");
-            Console.WriteLine("SIGTERM received. Exiting.");
+            logger?.Info(() => "Miningcore received process stop request.");
+            Console.WriteLine("Miningcore received process stop request.");
 
             try
             {
@@ -930,9 +940,9 @@ namespace Miningcore
 
         private static void Shutdown()
         {
-            logger?.Info(() => "Shutdown ...");
-            Console.WriteLine("Shutdown...");
-
+            Console.WriteLine("Miningcore is shuting down... bye!");
+            logger?.Info(() => "Miningcore is shuting down... bye!");
+            
             foreach(var pool in pools.Values)
                 pool.Stop();
 

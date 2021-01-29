@@ -29,8 +29,7 @@ using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Mining
 {
-    public abstract class PoolBase : StratumServer,
-        IMiningPool
+    public abstract class PoolBase : StratumServer, IMiningPool
     {
         protected PoolBase(IComponentContext ctx,
             JsonSerializerSettings serializerSettings,
