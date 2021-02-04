@@ -331,7 +331,7 @@ namespace Miningcore.Blockchain.Ethereum
                 // get sample block info (latestBlock-50)
                 ulong sampleBlockCount = 50;
                 var sampleBlockNumber = latestBlockHeight - sampleBlockCount;
-                var sampleBlockResults = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EthCommands.GetBlockByNumber, new[] { (object) sampleBlockNumber, true });
+                var sampleBlockResults = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EthCommands.GetBlockByNumber, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
                 var sampleBlockHeight = sampleBlockResults.First(x => x.Error == null && x.Response?.Height != null).Response.Height.Value;
                 var sampleBlockTimestamp = sampleBlockResults.First(x => x.Error == null && x.Response?.Height != null).Response.Timestamp;
                 
