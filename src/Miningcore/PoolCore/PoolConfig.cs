@@ -4,16 +4,17 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace Miningcore
+namespace Miningcore.PoolCore
 {
-    public class Program
+    class PoolConfig
     {
-        private static object configFile = null;
-        private static CommandOption dumpConfigOption;
-        private static CommandOption shareRecoveryOption;
+        public static CommandOption dumpConfigOption;
+        public static CommandOption shareRecoveryOption;
 
-        public static void Main(string[] args)
+
+        public static bool HandleCommandLineOptions(string[] args, out string configFile)
         {
+            configFile = null;
 
             var app = new CommandLineApplication(false)
             {
@@ -33,22 +34,18 @@ namespace Miningcore
             if(versionOption.HasValue())
             {
                 app.ShowVersion();
+                return false;
             }
 
             if(!configFileOption.HasValue())
             {
                 app.ShowHelp();
-            }
-            else
-            {
-                configFile = configFileOption.Value();
-
-                // Start Miningcore PoolCore
-                PoolCore.Pool.Start(args);
+                return false;
             }
 
-            
+            configFile = configFileOption.Value();
 
+            return true;
         }
 
     }

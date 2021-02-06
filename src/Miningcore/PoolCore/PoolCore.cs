@@ -62,8 +62,6 @@ namespace Miningcore.PoolCore
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static IContainer container;
         private static ILogger logger;
-        private static CommandOption dumpConfigOption;
-        private static CommandOption shareRecoveryOption;
         private static bool isShareRecoveryMode;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
@@ -93,7 +91,7 @@ namespace Miningcore.PoolCore
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKeyPress);
 
                 // Check args for config.json
-                if(!HandleCommandLineOptions(args, out var configFile))
+                if(!PoolConfig.HandleCommandLineOptions(args, out var configFile))
                     return;
 
                 // Check valid OS and user
@@ -107,26 +105,53 @@ namespace Miningcore.PoolCore
                 ValidateConfig();
 
                 // Check if shares need to be restored from file to database
-                isShareRecoveryMode = shareRecoveryOption.HasValue();
+                isShareRecoveryMode = PoolConfig.shareRecoveryOption.HasValue();
 
-                if(dumpConfigOption.HasValue())
+                if(PoolConfig.dumpConfigOption.HasValue())
                 {
                     DumpParsedConfig(clusterConfig);
                     return;
                 }
 
                 
-                Bootstrap();
-                LogRuntimeInfo();
+                // Bootstrap();
+                //-----------------------------------------------------------------------------
+                ZcashNetworks.Instance.EnsureRegistered();
 
-                // If not 
+                // Service collection
+                var builder = new ContainerBuilder();
+
+                builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
+                builder.RegisterInstance(clusterConfig);
+                builder.RegisterInstance(pools);
+                builder.RegisterInstance(gcStats);
+
+                // AutoMapper
+                var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
+                builder.Register((ctx, parms) => amConf.CreateMapper());
+
+                ConfigurePersistence(builder);
+                container = builder.Build();
+                ConfigureLogging();
+                ConfigureMisc();
+                MonitorGarbageCollection();
+
+                // LogRuntimeInfo();
+                //-----------------------------------------------------------------------------
+                logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+                
+
+                // If not Share Recovery needed
                 if(!isShareRecoveryMode)
                 {
                     if(!cts.IsCancellationRequested)
                         StartMiningcorePool().Wait(cts.Token);
                 }
                 else
-                    RecoverSharesAsync(shareRecoveryOption.Value()).Wait();
+                {
+                    RecoverSharesAsync(PoolConfig.shareRecoveryOption.Value()).Wait();
+                }
+                    
             }
 
             catch(PoolStartupAbortException ex)
@@ -167,15 +192,17 @@ namespace Miningcore.PoolCore
                 Console.WriteLine("Cluster cannot start. Good Bye!");
             }
 
-            Shutdown();
+            finally
+            {
+                Shutdown();
+                Process.GetCurrentProcess().Kill();
+            }
+            
 
-            Process.GetCurrentProcess().Kill();
+            
         }
 
-        private static void LogRuntimeInfo()
-        {
-            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
-        }
+
 
         private static void ValidateConfig()
         {
@@ -209,68 +236,6 @@ namespace Miningcore.PoolCore
             }));
         }
 
-        private static bool HandleCommandLineOptions(string[] args, out string configFile)
-        {
-            configFile = null;
-
-            var app = new CommandLineApplication(false)
-            {
-                FullName = "MiningCore - Pool Mining Engine",
-                ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
-                LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
-            };
-
-            var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
-            var configFileOption = app.Option("-c|--config <configfile>", "Configuration File",
-                CommandOptionType.SingleValue);
-            dumpConfigOption = app.Option("-dc|--dumpconfig",
-                "Dump the configuration (useful for trouble-shooting typos in the config file)",
-                CommandOptionType.NoValue);
-            shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file",
-                CommandOptionType.SingleValue);
-            app.HelpOption("-? | -h | --help");
-
-            app.Execute(args);
-
-            if(versionOption.HasValue())
-            {
-                app.ShowVersion();
-                return false;
-            }
-
-            if(!configFileOption.HasValue())
-            {
-                app.ShowHelp();
-                return false;
-            }
-
-            configFile = configFileOption.Value();
-
-            return true;
-        }
-
-        private static void Bootstrap()
-        {
-            ZcashNetworks.Instance.EnsureRegistered();
-
-            // Service collection
-            var builder = new ContainerBuilder();
-
-            builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
-            builder.RegisterInstance(clusterConfig);
-            builder.RegisterInstance(pools);
-            builder.RegisterInstance(gcStats);
-
-            // AutoMapper
-            var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
-            builder.Register((ctx, parms) => amConf.CreateMapper());
-
-            ConfigurePersistence(builder);
-            container = builder.Build();
-            ConfigureLogging();
-            ConfigureMisc();
-            MonitorGarbageCollection();
-        }
 
         private static ClusterConfig ReadConfig(string file)
         {
