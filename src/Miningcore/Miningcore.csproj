@@ -28,7 +28,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <StartupObject>Miningcore.Program</StartupObject>
     <Company>Miningcore.com</Company>
-    <Version>1.0.0</Version>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -61,7 +61,7 @@
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
     <PackageReference Include="MailKit" Version="2.1.4" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.0" />
@@ -99,6 +99,12 @@
     <None Update="coins.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataStore\" />
+    <Folder Include="Views\" />
+    <Folder Include="Stats\" />
   </ItemGroup>
 
   <!-- Copy pre-built library binaries on Windows  -->
