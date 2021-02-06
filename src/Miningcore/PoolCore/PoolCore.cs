@@ -28,12 +28,10 @@ using Miningcore.Api.Controllers;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.DataStore.Postgres;
 using Miningcore.Mining;
 using Miningcore.Notifications;
 using Miningcore.Payments;
-using Miningcore.Persistence.Dummy;
-using Miningcore.Persistence.Postgres;
-using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
@@ -62,13 +60,13 @@ namespace Miningcore.PoolCore
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static IContainer container;
         private static ILogger logger;
-        private static bool isShareRecoveryMode;
+
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
         private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
-        private static ClusterConfig clusterConfig;
+        public static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
         private static MetricsPublisher metricsPublisher;
@@ -76,11 +74,10 @@ namespace Miningcore.PoolCore
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
         private static AdminGcStats gcStats = new AdminGcStats();
-        private static readonly Regex regexJsonTypeConversionError =
-            new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+        
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
-        public static void Start(string[] args)
+        public static void Start(string configFile)
         {
             try
             {
@@ -90,10 +87,6 @@ namespace Miningcore.PoolCore
                 currentDomain.ProcessExit += OnProcessExit;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKeyPress);
 
-                // Check args for config.json
-                if(!PoolConfig.HandleCommandLineOptions(args, out var configFile))
-                    return;
-
                 // Check valid OS and user
                 ValidateRuntimeEnvironment();
 
@@ -101,19 +94,8 @@ namespace Miningcore.PoolCore
                 Logo();
 
                 // Read config.json file
-                clusterConfig = ReadConfig(configFile);
-                ValidateConfig();
+                clusterConfig = PoolConfig.GetConfigContent(configFile);
 
-                // Check if shares need to be restored from file to database
-                isShareRecoveryMode = PoolConfig.shareRecoveryOption.HasValue();
-
-                if(PoolConfig.dumpConfigOption.HasValue())
-                {
-                    DumpParsedConfig(clusterConfig);
-                    return;
-                }
-
-                
                 // Bootstrap();
                 //-----------------------------------------------------------------------------
                 ZcashNetworks.Instance.EnsureRegistered();
@@ -130,7 +112,8 @@ namespace Miningcore.PoolCore
                 var amConf = new MapperConfiguration(cfg => { cfg.AddProfile(new AutoMapperProfile()); });
                 builder.Register((ctx, parms) => amConf.CreateMapper());
 
-                ConfigurePersistence(builder);
+                PostgresInterface.ConnectDatabase(builder);
+                //PostgresInterface.ConfigurePersistence(builder);
                 container = builder.Build();
                 ConfigureLogging();
                 ConfigureMisc();
@@ -141,17 +124,10 @@ namespace Miningcore.PoolCore
                 logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
                 
 
-                // If not Share Recovery needed
-                if(!isShareRecoveryMode)
-                {
-                    if(!cts.IsCancellationRequested)
-                        StartMiningcorePool().Wait(cts.Token);
-                }
-                else
-                {
-                    RecoverSharesAsync(PoolConfig.shareRecoveryOption.Value()).Wait();
-                }
-                    
+                // Start Miningcore Pool
+                if(!cts.IsCancellationRequested)
+                    StartMiningcorePool().Wait(cts.Token);
+    
             }
 
             catch(PoolStartupAbortException ex)
@@ -195,107 +171,13 @@ namespace Miningcore.PoolCore
             finally
             {
                 Shutdown();
-                Process.GetCurrentProcess().Kill();
+                
             }
             
 
             
         }
 
-
-
-        private static void ValidateConfig()
-        {
-            // set some defaults
-            foreach(var config in clusterConfig.Pools)
-            {
-                if(!config.EnableInternalStratum.HasValue)
-                    config.EnableInternalStratum = clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
-            }
-
-            try
-            {
-                clusterConfig.Validate();
-            }
-
-            catch(ValidationException ex)
-            {
-                Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
-                throw new PoolStartupAbortException(string.Empty);
-            }
-        }
-
-        private static void DumpParsedConfig(ClusterConfig config)
-        {
-            Console.WriteLine("\nCurrent configuration as parsed from config file:");
-
-            Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                Formatting = Formatting.Indented
-            }));
-        }
-
-
-        private static ClusterConfig ReadConfig(string file)
-        {
-            try
-            {
-                Console.WriteLine($"Using configuration file {file}\n");
-
-                var serializer = JsonSerializer.Create(new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
-
-                using(var reader = new StreamReader(file, Encoding.UTF8))
-                {
-                    using(var jsonReader = new JsonTextReader(reader))
-                    {
-                        return serializer.Deserialize<ClusterConfig>(jsonReader);
-                    }
-                }
-            }
-
-            catch(JsonSerializationException ex)
-            {
-                HumanizeJsonParseException(ex);
-                throw;
-            }
-
-            catch(JsonException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
-
-            catch(IOException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
-        }
-
-        private static void HumanizeJsonParseException(JsonSerializationException ex)
-        {
-            var m = regexJsonTypeConversionError.Match(ex.Message);
-
-            if(m.Success)
-            {
-                var value = m.Groups[1].Value;
-                var type = Type.GetType(m.Groups[2].Value);
-                var line = m.Groups[3].Value;
-                var col = m.Groups[4].Value;
-
-                if(type == typeof(PayoutScheme))
-                    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
-            }
-
-            else
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
 
         private static void ValidateRuntimeEnvironment()
         {
@@ -398,7 +280,7 @@ namespace Miningcore.PoolCore
                 loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
 
                 // Api Log
-                if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
+                if(!string.IsNullOrEmpty(config.ApiLogFile) )
                 {
                     var target = new FileTarget("file")
                     {
@@ -411,7 +293,7 @@ namespace Miningcore.PoolCore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target, "Microsoft.AspNetCore.*", true);
                 }
 
-                if(config.EnableConsoleLog || isShareRecoveryMode)
+                if(config.EnableConsoleLog)
                 {
                     if(config.EnableConsoleColors)
                     {
@@ -460,7 +342,7 @@ namespace Miningcore.PoolCore
                     }
                 }
 
-                if(!string.IsNullOrEmpty(config.LogFile) && !isShareRecoveryMode)
+                if(!string.IsNullOrEmpty(config.LogFile))
                 {
                     var target = new FileTarget("file")
                     {
@@ -473,7 +355,7 @@ namespace Miningcore.PoolCore
                     loggingConfig.AddRule(level, LogLevel.Fatal, target);
                 }
 
-                if(config.PerPoolLogFile && !isShareRecoveryMode)
+                if(config.PerPoolLogFile)
                 {
                     foreach(var poolConfig in clusterConfig.Pools)
                     {
@@ -510,62 +392,7 @@ namespace Miningcore.PoolCore
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
         }
 
-        private static void ConfigurePersistence(ContainerBuilder builder)
-        {
-            if(clusterConfig.Persistence == null &&
-                clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.ShareRelay == null)
-                logger.ThrowLogPoolStartupException("Persistence is not configured!");
 
-            if(clusterConfig.Persistence?.Postgres != null)
-                ConfigurePostgres(clusterConfig.Persistence.Postgres, builder);
-            else
-                ConfigureDummyPersistence(builder);
-        }
-
-        private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
-        {
-            // validate config
-            if(string.IsNullOrEmpty(pgConfig.Host))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
-
-            if(pgConfig.Port == 0)
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
-
-            if(string.IsNullOrEmpty(pgConfig.Database))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
-
-            if(string.IsNullOrEmpty(pgConfig.User))
-                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
-
-            // build connection string
-            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
-
-            // register connection factory
-            builder.RegisterInstance(new PgConnectionFactory(connectionString))
-                .AsImplementedInterfaces();
-
-            // register repositories
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
-                .AsImplementedInterfaces()
-                .SingleInstance();
-        }
-
-        private static void ConfigureDummyPersistence(ContainerBuilder builder)
-        {
-            // register connection factory
-            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
-                .AsImplementedInterfaces();
-
-            // register repositories
-            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
-                .AsImplementedInterfaces()
-                .SingleInstance();
-        }
 
         private static Dictionary<string, CoinTemplate> LoadCoinTemplates()
         {
@@ -853,7 +680,7 @@ namespace Miningcore.PoolCore
             await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
-        private static Task RecoverSharesAsync(string recoveryFilename)
+        public static Task RecoverSharesAsync(string recoveryFilename)
         {
             shareRecorder = container.Resolve<ShareRecorder>();
             return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
@@ -909,12 +736,16 @@ namespace Miningcore.PoolCore
             logger?.Info(() => "Miningcore is shuting down... bye!");
             
             foreach(var pool in pools.Values)
+            {
+                Console.WriteLine($"Stopping pool {pool}");
                 pool.Stop();
-
+            }
+                
             shareRelay?.Stop();
             shareReceiver?.Stop();
             shareRecorder?.Stop();
             statsRecorder?.Stop();
+            Process.GetCurrentProcess().Kill();
         }
     }
 }

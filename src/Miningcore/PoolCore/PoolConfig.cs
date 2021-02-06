@@ -1,51 +1,130 @@
-using McMaster.Extensions.CommandLineUtils;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using FluentValidation;
+using Miningcore.Configuration;
+using Miningcore.Mining;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
+
 
 namespace Miningcore.PoolCore
 {
-    class PoolConfig
+    public class PoolConfig
     {
-        public static CommandOption dumpConfigOption;
-        public static CommandOption shareRecoveryOption;
 
+        private static ClusterConfig clusterConfig;
+        private static readonly Regex regexJsonTypeConversionError = new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
 
-        public static bool HandleCommandLineOptions(string[] args, out string configFile)
+        public static ClusterConfig GetConfigContent(string configFile)
         {
-            configFile = null;
+            // Read config.json file
+            clusterConfig = ReadConfig(configFile);
+            ValidateConfig();
 
-            var app = new CommandLineApplication(false)
+            return clusterConfig;
+
+        }
+
+        private static ClusterConfig ReadConfig(string configFile)
+        {
+            try
             {
-                FullName = "MiningCore - Pool Mining Engine",
-                ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
-                LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
-            };
+                Console.WriteLine($"Using configuration file {configFile}\n");
 
-            var versionOption = app.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
-            var configFileOption = app.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
-            dumpConfigOption = app.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
-            shareRecoveryOption = app.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
-            app.HelpOption("-? | -h | --help");
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
 
-            app.Execute(args);
-
-            if(versionOption.HasValue())
-            {
-                app.ShowVersion();
-                return false;
+                using(var reader = new StreamReader(configFile, Encoding.UTF8))
+                {
+                    using(var jsonReader = new JsonTextReader(reader))
+                    {
+                        return serializer.Deserialize<ClusterConfig>(jsonReader);
+                    }
+                }
             }
 
-            if(!configFileOption.HasValue())
+            catch(JsonSerializationException ex)
             {
-                app.ShowHelp();
-                return false;
+                HumanizeJsonParseException(ex);
+                throw;
             }
 
-            configFile = configFileOption.Value();
+            catch(JsonException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
 
-            return true;
+            catch(IOException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static void ValidateConfig()
+        {
+            // set some defaults
+            foreach(var config in clusterConfig.Pools)
+            {
+                if(!config.EnableInternalStratum.HasValue)
+                    config.EnableInternalStratum = clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
+            }
+
+            try
+            {
+                clusterConfig.Validate();
+            }
+
+            catch(ValidationException ex)
+            {
+                Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
+                throw new PoolStartupAbortException(string.Empty);
+            }
+            finally
+            {
+                Console.WriteLine($"Pool Configuration file is valid");
+            }
+
+        }
+
+        private static void HumanizeJsonParseException(JsonSerializationException ex)
+        {
+            var m = regexJsonTypeConversionError.Match(ex.Message);
+
+            if(m.Success)
+            {
+                var value = m.Groups[1].Value;
+                var type = Type.GetType(m.Groups[2].Value);
+                var line = m.Groups[3].Value;
+                var col = m.Groups[4].Value;
+
+                if(type == typeof(PayoutScheme))
+                    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+            }
+
+            else
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void DumpParsedConfig(ClusterConfig config)
+        {
+            Console.WriteLine("\nCurrent configuration as parsed from config file:");
+
+            Console.WriteLine(JsonConvert.SerializeObject(config, new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                Formatting = Formatting.Indented
+            }));
         }
 
     }

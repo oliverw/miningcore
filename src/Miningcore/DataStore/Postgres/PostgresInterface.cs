@@ -1,0 +1,99 @@
+using Autofac;
+using Miningcore.Configuration;
+using Miningcore.Persistence.Dummy;
+using Miningcore.Persistence.Postgres;
+using Miningcore.Persistence.Postgres.Repositories;
+using Miningcore.PoolCore;
+using Miningcore.Util;
+using NLog;
+using NLog.Conditions;
+using NLog.Config;
+using NLog.Layouts;
+using NLog.Targets;
+using Microsoft.Extensions.Logging;
+using LogLevel = NLog.LogLevel;
+using ILogger = NLog.ILogger;
+using NLog.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
+
+namespace Miningcore.DataStore.Postgres
+{
+    public class PostgresInterface
+    {
+
+        private static ILogger logger;
+
+        public static void ConnectDatabase(ContainerBuilder builder)
+        {
+            ConfigurePersistence(builder);
+        }
+
+
+
+        private static void ConfigurePersistence(ContainerBuilder builder)
+        {
+            if(Pool.clusterConfig.Persistence == null && Pool.clusterConfig.PaymentProcessing?.Enabled == true && Pool.clusterConfig.ShareRelay == null)
+                logger.ThrowLogPoolStartupException("Persistence is not configured!");
+
+            if(Pool.clusterConfig.Persistence?.Postgres != null)
+            {
+                ConfigurePostgres(Pool.clusterConfig.Persistence.Postgres, builder);
+            }
+            else
+            {
+                ConfigureDummyPersistence(builder);
+            }
+
+        }
+
+        private static void ConfigurePostgres(DatabaseConfig pgConfig, ContainerBuilder builder)
+        {
+            // validate config
+            if(string.IsNullOrEmpty(pgConfig.Host))
+                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'host'");
+
+            if(pgConfig.Port == 0)
+                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'port'");
+
+            if(string.IsNullOrEmpty(pgConfig.Database))
+                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'database'");
+
+            if(string.IsNullOrEmpty(pgConfig.User))
+                logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
+
+            Console.WriteLine($"Connecting to Postgres database {pgConfig.Host}:{pgConfig.Port} Database:{pgConfig.Database} User:{pgConfig.User}");
+
+            // build connection string
+            var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
+
+            // register connection factory
+            builder.RegisterInstance(new PgConnectionFactory(connectionString))
+                .AsImplementedInterfaces();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t =>
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
+
+
+        private static void ConfigureDummyPersistence(ContainerBuilder builder)
+        {
+            // register connection factory
+            builder.RegisterInstance(new DummyConnectionFactory(string.Empty))
+                .AsImplementedInterfaces();
+
+            // register repositories
+            builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+                .Where(t =>
+                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
+    }
+}

@@ -1,4 +1,6 @@
 using McMaster.Extensions.CommandLineUtils;
+using Miningcore.Configuration;
+using Miningcore.PoolCore;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -8,12 +10,13 @@ namespace Miningcore
 {
     public class Program
     {
-        private static object configFile = null;
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
+        private static ClusterConfig clusterConfig;
 
         public static void Main(string[] args)
         {
+            string configFile = "config_template.json";
 
             var app = new CommandLineApplication(false)
             {
@@ -30,26 +33,45 @@ namespace Miningcore
 
             app.Execute(args);
 
-            if(versionOption.HasValue())
+            if( versionOption.HasValue() )
             {
                 app.ShowVersion();
             }
 
+            // overwrite default config_template.json with -c | --config <configfile> file
+            if(configFileOption.HasValue())
+            {
+                configFile = configFileOption.Value();
+            }
+
+            // Dump Config to JSON output
+            if(dumpConfigOption.HasValue())
+            {
+                clusterConfig = PoolCore.PoolConfig.GetConfigContent(configFile);
+                PoolCore.PoolConfig.DumpParsedConfig(clusterConfig);
+            }
+
+
+            // Shares recovery from file to database
+            if( shareRecoveryOption.HasValue())
+            {
+                PoolCore.Pool.RecoverSharesAsync(shareRecoveryOption.Value()).Wait();
+            }
+            
             if(!configFileOption.HasValue())
             {
                 app.ShowHelp();
             }
             else
             {
-                configFile = configFileOption.Value();
-
                 // Start Miningcore PoolCore
-                PoolCore.Pool.Start(args);
+                PoolCore.Pool.Start(configFile);
             }
 
             
 
         }
+        
 
     }
 }
