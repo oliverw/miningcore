@@ -1,21 +1,6 @@
 /*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MiningCore 2.0
+Copyright 2021 MinerNL (Miningcore.com)
 */
 
 using System;
@@ -41,14 +26,9 @@ namespace Miningcore.Payments
     /// <summary>
     /// Coin agnostic payment processor
     /// </summary>
-    public class PayoutManager
+    internal class PayoutManager
     {
-        public PayoutManager(IComponentContext ctx,
-            IConnectionFactory cf,
-            IBlockRepository blockRepo,
-            IShareRepository shareRepo,
-            IBalanceRepository balanceRepo,
-            IMessageBus messageBus)
+        internal PayoutManager(IComponentContext ctx, IConnectionFactory cf, IBlockRepository blockRepo, IShareRepository shareRepo, IBalanceRepository balanceRepo, IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -76,56 +56,77 @@ namespace Miningcore.Payments
         private ClusterConfig clusterConfig;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private async Task ProcessPoolsAsync()
+        // Start Payment Services
+        internal void StartPayoutManager()
         {
-            foreach(var pool in clusterConfig.Pools.Where(x => x.Enabled && x.PaymentProcessing.Enabled))
+            Task.Run(async () =>
             {
-                logger.Info(() => $"Processing payments for pool {pool.Id}");
+                logger.Info(() => "Starting Payout Manager");
 
-                try
+                while(!cts.IsCancellationRequested)
                 {
-                    var family = HandleFamilyOverride(pool.Template.Family, pool);
+                    //try
+                    //{
+                        //await ProcessPoolPaymentsAsync();
+                        foreach(var pool in clusterConfig.Pools.Where(x => x.Enabled && x.PaymentProcessing.Enabled))
+                        {
+                            logger.Info(() => $"Processing payments for pool {pool.Id}");
 
-                    // resolve payout handler
-                    var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
-                        .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
+                            try
+                            {
+                                var family = HandleFamilyOverride(pool.Template.Family, pool);
 
-                    var handler = handlerImpl.Value;
-                    await handler.ConfigureAsync(clusterConfig, pool);
+                                // resolve payout handler
+                                var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
+                                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
 
-                    // resolve payout scheme
-                    var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
+                                var handler = handlerImpl.Value;
+                                await handler.ConfigureAsync(clusterConfig, pool);
 
-                    await UpdatePoolBalancesAsync(pool, handler, scheme);
-                    await PayoutPoolBalancesAsync(pool, handler);
+                                // resolve payout scheme
+                                var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
+
+                                await UpdatePoolBalancesAsync(pool, handler, scheme);
+                                await PayoutPoolBalancesAsync(pool, handler);
+                            }
+
+                            catch(InvalidOperationException ex)
+                            {
+                                logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
+                            }
+
+                            catch(AggregateException ex)
+                            {
+                                switch(ex.InnerException)
+                                {
+                                    case HttpRequestException httpEx:
+                                        logger.Error(() => $"[{pool.Id}] Payment processing failed: {httpEx.Message}");
+                                        break;
+
+                                    default:
+                                        logger.Error(ex.InnerException, () => $"[{pool.Id}] Payment processing failed");
+                                        break;
+                                }
+                            }
+
+                            catch(Exception ex)
+                            {
+                                logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
+                            }
+                        }
+                    //}
+
+                    //catch(Exception ex)
+                    //{
+                    //    logger.Error(ex);
+                    //}
+
+                    await Task.Delay(interval, cts.Token);
                 }
-
-                catch(InvalidOperationException ex)
-                {
-                    logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
-                }
-
-                catch(AggregateException ex)
-                {
-                    switch(ex.InnerException)
-                    {
-                        case HttpRequestException httpEx:
-                            logger.Error(() => $"[{pool.Id}] Payment processing failed: {httpEx.Message}");
-                            break;
-
-                        default:
-                            logger.Error(ex.InnerException, () => $"[{pool.Id}] Payment processing failed");
-                            break;
-                    }
-                }
-
-                catch(Exception ex)
-                {
-                    logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
-                }
-            }
+            });
         }
 
+ 
         private static CoinFamily HandleFamilyOverride(CoinFamily family, PoolConfig pool)
         {
             switch(family)
@@ -241,48 +242,24 @@ namespace Miningcore.Payments
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
-        #region API-Surface
 
-        public void Configure(ClusterConfig clusterConfig)
+        internal void Configure(ClusterConfig clusterConfig)
         {
             this.clusterConfig = clusterConfig;
-
-            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ?
-                clusterConfig.PaymentProcessing.Interval : 600);
+            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ? clusterConfig.PaymentProcessing.Interval : 600);
         }
 
-        public void Start()
-        {
-            Task.Run(async () =>
-            {
-                logger.Info(() => "Online");
-
-                while(!cts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await ProcessPoolsAsync();
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-
-                    await Task.Delay(interval, cts.Token);
-                }
-            });
-        }
+    
 
         public void Stop()
         {
-            logger.Info(() => "Stopping ..");
+            logger.Info(() => "Payments Service Stopping ..");
 
             cts.Cancel();
 
-            logger.Info(() => "Stopped");
+            logger.Info(() => "Payment Service Stopped");
         }
 
-        #endregion // API-Surface
+       
     }
 }

@@ -1,3 +1,8 @@
+/*
+MiningCore 2.0
+Copyright 2021 MinerNL (Miningcore.com)
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -260,7 +265,7 @@ namespace Miningcore.PoolCore
             {
                 payoutManager = container.Resolve<PayoutManager>();
                 payoutManager.Configure(clusterConfig);
-                payoutManager.Start();
+                payoutManager.StartPayoutManager();
             }
             else
             {

@@ -1,3 +1,8 @@
+/*
+MiningCore 2.0
+Copyright 2021 MinerNL (Miningcore.com)
+*/
+
 using Autofac;
 using Miningcore.Configuration;
 using Miningcore.Persistence.Dummy;

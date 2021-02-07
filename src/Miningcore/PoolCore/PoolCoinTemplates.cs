@@ -1,3 +1,8 @@
+/*
+MiningCore 2.0
+Copyright 2021 MinerNL (Miningcore.com)
+*/
+
 using Miningcore.Configuration;
 using System;
 using System.Collections.Generic;
