@@ -109,6 +109,11 @@ namespace Miningcore.Blockchain.Ethereum.DaemonResponses
         public string ParentHash { get; set; }
 
         /// <summary>
+        /// x Bytes - hash.
+        /// </summary>
+        public string MixHash { get; set; }
+
+        /// <summary>
         /// 8 Bytes - hash of the generated proof-of-work. null when its pending block.
         /// </summary>
         public string Nonce { get; set; }

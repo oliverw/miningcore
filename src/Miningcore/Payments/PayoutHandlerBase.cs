@@ -140,8 +140,7 @@ namespace Miningcore.Payments
                     {
                         foreach(var balance in balances)
                         {
-                            if(!string.IsNullOrEmpty(transactionConfirmation) &&
-                                !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
+                            if(!string.IsNullOrEmpty(transactionConfirmation) && !poolConfig.RewardRecipients.Any(x => x.Address == balance.Address))
                             {
                                 // record payment
                                 var payment = new Payment

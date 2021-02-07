@@ -406,8 +406,6 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        #region API-Surface
-
         public IObservable<object> Jobs { get; private set; }
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
@@ -500,10 +498,9 @@ namespace Miningcore.Blockchain.Ethereum
 
         public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
 
-        #endregion // API-Surface
+   
 
-        #region Overrides
-
+   
         protected override void ConfigureDaemons()
         {
             var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
@@ -589,13 +586,13 @@ namespace Miningcore.Blockchain.Ethereum
             var netVersion = results[0].Response.ToObject<string>();
             var accounts = results[1].Response.ToObject<string[]>();
             var coinbase = results[2].Response.ToObject<string>();
-            var parityChain = isParity ?
-                results[3].Response.ToObject<string>() :
-                (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
+            var parityChain = isParity ? results[3].Response.ToObject<string>() : (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
 
             // ensure pool owns wallet  // TODO
             //if (clusterConfig.PaymentProcessing?.Enabled == true && !accounts.Contains(poolConfig.Address) || coinbase != poolConfig.Address)
             //    logger.ThrowLogPoolStartupException($"Daemon does not own pool-address '{poolConfig.Address}'", LogCat);
+            logger.Info($"Pool config account: {accounts.Contains(poolConfig.Address)}");
+            logger.Info($"Daemon Wallet: {coinbase}");
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
 
@@ -675,8 +672,7 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 var enableStreaming = extraPoolConfig?.EnableDaemonWebsocketStreaming == true;
 
-                if(enableStreaming && !poolConfig.Daemons.Any(x =>
-                   x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
+                if(enableStreaming && !poolConfig.Daemons.Any(x => x.Extra.SafeExtensionDataAs<EthereumDaemonEndpointConfigExtra>()?.PortWs.HasValue == true))
                 {
                     logger.Warn(() => $"'{nameof(EthereumPoolConfigExtra.EnableDaemonWebsocketStreaming).ToLowerCamelCase()}' enabled but not a single daemon found with a configured websocket port ('{nameof(EthereumDaemonEndpointConfigExtra.PortWs).ToLowerCamelCase()}'). Falling back to polling.");
                     enableStreaming = false;
@@ -813,6 +809,6 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
-        #endregion // Overrides
+
     }
 }

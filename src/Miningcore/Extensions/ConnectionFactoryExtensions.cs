@@ -73,10 +73,10 @@ namespace Miningcore.Extensions
                             tx.Commit();
                     }
 
-                    catch
+                    catch(Exception ex)
                     {
                         tx.Rollback();
-                        throw;
+                        throw new Exception($"ERROR: Database transaction failed {ex.Message}");
                     }
                 }
             }

@@ -174,6 +174,9 @@ namespace Miningcore.Payments
                                 break;
 
                             case BlockStatus.Orphaned:
+                                await blockRepo.UpdateBlockAsync(con, tx, block);
+                                break;
+
                             case BlockStatus.Pending:
                                 await blockRepo.UpdateBlockAsync(con, tx, block);
                                 break;

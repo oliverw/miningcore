@@ -134,12 +134,16 @@ namespace Miningcore.Blockchain.Ethereum
 
                 for(var j = 0; j < blockInfos.Length; j++)
                 {
+                    logger.Info(() => $"Blocks count to process : {blockInfos.Length - j}");
                     var blockInfo = blockInfos[j];
                     var block = page[j];
 
                     // extract confirmation data from stored block
                     var mixHash = block.TransactionConfirmationData.Split(":").First();
                     var nonce = block.TransactionConfirmationData.Split(":").Last();
+                    logger.Info(() => $"** TransactionData: {block.TransactionConfirmationData}");
+                    logger.Info(() => $"** mixHash : {mixHash}");
+                    logger.Info(() => $"** nonce   : {nonce}");
 
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
@@ -148,18 +152,27 @@ namespace Miningcore.Blockchain.Ethereum
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
                     // is it block mined by us?
+                    logger.Info(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
                     if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
                         // additional check
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
-                        var match = isParity ?
-                            true :
-                            blockInfo.SealFields[0].Substring(2) == mixHash &&
-                            blockInfo.SealFields[1].Substring(2) == nonce;
+                        logger.Info(() => $"** Ethereum Deamon is Parity : {isParity}");
+                        bool match;
+                        if(isParity)
+                        {
+                            match = isParity ? true : blockInfo.SealFields[0].Substring(2) == mixHash && blockInfo.SealFields[1].Substring(2) == nonce;
+                        }
+                        else
+                        {
+                            match = blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce;
+                        }
+
+                        logger.Info(() => $"** mixHash & nonce match? {match}");
 
                         // mature?
-                        if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations))
+                        if( latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations )
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
@@ -272,9 +285,7 @@ namespace Miningcore.Blockchain.Ethereum
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EthCommands.GetPeerCount);
 
-            if(networkType == EthereumNetworkType.Main &&
-                (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
-                    infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
+            if(networkType == EthereumNetworkType.Main && (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) || infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
@@ -422,8 +433,10 @@ namespace Miningcore.Blockchain.Ethereum
             if(results.Any(x => x.Error != null))
             {
                 if(results[1].Error != null)
+                {
                     isParity = false;
-
+                    logger.Info(() => $"Parity is not detected. Switching to Geth.");
+                }
                 var errors = results.Take(1).Where(x => x.Error != null)
                     .ToArray();
 
@@ -433,9 +446,9 @@ namespace Miningcore.Blockchain.Ethereum
 
             // convert network
             var netVersion = results[0].Response.ToObject<string>();
-            var parityChain = isParity ?
-                results[1].Response.ToObject<string>() :
-                (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
+            var parityChain = isParity ? results[1].Response.ToObject<string>() : (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
+
+            logger.Info(() => $"Ethereum network: {netVersion}");
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
         }
