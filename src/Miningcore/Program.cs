@@ -16,17 +16,15 @@ namespace Miningcore
 
         public static void Main(string[] args)
         {
-            string configFile = "config_template.json";
-
             PoolLogo.Logo();
 
             var MiningCore = new CommandLineApplication(throwOnUnexpectedArg: false)
             {
                 Name = "dotnet Miningcore.dll",
-                FullName = "MiningCore 2.0 - Mining Pool Engine",
+                FullName = "MiningCore 2.0 - Stratum Mining Pool Engine",
                 Description = "Stratum mining pool engine for Bitcoin and Altcoins",
-                ShortVersionGetter = () => $"- MinerNL v{Assembly.GetEntryAssembly().GetName().Version}",
-                LongVersionGetter = () => $"- MinerNL v{Assembly.GetEntryAssembly().GetName().Version}",
+                ShortVersionGetter = () => $"- MinerNL build v{Assembly.GetEntryAssembly().GetName().Version.ToString(2)}",
+                LongVersionGetter = () => $"- MinerNL build v{Assembly.GetEntryAssembly().GetName().Version}",
                 ExtendedHelpText = "--------------------------------------------------------------------------------------------------------------"
             };
 
@@ -36,14 +34,11 @@ namespace Miningcore
             dumpConfigOption = MiningCore.Option("-dc|--dumpconfig", "Dump the configuration (useful for trouble-shooting typos in the config file)", CommandOptionType.NoValue);
             shareRecoveryOption = MiningCore.Option("-rs", "Import lost shares using existing recovery file", CommandOptionType.SingleValue);
             MiningCore.HelpOption("-? | -h | --help");
-            MiningCore.OnExecute(() =>
+            MiningCore.OnExecute( () =>
             {
-                // Display Software Version
-                Assembly thisAssem = typeof(Program).Assembly;
-                AssemblyName thisAssemName = thisAssem.GetName();
-                Version ver = thisAssemName.Version;
                 Console.WriteLine("-----------------------------------------------------------------------------------------------------------------------");
-                Console.WriteLine($"Running Miningcore V{ver}");
+
+                string configFile = "config_template.json";
 
                 if(versionOption.HasValue())
                 {
@@ -75,15 +70,14 @@ namespace Miningcore
                 }
                 else
                 {
+                    // Display Software Version
+                    Console.WriteLine($"{MiningCore.FullName} - MinerNL build v{Assembly.GetEntryAssembly().GetName().Version}");
+
                     // Start Miningcore PoolCore
                     PoolCore.Pool.Start(configFile);
                 }
-                return 0;
-
             });
             MiningCore.Execute(args);
-
         }
-
     }
 }
