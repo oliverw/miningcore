@@ -26,9 +26,9 @@ namespace Miningcore.Payments
     /// <summary>
     /// Coin agnostic payment processor
     /// </summary>
-    internal class PayoutManager
+    public class PayoutManager
     {
-        internal PayoutManager(IComponentContext ctx, IConnectionFactory cf, IBlockRepository blockRepo, IShareRepository shareRepo, IBalanceRepository balanceRepo, IMessageBus messageBus)
+        public PayoutManager(IComponentContext ctx, IConnectionFactory cf, IBlockRepository blockRepo, IShareRepository shareRepo, IBalanceRepository balanceRepo, IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));
