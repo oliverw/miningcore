@@ -102,8 +102,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\" />
+    <Folder Include="Proxy\" />
     <Folder Include="Stats\" />
+    <Folder Include="Views\Api\" />
+    <Folder Include="Views\AdminWeb\" />
+    <Folder Include="Views\PublicWeb\" />
   </ItemGroup>
 
   <!-- Copy pre-built library binaries on Windows  -->

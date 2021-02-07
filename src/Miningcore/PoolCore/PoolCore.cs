@@ -28,10 +28,12 @@ using Miningcore.Api.Controllers;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.DataStore.FileLogger;
 using Miningcore.DataStore.Postgres;
 using Miningcore.Mining;
 using Miningcore.Notifications;
 using Miningcore.Payments;
+using Miningcore.PoolCore;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
@@ -58,9 +60,8 @@ namespace Miningcore.PoolCore
     public class Pool
     {
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private static readonly ILogger logger = LogManager.GetLogger("PoolCore");
         private static IContainer container;
-        private static ILogger logger;
-
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
         private static ShareReceiver shareReceiver;
@@ -72,9 +73,7 @@ namespace Miningcore.PoolCore
         private static MetricsPublisher metricsPublisher;
         private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
-
         private static AdminGcStats gcStats = new AdminGcStats();
-        
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
         public static void Start(string configFile)
@@ -90,11 +89,19 @@ namespace Miningcore.PoolCore
                 // Check valid OS and user
                 ValidateRuntimeEnvironment();
 
-                // Miningcore logo
-                Logo();
+                // Miningcore Pool Logo
+                PoolLogo.Logo();
 
                 // Read config.json file
                 clusterConfig = PoolConfig.GetConfigContent(configFile);
+
+                // Initialize Logging
+                //ConfigureLogging();
+                FileLogger.ConfigureLogging();
+
+                // LogRuntimeInfo();
+                //-----------------------------------------------------------------------------
+                logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
 
                 // Bootstrap();
                 //-----------------------------------------------------------------------------
@@ -102,7 +109,6 @@ namespace Miningcore.PoolCore
 
                 // Service collection
                 var builder = new ContainerBuilder();
-
                 builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
                 builder.RegisterInstance(clusterConfig);
                 builder.RegisterInstance(pools);
@@ -113,16 +119,13 @@ namespace Miningcore.PoolCore
                 builder.Register((ctx, parms) => amConf.CreateMapper());
 
                 PostgresInterface.ConnectDatabase(builder);
-                //PostgresInterface.ConfigurePersistence(builder);
                 container = builder.Build();
-                ConfigureLogging();
-                ConfigureMisc();
-                MonitorGarbageCollection();
 
-                // LogRuntimeInfo();
-                //-----------------------------------------------------------------------------
-                logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
-                
+                // Configure Equihash
+                if(clusterConfig.EquihashMaxThreads.HasValue)
+                    EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+
+                MonitorGarbageCollection();
 
                 // Start Miningcore Pool
                 if(!cts.IsCancellationRequested)
@@ -173,9 +176,7 @@ namespace Miningcore.PoolCore
                 Shutdown();
                 
             }
-            
-
-            
+  
         }
 
 
@@ -225,175 +226,7 @@ namespace Miningcore.PoolCore
             thread.Start();
         }
 
-        private static void Logo()
-        {
-            Console.WriteLine($@"
- ███╗   ███╗██╗███╗   ██╗██╗███╗   ██╗ ██████╗  ██████╗ ██████╗ ██████╗ ███████╗
- ████╗ ████║██║████╗  ██║██║████╗  ██║██╔════╝ ██╔════╝██╔═══██╗██╔══██╗██╔════╝
- ██╔████╔██║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗██║     ██║   ██║██████╔╝█████╗
- ██║╚██╔╝██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
- ██║ ╚═╝ ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝╚██████╗╚██████╔╝██║  ██║███████╗
-");
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($" MININGCORE - making mining easy");
-            Console.WriteLine($" https://github.com/minernl/miningcore\n");
-            Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($" Part off all donation goes to the core developers");
-            Console.WriteLine($" If you want to donate to them yourself:\n");
-            Console.WriteLine($" BTC  - 3QT2WreQtanPHcMneg9LT2aH3s5nrSZsxr");
-            Console.WriteLine($" LTC  - LTVnLEv8Xj6emGbf981nTyN54Mnyjbfgrg");
-            Console.WriteLine($" DASH - Xc2vm9SfRn8t1hyQgqi8Zrt3oFeGcQtwTh");
-            Console.WriteLine($" ETH  - 0xBfD360CDd9014Bc5B348B65cBf79F78381694f4E");
-            Console.WriteLine($" ETC  - 0xF4BFFC324bbeB63348F137B84f8d1Ade17B507E4");
-            Console.WriteLine($" UMA  - 0x10c42769a8a07421C168c19612A434A72D460d08");
-            Console.WriteLine($" XLM  - GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37:::ucl:::864367071");
-            Console.WriteLine($" XMR  - 44riGcQcDp4EsboDJP284CFCnJ2qP7y8DAqGC4D9WtVbEqzxQ3qYXAUST57u5FkrVF7CXhsEc63QNWazJ5b9ygwBJBtB2kT");
-            Console.WriteLine($" XPR  - rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg:::ucl:::2242232925");
-            Console.WriteLine($" ZEC  - t1JtJtxTdgXCaYm1wzRfMRkGTJM4qLcm4FQ");
-            Console.WriteLine();
-            Console.ResetColor();
-        }
-
-        private static void ConfigureLogging()
-        {
-            var config = clusterConfig.Logging;
-            var loggingConfig = new LoggingConfiguration();
-
-            if(config != null)
-            {
-                // parse level
-                var level = !string.IsNullOrEmpty(config.Level)
-                    ? LogLevel.FromString(config.Level)
-                    : LogLevel.Info;
-
-                var layout = "[${longdate}] [${level:format=FirstCharacter:uppercase=true}] [${logger:shortName=true}] ${message} ${exception:format=ToString,StackTrace}";
-
-                var nullTarget = new NullTarget("null")
-                {
-                };
-
-                loggingConfig.AddTarget(nullTarget);
-
-                // Suppress some Aspnet stuff
-                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
-                loggingConfig.AddRule(level, LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
-
-                // Api Log
-                if(!string.IsNullOrEmpty(config.ApiLogFile) )
-                {
-                    var target = new FileTarget("file")
-                    {
-                        FileName = GetLogPath(config, config.ApiLogFile),
-                        FileNameKind = FilePathKind.Unknown,
-                        Layout = layout
-                    };
-
-                    loggingConfig.AddTarget(target);
-                    loggingConfig.AddRule(level, LogLevel.Fatal, target, "Microsoft.AspNetCore.*", true);
-                }
-
-                if(config.EnableConsoleLog)
-                {
-                    if(config.EnableConsoleColors)
-                    {
-                        var target = new ColoredConsoleTarget("console")
-                        {
-                            Layout = layout
-                        };
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Trace"),
-                            ConsoleOutputColor.DarkMagenta, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                            ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Info"),
-                            ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Warn"),
-                            ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Error"),
-                            ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
-
-                        target.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(
-                            ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-                            ConsoleOutputColor.DarkRed, ConsoleOutputColor.White));
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                    }
-
-                    else
-                    {
-                        var target = new ConsoleTarget("console")
-                        {
-                            Layout = layout
-                        };
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                    }
-                }
-
-                if(!string.IsNullOrEmpty(config.LogFile))
-                {
-                    var target = new FileTarget("file")
-                    {
-                        FileName = GetLogPath(config, config.LogFile),
-                        FileNameKind = FilePathKind.Unknown,
-                        Layout = layout
-                    };
-
-                    loggingConfig.AddTarget(target);
-                    loggingConfig.AddRule(level, LogLevel.Fatal, target);
-                }
-
-                if(config.PerPoolLogFile)
-                {
-                    foreach(var poolConfig in clusterConfig.Pools)
-                    {
-                        var target = new FileTarget(poolConfig.Id)
-                        {
-                            FileName = GetLogPath(config, poolConfig.Id + ".log"),
-                            FileNameKind = FilePathKind.Unknown,
-                            Layout = layout
-                        };
-
-                        loggingConfig.AddTarget(target);
-                        loggingConfig.AddRule(level, LogLevel.Fatal, target, poolConfig.Id);
-                    }
-                }
-            }
-
-            LogManager.Configuration = loggingConfig;
-
-            logger = LogManager.GetLogger("Core");
-        }
-
-        private static Layout GetLogPath(ClusterLoggingConfig config, string name)
-        {
-            if(string.IsNullOrEmpty(config.LogBaseDirectory))
-                return name;
-
-            return Path.Combine(config.LogBaseDirectory, name);
-        }
-
-        private static void ConfigureMisc()
-        {
-            // Configure Equihash
-            if(clusterConfig.EquihashMaxThreads.HasValue)
-                EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
-        }
-
-
-
+      
         private static Dictionary<string, CoinTemplate> LoadCoinTemplates()
         {
             var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);

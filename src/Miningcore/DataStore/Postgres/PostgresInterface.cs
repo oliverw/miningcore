@@ -5,26 +5,20 @@ using Miningcore.Persistence.Postgres;
 using Miningcore.Persistence.Postgres.Repositories;
 using Miningcore.PoolCore;
 using Miningcore.Util;
-using NLog;
-using NLog.Conditions;
-using NLog.Config;
-using NLog.Layouts;
-using NLog.Targets;
-using Microsoft.Extensions.Logging;
-using LogLevel = NLog.LogLevel;
 using ILogger = NLog.ILogger;
 using NLog.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using NLog;
 
 namespace Miningcore.DataStore.Postgres
 {
     public class PostgresInterface
     {
 
-        private static ILogger logger;
+        private static readonly ILogger logger = LogManager.GetLogger("Postgres");
 
         public static void ConnectDatabase(ContainerBuilder builder)
         {
@@ -64,7 +58,7 @@ namespace Miningcore.DataStore.Postgres
             if(string.IsNullOrEmpty(pgConfig.User))
                 logger.ThrowLogPoolStartupException("Postgres configuration: invalid or missing 'user'");
 
-            Console.WriteLine($"Connecting to Postgres database {pgConfig.Host}:{pgConfig.Port} Database:{pgConfig.Database} User:{pgConfig.User}");
+            logger.Info(() => $"Connecting to Postgres Server {pgConfig.Host}:{pgConfig.Port} Database={pgConfig.Database} User={pgConfig.User}");
 
             // build connection string
             var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
@@ -75,8 +69,7 @@ namespace Miningcore.DataStore.Postgres
 
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .Where(t => t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }
@@ -90,8 +83,7 @@ namespace Miningcore.DataStore.Postgres
 
             // register repositories
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-                .Where(t =>
-                    t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
+                .Where(t => t.Namespace.StartsWith(typeof(ShareRepository).Namespace))
                 .AsImplementedInterfaces()
                 .SingleInstance();
         }

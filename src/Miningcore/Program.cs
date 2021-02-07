@@ -51,7 +51,6 @@ namespace Miningcore
                 PoolCore.PoolConfig.DumpParsedConfig(clusterConfig);
             }
 
-
             // Shares recovery from file to database
             if( shareRecoveryOption.HasValue())
             {
@@ -68,10 +67,7 @@ namespace Miningcore
                 PoolCore.Pool.Start(configFile);
             }
 
-            
-
         }
-        
 
     }
 }
