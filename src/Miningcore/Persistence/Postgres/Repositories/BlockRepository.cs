@@ -48,7 +48,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Block>(block);
 
-            logger.Trace(() => $"InsertAsync: {mapped.Id} {mapped.BlockHeight} {mapped.TransactionConfirmationData} {mapped.Miner} {mapped.Reward} {mapped.ConfirmationProgress} {mapped.Source}");
+            logger.Trace(() => $"InsertAsync: |{mapped.Id}|{mapped.BlockHeight}|{mapped.TransactionConfirmationData}|{mapped.Miner}|{mapped.Reward}|{mapped.ConfirmationProgress}|{mapped.Source}|");
 
             const string query =
                 "INSERT INTO blocks(poolid, blockheight, networkdifficulty, status, type, transactionconfirmationdata, miner, reward, effort, confirmationprogress, source, hash, created) " +
@@ -61,7 +61,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke();
 
-            logger.Trace(() => $"DeleteBlockAsync: {block.Id} {block.BlockHeight}");
+            logger.Trace(() => $"DeleteBlockAsync: |{block.Id}|{block.BlockHeight}|");
 
             const string query = "DELETE FROM blocks WHERE id = @id";
             await con.ExecuteAsync(query, block, tx);
@@ -73,7 +73,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.Block>(block);
 
-            logger.Trace(() => $"UpdateBlockAsync: {mapped.BlockHeight} {mapped.Status} {mapped.Type} {mapped.Reward} {mapped.Effort} {mapped.ConfirmationProgress}");
+            logger.Trace(() => $"UpdateBlockAsync: |{mapped.BlockHeight}|{mapped.Status}|{mapped.Type}|{mapped.Reward}|{mapped.Effort}|{mapped.ConfirmationProgress}|");
 
             const string query = "UPDATE blocks SET blockheight = @blockheight, status = @status, type = @type, reward = @reward, effort = @effort, confirmationprogress = @confirmationprogress WHERE id = @id";
             await con.ExecuteAsync(query, mapped, tx);

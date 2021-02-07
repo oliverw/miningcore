@@ -456,7 +456,8 @@ namespace Miningcore.Blockchain.Ethereum
         private async Task<string> PayoutAsync(Balance balance)
         {
             // unlock account
-            if(extraConfig.CoinbasePassword != null)
+            //if(extraConfig.CoinbasePassword != null)
+            try
             {
                 var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EthCommands.UnlockAccount, new[]
                 {
@@ -465,8 +466,12 @@ namespace Miningcore.Blockchain.Ethereum
                     null
                 });
 
-                if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
-                    throw new Exception("Unable to unlock coinbase account for sending transaction");
+                //if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
+                //    throw new Exception("Unable to unlock coinbase account for sending transaction");
+            }
+            catch
+            {
+                throw new Exception("Unable to unlock coinbase account for sending transaction");
             }
 
             // send transaction
