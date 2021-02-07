@@ -34,7 +34,6 @@ using Miningcore.Mining;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.PoolCore;
-using Miningcore.Views;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
@@ -67,7 +66,6 @@ namespace Miningcore.PoolCore
         private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
-        private static IWebHost webHost;
         private static NotificationService notificationService;
         private static MetricsPublisher metricsPublisher;
         private static BtStreamReceiver btStreamReceiver;
@@ -78,7 +76,7 @@ namespace Miningcore.PoolCore
         internal static ClusterConfig clusterConfig;
         internal static IContainer container;
 
-        internal static void Start(string configFile)
+        internal static void StartMiningCorePool(string configFile)
         {
             try
             {
@@ -99,7 +97,7 @@ namespace Miningcore.PoolCore
                 if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
                     logger.Warn(() => "Running as root is discouraged!");
 
-                // require 64-bit on Windows
+                // require 64-bit Windows OS
                 if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
                     throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
 
@@ -137,9 +135,9 @@ namespace Miningcore.PoolCore
 
                 MonitorGarbageCollection();
 
-                // Start Miningcore Pool
+                // Start Miningcore Pool Services
                 if(!cts.IsCancellationRequested)
-                    StartMiningcorePool().Wait(cts.Token);
+                    StartMiningcorePoolServices().Wait(cts.Token);
     
             }
 
@@ -187,10 +185,10 @@ namespace Miningcore.PoolCore
                 Console.WriteLine("Miningcore is shuting down... bye!");
                 logger?.Info(() => "Miningcore is shuting down... bye!");
 
-                foreach(var pool in pools.Values)
+                foreach(var poolToStop in pools.Values)
                 {
-                    Console.WriteLine($"Stopping pool {pool}");
-                    pool.Stop();
+                    Console.WriteLine($"Stopping pool {poolToStop}");
+                    poolToStop.Stop();
                 }
 
                 shareRelay?.Stop();
@@ -205,9 +203,9 @@ namespace Miningcore.PoolCore
 
 
         // **************************************************************************
-        //  MININGCORE POOL CORE ENGINE
+        //  MININGCORE POOL SERVICES
         // **************************************************************************
-        private static async Task StartMiningcorePool()
+        private static async Task StartMiningcorePoolServices()
         {
             var coinTemplates = PoolCoinTemplates.LoadCoinTemplates();
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
@@ -249,12 +247,12 @@ namespace Miningcore.PoolCore
             // start API
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
-                Views.Api.StartApiService(clusterConfig);
+                Api.ApiService.StartApiService(clusterConfig);
                 metricsPublisher = container.Resolve<MetricsPublisher>();
             }
             else
             {
-                logger.Info("API is disabled");
+                logger.Warn("API is disabled");
             }
 
             // start payment processor
@@ -266,7 +264,7 @@ namespace Miningcore.PoolCore
             }
             else
             {
-                logger.Info("Payment processing is Disabled");
+                logger.Warn("Payment processing is Disabled");
             }
                 
             if(clusterConfig.ShareRelay == null)
@@ -289,16 +287,16 @@ namespace Miningcore.PoolCore
                     .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
                 // create and configure
-                var pool = poolImpl.Value;
-                pool.Configure(poolConfig, clusterConfig);
-                pools[poolConfig.Id] = pool;
+                var stratumPool = poolImpl.Value;
+                stratumPool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = stratumPool;
 
                 // pre-start attachments
-                shareReceiver?.AttachPool(pool);
-                statsRecorder?.AttachPool(pool);
-                //apiServer?.AttachPool(pool);
+                shareReceiver?.AttachPool(stratumPool);
+                statsRecorder?.AttachPool(stratumPool);
+                //apiServer?.AttachPool(stratumPool);
 
-                await pool.StartAsync(cts.Token);
+                await stratumPool.StartAsync(cts.Token);
             }));
 
             // keep running
@@ -391,6 +389,5 @@ namespace Miningcore.PoolCore
             }
         }
 
-       
     }
 }

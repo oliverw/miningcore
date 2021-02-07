@@ -56,9 +56,9 @@ using Microsoft.AspNetCore.Http;
 using AspNetCoreRateLimit;
 
 
-namespace Miningcore.Views
+namespace Miningcore.Api
 {
-    internal class Api
+    internal class ApiService
     {
         private static readonly ILogger logger = LogManager.GetLogger("Api");
         private static IWebHost webHost;

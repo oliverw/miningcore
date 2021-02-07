@@ -71,7 +71,7 @@ namespace Miningcore
                 else
                 {
                     // Start Miningcore PoolCore
-                    PoolCore.Pool.Start(configFile);
+                    PoolCore.Pool.StartMiningCorePool(configFile);
                 }
             });
             MiningCore.Execute(args);
