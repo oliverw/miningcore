@@ -35,7 +35,10 @@ namespace Miningcore.Serialization
                 str = str.Substring(2);
 
             if(typeof(T) == typeof(BigInteger))
-                return BigInteger.Parse("0" + str, NumberStyles.HexNumber);
+                return BigInteger.Parse(str, NumberStyles.HexNumber);
+
+            //if(typeof(T) == typeof(BigInteger))
+            //    return BigInteger.Parse("0" + str, NumberStyles.HexNumber);
 
             if(typeof(T) == typeof(uint256))
                 return new uint256(str.HexToReverseByteArray());
