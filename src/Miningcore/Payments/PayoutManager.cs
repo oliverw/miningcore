@@ -170,12 +170,12 @@ namespace Miningcore.Payments
                                 // must generate balance records for all reward recipients instead
                                 var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
 
-                                logger.Info(() => $"Pool {pool}");
-                                logger.Info(() => $"Block {block}");
-                                logger.Info(() => $"Block reward {blockReward}");
+                                logger.Info(() => $" --Pool {pool}");
+                                logger.Info(() => $" --Block {block}");
+                                logger.Info(() => $" --Block reward {blockReward}");
 
-                                logger.Info(() => $"Con {con}");
-                                logger.Info(() => $"tx {tx}");
+                                logger.Info(() => $" --Con {con}");
+                                logger.Info(() => $" --tx {tx}");
 
                                 await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
                                 await blockRepo.UpdateBlockAsync(con, tx, block);
