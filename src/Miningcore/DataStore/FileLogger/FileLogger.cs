@@ -16,12 +16,12 @@ using System.IO;
 
 namespace Miningcore.DataStore.FileLogger
 {
-    class FileLogger
+    internal class FileLogger
     {
 
         private static ILogger logger;
 
-        public static void ConfigureLogging()
+        internal static void ConfigureLogging()
         {
             var config = Pool.clusterConfig.Logging;
             var loggingConfig = new LoggingConfiguration();

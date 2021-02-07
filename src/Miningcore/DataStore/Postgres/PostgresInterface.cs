@@ -15,12 +15,12 @@ using NLog;
 
 namespace Miningcore.DataStore.Postgres
 {
-    public class PostgresInterface
+    internal class PostgresInterface
     {
 
         private static readonly ILogger logger = LogManager.GetLogger("Postgres");
 
-        public static void ConnectDatabase(ContainerBuilder builder)
+        internal static void ConnectDatabase(ContainerBuilder builder)
         {
             ConfigurePersistence(builder);
         }

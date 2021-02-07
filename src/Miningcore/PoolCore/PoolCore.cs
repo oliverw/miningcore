@@ -57,7 +57,7 @@ using AspNetCoreRateLimit;
 
 namespace Miningcore.PoolCore
 {
-    public class Pool
+    internal class Pool
     {
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static readonly ILogger logger = LogManager.GetLogger("PoolCore");
@@ -67,7 +67,7 @@ namespace Miningcore.PoolCore
         private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
-        public static ClusterConfig clusterConfig;
+        internal static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
         private static MetricsPublisher metricsPublisher;
@@ -76,7 +76,7 @@ namespace Miningcore.PoolCore
         private static AdminGcStats gcStats = new AdminGcStats();
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
-        public static void Start(string configFile)
+        internal static void Start(string configFile)
         {
             try
             {
@@ -89,14 +89,10 @@ namespace Miningcore.PoolCore
                 // Check valid OS and user
                 ValidateRuntimeEnvironment();
 
-                // Miningcore Pool Logo
-                PoolLogo.Logo();
-
                 // Read config.json file
                 clusterConfig = PoolConfig.GetConfigContent(configFile);
 
                 // Initialize Logging
-                //ConfigureLogging();
                 FileLogger.ConfigureLogging();
 
                 // LogRuntimeInfo();
@@ -173,8 +169,22 @@ namespace Miningcore.PoolCore
 
             finally
             {
-                Shutdown();
-                
+                // Shutdown();
+                Console.WriteLine("Miningcore is shuting down... bye!");
+                logger?.Info(() => "Miningcore is shuting down... bye!");
+
+                foreach(var pool in pools.Values)
+                {
+                    Console.WriteLine($"Stopping pool {pool}");
+                    pool.Stop();
+                }
+
+                shareRelay?.Stop();
+                shareReceiver?.Stop();
+                shareRecorder?.Stop();
+                statsRecorder?.Stop();
+                Process.GetCurrentProcess().Kill();
+
             }
   
         }
@@ -513,7 +523,7 @@ namespace Miningcore.PoolCore
             await Observable.Never<Unit>().ToTask(cts.Token);
         }
 
-        public static Task RecoverSharesAsync(string recoveryFilename)
+        internal static Task RecoverSharesAsync(string recoveryFilename)
         {
             shareRecorder = container.Resolve<ShareRecorder>();
             return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
@@ -563,22 +573,6 @@ namespace Miningcore.PoolCore
             }
         }
 
-        private static void Shutdown()
-        {
-            Console.WriteLine("Miningcore is shuting down... bye!");
-            logger?.Info(() => "Miningcore is shuting down... bye!");
-            
-            foreach(var pool in pools.Values)
-            {
-                Console.WriteLine($"Stopping pool {pool}");
-                pool.Stop();
-            }
-                
-            shareRelay?.Stop();
-            shareReceiver?.Stop();
-            shareRecorder?.Stop();
-            statsRecorder?.Stop();
-            Process.GetCurrentProcess().Kill();
-        }
+       
     }
 }
