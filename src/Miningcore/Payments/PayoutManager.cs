@@ -70,7 +70,7 @@ namespace Miningcore.Payments
                         //await ProcessPoolPaymentsAsync();
                         foreach(var pool in clusterConfig.Pools.Where(x => x.Enabled && x.PaymentProcessing.Enabled))
                         {
-                            logger.Info(() => $"Processing payments for pool {pool.Id}");
+                            logger.Info(() => $"Processing payments for pool [{pool.Id}]");
 
                             try
                             {
@@ -155,7 +155,8 @@ namespace Miningcore.Payments
             {
                 foreach(var block in updatedBlocks.OrderBy(x => x.Created))
                 {
-                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
+                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}, effort {block.Effort}");
+
 
                     await cf.RunTx(async (con, tx) =>
                     {
@@ -168,6 +169,13 @@ namespace Miningcore.Payments
                                 // blockchains that do not support block-reward payments via coinbase Tx
                                 // must generate balance records for all reward recipients instead
                                 var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+
+                                logger.Info(() => $"Pool {pool}");
+                                logger.Info(() => $"Block {block}");
+                                logger.Info(() => $"Block reward {blockReward}");
+
+                                logger.Info(() => $"Con {con}");
+                                logger.Info(() => $"tx {tx}");
 
                                 await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
                                 await blockRepo.UpdateBlockAsync(con, tx, block);
@@ -221,6 +229,8 @@ namespace Miningcore.Payments
 
         private async Task CalculateBlockEffortAsync(PoolConfig pool, Block block, IPayoutHandler handler)
         {
+            logger.Info(() => $"Calculate Block Effort");
+
             // get share date-range
             var from = DateTime.MinValue;
             var to = block.Created;
