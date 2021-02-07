@@ -236,8 +236,7 @@ namespace Miningcore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");

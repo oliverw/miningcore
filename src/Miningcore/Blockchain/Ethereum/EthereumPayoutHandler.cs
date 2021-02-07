@@ -476,7 +476,7 @@ namespace Miningcore.Blockchain.Ethereum
             }
 
             // send transaction
-            logger.Info(() => $"[{LogCategory}] Sending {FormatAmount(balance.Amount)} to {balance.Address}");
+            logger.Info(() => $"[{LogCategory}] Sending {FormatAmount(balance.Amount)} {balance.Amount} to {balance.Address}");
 
             var request = new SendTransactionRequest
             {

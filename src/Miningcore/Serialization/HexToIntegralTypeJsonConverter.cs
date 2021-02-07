@@ -13,11 +13,17 @@ namespace Miningcore.Serialization
 
         public override bool CanConvert(Type objectType)
         {
+            Console.WriteLine($"CONVERT type: {objectType}");
+
             return typeof(T) == objectType;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
+            Console.WriteLine($"WRITE writer: {writer}");
+            Console.WriteLine($"WRITE value: {value}");
+            Console.WriteLine($"WRITE serializer: {serializer}");
+
             if(value == null)
                 writer.WriteValue("null");
             else
@@ -27,6 +33,10 @@ namespace Miningcore.Serialization
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var str = (string) reader.Value;
+
+            Console.WriteLine($"READ str: {str}");
+            Console.WriteLine($"READ Type: {objectType}");
+            Console.WriteLine($"READ serializer: {serializer}");
 
             if(string.IsNullOrEmpty(str))
                 return default(T);
@@ -43,8 +53,8 @@ namespace Miningcore.Serialization
             if(typeof(T) == typeof(uint256))
                 return new uint256(str.HexToReverseByteArray());
 
-            var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
+            var val = ulong.Parse(str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            //var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             return Convert.ChangeType(val, underlyingType ?? typeof(T));
         }
     }
