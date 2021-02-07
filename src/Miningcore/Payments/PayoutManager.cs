@@ -57,7 +57,7 @@ namespace Miningcore.Payments
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         // Start Payment Services
-        internal void StartPayoutManager()
+        public void Start()
         {
             Task.Run(async () =>
             {

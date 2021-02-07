@@ -265,7 +265,7 @@ namespace Miningcore.PoolCore
             {
                 payoutManager = container.Resolve<PayoutManager>();
                 payoutManager.Configure(clusterConfig);
-                payoutManager.StartPayoutManager();
+                payoutManager.Start();
             }
             else
             {
