@@ -34,6 +34,7 @@ using Miningcore.Mining;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.PoolCore;
+using Miningcore.Views;
 using Miningcore.Util;
 using NBitcoin.Zcash;
 using Newtonsoft.Json;
@@ -61,13 +62,11 @@ namespace Miningcore.PoolCore
     {
         private static readonly CancellationTokenSource cts = new CancellationTokenSource();
         private static readonly ILogger logger = LogManager.GetLogger("PoolCore");
-        private static IContainer container;
         private static ShareRecorder shareRecorder;
         private static ShareRelay shareRelay;
         private static ShareReceiver shareReceiver;
         private static PayoutManager payoutManager;
         private static StatsRecorder statsRecorder;
-        internal static ClusterConfig clusterConfig;
         private static IWebHost webHost;
         private static NotificationService notificationService;
         private static MetricsPublisher metricsPublisher;
@@ -76,18 +75,33 @@ namespace Miningcore.PoolCore
         private static AdminGcStats gcStats = new AdminGcStats();
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
 
+        internal static ClusterConfig clusterConfig;
+        internal static IContainer container;
+
         internal static void Start(string configFile)
         {
             try
             {
+                // Display Software Version Info
+                var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                Console.WriteLine($"{Assembly.GetEntryAssembly().GetName().Name} - MinerNL build v{Assembly.GetEntryAssembly().GetName().Version}");
+                Console.WriteLine($"Run location: {basePath}");
+                Console.WriteLine(" ");
+
                 // log unhandled program exception errors
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MC_UnhandledException);
                 currentDomain.ProcessExit += OnProcessExit;
                 Console.CancelKeyPress += new ConsoleCancelEventHandler(OnCancelKeyPress);
 
-                // Check valid OS and user
-                ValidateRuntimeEnvironment();
+                // ValidateRuntimeEnvironment();
+                // root check
+                if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
+                    logger.Warn(() => "Running as root is discouraged!");
+
+                // require 64-bit on Windows
+                if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                    throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
 
                 // Read config.json file
                 clusterConfig = PoolConfig.GetConfigContent(configFile);
@@ -190,252 +204,12 @@ namespace Miningcore.PoolCore
         }
 
 
-        private static void ValidateRuntimeEnvironment()
-        {
-            // root check
-            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.UserName == "root")
-                logger.Warn(() => "Running as root is discouraged!");
-
-            // require 64-bit on Windows
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
-        }
-
-        private static void MonitorGarbageCollection()
-        {
-            var thread = new Thread(() =>
-            {
-                var sw = new Stopwatch();
-
-                while(true)
-                {
-                    var s = GC.WaitForFullGCApproach();
-                    if(s == GCNotificationStatus.Succeeded)
-                    {
-                        logger.Info(() => "Garbage Collection bin Full soon");
-                        sw.Start();
-                    }
-
-                    s = GC.WaitForFullGCComplete();
-
-                    if(s == GCNotificationStatus.Succeeded)
-                    {
-                        logger.Info(() => "Garbage Collection bin Full!!");
-
-                        sw.Stop();
-
-                        if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
-                            gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
-
-                        sw.Reset();
-                    }
-                }
-            });
-
-            GC.RegisterForFullGCNotification(1, 1);
-            thread.Start();
-        }
-
-      
-        private static Dictionary<string, CoinTemplate> LoadCoinTemplates()
-        {
-            var basePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var defaultTemplates = Path.Combine(basePath, "coins.json");
-
-            // make sure default templates are loaded first
-            clusterConfig.CoinTemplates = new[]
-            {
-                defaultTemplates
-            }
-            .Concat(clusterConfig.CoinTemplates != null ?
-                clusterConfig.CoinTemplates.Where(x => x != defaultTemplates) :
-                new string[0])
-            .ToArray();
-
-            return CoinTemplateLoader.Load(container, clusterConfig.CoinTemplates);
-        }
-
-        private static void UseIpWhiteList(IApplicationBuilder app, bool defaultToLoopback, string[] locations, string[] whitelist)
-        {
-            var ipList = whitelist?.Select(x => IPAddress.Parse(x)).ToList();
-            if(defaultToLoopback && (ipList == null || ipList.Count == 0))
-                ipList = new List<IPAddress>(new[] { IPAddress.Loopback, IPAddress.IPv6Loopback, IPUtils.IPv4LoopBackOnIPv6 });
-
-            if(ipList.Count > 0)
-            {
-                // always allow access by localhost
-                if(!ipList.Any(x => x.Equals(IPAddress.Loopback)))
-                    ipList.Add(IPAddress.Loopback);
-                if(!ipList.Any(x => x.Equals(IPAddress.IPv6Loopback)))
-                    ipList.Add(IPAddress.IPv6Loopback);
-                if(!ipList.Any(x => x.Equals(IPUtils.IPv4LoopBackOnIPv6)))
-                    ipList.Add(IPUtils.IPv4LoopBackOnIPv6);
-
-                logger.Info(() => $"API Access to {string.Join(",", locations)} restricted to {string.Join(",", ipList.Select(x => x.ToString()))}");
-
-                app.UseMiddleware<IPAccessWhitelistMiddleware>(locations, ipList.ToArray());
-            }
-        }
-
-        private static void ConfigureIpRateLimitOptions(IpRateLimitOptions options)
-        {
-            options.EnableEndpointRateLimiting = false;
-
-            // exclude admin api and metrics from throtteling
-            options.EndpointWhitelist = new List<string>
-            {
-                "*:/api/admin",
-                "get:/metrics",
-                "*:/notifications",
-            };
-
-            options.IpWhitelist = clusterConfig.Api?.RateLimiting?.IpWhitelist?.ToList();
-
-            // default to whitelist localhost if whitelist absent
-            if(options.IpWhitelist == null || options.IpWhitelist.Count == 0)
-            {
-                options.IpWhitelist = new List<string>
-                {
-                    IPAddress.Loopback.ToString(),
-                    IPAddress.IPv6Loopback.ToString(),
-                    IPUtils.IPv4LoopBackOnIPv6.ToString()
-                };
-            }
-
-            // limits
-            var rules = clusterConfig.Api?.RateLimiting?.Rules?.ToList();
-
-            if(rules == null || rules.Count == 0)
-            {
-                rules = new List<RateLimitRule>
-                {
-                    new RateLimitRule
-                    {
-                        Endpoint = "*",
-                        Period = "1s",
-                        Limit = 5,
-                    }
-                };
-            }
-
-            options.GeneralRules = rules;
-
-            logger.Info(() => $"API access limited to {(string.Join(", ", rules.Select(x => $"{x.Limit} requests per {x.Period}")))}, except from {string.Join(", ", options.IpWhitelist)}");
-        }
-
-        private static void StartApi()
-        {
-            var address = clusterConfig.Api?.ListenAddress != null
-                ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any)
-                : IPAddress.Parse("127.0.0.1");
-
-            var port = clusterConfig.Api?.Port ?? 4000;
-            var enableApiRateLimiting = !(clusterConfig.Api?.RateLimiting?.Disabled == true);
-
-            webHost = WebHost.CreateDefaultBuilder()
-                .ConfigureLogging(logging =>
-                {
-                    // NLog
-                    logging.ClearProviders();
-                    logging.AddNLog();
-
-                    logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-                })
-                .ConfigureServices(services =>
-                {
-                    // Memory Cache
-                    services.AddMemoryCache();
-
-                    // rate limiting
-                    if(enableApiRateLimiting)
-                    {
-                        
-                        services.Configure<IpRateLimitOptions>(ConfigureIpRateLimitOptions);
-                        services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-                        services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-                        services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-                    }
-
-                    // Controllers
-                    services.AddSingleton<PoolApiController, PoolApiController>();
-                    services.AddSingleton<AdminApiController, AdminApiController>();
-
-                    // MVC
-                    services.AddSingleton((IComponentContext) container);
-                    services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-                    services.AddControllers()
-                        .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
-                        .AddControllersAsServices()
-                        .AddNewtonsoftJson(options =>
-                        {
-                            options.SerializerSettings.Formatting = Formatting.Indented;
-                        });
-
-                    // .ContractResolver = new DefaultContractResolver());
-
-                    // Gzip Compression
-                    services.AddResponseCompression();
-
-                    // Cors
-                    // ToDo: Test if Admin portal is working without .credentials()
-                    // .AllowAnyOrigin(_ => true)
-                    // .AllowCredentials()
-                    services.AddCors(options =>
-                    {
-                        options.AddPolicy("CorsPolicy",
-                            builder => builder.AllowAnyOrigin()
-                                              .AllowAnyMethod()
-                                              .AllowAnyHeader()
-                                          );
-                    }
-                    );
-
-                    // WebSockets
-                    services.AddWebSocketManager();
-                })
-                .Configure(app =>
-                {
-                    if(enableApiRateLimiting)
-                        app.UseIpRateLimiting();
-
-                    app.UseMiddleware<ApiExceptionHandlingMiddleware>();
-
-                    UseIpWhiteList(app, true, new[] { "/api/admin" }, clusterConfig.Api?.AdminIpWhitelist);
-                    UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
-
-                    app.UseResponseCompression();
-                    app.UseCors("CorsPolicy");
-                    app.UseWebSockets();
-                    app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
-                    app.UseMetricServer();
-                    //app.UseMvc();
-                    app.UseRouting();
-                    app.UseEndpoints(endpoints => {
-                        endpoints.MapDefaultControllerRoute();
-                        endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-                    });
-                })
-                .UseKestrel(options =>
-                {
-                    options.Listen(address, clusterConfig.Api.Port, listenOptions =>
-                    {
-                        if(clusterConfig.Api.SSLConfig?.Enabled == true)
-                            listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
-                    });
-                })
-                .Build();
-
-            webHost.Start();
-
-            logger.Info(() => $"API Online @ {address}:{port}{(!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty)}");
-            logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
-            logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
-        }
-
+        // **************************************************************************
+        //  MININGCORE POOL CORE ENGINE
+        // **************************************************************************
         private static async Task StartMiningcorePool()
         {
-            var coinTemplates = LoadCoinTemplates();
+            var coinTemplates = PoolCoinTemplates.LoadCoinTemplates();
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
             // Populate pool configs with corresponding template
@@ -475,22 +249,26 @@ namespace Miningcore.PoolCore
             // start API
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
             {
-                await Task.Run(() => StartApi() );
-
+                Views.Api.StartApiService(clusterConfig);
                 metricsPublisher = container.Resolve<MetricsPublisher>();
+            }
+            else
+            {
+                logger.Info("API is disabled");
             }
 
             // start payment processor
-            if(clusterConfig.PaymentProcessing?.Enabled == true &&
-                clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+            if(clusterConfig.PaymentProcessing?.Enabled == true &&  clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
             {
                 payoutManager = container.Resolve<PayoutManager>();
                 payoutManager.Configure(clusterConfig);
                 payoutManager.Start();
             }
             else
-                logger.Info("Payment processing is not enabled");
-
+            {
+                logger.Info("Payment processing is Disabled");
+            }
+                
             if(clusterConfig.ShareRelay == null)
             {
                 // start pool stats updater
@@ -498,8 +276,12 @@ namespace Miningcore.PoolCore
                 statsRecorder.Configure(clusterConfig);
                 statsRecorder.Start();
             }
+            else
+            {
+                logger.Info("Share Relay is Active!");
+            }
 
-            // start pools
+            // start stratum pools
             await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
             {
                 // resolve pool implementation
@@ -521,6 +303,42 @@ namespace Miningcore.PoolCore
 
             // keep running
             await Observable.Never<Unit>().ToTask(cts.Token);
+        }
+
+
+        private static void MonitorGarbageCollection()
+        {
+            var thread = new Thread(() =>
+            {
+                var sw = new Stopwatch();
+
+                while(true)
+                {
+                    var s = GC.WaitForFullGCApproach();
+                    if(s == GCNotificationStatus.Succeeded)
+                    {
+                        logger.Info(() => "Garbage Collection bin Full soon");
+                        sw.Start();
+                    }
+
+                    s = GC.WaitForFullGCComplete();
+
+                    if(s == GCNotificationStatus.Succeeded)
+                    {
+                        logger.Info(() => "Garbage Collection bin Full!!");
+
+                        sw.Stop();
+
+                        if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
+                            gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
+
+                        sw.Reset();
+                    }
+                }
+            });
+
+            GC.RegisterForFullGCNotification(1, 1);
+            thread.Start();
         }
 
         internal static Task RecoverSharesAsync(string recoveryFilename)

@@ -51,6 +51,8 @@ namespace Miningcore.Mining
 
         public void Start(ClusterConfig clusterConfig)
         {
+            logger.Info(() => "Starting Share Relay Service");
+
             this.clusterConfig = clusterConfig;
 
             messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));

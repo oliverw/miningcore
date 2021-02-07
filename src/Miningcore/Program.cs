@@ -3,6 +3,7 @@ using Miningcore.Configuration;
 using Miningcore.PoolCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text;
 
@@ -27,7 +28,6 @@ namespace Miningcore
                 LongVersionGetter = () => $"- MinerNL build v{Assembly.GetEntryAssembly().GetName().Version}",
                 ExtendedHelpText = "--------------------------------------------------------------------------------------------------------------"
             };
-
 
             var versionOption = MiningCore.Option("-v|--version", "Version Information", CommandOptionType.NoValue);
             var configFileOption = MiningCore.Option("-c|--config <configfile>", "Configuration File", CommandOptionType.SingleValue);
@@ -70,9 +70,6 @@ namespace Miningcore
                 }
                 else
                 {
-                    // Display Software Version
-                    Console.WriteLine($"{MiningCore.FullName} - MinerNL build v{Assembly.GetEntryAssembly().GetName().Version}");
-
                     // Start Miningcore PoolCore
                     PoolCore.Pool.Start(configFile);
                 }
