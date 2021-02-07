@@ -41,6 +41,7 @@ namespace Miningcore.Serialization
                 return new uint256(str.HexToReverseByteArray());
 
             var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
             return Convert.ChangeType(val, underlyingType ?? typeof(T));
         }
     }

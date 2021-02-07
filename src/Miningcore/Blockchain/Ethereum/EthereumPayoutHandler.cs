@@ -459,6 +459,7 @@ namespace Miningcore.Blockchain.Ethereum
             //if(extraConfig.CoinbasePassword != null)
             try
             {
+
                 var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EthCommands.UnlockAccount, new[]
                 {
                     poolConfig.Address,
