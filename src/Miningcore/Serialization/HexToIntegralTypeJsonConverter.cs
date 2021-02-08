@@ -28,7 +28,7 @@ namespace Miningcore.Serialization
 
                 object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
                 Console.WriteLine($"WRITE ToHex1: 0x{valueToHex}");
-                if(valueToHex == null) {valueToHex = "0" };
+                if(valueToHex == null) { valueToHex = "0"; }
                 Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
                 writer.WriteValue($"0x{valueToHex}");
             }
