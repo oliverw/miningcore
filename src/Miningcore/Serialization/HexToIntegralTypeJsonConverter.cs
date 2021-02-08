@@ -30,7 +30,7 @@ namespace Miningcore.Serialization
                 Console.WriteLine($"WRITE ToHex1: {valueToHex}");
                 if(object.Equals(valueToHex, ""))
                 {
-                    valueToHex = "0x0";
+                    valueToHex = "0";
                 }
                 Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
 
