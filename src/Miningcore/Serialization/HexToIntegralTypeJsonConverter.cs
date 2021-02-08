@@ -27,11 +27,12 @@ namespace Miningcore.Serialization
                 writer.WriteValue("null");
             else
             {
-                string tmp = $"{value:x}".TrimStart(new Char[] { '0' });
-                Console.WriteLine($"WRITE converted 1: 0x|{tmp}");
 
-
-                writer.WriteValue($"0x{value:x}");
+                object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
+                Console.WriteLine($"WRITE ToHex1: 0x{valueToHex}");
+                if(valueToHex == null) {valueToHex = "0" }
+                Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
+                writer.WriteValue($"0x{valueToHex}");
             }
                 
         }
@@ -39,9 +40,6 @@ namespace Miningcore.Serialization
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var str = (string) reader.Value;
-
-            Console.WriteLine($"READ str: {str}");
-            Console.WriteLine($"READ Type: {objectType}");
 
             if(string.IsNullOrEmpty(str))
                 return default(T);
@@ -56,9 +54,6 @@ namespace Miningcore.Serialization
                 return new uint256(str.HexToReverseByteArray());
 
             var val = ulong.Parse("0" + str, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-
-            Console.WriteLine($"READ val: {val}");
-
             return Convert.ChangeType(val, underlyingType ?? typeof(T));
         }
     }
