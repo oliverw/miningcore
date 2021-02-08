@@ -27,7 +27,10 @@ namespace Miningcore.Serialization
                 writer.WriteValue("null");
             else
             {
-                Console.WriteLine($"WRITE converted 0x{value:x}");
+                string tmp = $"{value:x}".TrimStart(new Char[] { '0' });
+                Console.WriteLine($"WRITE converted 1: 0x|{tmp}");
+
+
                 writer.WriteValue($"0x{value:x}");
             }
                 
