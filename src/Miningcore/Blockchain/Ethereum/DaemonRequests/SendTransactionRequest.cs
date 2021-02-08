@@ -39,16 +39,16 @@ namespace Miningcore.Blockchain.Ethereum.DaemonRequests
         /// <summary>
         /// (Optional) (default: 90000) Integer of the gas provided for the transaction execution. It will return unused gas
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<BigInteger>))]
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public BigInteger Gas { get; set; }
+        public ulong? Gas { get; set; }
 
         /// <summary>
         /// (Optional) Integer of the gas price used for each paid gas
         /// </summary>
-        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<BigInteger>))]
+        [JsonConverter(typeof(HexToIntegralTypeJsonConverter<ulong>))]
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public BigInteger GasPrice { get; set; }
+        public ulong? GasPrice { get; set; }
 
         /// <summary>
         /// (Optional) Integer of the value send with this transaction
