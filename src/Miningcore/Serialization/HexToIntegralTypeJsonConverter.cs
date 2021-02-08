@@ -27,14 +27,19 @@ namespace Miningcore.Serialization
             {
 
                 object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
-                Console.WriteLine($"WRITE ToHex1: {valueToHex}");
+                Console.WriteLine($"WRITE ToHex1: [{valueToHex}]");
                 if(object.Equals(valueToHex, ""))
                 {
-                    valueToHex = "0";
+                    writer.WriteValue($"0x{value:x}");
                 }
-                Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
+                else
+                {
+                    Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
+                    writer.WriteValue($"0x{valueToHex}");
+                }
+               
 
-                writer.WriteValue($"0x{valueToHex}");
+                
             }
                 
         }
