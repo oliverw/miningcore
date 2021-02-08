@@ -73,7 +73,7 @@ namespace Miningcore.Api
         {
             var address = clusterConfig.Api?.ListenAddress != null ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any) : IPAddress.Parse("127.0.0.1");
             var port = clusterConfig.Api?.Port ?? 4000;
-            var enableApiRateLimiting = !(clusterConfig.Api?.RateLimiting?.Disabled == true);
+            var enableApiRateLimiting = (clusterConfig.Api?.RateLimiting?.Enabled == true) || !(clusterConfig.Api?.RateLimiting?.Disabled == true);
 
             logger.Info(() => $"Starting API Service @ {address}:{port}{(!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty)}");
 
@@ -173,7 +173,7 @@ namespace Miningcore.Api
 
             webHost.Start();
 
-            logger.Info(() => $"API Online @ {address}:{port}{(!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty)}");
+            logger.Info(() => $"API Online @ {address}:{port} { (!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty) }");
             logger.Info(() => $"Prometheus Metrics Online @ {address}:{port}/metrics");
             logger.Info(() => $"WebSocket notifications streaming @ {address}:{port}/notifications");
         }
