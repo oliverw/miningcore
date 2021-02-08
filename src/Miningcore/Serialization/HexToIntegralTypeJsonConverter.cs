@@ -18,8 +18,8 @@ namespace Miningcore.Serialization
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            Console.WriteLine($"WRITE writer: {writer}");
-            Console.WriteLine($"WRITE value: {value}");
+            //Console.WriteLine($"WRITE writer: {writer}");
+            //Console.WriteLine($"WRITE value: {value}");
 
             if(value == null)
                 writer.WriteValue("null");
@@ -34,7 +34,7 @@ namespace Miningcore.Serialization
                 }
                 else
                 {
-                    Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
+                    //Console.WriteLine($"WRITE ToHex2: 0x{valueToHex}");
                     writer.WriteValue($"0x{valueToHex}");
                 }
                

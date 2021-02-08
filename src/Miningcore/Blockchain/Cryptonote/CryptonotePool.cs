@@ -66,6 +66,8 @@ namespace Miningcore.Blockchain.Cryptonote
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
 
+            logger.Trace(() => $"OnLoginAsync {client}: {tsRequest}");
+
             if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
@@ -306,7 +308,6 @@ namespace Miningcore.Blockchain.Cryptonote
             return Task.WhenAll(tasks);
         }
 
-        #region Overrides
 
         protected override async Task SetupJobManager(CancellationToken ct)
         {
@@ -359,8 +360,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return new CryptonoteWorkerContext();
         }
 
-        protected override async Task OnRequestAsync(StratumClient client,
-            Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
+        protected override async Task OnRequestAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
@@ -387,7 +387,7 @@ namespace Miningcore.Blockchain.Cryptonote
                         break;
 
                     default:
-                        logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
+                        logger.Info(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
                         await client.RespondErrorAsync(StratumError.Other, $"Unsupported request {request.Method}", request.Id);
                         break;
@@ -423,6 +423,6 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        #endregion // Overrides
+
     }
 }

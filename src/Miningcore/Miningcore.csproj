@@ -102,6 +102,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Crypto\Coins\" />
     <Folder Include="Stats\" />
   </ItemGroup>
 
