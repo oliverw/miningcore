@@ -1,7 +1,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/minernl/miningcore?branch=master&svg=true)](https://ci.appveyor.com/project/minernl/miningcore)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-MinerNL - Miningcore Stratum Pool
+MinerNL - Miningcore 2.0 Stratum Pool
 =================================
 
 ![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
