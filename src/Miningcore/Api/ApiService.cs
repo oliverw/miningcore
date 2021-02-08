@@ -75,7 +75,7 @@ namespace Miningcore.Api
             var port = clusterConfig.Api?.Port ?? 4000;
             var enableApiRateLimiting = (clusterConfig.Api?.RateLimiting?.Enabled == true) || !(clusterConfig.Api?.RateLimiting?.Disabled == true);
 
-            logger.Info(() => $"Starting API Service @ {address}:{port}{(!enableApiRateLimiting ? " [rate-limiting disabled]" : string.Empty)}");
+            logger.Info(() => $"Starting API Service @ {address}:{port} {(enableApiRateLimiting ? " [rate-limiting enabled]" : " [rate-limiting disabled]" )}");
 
             webHost = WebHost.CreateDefaultBuilder()
                 .ConfigureLogging(logging =>
