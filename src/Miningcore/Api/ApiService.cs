@@ -73,7 +73,7 @@ namespace Miningcore.Api
         {
             var address = clusterConfig.Api?.ListenAddress != null ? (clusterConfig.Api.ListenAddress != "*" ? IPAddress.Parse(clusterConfig.Api.ListenAddress) : IPAddress.Any) : IPAddress.Parse("127.0.0.1");
             var port = clusterConfig.Api?.Port ?? 4000;
-            var enableApiRateLimiting = (clusterConfig.Api?.RateLimiting?.Enabled == true) || !(clusterConfig.Api?.RateLimiting?.Disabled == true);
+            var enableApiRateLimiting = (clusterConfig.Api?.RateLimiting?.Enabled == true);
 
             logger.Info(() => $"Starting API Service @ {address}:{port} {(enableApiRateLimiting ? " [rate-limiting enabled]" : " [rate-limiting disabled]" )}");
 

@@ -61,12 +61,12 @@ namespace Miningcore.Blockchain.Cryptonote
 
         private CryptonoteJobManager manager;
 
+
+        // OnLogin & Authorize
         private async Task OnLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
-
-            logger.Trace(() => $"OnLoginAsync {client}: {tsRequest}");
 
             if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
@@ -136,6 +136,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 logger.Info(() => $"[{client.ConnectionId}] Authorized miner {context.Miner}");
         }
 
+        // OnGetJob
         private async Task OnGetJobAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
@@ -183,6 +184,8 @@ namespace Miningcore.Blockchain.Cryptonote
             return result;
         }
 
+
+        // OnSubmit
         private async Task OnSubmitAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
@@ -276,6 +279,8 @@ namespace Miningcore.Blockchain.Cryptonote
             return Interlocked.Increment(ref currentJobId).ToString(CultureInfo.InvariantCulture);
         }
 
+
+        // OnNewJob
         private Task OnNewJobAsync()
         {
             logger.Info(() => "Broadcasting job");
@@ -309,6 +314,8 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
 
+
+        // Overrides PoolBase SetupJobManager
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<CryptonoteJobManager>();
@@ -364,6 +371,8 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             var request = tsRequest.Value;
             var context = client.ContextAs<CryptonoteWorkerContext>();
+
+            logger.Trace(() => $"[{client.ConnectionId}] RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");
 
             try
             {

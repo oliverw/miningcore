@@ -272,7 +272,7 @@ namespace Miningcore.Stratum
                 if(buffer.Length > MaxInboundRequestLength)
                     throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
 
-                logger.Debug(() => $"[{ConnectionId}] [PIPE] Received data: {result.Buffer.AsString(StratumConstants.Encoding)}");
+                logger.Trace(() => $"[{ConnectionId}] [PIPE] Received data: {result.Buffer.AsString(StratumConstants.Encoding)}");
 
                 do
                 {
@@ -310,7 +310,7 @@ namespace Miningcore.Stratum
 
         private async Task SendMessage(object msg)
         {
-            logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
+            logger.Trace(() => $"[{ConnectionId}] SendMessage: {JsonConvert.SerializeObject(msg)}");
 
             var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
 
