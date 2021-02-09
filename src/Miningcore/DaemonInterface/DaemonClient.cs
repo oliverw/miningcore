@@ -360,13 +360,14 @@ namespace Miningcore.DaemonInterface
                 {
                     // read response
                     var responseContent = await response.Content.ReadAsStringAsync();
+                    logger.Trace(() => $"Sending RPC (response1) {requestUrl}: {responseContent}");
 
                     // deserialize response
                     using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
                         
-                        logger.Trace(() => $"Sending RPC (response) {requestUrl}: {result}");
+                        logger.Trace(() => $"Sending RPC (response2) {requestUrl}: {result}");
 
                         // telemetry
                         sw.Stop();
