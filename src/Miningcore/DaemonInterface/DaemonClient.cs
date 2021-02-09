@@ -353,7 +353,7 @@ namespace Miningcore.DaemonInterface
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
                 }
 
-                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+                logger.Trace(() => $"Sending RPC (request) {requestUrl}: {json}");
 
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request, ct))
@@ -365,6 +365,8 @@ namespace Miningcore.DaemonInterface
                     using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
+                        
+                        logger.Trace(() => $"Sending RPC (response) {requestUrl}: {result}");
 
                         // telemetry
                         sw.Stop();
