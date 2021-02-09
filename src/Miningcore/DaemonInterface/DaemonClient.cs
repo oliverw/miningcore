@@ -372,7 +372,7 @@ namespace Miningcore.DaemonInterface
 
                         // telemetry
                         requestStopwatch.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
+                        PublishTelemetry(TelemetryCategory.RpcRequest, requestStopwatch.Elapsed, method, response.IsSuccessStatusCode);
 
                         return result;
                     }
