@@ -97,7 +97,7 @@ namespace Miningcore.DaemonInterface
             messageBus.SendMessage(new TelemetryEvent(server, poolId, cat, info, elapsed, success));
         }
 
-        #region API-Surface
+
 
         public void Configure(DaemonEndpointConfig[] endPoints, string digestAuthRealm = null)
         {
@@ -313,7 +313,7 @@ namespace Miningcore.DaemonInterface
                 .RefCount();
         }
 
-        #endregion // API-Surface
+
 
         private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload,
             CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
@@ -321,8 +321,8 @@ namespace Miningcore.DaemonInterface
             var rpcRequestId = GetRequestId();
 
             // telemetry
-            var sw = new Stopwatch();
-            sw.Start();
+            var requestStopwatch = new Stopwatch();
+            requestStopwatch.Start();
 
             // build rpc request
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
@@ -353,24 +353,25 @@ namespace Miningcore.DaemonInterface
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
                 }
 
-                logger.Trace(() => $"Sending RPC (request) {requestUrl}: {json}");
+                logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                logger.Trace(() => $"Sending RPC (REQUEST OUT) {requestUrl}: {json}");
 
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request, ct))
                 {
                     // read response
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    logger.Trace(() => $"Sending RPC (response1) {requestUrl}: {responseContent}");
+
+                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                    logger.Trace(() => $"Sending RPC (RESPONSE IN) {requestUrl}: {responseContent}");
 
                     // deserialize response
                     using(var jreader = new JsonTextReader(new StringReader(responseContent)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
-                        
-                        logger.Trace(() => $"Sending RPC (response2) {requestUrl}: {result}");
 
                         // telemetry
-                        sw.Stop();
+                        requestStopwatch.Stop();
                         PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
 
                         return result;
