@@ -524,6 +524,9 @@ namespace Miningcore.DaemonInterface
                                     var requestData = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 
                                     logger.Debug(() => $"Sending WebSocket subscription request to {uri}");
+                                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                                    logger.Trace(() => $"Subscribe WebSocket (REQUEST OUT) {uri}: {json}");
+
                                     await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
 
                                     // stream response
@@ -544,6 +547,9 @@ namespace Miningcore.DaemonInterface
                                                     ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
 
                                                     var response = await client.ReceiveAsync(buf, ctsComposite.Token);
+
+                                                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                                                    logger.Trace(() => $"Subscribe WebSocket (RESPONSE IN) {uri}: {response}");
 
                                                     if(response.MessageType == WebSocketMessageType.Binary)
                                                         throw new InvalidDataException("expected text, received binary data");
