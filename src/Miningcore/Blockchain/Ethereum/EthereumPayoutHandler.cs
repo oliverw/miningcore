@@ -151,7 +151,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
-                    // is it block mined by us?
+                    // is the block mined by us?
                     logger.Info(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
                     if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
@@ -169,10 +169,10 @@ namespace Miningcore.Blockchain.Ethereum
                             match = blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce;
                         }
 
-                        logger.Info(() => $"** mixHash & nonce match? {match}");
+                        logger.Debug(() => $"** Is the Block mined by us? {match}");
 
                         // mature?
-                        if( latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations )
+                        if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations) )
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
