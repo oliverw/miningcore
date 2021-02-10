@@ -258,8 +258,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
+        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
             while(true)
             {

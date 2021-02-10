@@ -110,9 +110,7 @@ namespace Miningcore.Blockchain.Cryptonote
             // extract control vars from password
             var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
             var staticDiff = GetStaticDiffFromPassparts(passParts);
-            if(staticDiff.HasValue &&
-                (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            if(staticDiff.HasValue && (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff || context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);

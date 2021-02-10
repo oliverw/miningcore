@@ -227,7 +227,7 @@ namespace Miningcore.Stratum
             }
 
             logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
-            logger.Trace(() => $"[{client.ConnectionId}] [STRATUM OnRequest]: {request}");
+            logger.Trace(() => $"[{client.ConnectionId}] [STRATUM OnRequest]: {JsonConvert.SerializeObject(request)}");
 
             await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.UtcNow), ct);
         }
