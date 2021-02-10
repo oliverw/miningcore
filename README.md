@@ -244,4 +244,6 @@ dotnet Miningcore.dll -c config.json
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
 You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
 
-Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
+Feel free to discuss ideas/issues with fellow pool operators using our channels: <br>
+[Discord Channel](https://discordapp.com/widget?id=612336178896830494&theme=dark) preferred<br>
+[Gitter Channel](https://gitter.im/miningcore/Lobby)
