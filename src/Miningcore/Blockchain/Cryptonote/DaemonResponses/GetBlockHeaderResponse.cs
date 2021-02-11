@@ -7,13 +7,14 @@ using Newtonsoft.Json;
 
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
-    /*
-        get_last_block_header
-        Block header information for the most recent block is easily retrieved with this method.
-        No inputs are needed
-        Alias: getlastblockheader
-    */
-
+    /// <summary>
+    /// get_last_block_header<br />
+    /// Alias: getlastblockheader
+    /// <para>Block header information for the most recent block is easily retrieved with this method.</para>
+    /// <para>Inputs:
+    /// <br>  No inputs are needed</br>
+    /// </para>
+    /// </summary>
     public class GetBlockHeaderResponse
     {
         /// <summary>

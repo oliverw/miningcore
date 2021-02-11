@@ -8,15 +8,14 @@ using Newtonsoft.Json;
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
 
-     /*
-        get_block_template
-        Get a block template on which mining a new block.
-        Alias: getblocktemplate.
-        Inputs:
-            wallet_address - string; Address of wallet to receive coinbase transactions if block is successfully mined.
-            reserve_size - unsigned int; Reserve size.
-     */
-
+    /// <summary>
+    /// get_block_template<br />
+    /// Alias: getblocktemplate
+    /// <para>Get a block template on which mining a new block.</para>
+    /// <para>Inputs:
+    /// <br>  [wallet_address] - string - Address of wallet to receive coinbase transactions if block is successfully mined.</br>
+    /// <br>  [reserve_size] - uint - Reserve size.</br></para>
+    /// </summary>
     public class GetBlockTemplateResponse
     {
         /// <summary>

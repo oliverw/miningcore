@@ -3,15 +3,14 @@ using Newtonsoft.Json;
 
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
-
-    /*
-        get_info
-        Retrieve general information about the state of your node and the network.
-        Alias:
-            /get_info
-            /getinfo
-    */
-
+    /// <summary>
+    /// get_info<br />
+    /// Alias: get_info  or  getinfo
+    /// <para>Retrieve general information about the state of your node and the network.</para>
+    /// <para>Inputs:
+    /// <br>  None.</br>
+    /// </para>
+    /// </summary>
     public class GetInfoResponse
     {
         /// <summary>
