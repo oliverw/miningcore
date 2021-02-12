@@ -3,10 +3,22 @@ MiningCore 2.0
 Copyright 2021 MinerNL (Miningcore.com)
 */
 
-using Newtonsoft.Json;
+// using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
+
+    internal class GetBlockTemplateRpcResponse : RpcResponse
+    {
+        [JsonPropertyName("result")]
+        public GetBlockTemplateResponse Result { get; set; }
+    }
+
 
     /// <summary>
     /// get_block_template<br />
@@ -21,41 +33,43 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         /// <summary>
         /// Blob on which to try to mine a new block
         /// </summary>
-        [JsonProperty("blocktemplate_blob")]
+        [JsonPropertyName("blocktemplate_blob")]
         public string Blob { get; set; }
 
         /// <summary>
         /// Blob on which to try to find a valid nonce
         /// </summary>
-        [JsonProperty("blockhashing_blob")]
+        [JsonPropertyName("blockhashing_blob")]
         public string HashBlob { get; set; }
 
         /// <summary>
         /// Difficulty of next block
         /// </summary>
+        [JsonPropertyName("difficulty")]
         public long Difficulty { get; set; }
 
         /// <summary>
         /// Coinbase reward expected to be received if block is successfully mined
         /// </summary>
-        [JsonProperty("expected_reward")]
+        [JsonPropertyName("expected_reward")]
         public uint ExpectedReward { get; set; }
 
         /// <summary>
         /// Height on which to mine
         /// </summary>
+        [JsonPropertyName("height")]
         public uint Height { get; set; }
 
         /// <summary>
         /// Hash of the most recent block on which to mine the next block
         /// </summary>
-        [JsonProperty("prev_hash")]
+        [JsonPropertyName("prev_hash")]
         public string PreviousBlockhash { get; set; }
 
         /// <summary>
         /// Reserved offset
         /// </summary>
-        [JsonProperty("reserved_offset")]
+        [JsonPropertyName("reserved_offset")]
         public uint ReservedOffset { get; set; }
 
         /// <summary>
@@ -67,6 +81,31 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         /// States if the result is obtained using the bootstrap mode, and is therefore not trusted (true), or when the daemon is fully synced (false)
         /// </summary>
         public bool Untrusted { get; set; }
+
+        // Extra added:
+        [JsonPropertyName("wide_difficulty")]
+        public string WideDifficulty { get; set; }
+
+        [JsonPropertyName("difficulty_top64")]
+        public ulong DifficultyTop64 { get; set; }
+
+        [JsonPropertyName("seed_height")]
+        public ulong SeedHeight { get; set; }
+
+        [JsonPropertyName("seed_hash")]
+        public string SeedHash { get; set; }
+
+        [JsonPropertyName("next_seed_hash")]
+        public string NextSeedHash { get; set; }
+
+        public override string ToString()
+        {
+            var typeInfo = typeof(GetBlockTemplateResponse);
+            var nonNullPropertyList = typeInfo.GetProperties()
+                                              .Where(p => p.GetValue(this) != default)
+                                              .Select(p => $"{p.Name}: {p.GetValue(this)} ");
+            return string.Join(Environment.NewLine, nonNullPropertyList);
+        }
 
     }
 }

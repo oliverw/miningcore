@@ -154,7 +154,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // inject extranonce
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-            extraNonceBytes.CopyTo(blob.Slice((int)BlockTemplate.ReservedOffset, extraNonceBytes.Length));
+            extraNonceBytes.CopyTo(blob.Slice((int) BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
             // inject nonce
             var nonceBytes = nonce.HexToByteArray();
