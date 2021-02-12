@@ -70,7 +70,7 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         /// Reserved offset
         /// </summary>
         [JsonPropertyName("reserved_offset")]
-        public uint ReservedOffset { get; set; }
+        public int ReservedOffset { get; set; }
 
         /// <summary>
         /// General RPC error code. "OK" means everything looks good

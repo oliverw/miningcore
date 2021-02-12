@@ -75,7 +75,7 @@ namespace Miningcore.Blockchain.Cryptonote
             blobTemplate = BlockTemplate.Blob.HexToByteArray();
 
             // inject instanceId at the end of the reserved area of the blob
-            var destOffset = (int) BlockTemplate.ReservedOffset + CryptonoteConstants.ExtraNonceSize;
+            var destOffset = BlockTemplate.ReservedOffset + CryptonoteConstants.ExtraNonceSize;
             Array.Copy(instanceId, 0, blobTemplate, destOffset, 3);
         }
 
@@ -86,7 +86,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // inject extranonce (big-endian at the beginning of the reserved area of the blob)
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-            extraNonceBytes.CopyTo(blob.Slice((int)BlockTemplate.ReservedOffset, extraNonceBytes.Length));
+            extraNonceBytes.CopyTo(blob.Slice(BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
             return LibCryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
         }
@@ -154,7 +154,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // inject extranonce
             var extraNonceBytes = BitConverter.GetBytes(workerExtraNonce.ToBigEndian());
-            extraNonceBytes.CopyTo(blob.Slice((int) BlockTemplate.ReservedOffset, extraNonceBytes.Length));
+            extraNonceBytes.CopyTo(blob.Slice(BlockTemplate.ReservedOffset, extraNonceBytes.Length));
 
             // inject nonce
             var nonceBytes = nonce.HexToByteArray();
