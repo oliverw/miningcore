@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
@@ -33,43 +34,43 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         /// <summary>
         /// Blob on which to try to mine a new block
         /// </summary>
-        [JsonPropertyName("blocktemplate_blob")]
+        [JsonProperty("blocktemplate_blob")]
         public string Blob { get; set; }
 
         /// <summary>
         /// Blob on which to try to find a valid nonce
         /// </summary>
-        [JsonPropertyName("blockhashing_blob")]
+        [JsonProperty("blockhashing_blob")]
         public string HashBlob { get; set; }
 
         /// <summary>
         /// Difficulty of next block
         /// </summary>
-        [JsonPropertyName("difficulty")]
+        [JsonProperty("difficulty")]
         public long Difficulty { get; set; }
 
         /// <summary>
         /// Coinbase reward expected to be received if block is successfully mined
         /// </summary>
-        [JsonPropertyName("expected_reward")]
-        public uint ExpectedReward { get; set; }
+        [JsonProperty("expected_reward")]
+        public ulong ExpectedReward { get; set; }
 
         /// <summary>
         /// Height on which to mine
         /// </summary>
-        [JsonPropertyName("height")]
+        [JsonProperty("height")]
         public uint Height { get; set; }
 
         /// <summary>
         /// Hash of the most recent block on which to mine the next block
         /// </summary>
-        [JsonPropertyName("prev_hash")]
+        [JsonProperty("prev_hash")]
         public string PreviousBlockhash { get; set; }
 
         /// <summary>
         /// Reserved offset
         /// </summary>
-        [JsonPropertyName("reserved_offset")]
+        [JsonProperty("reserved_offset")]
         public int ReservedOffset { get; set; }
 
         /// <summary>
@@ -83,19 +84,19 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         public bool Untrusted { get; set; }
 
         // Extra added:
-        [JsonPropertyName("wide_difficulty")]
+        [JsonProperty("wide_difficulty")]
         public string WideDifficulty { get; set; }
 
-        [JsonPropertyName("difficulty_top64")]
+        [JsonProperty("difficulty_top64")]
         public ulong DifficultyTop64 { get; set; }
 
-        [JsonPropertyName("seed_height")]
+        [JsonProperty("seed_height")]
         public ulong SeedHeight { get; set; }
 
-        [JsonPropertyName("seed_hash")]
+        [JsonProperty("seed_hash")]
         public string SeedHash { get; set; }
 
-        [JsonPropertyName("next_seed_hash")]
+        [JsonProperty("next_seed_hash")]
         public string NextSeedHash { get; set; }
 
         public override string ToString()
