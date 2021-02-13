@@ -79,10 +79,10 @@ namespace Miningcore.Blockchain.Cryptonote
                 var job = currentJob;
                 var newHash = blockTemplate.Blob.HexToByteArray().Slice(7, 32).ToHexString();
 
-                logger.Debug(()=> $"Block blob: {blockTemplate.Blob}");
-                logger.Debug(()=> $"newHash: {newHash}");
-                logger.Debug(()=> $"SeedHash: {blockTemplate.SeedHash}");
-                logger.Debug(()=> $"SeedHeight: {blockTemplate.SeedHeight}");
+                logger.Debug(()=> $"[JobManager] Block blob: {blockTemplate.Blob}");
+                logger.Debug(()=> $"[JobManager] newHash: {newHash}");
+                logger.Debug(()=> $"[JobManager] SeedHash: {blockTemplate.SeedHash}");
+                logger.Debug(()=> $"[JobManager] SeedHeight: {blockTemplate.SeedHeight}");
 
                 var isNew = job == null || newHash != job.PrevHash;
 
