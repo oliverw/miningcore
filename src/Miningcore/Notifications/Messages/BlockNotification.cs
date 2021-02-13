@@ -9,6 +9,7 @@ namespace Miningcore.Notifications.Messages
         public string PoolId { get; set; }
         public ulong BlockHeight { get; set; }
         public string Symbol { get; set; }
+        public string Name { get; set; }
     }
 
     public class BlockFoundNotification : BlockNotification

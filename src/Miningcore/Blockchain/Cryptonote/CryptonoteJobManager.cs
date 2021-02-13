@@ -201,7 +201,6 @@ namespace Miningcore.Blockchain.Cryptonote
             return true;
         }
 
-        #region API-Surface
 
         public IObservable<Unit> Blocks { get; private set; }
 
@@ -295,19 +294,21 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
+
         public async ValueTask<Share> SubmitShareAsync(StratumClient worker, CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
 
-            logger.LogInvoke(new[] { worker.ConnectionId });
+            logger.Debug(() => $"{ worker.ConnectionId } {request}");
+
             var context = worker.ContextAs<CryptonoteWorkerContext>();
 
             var job = currentJob;
             if(workerJob.Height != job?.BlockTemplate.Height)
                 throw new StratumException(StratumError.MinusOne, "block expired");
 
-            // validate & process
+            // validate & process share
             var (share, blobHex) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // enrich share with common data
@@ -346,7 +347,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return share;
         }
 
-        #endregion // API-Surface
+
 
         #region Overrides
 
