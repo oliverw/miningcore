@@ -49,6 +49,10 @@ namespace Miningcore.Blockchain.Cryptonote
             PrepareBlobTemplate(instanceId);
             PrevHash = prevHash;
 
+            // add for RandomX
+            if(!string.IsNullOrEmpty(blockTemplate.SeedHash))
+                seedHashBytes = blockTemplate.SeedHash.HexToByteArray();
+
             switch(coin.Hash)
             {
                 case CryptonightHashType.Normal:
@@ -66,6 +70,7 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
         private byte[] blobTemplate;
+        private readonly byte[] seedHashBytes;   // add for RandomX
         private int extraNonce;
         private readonly CryptonoteCoinTemplate coin;
         private readonly LibCryptonight.CryptonightHash hashFunc;
@@ -128,6 +133,7 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             workerJob.Height = BlockTemplate.Height;
             workerJob.ExtraNonce = (uint) Interlocked.Increment(ref extraNonce);
+            workerJob.SeedHash = BlockTemplate.SeedHash;
 
             if(extraNonce < 0)
                 extraNonce = 0;

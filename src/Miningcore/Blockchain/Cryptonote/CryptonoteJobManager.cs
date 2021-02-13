@@ -33,6 +33,7 @@ namespace Miningcore.Blockchain.Cryptonote
 {
     public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     {
+
         public CryptonoteJobManager( IComponentContext ctx, IMasterClock clock, IMessageBus messageBus) : base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -46,6 +47,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 instanceId = new byte[CryptonoteConstants.InstanceIdSize];
                 rng.GetNonZeroBytes(instanceId);
             }
+
         }
 
         private readonly byte[] instanceId;
@@ -76,6 +78,11 @@ namespace Miningcore.Blockchain.Cryptonote
                 var blockTemplate = response.Response;
                 var job = currentJob;
                 var newHash = blockTemplate.Blob.HexToByteArray().Slice(7, 32).ToHexString();
+
+                logger.Debug(()=> $"Block blob: {blockTemplate.Blob} {blockTemplate.}");
+                logger.Debug(()=> $"newHash: {newHash}");
+                logger.Debug(()=> $"SeedHash: {blockTemplate.SeedHash}");
+                logger.Debug(()=> $"SeedHeight: {blockTemplate.SeedHeight}");
 
                 var isNew = job == null || newHash != job.PrevHash;
 

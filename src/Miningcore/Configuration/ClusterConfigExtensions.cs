@@ -187,6 +187,8 @@ namespace Miningcore.Configuration
                     return "Cryptonight-Lite";
                 case CryptonightHashType.Heavy:
                     return "Cryptonight-Heavy";
+                case CryptonightHashType.RandomX:
+                    return "RandomX";
             }
 
             throw new NotSupportedException("Invalid hash type");

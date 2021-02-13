@@ -16,7 +16,7 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 
     internal class GetBlockTemplateRpcResponse : RpcResponse
     {
-        [JsonPropertyName("result")]
+        [JsonProperty("result")]
         public GetBlockTemplateResponse Result { get; set; }
     }
 
