@@ -1,22 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
 
 using System;
 using System.Collections.Concurrent;
@@ -74,6 +55,7 @@ namespace Miningcore.Native
         private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
         private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
         private static readonly CryptonightContextStore ctxsPico = new CryptonightContextStore(cryptonight_alloc_pico_context, "cn-pico");
+        private static readonly CryptonightContextStore ctxsRandomX = new CryptonightContextStore(cryptonight_alloc_randomx_context, "cn-randomx");
 
         #endregion // Hashing context managment
 
@@ -106,7 +88,18 @@ namespace Miningcore.Native
         [DllImport("libcryptonight", EntryPoint = "cryptonight_pico_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cryptonight_pico(IntPtr ctx, byte* input, byte* output, uint inputLength, CryptonightVariant variant, ulong height);
 
-        public delegate void CryptonightHash(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height);
+
+
+
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_random_context_export", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr cryptonight_alloc_randomx_context();
+
+
+        public delegate void CryptonightHash(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height);
+
+
+
+
 
         // see https://github.com/xmrig/xmrig/blob/master/src/common/xmrig.h
         public enum CryptonightVariant
@@ -136,7 +129,7 @@ namespace Miningcore.Native
         /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void Cryptonight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void Cryptonight(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -163,7 +156,7 @@ namespace Miningcore.Native
         /// Cryptonight Lite Hash (AEON etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightLight(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void CryptonightLight(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -190,7 +183,7 @@ namespace Miningcore.Native
         /// Cryptonight Heavy Hash (TUBE etc.)
         /// </summary>
         /// <param name="variant">Algorithm variant</param>
-        public static void CryptonightHeavy(ReadOnlySpan<byte> data, Span<byte> result, CryptonightVariant variant, ulong height)
+        public static void CryptonightHeavy(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -239,5 +232,34 @@ namespace Miningcore.Native
                 ctxsPico.Return(ctx);
             }
         }
+
+        /// <summary>
+        /// Cryptonight Hash (Monero, Monero v7, v8 etc.)
+        /// </summary>
+        /// <param name="variant">Algorithm variant</param>
+        public static void CryptonightRandomX(ReadOnlySpan<byte> data, string seedHash, Span<byte> result, CryptonightVariant variant, ulong height)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
+
+            var ctx = ctxs.Lease();
+
+            try
+            {
+                fixed(byte* input = data)
+                {
+                    fixed(byte* output = result)
+                    {
+                        cryptonight(ctx.Value, input, output, (uint) data.Length, variant, height);
+                    }
+                }
+            }
+
+            finally
+            {
+                ctxs.Return(ctx);
+            }
+        }
+
+
     }
 }
