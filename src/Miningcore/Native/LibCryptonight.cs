@@ -91,7 +91,7 @@ namespace Miningcore.Native
 
 
 
-        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_random_context_export", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libcryptonight", EntryPoint = "cryptonight_alloc_randomx_context_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr cryptonight_alloc_randomx_context();
 
 
