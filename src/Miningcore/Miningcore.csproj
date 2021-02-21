@@ -52,19 +52,8 @@
     <None Remove="config.json" />
     <None Remove="config2.json" />
   </ItemGroup>
-
-    <!-- Conditionally for the .NETcore 2.1 target -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-        
-    </ItemGroup>
-
-    <!-- Conditionally for the .NETcore 3.1 target -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-
-    </ItemGroup>
-
     
-    <ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AspNetCoreRateLimit" Version="3.0.4" />
     <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="AutoMapper" Version="8.1.0" />
@@ -148,10 +137,6 @@
       <Libs Include="$(OutDir)libmultihash.so;$(OutDir)libcryptonote.so;$(OutDir)libcryptonight.so" />
       <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
-  </Target>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-      <Exec Command="echo Output written to $(TargetDir)" />
   </Target>
 
 </Project>
