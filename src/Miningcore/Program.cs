@@ -729,7 +729,7 @@ namespace Miningcore
                     services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-#if netcore2_2
+#if netcore2_1
                     services.AddMvc()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                         .AddControllersAsServices()
@@ -787,7 +787,7 @@ namespace Miningcore
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
-#if netcore2_2
+#if netcore2_1
                     app.UseMvc();
 #endif
 #if netcore3_1

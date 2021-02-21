@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.2;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>Miningcore</AssemblyName>
     <RootNamespace>Miningcore</RootNamespace>
     <Platforms>AnyCPU</Platforms>
@@ -52,13 +52,13 @@
   </ItemGroup>
 
     <!-- Conditionally for the .NETcore 2.2 target -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.2' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json"  />
     </ItemGroup>
 
     <!-- Conditionally for the .NETcore 3.1 target -->
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     </ItemGroup>
 
     
@@ -72,7 +72,7 @@
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
     <PackageReference Include="MailKit" Version="2.1.4" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Condition="'$(TargetFramework)' == 'netcoreapp2.2'" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.0" />
