@@ -78,7 +78,6 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.12" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.12" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
