@@ -30,6 +30,7 @@
     <StartupObject>Miningcore.Program</StartupObject>
     <Company>Miningcore.com</Company>
     <Version>1.0.0</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -54,7 +55,7 @@
 
     <!-- Conditionally for the .NETcore 2.1 target -->
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json"  />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" />
     </ItemGroup>
 
     <!-- Conditionally for the .NETcore 3.1 target -->
