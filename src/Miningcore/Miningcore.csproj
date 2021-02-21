@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.2;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>Miningcore</AssemblyName>
     <RootNamespace>Miningcore</RootNamespace>
     <Platforms>AnyCPU</Platforms>
@@ -51,7 +51,18 @@
     <None Remove="config2.json" />
   </ItemGroup>
 
-  <ItemGroup>
+    <!-- Conditionally for the .NETcore 2.2 target -->
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.2' ">
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json"  />
+    </ItemGroup>
+
+    <!-- Conditionally for the .NETcore 3.1 target -->
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" Condition="'$(TargetFramework)' == 'netcoreapp2.1'" />
+    </ItemGroup>
+
+    
+    <ItemGroup>
     <PackageReference Include="AspNetCoreRateLimit" Version="3.0.4" />
     <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="AutoMapper" Version="8.1.0" />
@@ -61,17 +72,17 @@
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
     <PackageReference Include="MailKit" Version="2.1.4" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
-    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Condition="'$(TargetFramework)' == 'netcoreapp2.2'" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" Condition="'$(TargetFramework)' == 'netcoreapp3.1'"/>
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.0" />
     <PackageReference Include="morelinq" Version="3.1.1" />
     <PackageReference Include="NBitcoin" Version="4.1.2.22" />
     <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="NLog" Version="4.6.3" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.5.0" />
     <PackageReference Include="Npgsql" Version="4.0.6" />

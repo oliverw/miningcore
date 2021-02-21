@@ -729,6 +729,17 @@ namespace Miningcore
                     services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+#if netcore2_2
+                    services.AddMvc()
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                        .AddControllersAsServices()
+                        .AddJsonOptions(options =>
+                        {
+                            options.SerializerSettings.Formatting = Formatting.Indented;
+                        });
+#endif
+
+#if netcore3_1
                     services.AddControllers()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
                         .AddControllersAsServices()
@@ -736,6 +747,8 @@ namespace Miningcore
                         {
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
+#endif
+
 
                     // .ContractResolver = new DefaultContractResolver());
 
@@ -774,12 +787,16 @@ namespace Miningcore
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
-                    //app.UseMvc();
+#if netcore2_2
+                    app.UseMvc();
+#endif
+#if netcore3_1
                     app.UseRouting();
                     app.UseEndpoints(endpoints => {
                         endpoints.MapDefaultControllerRoute();
                         endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                     });
+#endif
                 })
                 .UseKestrel(options =>
                 {
