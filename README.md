@@ -244,6 +244,29 @@ dotnet Miningcore.dll -c config.json
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
 You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
 
+## ShareRelay (ZeroMQ) needs .NET core 2.1 runtime
+
+ZeroMQ is not supported in .NET core 3.1 and ShareRelay will fail
+
+If you need ShareRelay support:
+
+Install dotnet-sdk-2.1
+````
+sudo apt-get update; \
+  sudo apt-get install -y apt-transport-https && \
+  sudo apt-get update && \
+  sudo apt-get install -y dotnet-sdk-2.1
+````
+Build pool in core2.1 framework
+````
+BUILDIR=${1:-../../build}
+echo "Building into $BUILDIR"
+dotnet publish -c Release --framework netcoreapp2.1 --runtime linux-x64 --self-contained true -o $BUILDIR
+````
+
+
+
+
 Feel free to discuss ideas/issues with fellow pool operators using our channels: <br>
 [Discord Channel](https://discordapp.com/widget?id=612336178896830494&theme=dark) preferred<br>
 [Gitter Channel](https://gitter.im/miningcore/Lobby)
