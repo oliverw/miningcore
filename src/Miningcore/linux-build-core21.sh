@@ -6,4 +6,4 @@ echo ""
 sudo apt-get install git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 BUILDIR=${1:-../../build}
 echo "Building into $BUILDIR"
-dotnet publish -c Release --framework netcoreapp3.1 -o $BUILDIR
+dotnet publish -c Release --framework netcoreapp2.1 -o $BUILDIR

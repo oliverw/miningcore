@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>Miningcore</AssemblyName>
     <RootNamespace>Miningcore</RootNamespace>
     <Platforms>AnyCPU</Platforms>
@@ -147,4 +147,9 @@
       <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
   </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+      <Exec Command="echo Output written to $(TargetDir)" />
+  </Target>
+
 </Project>
