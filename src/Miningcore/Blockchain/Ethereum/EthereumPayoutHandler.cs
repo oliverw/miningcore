@@ -122,8 +122,7 @@ namespace Miningcore.Blockchain.Ethereum
                     var mixHash = block.TransactionConfirmationData.Split(":").First();
                     var nonce = block.TransactionConfirmationData.Split(":").Last();
                     logger.Debug(() => $"** TransactionData: {block.TransactionConfirmationData}");
-                    logger.Debug(() => $"** mixHash : {mixHash}");
-                    logger.Debug(() => $"** nonce   : {nonce}");
+
 
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
@@ -131,8 +130,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
-                    // is the block mined by us?
-                    logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
+                    
                     if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
                         // additional check
@@ -140,16 +138,26 @@ namespace Miningcore.Blockchain.Ethereum
                         // https://github.com/paritytech/parity/issues/1090
                         logger.Info(() => $"** Ethereum Deamon is Parity : {isParity}");
                         bool match;
+
+                        // is the block mined by us?
+                        logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
+                        match = blockInfo.Miner == poolConfig.Address;
+                        logger.Debug(() => $"** (WALLET_MATCH) Is the Block mined by us? {match}");
+
                         if(isParity)
                         {
                             match = isParity ? true : blockInfo.SealFields[0].Substring(2) == mixHash && blockInfo.SealFields[1].Substring(2) == nonce;
+                            logger.Debug(() => $"** Parity mixHash : {blockInfo.SealFields[0].Substring(2)} =?= {mixHash}");
+                            logger.Debug(() => $"** Parity nonce   : {blockInfo.SealFields[1].Substring(2)} =?= {nonce}");
                         }
                         else
                         {
                             match = blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce;
+                            logger.Debug(() => $"** Geth mixHash : {blockInfo.MixHash} =?= {mixHash}");
+                            logger.Debug(() => $"** Geth nonce   : {blockInfo.Nonce} =?= {nonce}");
                         }
 
-                        logger.Debug(() => $"** Is the Block mined by us? {match}");
+                        logger.Debug(() => $"** (MIXHASH_NONCE) Is the Block mined by us? {match}");
 
                         // mature?
                         if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations) )
@@ -191,9 +199,7 @@ namespace Miningcore.Blockchain.Ethereum
                         if(blockInfo2.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
-                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EthCommands.GetUncleByBlockNumberAndIndex,
-                                    new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
-                                .ToArray();
+                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EthCommands.GetUncleByBlockNumberAndIndex, new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() })).ToArray();
 
                             logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
 
