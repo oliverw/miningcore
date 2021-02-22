@@ -14,16 +14,21 @@ namespace Miningcore.Serialization
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            // Remove all 0 at the beginning
-            object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
-            // If value was 0, after trim it is null. Correcting it to 0x0.
-            if(object.Equals(valueToHex, ""))
-            {
-                writer.WriteValue($"0x{value:x}");
-            }
+            if(value == null)
+                writer.WriteValue("null");
             else
             {
-                writer.WriteValue($"0x{valueToHex}");
+                // Remove all 0 at the beginning
+                object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
+                // If value was 0, after trim it is null. Correcting it to 0x0.
+                if(object.Equals(valueToHex, ""))
+                {
+                    writer.WriteValue($"0x{value:x}");
+                }
+                else
+                {
+                    writer.WriteValue($"0x{valueToHex}");
+                }
             }
 
         }
