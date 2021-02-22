@@ -157,7 +157,7 @@ namespace Miningcore.Blockchain.Ethereum
                             }
                             if(blockInfo.Miner == poolConfig.Address)
                             {
-                                match = true;
+                                //match = true;
                                 logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
                                 logger.Debug(() => $"** (WALLET_MATCH) Is the Block mined by us? {match}");
                                 logger.Debug(() => $"** Possible Uncle or Orphan block found");
