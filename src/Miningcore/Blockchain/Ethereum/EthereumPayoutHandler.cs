@@ -137,13 +137,9 @@ namespace Miningcore.Blockchain.Ethereum
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
                         logger.Info(() => $"** Ethereum Deamon is Parity : {isParity}");
-                        bool match;
 
                         // is the block mined by us?
-                        logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
-                        match = blockInfo.Miner == poolConfig.Address;
-                        logger.Debug(() => $"** (WALLET_MATCH) Is the Block mined by us? {match}");
-
+                        bool match = false;
                         if(isParity)
                         {
                             match = isParity ? true : blockInfo.SealFields[0].Substring(2) == mixHash && blockInfo.SealFields[1].Substring(2) == nonce;
@@ -152,12 +148,22 @@ namespace Miningcore.Blockchain.Ethereum
                         }
                         else
                         {
-                            match = blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce;
-                            logger.Debug(() => $"** Geth mixHash : {blockInfo.MixHash} =?= {mixHash}");
-                            logger.Debug(() => $"** Geth nonce   : {blockInfo.Nonce} =?= {nonce}");
+                            if(blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce)
+                            {
+                                match = true;
+                                logger.Debug(() => $"** Geth mixHash : {blockInfo.MixHash} =?= {mixHash}");
+                                logger.Debug(() => $"** Geth nonce   : {blockInfo.Nonce} =?= {nonce}");
+                                logger.Debug(() => $"** (MIXHASH_NONCE) Is the Block mined by us? {match}");
+                            }
+                            if(blockInfo.Miner == poolConfig.Address)
+                            {
+                                match = true;
+                                logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
+                                logger.Debug(() => $"** (WALLET_MATCH) Is the Block mined by us? {match}");
+                                logger.Debug(() => $"** Possible Uncle or Orphan block found");
+                            }
+                            
                         }
-
-                        logger.Debug(() => $"** (MIXHASH_NONCE) Is the Block mined by us? {match}");
 
                         // mature?
                         if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations) )
