@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
+
 namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
 {
     internal class RpcResponse

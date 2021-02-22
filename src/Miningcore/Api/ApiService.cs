@@ -109,6 +109,15 @@ namespace Miningcore.Api
                     services.AddSingleton((IComponentContext) Pool.container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+#if NETCOREAPP2_1
+                    services.AddMvc()
+                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                        .AddControllersAsServices()
+                        .AddJsonOptions(options =>
+                        {
+                            options.SerializerSettings.Formatting = Formatting.Indented;
+                        });
+#elif NETCOREAPP3_1
                     services.AddControllers()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
                         .AddControllersAsServices()
@@ -116,7 +125,16 @@ namespace Miningcore.Api
                         {
                             options.SerializerSettings.Formatting = Formatting.Indented;
                         });
+#else
+                   services.AddControllers()
+                        .SetCompatibilityVersion(CompatibilityVersion.Latest)
+                        .AddControllersAsServices()
+                        .AddNewtonsoftJson(options =>
+                        {
+                            options.SerializerSettings.Formatting = Formatting.Indented;
+                        });
 
+#endif
                     // .ContractResolver = new DefaultContractResolver());
 
                     // Gzip Compression
@@ -154,12 +172,17 @@ namespace Miningcore.Api
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();
-                    //app.UseMvc();
+
+#if NETCOREAPP2_1
+                    app.UseMvc();
+#else
                     app.UseRouting();
                     app.UseEndpoints(endpoints => {
                         endpoints.MapDefaultControllerRoute();
                         endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                     });
+#endif
+
                 })
                 .UseKestrel(options =>
                 {

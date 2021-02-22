@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -141,9 +121,9 @@ namespace Miningcore.Blockchain.Ethereum
                     // extract confirmation data from stored block
                     var mixHash = block.TransactionConfirmationData.Split(":").First();
                     var nonce = block.TransactionConfirmationData.Split(":").Last();
-                    logger.Info(() => $"** TransactionData: {block.TransactionConfirmationData}");
-                    logger.Info(() => $"** mixHash : {mixHash}");
-                    logger.Info(() => $"** nonce   : {nonce}");
+                    logger.Debug(() => $"** TransactionData: {block.TransactionConfirmationData}");
+                    logger.Debug(() => $"** mixHash : {mixHash}");
+                    logger.Debug(() => $"** nonce   : {nonce}");
 
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
@@ -152,7 +132,7 @@ namespace Miningcore.Blockchain.Ethereum
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
                     // is the block mined by us?
-                    logger.Info(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
+                    logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
                     if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
                         // additional check
@@ -448,7 +428,7 @@ namespace Miningcore.Blockchain.Ethereum
             var netVersion = results[0].Response.ToObject<string>();
             var parityChain = isParity ? results[1].Response.ToObject<string>() : (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
 
-            logger.Info(() => $"Ethereum network: {netVersion}");
+            logger.Debug(() => $"Ethereum network: {netVersion}");
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
         }
