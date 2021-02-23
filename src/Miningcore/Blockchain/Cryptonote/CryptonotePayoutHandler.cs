@@ -367,8 +367,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 {
                     var block = page[j];
 
-                    var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(logger,
-                        CryptonoteCommands.GetBlockHeaderByHeight,
+                    var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(logger, CryptonoteCommands.GetBlockHeaderByHeight,
                         new GetBlockHeaderByHeightRequest
                         {
                             Height = block.BlockHeight

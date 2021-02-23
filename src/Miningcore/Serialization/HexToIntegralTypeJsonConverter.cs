@@ -22,19 +22,23 @@ namespace Miningcore.Serialization
                 writer.WriteValue("null");
             else
             {
-                // Remove all 0 at the beginning
-                object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
-                // If value was 0, after trim it is null. Correcting it to 0x0.
-                if(object.Equals(valueToHex, ""))
-                {
-                    writer.WriteValue($"0x{value:x}");
-                }
+                if(value == null)
+                    writer.WriteValue("null");
                 else
                 {
-                    writer.WriteValue($"0x{valueToHex}");
+                    // Remove all 0 at the beginning
+                    object valueToHex = $"{value:x}".TrimStart(new Char[] { '0' });
+                    // If value was 0, after trim it is null. Correcting it to 0x0.
+                    if(object.Equals(valueToHex, ""))
+                    {
+                        writer.WriteValue($"0x{value:x}");
+                    }
+                    else
+                    {
+                        writer.WriteValue($"0x{valueToHex}");
+                    }
                 }
-            }
-             
+            }    
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)

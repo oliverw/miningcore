@@ -50,7 +50,7 @@ namespace Miningcore.Blockchain
         protected readonly long nonceMax;
         protected readonly string stringFormat;
 
-        #region IExtraNonceProvider
+
 
         public string Next()
         {
@@ -66,6 +66,5 @@ namespace Miningcore.Blockchain
             }
         }
 
-        #endregion // IExtraNonceProvider
     }
 }

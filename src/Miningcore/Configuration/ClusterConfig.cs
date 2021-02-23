@@ -248,7 +248,10 @@ namespace Miningcore.Configuration
         Heavy,
 
         [EnumMember(Value = "cryptonight-pico")]
-        Pico
+        Pico,
+
+        [EnumMember(Value = "randomx")]
+        RandomX
     }
 
     public partial class CryptonoteCoinTemplate : CoinTemplate
@@ -551,15 +554,14 @@ namespace Miningcore.Configuration
     public partial class NotificationsConfig
     {
         public bool Enabled { get; set; }
-
         public EmailSenderConfig Email { get; set; }
         public AdminNotifications Admin { get; set; }
     }
 
     public partial class ApiRateLimitConfig
     {
+        public bool Enabled { get; set; }
         public bool Disabled { get; set; }
-
         public RateLimitRule[] Rules { get; set; }
         public string[] IpWhitelist { get; set; }
     }

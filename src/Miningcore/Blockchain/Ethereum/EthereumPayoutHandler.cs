@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -134,12 +114,15 @@ namespace Miningcore.Blockchain.Ethereum
 
                 for(var j = 0; j < blockInfos.Length; j++)
                 {
+                    logger.Info(() => $"Blocks count to process : {blockInfos.Length - j}");
                     var blockInfo = blockInfos[j];
                     var block = page[j];
 
                     // extract confirmation data from stored block
                     var mixHash = block.TransactionConfirmationData.Split(":").First();
                     var nonce = block.TransactionConfirmationData.Split(":").Last();
+                    logger.Debug(() => $"** TransactionData: {block.TransactionConfirmationData}");
+
 
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
@@ -147,19 +130,43 @@ namespace Miningcore.Blockchain.Ethereum
 
                     messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
 
-                    // is it block mined by us?
+                    
                     if(string.Equals(blockInfo.Miner, poolConfig.Address, StringComparison.OrdinalIgnoreCase))
                     {
                         // additional check
                         // NOTE: removal of first character of both sealfields caused by
                         // https://github.com/paritytech/parity/issues/1090
-                        var match = isParity ?
-                            true :
-                            blockInfo.SealFields[0].Substring(2) == mixHash &&
-                            blockInfo.SealFields[1].Substring(2) == nonce;
+                        logger.Info(() => $"** Ethereum Deamon is Parity : {isParity}");
+
+                        // is the block mined by us?
+                        bool match = false;
+                        if(isParity)
+                        {
+                            match = isParity ? true : blockInfo.SealFields[0].Substring(2) == mixHash && blockInfo.SealFields[1].Substring(2) == nonce;
+                            logger.Debug(() => $"** Parity mixHash : {blockInfo.SealFields[0].Substring(2)} =?= {mixHash}");
+                            logger.Debug(() => $"** Parity nonce   : {blockInfo.SealFields[1].Substring(2)} =?= {nonce}");
+                        }
+                        else
+                        {
+                            if(blockInfo.MixHash == mixHash && blockInfo.Nonce == nonce)
+                            {
+                                match = true;
+                                logger.Debug(() => $"** Geth mixHash : {blockInfo.MixHash} =?= {mixHash}");
+                                logger.Debug(() => $"** Geth nonce   : {blockInfo.Nonce} =?= {nonce}");
+                                logger.Debug(() => $"** (MIXHASH_NONCE) Is the Block mined by us? {match}");
+                            }
+                            if(blockInfo.Miner == poolConfig.Address)
+                            {
+                                //match = true;
+                                logger.Debug(() => $"Is the block mined by us? Yes if equal: {blockInfo.Miner} =?= {poolConfig.Address}");
+                                logger.Debug(() => $"** (WALLET_MATCH) Is the Block mined by us? {match}");
+                                logger.Debug(() => $"** Possible Uncle or Orphan block found");
+                            }
+                            
+                        }
 
                         // mature?
-                        if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations))
+                        if(match && (latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations) )
                         {
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
@@ -198,9 +205,7 @@ namespace Miningcore.Blockchain.Ethereum
                         if(blockInfo2.Uncles.Length > 0)
                         {
                             // fetch all uncles in a single RPC batch request
-                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EthCommands.GetUncleByBlockNumberAndIndex,
-                                    new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() }))
-                                .ToArray();
+                            var uncleBatch = blockInfo2.Uncles.Select((x, index) => new DaemonCmd(EthCommands.GetUncleByBlockNumberAndIndex, new[] { blockInfo2.Height.Value.ToStringHexWithPrefix(), index.ToStringHexWithPrefix() })).ToArray();
 
                             logger.Info(() => $"[{LogCategory}] Fetching {blockInfo2.Uncles.Length} uncles for block {blockInfo2.Height}");
 
@@ -272,9 +277,7 @@ namespace Miningcore.Blockchain.Ethereum
             // ensure we have peers
             var infoResponse = await daemon.ExecuteCmdSingleAsync<string>(logger, EthCommands.GetPeerCount);
 
-            if(networkType == EthereumNetworkType.Main &&
-                (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) ||
-                    infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
+            if(networkType == EthereumNetworkType.Main && (infoResponse.Error != null || string.IsNullOrEmpty(infoResponse.Response) || infoResponse.Response.IntegralFromHex<int>() < EthereumConstants.MinPayoutPeerCount))
             {
                 logger.Warn(() => $"[{LogCategory}] Payout aborted. Not enough peers (4 required)");
                 return;
@@ -422,8 +425,10 @@ namespace Miningcore.Blockchain.Ethereum
             if(results.Any(x => x.Error != null))
             {
                 if(results[1].Error != null)
+                {
                     isParity = false;
-
+                    logger.Info(() => $"Parity is not detected. Switching to Geth.");
+                }
                 var errors = results.Take(1).Where(x => x.Error != null)
                     .ToArray();
 
@@ -433,9 +438,9 @@ namespace Miningcore.Blockchain.Ethereum
 
             // convert network
             var netVersion = results[0].Response.ToObject<string>();
-            var parityChain = isParity ?
-                results[1].Response.ToObject<string>() :
-                (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
+            var parityChain = isParity ? results[1].Response.ToObject<string>() : (extraPoolConfig?.ChainTypeOverride ?? "Mainnet");
+
+            logger.Debug(() => $"Ethereum network: {netVersion}");
 
             EthereumUtils.DetectNetworkAndChain(netVersion, parityChain, out networkType, out chainType);
         }
@@ -443,8 +448,10 @@ namespace Miningcore.Blockchain.Ethereum
         private async Task<string> PayoutAsync(Balance balance)
         {
             // unlock account
-            if(extraConfig.CoinbasePassword != null)
+            //if(extraConfig.CoinbasePassword != null)
+            try
             {
+
                 var unlockResponse = await daemon.ExecuteCmdSingleAsync<object>(logger, EthCommands.UnlockAccount, new[]
                 {
                     poolConfig.Address,
@@ -452,12 +459,16 @@ namespace Miningcore.Blockchain.Ethereum
                     null
                 });
 
-                if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
-                    throw new Exception("Unable to unlock coinbase account for sending transaction");
+                //if(unlockResponse.Error != null || unlockResponse.Response == null || (bool) unlockResponse.Response == false)
+                //    throw new Exception("Unable to unlock coinbase account for sending transaction");
+            }
+            catch
+            {
+                throw new Exception("Unable to unlock coinbase account for sending transaction");
             }
 
             // send transaction
-            logger.Info(() => $"[{LogCategory}] Sending {FormatAmount(balance.Amount)} to {balance.Address}");
+            logger.Info(() => $"[{LogCategory}] Sending {FormatAmount(balance.Amount)} {balance.Amount} to {balance.Address}");
 
             var request = new SendTransactionRequest
             {

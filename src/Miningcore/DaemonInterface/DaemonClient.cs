@@ -1,21 +1,6 @@
 /*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MiningCore 2.0
+Copyright 2021 MinerNL (Miningcore.com)
 */
 
 using System;
@@ -97,7 +82,7 @@ namespace Miningcore.DaemonInterface
             messageBus.SendMessage(new TelemetryEvent(server, poolId, cat, info, elapsed, success));
         }
 
-        #region API-Surface
+
 
         public void Configure(DaemonEndpointConfig[] endPoints, string digestAuthRealm = null)
         {
@@ -236,8 +221,7 @@ namespace Miningcore.DaemonInterface
         /// <param name="method"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
+        public async Task<DaemonResponse<TResponse>> ExecuteCmdSingleAsync<TResponse>(ILogger logger, string method, object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
             where TResponse : class
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
@@ -291,15 +275,16 @@ namespace Miningcore.DaemonInterface
         }
 
         public IObservable<byte[]> WebsocketSubscribe(ILogger logger, Dictionary<DaemonEndpointConfig,
-                (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null,
-            JsonSerializerSettings payloadJsonSerializerSettings = null)
+               (int Port, string HttpPath, bool Ssl)> portMap, string method, object payload = null, JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(method), $"{nameof(method)} must not be empty");
 
             logger.LogInvoke(new[] { method });
+            logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+            logger.Trace(() => $"Subscribe WebSocket: {nameof(method)}: {payload}");
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => WebsocketSubscribeEndpoint(logger, endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
+                .Select(endPoint => WebsocketSubscribeEndpoint(logger, endPoint, portMap[endPoint], method, payload, payloadJsonSerializerSettings)))
                 .Publish()
                 .RefCount();
         }
@@ -309,21 +294,20 @@ namespace Miningcore.DaemonInterface
             logger.LogInvoke();
 
             return Observable.Merge(portMap.Keys
-                    .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic)))
+                .Select(endPoint => ZmqSubscribeEndpoint(logger, endPoint, portMap[endPoint].Socket, portMap[endPoint].Topic)))
                 .Publish()
                 .RefCount();
         }
 
-        #endregion // API-Surface
 
-        private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload,
-            CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
+
+        private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload, CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)
         {
             var rpcRequestId = GetRequestId();
 
             // telemetry
-            var sw = new Stopwatch();
-            sw.Start();
+            var requestStopwatch = new Stopwatch();
+            requestStopwatch.Start();
 
             // build rpc request
             var rpcRequest = new JsonRpcRequest<object>(method, payload, rpcRequestId);
@@ -354,22 +338,26 @@ namespace Miningcore.DaemonInterface
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
                 }
 
-                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+                logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                logger.Trace(() => $"Sending RPC (REQUEST OUT) {requestUrl}: {json}");
 
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request, ct))
                 {
                     // read response
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                    logger.Trace(() => $"Sending RPC (RESPONSE IN) {requestUrl}: {jsonResponse}");
 
                     // deserialize response
-                    using(var jreader = new JsonTextReader(new StringReader(responseContent)))
+                    using(var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse>(jreader);
 
                         // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, method, response.IsSuccessStatusCode);
+                        requestStopwatch.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, requestStopwatch.Elapsed, method, response.IsSuccessStatusCode);
 
                         return result;
                     }
@@ -380,8 +368,8 @@ namespace Miningcore.DaemonInterface
         private async Task<JsonRpcResponse<JToken>[]> BuildBatchRequestTask(ILogger logger, DaemonEndpointConfig endPoint, DaemonCmd[] batch)
         {
             // telemetry
-            var sw = new Stopwatch();
-            sw.Start();
+            var requestStopwatch = new Stopwatch();
+            requestStopwatch.Start();
 
             // build rpc request
             var rpcRequests = batch.Select(x => new JsonRpcRequest<object>(x.Method, x.Payload, GetRequestId()));
@@ -412,21 +400,25 @@ namespace Miningcore.DaemonInterface
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
                 }
 
-                logger.Trace(() => $"Sending RPC request to {requestUrl}: {json}");
+                logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                logger.Trace(() => $"Sending RPC (REQUEST OUT) {requestUrl}: {json}");
 
                 // send request
                 using(var response = await httpClients[endPoint].SendAsync(request))
                 {
-                    // deserialize response
+                    // read response
                     var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                    logger.Trace(() => $"Sending RPC (RESPONSE IN) {requestUrl}: {jsonResponse}");
 
                     using(var jreader = new JsonTextReader(new StringReader(jsonResponse)))
                     {
                         var result = serializer.Deserialize<JsonRpcResponse<JToken>[]>(jreader);
 
                         // telemetry
-                        sw.Stop();
-                        PublishTelemetry(TelemetryCategory.RpcRequest, sw.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
+                        requestStopwatch.Stop();
+                        PublishTelemetry(TelemetryCategory.RpcRequest, requestStopwatch.Elapsed, string.Join(", ", batch.Select(x => x.Method)), true);
 
                         return result;
                     }
@@ -536,6 +528,9 @@ namespace Miningcore.DaemonInterface
                                     var requestData = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
 
                                     logger.Debug(() => $"Sending WebSocket subscription request to {uri}");
+                                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                                    logger.Trace(() => $"Subscribe WebSocket (REQUEST OUT) {uri}: {json}");
+
                                     await client.SendAsync(requestData, WebSocketMessageType.Text, true, cts.Token);
 
                                     // stream response
@@ -556,6 +551,9 @@ namespace Miningcore.DaemonInterface
                                                     ctsTimeout.CancelAfter(TimeSpan.FromMinutes(10));
 
                                                     var response = await client.ReceiveAsync(buf, ctsComposite.Token);
+
+                                                    logger.Trace(() => $"------------------------------------------------------------------------------------------------");
+                                                    logger.Trace(() => $"Subscribe WebSocket (RESPONSE IN) {uri}: {response}");
 
                                                     if(response.MessageType == WebSocketMessageType.Binary)
                                                         throw new InvalidDataException("expected text, received binary data");

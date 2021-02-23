@@ -384,6 +384,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
+        // Overrides PoolBase SetupJobManager
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<BitcoinJobManager>(

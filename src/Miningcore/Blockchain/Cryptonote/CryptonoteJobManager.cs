@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,11 +33,8 @@ namespace Miningcore.Blockchain.Cryptonote
 {
     public class CryptonoteJobManager : JobManagerBase<CryptonoteJob>
     {
-        public CryptonoteJobManager(
-            IComponentContext ctx,
-            IMasterClock clock,
-            IMessageBus messageBus) :
-            base(ctx, messageBus)
+
+        public CryptonoteJobManager( IComponentContext ctx, IMasterClock clock, IMessageBus messageBus) : base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(clock, nameof(clock));
@@ -70,6 +47,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 instanceId = new byte[CryptonoteConstants.InstanceIdSize];
                 rng.GetNonZeroBytes(instanceId);
             }
+
         }
 
         private readonly byte[] instanceId;
@@ -100,6 +78,11 @@ namespace Miningcore.Blockchain.Cryptonote
                 var blockTemplate = response.Response;
                 var job = currentJob;
                 var newHash = blockTemplate.Blob.HexToByteArray().Slice(7, 32).ToHexString();
+
+                logger.Debug(()=> $"[JobManager] Block blob: {blockTemplate.Blob}");
+                logger.Debug(()=> $"[JobManager] newHash: {newHash}");
+                logger.Debug(()=> $"[JobManager] SeedHash: {blockTemplate.SeedHash}");
+                logger.Debug(()=> $"[JobManager] SeedHeight: {blockTemplate.SeedHeight}");
 
                 var isNew = job == null || newHash != job.PrevHash;
 
@@ -218,7 +201,6 @@ namespace Miningcore.Blockchain.Cryptonote
             return true;
         }
 
-        #region API-Surface
 
         public IObservable<Unit> Blocks { get; private set; }
 
@@ -312,20 +294,21 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        public async ValueTask<Share> SubmitShareAsync(StratumClient worker,
-            CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
+
+        public async ValueTask<Share> SubmitShareAsync(StratumClient worker, CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
 
-            logger.LogInvoke(new[] { worker.ConnectionId });
+            logger.Debug(() => $"{ worker.ConnectionId } {request}");
+
             var context = worker.ContextAs<CryptonoteWorkerContext>();
 
             var job = currentJob;
             if(workerJob.Height != job?.BlockTemplate.Height)
                 throw new StratumException(StratumError.MinusOne, "block expired");
 
-            // validate & process
+            // validate & process share
             var (share, blobHex) = job.ProcessShare(request.Nonce, workerJob.ExtraNonce, request.Hash, worker);
 
             // enrich share with common data
@@ -364,7 +347,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return share;
         }
 
-        #endregion // API-Surface
+
 
         #region Overrides
 

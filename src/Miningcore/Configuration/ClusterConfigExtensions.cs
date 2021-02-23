@@ -162,7 +162,6 @@ namespace Miningcore.Configuration
             throw new NotSupportedException("unsupported network type");
         }
 
-        #region Overrides of CoinTemplate
 
         public override string GetAlgorithmName()
         {
@@ -170,7 +169,7 @@ namespace Miningcore.Configuration
             return "Equihash";
         }
 
-        #endregion
+       
     }
 
     public partial class CryptonoteCoinTemplate
@@ -187,6 +186,8 @@ namespace Miningcore.Configuration
                     return "Cryptonight-Lite";
                 case CryptonightHashType.Heavy:
                     return "Cryptonight-Heavy";
+                case CryptonightHashType.RandomX:
+                    return "RandomX";
             }
 
             throw new NotSupportedException("Invalid hash type");
@@ -197,14 +198,11 @@ namespace Miningcore.Configuration
 
     public partial class EthereumCoinTemplate
     {
-        #region Overrides of CoinTemplate
-
         public override string GetAlgorithmName()
         {
             return "Ethhash";
         }
 
-        #endregion
     }
 
     public partial class PoolConfig

@@ -235,16 +235,17 @@ namespace Miningcore.Stratum
         {
             while(true)
             {
-                logger.Debug(() => $"[{ConnectionId}] [NET] Waiting for data ...");
+                logger.Debug(() => $"[{ConnectionId}] [1] [FILL RECEIVE PIPE] Waiting for data...");
 
                 var memory = receivePipe.Writer.GetMemory(MaxInboundRequestLength + 1);
 
                 // read from network directly into pipe memory
                 var cb = await networkStream.ReadAsync(memory, cts.Token);
+
+                logger.Trace(() => $"[{ConnectionId}] [1] [FILL RECEIVE PIPE] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
+
                 if(cb == 0)
                     break; // EOF
-
-                logger.Debug(() => $"[{ConnectionId}] [NET] Received data: {StratumConstants.Encoding.GetString(memory.ToArray(), 0, cb)}");
 
                 LastReceive = clock.UtcNow;
 
@@ -257,22 +258,22 @@ namespace Miningcore.Stratum
             }
         }
 
-        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol,
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
+        private async Task ProcessReceivePipeAsync(TcpProxyProtocolConfig proxyProtocol, Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
             while(true)
             {
-                logger.Debug(() => $"[{ConnectionId}] [PIPE] Waiting for data ...");
+                logger.Debug(() => $"[{ConnectionId}] [2] [PROCESS RECEIVE PIPE] Waiting for data...");
 
                 var result = await receivePipe.Reader.ReadAsync(cts.Token);
 
                 var buffer = result.Buffer;
                 SequencePosition? position = null;
 
+                logger.Trace(() => $"[{ConnectionId}] [2] [PROCESS RECEIVE PIPE] Received data: {result.Buffer.AsString(StratumConstants.Encoding)}");
+
                 if(buffer.Length > MaxInboundRequestLength)
                     throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
 
-                logger.Debug(() => $"[{ConnectionId}] [PIPE] Received data: {result.Buffer.AsString(StratumConstants.Encoding)}");
 
                 do
                 {
@@ -310,7 +311,7 @@ namespace Miningcore.Stratum
 
         private async Task SendMessage(object msg)
         {
-            logger.Debug(() => $"[{ConnectionId}] Sending: {JsonConvert.SerializeObject(msg)}");
+            logger.Trace(() => $"[{ConnectionId}] [3] [SendMessage] {JsonConvert.SerializeObject(msg)}");
 
             var buffer = ArrayPool<byte>.Shared.Rent(MaxOutboundRequestLength);
 
@@ -346,9 +347,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        private async Task ProcessRequestAsync(
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
-            ReadOnlySequence<byte> lineBuffer)
+        private async Task ProcessRequestAsync(Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync, ReadOnlySequence<byte> lineBuffer)
         {
             using(var reader = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))
             {

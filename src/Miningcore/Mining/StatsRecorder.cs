@@ -92,7 +92,7 @@ namespace Miningcore.Mining
         {
             Task.Run(async () =>
             {
-                logger.Info(() => "Pool Stats Online");
+                logger.Info(() => "Starting Pool Stats Service");
 
                 // warm-up delay
 				await Task.Delay(TimeSpan.FromSeconds(10));
@@ -151,6 +151,7 @@ namespace Miningcore.Mining
                     
                 }
             });
+            logger.Info(() => "Pool Stats Online");
         }
         public void Stop()
         {
