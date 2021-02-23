@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -31,7 +31,7 @@
     <StartupObject>Miningcore.Program</StartupObject>
     <Company>Miningcore.com</Company>
     <Version>2.0.0</Version>
-  </PropertyGroup>
+</PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Api\Notifications\**" />
@@ -52,7 +52,7 @@
     <None Remove="config.json" />
     <None Remove="config2.json" />
   </ItemGroup>
-
+    
   <ItemGroup>
       <PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />
       <PackageReference Include="Autofac" Version="4.9.2" />
@@ -144,4 +144,5 @@
       <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
   </Target>
+
 </Project>

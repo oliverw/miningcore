@@ -38,9 +38,7 @@ namespace Miningcore.Serialization
                         writer.WriteValue($"0x{valueToHex}");
                     }
                 }
-
-            }
-                
+            }    
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
