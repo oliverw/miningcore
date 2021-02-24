@@ -1,3 +1,21 @@
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  SWIFFTX ANSI C OPTIMIZED 32BIT IMPLEMENTATION FOR NIST SHA-3 COMPETITION
+//
+//  SWIFFTX.h
+//
+//  October 2008
+//
+//	This file is the exact copy from the reference implementation.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////
+#ifndef __SWIFFTX__
+#define __SWIFFTX__
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 // See the remarks concerning compatibility issues inside stdint.h.
 #include "stdint.h"
 #include "stdbool.h"
@@ -49,3 +67,8 @@ void ComputeSingleSWIFFTX(unsigned char input[SWIFFTX_INPUT_BLOCK_SIZE],
 // You must call this function before doing SWIFFT/X, otherwise you will get zeroes everywhere.
 void InitializeSWIFFTX();
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif // __SWIFFTX__
