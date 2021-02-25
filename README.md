@@ -43,21 +43,8 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ### Supported Coins
 
-Refer to [this file](https://github.com/minernl/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Refer to [this file](https://github.com/minernl/miningcore/blob/master/src/Miningcore/Crypto/Coins/Readme.me) for a complete list.
 
-#### Ethereum
-
-Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-
-- Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
-- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
-
-#### ZCash
-
-- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
-- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
-- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
-- Miners may use both t-addresses and z-addresses when connecting to the pool
 
 ### Donations
 
@@ -155,7 +142,7 @@ $ exit
 
 - Import Miningcore database tables
 ````console
-sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/DataStore/Postgres/Scripts/createdb.sql
 
 sudo -u postgres -i
 psql -d miningcore -f createdb.sql
@@ -243,6 +230,19 @@ dotnet Miningcore.dll -c config.json
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. 
 You can use the web frontend that come with this fork [Miningcore.Web](https://github.com/minernl/miningcore/src/Miningcore.WebUI)
+
+## Upgrading to this version
+
+If you already running a build with postgres database. You need to update you database.
+
+In this release we use a new column "connectedworkers" in table "poolstats"
+````console
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/DataStore/Postgres/Scripts/db_change_20210225.sql
+
+sudo -u postgres -i
+psql -d miningcore -f db_change_20210225.sql
+exit
+````
 
 ## ShareRelay (ZeroMQ) needs .NET core 2.1 runtime
 
