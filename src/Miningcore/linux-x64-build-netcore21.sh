@@ -22,3 +22,6 @@ sudo apt-get install -y dotnet-sdk-3.1
 BUILDIR=${1:-../../build}
 echo "Building into $BUILDIR"
 dotnet publish -c Release --framework netcoreapp2.1 --runtime linux-x64 --self-contained true -o $BUILDIR
+
+echo ""
+echo "Run the pool:  dotnet Miningcore.dll -c config.json"
