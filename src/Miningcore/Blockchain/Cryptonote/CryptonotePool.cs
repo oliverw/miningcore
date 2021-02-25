@@ -60,7 +60,7 @@ namespace Miningcore.Blockchain.Cryptonote
             // extract worker/miner/paymentid
             var split = loginRequest.Login.Split('.');
             context.Miner = split[0].Trim();
-            context.Worker = split.Length > 1 ? split[1].Trim() : null;
+            context.Worker = split.Length > 1 ? split[1].Trim() : "0";
             context.UserAgent = loginRequest.UserAgent?.Trim();
 
             var addressToValidate = context.Miner;

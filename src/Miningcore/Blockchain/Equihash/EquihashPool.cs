@@ -160,7 +160,7 @@ namespace Miningcore.Blockchain.Equihash
 
             var context = client.ContextAs<BitcoinWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
-            var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
+            var workerValue = requestParams?.Length > 0 ? requestParams[0] : "0";
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
             var passParts = password?.Split(PasswordControlVarsSeparator);
 
