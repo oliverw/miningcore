@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -92,8 +93,10 @@ namespace Miningcore.Blockchain.Ethereum
             // setup worker context
             context.IsSubscribed = true;
             context.UserAgent = requestParams[0].Trim();
+            context.IsNiceHashClient = true;
         }
 
+        #region EthereumStratum/1.0.0
         private async Task OnAuthorizeAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
@@ -103,19 +106,20 @@ namespace Miningcore.Blockchain.Ethereum
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
             var requestParams = request.ParamsAs<string[]>();
-            var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
+            var workerValue = requestParams?.Length > 0 ? requestParams[0] : "0";
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
             var passParts = password?.Split(PasswordControlVarsSeparator);
 
             // extract worker/miner
             var workerParts = workerValue?.Split('.');
             var minerName = workerParts?.Length > 0 ? workerParts[0].Trim() : null;
-            var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : null;
+            var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
 
             // assumes that workerName is an address
             context.IsAuthorized = !string.IsNullOrEmpty(minerName) && manager.ValidateAddress(minerName);
             context.Miner = minerName;
             context.Worker = workerName;
+            context.IsNiceHashClient = true;
 
             // respond
             await client.RespondAsync(context.IsAuthorized, request.Id);
@@ -235,6 +239,89 @@ namespace Miningcore.Blockchain.Ethereum
             }
         }
 
+		// >>>>>>>>>>>>>>>>>>> Start new
+       // Stratum-Proxy
+        private async Task OnSubmitLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<EthereumWorkerContext>();
+
+            if(request.Id == null)
+                throw new StratumException(StratumError.MinusOne, "missing request id");
+
+            context.IsSubscribed = true;
+
+            var requestParams = request.ParamsAs<string[]>();
+            // setup worker context
+            var workerValue = requestParams?.Length > 0 ? requestParams[0] : "0";
+            var password = requestParams?.Length > 1 ? requestParams[1] : null;
+            var passParts = password?.Split(PasswordControlVarsSeparator);
+
+            // extract worker/miner
+            var workerParts = workerValue?.Split('.');
+            var minerName = workerParts?.Length > 0 ? workerParts[0].Trim() : null;
+            var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
+
+            // assumes that workerName is an address
+            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && manager.ValidateAddress(minerName);
+            context.Miner = minerName.ToLower();
+            context.Worker = workerName;
+            context.IsNiceHashClient = false;
+
+            // respond
+            await client.RespondAsync(context.IsAuthorized, request.Id);
+
+            // extract control vars from password
+            var staticDiff = GetStaticDiffFromPassparts(passParts);
+            if(staticDiff.HasValue &&
+                (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            {
+                context.VarDiff = null; // disable vardiff
+                context.SetDifficulty(staticDiff.Value);
+
+                logger.Info(() => $"[{client.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+            }
+
+            await EnsureInitialWorkSent(client);
+
+            // log association
+            logger.Info(() => $"[{client.ConnectionId}] Authorized Stratum-Proxy Worker {workerValue}");
+        }
+
+        private async Task OnGetWorkAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<EthereumWorkerContext>();
+
+            if(request.Id == null)
+                throw new StratumException(StratumError.Other, "missing request id");
+
+            object[] newJobParams = (object[]) currentJobParams;
+            var header = newJobParams[2];
+            var seed = newJobParams[1];
+            var target = EthereumUtils.GetTargetHex(new BigInteger(context.Difficulty * EthereumConstants.StratumDiffFactor));
+
+            await client.RespondAsync(new object[] { header, seed, target }, request.Id);
+            context.IsInitialWorkSent = true;
+
+            await EnsureInitialWorkSent(client);
+        }
+
+        private async Task OnSubmitHashrateAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
+        {
+            var request = tsRequest.Value;
+            var context = client.ContextAs<EthereumWorkerContext>();
+
+            if(request.Id == null)
+                throw new StratumException(StratumError.Other, "missing request id");
+
+            // Dummy command, just predend like you did something with it and send true to keep the miner happy
+            await client.RespondAsync(true, request.Id);
+
+        }
+		// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< end new
+
         protected virtual Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
@@ -271,6 +358,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             return Task.WhenAll(tasks);
         }
+        #endregion
 
         #region Overrides
 
@@ -335,6 +423,7 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 switch(request.Method)
                 {
+                    #region EthereumStratum/1.0.0
                     case EthereumStratumMethods.Subscribe:
                         await OnSubscribeAsync(client, tsRequest);
                         break;
@@ -350,6 +439,25 @@ namespace Miningcore.Blockchain.Ethereum
                     case EthereumStratumMethods.ExtraNonceSubscribe:
                         await client.RespondErrorAsync(StratumError.Other, "not supported", request.Id, false);
                         break;
+                    #endregion
+
+                    #region Stratum-Proxy
+                    case EthereumStratumMethods.SubmitLogin:
+                        await OnSubmitLoginAsync(client, tsRequest);
+                        break;
+
+                    case EthereumStratumMethods.GetWork:
+                        await OnGetWorkAsync(client, tsRequest);
+                        break;
+
+                    case EthereumStratumMethods.SubmitHasrate:
+                        await OnSubmitHashrateAsync(client, tsRequest);
+                        break;
+
+                    case EthereumStratumMethods.SubmitWork:
+                        await OnSubmitAsync(client, tsRequest, ct);
+                        break;
+                    #endregion  
 
                     default:
                         logger.Debug(() => $"[{client.ConnectionId}] Unsupported RPC request: {JsonConvert.SerializeObject(request, serializerSettings)}");

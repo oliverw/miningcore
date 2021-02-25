@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Numerics;
 
 namespace Miningcore.Blockchain.Ethereum
 {
@@ -30,6 +32,16 @@ namespace Miningcore.Blockchain.Ethereum
 
             if(chainType == ParityChainType.Foundation)
                 chainType = ParityChainType.Mainnet;
+
+            if(chainType == ParityChainType.Joys)
+                chainType = ParityChainType.Joys;
+        }
+        
+        public static string GetTargetHex(BigInteger difficulty)
+        {
+            var target = BigInteger.Divide(BigInteger.Pow(2, 256), difficulty);
+            var hex = target.ToString("X16").ToLower();
+            return $"0x{string.Concat(Enumerable.Repeat("0", 64 - hex.Length))}{hex}";
         }
     }
 }

@@ -232,7 +232,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     args = new object[]
                     {
-                        "", // default account
+                        string.Empty, // default account
                         amounts, // addresses and associated amounts
                         1, // only spend funds covered by this many confirmations
                         comment, // tx comment
@@ -244,7 +244,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     args = new object[]
                     {
-                        string.Empty, // default account
+                        "", // default account
                         amounts, // addresses and associated amounts
                         1, // only spend funds covered by this many confirmations
                         false, // Whether to add confirmations to transactions locked via InstantSend
