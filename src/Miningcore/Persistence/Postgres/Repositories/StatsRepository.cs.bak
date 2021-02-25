@@ -53,9 +53,9 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
-            const string query = "INSERT INTO poolstats(poolid, connectedminers, connectedworkers, poolhashrate, networkhashrate, " +
+            const string query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
                 "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
-                "VALUES(@poolid, @connectedminers, @connectedworkers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
+                "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
                 "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
@@ -321,16 +321,15 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "WITH tmp AS " +
                 "( " +
                 "	SELECT  " +
-                 "		ms.miner,  " +
-                "		ms.id,  " +
+                "		ms.miner,  " +
                 "		ms.hashrate,  " +
                 "		ms.sharespersecond,  " +
                 "		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk  " +
-                "	FROM (SELECT  miner, id , SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
+                "	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
                 "       FROM minerstats " +
-                "       WHERE poolid = @poolid AND created >= @from GROUP BY id, created) ms " +
+                "       WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms " +
                 ") " +
-                "SELECT t.id, t.miner, t.hashrate, t.sharespersecond " +
+                "SELECT t.miner, t.hashrate, t.sharespersecond " +
                 "FROM tmp t " +
                 "WHERE t.rk = 1 " +
                 "ORDER by t.hashrate DESC " +

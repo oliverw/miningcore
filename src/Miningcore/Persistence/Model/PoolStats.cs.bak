@@ -19,23 +19,23 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Data;
-using System.Threading.Tasks;
-using Miningcore.Persistence.Model;
 
-namespace Miningcore.Persistence.Repositories
+namespace Miningcore.Persistence.Model
 {
-    public interface IBlockRepository
+    public class PoolStats
     {
-        Task InsertAsync(IDbConnection con, IDbTransaction tx, Block block);
-        Task DeleteBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
-        Task UpdateBlockAsync(IDbConnection con, IDbTransaction tx, Block block);
+        public long Id { get; set; }
+        public string PoolId { get; set; }
 
-        Task<Block[]> PageBlocksAsync(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize);
-        Task<Block[]> PageBlocksAsyncPaged(IDbConnection con, string poolId, BlockStatus[] status, int page, int pageSize,int _start,int _end,string _order,string _sort);
+        public int ConnectedMiners { get; set; }
+        public float PoolHashrate { get; set; }
+        public double NetworkHashrate { get; set; }
+        public double NetworkDifficulty { get; set; }
+        public DateTime? LastNetworkBlockTime { get; set; }
+        public long BlockHeight { get; set; }
+        public int ConnectedPeers { get; set; }
+        public int SharesPerSecond { get; set; }
 
-        Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize);
-        Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId);
-        Task<Block> GetBlockBeforeAsync(IDbConnection con, string poolId, BlockStatus[] status, DateTime before);
+        public DateTime Created { get; set; }
     }
 }
