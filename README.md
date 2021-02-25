@@ -6,24 +6,11 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
 
-### Changes in this Miningcore fork
-- Added nice Web frontend [https://miningcore.com](https://miningcore.com)
-- Pool time set to UTC time zone
-  Local time conversion should be used in the web frontend as that can be anyone on the globe
-- Faster mining statistics calculation
-- Added stats setting in config.json
-```config
-	"statistics": {
-		// Stats broadcast (seconds)
-		"statsUpdateInterval": 60,
-		// Stats calculation window (minutes)
-		"hashrateCalculationWindow": 5,
-		// Stats DB cleanup interval (hours)
-		"statsCleanupInterval": 48,
-		// Stats history to cleanup is DB. older then x (days)
-		"statsDBCleanupHistory": 365
-	},
-```
+### Changes in this Miningcore release
+- Added total 90 coins supported by Miningcore. Thanks to AlphaX
+- Added PROP Payment Scheme. Now we support PPLNS, PROP, SOLO
+- Added Connected Workers to the API Statistics 
+
 
 ### Features
 
