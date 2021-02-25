@@ -6,24 +6,6 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
 
-### Changes in this Miningcore fork
-- Added nice Web frontend [https://miningcore.com](https://miningcore.com)
-- Pool time set to UTC time zone
-  Local time conversion should be used in the web frontend as that can be anyone on the globe
-- Faster mining statistics calculation
-- Added stats setting in config.json
-```config
-	"statistics": {
-		// Stats broadcast (seconds)
-		"statsUpdateInterval": 60,
-		// Stats calculation window (minutes)
-		"hashrateCalculationWindow": 5,
-		// Stats DB cleanup interval (hours)
-		"statsCleanupInterval": 48,
-		// Stats history to cleanup is DB. older then x (days)
-		"statsDBCleanupHistory": 365
-	},
-```
 
 ### Features
 
@@ -34,11 +16,12 @@ MinerNL - Miningcore 2.0 Stratum Pool
 - Session management for purging DDoS/flood initiated zombie workers
 - Payment processing
 - Banning System
-- Live Stats [API](https://github.com/coinfoundry/miningcore/wiki/API) on Port 4000
+- Live Stats [API](https://github.com/minernl/miningcore/wiki/API) on Port 4000
 - WebSocket streaming of notable events like Blocks found, Blocks unlocked, Payments and more
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
+- [Discord Channel](https://discordapp.com/widget?id=612336178896830494&theme=dark) preferred<br>
 - [Gitter Channel](https://gitter.im/miningcore/Lobby)
 
 
