@@ -1249,9 +1249,9 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://explorer.namecoin.info/b/$height$",
-        "explorerTxLink": "https://explorer.namecoin.info/tx/{0}",
-        "explorerAccountLink": "https://explorer.namecoin.info/a/{0}"
+        "explorerBlockLink": "https://nmc.tokenview.com/block/$height$",
+        "explorerTxLink": "https://nmc.tokenview.com/tx/{0}",
+        "explorerAccountLink": "https://nmc.tokenview.com/addr/{0}"
     },
     "note-blockchain": {
         "name": "Notecoin",
