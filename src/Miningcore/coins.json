@@ -193,6 +193,35 @@
         "explorerTxLink": "https://insight.axecore.net/tx/{0}",
         "explorerAccountLink": "https://insight.axecore.net/address/{0}"
     },
+    "beyondcoin": {
+        "name": "Beyondcoin",
+        "symbol": "bynd",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://chainz.cryptoid.info/bynd/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/bynd/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/bynd/address.dws?{0}.htm"
+    },
     "bitcoin": {
         "name": "Bitcoin",
         "symbol": "BTC",
