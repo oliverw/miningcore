@@ -679,6 +679,35 @@
         "explorerTxLink": "https://dogechain.info/tx/{0}",
         "explorerAccountLink": "https://dogechain.info/address/{0}"
     },
+	"einsteinium": {
+        "name": "Einsteinium",
+        "symbol": "EMC2",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://chainz.cryptoid.info/emc2/block.dws?$height$.htm",
+        "explorerTxLink": "https://chainz.cryptoid.info/emc2/tx.dws?{0}.htm",
+        "explorerAccountLink": "https://chainz.cryptoid.info/emc2/address.dws?{0}.htm"
+    },
     "elicoin": {
         "name": "Elicoin",
         "symbol": "ELI",
