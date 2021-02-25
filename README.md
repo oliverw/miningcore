@@ -43,7 +43,7 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ### Supported Coins
 
-Refer to [this file](https://github.com/minernl/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Refer to [this file](https://github.com/minernl/miningcore/wiki/Supported-Coins) for a complete list.
 
 #### Ethereum
 
