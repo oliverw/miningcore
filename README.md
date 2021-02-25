@@ -43,8 +43,9 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ### Supported Coins
 
-In our wiki we have a complete list of supported coins
-[Checkout the list here](https://github.com/minernl/miningcore/wiki/Supported-Coins) for a complete list.
+In our wiki we have a complete list of supported coins.
+
+[Checkout the list here](https://github.com/minernl/miningcore/wiki/Supported-Coins)
 
 #### Ethereum
 
