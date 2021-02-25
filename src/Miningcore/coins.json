@@ -1518,6 +1518,35 @@
         "explorerTxLink": "https://ravencoin.network/tx/{0}",
         "explorerAccountLink": "https://ravencoin.network/address/{0}"
     },
+    "scholarship": {
+        "name": "Scholarship Coin",
+        "symbol": "SCHO",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://explorer.scholarshipcoin.org/block/$height$",
+        "explorerTxLink": "https://explorer.scholarshipcoin.org/tx/{0}",
+        "explorerAccountLink": "https://explorer.scholarshipcoin.org/address/{0}"
+    },
     "shroud": {
         "name": "ShroudX",
         "symbol": "SHRX",
