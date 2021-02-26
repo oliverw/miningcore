@@ -67,6 +67,10 @@ namespace Miningcore.DataStore.Postgres
 
             // build connection string
             var connectionString = $"Server={pgConfig.Host};Port={pgConfig.Port};Database={pgConfig.Database};User Id={pgConfig.User};Password={pgConfig.Password};CommandTimeout=900;";
+            
+            // concatenate SSL config to connectionString
+            if(pgConfig.Ssl == true)
+                connectionString += "SSL Mode=Require;Trust Server Certificate=True;Server Compatibility Mode=Redshift;";
 
             // register connection factory
             builder.RegisterInstance(new PgConnectionFactory(connectionString))
