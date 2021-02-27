@@ -195,7 +195,7 @@
     },
     "beyondcoin": {
         "name": "Beyondcoin",
-        "symbol": "bynd",
+        "symbol": "BYND",
         "family": "bitcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
@@ -604,8 +604,7 @@
         },
         "explorerBlockLink": "https://chainz.cryptoid.info/dgb/block.dws?$height$.htm",
         "explorerTxLink": "https://chainz.cryptoid.info/dgb/tx.dws?{0}.htm",
-        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"
-																		 
+        "explorerAccountLink": "https://chainz.cryptoid.info/dgb/address.dws?{0}.htm"																 
     },
     "digibyte-qubit": {
         "name": "Digibyte-Qubit",
@@ -662,7 +661,6 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-   
         "networks": {
             "main": {
                 "odoCryptShapeChangeInterval": 864000
@@ -1529,8 +1527,7 @@
     },
     "ravencoin": {
         "name": "Ravencoin",
-        "symbol": "RVN",
-						
+        "symbol": "RVN",		
         "family": "bitcoin",
         "coinbaseHasher": {
             "hash": "sha256d"
@@ -1612,11 +1609,7 @@
             "args": [ 0 ]
         },
         "blockHasher": {
-            "hash": "reverse",
-											 
-		  
-						   
-							  
+            "hash": "reverse",		  
             "args": [
                 {
                     "hash": "neoscrypt",
@@ -1677,8 +1670,7 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "sha256d"
-							   
+            "hash": "sha256d"		   
         },
         "blockHasher": {
             "hash": "reverse",
@@ -1696,8 +1688,7 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "yespower_tide"
-							   
+            "hash": "yespower_tide"		   
         },
         "blockHasher": {
             "hash": "reverse",
@@ -1727,9 +1718,7 @@
        "explorerAccountLink": "https://www.blockexperts.com/tit/address/{0}"
     },
     "veles-sha256": {
-						
-       "name": "Veles-Sha256",
-									
+       "name": "Veles-Sha256",				
        "symbol": "VLS",
        "family": "bitcoin",
        "coinbaseHasher": {
@@ -1840,18 +1829,13 @@
         },
         "blockHasher": {
             "hash": "reverse",
-											 
-		  
-						   
-							  
             "args": [
                 {
                     "hash": "scrypt",
                     "args": [ 1024, 1 ]
                 }
             ]
-        },
-								 
+        },					 
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -1900,8 +1884,7 @@
                     "args": [ 1024, 1 ]
                 }
             ]
-        },
-							 
+        }, 
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -2433,7 +2416,6 @@
         "explorerAccountLink": "http://explorer.zensystem.io/accounts/{0}"
     },
     "zentoshi": {
-				 
         "name": "Zentoshi",
         "symbol": "ZENX",
         "family": "bitcoin",
