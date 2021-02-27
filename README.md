@@ -129,7 +129,7 @@ $ exit
 
 - Import Miningcore database tables
 ````console
-sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/DataStore/Postgres/Scripts/createdb.sql
 
 sudo -u postgres -i
 psql -d miningcore -f createdb.sql
