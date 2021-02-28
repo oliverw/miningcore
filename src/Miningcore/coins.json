@@ -543,9 +543,9 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "hasCoinbasePayload": true,
-        "explorerBlockLink": "https://devault.llama.network/block/$height$",
-        "explorerTxLink": "https://devault.llama.network/tx/{0}",
-        "explorerAccountLink": "https://devault.llama.network/address/{0}"
+        "explorerBlockLink": "https://www.coinexplorer.net/DVT/block/$height$",
+        "explorerTxLink": "https://www.coinexplorer.net/DVT/transaction/{0}",
+        "explorerAccountLink": "https://www.coinexplorer.net/DVT/address/{0}"
     },
 	"digibyte-sha256": {
         "name": "Digibyte-Sha256",
