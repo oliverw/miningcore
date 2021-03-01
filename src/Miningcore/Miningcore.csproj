@@ -50,7 +50,7 @@
     <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="AutoMapper" Version="8.1.0" />
     <PackageReference Include="Dapper" Version="1.60.6" />
-    <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.4.0" />
+    <PackageReference Include="FluentValidation.ValidatorAttribute" Version="8.6.1" />
     <PackageReference Include="FluentValidation" Version="8.4.0" />
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
     <PackageReference Include="MailKit" Version="2.1.5.1" />
