@@ -47,6 +47,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "jh.h"
 #include "c11.h"
 #include "Lyra2.h"
+#include "Lyra2re.h"
 #include "Lyra2-z.h"
 #include "lyra2v2.h"
 #include "lyra2v3.h"
