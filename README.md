@@ -7,7 +7,7 @@ MinerNL - Miningcore 2.0 Stratum Pool
 ![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
 
 ### Changes in this Miningcore release
-- Added total 90 coins supported by Miningcore. Thanks to AlphaX
+- [Added total 90 coins supported by Miningcore.](https://github.com/minernl/miningcore/wiki/Supported-Coins) Thanks to AlphaX
 - Added PROP Payment Scheme. Now we support PPLNS, PROP, SOLO
 - Added Connected Workers to the API Statistics 
 
