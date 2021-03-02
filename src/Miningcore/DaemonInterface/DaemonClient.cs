@@ -82,7 +82,7 @@ namespace Miningcore.DaemonInterface
             messageBus.SendMessage(new TelemetryEvent(server, poolId, cat, info, elapsed, success));
         }
 
-
+        #region API-Surface
 
         public void Configure(DaemonEndpointConfig[] endPoints, string digestAuthRealm = null)
         {
@@ -299,6 +299,7 @@ namespace Miningcore.DaemonInterface
                 .RefCount();
         }
 
+        #endregion // API-Surface
 
 
         private async Task<JsonRpcResponse> BuildRequestTask(ILogger logger, DaemonEndpointConfig endPoint, string method, object payload, CancellationToken ct, JsonSerializerSettings payloadJsonSerializerSettings = null)

@@ -53,9 +53,9 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             var mapped = mapper.Map<Entities.PoolStats>(stats);
 
-            const string query = "INSERT INTO poolstats(poolid, connectedminers, poolhashrate, networkhashrate, " +
+            const string query = "INSERT INTO poolstats(poolid, connectedminers, connectedworkers, poolhashrate, networkhashrate, " +
                 "networkdifficulty, lastnetworkblocktime, blockheight, connectedpeers, sharespersecond, created) " +
-                "VALUES(@poolid, @connectedminers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
+                "VALUES(@poolid, @connectedminers, @connectedworkers, @poolhashrate, @networkhashrate, @networkdifficulty, " +
                 "@lastnetworkblocktime, @blockheight, @connectedpeers, @sharespersecond, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
@@ -314,6 +314,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             return tmp;
         }
 
+		// ToDo: Check why db id is included.
         public async Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize)
         {
             logger.LogInvoke(new[] { (object) poolId, from, page, pageSize });
@@ -321,15 +322,16 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "WITH tmp AS " +
                 "( " +
                 "	SELECT  " +
-                "		ms.miner,  " +
+                 "		ms.miner,  " +
+                "		ms.id,  " +
                 "		ms.hashrate,  " +
                 "		ms.sharespersecond,  " +
                 "		ROW_NUMBER() OVER(PARTITION BY ms.miner ORDER BY ms.hashrate DESC) AS rk  " +
-                "	FROM (SELECT miner, SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
+                "	FROM (SELECT  miner, id , SUM(hashrate) AS hashrate, SUM(sharespersecond) AS sharespersecond " +
                 "       FROM minerstats " +
-                "       WHERE poolid = @poolid AND created >= @from GROUP BY miner, created) ms " +
+                "       WHERE poolid = @poolid AND created >= @from GROUP BY id, created) ms " +
                 ") " +
-                "SELECT t.miner, t.hashrate, t.sharespersecond " +
+                "SELECT t.id, t.miner, t.hashrate, t.sharespersecond " +
                 "FROM tmp t " +
                 "WHERE t.rk = 1 " +
                 "ORDER by t.hashrate DESC " +

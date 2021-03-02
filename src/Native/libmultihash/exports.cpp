@@ -1,13 +1,17 @@
 /*
 Copyright 2017 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
+         Olaf Wasilewski (olaf.wasilewski@gmx.de)
+         
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -16,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "bcrypt.h"
+#include "balloon.h"
 #include "keccak.h"
 #include "quark.h"
 #include "scryptjane.h"
@@ -41,9 +46,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "dcrypt.h"
 #include "jh.h"
 #include "c11.h"
-#include "Lyra2RE.h"
 #include "Lyra2.h"
+#include "Lyra2-z.h"
+#include "lyra2re.h"
+#include "lyra2v2.h"
+#include "lyra2v3.h"
+#include "lyra2vc0ban.h"
+#include "lyra2z.h"
+#include "lyra2z330.h"
 #include "x16r.h"
+#include "x16rv2.h"
 #include "x16s.h"
 #include "x21s.h"
 #include "x25x.h"
@@ -53,6 +65,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "libethash/internal.h"
 #include "libethash/ethash.h"
 #include "verushash/verus_hash.h"
+#include "yescrypt.h"
+#include "yespower/yespower.h"
+#include "sha256csm.h"
 
 extern "C" bool ethash_get_default_dirname(char* strbuf, size_t buffsize);
 
@@ -109,7 +124,7 @@ extern "C" MODULE_API void scryptn_export(const char* input, char* output, uint3
 	scrypt_N_R_1_256(input, output, N, 1, input_len); //hardcode for now to R=1 for now
 }
 
-extern "C" MODULE_API void kezzak_export(const char* input, char* output, uint32_t input_len)
+extern "C" MODULE_API void keccak_export(const char* input, char* output, uint32_t input_len)
 {
 	keccak_hash(input, output, input_len);
 }
@@ -132,6 +147,11 @@ extern "C" MODULE_API void groestl_export(const char* input, char* output, uint3
 extern "C" MODULE_API void groestl_myriad_export(const char* input, char* output, uint32_t input_len)
 {
 	groestlmyriad_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void balloon_export(const char* input, char* output, uint32_t input_len)
+{
+	balloon(input, output, input_len);
 }
 
 extern "C" MODULE_API void blake_export(const char* input, char* output, uint32_t input_len)
@@ -199,24 +219,44 @@ extern "C" MODULE_API void c11_export(const char* input, char* output)
 	c11_hash(input, output);
 }
 
-extern "C" MODULE_API void lyra2re_export(const char* input, char* output)
+extern "C" MODULE_API void lyra2re_export(const char* input, char* output, uint32_t input_len)
 {
-	lyra2re_hash(input, output);
+	lyra2re_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output)
+extern "C" MODULE_API void lyra2rev2_export(const char* input, char* output, uint32_t input_len)
 {
-	lyra2re2_hash(input, output);
+	lyra2v2_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output)
+extern "C" MODULE_API void lyra2rev3_export(const char* input, char* output, uint32_t input_len)
 {
-	lyra2re3_hash(input, output);
+	lyra2v3_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void lyra2vc0ban_export(const char* input, char* output, uint32_t input_len)
+{
+	lyra2vc0ban_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void lyra2z_export(const char* input, char* output, uint32_t input_len)
+{
+	lyra2z_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void lyra2z330_export(const char* input, char* output, uint32_t input_len)
+{
+	lyra2z330_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t input_len)
 {
     x16r_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x16rv2_export(const char* input, char* output, uint32_t input_len)
+{
+    x16rv2_hash(input, output,input_len);
 }
 
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
@@ -237,6 +277,86 @@ extern "C" MODULE_API void odocrypt_export(const char* input, char* output, uint
 extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)
 {
     x16s_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yescrypt_export(const char* input, char* output, uint32_t input_len)
+{
+    yescrypt_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yescryptR8_export(const char* input, char* output, uint32_t input_len)
+{
+    yescryptR8_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yescryptR16_export(const char* input, char* output, uint32_t input_len)
+{
+    yescryptR16_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yescryptR32_export(const char* input, char* output, uint32_t input_len)
+{
+    yescryptR32_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_export(const char* input, char* output, uint32_t input_len)
+{
+    yespower_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_ic_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerIC_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_iots_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerIOTS_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_ltncg_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerLTNCG_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_r16_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerR16_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_res_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerRES_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_sugar_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerSUGAR_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_urx_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerURX_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_litb_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerLITB_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void yespower_tide_export(const char* input, char* output, uint32_t input_len)
+{
+    yespowerTIDE_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void cpupower_export(const char* input, char* output, uint32_t input_len)
+{
+    cpupower_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void sha256csm_export(const char* input, char* output, uint32_t input_len)
+{
+	sha256csm_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API bool equihash_verify_200_9_export(const char* header, int header_length, const char* solution, int solution_length, const char *personalization)
@@ -354,13 +474,10 @@ extern "C" MODULE_API bool ethash_get_default_dirname_export(char *buf, size_t b
 
 extern "C" MODULE_API void verushash_export(const char* input, char* output, int input_len)
 {
-    
-	CVerusHashV2* vh2b2;
-	CVerusHashV2::init();
+    CVerusHashV2* vh2b2;
+    CVerusHashV2::init();
     vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
     vh2b2->Reset();
     vh2b2->Write((const unsigned char *)input, input_len);
     vh2b2->Finalize2b((unsigned char *)output);
-
 }
-																					   

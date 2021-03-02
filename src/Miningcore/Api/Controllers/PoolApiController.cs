@@ -370,15 +370,12 @@ namespace Miningcore.Api.Controllers
             switch(mode)
             {
                 case SampleRange.Day:
-
-			// NEW from CF-master
                     // set range
                     if(end.Minute < 30)
                         end = end.AddHours(-1);
 
                     end = end.AddMinutes(-end.Minute);
                     end = end.AddSeconds(-end.Second);
-			// <<<<<<<<-------
 					
                     start = end.AddDays(-1);
 
@@ -387,13 +384,10 @@ namespace Miningcore.Api.Controllers
                     break;
 
                 case SampleRange.Month:
-					
-			// NEW from CF-master
                     if(end.Hour < 12)
                         end = end.AddDays(-1);
 
                     end = end.Date;
-			// <<<<<<<<-------
 					
                     // set range
                     start = end.AddMonths(-1);

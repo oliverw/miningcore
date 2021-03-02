@@ -366,6 +366,9 @@ namespace Miningcore.Blockchain.Ethereum
                 case ParityChainType.Callisto:
                     return CallistoConstants.BaseRewardInitial * (1.0m - CallistoConstants.TreasuryPercent);
 
+                case ParityChainType.Joys:
+                    return EthereumConstants.JoysBlockReward;
+
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");
             }
@@ -477,6 +480,9 @@ namespace Miningcore.Blockchain.Ethereum
                 Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
             };
 
+// ToDo test difference
+// NL: Value = (BigInteger) Math.Floor(balance.Amount * EthereumConstants.Wei),
+// AX: Value = writeHex(amount),
             var response = await daemon.ExecuteCmdSingleAsync<string>(logger, EthCommands.SendTx, new[] { request });
 
             if(response.Error != null)
@@ -493,6 +499,11 @@ namespace Miningcore.Blockchain.Ethereum
 
             // done
             return txHash;
+        }
+
+        private static string writeHex(BigInteger value)
+        {
+            return (value.ToString("x").TrimStart('0'));
         }
     }
 }

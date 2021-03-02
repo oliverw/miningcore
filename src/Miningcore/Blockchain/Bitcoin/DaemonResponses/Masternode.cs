@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
@@ -22,6 +22,15 @@ namespace Miningcore.Blockchain.Bitcoin.DaemonResponses
     public class MasterNodeBlockTemplateExtra : PayeeBlockTemplateExtra
     {
         public JToken Masternode { get; set; }
+
+        [JsonProperty("indexnode")]
+        private JToken Indexnode { set { Masternode = value; } }
+
+        [JsonProperty("fivegnode")]
+        private JToken Fivegnode { set { Masternode = value; } }
+
+        [JsonProperty("shroudnode")]
+        private JToken Shroudnode { set { Masternode = value; } }
 
         [JsonProperty("masternode_payments_started")]
         public bool MasternodePaymentsStarted { get; set; }

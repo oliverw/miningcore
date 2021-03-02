@@ -18,6 +18,7 @@ namespace Miningcore.Blockchain.Ethereum
         public const string EthereumStratumVersion = "EthereumStratum/1.0.0";
         public const decimal StaticTransactionFeeReserve = 0.0025m; // in ETH
         public const string BlockTypeUncle = "uncle";
+        public static double StratumDiffFactor = 4294901760.0;
 
 #if !DEBUG
         public const int MinPayoutPeerCount = 1;
@@ -39,6 +40,7 @@ namespace Miningcore.Blockchain.Ethereum
         public const decimal TestnetBlockReward = 3.0m;
         public const decimal ExpanseBlockReward = 8.0m;
         public const decimal EllaismBlockReward = 5.0m;
+        public const decimal JoysBlockReward = 2.0m;
 
         public const int MinConfimations = 16;
     }
@@ -64,7 +66,8 @@ namespace Miningcore.Blockchain.Ethereum
         Ropsten = 3,
         Rinkeby = 4,
         Kovan = 42,
-        Galilei = 7919, // Callisto v3 Testnet
+        Galilei = 7919,
+        Joys = 35855456,
 
         Unknown = -1,
     }
@@ -81,8 +84,9 @@ namespace Miningcore.Blockchain.Ethereum
         Classic,
         Expanse,
         Ellaism,
-        CallistoTestnet, // Callisto (CLO) v3 Testnet
-        Callisto, // Callisto (CLO) v3 Testnet
+        CallistoTestnet,
+        Callisto,
+        Joys,
 
         Unknown = -1,
     }
