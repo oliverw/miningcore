@@ -6,6 +6,23 @@ MinerNL - Miningcore 2.0 Stratum Pool
 
 ![Miningcore running ubuntu](http://i.imgur.com/sYF5s2c.jpg)
 
+### Changes in this Miningcore release
+- Added total 90 coins supported by Miningcore. Thanks to AlphaX
+- Added PROP Payment Scheme. Now we support PPLNS, PROP, SOLO
+- Added Connected Workers to the API Statistics 
+
+## Upgrading to this version
+
+If you already running a build with postgres database. You need to update you database.
+
+In this release we use a new column "connectedworkers" in table "poolstats"
+````console
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/DataStore/Postgres/Scripts/db_change_20210225.sql
+
+sudo -u postgres -i
+psql -d miningcore -f db_change_20210225.sql
+exit
+````
 
 ### Features
 
@@ -129,7 +146,7 @@ $ exit
 
 - Import Miningcore database tables
 ````console
-sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+sudo wget https://raw.githubusercontent.com/minernl/miningcore/master/src/Miningcore/DataStore/Postgres/Scripts/createdb.sql
 
 sudo -u postgres -i
 psql -d miningcore -f createdb.sql
