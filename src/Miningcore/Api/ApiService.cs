@@ -109,6 +109,19 @@ namespace Miningcore.Api
                     services.AddSingleton((IComponentContext) Pool.container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+					// ToDo: Setting check
+					//services.AddMvc()
+                    //    .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
+                    //    .AddControllersAsServices()
+                    //    .AddNewtonsoftJson(options =>
+                    //    {
+                    //        options.SerializerSettings.Formatting = Formatting.Indented;
+                    //    });
+                    //services.AddMvc(option => option.EnableEndpointRouting = false);
+
+
+
+
 #if NETCOREAPP2_1
                     services.AddMvc()
                         .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
@@ -153,7 +166,9 @@ namespace Miningcore.Api
                                           );
                     }
                     );
-
+					// ToDo: AddCors to check:   .WithExposedHeaders("x-total-count")
+					
+					
                     // WebSockets
                     services.AddWebSocketManager();
                 })

@@ -168,6 +168,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="balloon.h" />
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="blake.h" />
     <ClInclude Include="blake2s.h" />
@@ -198,6 +199,7 @@
     <ClInclude Include="groestl.h" />
     <ClInclude Include="hashodo.h" />
     <ClInclude Include="hefty1.h" />
+    <ClInclude Include="yespower\insecure_memzero.h" />
     <ClInclude Include="jh.h" />
     <ClInclude Include="keccak.h" />
     <ClInclude Include="KeccakP-800-SnP.h" />
@@ -213,7 +215,13 @@
     <ClInclude Include="libethash\sha3.h" />
     <ClInclude Include="libethash\util.h" />
     <ClInclude Include="Lyra2.h" />
-    <ClInclude Include="Lyra2RE.h" />
+    <ClInclude Include="lyra2re.h" />
+    <ClInclude Include="lyra2v2.h" />
+    <ClInclude Include="lyra2v3.h" />
+    <ClInclude Include="lyra2vc0ban.h" />
+    <ClInclude Include="lyra2z.h" />
+    <ClInclude Include="Lyra2-z.h" />
+    <ClInclude Include="lyra2z330.h" />
     <ClInclude Include="neoscrypt.h" />
     <ClInclude Include="nist5.h" />
     <ClInclude Include="odocrypt.h" />
@@ -224,6 +232,9 @@
     <ClInclude Include="scryptjane.h" />
     <ClInclude Include="scryptn.h" />
     <ClInclude Include="sha256.h" />
+    <ClInclude Include="sha256csm.h" />
+    <ClInclude Include="sha256_Y.h" />
+    <ClInclude Include="yespower\sha256.h" />
     <ClInclude Include="sha3\extra.h" />
     <ClInclude Include="sha3\gost_streebog.h" />
     <ClInclude Include="sha3\sph_blake.h" />
@@ -255,18 +266,24 @@
     <ClInclude Include="Sponge.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="stdint.h" />
+    <ClInclude Include="sysendian.h" />
+    <ClInclude Include="yespower\sysendian.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="x11.h" />
     <ClInclude Include="x13.h" />
     <ClInclude Include="x14.h" />
     <ClInclude Include="x15.h" />
     <ClInclude Include="x16r.h" />
+    <ClInclude Include="x16rv2.h" />
     <ClInclude Include="x16s.h" />
     <ClInclude Include="x17.h" />
     <ClInclude Include="x21s.h" />
     <ClInclude Include="x25x.h" />
+    <ClInclude Include="yescrypt.h" />
+    <ClInclude Include="yespower\yespower.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="balloon.c" />
     <ClCompile Include="bcrypt.c" />
     <ClCompile Include="blake.c" />
     <ClCompile Include="blake2s.c" />
@@ -303,7 +320,13 @@
     <ClCompile Include="libethash\sha3.c" />
     <ClCompile Include="libethash\util_win32.c" />
     <ClCompile Include="Lyra2.c" />
-    <ClCompile Include="Lyra2RE.c" />
+    <ClCompile Include="lyra2re.c" />
+    <ClCompile Include="lyra2v2.c" />
+    <ClCompile Include="lyra2v3.c" />
+    <ClCompile Include="lyra2vc0ban.c" />
+    <ClCompile Include="lyra2z.c" />
+    <ClCompile Include="Lyra2-z.c" />
+    <ClCompile Include="lyra2z330.c" />
     <ClCompile Include="neoscrypt.c" />
     <ClCompile Include="exports.cpp" />
     <ClCompile Include="nist5.c" />
@@ -312,6 +335,9 @@
     <ClCompile Include="qubit.c" />
     <ClCompile Include="s3.c" />
     <ClCompile Include="scryptn.c" />
+    <ClCompile Include="sha256.c" />
+    <ClCompile Include="sha256csm.c" />
+    <ClCompile Include="sha256_Y.c" />
     <ClCompile Include="sha3\aes_helper.c" />
     <ClCompile Include="sha3\extra.c" />
     <ClCompile Include="sha3\gost_streebog.c" />
@@ -348,10 +374,15 @@
     <ClCompile Include="x14.c" />
     <ClCompile Include="x15.c" />
     <ClCompile Include="x16r.c" />
+    <ClCompile Include="x16rv2.c" />
     <ClCompile Include="x16s.c" />
     <ClCompile Include="x17.c" />
     <ClCompile Include="x21s.c" />
     <ClCompile Include="x25x.c" />
+    <ClCompile Include="yescrypt.c" />
+    <ClCompile Include="yescrypt-opt.c" />
+    <ClCompile Include="yespower\yespower-combined.c" />
+    <ClCompile Include="yespower\yespower-platform.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="equi\crypto\equihash.tcc" />

@@ -1,6 +1,7 @@
 /*
-Copyright 2017 Coin Foundry (coinfoundry.org)
+Copyright 2017 - 2021 Coin Foundry (coinfoundry.org)
 Authors: Oliver Weichhold (oliver@weichhold.com)
+         Olaf Wasilewski (olaf.wasilewski@gmx.de)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -33,12 +34,12 @@ using Contract = Miningcore.Contracts.Contract;
 namespace Miningcore.Payments.PaymentSchemes
 {
     /// <summary>
-    /// PPLNS payout scheme implementation
+    /// SOLO payout scheme implementation
     /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public class SoloPaymentScheme : IPayoutScheme
+    /// ReSharper disable once InconsistentNaming
+    public class SOLOPaymentScheme : IPayoutScheme
     {
-        public SoloPaymentScheme(IConnectionFactory cf,
+        public SOLOPaymentScheme(IConnectionFactory cf,
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo)
@@ -58,7 +59,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
-        private static readonly ILogger logger = LogManager.GetLogger("Solo Payment", typeof(SoloPaymentScheme));
+        private static readonly ILogger logger = LogManager.GetLogger("SOLO Payment", typeof(SOLOPaymentScheme));
 
         private class Config
         {
@@ -67,8 +68,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block, decimal blockReward)
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig, IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             // calculate rewards
             var rewards = new Dictionary<string, decimal>();
@@ -89,13 +89,13 @@ namespace Miningcore.Payments.PaymentSchemes
             // delete discarded shares
             if(shareCutOffDate.HasValue)
             {
-                var cutOffCount = await shareRepo.CountSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                var cutOffCount = await shareRepo.CountSharesSoloBeforeCreatedAsync(con, tx, poolConfig.Id, block.Miner, shareCutOffDate.Value);
 
                 if(cutOffCount > 0)
                 {
 #if !DEBUG
-                    logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
-                    await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
+                    logger.Info(() => $"Deleting {cutOffCount} discarded shares for {block.Miner}");
+                    await shareRepo.DeleteSharesSoloBeforeCreatedAsync(con, tx, poolConfig.Id, block.Miner, shareCutOffDate.Value);
 #endif
                 }
             }
@@ -105,22 +105,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         private DateTime? CalculateRewards(PoolConfig poolConfig, Block block, decimal blockReward, Dictionary<string, decimal> rewards)
         {
-            var recipients = (poolConfig.RewardRecipients.Length == 1 ?
-                    poolConfig.RewardRecipients.Take(1) :
-                    poolConfig.RewardRecipients.Where(x => x.Type?.ToLower() == "solo"))
-                .Select(x => x.Address)
-                .ToArray();
-
-            if(recipients.Length == 0)
-                throw new Exception("No reward-recipients of type = 'solo' configured");
-
-            // split reward evenly between configured solo-recipients
-            foreach(var address in recipients)
-            {
-                var reward = blockReward / recipients.Length;
-                rewards[address] = reward;
-            }
-
+            rewards[block.Miner] = blockReward;
             return block.Created;
         }
     }

@@ -369,7 +369,8 @@ namespace Miningcore.Blockchain.Bitcoin
             try
             {
                 var results = await daemon.ExecuteBatchAnyAsync(logger,
-                    new DaemonCmd(BitcoinCommands.GetConnectionCount)
+                              new DaemonCmd(BitcoinCommands.GetConnectionCount),
+                              new DaemonCmd(BitcoinCommands.GetMiningInfo)
                 );
 
                 if(results.Any(x => x.Error != null))
@@ -381,9 +382,12 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
 
                 var connectionCountResponse = results[0].Response.ToObject<object>();
+                var miningInfoResponse = results[1].Response.ToObject<MiningInfo>();
 
                 //BlockchainStats.NetworkHashrate = miningInfoResponse.NetworkHashps;
                 BlockchainStats.ConnectedPeers = (int) (long) connectionCountResponse;
+                // added 022021 ToDo: Check if needed
+                BlockchainStats.NetworkHashrate = miningInfoResponse.NetmHashps *= 1000000;
             }
 
             catch(Exception e)
@@ -503,10 +507,14 @@ namespace Miningcore.Blockchain.Bitcoin
             isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
-            if(!isPoS)
+            if(!isPoS || !poolConfig.UseP2PK)
+            {
                 poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
+            }
             else
+            {
                 poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
+            }
 
             // Payment-processing setup
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
@@ -564,7 +572,10 @@ namespace Miningcore.Blockchain.Bitcoin
             switch(addressType.Value)
             {
                 case BitcoinAddressType.BechSegwit:
-                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
+                    return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network, extraPoolConfig?.BechPrefix);
+
+                case BitcoinAddressType.CashAddr:
+                    return BitcoinUtils.CashAddrToDestination(poolConfig.Address, network);
 
                 default:
                     return BitcoinUtils.AddressToDestination(poolConfig.Address, network);

@@ -284,7 +284,7 @@ namespace Miningcore.Blockchain.Equihash
             // extract worker/miner/payoutid
             var split = workerValue.Split('.');
             var minerName = split[0];
-            var workerName = split.Length > 1 ? split[1] : null;
+            var workerName = split.Length > 1 ? split[1] : "0";
 
             // validate & process
             var (share, blockHex) = job.ProcessShare(worker, extraNonce2, nTime, solution);

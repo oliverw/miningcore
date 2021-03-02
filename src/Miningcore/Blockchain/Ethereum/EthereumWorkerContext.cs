@@ -36,6 +36,8 @@ namespace Miningcore.Blockchain.Ethereum
 
         public bool IsInitialWorkSent { get; set; } = false;
 
+        public bool IsNiceHashClient { get; set; }
+
         public string ExtraNonce1 { get; set; }
     }
 }

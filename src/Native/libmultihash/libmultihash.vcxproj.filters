@@ -17,6 +17,9 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="balloon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="bcrypt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -182,7 +185,25 @@
     <ClInclude Include="Lyra2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Lyra2RE.h">
+    <ClInclude Include="lyra2re.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+     <ClInclude Include="lyra2v2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lyra2v3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lyra2vc0ban.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lyra2z.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lyra2-z.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lyra2z330.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sponge.h">
@@ -204,6 +225,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x16r.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+      <ClInclude Include="x16rv2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x16s.h">
@@ -302,6 +326,30 @@
     <ClInclude Include="sha3\sph_panama.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sha256_Y.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sysendian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yescrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yespower\insecure_memzero.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yespower\sha256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yespower\sysendian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yespower\yespower.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha256csm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -311,6 +359,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="blake.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="balloon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="bcrypt.c">
@@ -359,6 +410,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scryptn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shavite3.c">
@@ -454,7 +508,25 @@
     <ClCompile Include="Lyra2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Lyra2RE.c">
+      <ClCompile Include="lyra2re.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lyra2v2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lyra2v3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lyra2vc0ban.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lyra2z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lyra2-z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lyra2z330.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sponge.c">
@@ -479,6 +551,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x16r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x16rv2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x16s.c">
@@ -557,6 +632,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha3\panama.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256_Y.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="yescrypt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="yescrypt-opt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="yespower\yespower-combined.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="yespower\yespower-platform.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256csm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

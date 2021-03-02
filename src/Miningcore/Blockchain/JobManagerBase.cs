@@ -96,6 +96,7 @@ namespace Miningcore.Blockchain
         protected abstract Task EnsureDaemonsSynchedAsync(CancellationToken ct);
         protected abstract Task PostStartInitAsync(CancellationToken ct);
 
+        #region API-Surface
 
         public virtual void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
@@ -108,7 +109,6 @@ namespace Miningcore.Blockchain
 
             ConfigureDaemons();
         }
-
 
         public async Task StartAsync(CancellationToken ct)
         {
@@ -123,6 +123,6 @@ namespace Miningcore.Blockchain
             logger.Info(() => $"Job Manager Online");
         }
 
-  
+        #endregion // API-Surface
     }
 }

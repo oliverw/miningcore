@@ -155,11 +155,11 @@ namespace Miningcore.Mining
         }
         public void Stop()
         {
-            logger.Info(() => "Pool Stopping ..");
+            logger.Info(() => "Pool Stats Stopping ..");
 
             cts.Cancel();
 
-            logger.Info(() => "Pool Stopped");
+            logger.Info(() => "Pool Stats Stopped");
         }
 
         #endregion // API-Surface

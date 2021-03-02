@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <limits.h>
-
 #include "sph_blake.h"
 
 #ifdef __cplusplus
@@ -55,6 +54,8 @@ extern "C"{
 #ifdef _MSC_VER
 #pragma warning (disable: 4146)
 #endif
+
+static int blake32_rounds = 14; /* 8 in blakecoin */
 
 static const sph_u32 IV224[8] = {
 	SPH_C32(0xC1059ED8), SPH_C32(0x367CD507),
@@ -548,7 +549,7 @@ static const sph_u64 CB[16] = {
 		M[0xD] = sph_dec32be_aligned(buf + 52); \
 		M[0xE] = sph_dec32be_aligned(buf + 56); \
 		M[0xF] = sph_dec32be_aligned(buf + 60); \
-		for (r = 0; r < 14; r ++) \
+		for (r = 0; r < blake32_rounds; r ++) \
 			ROUND_S(r); \
 		H0 ^= S0 ^ V0 ^ V8; \
 		H1 ^= S1 ^ V1 ^ V9; \
@@ -607,12 +608,14 @@ static const sph_u64 CB[16] = {
 		ROUND_S(5); \
 		ROUND_S(6); \
 		ROUND_S(7); \
+		if (blake32_rounds == 14) { \
 		ROUND_S(8); \
 		ROUND_S(9); \
 		ROUND_S(0); \
 		ROUND_S(1); \
 		ROUND_S(2); \
 		ROUND_S(3); \
+		} \
 		H0 ^= S0 ^ V0 ^ V8; \
 		H1 ^= S1 ^ V1 ^ V9; \
 		H2 ^= S2 ^ V2 ^ VA; \
@@ -1051,6 +1054,12 @@ sph_blake256_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
 {
 	blake32_close(cc, ub, n, dst, 8);
 	sph_blake256_init(cc);
+}
+
+/* see sph_blake.h */
+void sph_blake256_set_rounds(int rounds)
+{
+	blake32_rounds = rounds;
 }
 
 #if SPH_64

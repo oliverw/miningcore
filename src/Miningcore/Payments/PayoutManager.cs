@@ -28,7 +28,12 @@ namespace Miningcore.Payments
     /// </summary>
     public class PayoutManager
     {
-        public PayoutManager(IComponentContext ctx, IConnectionFactory cf, IBlockRepository blockRepo, IShareRepository shareRepo, IBalanceRepository balanceRepo, IMessageBus messageBus)
+        public PayoutManager(IComponentContext ctx,
+            IConnectionFactory cf,
+            IBlockRepository blockRepo,
+            IShareRepository shareRepo,
+            IBalanceRepository balanceRepo,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(cf, nameof(cf));

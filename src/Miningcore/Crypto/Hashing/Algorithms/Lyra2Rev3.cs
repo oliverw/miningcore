@@ -35,7 +35,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.lyra2rev3(input, output);
+                    LibMultihash.lyra2rev3(input, output, (uint) data.Length);
                 }
             }
         }
