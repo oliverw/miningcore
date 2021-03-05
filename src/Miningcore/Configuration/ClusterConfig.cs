@@ -412,6 +412,10 @@ namespace Miningcore.Configuration
     public class DatabaseConfig : AuthenticatedNetworkEndpointConfig
     {
         public string Database { get; set; }
+        /// <summary>
+        /// Use SSL
+        /// </summary>
+        public bool Ssl { get; set; }
     }
 
     public class TcpProxyProtocolConfig
