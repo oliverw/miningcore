@@ -82,7 +82,19 @@ namespace Miningcore.Blockchain.Equihash
             }
 
             // calculate outputs
-            if(networkParams.PayFoundersReward &&
+            if(networkParams.vFundingStreams){
+                // pool reward (t-addr)
+                rewardToPool = new Money(Math.Round(blockReward * (1m - (networkParams.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
+                tx.Outputs.Add(rewardToPool, poolAddressDestination);
+                // funding stream reward (t-addr)
+                foreach(fundingStreams fundingstream in BlockTemplate.Subsidy.FundingStreams)
+                {
+                    var amount = new Money(Math.Round(fundingstream.ValueZat / 1m), MoneyUnit.Satoshi);
+                    var destination = FoundersAddressToScriptDestination(fundingstream.Address);
+                    tx.Outputs.Add(amount, destination);
+                }
+            }
+            else if(networkParams.PayFoundersReward &&
                 (networkParams.LastFoundersRewardBlockHeight >= BlockTemplate.Height ||
                     networkParams.TreasuryRewardStartBlockHeight > 0))
             {
@@ -360,7 +372,13 @@ namespace Miningcore.Blockchain.Equihash
             else
                 blockReward = BlockTemplate.CoinbaseValue;
 
-            if(networkParams?.PayFoundersReward == true)
+            if(networkParams?.vFundingStreams == true)
+            {
+                decimal fundingstreamTotal = 0;
+                fundingstreamTotal = blockTemplate.Subsidy.FundingStreams.Sum(x => x.Value);
+                blockReward = (blockTemplate.Subsidy.Miner + fundingstreamTotal) * BitcoinConstants.SatoshisPerBitcoin;
+            }
+            else if(networkParams?.PayFoundersReward == true)
             {
                 var founders = blockTemplate.Subsidy.Founders ?? blockTemplate.Subsidy.Community;
 

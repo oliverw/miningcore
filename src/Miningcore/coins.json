@@ -2101,7 +2101,8 @@
                 "overwinterTxVersionGroupId": 63210096,
                 "saplingActivationHeight": 419200,
                 "saplingTxVersion": 4,
-                "saplingTxVersionGroupId": 2301567109
+                "saplingTxVersionGroupId": 2301567109,
+                "vFundingStreams": true
             },
             "test": {
                 "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -2171,7 +2172,8 @@
                 "overwinterTxVersionGroupId": 63210096,
                 "saplingActivationHeight": 280000,
                 "saplingTxVersion": 4,
-                "saplingTxVersionGroupId": 2301567109
+                "saplingTxVersionGroupId": 2301567109,
+                "vFundingStreams": true
             },
             "regtest": {
                 "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",

@@ -186,6 +186,8 @@ namespace Miningcore.Configuration
 
             public bool PayFoundersReward { get; set; }
 
+            public bool vFundingStreams { get; set; }
+
             [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public decimal PercentFoundersReward { get; set; }
 
