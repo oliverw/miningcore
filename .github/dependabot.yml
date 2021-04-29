@@ -1,0 +1,41 @@
+version: 2
+updates:
+- package-ecosystem: nuget
+  directory: "/src/Miningcore"
+  schedule:
+    interval: monthly
+  open-pull-requests-limit: 10
+  target-branch: dev
+  ignore:
+  - dependency-name: FluentValidation
+    versions:
+    - 9.3.0
+    - 9.5.0
+  - dependency-name: NBitcoin
+    versions:
+    - 5.0.68
+    - 5.0.73
+  - dependency-name: NLog.Extensions.Logging
+    versions:
+    - 1.7.0
+  - dependency-name: Npgsql
+    versions:
+    - 5.0.1.1
+  - dependency-name: protobuf-net
+    versions:
+    - 3.0.73
+  - dependency-name: Dapper
+    versions:
+    - 2.0.78
+  - dependency-name: Microsoft.Extensions.Options.ConfigurationExtensions
+    versions:
+    - 5.0.0
+  - dependency-name: Microsoft.Extensions.Caching.Memory
+    versions:
+    - 5.0.0
+  - dependency-name: MailKit
+    versions:
+    - 2.10.0
+  - dependency-name: JetBrains.Annotations
+    versions:
+    - 2020.3.0
