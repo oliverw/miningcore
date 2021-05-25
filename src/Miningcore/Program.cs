@@ -97,7 +97,7 @@ namespace Miningcore
         private static BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
 
-        private static AdminGcStats gcStats = new AdminGcStats();
+        private static readonly AdminGcStats gcStats = new AdminGcStats();
         private static readonly Regex regexJsonTypeConversionError =
             new Regex("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
         private static readonly IPAddress IPv4LoopBackOnIPv6 = IPAddress.Parse("::ffff:127.0.0.1");
@@ -191,8 +191,7 @@ namespace Miningcore
             // set some defaults
             foreach(var config in clusterConfig.Pools)
             {
-                if(!config.EnableInternalStratum.HasValue)
-                    config.EnableInternalStratum = clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
+                config.EnableInternalStratum ??= clusterConfig.ShareRelays == null || clusterConfig.ShareRelays.Length == 0;
             }
 
             try
@@ -222,7 +221,7 @@ namespace Miningcore
         {
             configFile = null;
 
-            var app = new CommandLineApplication(false)
+            var app = new CommandLineApplication
             {
                 FullName = "MiningCore - Pool Mining Engine",
                 ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
@@ -676,7 +675,7 @@ namespace Miningcore
             {
                 rules = new List<RateLimitRule>
                 {
-                    new RateLimitRule
+                    new()
                     {
                         Endpoint = "*",
                         Period = "1s",
@@ -697,7 +696,7 @@ namespace Miningcore
                 : IPAddress.Parse("127.0.0.1");
 
             var port = clusterConfig.Api?.Port ?? 4000;
-            var enableApiRateLimiting = !(clusterConfig.Api?.RateLimiting?.Disabled == true);
+            var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
 
             webHost = WebHost.CreateDefaultBuilder()
                 .ConfigureLogging(logging =>
@@ -727,13 +726,16 @@ namespace Miningcore
                     services.AddSingleton((IComponentContext) container);
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-                    services.AddMvc()
-                        .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
-                        .AddControllersAsServices()
-                        .AddJsonOptions(options =>
-                        {
-                            options.SerializerSettings.Formatting = Formatting.Indented;
-                        });
+                    services.AddMvc(options =>
+                    {
+                        options.EnableEndpointRouting = false;
+                    })
+                    .SetCompatibilityVersion(CompatibilityVersion.Latest)
+                    .AddControllersAsServices()
+                    .AddJsonOptions(options =>
+                    {
+                        options.JsonSerializerOptions.WriteIndented = true;
+                    });
 
                     // Gzip Compression
                     services.AddResponseCompression();
@@ -755,7 +757,7 @@ namespace Miningcore
                     UseIpWhiteList(app, true, new[] { "/metrics" }, clusterConfig.Api?.MetricsIpWhitelist);
 
                     app.UseResponseCompression();
-                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
                     app.UseWebSockets();
                     app.MapWebSocketManager("/notifications", app.ApplicationServices.GetService<WebSocketNotificationsRelay>());
                     app.UseMetricServer();

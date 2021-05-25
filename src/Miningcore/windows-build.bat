@@ -1,1 +1,1 @@
-dotnet publish -c Release --framework netcoreapp2.1  -o ../../build
+dotnet publish -c Release --framework net5.0  -o ../../build

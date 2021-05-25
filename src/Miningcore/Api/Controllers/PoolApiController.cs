@@ -2,7 +2,6 @@ using Autofac;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Internal;
 using Miningcore.Api.Extensions;
 using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
@@ -22,6 +21,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 
 namespace Miningcore.Api.Controllers
 {
@@ -97,7 +97,7 @@ namespace Miningcore.Api.Controllers
                 {
                     // Get and pad http method
                     var method = x?.ActionConstraints?.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.First();
-                    method = String.Format("{0,-5}", method);
+                    method = $"{method,-5}";
 
                     return $"{method} -> {x.AttributeRouteInfo.Template}";
                 });

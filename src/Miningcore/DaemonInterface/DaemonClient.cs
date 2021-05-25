@@ -360,7 +360,7 @@ namespace Miningcore.DaemonInterface
                 using(var response = await httpClients[endPoint].SendAsync(request, ct))
                 {
                     // read response
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var responseContent = await response.Content.ReadAsStringAsync(ct);
 
                     // deserialize response
                     using(var jreader = new JsonTextReader(new StringReader(responseContent)))
