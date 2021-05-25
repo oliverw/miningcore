@@ -73,30 +73,13 @@ using WebSocketManager;
 using ILogger = NLog.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
+// ReSharper disable AssignNullToNotNullAttribute
+// ReSharper disable PossibleNullReferenceException
+
 namespace Miningcore
 {
     public class Program : BackgroundService
     {
-        private readonly IComponentContext container;
-        private static ILogger logger;
-        private static CommandOption dumpConfigOption;
-        private static CommandOption shareRecoveryOption;
-        private static bool isShareRecoveryMode;
-        private ShareRecorder shareRecorder;
-        private ShareRelay shareRelay;
-        private ShareReceiver shareReceiver;
-        private PayoutManager payoutManager;
-        private StatsRecorder statsRecorder;
-        private static ClusterConfig clusterConfig;
-        private NotificationService notificationService;
-        private MetricsPublisher metricsPublisher;
-        private BtStreamReceiver btStreamReceiver;
-        private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
-
-        private static readonly AdminGcStats gcStats = new();
-        private static readonly Regex regexJsonTypeConversionError =
-            new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
-
         public static async Task Main(string[] args)
         {
             try
@@ -257,6 +240,31 @@ namespace Miningcore
             }
         }
 
+        private readonly IComponentContext container;
+        private static ILogger logger;
+        private static CommandOption dumpConfigOption;
+        private static CommandOption shareRecoveryOption;
+        private static bool isShareRecoveryMode;
+        private ShareRecorder shareRecorder;
+        private ShareRelay shareRelay;
+        private ShareReceiver shareReceiver;
+        private PayoutManager payoutManager;
+        private StatsRecorder statsRecorder;
+        private static ClusterConfig clusterConfig;
+        private NotificationService notificationService;
+        private MetricsPublisher metricsPublisher;
+        private BtStreamReceiver btStreamReceiver;
+        private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
+
+        private static readonly AdminGcStats gcStats = new();
+        private static readonly Regex regexJsonTypeConversionError =
+            new("\"([^\"]+)\"[^\']+\'([^\']+)\'.+\\s(\\d+),.+\\s(\\d+)", RegexOptions.Compiled);
+
+        public Program(IComponentContext container)
+        {
+            this.container = container;
+        }
+
         private static void ConfigureAutofac(ContainerBuilder builder)
         {
             builder.RegisterAssemblyModules(typeof(AutofacModule).GetTypeInfo().Assembly);
@@ -269,11 +277,6 @@ namespace Miningcore
             builder.Register((ctx, parms) => amConf.CreateMapper());
 
             ConfigurePersistence(builder);
-        }
-
-        public Program(IComponentContext container)
-        {
-            this.container = container;
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)
