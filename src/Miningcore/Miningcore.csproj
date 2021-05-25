@@ -37,6 +37,8 @@
     <ItemGroup>
         <PackageReference Include="AspNetCoreRateLimit" Version="3.2.2" />
         <PackageReference Include="Autofac" Version="6.2.0" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
+        <PackageReference Include="NLog.Extensions.Hosting" Version="1.7.2" />
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="Dapper" Version="2.0.90" />
         <PackageReference Include="FluentValidation" Version="10.1.0" />

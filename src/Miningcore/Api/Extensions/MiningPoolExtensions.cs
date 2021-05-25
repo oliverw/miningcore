@@ -25,7 +25,7 @@ namespace Miningcore.Api.Extensions
                 poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
 
             // pool fees
-            poolInfo.PoolFeePercent = (float) poolConfig.RewardRecipients.Sum(x => x.Percentage);
+            poolInfo.PoolFeePercent = poolConfig.RewardRecipients != null ? (float) poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0;
 
             // strip security critical stuff
             if(poolInfo.PaymentProcessing.Extra != null)

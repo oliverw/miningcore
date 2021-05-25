@@ -57,8 +57,8 @@ namespace Miningcore.Mining
         private readonly IMessageBus messageBus;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
-        private readonly ConcurrentDictionary<string, IMiningPool> pools = new ConcurrentDictionary<string, IMiningPool>();
+        private readonly CancellationTokenSource cts = new();
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
         private readonly TimeSpan interval = TimeSpan.FromMinutes(5);
         private const int HashrateCalculationWindow = 1200; // seconds
         private const int MinHashrateCalculationWindow = 300; // seconds
