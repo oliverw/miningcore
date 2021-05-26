@@ -77,10 +77,9 @@ namespace Miningcore.Api.Controllers
 
                     var from = clock.Now.AddDays(-1);
 
-                    result.TopMiners = (await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(
-                            con, config.Id, from, 0, 15)))
-                        .Select(mapper.Map<MinerPerformanceStats>)
-                        .ToArray();
+                    var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15));
+
+                    result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
 
                     return result;
                 }).ToArray())

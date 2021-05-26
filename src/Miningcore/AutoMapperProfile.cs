@@ -77,6 +77,7 @@ namespace Miningcore
 
             CreateMap<WorkerPerformanceStats, Api.Responses.WorkerPerformanceStats>();
             CreateMap<WorkerPerformanceStatsContainer, Api.Responses.WorkerPerformanceStatsContainer>();
+            CreateMap<MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
             // PostgreSQL
             CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();
