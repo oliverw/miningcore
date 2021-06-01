@@ -108,7 +108,7 @@ namespace Miningcore.Configuration
         /// Coin Family associciations
         /// </summary>
         [JsonIgnore]
-        public static readonly Dictionary<CoinFamily, Type> Families = new Dictionary<CoinFamily, Type>
+        public static readonly Dictionary<CoinFamily, Type> Families = new()
         {
             {CoinFamily.Bitcoin, typeof(BitcoinTemplate)},
             {CoinFamily.Equihash, typeof(EquihashCoinTemplate)},
@@ -173,6 +173,9 @@ namespace Miningcore.Configuration
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool IsPseudoPoS { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public JToken BlockTemplateRpcExtraParams { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }

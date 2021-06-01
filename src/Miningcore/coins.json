@@ -600,6 +600,7 @@
             ]
         },
         "isPseudoPoS": true,
+        "blockTemplateRpcExtraParams": [ "lyra" ],
         "shareMultiplier": 256,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -627,6 +628,7 @@
             ]
         },
         "isPseudoPoS": true,
+        "blockTemplateRpcExtraParams": ["scrypt"],
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -653,6 +655,7 @@
             ]
         },
         "isPseudoPoS": true,
+        "blockTemplateRpcExtraParams": [ "x17" ],
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -678,6 +681,7 @@
             ]
         },
         "isPseudoPoS": true,
+        "blockTemplateRpcExtraParams": [ "blake" ],
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -703,6 +707,7 @@
             ]
         },
         "isPseudoPoS": true,
+        "blockTemplateRpcExtraParams": [ "groestl" ],
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"

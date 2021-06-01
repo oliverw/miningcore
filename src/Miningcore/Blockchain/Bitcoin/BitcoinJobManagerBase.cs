@@ -79,13 +79,16 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Network network;
         protected IDestination poolAddressDestination;
 
-        protected object[] getBlockTemplateParams =
+        protected virtual object[] GetBlockTemplateParams()
         {
-            new
+            return new object[]
             {
-                rules = new[] { "segwit" }
-            }
-        };
+                new
+                {
+                    rules = new[] {"segwit"},
+                }
+            };
+        }
 
         protected virtual void SetupJobUpdates()
         {
@@ -434,7 +437,7 @@ namespace Miningcore.Blockchain.Bitcoin
             while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(logger,
-                    BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                    BitcoinCommands.GetBlockTemplate, GetBlockTemplateParams());
 
                 var isSynched = responses.All(x => x.Error == null);
 
