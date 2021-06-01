@@ -172,7 +172,7 @@ namespace Miningcore.Configuration
         public bool CoinbaseIgnoreAuxFlags { get; set; }
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public bool CoinbaseRequireTime { get; set; }
+        public bool IsPseudoPoS { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }

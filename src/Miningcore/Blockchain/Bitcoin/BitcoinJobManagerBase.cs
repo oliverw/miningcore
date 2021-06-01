@@ -71,7 +71,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected bool hasLegacyDaemon;
         protected BitcoinPoolConfigExtra extraPoolConfig;
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
-        protected readonly List<TJob> validJobs = new List<TJob>();
+        protected readonly List<TJob> validJobs = new();
         protected DateTime? lastJobRebroadcast;
         protected bool hasSubmitBlockMethod;
         protected bool isPoS;
@@ -498,7 +498,9 @@ namespace Miningcore.Blockchain.Bitcoin
             if(validateAddressResponse == null || !validateAddressResponse.IsValid)
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            var coinTemplate = poolConfig.Template as BitcoinTemplate;
+
+            isPoS = coinTemplate.IsPseudoPoS || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
             if(!isPoS)

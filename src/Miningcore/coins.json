@@ -599,7 +599,7 @@
                 }
             ]
         },
-        "coinbaseRequireTime": true,
+        "isPseudoPoS": true,
         "shareMultiplier": 256,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -626,7 +626,7 @@
                 }
             ]
         },
-        "coinbaseRequireTime": true,
+        "isPseudoPoS": true,
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -652,7 +652,7 @@
                 }
             ]
         },
-        "coinbaseRequireTime": true,
+        "isPseudoPoS": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -677,7 +677,7 @@
                 }
             ]
         },
-        "coinbaseRequireTime": true,
+        "isPseudoPoS": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -702,7 +702,7 @@
                 }
             ]
         },
-        "coinbaseRequireTime": true,
+        "isPseudoPoS": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"

@@ -124,7 +124,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref txVersion);
 
                 // timestamp for POS coins
-                if(isPoS || coin.CoinbaseRequireTime)
+                if(isPoS)
                 {
                     var timestamp = BlockTemplate.CurTime;
                     bs.ReadWrite(ref timestamp);
