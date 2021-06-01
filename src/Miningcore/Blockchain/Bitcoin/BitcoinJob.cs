@@ -124,7 +124,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 bs.ReadWrite(ref txVersion);
 
                 // timestamp for POS coins
-                if(isPoS)
+                if(isPoS || coin.CoinbaseRequireTime)
                 {
                     var timestamp = BlockTemplate.CurTime;
                     bs.ReadWrite(ref timestamp);
@@ -245,7 +245,7 @@ namespace Miningcore.Blockchain.Bitcoin
             ops.Add(Op.GetPushOp(BlockTemplate.Height));
 
             // optionally push aux-flags
-            if(!coin.IgnoreCoinbaseAuxFlags && !string.IsNullOrEmpty(BlockTemplate.CoinbaseAux?.Flags))
+            if(!coin.CoinbaseIgnoreAuxFlags && !string.IsNullOrEmpty(BlockTemplate.CoinbaseAux?.Flags))
                 ops.Add(Op.GetPushOp(BlockTemplate.CoinbaseAux.Flags.HexToByteArray()));
 
             // push timestamp

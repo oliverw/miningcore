@@ -13,10 +13,10 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
+        "coinbaseIgnoreAuxFlags": true, // since Release 0.20
         "explorerBlockLink": "https://blockchain.info/block/$height$",
         "explorerTxLink": "https://blockchain.info/tx/{0}",
-        "explorerAccountLink": "https://blockchain.info/address/{0}",
-        "ignoreCoinbaseAuxFlags": true // since Release 0.20
+        "explorerAccountLink": "https://blockchain.info/address/{0}"
     },
     "bitcoin-cash": {
         "name": "Bitcoin Cash",
@@ -599,6 +599,7 @@
                 }
             ]
         },
+        "coinbaseRequireTime": true,
         "shareMultiplier": 256,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -625,6 +626,7 @@
                 }
             ]
         },
+        "coinbaseRequireTime": true,
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
@@ -650,6 +652,7 @@
                 }
             ]
         },
+        "coinbaseRequireTime": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -674,6 +677,7 @@
                 }
             ]
         },
+        "coinbaseRequireTime": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"
@@ -698,6 +702,7 @@
                 }
             ]
         },
+        "coinbaseRequireTime": true,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
         "explorerAccountLink": "https://verge-blockchain.info/address/{0}"

@@ -169,7 +169,10 @@ namespace Miningcore.Configuration
         public double ShareMultiplier { get; set; } = 1.0d;
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public bool IgnoreCoinbaseAuxFlags { get; set; }
+        public bool CoinbaseIgnoreAuxFlags { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool CoinbaseRequireTime { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
