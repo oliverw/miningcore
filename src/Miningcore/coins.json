@@ -15,7 +15,8 @@
         },
         "explorerBlockLink": "https://blockchain.info/block/$height$",
         "explorerTxLink": "https://blockchain.info/tx/{0}",
-        "explorerAccountLink": "https://blockchain.info/address/{0}"
+        "explorerAccountLink": "https://blockchain.info/address/{0}",
+        "ignoreCoinbaseAuxFlags": true // since Release 0.20
     },
     "bitcoin-cash": {
         "name": "Bitcoin Cash",
@@ -118,7 +119,7 @@
         "explorerTxLink": "https://chainz.cryptoid.info/lcc/tx.dws?{0}.htm",
         "explorerAccountLink": "https://chainz.cryptoid.info/lcc/address.dws?{0}.htm"
     },
-    "dogecoin,": {
+    "dogecoin": {
         "name": "Dogecoin,",
         "symbol": "DOGE",
         "family": "bitcoin",

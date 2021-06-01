@@ -58,7 +58,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected PoolConfig poolConfig;
         protected BitcoinTemplate coin;
         private BitcoinTemplate.BitcoinNetworkParams networkParams;
-        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseFinal;
         protected string coinbaseFinalHex;
@@ -245,7 +245,7 @@ namespace Miningcore.Blockchain.Bitcoin
             ops.Add(Op.GetPushOp(BlockTemplate.Height));
 
             // optionally push aux-flags
-            if(!string.IsNullOrEmpty(BlockTemplate.CoinbaseAux?.Flags))
+            if(!coin.IgnoreCoinbaseAuxFlags && !string.IsNullOrEmpty(BlockTemplate.CoinbaseAux?.Flags))
                 ops.Add(Op.GetPushOp(BlockTemplate.CoinbaseAux.Flags.HexToByteArray()));
 
             // push timestamp
