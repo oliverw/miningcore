@@ -604,7 +604,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public Network Network => network;
         public IObservable<object> Jobs { get; private set; }
-        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public BlockchainStats BlockchainStats { get; } = new();
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {

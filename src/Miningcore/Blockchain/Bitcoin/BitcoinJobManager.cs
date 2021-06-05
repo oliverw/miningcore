@@ -160,6 +160,14 @@ namespace Miningcore.Blockchain.Bitcoin
                         BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
+                    else
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Template update {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Template update {blockTemplate.Height}");
+                    }
+
                     currentJob = job;
                 }
 

@@ -123,6 +123,14 @@ namespace Miningcore.Blockchain.Cryptonote
                     BlockchainStats.NextNetworkBits = "";
                 }
 
+                else
+                {
+                    if(via != null)
+                        logger.Info(() => $"Template update {blockTemplate.Height} [{via}]");
+                    else
+                        logger.Info(() => $"Template update {blockTemplate.Height}");
+                }
+
                 return isNew;
             }
 
