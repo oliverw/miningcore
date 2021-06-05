@@ -126,9 +126,9 @@ namespace Miningcore.Blockchain.Cryptonote
                 else
                 {
                     if(via != null)
-                        logger.Info(() => $"Template update {blockTemplate.Height} [{via}]");
+                        logger.Debug(() => $"Template update {blockTemplate.Height} [{via}]");
                     else
-                        logger.Info(() => $"Template update {blockTemplate.Height}");
+                        logger.Debug(() => $"Template update {blockTemplate.Height}");
                 }
 
                 return isNew;
