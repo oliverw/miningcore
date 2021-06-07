@@ -120,7 +120,7 @@
         "explorerAccountLink": "https://chainz.cryptoid.info/lcc/address.dws?{0}.htm"
     },
     "dogecoin": {
-        "name": "Dogecoin,",
+        "name": "Dogecoin",
         "symbol": "DOGE",
         "family": "bitcoin",
         "coinbaseHasher": {
