@@ -257,26 +257,6 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
-        public void Odocrypt_Hash()
-        {
-            var hasher = new OdoCrypt();
-            var hash = new byte[32];
-
-            var bnp = new BitcoinNetworkParams
-            {
-                Extra = new Dictionary<string, object>
-                {
-                    [nameof(OdoCryptConfig.OdoCryptShapeChangeInterval)] = 864000
-                }
-            };
-
-            hasher.Digest(testValue2, hash, (ulong) 0x59ef86f2, null, null, bnp);
-            var result = hash.ToHexString();
-
-            Assert.Equal("93164a82a79fba784dcf04c0b0f8537cc43821e7518bf513f296de50aefee4cf", result);
-        }
-
-        [Fact]
         public void Skein_Hash()
         {
             var hasher = new Skein();

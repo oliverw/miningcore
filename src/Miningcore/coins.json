@@ -552,37 +552,6 @@
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
     },
-    "digibyte-odo": {
-        "name": "Digibyte-Odo",
-        "canonicalName": "Digibyte",
-        "symbol": "DGB",
-        "family": "bitcoin",
-        "coinbaseHasher": {
-            "hash": "sha256s"
-        },
-        "headerHasher": {
-            "hash": "odocrypt"
-        },
-        "blockHasher": {
-            "hash": "reverse",
-            "args": [ { "hash": "sha256d" } ]
-        },
-        "networks": {
-            "main": {
-                "odoCryptShapeChangeInterval": 864000
-            },
-            "test": {
-                "odoCryptShapeChangeInterval": 86400
-            },
-            "regtest": {
-                "odoCryptShapeChangeInterval": 60
-            }
-        },
-        "shareMultiplier": 256,
-        "explorerBlockLink": "https://digiexplorer.info/block/$height$",
-        "explorerTxLink": "https://digiexplorer.info/tx/{0}",
-        "explorerAccountLink": "https://digiexplorer.info/address/{0}"
-    },
     "verge-lyra": {
         "name": "Verge-Lyra",
         "canonicalName": "Verge",
