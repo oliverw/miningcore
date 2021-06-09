@@ -75,21 +75,21 @@ namespace Miningcore.Mining
             this.messageBus = messageBus;
         }
 
-        protected PoolStats poolStats = new PoolStats();
+        protected PoolStats poolStats = new();
         protected readonly JsonSerializerSettings serializerSettings;
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
         protected readonly IMessageBus messageBus;
-        protected readonly CompositeDisposable disposables = new CompositeDisposable();
+        protected readonly CompositeDisposable disposables = new();
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
-        protected static readonly Regex regexStaticDiff = new Regex(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
+        protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
-            new Dictionary<PoolEndpoint, VarDiffManager>();
+            new();
 
         protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();

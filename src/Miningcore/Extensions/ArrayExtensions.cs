@@ -51,7 +51,7 @@ namespace Miningcore.Extensions
 
         public static BigInteger ToBigInteger(this Span<byte> value)
         {
-            return new BigInteger(value, true);
+            return new(value, true);
         }
 
         public static string ToHexString(this IEnumerable<byte> byteArray)

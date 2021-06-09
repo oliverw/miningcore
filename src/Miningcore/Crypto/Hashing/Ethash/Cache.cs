@@ -18,7 +18,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
         private IntPtr handle = IntPtr.Zero;
         private bool isGenerated = false;
-        private readonly object genLock = new object();
+        private readonly object genLock = new();
 
         public ulong Epoch { get; }
         public DateTime LastUsed { get; set; }

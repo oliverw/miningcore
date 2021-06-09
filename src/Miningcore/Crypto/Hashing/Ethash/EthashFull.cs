@@ -20,8 +20,8 @@ namespace Miningcore.Crypto.Hashing.Ethash
         }
 
         private int numCaches; // Maximum number of caches to keep before eviction (only init, don't modify)
-        private readonly object cacheLock = new object();
-        private readonly Dictionary<ulong, Dag> caches = new Dictionary<ulong, Dag>();
+        private readonly object cacheLock = new();
+        private readonly Dictionary<ulong, Dag> caches = new();
         private Dag future;
         private readonly string dagDir;
 

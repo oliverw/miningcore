@@ -28,7 +28,7 @@ namespace Miningcore.Native
 
         // this holds a finite number of contexts for the cryptonight hashing functions
         // if no context is currently available because all are in use, the thread waits
-        private readonly BlockingCollection<Lazy<IntPtr>> contexts = new BlockingCollection<Lazy<IntPtr>>(Environment.ProcessorCount);
+        private readonly BlockingCollection<Lazy<IntPtr>> contexts = new(Environment.ProcessorCount);
 
         internal Lazy<IntPtr> Lease()
         {

@@ -51,7 +51,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly ConcurrentDictionary<string, bool> submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
@@ -392,7 +392,7 @@ namespace Miningcore.Blockchain.Equihash
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            var txHashes = new List<uint256> { new(coinbaseInitialHash) };
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToReverseByteArray())));
 
             // build merkle root

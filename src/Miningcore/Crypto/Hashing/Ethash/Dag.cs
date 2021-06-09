@@ -21,7 +21,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
         public ulong Epoch { get; set; }
 
         private IntPtr handle = IntPtr.Zero;
-        private static readonly Semaphore sem = new Semaphore(1, 1);
+        private static readonly Semaphore sem = new(1, 1);
 
         public DateTime LastUsed { get; set; }
 

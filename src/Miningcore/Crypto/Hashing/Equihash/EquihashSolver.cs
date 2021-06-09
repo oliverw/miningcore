@@ -42,7 +42,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
             }
         }
 
-        protected static readonly Lazy<Semaphore> sem = new Lazy<Semaphore>(() =>
+        protected static readonly Lazy<Semaphore> sem = new(() =>
             new Semaphore(maxThreads, maxThreads));
 
         protected string personalization;

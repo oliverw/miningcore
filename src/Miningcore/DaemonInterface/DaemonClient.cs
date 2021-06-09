@@ -76,7 +76,7 @@ namespace Miningcore.DaemonInterface
         private Dictionary<DaemonEndpointConfig, HttpClient> httpClients;
         private readonly JsonSerializer serializer;
 
-        private static readonly HttpClient defaultHttpClient = new HttpClient(new SocketsHttpHandler
+        private static readonly HttpClient defaultHttpClient = new(new SocketsHttpHandler
         {
             AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
 

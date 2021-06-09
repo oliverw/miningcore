@@ -24,7 +24,7 @@ namespace Miningcore.Messaging
     public class MessageBus : IMessageBus
     {
         private readonly Dictionary<Tuple<Type, string>, NotAWeakReference> messageBus =
-            new Dictionary<Tuple<Type, string>, NotAWeakReference>();
+            new();
 
         private readonly IDictionary<Tuple<Type, string>, IScheduler> schedulerMappings =
             new Dictionary<Tuple<Type, string>, IScheduler>();

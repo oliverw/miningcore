@@ -102,7 +102,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public static EquihashBlockHeader Parse(string hex)
         {
-            return new EquihashBlockHeader(Encoders.Hex.DecodeData(hex));
+            return new(Encoders.Hex.DecodeData(hex));
         }
 
         internal void SetNull()

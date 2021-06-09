@@ -37,7 +37,7 @@ namespace Miningcore.Blockchain.Cryptonote
         /// </summary>
         public string Worker { get; set; }
 
-        private List<CryptonoteWorkerJob> validJobs { get; } = new List<CryptonoteWorkerJob>();
+        private List<CryptonoteWorkerJob> validJobs { get; } = new();
 
         public void AddJob(CryptonoteWorkerJob job)
         {

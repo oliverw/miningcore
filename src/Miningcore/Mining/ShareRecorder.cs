@@ -172,7 +172,7 @@ namespace Miningcore.Mining
             }
         }
 
-        private static void WriteRecoveryFileheader(StreamWriter writer)
+        private static void WriteRecoveryFileheader(TextWriter writer)
         {
             writer.WriteLine("# The existence of this file means shares could not be committed to the database.");
             writer.WriteLine("# You should stop the pool cluster and run the following command:");

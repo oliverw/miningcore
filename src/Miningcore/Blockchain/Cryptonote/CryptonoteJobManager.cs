@@ -302,7 +302,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return true;
         }
 
-        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public BlockchainStats BlockchainStats { get; } = new();
 
         public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
         {

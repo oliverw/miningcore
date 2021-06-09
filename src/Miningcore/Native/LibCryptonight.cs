@@ -34,13 +34,13 @@ namespace Miningcore.Native
     {
         #region Hashing context managment
 
-        private static readonly CryptonightContextStore ctxs = new CryptonightContextStore(cryptonight_alloc_context, "cn");
-        private static readonly CryptonightContextStore ctxsLite = new CryptonightContextStore(cryptonight_alloc_lite_context, "cn-lite");
-        private static readonly CryptonightContextStore ctxsHeavy = new CryptonightContextStore(cryptonight_alloc_heavy_context, "cn-heavy");
-        private static readonly CryptonightContextStore ctxsPico = new CryptonightContextStore(cryptonight_alloc_pico_context, "cn-pico");
+        private static readonly CryptonightContextStore ctxs = new(cryptonight_alloc_context, "cn");
+        private static readonly CryptonightContextStore ctxsLite = new(cryptonight_alloc_lite_context, "cn-lite");
+        private static readonly CryptonightContextStore ctxsHeavy = new(cryptonight_alloc_heavy_context, "cn-heavy");
+        private static readonly CryptonightContextStore ctxsPico = new(cryptonight_alloc_pico_context, "cn-pico");
 
         private static IntPtr randomxVm;
-        private static readonly Dictionary<string, IntPtr> randomxVmCacheCache = new Dictionary<string, IntPtr>();
+        private static readonly Dictionary<string, IntPtr> randomxVmCacheCache = new();
 
         #endregion // Hashing context managment
 

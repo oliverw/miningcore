@@ -81,10 +81,10 @@ namespace Miningcore.Blockchain.Ethereum
         private bool isParity = true;
         private EthashFull ethash;
         private readonly IMasterClock clock;
-        private readonly EthereumExtraNonceProvider extraNonceProvider = new EthereumExtraNonceProvider();
+        private readonly EthereumExtraNonceProvider extraNonceProvider = new();
 
         private const int MaxBlockBacklog = 3;
-        protected readonly Dictionary<string, EthereumJob> validJobs = new Dictionary<string, EthereumJob>();
+        protected readonly Dictionary<string, EthereumJob> validJobs = new();
         private EthereumPoolConfigExtra extraPoolConfig;
         private readonly JsonSerializer serializer;
 
@@ -481,7 +481,7 @@ namespace Miningcore.Blockchain.Ethereum
             return share;
         }
 
-        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public BlockchainStats BlockchainStats { get; } = new();
 
         #endregion // API-Surface
 

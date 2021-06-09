@@ -84,7 +84,7 @@ namespace Miningcore.Stratum
         private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
         private readonly Subject<Unit> terminated = new();
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource cts = new();
         private bool expectingProxyHeader;
 
         private static readonly JsonSerializer serializer = new()

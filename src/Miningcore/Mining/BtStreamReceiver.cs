@@ -41,8 +41,8 @@ namespace Miningcore.Mining
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
-        private CompositeDisposable disposables = new CompositeDisposable();
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private CompositeDisposable disposables = new();
+        private readonly CancellationTokenSource cts = new();
 
         private void StartMessageReceiver(ZmqPubSubEndpointConfig[] endpoints)
         {

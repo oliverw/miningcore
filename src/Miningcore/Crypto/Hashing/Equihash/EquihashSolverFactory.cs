@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Autofac;
@@ -10,7 +10,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
     public static class EquihashSolverFactory
     {
         private const string HashName = "equihash";
-        private static readonly ConcurrentDictionary<string, EquihashSolver> cache = new ConcurrentDictionary<string, EquihashSolver>();
+        private static readonly ConcurrentDictionary<string, EquihashSolver> cache = new();
 
         public static EquihashSolver GetSolver(IComponentContext ctx, JObject definition)
         {

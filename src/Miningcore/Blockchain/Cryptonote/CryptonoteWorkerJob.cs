@@ -38,6 +38,6 @@ namespace Miningcore.Blockchain.Cryptonote
         public double Difficulty { get; set; }
         public string SeedHash { get; set; }
 
-        public readonly ConcurrentDictionary<string, bool> Submissions = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        public readonly ConcurrentDictionary<string, bool> Submissions = new(StringComparer.OrdinalIgnoreCase);
     }
 }

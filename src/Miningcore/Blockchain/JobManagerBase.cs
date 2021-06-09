@@ -52,11 +52,11 @@ namespace Miningcore.Blockchain
 
         protected TJob currentJob;
         private int jobId;
-        protected object jobLock = new object();
+        protected object jobLock = new();
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new();
 
         protected abstract void ConfigureDaemons();
 

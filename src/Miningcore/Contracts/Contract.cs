@@ -49,7 +49,7 @@ namespace Miningcore.Contracts
 
         #region Exception Constructors
 
-        private static readonly ConcurrentDictionary<Type, ConstructorDelegate> constructors = new ConcurrentDictionary<Type, ConstructorDelegate>();
+        private static readonly ConcurrentDictionary<Type, ConstructorDelegate> constructors = new();
 
         private delegate Exception ConstructorDelegate(object[] parameters);
 
