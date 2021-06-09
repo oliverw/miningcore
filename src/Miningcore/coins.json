@@ -465,6 +465,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
+        "blockTemplateRpcExtraParams": [ "sha256" ],
         "explorerBlockLink": "https://digiexplorer.info/block/$height$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -486,6 +487,7 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "shareMultiplier": 65536,
+        "blockTemplateRpcExtraParams": [ "scrypt" ],
         "explorerBlockLink": "https://digiexplorer.info/block/$height$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -505,6 +507,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
+        "blockTemplateRpcExtraParams": [ "skein" ],
         "explorerBlockLink": "https://digiexplorer.info/block/$height$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
@@ -524,6 +527,7 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
+        "blockTemplateRpcExtraParams": [ "qubit" ],
         "explorerBlockLink": "https://digiexplorer.info/block/$height$",
         "explorerTxLink": "https://digiexplorer.info/tx/{0}",
         "explorerAccountLink": "https://digiexplorer.info/address/{0}"
