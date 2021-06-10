@@ -96,7 +96,7 @@ namespace Miningcore.Crypto
                     steps.Add(L[1]);
 
                     if(Ll % 2 == 1)
-                        L.Add(L[L.Count - 1]);
+                        L.Add(L[^1]);
 
                     var Ld = new List<byte[]>();
 

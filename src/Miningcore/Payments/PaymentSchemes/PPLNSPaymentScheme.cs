@@ -157,7 +157,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 if(page.Length < pageSize)
                     break;
 
-                before = page[page.Length - 1].Created;
+                before = page[^1].Created;
             }
 
             if(shares.Keys.Count > 0)
@@ -242,7 +242,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 if(page.Length < pageSize)
                     break;
 
-                before = page[page.Length - 1].Created;
+                before = page[^1].Created;
             }
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");

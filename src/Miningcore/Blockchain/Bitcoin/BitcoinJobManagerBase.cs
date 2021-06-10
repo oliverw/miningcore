@@ -498,7 +498,7 @@ namespace Miningcore.Blockchain.Bitcoin
             PostChainIdentifyConfigure();
 
             // ensure pool owns wallet
-            if(validateAddressResponse == null || !validateAddressResponse.IsValid)
+            if(validateAddressResponse is not {IsValid: true})
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
             var coinTemplate = poolConfig.Template as BitcoinTemplate;
@@ -507,7 +507,13 @@ namespace Miningcore.Blockchain.Bitcoin
 
             // Create pool address script from response
             if(!isPoS)
+            {
+                if(extraPoolConfig?.AddressType != BitcoinAddressType.Legacy)
+                    logger.Info(()=> $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
+
                 poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
+            }
+
             else
                 poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
@@ -569,6 +575,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 case BitcoinAddressType.BechSegwit:
                     return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
 
+                case BitcoinAddressType.BCash:
+                    return BitcoinUtils.BCashAddressToDestination(poolConfig.Address, network);
+
                 default:
                     return BitcoinUtils.AddressToDestination(poolConfig.Address, network);
             }
@@ -626,7 +635,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 BitcoinCommands.ValidateAddress, new[] { address });
 
-            return result.Response != null && result.Response.IsValid;
+            return result.Response is {IsValid: true};
         }
 
         public abstract object[] GetSubscriberData(StratumClient worker);

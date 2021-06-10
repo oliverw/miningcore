@@ -459,7 +459,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public object GetJobParams(bool isNew)
         {
-            jobParams[jobParams.Length - 1] = isNew;
+            jobParams[^1] = isNew;
             return jobParams;
         }
 
