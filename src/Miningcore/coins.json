@@ -14,9 +14,9 @@
             "args": [ { "hash": "sha256d" } ]
         },
         "coinbaseIgnoreAuxFlags": true, // since Release 0.20
-        "explorerBlockLink": "https://blockchain.info/block/$height$",
-        "explorerTxLink": "https://blockchain.info/tx/{0}",
-        "explorerAccountLink": "https://blockchain.info/address/{0}"
+        "explorerBlockLink": "https://www.blockchain.com/btc/block/$hash$",
+        "explorerTxLink": "https://www.blockchain.com/btc/tx/{0}",
+        "explorerAccountLink": "https://www.blockchain.com/btc/address/{0}"
     },
     "bitcoin-cash": {
         "name": "Bitcoin Cash",
@@ -32,9 +32,9 @@
             "hash": "reverse",
             "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://www.blocktrail.com/BCC/block/$height$",
-        "explorerTxLink": "https://www.blocktrail.com/BCC/tx/{0}",
-        "explorerAccountLink": "https://www.blocktrail.com/BCC/address/{0}"
+        "explorerBlockLink": "https://www.blockchain.com/bch/block/$hash$",
+        "explorerTxLink": "https://www.blockchain.com/bch/tx/{0}",
+        "explorerAccountLink": "https://www.blockchain.com/bch/address/{0}"
     },
     "namecoin": {
         "name": "Namecoin",
