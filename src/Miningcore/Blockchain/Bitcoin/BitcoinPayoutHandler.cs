@@ -238,7 +238,14 @@ namespace Miningcore.Blockchain.Bitcoin
                         amounts, // addresses and associated amounts
                         1, // only spend funds covered by this many confirmations
                         comment, // tx comment
-                        subtractFeesFrom // distribute transaction fee equally over all recipients
+                        subtractFeesFrom, // distribute transaction fee equally over all recipients,
+
+                        // workaround for https://bitcoin.stackexchange.com/questions/102508/bitcoin-cli-sendtoaddress-error-fallbackfee-is-disabled-wait-a-few-blocks-or-en
+                        // using bitcoin regtest
+                        //true,
+                        //null,
+                        //"unset",
+                        //"1"
                     };
                 }
 
