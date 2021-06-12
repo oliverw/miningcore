@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
@@ -41,11 +41,11 @@ namespace Miningcore.Api
             Relay<HashrateNotification>(WsNotificationType.HashrateUpdated);
         }
 
-        private IMessageBus messageBus;
+        private readonly IMessageBus messageBus;
         private readonly ClusterConfig clusterConfig;
         private readonly Dictionary<string, PoolConfig> pools;
-        private JsonSerializer serializer;
-        private static ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly JsonSerializer serializer;
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         public override async Task OnConnected(WebSocket socket)
         {

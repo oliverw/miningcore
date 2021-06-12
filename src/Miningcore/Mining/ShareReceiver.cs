@@ -42,12 +42,12 @@ namespace Miningcore.Mining
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
-        private CompositeDisposable disposables = new();
+        private readonly CompositeDisposable disposables = new();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new();
         private readonly BufferBlock<(string Url, ZMessage Message)> queue = new();
         private readonly CancellationTokenSource cts = new();
 
-        JsonSerializer serializer = new()
+        readonly JsonSerializer serializer = new()
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };

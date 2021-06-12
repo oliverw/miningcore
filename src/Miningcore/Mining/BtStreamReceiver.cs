@@ -24,7 +24,7 @@ using ZeroMQ;
 namespace Miningcore.Mining
 {
     /// <summary>
-    /// Receives external shares from relays and re-publishes for consumption
+    /// Receives ready made block templates from GBTRelay
     /// </summary>
     public class BtStreamReceiver
     {
@@ -41,7 +41,7 @@ namespace Miningcore.Mining
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
-        private CompositeDisposable disposables = new();
+        private readonly CompositeDisposable disposables = new();
         private readonly CancellationTokenSource cts = new();
 
         private void StartMessageReceiver(ZmqPubSubEndpointConfig[] endpoints)
