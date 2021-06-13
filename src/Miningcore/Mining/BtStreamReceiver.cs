@@ -3,14 +3,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Cryptonote.Configuration;
-using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
@@ -178,8 +175,7 @@ namespace Miningcore.Mining
 
             var endpoints = clusterConfig.Pools.Select(x =>
                     x.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>()?.BtStream ??
-                    x.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>()?.BtStream ??
-                    x.Extra.SafeExtensionDataAs<EthereumPoolConfigExtra>()?.BtStream)
+                    x.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>()?.BtStream)
                 .Where(x => x != null)
                 .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                 .ToArray();

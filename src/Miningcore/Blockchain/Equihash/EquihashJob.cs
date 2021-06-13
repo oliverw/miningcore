@@ -235,13 +235,13 @@ namespace Miningcore.Blockchain.Equihash
             var headerBytes = SerializeHeader(nTime, nonce);
 
             // verify solution
-            if(!solver.Verify(headerBytes, solutionBytes.Slice(networkParams.SolutionPreambleSize)))
+            if(!solver.Verify(headerBytes, solutionBytes[networkParams.SolutionPreambleSize..]))
                 throw new StratumException(StratumError.Other, "invalid solution");
 
             // concat header and solution
             Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length + solutionBytes.Length];
             headerBytes.CopyTo(headerSolutionBytes);
-            solutionBytes.CopyTo(headerSolutionBytes.Slice(headerBytes.Length));
+            solutionBytes.CopyTo(headerSolutionBytes[headerBytes.Length..]);
 
             // hash block-header
             Span<byte> headerHash = stackalloc byte[32];

@@ -86,14 +86,14 @@ namespace Miningcore.Blockchain.Cryptonote
             var index = context.Miner.IndexOf('#');
             if(index != -1)
             {
-                var paymentId = context.Miner.Substring(index + 1).Trim();
+                var paymentId = context.Miner[(index + 1)..].Trim();
 
                 // validate
                 if(!string.IsNullOrEmpty(paymentId) && paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
                     throw new StratumException(StratumError.MinusOne, "invalid payment id");
 
                 // re-append to address
-                addressToValidate = context.Miner.Substring(0, index).Trim();
+                addressToValidate = context.Miner[..index].Trim();
                 context.Miner = addressToValidate + PayoutConstants.PayoutInfoSeperator + paymentId;
             }
 

@@ -225,11 +225,11 @@ namespace Miningcore.Blockchain.Cryptonote
 
             if(index != -1)
             {
-                address = input.Substring(0, index);
+                address = input[..index];
 
                 if(index + 1 < input.Length)
                 {
-                    paymentId = input.Substring(index + 1);
+                    paymentId = input[(index + 1)..];
 
                     // ignore invalid payment ids
                     if(paymentId.Length != CryptonoteConstants.PaymentIdHexLength)

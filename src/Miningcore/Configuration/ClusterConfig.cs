@@ -267,18 +267,6 @@ namespace Miningcore.Configuration
 
     public enum CryptonightHashType
     {
-        [EnumMember(Value = "cryptonight")]
-        Normal = 1,
-
-        [EnumMember(Value = "cryptonight-lite")]
-        Lite,
-
-        [EnumMember(Value = "cryptonight-heavy")]
-        Heavy,
-
-        [EnumMember(Value = "cryptonight-pico")]
-        Pico,
-
         [EnumMember(Value = "randomx")]
         RandomX,
     }

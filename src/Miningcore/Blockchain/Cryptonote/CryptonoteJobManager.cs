@@ -218,7 +218,7 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 var error = response.Error?.Message ?? response.Response?.Status;
 
-                logger.Warn(() => $"Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
+                logger.Warn(() => $"Block {share.BlockHeight} [{blobHash[..6]}] submission failed with: {error}");
                 messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
                 return false;
             }
@@ -349,13 +349,13 @@ namespace Miningcore.Blockchain.Cryptonote
             // if block candidate, submit & check if accepted by network
             if(share.IsBlockCandidate)
             {
-                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}]");
+                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash[..6]}]");
 
                 share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, share.BlockHash);
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash[..6]}] submitted by {context.Miner}");
 
                     OnBlockFound();
 

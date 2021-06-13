@@ -1246,51 +1246,6 @@
         "explorerTxLink": "https://minexexplorer.com/transactions/view?hash={0}",
         "explorerAccountLink": "https://minexexplorer.com/address?hash={0}"
     },
-    "bitcoin-private": {
-        "name": "Bitcoin Private",
-        "symbol": "BTCP",
-        "family": "equihash",
-        "networks": {
-            "main": {
-                "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                "solutionSize": 1344,
-                "solutionPreambleSize": 3,
-                "solver": {
-                    "hash": "equihash",
-                    "args": [ 200, 9, "ZcashPoW" ]
-                },
-                "coinbaseTxNetwork": "main",
-                "payFoundersReward": false
-            },
-            "test": {
-                "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                "solutionSize": 1344,
-                "solutionPreambleSize": 3,
-                "solver": {
-                    "hash": "equihash",
-                    "args": [ 200, 9, "ZcashPoW" ]
-                },
-                "coinbaseTxNetwork": "testnet",
-                "payFoundersReward": false
-            },
-            "regtest": {
-                "diff1": "0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                "solutionSize": 1344,
-                "solutionPreambleSize": 3,
-                "solver": {
-                    "hash": "equihash",
-                    "args": [ 200, 9, "ZcashPoW" ]
-                },
-                "coinbaseTxNetwork": "regtest",
-                "payFoundersReward": false
-            }
-        },
-        "usesZCashAddressFormat": true,
-        "useBitcoinPayoutHandler": false,
-        "explorerBlockLink": "https://explorer.btcprivate.org/block-index/$hash$",
-        "explorerTxLink": "https://explorer.btcprivate.org/tx/{0}",
-        "explorerAccountLink": "https://explorer.btcprivate.org/address/{0}"
-    },
     "monero": {
         "name": "Monero",
         "symbol": "XMR",
@@ -1302,58 +1257,7 @@
         "addressPrefixTestnet": 53,
         "addressPrefixIntegrated": 19,
         "addressPrefixIntegratedTestnet": 54,
-        "explorerBlockLink": "https://chainradar.com/xmr/block/$height$",
-        "explorerTxLink": "https://chainradar.com/xmr/transaction/{0}"
-    },
-    "bittube": {
-        "name": "Bittube",
-        "symbol": "TUBE",
-        "family": "cryptonote",
-        "hash": "cryptonight-heavy",
-        "hashVariant": 2,
-        "smallestUnit": 100000000,
-        "addressPrefix": 209,
-        "addressPrefixTestnet": 209,
-        "addressPrefixIntegrated": 16463,
-        "addressPrefixIntegratedTestnet": 16463,
-        "blockrewardMultiplier": 0.7,
-        "explorerBlockLink": "https://explorer.bit.tube/block/$height$",
-        "explorerTxLink": "https://explorer.bit.tube/tx/{0}"
-    },
-    "aeon": {
-        "name": "Aeon",
-        "symbol": "AEON",
-        "family": "cryptonote",
-        "hash": "cryptonight-lite",
-        "hashVariant": 0,
-        "smallestUnit": 100000000,
-        "addressPrefix": 178,
-        "addressPrefixTestnet": 1062,
-        "addressPrefixIntegrated": 10035,
-        "addressPrefixIntegratedTestnet": 11303,
-        "explorerBlockLink": "https://aeonblocks.com/block/$height$",
-        "explorerTxLink": "https://aeonblocks.com/tx/{0}"
-    },
-    "ethereum": {
-        "name": "Ethereum",
-        "symbol": "ETH",
-        "family": "ethereum",
-        "explorerBlockLinks": {
-            "block": "https://etherscan.io/block/$height$",
-            "uncle": "https://etherscan.io/uncle/$height$"
-        },
-        "explorerTxLink": "https://etherscan.io/tx/{0}",
-        "explorerAccountLink": "https://etherscan.io/address/{0}"
-    },
-    "ethereum-classic": {
-        "name": "Ethereum Classic",
-        "symbol": "ETC",
-        "family": "ethereum",
-        "explorerBlockLinks": {
-            "block": "https://gastracker.io/block/$height$",
-            "uncle": "https://gastracker.io/uncle/$height$"
-        },
-        "explorerTxLink": "https://gastracker.io/tx/{0}",
-        "explorerAccountLink": "https://gastracker.io/addr/{0}"
+        "explorerBlockLink": "https://www.exploremonero.com/block/$height$",
+        "explorerTxLink": "https://www.exploremonero.com/transaction/{0}"
     }
 }

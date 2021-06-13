@@ -181,12 +181,6 @@ namespace Miningcore.Configuration
         {
             switch(Hash)
             {
-                case CryptonightHashType.Normal:
-                    return "Cryptonight";
-                case CryptonightHashType.Lite:
-                    return "Cryptonight-Lite";
-                case CryptonightHashType.Heavy:
-                    return "Cryptonight-Heavy";
                 case CryptonightHashType.RandomX:
                     return "RandomX";
             }
