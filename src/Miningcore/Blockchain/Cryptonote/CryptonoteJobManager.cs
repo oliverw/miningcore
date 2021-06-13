@@ -262,9 +262,6 @@ namespace Miningcore.Blockchain.Cryptonote
                         if(string.IsNullOrEmpty(x.HttpPath))
                             x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
 
-                        // cryptonote daemons only support digest auth
-                        x.DigestAuth = true;
-
                         return x;
                     })
                     .ToArray();
@@ -401,7 +398,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
 
-            if(!responses.All(x => x.Error == null))
+            if(responses.Any(x => x.Error != null))
                 return false;
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
@@ -484,7 +481,27 @@ namespace Miningcore.Blockchain.Cryptonote
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
             // chain detection
-            networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
+            if(!string.IsNullOrEmpty(info.NetType))
+            {
+                switch(info.NetType.ToLower())
+                {
+                    case "mainnet":
+                        networkType = CryptonoteNetworkType.Main;
+                        break;
+                    case "stagenet":
+                        networkType = CryptonoteNetworkType.Stage;
+                        break;
+                    case "testnet":
+                        networkType = CryptonoteNetworkType.Test;
+                        break;
+                    default:
+                        logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
+                        break;
+                }
+            }
+
+            else
+                networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
 
             // address validation
             poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
@@ -498,9 +515,14 @@ namespace Miningcore.Blockchain.Cryptonote
                         logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
                     break;
 
+                case CryptonoteNetworkType.Stage:
+                    if(poolAddressBase58Prefix != coin.AddressPrefixStagenet)
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
+                    break;
+
                 case CryptonoteNetworkType.Test:
                     if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
-                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
                     break;
             }
 

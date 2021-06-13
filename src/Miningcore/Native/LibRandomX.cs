@@ -21,12 +21,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Autofac.Extensions.DependencyInjection;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
+using MoreLinq;
 using NLog;
 
 // ReSharper disable InconsistentNaming
@@ -59,10 +57,16 @@ namespace Miningcore.Native
                                 list.Add(pair);
                         }
 
-                        foreach(var pair in list)
+                        foreach(var pair in list.OrderBy(x=> DateTime.Now - x.Value.LastAccess, OrderByDirection.Descending))
                         {
+                            // don't dispose remaining VM
+                            if(vms.Count <= 1)
+                                break;
+
                             pair.Value.Dispose();
                             vms.Remove(pair.Key);
+
+                            logger.Info(()=> $"Disposing VM for seed hash {pair.Key}");
                         }
                     }
                 }
@@ -160,10 +164,12 @@ namespace Miningcore.Native
             private IntPtr vm = IntPtr.Zero;
             private IntPtr cache = IntPtr.Zero;
             private RxDataSet ds;
+            private ulong flags;
             private DateTime lastAccess;
 
             public IntPtr Handle => vm;
             public DateTime LastAccess => lastAccess;
+            public ulong Flags => flags;
 
             public void Dispose()
             {
@@ -187,7 +193,8 @@ namespace Miningcore.Native
                 lastAccess = DateTime.Now;
 
                 var flags = randomx_get_flags();
-                flags |= randomx_flags.RANDOMX_FLAG_DEFAULT;
+                //flags = randomx_flags.RANDOMX_FLAG_DEFAULT;
+                this.flags = (ulong) flags;
 
                 cache = randomx_alloc_cache(flags);
 
@@ -228,8 +235,13 @@ namespace Miningcore.Native
 
                 if(!vms.TryGetValue(keyString, out var vm))
                 {
+                    var start = DateTime.Now;
+                    logger.Info(()=> $"Creating VM for seed hash {keyString}. This may take a while ...");
+
                     vm = new RxVm();
                     vm.Init(key);
+
+                    logger.Info(()=> $"VM created in {DateTime.Now - start} (Flags = 0x{vm.Flags:X})");
 
                     vms[keyString] = vm;
                 }

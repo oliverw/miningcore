@@ -168,7 +168,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            hashFunc(BlockTemplate.SeedHash.HexToByteArray(), blobConverted, headerHash, BlockTemplate.Height);
+            hashFunc(seedHashBytes, blobConverted, headerHash, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
             if(headerHashString != workerHash)

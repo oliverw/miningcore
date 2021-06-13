@@ -31,7 +31,8 @@ namespace Miningcore.Blockchain.Cryptonote
     public enum CryptonoteNetworkType
     {
         Main = 1,
-        Test
+        Test,
+        Stage
     }
 
     public class CryptonoteConstants

@@ -309,10 +309,22 @@ namespace Miningcore.Configuration
         public ulong AddressPrefixTestnet { get; set; }
 
         /// <summary>
+        /// Prefix of a valid stagenet-address
+        /// See: namespace config -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+        /// </summary>
+        public ulong AddressPrefixStagenet { get; set; }
+
+        /// <summary>
         /// Prefix of a valid integrated address
         /// See: namespace testnet -> CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX  in src/cryptonote_config.h
         /// </summary>
         public ulong AddressPrefixIntegrated { get; set; }
+
+        /// <summary>
+        /// Prefix of a valid integrated stagenet-address
+        /// See: namespace testnet -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+        /// </summary>
+        public ulong AddressPrefixIntegratedStagenet { get; set; }
 
         /// <summary>
         /// Prefix of a valid integrated testnet-address
@@ -385,11 +397,6 @@ namespace Miningcore.Configuration
         /// Use HTTP2 protocol for RPC requests (don't use this unless your daemon(s) live behind a HTTP reverse proxy)
         /// </summary>
         public bool Http2 { get; set; }
-
-        /// <summary>
-        /// Set if the endpoint requires HTTP Digest Authentication (Cryptonote coins)
-        /// </summary>
-        public bool DigestAuth { get; set; }
 
         /// <summary>
         /// Optional endpoint category

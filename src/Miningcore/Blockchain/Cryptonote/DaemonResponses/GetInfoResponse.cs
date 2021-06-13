@@ -42,6 +42,12 @@ namespace Miningcore.Blockchain.Cryptonote.DaemonResponses
         public bool IsTestnet { get; set; }
 
         /// <summary>
+        /// States if the node is on the testnet(true) or mainnet(false).
+        /// </summary>
+        [JsonProperty("nettype")]
+        public string NetType { get; set; }
+
+        /// <summary>
         /// Hash of the highest block in the chain.
         /// </summary>
         [JsonProperty("top_block_hash")]
