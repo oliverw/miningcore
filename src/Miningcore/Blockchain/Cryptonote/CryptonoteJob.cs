@@ -68,7 +68,7 @@ namespace Miningcore.Blockchain.Cryptonote
         private readonly byte[] seedHashBytes;
         private int extraNonce;
         private readonly CryptonoteCoinTemplate coin;
-        private HashFunc hashFunc;
+        private readonly HashFunc hashFunc;
 
         private void PrepareBlobTemplate(byte[] instanceId)
         {
