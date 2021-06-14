@@ -19,9 +19,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using MoreLinq;
@@ -35,8 +38,9 @@ namespace Miningcore.Native
     {
         #region Context managment
 
-        private static readonly Dictionary<string, RxVm> vms = new();
+        private static readonly ConcurrentDictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>> generations = new();
         private static readonly Thread gcThread;
+        private static readonly byte[] empty = new byte[32];
 
         static LibRandomX()
         {
@@ -47,26 +51,36 @@ namespace Miningcore.Native
                 {
                     Thread.Sleep(TimeSpan.FromMinutes(1));
 
-                    lock(vms)
+                    var list = new List<KeyValuePair<string, Tuple<GenContext, BlockingCollection<RxVm>>>>();
+
+                    foreach(var pair in generations)
                     {
-                        var list = new List<KeyValuePair<string, RxVm>>();
+                        if(DateTime.Now - pair.Value.Item1.LastAccess > TimeSpan.FromMinutes(5))
+                            list.Add(pair);
+                    }
 
-                        foreach(var pair in vms)
+                    foreach(var pair in list.OrderBy(x=> DateTime.Now - x.Value.Item1.LastAccess, OrderByDirection.Descending))
+                    {
+                        // don't dispose remaining VM
+                        if(generations.Count <= 1)
+                            break;
+
+                        if(generations.TryRemove(pair.Key, out var item))
                         {
-                            if(DateTime.Now - pair.Value.LastAccess > TimeSpan.FromMinutes(5))
-                                list.Add(pair);
-                        }
+                            // remove all associated VMs
+                            var remaining = item.Item1.VmCount;
+                            var col = item.Item2;
 
-                        foreach(var pair in list.OrderBy(x=> DateTime.Now - x.Value.LastAccess, OrderByDirection.Descending))
-                        {
-                            // don't dispose remaining VM
-                            if(vms.Count <= 1)
-                                break;
+                            while(remaining > 0)
+                            {
+                                var vm = col.Take();
 
-                            pair.Value.Dispose();
-                            vms.Remove(pair.Key);
+                                logger.Info($"Disposing VM {item.Item1.VmCount - remaining} for seed hash {pair.Key}");
+                                vm.Dispose();
+                                remaining--;
+                            }
 
-                            logger.Info(()=> $"Disposing VM for seed hash {pair.Key}");
+                            col.Dispose();
                         }
                     }
                 }
@@ -135,6 +149,12 @@ namespace Miningcore.Native
         [DllImport("librandomx", EntryPoint = "randomx_calculate_hash", CallingConvention = CallingConvention.Cdecl)]
         private static extern void randomx_calculate_hash(IntPtr machine, byte* input, int inputSize, byte* output);
 
+        private class GenContext
+        {
+            public DateTime LastAccess { get; set; } = DateTime.Now;
+            public int VmCount { get; init; }
+        }
+
         private class RxDataSet : IDisposable
         {
             private IntPtr dataset = IntPtr.Zero;
@@ -165,10 +185,8 @@ namespace Miningcore.Native
             private IntPtr vm = IntPtr.Zero;
             private RxDataSet ds;
             private randomx_flags flags;
-            private DateTime lastAccess;
 
             public IntPtr Handle => vm;
-            public DateTime LastAccess => lastAccess;
             public randomx_flags Flags => flags;
 
             public void Dispose()
@@ -190,8 +208,6 @@ namespace Miningcore.Native
 
             public void Init(ReadOnlySpan<byte> key, randomx_flags? flags_override = null)
             {
-                lastAccess = DateTime.Now;
-
                 flags = flags_override ?? randomx_get_flags();
 
                 cache = randomx_alloc_cache(flags);
@@ -214,35 +230,86 @@ namespace Miningcore.Native
                     fixed (byte* output = result)
                     {
                         randomx_calculate_hash(vm, input, data.Length, output);
-
-                        lastAccess = DateTime.Now;
                     }
                 }
             }
         }
 
-        public static void CalculateHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, Span<byte> result, randomx_flags? flags_override = null)
+        private static Tuple<GenContext, BlockingCollection<RxVm>> CreateGeneration(byte[] key, randomx_flags? flags, int vmCount, string keyString)
+        {
+            var vms = new BlockingCollection<RxVm>();
+
+            if (vmCount == -1)
+                vmCount = Environment.ProcessorCount;
+
+            var generation = new Tuple<GenContext, BlockingCollection<RxVm>>(new GenContext
+            {
+                VmCount = vmCount
+            }, vms);
+
+            void createVm(int index)
+            {
+                var start = DateTime.Now;
+                logger.Info(() => $"Creating VM {index + 1} for seed hash {keyString} ...");
+
+                var vm = new RxVm();
+                vm.Init(key, flags);
+
+                vms.Add(vm);
+
+                logger.Info(() => $"VM {index + 1} created in {DateTime.Now - start} ({vm.Flags})");
+            };
+
+            Parallel.For(0, vmCount, createVm);
+
+            return generation;
+        }
+
+        private static Tuple<GenContext, BlockingCollection<RxVm>> GetGeneration(byte[] key, randomx_flags? flags, int vmCount)
+        {
+            var keyString = key.ToHexString();
+
+            if(!generations.TryGetValue(keyString, out var item))
+            {
+                item = CreateGeneration(key, flags, vmCount, keyString);
+
+                generations[keyString] = item;
+            }
+
+            return item;
+        }
+
+        public static void CalculateHash(byte[] key, ReadOnlySpan<byte> data, Span<byte> result, randomx_flags? flags = null, int vmCount = 1)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            lock(vms)
+            var (ctx, vms) = GetGeneration(key, flags, vmCount);
+            RxVm vm = null;
+
+            try
             {
-                var keyString = key.ToHexString();
-
-                if(!vms.TryGetValue(keyString, out var vm))
-                {
-                    var start = DateTime.Now;
-                    logger.Info(()=> $"Creating VM for seed hash {keyString} ...");
-
-                    vm = new RxVm();
-                    vm.Init(key, flags_override);
-
-                    logger.Info(()=> $"VM created in {DateTime.Now - start} (Flags = {vm.Flags})");
-
-                    vms[keyString] = vm;
-                }
+                // lease a VM
+                vm = vms.Take();
 
                 vm.CalculateHash(data, result);
+
+                // update timestamp
+                ctx.LastAccess = DateTime.Now;
+            }
+
+            catch(Exception ex)
+            {
+                logger.Error(()=> ex.Message);
+
+                // clear result
+                empty.CopyTo(result);
+            }
+
+            finally
+            {
+                // return VM
+                if(vm != null)
+                    vms.Add(vm);
             }
         }
     }
