@@ -161,8 +161,8 @@ namespace Miningcore.Native
 
         private class RxVm : IDisposable
         {
-            private IntPtr vm = IntPtr.Zero;
             private IntPtr cache = IntPtr.Zero;
+            private IntPtr vm = IntPtr.Zero;
             private RxDataSet ds;
             private randomx_flags flags;
             private DateTime lastAccess;
@@ -193,6 +193,7 @@ namespace Miningcore.Native
                 lastAccess = DateTime.Now;
 
                 flags = randomx_get_flags();
+
                 cache = randomx_alloc_cache(flags);
 
                 fixed(byte* key_ptr = key)
@@ -208,8 +209,6 @@ namespace Miningcore.Native
 
             public void CalculateHash(ReadOnlySpan<byte> data, Span<byte> result)
             {
-                Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
-
                 fixed (byte* input = data)
                 {
                     fixed (byte* output = result)
@@ -233,7 +232,7 @@ namespace Miningcore.Native
                 if(!vms.TryGetValue(keyString, out var vm))
                 {
                     var start = DateTime.Now;
-                    logger.Info(()=> $"Creating VM for seed hash {keyString}. This may take a while ...");
+                    logger.Info(()=> $"Creating VM for seed hash {keyString} ...");
 
                     vm = new RxVm();
                     vm.Init(key);
@@ -243,13 +242,7 @@ namespace Miningcore.Native
                     vms[keyString] = vm;
                 }
 
-                fixed (byte* input = data)
-                {
-                    fixed (byte* output = result)
-                    {
-                        randomx_calculate_hash(vm.Handle, input, data.Length, output);
-                    }
-                }
+                vm.CalculateHash(data, result);
             }
         }
     }
