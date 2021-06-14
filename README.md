@@ -120,31 +120,31 @@ Once you have done this for all of your existing pools you should now restore yo
 #### Building on Ubuntu 20.04
 
 ```console
-$ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-$ sudo dpkg -i packages-microsoft-prod.deb
-$ sudo apt-get update; \
-$  sudo apt-get install -y apt-transport-https && \
-$  sudo apt-get update
-$ sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-$ git clone https://github.com/coinfoundry/miningcore
-$ cd miningcore/src/Miningcore
-$ dotnet publish -c Release --framework net5.0  -o ../../build
+wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt-get update \
+ sudo apt-get install -y apt-transport-https && \
+ sudo apt-get update
+sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+git clone https://github.com/coinfoundry/miningcore
+cd miningcore/src/Miningcore
+dotnet publish -c Release --framework net5.0  -o ../../build
 ```
 
 #### Building on Windows
 
-Download and install the [.Net Core 2.2 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
+Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
 > cd miningcore/src/Miningcore
-> dotnet publish -c Release --framework netcoreapp2.2  -o ..\..\build
+> dotnet publish -c Release --framework net5.0  -o ..\..\build
 ```
 
 #### Building on Windows - Visual Studio
 
 - Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
-- Open `Miningcore.sln` in VS 2017
+- Open `Miningcore.sln` in Visual Studio
 
 
 #### After successful build
