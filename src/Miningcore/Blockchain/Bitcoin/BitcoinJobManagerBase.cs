@@ -468,6 +468,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 new DaemonCmd(BitcoinCommands.SubmitBlock),
                 new DaemonCmd(!hasLegacyDaemon ? BitcoinCommands.GetBlockchainInfo : BitcoinCommands.GetInfo),
                 new DaemonCmd(BitcoinCommands.GetDifficulty),
+                new DaemonCmd(BitcoinCommands.GetAddressInfo, new[] { poolConfig.Address }),
             };
 
             var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
@@ -488,6 +489,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var blockchainInfoResponse = !hasLegacyDaemon ? results[2].Response.ToObject<BlockchainInfo>() : null;
             var daemonInfoResponse = hasLegacyDaemon ? results[2].Response.ToObject<DaemonInfo>() : null;
             var difficultyResponse = results[3].Response.ToObject<JToken>();
+            var addressInfoResponse = results[4].Error == null ? results[4].Response.ToObject<AddressInfo>() : null;
 
             // chain detection
             if(!hasLegacyDaemon)

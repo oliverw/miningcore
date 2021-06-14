@@ -160,6 +160,7 @@ namespace Miningcore.Blockchain.Bitcoin
         public const string GetNetworkHashPS = "getnetworkhashps";
         public const string GetPeerInfo = "getpeerinfo";
         public const string ValidateAddress = "validateaddress";
+        public const string GetAddressInfo = "getaddressinfo";
         public const string GetBlockTemplate = "getblocktemplate";
         public const string GetBlockSubsidy = "getblocksubsidy";
         public const string SubmitBlock = "submitblock";
