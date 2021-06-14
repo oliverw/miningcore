@@ -173,13 +173,13 @@ namespace Miningcore.Blockchain.Cryptonote
             var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
             var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
 
-            if(response.Response.Balance > 0 && response.Response.UnlockedBalance < requiredAmount)
+            if(unlockedBalance < requiredAmount)
             {
                 logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payout, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
                 return false;
             }
 
-            logger.Error(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
+            logger.Info(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
             return true;
         }
 
