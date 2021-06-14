@@ -94,7 +94,7 @@ namespace Miningcore.Native
         };
 
         [DllImport("librandomx", EntryPoint = "randomx_get_flags", CallingConvention = CallingConvention.Cdecl)]
-        public static extern randomx_flags randomx_get_flags();
+        private static extern randomx_flags randomx_get_flags();
 
         [DllImport("librandomx", EntryPoint = "randomx_alloc_cache", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr randomx_alloc_cache(randomx_flags flags);

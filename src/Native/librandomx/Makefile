@@ -1,14 +1,9 @@
+# Create shared library librandomx.so from static library librandomx.a using --whole-archive
+
 CC = g++
-INC_DIRS = -I/tmp/RandomX/src
-
-CFLAGS = -std=gnu11 -fPIC -O3 $(INC_DIRS)
-CXXFLAGS = -std=gnu++11 -s -fPIC -O3 $(INC_DIRS)
-
-LDFLAGS = -shared -pthread -L.
-LDLIBS = -lrandomx
-
+LDFLAGS = -shared -pthread -L. -Wl,-whole-archive librandomx.a -Wl,-no-whole-archive
+LDLIBS = -lstdc++ -lgcc -lc
 TARGET  = librandomx.so
-OBJECTS =	exports.o
 
 all: $(TARGET)
 
