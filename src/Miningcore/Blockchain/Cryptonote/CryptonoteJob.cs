@@ -35,7 +35,8 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash)
+            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash,
+            LibRandomX.randomx_flags? randomXFlagsOverride)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -56,7 +57,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 case CryptonightHashType.RandomX:
                     hashFunc = ((key, data, result, height) =>
                     {
-                        LibRandomX.CalculateHash(key, data, result);
+                        LibRandomX.CalculateHash(key, data, result, randomXFlagsOverride);
                     });
                     break;
             }

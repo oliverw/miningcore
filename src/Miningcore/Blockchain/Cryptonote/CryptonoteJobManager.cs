@@ -46,6 +46,7 @@ using Miningcore.Time;
 using Miningcore.Util;
 using MoreLinq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
 
@@ -79,7 +80,8 @@ namespace Miningcore.Blockchain.Cryptonote
         private readonly IMasterClock clock;
         private CryptonoteNetworkType networkType;
         private CryptonotePoolConfigExtra extraPoolConfig;
-        private UInt64 poolAddressBase58Prefix;
+        private LibRandomX.randomx_flags? randomXFlagsOverride;
+        private ulong poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob(string via = null, string json = null)
@@ -112,7 +114,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash);
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXFlagsOverride);
                     currentJob = job;
 
                     // update stats
@@ -239,6 +241,8 @@ namespace Miningcore.Blockchain.Cryptonote
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
+
+            randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
@@ -370,6 +374,30 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
         #endregion // API-Surface
+
+        private LibRandomX.randomx_flags? MakeRandomXFlags(JToken token)
+        {
+            if(token == null)
+                return null;
+
+            if(token.Type == JTokenType.Integer)
+                return (LibRandomX.randomx_flags) token.Value<ulong>();
+            else if(token.Type == JTokenType.String)
+            {
+                LibRandomX.randomx_flags result = 0;
+                var value = token.Value<string>();
+
+                foreach(var flag in value.Split("|").Select(x=> x.Trim()).Where(x=> !string.IsNullOrEmpty(x)))
+                {
+                    if(Enum.TryParse(typeof(LibRandomX.randomx_flags), flag, true, out var flagVal))
+                        result |= (LibRandomX.randomx_flags) flagVal;
+                }
+
+                return result;
+            }
+
+            return null;
+        }
 
         #region Overrides
 

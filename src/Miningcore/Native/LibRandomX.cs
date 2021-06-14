@@ -188,11 +188,11 @@ namespace Miningcore.Native
                 }
             }
 
-            public void Init(ReadOnlySpan<byte> key)
+            public void Init(ReadOnlySpan<byte> key, randomx_flags? flags_override = null)
             {
                 lastAccess = DateTime.Now;
 
-                flags = randomx_get_flags();
+                flags = flags_override ?? randomx_get_flags();
 
                 cache = randomx_alloc_cache(flags);
 
@@ -221,7 +221,7 @@ namespace Miningcore.Native
             }
         }
 
-        public static void CalculateHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, Span<byte> result)
+        public static void CalculateHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, Span<byte> result, randomx_flags? flags_override = null)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
@@ -235,7 +235,7 @@ namespace Miningcore.Native
                     logger.Info(()=> $"Creating VM for seed hash {keyString} ...");
 
                     vm = new RxVm();
-                    vm.Init(key);
+                    vm.Init(key, flags_override);
 
                     logger.Info(()=> $"VM created in {DateTime.Now - start} (Flags = {vm.Flags})");
 
