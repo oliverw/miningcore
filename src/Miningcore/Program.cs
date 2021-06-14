@@ -84,6 +84,9 @@ namespace Miningcore
     {
         public static async Task Main(string[] args)
         {
+            Console.WriteLine($"{LibRandomX.randomx_get_flags()}");
+            return;
+
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;

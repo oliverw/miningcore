@@ -94,7 +94,7 @@ namespace Miningcore.Native
         };
 
         [DllImport("librandomx", EntryPoint = "randomx_get_flags", CallingConvention = CallingConvention.Cdecl)]
-        private static extern randomx_flags randomx_get_flags();
+        public static extern randomx_flags randomx_get_flags();
 
         [DllImport("librandomx", EntryPoint = "randomx_alloc_cache", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr randomx_alloc_cache(randomx_flags flags);
@@ -164,12 +164,12 @@ namespace Miningcore.Native
             private IntPtr vm = IntPtr.Zero;
             private IntPtr cache = IntPtr.Zero;
             private RxDataSet ds;
-            private ulong flags;
+            private randomx_flags flags;
             private DateTime lastAccess;
 
             public IntPtr Handle => vm;
             public DateTime LastAccess => lastAccess;
-            public ulong Flags => flags;
+            public randomx_flags Flags => flags;
 
             public void Dispose()
             {
@@ -192,10 +192,7 @@ namespace Miningcore.Native
             {
                 lastAccess = DateTime.Now;
 
-                var flags = randomx_get_flags();
-                //flags = randomx_flags.RANDOMX_FLAG_DEFAULT;
-                this.flags = (ulong) flags;
-
+                flags = randomx_get_flags();
                 cache = randomx_alloc_cache(flags);
 
                 fixed(byte* key_ptr = key)
@@ -241,7 +238,7 @@ namespace Miningcore.Native
                     vm = new RxVm();
                     vm.Init(key);
 
-                    logger.Info(()=> $"VM created in {DateTime.Now - start} (Flags = 0x{vm.Flags:X})");
+                    logger.Info(()=> $"VM created in {DateTime.Now - start} (Flags = {vm.Flags})");
 
                     vms[keyString] = vm;
                 }
