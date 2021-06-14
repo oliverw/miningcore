@@ -115,11 +115,11 @@ namespace Miningcore.Util
 
         #region Public Properties
 
-        public static BigRational Zero { get; } = new BigRational(BigInteger.Zero);
+        public static BigRational Zero { get; } = new(BigInteger.Zero);
 
-        public static BigRational One { get; } = new BigRational(BigInteger.One);
+        public static BigRational One { get; } = new(BigInteger.One);
 
-        public static BigRational MinusOne { get; } = new BigRational(BigInteger.MinusOne);
+        public static BigRational MinusOne { get; } = new(BigInteger.MinusOne);
 
         public int Sign => m_numerator.Sign;
 
@@ -150,7 +150,7 @@ namespace Miningcore.Util
 
         public BigRational GetFractionPart()
         {
-            return new BigRational(BigInteger.Remainder(m_numerator, Denominator), Denominator);
+            return new(BigInteger.Remainder(m_numerator, Denominator), Denominator);
         }
 
         public override bool Equals(object obj)
@@ -336,12 +336,12 @@ namespace Miningcore.Util
 
         public static BigRational Negate(BigRational r)
         {
-            return new BigRational(BigInteger.Negate(r.m_numerator), r.Denominator);
+            return new(BigInteger.Negate(r.m_numerator), r.Denominator);
         }
 
         public static BigRational Invert(BigRational r)
         {
-            return new BigRational(r.Denominator, r.m_numerator);
+            return new(r.Denominator, r.m_numerator);
         }
 
         public static BigRational Add(BigRational x, BigRational y)
@@ -470,7 +470,7 @@ namespace Miningcore.Util
 
         public static BigRational operator -(BigRational r)
         {
-            return new BigRational(-r.m_numerator, r.Denominator);
+            return new(-r.m_numerator, r.Denominator);
         }
 
         public static BigRational operator ++(BigRational r)
@@ -486,33 +486,33 @@ namespace Miningcore.Util
         public static BigRational operator +(BigRational r1, BigRational r2)
         {
             // a/b + c/d  == (ad + bc)/bd
-            return new BigRational(r1.m_numerator * r2.Denominator + r1.Denominator * r2.m_numerator,
+            return new(r1.m_numerator * r2.Denominator + r1.Denominator * r2.m_numerator,
                 r1.Denominator * r2.Denominator);
         }
 
         public static BigRational operator -(BigRational r1, BigRational r2)
         {
             // a/b - c/d  == (ad - bc)/bd
-            return new BigRational(r1.m_numerator * r2.Denominator - r1.Denominator * r2.m_numerator,
+            return new(r1.m_numerator * r2.Denominator - r1.Denominator * r2.m_numerator,
                 r1.Denominator * r2.Denominator);
         }
 
         public static BigRational operator *(BigRational r1, BigRational r2)
         {
             // a/b * c/d  == (ac)/(bd)
-            return new BigRational(r1.m_numerator * r2.m_numerator, r1.Denominator * r2.Denominator);
+            return new(r1.m_numerator * r2.m_numerator, r1.Denominator * r2.Denominator);
         }
 
         public static BigRational operator /(BigRational r1, BigRational r2)
         {
             // a/b / c/d  == (ad)/(bc)
-            return new BigRational(r1.m_numerator * r2.Denominator, r1.Denominator * r2.m_numerator);
+            return new(r1.m_numerator * r2.Denominator, r1.Denominator * r2.m_numerator);
         }
 
         public static BigRational operator %(BigRational r1, BigRational r2)
         {
             // a/b % c/d  == (ad % bc)/bd
-            return new BigRational(r1.m_numerator * r2.Denominator % (r1.Denominator * r2.m_numerator),
+            return new(r1.m_numerator * r2.Denominator % (r1.Denominator * r2.m_numerator),
                 r1.Denominator * r2.Denominator);
         }
 
@@ -657,65 +657,65 @@ namespace Miningcore.Util
         [CLSCompliant(false)]
         public static implicit operator BigRational(sbyte value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         [CLSCompliant(false)]
         public static implicit operator BigRational(ushort value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         [CLSCompliant(false)]
         public static implicit operator BigRational(uint value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         [CLSCompliant(false)]
         public static implicit operator BigRational(ulong value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         public static implicit operator BigRational(byte value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         public static implicit operator BigRational(short value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         public static implicit operator BigRational(int value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         public static implicit operator BigRational(long value)
         {
-            return new BigRational((BigInteger) value);
+            return new((BigInteger) value);
         }
 
         public static implicit operator BigRational(BigInteger value)
         {
-            return new BigRational(value);
+            return new(value);
         }
 
         public static implicit operator BigRational(float value)
         {
-            return new BigRational(value);
+            return new(value);
         }
 
         public static implicit operator BigRational(double value)
         {
-            return new BigRational(value);
+            return new(value);
         }
 
         public static implicit operator BigRational(decimal value)
         {
-            return new BigRational(value);
+            return new(value);
         }
 
         #endregion implicit conversions to BigRational

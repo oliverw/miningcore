@@ -52,6 +52,8 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             // pool reward (t-addr)
             tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+
             return tx;
         }
 
@@ -198,7 +200,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            var txHashes = new List<uint256> { new(coinbaseInitialHash) };
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.TxId.HexToReverseByteArray())));
 
             // build merkle root

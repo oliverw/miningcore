@@ -133,5 +133,23 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .Select(mapper.Map<Block>)
                 .FirstOrDefault();
         }
+
+        public Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT COUNT(*) FROM blocks WHERE poolid = @poolId";
+
+            return con.ExecuteScalarAsync<uint>(query, new { poolId });
+        }
+
+        public Task<DateTime?> GetLastPoolBlockTimeAsync(IDbConnection con, string poolId)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT created FROM blocks WHERE poolid = @poolId ORDER BY created DESC LIMIT 1";
+
+            return con.ExecuteScalarAsync<DateTime?>(query, new { poolId });
+        }
     }
 }

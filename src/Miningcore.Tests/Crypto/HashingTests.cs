@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
+using Miningcore.Native;
 using Miningcore.Tests.Util;
 using Xunit;
 using static Miningcore.Configuration.BitcoinTemplate;
@@ -234,6 +237,17 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
+        public void X22I_Hash()
+        {
+            var hasher = new X22I();
+            var hash = new byte[32];
+            hasher.Digest(testValue, hash);
+            var result = hash.ToHexString();
+
+            Assert.Equal("616c341e79417e6623dacff834c5c480d8d7d43ba6ae60fcee99f69343fd7c99", result);
+        }
+
+        [Fact]
         public void X25X_Hash()
         {
             var hasher = new X25X();
@@ -242,26 +256,6 @@ namespace Miningcore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("fe2a3d0e45eb5afbf007055c2605590db4167169dc03d1d5a070885771e51846", result);
-        }
-
-        [Fact]
-        public void Odocrypt_Hash()
-        {
-            var hasher = new OdoCrypt();
-            var hash = new byte[32];
-
-            var bnp = new BitcoinNetworkParams
-            {
-                Extra = new Dictionary<string, object>
-                {
-                    [nameof(OdoCryptConfig.OdoCryptShapeChangeInterval)] = 864000
-                }
-            };
-
-            hasher.Digest(testValue2, hash, (ulong) 0x59ef86f2, null, null, bnp);
-            var result = hash.ToHexString();
-
-            Assert.Equal("93164a82a79fba784dcf04c0b0f8537cc43821e7518bf513f296de50aefee4cf", result);
         }
 
         [Fact]
@@ -369,6 +363,24 @@ namespace Miningcore.Tests.Crypto
             var result = hash.ToHexString();
 
             Assert.Equal("e0883cffc9ff0ecf41fca8ade29dba1fc0df4b15beccc06ca03283805e176e497f0dd33db3bda375b199a4bb5eb1bb3ba884f3cc26f65f7acf08e1307058cc8d", result);
+        }
+
+        [Fact]
+        public void RandomX()
+        {
+            var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
+            var buf = new byte[32];
+            var key = Encoding.UTF8.GetBytes("foo bar");
+
+            LibRandomX.CalculateHash(key, blobConverted, buf);
+            var result = buf.ToHexString();
+            Assert.Equal("ae46586e2b786b08cf3884747e391fc27695b40c2502b45b39727832099a19c0", result);
+
+            Array.Clear(buf, 0, buf.Length);
+
+            LibRandomX.CalculateHash(key, blobConverted, buf);
+            result = buf.ToHexString();
+            Assert.Equal("ae46586e2b786b08cf3884747e391fc27695b40c2502b45b39727832099a19c0", result);
         }
     }
 }

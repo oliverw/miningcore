@@ -43,7 +43,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
 
             if(nTimeHex.Length > 0)
             {
-                var dest = dataEx.Slice(data.Length);
+                var dest = dataEx[data.Length..];
                 nTimeHex.CopyTo(dest);
             }
 

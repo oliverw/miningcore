@@ -108,7 +108,7 @@ namespace Miningcore.Configuration
         /// Coin Family associciations
         /// </summary>
         [JsonIgnore]
-        public static readonly Dictionary<CoinFamily, Type> Families = new Dictionary<CoinFamily, Type>
+        public static readonly Dictionary<CoinFamily, Type> Families = new()
         {
             {CoinFamily.Bitcoin, typeof(BitcoinTemplate)},
             {CoinFamily.Equihash, typeof(EquihashCoinTemplate)},
@@ -154,7 +154,7 @@ namespace Miningcore.Configuration
         public uint CoinbaseTxVersion { get; set; }
 
         /// <summary>
-        /// Default transaction comment for coins that REQUIRE tx comments 
+        /// Default transaction comment for coins that REQUIRE tx comments
         /// </summary>
         public string CoinbaseTxComment { get; set; }
 
@@ -167,6 +167,15 @@ namespace Miningcore.Configuration
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1.0d)]
         public double ShareMultiplier { get; set; } = 1.0d;
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool CoinbaseIgnoreAuxFlags { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool IsPseudoPoS { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public JToken BlockTemplateRpcExtraParams { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
@@ -258,17 +267,8 @@ namespace Miningcore.Configuration
 
     public enum CryptonightHashType
     {
-        [EnumMember(Value = "cryptonight")]
-        Normal = 1,
-
-        [EnumMember(Value = "cryptonight-lite")]
-        Lite,
-
-        [EnumMember(Value = "cryptonight-heavy")]
-        Heavy,
-
-        [EnumMember(Value = "cryptonight-pico")]
-        Pico
+        [EnumMember(Value = "randomx")]
+        RandomX,
     }
 
     public partial class CryptonoteCoinTemplate : CoinTemplate
@@ -309,10 +309,22 @@ namespace Miningcore.Configuration
         public ulong AddressPrefixTestnet { get; set; }
 
         /// <summary>
+        /// Prefix of a valid stagenet-address
+        /// See: namespace config -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+        /// </summary>
+        public ulong AddressPrefixStagenet { get; set; }
+
+        /// <summary>
         /// Prefix of a valid integrated address
         /// See: namespace testnet -> CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX  in src/cryptonote_config.h
         /// </summary>
         public ulong AddressPrefixIntegrated { get; set; }
+
+        /// <summary>
+        /// Prefix of a valid integrated stagenet-address
+        /// See: namespace testnet -> CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX in src/cryptonote_config.h
+        /// </summary>
+        public ulong AddressPrefixIntegratedStagenet { get; set; }
 
         /// <summary>
         /// Prefix of a valid integrated testnet-address
@@ -385,11 +397,6 @@ namespace Miningcore.Configuration
         /// Use HTTP2 protocol for RPC requests (don't use this unless your daemon(s) live behind a HTTP reverse proxy)
         /// </summary>
         public bool Http2 { get; set; }
-
-        /// <summary>
-        /// Set if the endpoint requires HTTP Digest Authentication (Cryptonote coins)
-        /// </summary>
-        public bool DigestAuth { get; set; }
 
         /// <summary>
         /// Optional endpoint category
@@ -678,7 +685,7 @@ namespace Miningcore.Configuration
         public PoolShareBasedBanningConfig Banning { get; set; }
         public RewardRecipient[] RewardRecipients { get; set; }
         public string Address { get; set; }
-        public string PubKey { get; set; }  // POS coins only 
+        public string PubKey { get; set; }  // POS coins only
         public int ClientConnectionTimeout { get; set; }
         public int JobRebroadcastTimeout { get; set; }
         public int BlockRefreshInterval { get; set; }

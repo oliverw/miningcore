@@ -1,4 +1,4 @@
-﻿using Miningcore.Blockchain;
+using Miningcore.Blockchain;
 using Miningcore.Messaging;
 using Miningcore.Persistence.Model;
 using System.Globalization;
@@ -22,6 +22,7 @@ namespace Miningcore.Extensions
                 PoolId = poolId,
                 BlockHeight = block.BlockHeight,
                 Symbol = coin.Symbol,
+                Name = coin.CanonicalName ?? coin.Name,
                 Miner = block.Miner,
                 MinerExplorerLink = minerExplorerLink,
                 Source = block.Source,
@@ -35,6 +36,7 @@ namespace Miningcore.Extensions
                 PoolId = poolId,
                 BlockHeight = block.BlockHeight,
                 Symbol = coin.Symbol,
+                Name = coin.CanonicalName ?? coin.Name,
                 Effort = block.Effort,
                 Progress = block.ConfirmationProgress,
             });
@@ -68,6 +70,7 @@ namespace Miningcore.Extensions
                 BlockHeight = block.BlockHeight,
                 BlockType = block.Type,
                 Symbol = coin.Symbol,
+                Name = coin.CanonicalName ?? coin.Name,
                 Reward = block.Reward,
                 Status = block.Status,
                 Effort = block.Effort,
@@ -85,6 +88,7 @@ namespace Miningcore.Extensions
                 PoolId = poolId,
                 BlockHeight = height,
                 Symbol = coin.Symbol,
+                Name = coin.CanonicalName ?? coin.Name,
             });
         }
 

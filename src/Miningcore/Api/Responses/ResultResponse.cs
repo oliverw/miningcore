@@ -18,22 +18,24 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using System.Threading.Tasks;
-using Miningcore.Persistence.Model;
-using Miningcore.Persistence.Model.Projections;
+using System;
 
-namespace Miningcore.Persistence.Repositories
+namespace Miningcore.Api.Responses
 {
-    public interface IPaymentRepository
+    public class ResultResponse<T>
     {
-        Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment);
+        public ResultResponse(T result)
+        {
+            Result = result;
+            Success = result != null;
+        }
 
-        Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address = null);
-        Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address);
-        Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null);
+        public ResultResponse()
+        {
+            Success = true;
+        }
+
+        public T Result { get; set; }
+        public bool Success { get; set; }
     }
 }

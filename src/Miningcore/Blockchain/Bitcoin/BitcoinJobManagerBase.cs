@@ -71,7 +71,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected bool hasLegacyDaemon;
         protected BitcoinPoolConfigExtra extraPoolConfig;
         protected BitcoinPoolPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
-        protected readonly List<TJob> validJobs = new List<TJob>();
+        protected readonly List<TJob> validJobs = new();
         protected DateTime? lastJobRebroadcast;
         protected bool hasSubmitBlockMethod;
         protected bool isPoS;
@@ -79,13 +79,16 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Network network;
         protected IDestination poolAddressDestination;
 
-        protected object[] getBlockTemplateParams =
+        protected virtual object[] GetBlockTemplateParams()
         {
-            new
+            return new object[]
             {
-                rules = new[] { "segwit" }
-            }
-        };
+                new
+                {
+                    rules = new[] {"segwit"},
+                }
+            };
+        }
 
         protected virtual void SetupJobUpdates()
         {
@@ -434,7 +437,7 @@ namespace Miningcore.Blockchain.Bitcoin
             while(true)
             {
                 var responses = await daemon.ExecuteCmdAllAsync<BlockTemplate>(logger,
-                    BitcoinCommands.GetBlockTemplate, getBlockTemplateParams);
+                    BitcoinCommands.GetBlockTemplate, GetBlockTemplateParams());
 
                 var isSynched = responses.All(x => x.Error == null);
 
@@ -495,14 +498,22 @@ namespace Miningcore.Blockchain.Bitcoin
             PostChainIdentifyConfigure();
 
             // ensure pool owns wallet
-            if(validateAddressResponse == null || !validateAddressResponse.IsValid)
+            if(validateAddressResponse is not {IsValid: true})
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            isPoS = difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            var coinTemplate = poolConfig.Template as BitcoinTemplate;
+
+            isPoS = coinTemplate.IsPseudoPoS || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
             if(!isPoS)
+            {
+                if(extraPoolConfig?.AddressType != BitcoinAddressType.Legacy)
+                    logger.Info(()=> $"Interpreting pool address {poolConfig.Address} as type {extraPoolConfig?.AddressType.ToString()}");
+
                 poolAddressDestination = AddressToDestination(poolConfig.Address, extraPoolConfig?.AddressType);
+            }
+
             else
                 poolAddressDestination = new PubKey(poolConfig.PubKey ?? validateAddressResponse.PubKey);
 
@@ -564,6 +575,9 @@ namespace Miningcore.Blockchain.Bitcoin
                 case BitcoinAddressType.BechSegwit:
                     return BitcoinUtils.BechSegwitAddressToDestination(poolConfig.Address, network);
 
+                case BitcoinAddressType.BCash:
+                    return BitcoinUtils.BCashAddressToDestination(poolConfig.Address, network);
+
                 default:
                     return BitcoinUtils.AddressToDestination(poolConfig.Address, network);
             }
@@ -599,7 +613,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public Network Network => network;
         public IObservable<object> Jobs { get; private set; }
-        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public BlockchainStats BlockchainStats { get; } = new();
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
@@ -621,7 +635,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 BitcoinCommands.ValidateAddress, new[] { address });
 
-            return result.Response != null && result.Response.IsValid;
+            return result.Response is {IsValid: true};
         }
 
         public abstract object[] GetSubscriberData(StratumClient worker);

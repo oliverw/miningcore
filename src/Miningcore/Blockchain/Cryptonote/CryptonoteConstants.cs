@@ -31,7 +31,8 @@ namespace Miningcore.Blockchain.Cryptonote
     public enum CryptonoteNetworkType
     {
         Main = 1,
-        Test
+        Test,
+        Stage
     }
 
     public class CryptonoteConstants
@@ -44,9 +45,9 @@ namespace Miningcore.Blockchain.Cryptonote
         public const char MainNetAddressPrefix = '4';
         public const char TestNetAddressPrefix = '9';
         public const int PaymentIdHexLength = 64;
-        public static readonly Regex RegexValidNonce = new Regex("^[0-9a-f]{8}$", RegexOptions.Compiled);
+        public static readonly Regex RegexValidNonce = new("^[0-9a-f]{8}$", RegexOptions.Compiled);
 
-        public static readonly BigInteger Diff1 = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
+        public static readonly BigInteger Diff1 = new("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         public static readonly System.Numerics.BigInteger Diff1b = System.Numerics.BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.HexNumber);
 
 #if DEBUG

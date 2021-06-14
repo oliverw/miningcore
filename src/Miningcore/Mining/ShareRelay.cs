@@ -29,7 +29,7 @@ namespace Miningcore.Mining
 
         private readonly IMessageBus messageBus;
         private ClusterConfig clusterConfig;
-        private readonly BlockingCollection<Share> queue = new BlockingCollection<Share>();
+        private readonly BlockingCollection<Share> queue = new();
         private IDisposable queueSub;
         private readonly int QueueSizeWarningThreshold = 1024;
         private bool hasWarnedAboutBacklogSize;

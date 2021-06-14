@@ -19,6 +19,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Miningcore.Configuration;
+using Miningcore.Native;
+using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Cryptonote.Configuration
 {
@@ -28,5 +30,16 @@ namespace Miningcore.Blockchain.Cryptonote.Configuration
         /// Blocktemplate stream published via ZMQ
         /// </summary>
         public ZmqPubSubEndpointConfig BtStream { get; set; }
+
+        /// <summary>
+        /// Optional override value for RandomX VM Flags (see Native/LibRandomX.cs)
+        /// </summary>
+        public JToken RandomXFlagsOverride { get; set; }
+
+        /// <summary>
+        /// Optional value for number of RandomX VMs allocated per generation (new seed hash)
+        /// Set to -1 to scale to number of cores
+        /// </summary>
+        public int RandomXVMCount { get; set; } = 1;
     }
 }

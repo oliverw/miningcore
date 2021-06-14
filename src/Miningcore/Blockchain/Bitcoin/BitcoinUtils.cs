@@ -56,5 +56,12 @@ namespace Miningcore.Blockchain.Bitcoin
             Debug.Assert(result.GetAddress(expectedNetwork).ToString() == address);
             return result;
         }
+
+        public static IDestination BCashAddressToDestination(string address, Network expectedNetwork)
+        {
+            var bcash = NBitcoin.Altcoins.BCash.Instance.GetNetwork(expectedNetwork.ChainName);
+            var trashAddress = bcash.Parse<NBitcoin.Altcoins.BCash.BTrashPubKeyAddress>(address);
+            return trashAddress.ScriptPubKey.GetDestinationAddress(bcash);
+        }
     }
 }

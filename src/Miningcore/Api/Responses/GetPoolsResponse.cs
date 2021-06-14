@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System;
 using System.Collections.Generic;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
@@ -31,6 +32,7 @@ namespace Miningcore.Api.Responses
     {
         public string Type { get; set; }
         public string Name { get; set; }
+        public string Symbol { get; set; }
         public string Family { get; set; }
         public string Algorithm { get; set; }
 
@@ -71,6 +73,8 @@ namespace Miningcore.Api.Responses
         public BlockchainStats NetworkStats { get; set; }
         public MinerPerformanceStats[] TopMiners { get; set; }
         public decimal TotalPaid { get; set; }
+        public uint TotalBlocks { get; set; }
+        public DateTime? LastPoolBlockTime { get; set; }
     }
 
     public class GetPoolsResponse

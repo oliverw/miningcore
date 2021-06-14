@@ -52,11 +52,11 @@ namespace Miningcore.Blockchain
 
         protected TJob currentJob;
         private int jobId;
-        protected object jobLock = new object();
+        protected object jobLock = new();
         protected ILogger logger;
         protected PoolConfig poolConfig;
         protected bool hasInitialBlockTemplate = false;
-        protected Subject<Unit> blockFoundSubject = new Subject<Unit>();
+        protected Subject<Unit> blockFoundSubject = new();
 
         protected abstract void ConfigureDaemons();
 
@@ -96,9 +96,7 @@ namespace Miningcore.Blockchain
                 .Where(x => x.Topic == config.Topic)
                 .DoSafe(x => messageBus.SendMessage(new TelemetryEvent(
                     clusterConfig.ClusterName, poolConfig.Id, TelemetryCategory.BtStream, x.Received - x.Sent)), logger)
-                .Select(x => x.Payload)
-                .Publish()
-                .RefCount();
+                .Select(x => x.Payload);
         }
 
         protected virtual void OnBlockFound()

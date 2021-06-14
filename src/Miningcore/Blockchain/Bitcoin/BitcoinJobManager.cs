@@ -36,6 +36,7 @@ using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLog;
 
 namespace Miningcore.Blockchain.Bitcoin
@@ -53,12 +54,27 @@ namespace Miningcore.Blockchain.Bitcoin
 
         private BitcoinTemplate coin;
 
+        protected override object[] GetBlockTemplateParams()
+        {
+            var result = base.GetBlockTemplateParams();
+
+            if(coin.BlockTemplateRpcExtraParams != null)
+            {
+                if(coin.BlockTemplateRpcExtraParams.Type == JTokenType.Array)
+                    result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>()).ToArray();
+                else
+                    result = result.Concat(new []{ coin.BlockTemplateRpcExtraParams.ToObject<object>()}).ToArray();
+            }
+
+            return result;
+        }
+
         protected async Task<DaemonResponse<BlockTemplate>> GetBlockTemplateAsync()
         {
             logger.LogInvoke();
 
             var result = await daemon.ExecuteCmdAnyAsync<BlockTemplate>(logger,
-                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) getBlockTemplateParams);
+                BitcoinCommands.GetBlockTemplate, extraPoolConfig?.GBTArgs ?? (object) GetBlockTemplateParams());
 
             return result;
         }
@@ -77,11 +93,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         private BitcoinJob CreateJob()
         {
-            //switch (coin.Subfamily)
-            //{
-            //}
-
-            return new BitcoinJob();
+            return new();
         }
 
         protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
@@ -146,6 +158,14 @@ namespace Miningcore.Blockchain.Bitcoin
                         BlockchainStats.NetworkDifficulty = job.Difficulty;
                         BlockchainStats.NextNetworkTarget = blockTemplate.Target;
                         BlockchainStats.NextNetworkBits = blockTemplate.Bits;
+                    }
+
+                    else
+                    {
+                        if(via != null)
+                            logger.Debug(() => $"Template update {blockTemplate.Height} [{via}]");
+                        else
+                            logger.Debug(() => $"Template update {blockTemplate.Height}");
                     }
 
                     currentJob = job;

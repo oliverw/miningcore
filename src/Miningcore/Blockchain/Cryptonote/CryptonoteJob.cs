@@ -28,7 +28,6 @@ using Miningcore.Native;
 using Miningcore.Stratum;
 using Miningcore.Util;
 using NBitcoin.BouncyCastle.Math;
-using static Miningcore.Native.LibCryptonight;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Blockchain.Cryptonote
@@ -36,7 +35,8 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash)
+            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash,
+            LibRandomX.randomx_flags? randomXFlagsOverride, int randomXvmCount)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -49,26 +49,27 @@ namespace Miningcore.Blockchain.Cryptonote
             PrepareBlobTemplate(instanceId);
             PrevHash = prevHash;
 
+            if(!string.IsNullOrEmpty(blockTemplate.SeedHash))
+                seedHashBytes = blockTemplate.SeedHash.HexToByteArray();
+
             switch(coin.Hash)
             {
-                case CryptonightHashType.Normal:
-                    hashFunc = LibCryptonight.Cryptonight;
-                    break;
-
-                case CryptonightHashType.Lite:
-                    hashFunc = LibCryptonight.CryptonightLight;
-                    break;
-
-                case CryptonightHashType.Heavy:
-                    hashFunc = LibCryptonight.CryptonightHeavy;
+                case CryptonightHashType.RandomX:
+                    hashFunc = ((key, data, result, height) =>
+                    {
+                        LibRandomX.CalculateHash(key, data, result, randomXFlagsOverride, randomXvmCount);
+                    });
                     break;
             }
         }
 
+        public delegate void HashFunc(byte[] key, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
+
         private byte[] blobTemplate;
+        private readonly byte[] seedHashBytes;
         private int extraNonce;
         private readonly CryptonoteCoinTemplate coin;
-        private readonly LibCryptonight.CryptonightHash hashFunc;
+        private readonly HashFunc hashFunc;
 
         private void PrepareBlobTemplate(byte[] instanceId)
         {
@@ -91,7 +92,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return LibCryptonote.ConvertBlob(blob, blobTemplate.Length).ToHexString();
         }
 
-        private string EncodeTarget(double difficulty)
+        private string EncodeTarget(double difficulty, int size = 4)
         {
             var diff = BigInteger.ValueOf((long) (difficulty * 255d));
             var quotient = CryptonoteConstants.Diff1.Divide(diff).Multiply(BigInteger.ValueOf(255));
@@ -103,7 +104,7 @@ namespace Miningcore.Blockchain.Cryptonote
             if(padLength > 0)
                 bytes.CopyTo(padded.Slice(padLength, bytes.Length));
 
-            padded = padded.Slice(0, 4);
+            padded = padded[..size];
             padded.Reverse();
 
             return padded.ToHexString();
@@ -114,7 +115,7 @@ namespace Miningcore.Blockchain.Cryptonote
             // blockhash is computed from the converted blob data prefixed with its length
             Span<byte> block = stackalloc byte[blobConverted.Length + 1];
             block[0] = (byte) blobConverted.Length;
-            blobConverted.CopyTo(block.Slice(1));
+            blobConverted.CopyTo(block[1..]);
 
             LibCryptonote.CryptonightHashFast(block, result);
         }
@@ -128,6 +129,7 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             workerJob.Height = BlockTemplate.Height;
             workerJob.ExtraNonce = (uint) Interlocked.Increment(ref extraNonce);
+            workerJob.SeedHash = BlockTemplate.SeedHash;
 
             if(extraNonce < 0)
                 extraNonce = 0;
@@ -165,35 +167,9 @@ namespace Miningcore.Blockchain.Cryptonote
             if(blobConverted == null)
                 throw new StratumException(StratumError.MinusOne, "malformed blob");
 
-            // determine variant
-            CryptonightVariant variant = CryptonightVariant.VARIANT_0;
-
-            if(coin.HashVariant != 0)
-                variant = (CryptonightVariant) coin.HashVariant;
-            else
-            {
-                switch(coin.Hash)
-                {
-                    case CryptonightHashType.Normal:
-                        variant = (blobConverted[0] >= 10) ? CryptonightVariant.VARIANT_4 :
-                            ((blobConverted[0] >= 8) ? CryptonightVariant.VARIANT_2 :
-                            ((blobConverted[0] == 7) ? CryptonightVariant.VARIANT_1 :
-                            CryptonightVariant.VARIANT_0));
-                        break;
-
-                    case CryptonightHashType.Lite:
-                        variant = CryptonightVariant.VARIANT_1;
-                        break;
-
-                    case CryptonightHashType.Heavy:
-                        variant = CryptonightVariant.VARIANT_0;
-                        break;
-                }
-            }
-
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            hashFunc(blobConverted, headerHash, variant, BlockTemplate.Height);
+            hashFunc(seedHashBytes, blobConverted, headerHash, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
             if(headerHashString != workerHash)

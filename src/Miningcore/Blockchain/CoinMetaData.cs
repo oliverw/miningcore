@@ -6,7 +6,7 @@ namespace Miningcore.Blockchain
     {
         public const decimal Percent = 0.1m;
 
-        public static readonly Dictionary<string, string> Addresses = new Dictionary<string, string>
+        public static readonly Dictionary<string, string> Addresses = new()
         {
             { "BTC", "17QnVor1B6oK1rWnVVBrdX9gFzVkZZbhDm" },
             { "BCH", "qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv" },

@@ -46,6 +46,7 @@ using Miningcore.Time;
 using Miningcore.Util;
 using MoreLinq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
 
@@ -79,7 +80,8 @@ namespace Miningcore.Blockchain.Cryptonote
         private readonly IMasterClock clock;
         private CryptonoteNetworkType networkType;
         private CryptonotePoolConfigExtra extraPoolConfig;
-        private UInt64 poolAddressBase58Prefix;
+        private LibRandomX.randomx_flags? randomXFlagsOverride;
+        private ulong poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
         protected async Task<bool> UpdateJob(string via = null, string json = null)
@@ -112,7 +114,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash);
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXFlagsOverride, extraPoolConfig.RandomXVMCount);
                     currentJob = job;
 
                     // update stats
@@ -121,6 +123,14 @@ namespace Miningcore.Blockchain.Cryptonote
                     BlockchainStats.NetworkDifficulty = job.BlockTemplate.Difficulty;
                     BlockchainStats.NextNetworkTarget = "";
                     BlockchainStats.NextNetworkBits = "";
+                }
+
+                else
+                {
+                    if(via != null)
+                        logger.Debug(() => $"Template update {blockTemplate.Height} [{via}]");
+                    else
+                        logger.Debug(() => $"Template update {blockTemplate.Height}");
                 }
 
                 return isNew;
@@ -210,7 +220,7 @@ namespace Miningcore.Blockchain.Cryptonote
             {
                 var error = response.Error?.Message ?? response.Response?.Status;
 
-                logger.Warn(() => $"Block {share.BlockHeight} [{blobHash.Substring(0, 6)}] submission failed with: {error}");
+                logger.Warn(() => $"Block {share.BlockHeight} [{blobHash[..6]}] submission failed with: {error}");
                 messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {error}"));
                 return false;
             }
@@ -231,6 +241,8 @@ namespace Miningcore.Blockchain.Cryptonote
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
+
+            randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
@@ -253,9 +265,6 @@ namespace Miningcore.Blockchain.Cryptonote
                     {
                         if(string.IsNullOrEmpty(x.HttpPath))
                             x.HttpPath = CryptonoteConstants.DaemonRpcLocation;
-
-                        // cryptonote daemons only support digest auth
-                        x.DigestAuth = true;
 
                         return x;
                     })
@@ -294,7 +303,7 @@ namespace Miningcore.Blockchain.Cryptonote
             return true;
         }
 
-        public BlockchainStats BlockchainStats { get; } = new BlockchainStats();
+        public BlockchainStats BlockchainStats { get; } = new();
 
         public void PrepareWorkerJob(CryptonoteWorkerJob workerJob, out string blob, out string target)
         {
@@ -341,13 +350,13 @@ namespace Miningcore.Blockchain.Cryptonote
             // if block candidate, submit & check if accepted by network
             if(share.IsBlockCandidate)
             {
-                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}]");
+                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash[..6]}]");
 
                 share.IsBlockCandidate = await SubmitBlockAsync(share, blobHex, share.BlockHash);
 
                 if(share.IsBlockCandidate)
                 {
-                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash.Substring(0, 6)}] submitted by {context.Miner}");
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash[..6]}] submitted by {context.Miner}");
 
                     OnBlockFound();
 
@@ -365,6 +374,30 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
         #endregion // API-Surface
+
+        private LibRandomX.randomx_flags? MakeRandomXFlags(JToken token)
+        {
+            if(token == null)
+                return null;
+
+            if(token.Type == JTokenType.Integer)
+                return (LibRandomX.randomx_flags) token.Value<ulong>();
+            else if(token.Type == JTokenType.String)
+            {
+                LibRandomX.randomx_flags result = 0;
+                var value = token.Value<string>();
+
+                foreach(var flag in value.Split("|").Select(x=> x.Trim()).Where(x=> !string.IsNullOrEmpty(x)))
+                {
+                    if(Enum.TryParse(typeof(LibRandomX.randomx_flags), flag, true, out var flagVal))
+                        result |= (LibRandomX.randomx_flags) flagVal;
+                }
+
+                return result;
+            }
+
+            return null;
+        }
 
         #region Overrides
 
@@ -393,7 +426,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
                 logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
 
-            if(!responses.All(x => x.Error == null))
+            if(responses.Any(x => x.Error != null))
                 return false;
 
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
@@ -476,7 +509,27 @@ namespace Miningcore.Blockchain.Cryptonote
             var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
             // chain detection
-            networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
+            if(!string.IsNullOrEmpty(info.NetType))
+            {
+                switch(info.NetType.ToLower())
+                {
+                    case "mainnet":
+                        networkType = CryptonoteNetworkType.Main;
+                        break;
+                    case "stagenet":
+                        networkType = CryptonoteNetworkType.Stage;
+                        break;
+                    case "testnet":
+                        networkType = CryptonoteNetworkType.Test;
+                        break;
+                    default:
+                        logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
+                        break;
+                }
+            }
+
+            else
+                networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
 
             // address validation
             poolAddressBase58Prefix = LibCryptonote.DecodeAddress(poolConfig.Address);
@@ -490,9 +543,14 @@ namespace Miningcore.Blockchain.Cryptonote
                         logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
                     break;
 
+                case CryptonoteNetworkType.Stage:
+                    if(poolAddressBase58Prefix != coin.AddressPrefixStagenet)
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixStagenet}, got {poolAddressBase58Prefix}");
+                    break;
+
                 case CryptonoteNetworkType.Test:
                     if(poolAddressBase58Prefix != coin.AddressPrefixTestnet)
-                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefix}, got {poolAddressBase58Prefix}");
+                        logger.ThrowLogPoolStartupException($"Invalid pool address prefix. Expected {coin.AddressPrefixTestnet}, got {poolAddressBase58Prefix}");
                     break;
             }
 

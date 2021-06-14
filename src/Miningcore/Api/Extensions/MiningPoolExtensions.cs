@@ -1,9 +1,7 @@
 using System.Linq;
-using Autofac;
 using AutoMapper;
 using Miningcore.Api.Responses;
 using Miningcore.Blockchain;
-using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Mining;
@@ -25,14 +23,14 @@ namespace Miningcore.Api.Extensions
                 poolInfo.AddressInfoLink = string.Format(addressInfobaseUrl, poolInfo.Address);
 
             // pool fees
-            poolInfo.PoolFeePercent = (float) poolConfig.RewardRecipients.Sum(x => x.Percentage);
+            poolInfo.PoolFeePercent = poolConfig.RewardRecipients != null ? (float) poolConfig.RewardRecipients.Sum(x => x.Percentage) : 0;
 
             // strip security critical stuff
             if(poolInfo.PaymentProcessing.Extra != null)
             {
                 var extra = poolInfo.PaymentProcessing.Extra;
 
-                extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
+                //extra.StripValue(nameof(EthereumPoolPaymentProcessingConfigExtra.CoinbasePassword));
             }
 
             return poolInfo;

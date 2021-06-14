@@ -44,7 +44,7 @@ namespace Miningcore.Blockchain
             counter = Math.Abs(instanceId & mask);
         }
 
-        private readonly object counterLock = new object();
+        private readonly object counterLock = new();
         protected long counter;
         protected readonly int extranonceBytes;
         protected readonly long nonceMax;

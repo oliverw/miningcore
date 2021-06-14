@@ -35,6 +35,11 @@ namespace Miningcore.Blockchain.Bitcoin
         /// Bech encoded, segwit
         /// </summary>
         BechSegwit,
+
+        /// <summary>
+        /// Bitcoin Cash
+        /// </summary>
+        BCash,
     }
 
     public enum BitcoinTransactionCategory

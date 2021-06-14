@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -50,7 +51,7 @@ namespace Miningcore.Blockchain.Equihash
         protected Network network;
 
         protected IDestination poolAddressDestination;
-        protected readonly HashSet<string> submissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         protected uint256 blockTargetValue;
         protected byte[] coinbaseInitial;
 
@@ -140,6 +141,8 @@ namespace Miningcore.Blockchain.Equihash
                 tx.Outputs.Add(rewardToPool, poolAddressDestination);
             }
 
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
+
             return tx;
         }
 
@@ -156,7 +159,6 @@ namespace Miningcore.Blockchain.Equihash
         {
             // output transaction
             txOut = CreateOutputTransaction();
-            txOut.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
             using(var stream = new MemoryStream())
             {
@@ -233,13 +235,13 @@ namespace Miningcore.Blockchain.Equihash
             var headerBytes = SerializeHeader(nTime, nonce);
 
             // verify solution
-            if(!solver.Verify(headerBytes, solutionBytes.Slice(networkParams.SolutionPreambleSize)))
+            if(!solver.Verify(headerBytes, solutionBytes[networkParams.SolutionPreambleSize..]))
                 throw new StratumException(StratumError.Other, "invalid solution");
 
             // concat header and solution
             Span<byte> headerSolutionBytes = stackalloc byte[headerBytes.Length + solutionBytes.Length];
             headerBytes.CopyTo(headerSolutionBytes);
-            solutionBytes.CopyTo(headerSolutionBytes.Slice(headerBytes.Length));
+            solutionBytes.CopyTo(headerSolutionBytes[headerBytes.Length..]);
 
             // hash block-header
             Span<byte> headerHash = stackalloc byte[32];
@@ -299,15 +301,9 @@ namespace Miningcore.Blockchain.Equihash
 
         private bool RegisterSubmit(string nonce, string solution)
         {
-            lock(submissions)
-            {
-                var key = nonce.ToLower() + solution.ToLower();
-                if(submissions.Contains(key))
-                    return false;
+            var key = nonce + solution;
 
-                submissions.Add(key);
-                return true;
-            }
+            return submissions.TryAdd(key, true);
         }
 
         #region API-Surface
@@ -396,7 +392,7 @@ namespace Miningcore.Blockchain.Equihash
             BuildCoinbase();
 
             // build tx hashes
-            var txHashes = new List<uint256> { new uint256(coinbaseInitialHash) };
+            var txHashes = new List<uint256> { new(coinbaseInitialHash) };
             txHashes.AddRange(BlockTemplate.Transactions.Select(tx => new uint256(tx.Hash.HexToReverseByteArray())));
 
             // build merkle root
@@ -463,7 +459,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public object GetJobParams(bool isNew)
         {
-            jobParams[jobParams.Length - 1] = isNew;
+            jobParams[^1] = isNew;
             return jobParams;
         }
 

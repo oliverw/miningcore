@@ -58,6 +58,7 @@ namespace Miningcore
             CreateMap<CoinTemplate, Api.Responses.ApiCoinConfig>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Symbol))
                 .ForMember(dest => dest.Family, opt => opt.MapFrom(src => src.Family.ToString().ToLower()))
+                .ForMember(dest => dest.Symbol, opt => opt.MapFrom(src => src.Symbol))
                 .ForMember(dest => dest.Algorithm, opt => opt.MapFrom(src => src.GetAlgorithmName()));
 
             CreateMap<PoolConfig, Api.Responses.PoolInfo>()
@@ -76,6 +77,7 @@ namespace Miningcore
 
             CreateMap<WorkerPerformanceStats, Api.Responses.WorkerPerformanceStats>();
             CreateMap<WorkerPerformanceStatsContainer, Api.Responses.WorkerPerformanceStatsContainer>();
+            CreateMap<MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
             // PostgreSQL
             CreateMap<Persistence.Model.Share, Persistence.Postgres.Entities.Share>();

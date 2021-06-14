@@ -37,7 +37,7 @@ namespace Miningcore.Extensions
         public static byte[] HexToByteArray(this string str)
         {
             if(str.StartsWith("0x"))
-                str = str.Substring(2);
+                str = str[2..];
 
             var arr = new byte[str.Length >> 1];
             var count = str.Length >> 1;
@@ -56,7 +56,7 @@ namespace Miningcore.Extensions
         public static byte[] HexToReverseByteArray(this string str)
         {
             if(str.StartsWith("0x"))
-                str = str.Substring(2);
+                str = str[2..];
 
             var arr = new byte[str.Length >> 1];
             var count = str.Length >> 1;
@@ -118,7 +118,7 @@ namespace Miningcore.Extensions
         public static string StripHexPrefix(this string value)
         {
             if(value?.ToLower().StartsWith("0x") == true)
-                return value.Substring(2);
+                return value[2..];
 
             return value;
         }
@@ -128,7 +128,7 @@ namespace Miningcore.Extensions
             var underlyingType = Nullable.GetUnderlyingType(typeof(T));
 
             if(value.StartsWith("0x"))
-                value = value.Substring(2);
+                value = value[2..];
 
             if(!ulong.TryParse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var val))
                 throw new FormatException();
@@ -141,7 +141,7 @@ namespace Miningcore.Extensions
             if(string.IsNullOrEmpty(str))
                 return str;
 
-            return char.ToLowerInvariant(str[0]) + str.Substring(1);
+            return char.ToLowerInvariant(str[0]) + str[1..];
         }
 
         public static string AsString(this ReadOnlySequence<byte> line, Encoding encoding)
@@ -154,7 +154,7 @@ namespace Miningcore.Extensions
             if(string.IsNullOrEmpty(str))
                 return str;
 
-            return str.Substring(0, 1).ToUpper() + str.Substring(1);
+            return str[..1].ToUpper() + str[1..];
         }
     }
 }

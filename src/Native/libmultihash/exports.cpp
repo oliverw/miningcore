@@ -37,6 +37,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "nist5.h"
 #include "x15.h"
 #include "x17.h"
+#include "x22i.h"
 #include "fresh.h"
 #include "dcrypt.h"
 #include "jh.h"
@@ -221,6 +222,11 @@ extern "C" MODULE_API void x16r_export(const char* input, char* output, uint32_t
 extern "C" MODULE_API void x21s_export(const char* input, char* output, uint32_t input_len)
 {
 	x21s_hash(input, output, input_len);
+}
+
+extern "C" MODULE_API void x22i_export(const char* input, char* output, uint32_t input_len)
+{
+    x22i_hash(input, output, input_len);
 }
 
 extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t input_len)

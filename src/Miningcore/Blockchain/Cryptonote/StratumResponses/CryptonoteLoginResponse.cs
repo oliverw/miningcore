@@ -30,6 +30,9 @@ namespace Miningcore.Blockchain.Cryptonote.StratumResponses
         public string Blob { get; set; }
         public string Target { get; set; }
 
+        [JsonProperty("seed_hash")]
+        public string SeedHash { get; set; }
+
         /// <summary>
         /// Introduced for CNv4 (aka CryptonightR)
         /// </summary>

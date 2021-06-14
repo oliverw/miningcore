@@ -42,8 +42,6 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using Contract = Miningcore.Contracts.Contract;
 using CNC = Miningcore.Blockchain.Cryptonote.CryptonoteCommands;
-using Miningcore.Notifications.Messages;
-using System.Globalization;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Cryptonote
@@ -130,17 +128,36 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        private async Task<CryptonoteNetworkType> GetNetworkTypeAsync()
+        private async Task UpdateNetworkTypeAsync()
         {
             if(!networkType.HasValue)
             {
-                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo, true);
+                var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CNC.GetInfo, true);
                 var info = infoResponse.Response.ToObject<GetInfoResponse>();
 
-                networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
-            }
+                // chain detection
+                if(!string.IsNullOrEmpty(info.NetType))
+                {
+                    switch(info.NetType.ToLower())
+                    {
+                        case "mainnet":
+                            networkType = CryptonoteNetworkType.Main;
+                            break;
+                        case "stagenet":
+                            networkType = CryptonoteNetworkType.Stage;
+                            break;
+                        case "testnet":
+                            networkType = CryptonoteNetworkType.Test;
+                            break;
+                        default:
+                            logger.ThrowLogPoolStartupException($"Unsupport net type '{info.NetType}'");
+                            break;
+                    }
+                }
 
-            return networkType.Value;
+                else
+                    networkType = info.IsTestnet ? CryptonoteNetworkType.Test : CryptonoteNetworkType.Main;
+            }
         }
 
         private async Task<bool> EnsureBalance(decimal requiredAmount, CryptonoteCoinTemplate coin)
@@ -156,13 +173,13 @@ namespace Miningcore.Blockchain.Cryptonote
             var unlockedBalance = Math.Floor(response.Response.UnlockedBalance / coin.SmallestUnit);
             var balance = Math.Floor(response.Response.Balance / coin.SmallestUnit);
 
-            if(response.Response.UnlockedBalance < requiredAmount)
+            if(unlockedBalance < requiredAmount)
             {
-                logger.Error(() => $"[{LogCategory}] Need {FormatAmount(requiredAmount)} unlocked balance, but only have {FormatAmount(unlockedBalance)} ({FormatAmount(balance)})");
+                logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payout, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
                 return false;
             }
 
-            logger.Error(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
+            logger.Info(() => $"[{LogCategory}] Current balance is {FormatAmount(unlockedBalance)}");
             return true;
         }
 
@@ -225,11 +242,11 @@ namespace Miningcore.Blockchain.Cryptonote
 
             if(index != -1)
             {
-                address = input.Substring(0, index);
+                address = input[..index];
 
                 if(index + 1 < input.Length)
                 {
-                    paymentId = input.Substring(index + 1);
+                    paymentId = input[(index + 1)..];
 
                     // ignore invalid payment ids
                     if(paymentId.Length != CryptonoteConstants.PaymentIdHexLength)
@@ -337,7 +354,9 @@ namespace Miningcore.Blockchain.Cryptonote
             walletDaemon.Configure(walletDaemonEndpoints);
 
             // detect network
-            await GetNetworkTypeAsync();
+            await UpdateNetworkTypeAsync();
+
+var response1 = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance);
 
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit);
@@ -368,7 +387,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     var block = page[j];
 
                     var rpcResult = await daemon.ExecuteCmdAnyAsync<GetBlockHeaderResponse>(logger,
-                        CryptonoteCommands.GetBlockHeaderByHeight,
+                        CNC.GetBlockHeaderByHeight,
                         new GetBlockHeaderByHeightRequest
                         {
                             Height = block.BlockHeight
@@ -467,6 +486,16 @@ namespace Miningcore.Blockchain.Cryptonote
                         case CryptonoteNetworkType.Main:
                             if(addressPrefix != coin.AddressPrefix &&
                                 addressIntegratedPrefix != coin.AddressPrefixIntegrated)
+                            {
+                                logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
+                                return false;
+                            }
+
+                            break;
+
+                        case CryptonoteNetworkType.Stage:
+                            if(addressPrefix != coin.AddressPrefixStagenet &&
+                               addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
                             {
                                 logger.Warn(() => $"[{LogCategory}] Excluding payment to invalid address {x.Address}");
                                 return false;

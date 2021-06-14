@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,7 @@ namespace Miningcore.Crypto
 {
     public static class HashAlgorithmFactory
     {
-        private static readonly ConcurrentDictionary<string, IHashAlgorithm> cache = new ConcurrentDictionary<string, IHashAlgorithm>();
+        private static readonly ConcurrentDictionary<string, IHashAlgorithm> cache = new();
 
         public static IHashAlgorithm GetHash(IComponentContext ctx, JObject definition)
         {

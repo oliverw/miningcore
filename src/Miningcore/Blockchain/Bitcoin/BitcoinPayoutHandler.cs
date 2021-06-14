@@ -139,6 +139,8 @@ namespace Miningcore.Blockchain.Bitcoin
                             block.Status = BlockStatus.Orphaned;
                             block.Reward = 0;
                             result.Add(block);
+
+                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to daemon error {cmdResult.Error.Code}");
                         }
 
                         else
@@ -153,6 +155,8 @@ namespace Miningcore.Blockchain.Bitcoin
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
                         result.Add(block);
+
+                        logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to missing tx details");
                     }
 
                     else
@@ -234,7 +238,14 @@ namespace Miningcore.Blockchain.Bitcoin
                         amounts, // addresses and associated amounts
                         1, // only spend funds covered by this many confirmations
                         comment, // tx comment
-                        subtractFeesFrom // distribute transaction fee equally over all recipients
+                        subtractFeesFrom, // distribute transaction fee equally over all recipients,
+
+                        // workaround for https://bitcoin.stackexchange.com/questions/102508/bitcoin-cli-sendtoaddress-error-fallbackfee-is-disabled-wait-a-few-blocks-or-en
+                        // using bitcoin regtest
+                        //true,
+                        //null,
+                        //"unset",
+                        //"1"
                     };
                 }
 

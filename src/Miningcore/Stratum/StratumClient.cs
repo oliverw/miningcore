@@ -83,11 +83,11 @@ namespace Miningcore.Stratum
         private readonly Pipe receivePipe;
         private readonly BufferBlock<object> sendQueue;
         private WorkerContextBase context;
-        private readonly Subject<Unit> terminated = new Subject<Unit>();
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly Subject<Unit> terminated = new();
+        private readonly CancellationTokenSource cts = new();
         private bool expectingProxyHeader;
 
-        private static readonly JsonSerializer serializer = new JsonSerializer
+        private static readonly JsonSerializer serializer = new()
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
@@ -149,8 +149,8 @@ namespace Miningcore.Stratum
                         await Task.WhenAny(tasks);
 
                         // We are done with this client, make sure all tasks complete
-                        receivePipe.Reader.Complete();
-                        receivePipe.Writer.Complete();
+                        await receivePipe.Reader.CompleteAsync();
+                        await receivePipe.Writer.CompleteAsync();
                         sendQueue.Complete();
 
                         // additional safety net to ensure remaining tasks don't linger
@@ -243,7 +243,7 @@ namespace Miningcore.Stratum
 
                     if(!await sendQueue.SendAsync(payload, ctsComposite.Token))
                     {
-                        // this will force a disconnect down the line 
+                        // this will force a disconnect down the line
                         throw new IOException($"Send queue stalled at {sendQueue.Count} of {SendQueueCapacity} items");
                     }
                 }
@@ -286,7 +286,7 @@ namespace Miningcore.Stratum
                 var result = await receivePipe.Reader.ReadAsync(cts.Token);
 
                 var buffer = result.Buffer;
-                SequencePosition? position = null;
+                SequencePosition? position;
 
                 if(buffer.Length > MaxInboundRequestLength)
                     throw new InvalidDataException($"Incoming data exceeds maximum of {MaxInboundRequestLength}");
@@ -335,10 +335,10 @@ namespace Miningcore.Stratum
 
             try
             {
-                using(var stream = new MemoryStream(buffer, true))
+                await using(var stream = new MemoryStream(buffer, true))
                 {
                     // serialize
-                    using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
+                    await using(var writer = new StreamWriter(stream, StratumConstants.Encoding, MaxOutboundRequestLength, true))
                     {
                         serializer.Serialize(writer, msg);
                     }
@@ -393,7 +393,7 @@ namespace Miningcore.Stratum
 
             if(line.StartsWith("PROXY "))
             {
-                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(x => IPAddress.Parse(x)).ToArray();
+                var proxyAddresses = proxyProtocol.ProxyAddresses?.Select(IPAddress.Parse).ToArray();
                 if(proxyAddresses == null || !proxyAddresses.Any())
                     proxyAddresses = new[] { IPAddress.Loopback, IPUtils.IPv4LoopBackOnIPv6, IPAddress.IPv6Loopback };
 

@@ -71,7 +71,7 @@ namespace Miningcore.Payments
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly IMessageBus messageBus;
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource cts = new();
         private TimeSpan interval;
         private ClusterConfig clusterConfig;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();

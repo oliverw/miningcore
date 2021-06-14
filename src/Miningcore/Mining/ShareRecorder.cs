@@ -144,9 +144,9 @@ namespace Miningcore.Mining
 
             try
             {
-                using(var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
+                await using(var stream = new FileStream(recoveryFilename, FileMode.Append, FileAccess.Write))
                 {
-                    using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                    await using(var writer = new StreamWriter(stream, new UTF8Encoding(false)))
                     {
                         if(stream.Length == 0)
                             WriteRecoveryFileheader(writer);
@@ -172,7 +172,7 @@ namespace Miningcore.Mining
             }
         }
 
-        private static void WriteRecoveryFileheader(StreamWriter writer)
+        private static void WriteRecoveryFileheader(TextWriter writer)
         {
             writer.WriteLine("# The existence of this file means shares could not be committed to the database.");
             writer.WriteLine("# You should stop the pool cluster and run the following command:");
@@ -189,7 +189,7 @@ namespace Miningcore.Mining
                 var failCount = 0;
                 const int bufferSize = 100;
 
-                using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
+                await using(var stream = new FileStream(recoveryFilename, FileMode.Open, FileAccess.Read))
                 {
                     using(var reader = new StreamReader(stream, new UTF8Encoding(false)))
                     {

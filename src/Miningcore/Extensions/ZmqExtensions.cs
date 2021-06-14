@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -16,9 +16,9 @@ namespace Miningcore.Extensions
     public static class ZmqExtensions
     {
         private static readonly ConcurrentDictionary<string, (byte[] PubKey, byte[] SecretKey)> knownKeys =
-            new ConcurrentDictionary<string, (byte[] PubKey, byte[] SecretKey)>();
+            new();
 
-        private static readonly Lazy<(byte[] PubKey, byte[] SecretKey)> ownKey = new Lazy<(byte[] PubKey, byte[] SecretKey)>(() =>
+        private static readonly Lazy<(byte[] PubKey, byte[] SecretKey)> ownKey = new(() =>
         {
             if(!ZContext.Has("curve"))
                 throw new NotSupportedException("ZMQ library does not support curve");

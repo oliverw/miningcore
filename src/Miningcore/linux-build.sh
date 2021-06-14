@@ -5,4 +5,4 @@
 
 BUILDIR=${1:-../../build}
 echo "Building into $BUILDIR"
-dotnet publish -c Release --framework netcoreapp2.2 -o $BUILDIR
+dotnet publish -c Release --framework net5.0 -o $BUILDIR

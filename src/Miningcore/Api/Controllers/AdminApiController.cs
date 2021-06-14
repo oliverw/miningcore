@@ -34,7 +34,7 @@ namespace Miningcore.Api.Controllers
         private readonly IBalanceRepository balanceRepo;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
 
-        private AdminGcStats gcStats;
+        private readonly AdminGcStats gcStats;
 
         #region Actions
 

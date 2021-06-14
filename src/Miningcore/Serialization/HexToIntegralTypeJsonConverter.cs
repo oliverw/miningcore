@@ -32,7 +32,7 @@ namespace Miningcore.Serialization
                 return default(T);
 
             if(str.StartsWith("0x"))
-                str = str.Substring(2);
+                str = str[2..];
 
             if(typeof(T) == typeof(BigInteger))
                 return BigInteger.Parse("0" + str, NumberStyles.HexNumber);

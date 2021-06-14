@@ -28,7 +28,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
 {
     public class MinexcoinJob : EquihashJob
     {
-        private static readonly Script bankScript = new Script("2103ae6efe9458f1d3bdd9a458b1970eabbdf9fcb1357e0dff2744a777ff43c391eeac".HexToByteArray());
+        private static readonly Script bankScript = new("2103ae6efe9458f1d3bdd9a458b1970eabbdf9fcb1357e0dff2744a777ff43c391eeac".HexToByteArray());
         private const decimal BlockReward = 250000000m;  // Minexcoin has a static block reward
 
         protected override Transaction CreateOutputTransaction()
@@ -46,6 +46,8 @@ namespace Miningcore.Blockchain.Equihash.Custom.Minexcoin
 
             // bank reward
             tx.Outputs.Add(bankReward, bankScript);
+
+            tx.Inputs.Add(TxIn.CreateCoinbase((int) BlockTemplate.Height));
 
             return tx;
         }

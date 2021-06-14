@@ -24,11 +24,8 @@ using Autofac;
 using Miningcore.Api;
 using Miningcore.Banning;
 using Miningcore.Blockchain.Bitcoin;
-using Miningcore.Blockchain.Bitcoin.DaemonResponses;
-using Miningcore.Blockchain.Ethereum;
 using Miningcore.Blockchain.Cryptonote;
 using Miningcore.Blockchain.Equihash;
-using Miningcore.Blockchain.Equihash.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -42,7 +39,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 using Microsoft.AspNetCore.Mvc;
-using Miningcore.Api.WebSocketNotifications;
 
 namespace Miningcore
 {
@@ -151,12 +147,6 @@ namespace Miningcore
             // Cryptonote
 
             builder.RegisterType<CryptonoteJobManager>()
-                .AsSelf();
-
-            //////////////////////
-            // Ethereum
-
-            builder.RegisterType<EthereumJobManager>()
                 .AsSelf();
 
             //////////////////////

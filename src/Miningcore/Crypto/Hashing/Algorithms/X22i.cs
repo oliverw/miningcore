@@ -18,22 +18,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System.Data;
-using System.Threading.Tasks;
-using Miningcore.Persistence.Model;
-using Miningcore.Persistence.Model.Projections;
+using System;
+using Miningcore.Contracts;
+using Miningcore.Native;
 
-namespace Miningcore.Persistence.Repositories
+namespace Miningcore.Crypto.Hashing.Algorithms
 {
-    public interface IPaymentRepository
+    public unsafe class X22I : IHashAlgorithm
     {
-        Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment);
+        public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
+        {
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-        Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<AmountByDate[]> PageMinerPaymentsByDayAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
-        Task<uint> GetPaymentsCountAsync(IDbConnection con, string poolId, string address = null);
-        Task<uint> GetMinerPaymentsByDayCountAsync(IDbConnection con, string poolId, string address);
-        Task<uint> GetBalanceChangesCountAsync(IDbConnection con, string poolId, string address = null);
+            fixed (byte* input = data)
+            {
+                fixed (byte* output = result)
+                {
+                    LibMultihash.x22i(input, output, (uint) data.Length);
+                }
+            }
+        }
     }
 }

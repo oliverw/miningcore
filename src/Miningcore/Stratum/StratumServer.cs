@@ -83,14 +83,14 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected readonly Dictionary<string, StratumClient> clients = new Dictionary<string, StratumClient>();
-        protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new ConcurrentDictionary<string, X509Certificate2>();
+        protected readonly Dictionary<string, StratumClient> clients = new();
+        protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new();
         protected static readonly HashSet<int> ignoredSocketErrors;
         protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
-        protected readonly Dictionary<int, Socket> ports = new Dictionary<int, Socket>();
+        protected readonly Dictionary<int, Socket> ports = new();
         protected ClusterConfig clusterConfig;
         protected IBanManager banManager;
         protected ILogger logger;
