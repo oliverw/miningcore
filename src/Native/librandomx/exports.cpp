@@ -30,87 +30,87 @@ namespace rx
 #define MODULE_API __attribute__((visibility("default")))
 #endif
 
-extern "C" MODULE_API rx::randomx_flags randomx_get_flags_export()
+extern "C" MODULE_API rx::randomx_flags randomx_get_flags()
 {
 	return rx::randomx_get_flags();
 }
 
-extern "C" MODULE_API rx::randomx_cache *randomx_alloc_cache_export(rx::randomx_flags flags)
+extern "C" MODULE_API rx::randomx_cache *randomx_alloc_cache(rx::randomx_flags flags)
 {
   return rx::randomx_alloc_cache(flags);
 }
 
-extern "C" MODULE_API void randomx_init_cache_export(rx::randomx_cache *cache, const void *key, size_t keySize)
+extern "C" MODULE_API void randomx_init_cache(rx::randomx_cache *cache, const void *key, size_t keySize)
 {
   rx::randomx_init_cache(cache, key, keySize);
 }
 
-extern "C" MODULE_API void randomx_release_cache_export(rx::randomx_cache* cache)
+extern "C" MODULE_API void randomx_release_cache(rx::randomx_cache* cache)
 {
   rx::randomx_release_cache(cache);
 }
 
-extern "C" MODULE_API rx::randomx_dataset *randomx_alloc_dataset_export(rx::randomx_flags flags)
+extern "C" MODULE_API rx::randomx_dataset *randomx_alloc_dataset(rx::randomx_flags flags)
 {
   return rx::randomx_alloc_dataset(flags);
 }
 
-extern "C" MODULE_API unsigned long randomx_dataset_item_count_export(void)
+extern "C" MODULE_API unsigned long randomx_dataset_item_count(void)
 {
   return rx::randomx_dataset_item_count();
 }
 
-extern "C" MODULE_API void randomx_init_dataset_export(rx::randomx_dataset *dataset, rx::randomx_cache *cache, unsigned long startItem, unsigned long itemCount)
+extern "C" MODULE_API void randomx_init_dataset(rx::randomx_dataset *dataset, rx::randomx_cache *cache, unsigned long startItem, unsigned long itemCount)
 {
   rx::randomx_init_dataset(dataset, cache, startItem, itemCount);
 }
 
-extern "C" MODULE_API void *randomx_get_dataset_memory_export(rx::randomx_dataset *dataset)
+extern "C" MODULE_API void *randomx_get_dataset_memory(rx::randomx_dataset *dataset)
 {
    return rx::randomx_get_dataset_memory(dataset);
 }
 
-extern "C" MODULE_API void randomx_release_dataset_export(rx::randomx_dataset *dataset)
+extern "C" MODULE_API void randomx_release_dataset(rx::randomx_dataset *dataset)
 {
   rx::randomx_release_dataset(dataset);
 }
 
-extern "C" MODULE_API rx::randomx_vm *randomx_create_vm_export(rx::randomx_flags flags, rx::randomx_cache *cache, rx::randomx_dataset *dataset)
+extern "C" MODULE_API rx::randomx_vm *randomx_create_vm(rx::randomx_flags flags, rx::randomx_cache *cache, rx::randomx_dataset *dataset)
 {
   return rx::randomx_create_vm(flags, cache, dataset);
 }
 
-extern "C" MODULE_API void randomx_vm_set_cache_export(rx::randomx_vm *machine, rx::randomx_cache* cache)
+extern "C" MODULE_API void randomx_vm_set_cache(rx::randomx_vm *machine, rx::randomx_cache* cache)
 {
   rx::randomx_vm_set_cache(machine, cache);
 }
 
-extern "C" MODULE_API void randomx_vm_set_dataset_export(rx::randomx_vm *machine, rx::randomx_dataset *dataset)
+extern "C" MODULE_API void randomx_vm_set_dataset(rx::randomx_vm *machine, rx::randomx_dataset *dataset)
 {
   rx::randomx_vm_set_dataset(machine, dataset);
 }
 
-extern "C" MODULE_API void randomx_destroy_vm_export(rx::randomx_vm *machine)
+extern "C" MODULE_API void randomx_destroy_vm(rx::randomx_vm *machine)
 {
   rx::randomx_destroy_vm(machine);
 }
 
-extern "C" MODULE_API void randomx_calculate_hash_export(rx::randomx_vm *machine, const void *input, size_t inputSize, void *output)
+extern "C" MODULE_API void randomx_calculate_hash(rx::randomx_vm *machine, const void *input, size_t inputSize, void *output)
 {
   rx::randomx_calculate_hash(machine, input, inputSize, output);
 }
 
-extern "C" MODULE_API void randomx_calculate_hash_first_export(rx::randomx_vm* machine, const void* input, size_t inputSize)
+extern "C" MODULE_API void randomx_calculate_hash_first(rx::randomx_vm* machine, const void* input, size_t inputSize)
 {
   rx::randomx_calculate_hash_first(machine, input, inputSize);
 }
 
-extern "C" MODULE_API void randomx_calculate_hash_next_export(rx::randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output)
+extern "C" MODULE_API void randomx_calculate_hash_next(rx::randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output)
 {
   rx::randomx_calculate_hash_next(machine, nextInput, nextInputSize, output);
 }
 
-extern "C" MODULE_API void randomx_calculate_hash_last_export(rx::randomx_vm* machine, void* output)
+extern "C" MODULE_API void randomx_calculate_hash_last(rx::randomx_vm* machine, void* output)
 {
   rx::randomx_calculate_hash_last(machine, output);
 }
