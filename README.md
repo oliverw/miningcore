@@ -24,13 +24,6 @@
 
 Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
-#### Ethereum
-
-Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-
-- Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
-- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
-
 #### ZCash
 
 - Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
@@ -54,13 +47,13 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 
 ### Runtime Requirements on Windows
 
-- [.Net Core 2.2 Runtime](https://www.microsoft.com/net/download/core)
+- [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 
 ### Runtime Requirements on Linux
 
-- [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
+- [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
@@ -108,7 +101,7 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
-After executing the command, your <code>shares</code> table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool. 
+After executing the command, your <code>shares</code> table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
 
 The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
 
@@ -124,23 +117,23 @@ Once you have done this for all of your existing pools you should now restore yo
 
 ### Building from Source
 
-#### Building on Ubuntu 16.04
+#### Building on Ubuntu 20.04
 
 ```console
-$ wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb
+$ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 $ sudo dpkg -i packages-microsoft-prod.deb
-$ sudo apt-get update -y
-$ sudo apt-get install apt-transport-https -y
-$ sudo apt-get update -y
-$ sudo apt-get -y install dotnet-sdk-2.2 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+$ sudo apt-get update; \
+$  sudo apt-get install -y apt-transport-https && \
+$  sudo apt-get update
+$ sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
 $ git clone https://github.com/coinfoundry/miningcore
 $ cd miningcore/src/Miningcore
-$ dotnet publish -c Release --framework netcoreapp2.2  -o ../../build
+$ dotnet publish -c Release --framework net5.0  -o ../../build
 ```
 
 #### Building on Windows
 
-Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
+Download and install the [.Net Core 2.2 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 
 ```dosbatch
 > git clone https://github.com/coinfoundry/miningcore
@@ -150,8 +143,7 @@ Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/downl
 
 #### Building on Windows - Visual Studio
 
-- Download and install the [.Net Core 2.2 SDK](https://www.microsoft.com/net/download/core)
-- Install [Visual Studio 2017](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
+- Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in VS 2017
 
 
@@ -161,9 +153,9 @@ Create a configuration file <code>config.json</code> as described [here](https:/
 
 ```
 cd ../../build
-dotnet Miningcore.dll -c config.json
+Miningcore -c config.json
 ```
 
 ## Running a production pool
 
-A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point. Feel free to discuss ideas/issues with fellow pool operators using our [Gitter Channel](https://gitter.im/miningcore/Lobby).
+A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
