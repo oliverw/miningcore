@@ -206,9 +206,13 @@ namespace Miningcore.Native
                 }
             }
 
-            public void Init(ReadOnlySpan<byte> key, randomx_flags? flags_override = null)
+            public void Init(ReadOnlySpan<byte> key,
+                randomx_flags? flagsOverride = null, randomx_flags? flagsAdd = null)
             {
-                flags = flags_override ?? randomx_get_flags();
+                flags = flagsOverride ?? randomx_get_flags();
+
+                if(flagsAdd.HasValue)
+                    flags |= flagsAdd.Value;
 
                 cache = randomx_alloc_cache(flags);
 
@@ -235,7 +239,8 @@ namespace Miningcore.Native
             }
         }
 
-        private static Tuple<GenContext, BlockingCollection<RxVm>> CreateGeneration(byte[] key, randomx_flags? flags, int vmCount, string keyString)
+        private static Tuple<GenContext, BlockingCollection<RxVm>> CreateGeneration(byte[] key,
+            randomx_flags? flagsOverride, randomx_flags? flagsAdd, int vmCount, string keyString)
         {
             var vms = new BlockingCollection<RxVm>();
 
@@ -253,7 +258,7 @@ namespace Miningcore.Native
                 logger.Info(() => $"Creating VM {index + 1} for seed hash {keyString} ...");
 
                 var vm = new RxVm();
-                vm.Init(key, flags);
+                vm.Init(key, flagsOverride, flagsAdd);
 
                 vms.Add(vm);
 
@@ -265,13 +270,14 @@ namespace Miningcore.Native
             return generation;
         }
 
-        private static Tuple<GenContext, BlockingCollection<RxVm>> GetGeneration(byte[] key, randomx_flags? flags, int vmCount)
+        private static Tuple<GenContext, BlockingCollection<RxVm>> GetGeneration(byte[] key,
+            randomx_flags? flagsOverride, randomx_flags? flagsAdd, int vmCount)
         {
             var keyString = key.ToHexString();
 
             if(!generations.TryGetValue(keyString, out var item))
             {
-                item = CreateGeneration(key, flags, vmCount, keyString);
+                item = CreateGeneration(key, flagsOverride, flagsAdd, vmCount, keyString);
 
                 generations[keyString] = item;
             }
@@ -279,11 +285,12 @@ namespace Miningcore.Native
             return item;
         }
 
-        public static void CalculateHash(byte[] key, ReadOnlySpan<byte> data, Span<byte> result, randomx_flags? flags = null, int vmCount = 1)
+        public static void CalculateHash(byte[] key, ReadOnlySpan<byte> data, Span<byte> result,
+            randomx_flags? flagsOverride = null, randomx_flags? flagsAdd = null, int vmCount = 1)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var (ctx, vms) = GetGeneration(key, flags, vmCount);
+            var (ctx, vms) = GetGeneration(key, flagsOverride, flagsAdd, vmCount);
             RxVm vm = null;
 
             try
