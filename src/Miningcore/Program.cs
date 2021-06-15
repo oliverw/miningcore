@@ -108,6 +108,21 @@ namespace Miningcore
                 ConfigureMisc();
                 ValidateRuntimeEnvironment();
 
+var blobConverted = "0106a2aaafd505583cf50bcc743d04d831d2b119dc94ad88679e359076ee3f18d258ee138b3b42580100a4b1e2f4baf6ab7109071ab59bc52dba740d1de99fa0ae0c4afd6ea9f40c5d87ec01".HexToByteArray();
+var buf = new byte[32];
+var key = Encoding.UTF8.GetBytes("foo bar");
+
+LibRandomX.CalculateHash(key, blobConverted, buf, null, LibRandomX.randomx_flags.RANDOMX_FLAG_FULL_MEM);
+
+var start = DateTime.Now;
+
+const int count = 10000;
+for(var i=0;i<count;i++)
+    LibRandomX.CalculateHash(key, blobConverted, buf);
+
+Console.WriteLine((DateTime.Now - start).TotalMilliseconds / count);
+return;
+
                 var hostBuilder = new HostBuilder();
 
                 hostBuilder

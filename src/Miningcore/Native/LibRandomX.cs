@@ -38,7 +38,7 @@ namespace Miningcore.Native
     {
         #region Context managment
 
-        private static readonly ConcurrentDictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>> generations = new();
+        private static readonly Dictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>> generations = new();
         private static readonly Thread gcThread;
         private static readonly byte[] empty = new byte[32];
 
@@ -51,36 +51,39 @@ namespace Miningcore.Native
                 {
                     Thread.Sleep(TimeSpan.FromMinutes(1));
 
-                    var list = new List<KeyValuePair<string, Tuple<GenContext, BlockingCollection<RxVm>>>>();
-
-                    foreach(var pair in generations)
+                    lock(generations)
                     {
-                        if(DateTime.Now - pair.Value.Item1.LastAccess > TimeSpan.FromMinutes(5))
-                            list.Add(pair);
-                    }
+                        var list = new List<KeyValuePair<string, Tuple<GenContext, BlockingCollection<RxVm>>>>();
 
-                    foreach(var pair in list.OrderBy(x=> DateTime.Now - x.Value.Item1.LastAccess, OrderByDirection.Descending))
-                    {
-                        // don't dispose remaining VM
-                        if(generations.Count <= 1)
-                            break;
-
-                        if(generations.TryRemove(pair.Key, out var item))
+                        foreach(var pair in generations)
                         {
-                            // remove all associated VMs
-                            var remaining = item.Item1.VmCount;
-                            var col = item.Item2;
+                            if(DateTime.Now - pair.Value.Item1.LastAccess > TimeSpan.FromMinutes(5))
+                                list.Add(pair);
+                        }
 
-                            while(remaining > 0)
+                        foreach(var pair in list.OrderBy(x => DateTime.Now - x.Value.Item1.LastAccess, OrderByDirection.Descending))
+                        {
+                            // don't dispose remaining VM
+                            if(generations.Count <= 1)
+                                break;
+
+                            if(generations.Remove(pair.Key, out var item))
                             {
-                                var vm = col.Take();
+                                // remove all associated VMs
+                                var remaining = item.Item1.VmCount;
+                                var col = item.Item2;
 
-                                logger.Info($"Disposing VM {item.Item1.VmCount - remaining} for seed hash {pair.Key}");
-                                vm.Dispose();
-                                remaining--;
+                                while(remaining > 0)
+                                {
+                                    var vm = col.Take();
+
+                                    logger.Info($"Disposing VM {item.Item1.VmCount - remaining} for seed hash {pair.Key}");
+                                    vm.Dispose();
+                                    remaining--;
+                                }
+
+                                col.Dispose();
                             }
-
-                            col.Dispose();
                         }
                     }
                 }
@@ -265,19 +268,22 @@ namespace Miningcore.Native
         {
             var keyString = key.ToHexString();
 
-            if(!generations.TryGetValue(keyString, out var item))
+            lock(generations)
             {
-                var flags = flagsOverride ?? randomx_get_flags();
+                if(!generations.TryGetValue(keyString, out var item))
+                {
+                    var flags = flagsOverride ?? randomx_get_flags();
 
-                if(flagsAdd.HasValue)
-                    flags |= flagsAdd.Value;
+                    if(flagsAdd.HasValue)
+                        flags |= flagsAdd.Value;
 
-                item = CreateGeneration(key, flags, vmCount, keyString);
+                    item = CreateGeneration(key, flags, vmCount, keyString);
 
-                generations[keyString] = item;
+                    generations[keyString] = item;
+                }
+
+                return item;
             }
-
-            return item;
         }
 
         public static void CalculateHash(byte[] key, ReadOnlySpan<byte> data, Span<byte> result,
