@@ -117,15 +117,15 @@ Once you have done this for all of your existing pools you should now restore yo
 #### Building on Ubuntu 20.04
 
 ```console
-wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-sudo dpkg -i packages-microsoft-prod.deb
-sudo apt-get update \
- sudo apt-get install -y apt-transport-https && \
- sudo apt-get update
-sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
-git clone https://github.com/coinfoundry/miningcore
-cd miningcore/src/Miningcore
-dotnet publish -c Release --framework net5.0  -o ../../build
+$ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+$ sudo dpkg -i packages-microsoft-prod.deb
+$ sudo apt-get update
+$ sudo apt-get install -y apt-transport-https
+$ sudo apt-get update
+$ sudo apt-get -y install dotnet-sdk-5.0 git cmake build-essential libssl-dev pkg-config libboost-all-dev libsodium-dev libzmq5
+$ git clone https://github.com/coinfoundry/miningcore
+$ cd miningcore/src/Miningcore
+$ dotnet publish -c Release --framework net5.0  -o ../../build
 ```
 
 #### Building on Windows
@@ -148,9 +148,9 @@ Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotn
 
 Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
-```
-cd ../../build
-Miningcore -c config.json
+```console
+$ cd ../../build
+$ Miningcore -c config.json
 ```
 
 ## Running a production pool
