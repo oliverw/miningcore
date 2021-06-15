@@ -184,10 +184,6 @@ namespace Miningcore.Native
             private IntPtr cache = IntPtr.Zero;
             private IntPtr vm = IntPtr.Zero;
             private RxDataSet ds;
-            private randomx_flags flags;
-
-            public IntPtr Handle => vm;
-            public randomx_flags Flags => flags;
 
             public void Dispose()
             {
@@ -206,14 +202,8 @@ namespace Miningcore.Native
                 }
             }
 
-            public void Init(ReadOnlySpan<byte> key,
-                randomx_flags? flagsOverride = null, randomx_flags? flagsAdd = null)
+            public void Init(ReadOnlySpan<byte> key, randomx_flags flags)
             {
-                flags = flagsOverride ?? randomx_get_flags();
-
-                if(flagsAdd.HasValue)
-                    flags |= flagsAdd.Value;
-
                 cache = randomx_alloc_cache(flags);
 
                 fixed(byte* key_ptr = key)
@@ -240,7 +230,7 @@ namespace Miningcore.Native
         }
 
         private static Tuple<GenContext, BlockingCollection<RxVm>> CreateGeneration(byte[] key,
-            randomx_flags? flagsOverride, randomx_flags? flagsAdd, int vmCount, string keyString)
+            randomx_flags flags, int vmCount, string keyString)
         {
             var vms = new BlockingCollection<RxVm>();
 
@@ -255,14 +245,14 @@ namespace Miningcore.Native
             void createVm(int index)
             {
                 var start = DateTime.Now;
-                logger.Info(() => $"Creating VM {index + 1} for seed hash {keyString} ...");
+                logger.Info(() => $"Creating VM {index + 1} [{flags}] for seed hash {keyString} ...");
 
                 var vm = new RxVm();
-                vm.Init(key, flagsOverride, flagsAdd);
+                vm.Init(key, flags);
 
                 vms.Add(vm);
 
-                logger.Info(() => $"VM {index + 1} created in {DateTime.Now - start} ({vm.Flags})");
+                logger.Info(() => $"VM {index + 1} created in {DateTime.Now - start}");
             };
 
             Parallel.For(0, vmCount, createVm);
@@ -277,7 +267,12 @@ namespace Miningcore.Native
 
             if(!generations.TryGetValue(keyString, out var item))
             {
-                item = CreateGeneration(key, flagsOverride, flagsAdd, vmCount, keyString);
+                var flags = flagsOverride ?? randomx_get_flags();
+
+                if(flagsAdd.HasValue)
+                    flags |= flagsAdd.Value;
+
+                item = CreateGeneration(key, flags, vmCount, keyString);
 
                 generations[keyString] = item;
             }
