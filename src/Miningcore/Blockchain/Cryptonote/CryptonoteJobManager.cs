@@ -81,6 +81,7 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonoteNetworkType networkType;
         private CryptonotePoolConfigExtra extraPoolConfig;
         private LibRandomX.randomx_flags? randomXFlagsOverride;
+        private LibRandomX.randomx_flags? randomXFlagsAdd;
         private ulong poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
 
@@ -114,7 +115,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXFlagsOverride, extraPoolConfig.RandomXVMCount);
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
                     currentJob = job;
 
                     // update stats
@@ -243,6 +244,7 @@ namespace Miningcore.Blockchain.Cryptonote
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
 
             randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
+            randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons

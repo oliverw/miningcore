@@ -476,7 +476,11 @@ namespace Miningcore.Blockchain.Bitcoin
             if(results.Any(x => x.Error != null))
             {
                 var resultList = results.ToList();
-                var errors = results.Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
+
+                // filter out optional RPCs
+                var errors = results
+                    .Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.SubmitBlock)
+                    .Where(x => x.Error != null && commands[resultList.IndexOf(x)].Method != BitcoinCommands.GetAddressInfo)
                     .ToArray();
 
                 if(errors.Any())
