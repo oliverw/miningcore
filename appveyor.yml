@@ -5,7 +5,7 @@
 # Build worker image (VM template)
 image:
 - Visual Studio 2019
-- Ubuntu
+- Ubuntu2004
 
 #---------------------------------#
 #       build configuration       #
@@ -36,6 +36,9 @@ build_script:
 # to run tests again only selected assemblies and/or categories
 test_script:
  - dotnet test -c Release --no-build
+
+before_test:
+  - sh: cp -v $APPVEYOR_BUILD_FOLDER/src/Miningcore/bin/Release/net5.0/publish/*.so $APPVEYOR_BUILD_FOLDER/src/Miningcore.Tests/bin/Release/net5.0/
 
 #---------------------------------#
 #         notifications           #
