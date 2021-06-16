@@ -35,7 +35,7 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash, string randomXRealm)
+            CryptonoteCoinTemplate coin, PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash, string randomXRealm)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -43,7 +43,7 @@ namespace Miningcore.Blockchain.Cryptonote
             Contract.RequiresNonNull(instanceId, nameof(instanceId));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(jobId), $"{nameof(jobId)} must not be empty");
 
-            coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
+            this.coin = coin;
             BlockTemplate = blockTemplate;
             PrepareBlobTemplate(instanceId);
             PrevHash = prevHash;

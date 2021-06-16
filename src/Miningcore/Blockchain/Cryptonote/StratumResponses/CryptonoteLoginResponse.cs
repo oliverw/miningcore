@@ -33,6 +33,9 @@ namespace Miningcore.Blockchain.Cryptonote.StratumResponses
         [JsonProperty("seed_hash")]
         public string SeedHash { get; set; }
 
+        [JsonProperty("algo")]
+        public string Algorithm { get; set; }
+
         /// <summary>
         /// Introduced for CNv4 (aka CryptonightR)
         /// </summary>

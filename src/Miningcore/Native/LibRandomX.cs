@@ -302,8 +302,7 @@ namespace Miningcore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            // clear result
-            empty.CopyTo(result);
+            var success = false;
 
             // look up generation
             var (ctx, seedVms) = GetSeed(realm, seedHex);
@@ -319,8 +318,8 @@ namespace Miningcore.Native
 
                     vm.CalculateHash(data, result);
 
-                    // update timestamp
                     ctx.LastAccess = DateTime.Now;
+                    success = true;
                 }
 
                 catch(Exception ex)
@@ -335,6 +334,12 @@ namespace Miningcore.Native
                     if(vm != null)
                         seedVms.Add(vm);
                 }
+            }
+
+            if(!success)
+            {
+                // clear result on failure
+                empty.CopyTo(result);
             }
         }
     }

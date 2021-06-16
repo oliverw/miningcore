@@ -60,6 +60,7 @@ namespace Miningcore.Blockchain.Cryptonote
         private long currentJobId;
 
         private CryptonoteJobManager manager;
+        private string minerAlgo;
 
         private async Task OnLoginAsync(StratumClient client, Timestamped<JsonRpcRequest> tsRequest)
         {
@@ -172,6 +173,9 @@ namespace Miningcore.Blockchain.Cryptonote
                 Height = job.Height,
                 SeedHash = job.SeedHash,
             };
+
+            if(!string.IsNullOrEmpty(minerAlgo))
+                result.Algorithm = minerAlgo;
 
             // update context
             lock(context)
@@ -312,6 +316,8 @@ namespace Miningcore.Blockchain.Cryptonote
 
             if(poolConfig.EnableInternalStratum == true)
             {
+                minerAlgo = GetMinerAlgo();
+
                 disposables.Add(manager.Blocks
                     .Select(_ => Observable.FromAsync(async () =>
                     {
@@ -340,6 +346,17 @@ namespace Miningcore.Blockchain.Cryptonote
                 // keep updating NetworkStats
                 disposables.Add(manager.Blocks.Subscribe());
             }
+        }
+
+        private string GetMinerAlgo()
+        {
+            switch(manager.Coin.Hash)
+            {
+                case CryptonightHashType.RandomX:
+                    return $"rx/{manager.Coin.HashVariant}";
+            }
+
+            return null;
         }
 
         protected override async Task InitStatsAsync()

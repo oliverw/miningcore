@@ -42,7 +42,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
-using Miningcore.Payments;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -84,10 +83,11 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonotePoolConfigExtra extraPoolConfig;
         private LibRandomX.randomx_flags? randomXFlagsOverride;
         private LibRandomX.randomx_flags? randomXFlagsAdd;
-        private string currentSeedHash = null;
+        private string currentSeedHash;
         private string randomXRealm;
         private ulong poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
+        private CryptonoteCoinTemplate coin;
 
         protected async Task<bool> UpdateJob(string via = null, string json = null)
         {
@@ -137,7 +137,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     }
 
                     // init job
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXRealm);
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), coin, poolConfig, clusterConfig, newHash, randomXRealm);
                     currentJob = job;
 
                     // update stats
@@ -255,6 +255,8 @@ namespace Miningcore.Blockchain.Cryptonote
 
         public IObservable<Unit> Blocks { get; private set; }
 
+        public CryptonoteCoinTemplate Coin => coin;
+
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -264,6 +266,7 @@ namespace Miningcore.Blockchain.Cryptonote
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
+            coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
             randomXRealm = poolConfig.Id;
             randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
