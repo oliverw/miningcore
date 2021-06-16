@@ -19,7 +19,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using Miningcore.Configuration;
-using Miningcore.Native;
 using Newtonsoft.Json.Linq;
 
 namespace Miningcore.Blockchain.Cryptonote.Configuration
@@ -45,6 +44,7 @@ namespace Miningcore.Blockchain.Cryptonote.Configuration
         /// Optional value for number of RandomX VMs allocated per generation (new seed hash)
         /// Set to -1 to scale to number of cores
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public int RandomXVMCount { get; set; } = 1;
     }
 }

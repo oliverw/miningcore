@@ -20,11 +20,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -40,7 +42,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Native;
 using Miningcore.Notifications.Messages;
-using Miningcore.Payments;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -82,8 +83,11 @@ namespace Miningcore.Blockchain.Cryptonote
         private CryptonotePoolConfigExtra extraPoolConfig;
         private LibRandomX.randomx_flags? randomXFlagsOverride;
         private LibRandomX.randomx_flags? randomXFlagsAdd;
+        private string currentSeedHash;
+        private string randomXRealm;
         private ulong poolAddressBase58Prefix;
         private DaemonEndpointConfig[] walletDaemonEndpoints;
+        private CryptonoteCoinTemplate coin;
 
         protected async Task<bool> UpdateJob(string via = null, string json = null)
         {
@@ -115,7 +119,25 @@ namespace Miningcore.Blockchain.Cryptonote
                     else
                         logger.Info(() => $"Detected new block {blockTemplate.Height}");
 
-                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), poolConfig, clusterConfig, newHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                    // detect seed hash change
+                    if(currentSeedHash != blockTemplate.SeedHash)
+                    {
+                        logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
+
+                        LibRandomX.WithLock(() =>
+                        {
+                            // delete old seed
+                            if(currentSeedHash != null)
+                                LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
+
+                            // activate new one
+                            currentSeedHash = blockTemplate.SeedHash;
+                            LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                        });
+                    }
+
+                    // init job
+                    job = new CryptonoteJob(blockTemplate, instanceId, NextJobId(), coin, poolConfig, clusterConfig, newHash, randomXRealm);
                     currentJob = job;
 
                     // update stats
@@ -233,6 +255,8 @@ namespace Miningcore.Blockchain.Cryptonote
 
         public IObservable<Unit> Blocks { get; private set; }
 
+        public CryptonoteCoinTemplate Coin => coin;
+
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -242,7 +266,9 @@ namespace Miningcore.Blockchain.Cryptonote
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
+            coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
+            randomXRealm = poolConfig.Id;
             randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
             randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
 
@@ -376,6 +402,21 @@ namespace Miningcore.Blockchain.Cryptonote
         }
 
         #endregion // API-Surface
+
+        private static JToken GetFrameAsJToken(byte[] frame)
+        {
+            var text = Encoding.UTF8.GetString(frame);
+
+            // find end of message type indicator
+            var index = text.IndexOf(":");
+
+            if (index == -1)
+                return null;
+
+            var json = text.Substring(index + 1);
+
+            return JToken.Parse(json);
+        }
 
         private LibRandomX.randomx_flags? MakeRandomXFlags(JToken token)
         {
@@ -631,14 +672,38 @@ namespace Miningcore.Blockchain.Cryptonote
                     logger.Info(() => $"Subscribing to ZMQ push-updates from {string.Join(", ", zmq.Values)}");
 
                     var blockNotify = daemon.ZmqSubscribe(logger, zmq)
+                        .Where(msg =>
+                        {
+                            bool result = false;
+
+                            try
+                            {
+                                var text = Encoding.UTF8.GetString(msg[0].Read());
+
+                                result = text.StartsWith("json-minimal-chain_main:");
+                            }
+
+                            catch
+                            {
+                            }
+
+                            if(!result)
+                                msg.Dispose();
+
+                            return result;
+                        })
                         .Select(msg =>
                         {
                             using(msg)
                             {
+                                var token = GetFrameAsJToken(msg[0].Read());
+
+                                if (token != null)
+                                    return token.Value<long>("first_height").ToString(CultureInfo.InvariantCulture);
+
                                 // We just take the second frame's raw data and turn it into a hex string.
                                 // If that string changes, we got an update (DistinctUntilChanged)
-                                var result = msg[1].Read().ToHexString();
-                                return result;
+                                return msg[0].Read().ToHexString();
                             }
                         })
                         .DistinctUntilChanged()
