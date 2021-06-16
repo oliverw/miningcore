@@ -56,6 +56,11 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 ### Runtime Requirements on Linux
 
 - [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
+- Debian/Ubuntu Packages if **not** built from source
+  - postgresql-11 (or higher, the higher the better)
+  - libzmq5
+  - libboost-system1.67.0
+  - libboost-date-time1.67.0
 - [PostgreSQL Database](https://www.postgresql.org/)
 - Coin Daemon (per pool)
 - Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
