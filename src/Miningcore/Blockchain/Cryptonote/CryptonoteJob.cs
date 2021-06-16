@@ -35,10 +35,7 @@ namespace Miningcore.Blockchain.Cryptonote
     public class CryptonoteJob
     {
         public CryptonoteJob(GetBlockTemplateResponse blockTemplate, byte[] instanceId, string jobId,
-            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash,
-            LibRandomX.randomx_flags? randomXFlagsOverride,
-            LibRandomX.randomx_flags? randomXFlagsAdd,
-            int randomXvmCount)
+            PoolConfig poolConfig, ClusterConfig clusterConfig, string prevHash, string randomXRealm)
         {
             Contract.RequiresNonNull(blockTemplate, nameof(blockTemplate));
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
@@ -51,24 +48,20 @@ namespace Miningcore.Blockchain.Cryptonote
             PrepareBlobTemplate(instanceId);
             PrevHash = prevHash;
 
-            if(!string.IsNullOrEmpty(blockTemplate.SeedHash))
-                seedHashBytes = blockTemplate.SeedHash.HexToByteArray();
-
             switch(coin.Hash)
             {
                 case CryptonightHashType.RandomX:
-                    hashFunc = ((key, data, result, height) =>
+                    hashFunc = ((seedHex, data, result, height) =>
                     {
-                        LibRandomX.CalculateHash(key, data, result, randomXFlagsOverride, randomXFlagsAdd, randomXvmCount);
+                        LibRandomX.CalculateHash(randomXRealm, seedHex, data, result);
                     });
                     break;
             }
         }
 
-        public delegate void HashFunc(byte[] key, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
+        public delegate void HashFunc(string seedHex, ReadOnlySpan<byte> data, Span<byte> result, ulong height);
 
         private byte[] blobTemplate;
-        private readonly byte[] seedHashBytes;
         private int extraNonce;
         private readonly CryptonoteCoinTemplate coin;
         private readonly HashFunc hashFunc;
@@ -171,7 +164,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // hash it
             Span<byte> headerHash = stackalloc byte[32];
-            hashFunc(seedHashBytes, blobConverted, headerHash, BlockTemplate.Height);
+            hashFunc(BlockTemplate.SeedHash, blobConverted, headerHash, BlockTemplate.Height);
 
             var headerHashString = headerHash.ToHexString();
             if(headerHashString != workerHash)

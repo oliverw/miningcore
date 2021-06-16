@@ -21,80 +21,27 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
-using MoreLinq;
 using NLog;
 
+// ReSharper disable UnusedMember.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Native
 {
     public static unsafe class LibRandomX
     {
-        #region Context managment
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly Dictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>> generations = new();
-        private static readonly Thread gcThread;
+        #region VM managment
+
+        internal static readonly Dictionary<string, Dictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>>> realms = new();
         private static readonly byte[] empty = new byte[32];
 
-        static LibRandomX()
-        {
-            // GC
-            gcThread = new Thread(() =>
-            {
-                while(true)
-                {
-                    Thread.Sleep(TimeSpan.FromMinutes(1));
-
-                    lock(generations)
-                    {
-                        var list = new List<KeyValuePair<string, Tuple<GenContext, BlockingCollection<RxVm>>>>();
-
-                        foreach(var pair in generations)
-                        {
-                            if(DateTime.Now - pair.Value.Item1.LastAccess > TimeSpan.FromMinutes(5))
-                                list.Add(pair);
-                        }
-
-                        foreach(var pair in list.OrderBy(x => DateTime.Now - x.Value.Item1.LastAccess, OrderByDirection.Descending))
-                        {
-                            // don't dispose remaining VM
-                            if(generations.Count <= 1)
-                                break;
-
-                            if(generations.Remove(pair.Key, out var item))
-                            {
-                                // remove all associated VMs
-                                var remaining = item.Item1.VmCount;
-                                var col = item.Item2;
-
-                                while(remaining > 0)
-                                {
-                                    var vm = col.Take();
-
-                                    logger.Info($"Disposing VM {item.Item1.VmCount - remaining} for seed hash {pair.Key}");
-                                    vm.Dispose();
-                                    remaining--;
-                                }
-
-                                col.Dispose();
-                            }
-                        }
-                    }
-                }
-            });
-
-            gcThread.Start();
-        }
-
-        #endregion // Context managment
-
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        #endregion // VM managment
 
         [Flags]
         public enum randomx_flags
@@ -152,13 +99,13 @@ namespace Miningcore.Native
         [DllImport("librandomx", EntryPoint = "randomx_calculate_hash", CallingConvention = CallingConvention.Cdecl)]
         private static extern void randomx_calculate_hash(IntPtr machine, byte* input, int inputSize, byte* output);
 
-        private class GenContext
+        public class GenContext
         {
             public DateTime LastAccess { get; set; } = DateTime.Now;
             public int VmCount { get; init; }
         }
 
-        private class RxDataSet : IDisposable
+        public class RxDataSet : IDisposable
         {
             private IntPtr dataset = IntPtr.Zero;
 
@@ -182,7 +129,7 @@ namespace Miningcore.Native
             }
         }
 
-        private class RxVm : IDisposable
+        public class RxVm : IDisposable
         {
             private IntPtr cache = IntPtr.Zero;
             private IntPtr vm = IntPtr.Zero;
@@ -232,15 +179,48 @@ namespace Miningcore.Native
             }
         }
 
-        private static Tuple<GenContext, BlockingCollection<RxVm>> CreateGeneration(byte[] key,
-            randomx_flags flags, int vmCount, string keyString)
+        public static void WithLock(Action action)
+        {
+            lock(realms)
+            {
+                action();
+            }
+        }
+
+        public static void CreateSeed(string realm, string seedHex,
+            randomx_flags? flagsOverride = null, randomx_flags? flagsAdd = null, int vmCount = 1)
+        {
+            lock(realms)
+            {
+                if(!realms.TryGetValue(realm, out var seeds))
+                {
+                    seeds = new Dictionary<string, Tuple<GenContext, BlockingCollection<RxVm>>>();
+
+                    realms[realm] = seeds;
+                }
+
+                if(!seeds.TryGetValue(seedHex, out var seed))
+                {
+                    var flags = flagsOverride ?? randomx_get_flags();
+
+                    if(flagsAdd.HasValue)
+                        flags |= flagsAdd.Value;
+
+                    if (vmCount == -1)
+                        vmCount = Environment.ProcessorCount;
+
+                    seed = CreateSeed(realm, seedHex, flags, vmCount);
+
+                    seeds[seedHex] = seed;
+                }
+            }
+        }
+
+        private static Tuple<GenContext, BlockingCollection<RxVm>> CreateSeed(string realm, string seedHex, randomx_flags flags, int vmCount)
         {
             var vms = new BlockingCollection<RxVm>();
 
-            if (vmCount == -1)
-                vmCount = Environment.ProcessorCount;
-
-            var generation = new Tuple<GenContext, BlockingCollection<RxVm>>(new GenContext
+            var seed = new Tuple<GenContext, BlockingCollection<RxVm>>(new GenContext
             {
                 VmCount = vmCount
             }, vms);
@@ -248,76 +228,101 @@ namespace Miningcore.Native
             void createVm(int index)
             {
                 var start = DateTime.Now;
-                logger.Info(() => $"Creating VM {index + 1} [{flags}] for seed hash {keyString} ...");
+                logger.Info(() => $"Creating VM {realm}@{index + 1} [{flags}], hash {seedHex} ...");
 
                 var vm = new RxVm();
-                vm.Init(key, flags);
+                vm.Init(seedHex.HexToByteArray(), flags);
 
                 vms.Add(vm);
 
-                logger.Info(() => $"VM {index + 1} created in {DateTime.Now - start}");
+                logger.Info(() => $"Created VM {realm}@{index + 1} in {DateTime.Now - start}");
             };
 
             Parallel.For(0, vmCount, createVm);
 
-            return generation;
+            return seed;
         }
 
-        private static Tuple<GenContext, BlockingCollection<RxVm>> GetGeneration(byte[] key,
-            randomx_flags? flagsOverride, randomx_flags? flagsAdd, int vmCount)
+        public static void DeleteSeed(string realm, string seedHex)
         {
-            var keyString = key.ToHexString();
+            Tuple<GenContext, BlockingCollection<RxVm>> seed;
 
-            lock(generations)
+            lock(realms)
             {
-                if(!generations.TryGetValue(keyString, out var item))
-                {
-                    var flags = flagsOverride ?? randomx_get_flags();
+                if(!realms.TryGetValue(realm, out var seeds))
+                    return;
 
-                    if(flagsAdd.HasValue)
-                        flags |= flagsAdd.Value;
+                if(!seeds.Remove(seedHex, out seed))
+                    return;
+            }
 
-                    item = CreateGeneration(key, flags, vmCount, keyString);
+            // dispose all VMs
+            var (ctx, col) = seed;
+            var remaining = ctx.VmCount;
 
-                    generations[keyString] = item;
-                }
+            while (remaining > 0)
+            {
+                var vm = col.Take();
 
-                return item;
+                logger.Info($"Disposing VM {ctx.VmCount - remaining} for realm {realm} and key {seedHex}");
+                vm.Dispose();
+
+                remaining--;
             }
         }
 
-        public static void CalculateHash(byte[] key, ReadOnlySpan<byte> data, Span<byte> result,
-            randomx_flags? flagsOverride = null, randomx_flags? flagsAdd = null, int vmCount = 1)
+
+        public static Tuple<GenContext, BlockingCollection<RxVm>> GetSeed(string realm, string seedHex)
+        {
+            lock(realms)
+            {
+                if(!realms.TryGetValue(realm, out var seeds))
+                    return null;
+
+                if(!seeds.TryGetValue(seedHex, out var seed))
+                    return null;
+
+                return seed;
+            }
+        }
+
+        public static void CalculateHash(string realm, string seedHex, ReadOnlySpan<byte> data, Span<byte> result)
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
-            var (ctx, vms) = GetGeneration(key, flagsOverride, flagsAdd, vmCount);
-            RxVm vm = null;
+            // clear result
+            empty.CopyTo(result);
 
-            try
+            // look up generation
+            var (ctx, seedVms) = GetSeed(realm, seedHex);
+
+            if(ctx != null)
             {
-                // lease a VM
-                vm = vms.Take();
+                RxVm vm = null;
 
-                vm.CalculateHash(data, result);
+                try
+                {
+                    // lease a VM
+                    vm = seedVms.Take();
 
-                // update timestamp
-                ctx.LastAccess = DateTime.Now;
-            }
+                    vm.CalculateHash(data, result);
 
-            catch(Exception ex)
-            {
-                logger.Error(()=> ex.Message);
+                    // update timestamp
+                    ctx.LastAccess = DateTime.Now;
+                }
 
-                // clear result
-                empty.CopyTo(result);
-            }
+                catch(Exception ex)
+                {
+                    // ReSharper disable once InconsistentlySynchronizedField
+                    logger.Error(() => ex.Message);
+                }
 
-            finally
-            {
-                // return VM
-                if(vm != null)
-                    vms.Add(vm);
+                finally
+                {
+                    // return VM
+                    if(vm != null)
+                        seedVms.Add(vm);
+                }
             }
         }
     }
