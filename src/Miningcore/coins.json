@@ -36,7 +36,26 @@
         "explorerTxLink": "https://www.blockchain.com/bch/tx/{0}",
         "explorerAccountLink": "https://www.blockchain.com/bch/address/{0}"
     },
-    "namecoin": {
+    "bitcoin-cash-abc": {
+        "name": "Bitcoin Cash ABC",
+        "symbol": "BCHA",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "https://blockchair.com/bitcoin-abc/block/$height$",
+        "explorerTxLink": "https://blockchair.com/bitcoin-abc/transaction/{0}",
+        "explorerAccountLink": "https://blockchair.com/bitcoin-abc/address/{0}"
+    },
+    "namecoin":
+    {
         "name": "Namecoin",
         "symbol": "NMC",
         "family": "bitcoin",
@@ -601,7 +620,7 @@
             ]
         },
         "isPseudoPoS": true,
-        "blockTemplateRpcExtraParams": ["scrypt"],
+        "blockTemplateRpcExtraParams": [ "scrypt" ],
         "shareMultiplier": 65536,
         "explorerBlockLink": "https://verge-blockchain.info/block/$hash$",
         "explorerTxLink": "https://verge-blockchain.info/tx/{0}",
