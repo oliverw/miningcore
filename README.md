@@ -21,6 +21,11 @@
 
 Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
+#### Monero
+
+- Miningcore utilizes RandomX's light-mode by default which consumes only 256 MB of memory. A mondern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
+- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration or activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly 3 GB of RAM per RandomX-VM.
+
 #### ZCash
 
 - Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
