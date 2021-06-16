@@ -154,15 +154,27 @@ namespace Miningcore.Native
 
             public void Init(ReadOnlySpan<byte> key, randomx_flags flags)
             {
+                var ds_ptr = IntPtr.Zero;
+
+                // alloc cache
                 cache = randomx_alloc_cache(flags);
 
+                // init cache
                 fixed(byte* key_ptr = key)
                 {
                     randomx_init_cache(cache, (IntPtr) key_ptr, key.Length);
                 }
 
-                ds = new RxDataSet();
-                var ds_ptr = ds.Init(key, flags, cache);
+                // Enable fast-mode? (requires 2GB+ memory per VM)
+                if((flags & randomx_flags.RANDOMX_FLAG_FULL_MEM) != 0)
+                {
+                    ds = new RxDataSet();
+                    ds_ptr = ds.Init(key, flags, cache);
+
+                    // cache is no longer needed in fast-mode
+                    randomx_release_cache(cache);
+                    cache = IntPtr.Zero;
+                }
 
                 vm = randomx_create_vm(flags, cache, ds_ptr);
             }
