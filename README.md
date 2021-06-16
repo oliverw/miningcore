@@ -47,26 +47,24 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 * BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
 * XMR: `475YVJbPHPedudkhrcNp1wDcLMTGYusGPF5fqE7XjnragVLPdqbCHBdZg3dF4dN9hXMjjvGbykS6a77dTAQvGrpiQqHp2eH`
 
-### Runtime Requirements on Windows
+### Running pre-built Release Binaries on Linux
 
-- [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
-- [PostgreSQL Database](https://www.postgresql.org/)
-- Coin Daemon (per pool)
-
-### Runtime Requirements on Linux
-
-- [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
-- Debian/Ubuntu Packages if **not** built from source
+- Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
+- Debian/Ubuntu Packages to install
   - postgresql-11 (or higher, the higher the better)
   - libzmq5
   - libboost-system1.67.0
   - libboost-date-time1.67.0
-- [PostgreSQL Database](https://www.postgresql.org/)
-- Coin Daemon (per pool)
-- Miningcore needs to be built from source on Linux. Refer to the section further down below for instructions.
+- Download miningcore-linux-ubuntu-x64.tar.gz from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Extract the Archive
+- Setup the database as outlined below
+- Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Run <code>dotnet Miningcore.dll -c config.json</code>
 
 ### Running pre-built Release Binaries on Windows
 
+- Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
+- Install [PostgreSQL Database](https://www.postgresql.org/)
 - Download miningcore-win-x64.zip from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
 - Extract the Archive
 - Setup the database as outlined below
