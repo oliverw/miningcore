@@ -41,7 +41,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected override void PostChainIdentifyConfigure()
         {
-            ChainConfig = coin.GetNetwork(network.NetworkType);
+            ChainConfig = coin.GetNetwork(network.ChainName);
             solver = EquihashSolverFactory.GetSolver(ctx, ChainConfig.Solver);
 
             base.PostChainIdentifyConfigure();

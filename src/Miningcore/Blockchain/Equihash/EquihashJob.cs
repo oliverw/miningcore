@@ -324,7 +324,7 @@ namespace Miningcore.Blockchain.Equihash
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
-            networkParams = coin.GetNetwork(network.NetworkType);
+            networkParams = coin.GetNetwork(network.ChainName);
             this.network = network;
             BlockTemplate = blockTemplate;
             JobId = jobId;

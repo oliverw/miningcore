@@ -127,7 +127,7 @@ namespace Miningcore.Stratum
                 {
                     try
                     {
-                        // Wait incoming connection on any of the monitored sockets
+                        // Wait incoming for connection on monitored sockets
                         await Task.WhenAny(tasks);
 
                         // check tasks
@@ -166,15 +166,16 @@ namespace Miningcore.Stratum
         private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
-            var connectionId = CorrelationIdGenerator.GetNextId();
 
-            // get rid of banned clients as early as possible
-            if(banManager?.IsBanned(remoteEndpoint.Address) == true)
+            // dispose of banned clients as early as possible
+            if(remoteEndpoint != null && banManager?.IsBanned(remoteEndpoint.Address) == true)
             {
                 logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
                 socket.Close();
                 return;
             }
+
+            var connectionId = CorrelationIdGenerator.GetNextId();
 
             // TLS cert loading
             X509Certificate2 cert = null;

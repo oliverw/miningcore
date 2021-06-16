@@ -528,7 +528,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
-            networkParams = coin.GetNetwork(network.NetworkType);
+            networkParams = coin.GetNetwork(network.ChainName);
             txVersion = coin.CoinbaseTxVersion;
             this.network = network;
             this.clock = clock;

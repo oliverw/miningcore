@@ -600,7 +600,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected void ConfigureRewards()
         {
             // Donation to MiningCore development
-            if(network.NetworkType == NetworkType.Mainnet &&
+            if(network.ChainName == ChainName.Mainnet &&
                 DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
             {
                 poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]

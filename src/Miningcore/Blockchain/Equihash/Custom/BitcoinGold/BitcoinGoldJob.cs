@@ -177,7 +177,7 @@ namespace Miningcore.Blockchain.Equihash.Custom.BitcoinGold
             coin = poolConfig.Template.As<EquihashCoinTemplate>();
             this.network = network;
             var equihashTemplate = poolConfig.Template.As<EquihashCoinTemplate>();
-            networkParams = coin.GetNetwork(network.NetworkType);
+            networkParams = coin.GetNetwork(network.ChainName);
             BlockTemplate = blockTemplate;
             JobId = jobId;
             Difficulty = (double) new BigRational(networkParams.Diff1BValue, BlockTemplate.Target.HexToReverseByteArray().AsSpan().ToBigInteger());

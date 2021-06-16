@@ -75,20 +75,17 @@ namespace Miningcore.Configuration
         public IHashAlgorithm BlockHasherValue => blockHasherValue.Value;
         public IHashAlgorithm PoSBlockHasherValue => posBlockHasherValue.Value;
 
-        public BitcoinNetworkParams GetNetwork(NetworkType networkType)
+        public BitcoinNetworkParams GetNetwork(ChainName chain)
         {
             if(Networks == null || Networks.Count == 0)
                 return null;
 
-            switch(networkType)
-            {
-                case NetworkType.Mainnet:
-                    return Networks["main"];
-                case NetworkType.Testnet:
-                    return Networks["test"];
-                case NetworkType.Regtest:
-                    return Networks["regtest"];
-            }
+            if(chain == ChainName.Mainnet)
+                return Networks["main"];
+            else if(chain == ChainName.Testnet)
+                return Networks["test"];
+            else if(chain == ChainName.Regtest)
+                return Networks["regtest"];
 
             throw new NotSupportedException("unsupported network type");
         }
@@ -147,17 +144,14 @@ namespace Miningcore.Configuration
             public ulong LastFoundersRewardBlockHeight => FoundersRewardSubsidyHalvingInterval + FoundersRewardSubsidySlowStartShift - 1;
         }
 
-        public EquihashNetworkParams GetNetwork(NetworkType networkType)
+        public EquihashNetworkParams GetNetwork(ChainName chain)
         {
-            switch(networkType)
-            {
-                case NetworkType.Mainnet:
-                    return Networks["main"];
-                case NetworkType.Testnet:
-                    return Networks["test"];
-                case NetworkType.Regtest:
-                    return Networks["regtest"];
-            }
+            if(chain == ChainName.Mainnet)
+                return Networks["main"];
+            else if(chain == ChainName.Testnet)
+                return Networks["test"];
+            else if(chain == ChainName.Regtest)
+                return Networks["regtest"];
 
             throw new NotSupportedException("unsupported network type");
         }

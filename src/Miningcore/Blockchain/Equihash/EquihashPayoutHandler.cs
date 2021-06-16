@@ -80,7 +80,7 @@ namespace Miningcore.Blockchain.Equihash
 
             network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
-            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.NetworkType);
+            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase);
