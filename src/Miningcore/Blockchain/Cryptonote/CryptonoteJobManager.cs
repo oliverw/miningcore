@@ -627,15 +627,13 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             instanceId = new byte[CryptonoteConstants.InstanceIdSize];
 
+            using(var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetNonZeroBytes(instanceId);
+            }
+
             if(clusterConfig.InstanceId.HasValue)
                 instanceId[0] = clusterConfig.InstanceId.Value;
-            else
-            {
-                using(var rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetNonZeroBytes(instanceId);
-                }
-            }
         }
 
         private void ConfigureRewards()
