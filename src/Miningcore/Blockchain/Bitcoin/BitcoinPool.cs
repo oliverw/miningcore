@@ -113,7 +113,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var minerName = split?.FirstOrDefault()?.Trim();
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
-            // assumes that workerName is an address
+            // assumes that minerName is an address
             context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
             context.Miner = minerName;
             context.Worker = workerName;
@@ -283,10 +283,10 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         private void ConfigureVersionRolling(StratumClient client, BitcoinWorkerContext context,
-            Dictionary<string, JToken> extensionParams, Dictionary<string, object> result)
+            IReadOnlyDictionary<string, JToken> extensionParams, Dictionary<string, object> result)
         {
             //var requestedBits = extensionParams[BitcoinStratumExtensions.VersionRollingBits].Value<int>();
-            uint requestedMask = BitcoinConstants.VersionRollingPoolMask;
+            var requestedMask = BitcoinConstants.VersionRollingPoolMask;
 
             if(extensionParams.TryGetValue(BitcoinStratumExtensions.VersionRollingMask, out var requestedMaskValue))
                 requestedMask = uint.Parse(requestedMaskValue.Value<string>(), NumberStyles.HexNumber);
@@ -302,7 +302,7 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         private void ConfigureMinimumDiff(StratumClient client, BitcoinWorkerContext context,
-            Dictionary<string, JToken> extensionParams, Dictionary<string, object> result)
+            IReadOnlyDictionary<string, JToken> extensionParams, Dictionary<string, object> result)
         {
             var requestedDiff = extensionParams[BitcoinStratumExtensions.MinimumDiffValue].Value<double>();
 
@@ -389,7 +389,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<BitcoinJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider()));
+                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider(clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 

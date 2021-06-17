@@ -61,7 +61,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(coin.BlockTemplateRpcExtraParams != null)
             {
                 if(coin.BlockTemplateRpcExtraParams.Type == JTokenType.Array)
-                    result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>()).ToArray();
+                    result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>() ?? Array.Empty<object>()).ToArray();
                 else
                     result = result.Concat(new []{ coin.BlockTemplateRpcExtraParams.ToObject<object>()}).ToArray();
             }

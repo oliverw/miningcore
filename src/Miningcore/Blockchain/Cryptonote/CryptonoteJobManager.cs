@@ -66,15 +66,9 @@ namespace Miningcore.Blockchain.Cryptonote
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clock = clock;
-
-            using(var rng = RandomNumberGenerator.Create())
-            {
-                instanceId = new byte[CryptonoteConstants.InstanceIdSize];
-                rng.GetNonZeroBytes(instanceId);
-            }
         }
 
-        private readonly byte[] instanceId;
+        private byte[] instanceId;
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
@@ -534,6 +528,9 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected override async Task PostStartInitAsync(CancellationToken ct)
         {
+            SetInstanceId();
+
+            // coin config
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
             var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo);
 
@@ -624,6 +621,21 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Subscribe();
 
             SetupJobUpdates();
+        }
+
+        private void SetInstanceId()
+        {
+            instanceId = new byte[CryptonoteConstants.InstanceIdSize];
+
+            if(clusterConfig.InstanceId.HasValue)
+                instanceId[0] = clusterConfig.InstanceId.Value;
+            else
+            {
+                using(var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetNonZeroBytes(instanceId);
+                }
+            }
         }
 
         private void ConfigureRewards()

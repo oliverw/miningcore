@@ -705,6 +705,11 @@ namespace Miningcore.Configuration
     public partial class ClusterConfig
     {
         /// <summary>
+        /// cluster instance id (only used in clustering setups)
+        /// </summary>
+        public byte? InstanceId { get; set; }
+
+        /// <summary>
         /// One or more files containing coin definitions
         /// </summary>
         public string[] CoinTemplates { get; set; }
