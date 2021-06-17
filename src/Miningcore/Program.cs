@@ -290,7 +290,7 @@ namespace Miningcore
                 MonitorGc();
 
                 if(clusterConfig.InstanceId.HasValue)
-                    logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}");
+                    logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
 
                 var coinTemplates = LoadCoinTemplates();
                 logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
