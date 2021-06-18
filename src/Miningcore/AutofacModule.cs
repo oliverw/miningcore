@@ -39,6 +39,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 using Microsoft.AspNetCore.Mvc;
+using Miningcore.Nicehash;
 
 namespace Miningcore
 {
@@ -64,37 +65,12 @@ namespace Miningcore
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
-            builder.RegisterType<PayoutManager>()
-                .AsSelf()
-                .SingleInstance();
-
             builder.RegisterType<StandardClock>()
                 .AsImplementedInterfaces()
                 .SingleInstance();
 
             builder.RegisterType<IntegratedBanManager>()
                 .Keyed<IBanManager>(BanManagerKind.Integrated)
-                .SingleInstance();
-
-            builder.RegisterType<ShareRecorder>()
-                .SingleInstance();
-
-            builder.RegisterType<ShareReceiver>()
-                .SingleInstance();
-
-            builder.RegisterType<BtStreamReceiver>()
-                .SingleInstance();
-
-            builder.RegisterType<ShareRelay>()
-                .SingleInstance();
-
-            builder.RegisterType<StatsRecorder>()
-                .SingleInstance();
-
-            builder.RegisterType<NotificationService>()
-                .SingleInstance();
-
-            builder.RegisterType<MetricsPublisher>()
                 .SingleInstance();
 
             builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
@@ -124,6 +100,37 @@ namespace Miningcore
             builder.RegisterType<WebSocketNotificationsRelay>()
                 .PropertiesAutowired()
                 .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<NicehashService>()
+                .SingleInstance();
+
+            //////////////////////
+            // Background services
+
+            builder.RegisterType<PayoutManager>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<ShareRecorder>()
+                .SingleInstance();
+
+            builder.RegisterType<ShareReceiver>()
+                .SingleInstance();
+
+            builder.RegisterType<BtStreamReceiver>()
+                .SingleInstance();
+
+            builder.RegisterType<ShareRelay>()
+                .SingleInstance();
+
+            builder.RegisterType<StatsRecorder>()
+                .SingleInstance();
+
+            builder.RegisterType<NotificationService>()
+                .SingleInstance();
+
+            builder.RegisterType<MetricsPublisher>()
                 .SingleInstance();
 
             //////////////////////

@@ -53,7 +53,7 @@ using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Native;
+using Miningcore.Nicehash;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence.Dummy;
@@ -122,7 +122,11 @@ namespace Miningcore
                     })
                     .ConfigureServices((ctx, services) =>
                     {
+                        services.AddHttpClient();
+
                         services.AddHostedService<Program>();
+
+                        ConfigureBackgroundServices(services);
                     });
 
                 if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
@@ -202,7 +206,11 @@ namespace Miningcore
                     });
                 }
 
-                await hostBuilder.RunConsoleAsync();
+                host = hostBuilder
+                    .UseConsoleLifetime()
+                    .Build();
+
+                await host.RunAsync();
             }
 
             catch(PoolStartupAbortException ex)
@@ -244,6 +252,11 @@ namespace Miningcore
             }
         }
 
+        private static void ConfigureBackgroundServices(IServiceCollection services)
+        {
+        }
+
+        private static IHost host;
         private readonly IComponentContext container;
         private static ILogger logger;
         private static CommandOption dumpConfigOption;
@@ -255,8 +268,6 @@ namespace Miningcore
         private PayoutManager payoutManager;
         private StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
-        private NotificationService notificationService;
-        private MetricsPublisher metricsPublisher;
         private BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
 
@@ -306,7 +317,7 @@ namespace Miningcore
                 }
 
                 // Notifications
-                notificationService = container.Resolve<NotificationService>();
+                container.Resolve<NotificationService>();
 
                 // start btStream receiver
                 btStreamReceiver = container.Resolve<BtStreamReceiver>();
@@ -333,7 +344,7 @@ namespace Miningcore
                 // start API
                 if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
                 {
-                    metricsPublisher = container.Resolve<MetricsPublisher>();
+                    container.Resolve<MetricsPublisher>();
                 }
 
                 // start payment processor

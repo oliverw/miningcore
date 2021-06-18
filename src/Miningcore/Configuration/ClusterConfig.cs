@@ -661,6 +661,14 @@ namespace Miningcore.Configuration
         public string SharedEncryptionKey { get; set; }
     }
 
+    public class NicehashClusterConfig
+    {
+        /// <summary>
+        /// If set to true, the Nicehash service will be started
+        /// </summary>
+        public bool Enable { get; set; }
+    }
+
     public partial class PoolConfig
     {
         /// <summary>
@@ -721,6 +729,7 @@ namespace Miningcore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
+        public NicehashClusterConfig Nicehash { get; set; }
 
         /// <summary>
         /// If this is enabled, shares are not written to the database

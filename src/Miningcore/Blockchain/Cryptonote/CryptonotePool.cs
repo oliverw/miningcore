@@ -33,6 +33,7 @@ using Miningcore.Configuration;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
+using Miningcore.Nicehash;
 using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
@@ -52,8 +53,9 @@ namespace Miningcore.Blockchain.Cryptonote
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus) :
-            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus)
+            IMessageBus messageBus,
+            NicehashService nicehashService) :
+            base(ctx, serializerSettings, cf, statsRepo, mapper, clock, messageBus, nicehashService)
         {
         }
 
@@ -106,17 +108,35 @@ namespace Miningcore.Blockchain.Cryptonote
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
-            // extract control vars from password
-            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
-            var staticDiff = GetStaticDiffFromPassparts(passParts);
+            // Nicehash support
+            double? staticDiff = null;
+
+            if(clusterConfig.Nicehash?.Enable == true &&
+               context.UserAgent.Contains("nicehash", StringComparison.OrdinalIgnoreCase))
+            {
+                // query current diff
+                staticDiff = await nicehashService.GetStaticDiff(manager.Coin.Name, manager.Coin.GetAlgorithmName(), CancellationToken.None);
+
+                if(staticDiff.HasValue)
+                    logger.Info(()=> $"[{client.ConnectionId}] Nicehash detected. Using static difficulty of {staticDiff.Value}");
+            }
+
+            if(!staticDiff.HasValue)
+            {
+                // extract control vars from password
+                var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
+                staticDiff = GetStaticDiffFromPassparts(passParts);
+            }
+
+            // Static diff
             if(staticDiff.HasValue &&
-                (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
 
-                logger.Info(() => $"[{client.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+                logger.Info(() => $"[{client.ConnectionId}] Static difficulty set to {staticDiff.Value}");
             }
 
             // respond

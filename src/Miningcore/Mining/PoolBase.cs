@@ -36,6 +36,7 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Nicehash;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -58,7 +59,8 @@ namespace Miningcore.Mining
             IStatsRepository statsRepo,
             IMapper mapper,
             IMasterClock clock,
-            IMessageBus messageBus) : base(ctx, clock)
+            IMessageBus messageBus,
+            NicehashService nicehashService) : base(ctx, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -67,12 +69,14 @@ namespace Miningcore.Mining
             Contract.RequiresNonNull(mapper, nameof(mapper));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
+            Contract.RequiresNonNull(nicehashService, nameof(nicehashService));
 
             this.serializerSettings = serializerSettings;
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
             this.messageBus = messageBus;
+            this.nicehashService = nicehashService;
         }
 
         protected PoolStats poolStats = new();
@@ -81,6 +85,7 @@ namespace Miningcore.Mining
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
         protected readonly IMessageBus messageBus;
+        protected readonly NicehashService nicehashService;
         protected readonly CompositeDisposable disposables = new();
         protected BlockchainStats blockchainStats;
         protected PoolConfig poolConfig;
