@@ -113,7 +113,7 @@ namespace Miningcore.Blockchain.Cryptonote
             var staticDiff = GetStaticDiffFromPassparts(passParts);
 
             // Nicehash support
-            if(clusterConfig.Nicehash?.Enable == true &&
+            if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
                context.UserAgent.Contains("nicehash", StringComparison.OrdinalIgnoreCase))
             {
                 // query current diff
@@ -121,7 +121,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if(nicehashDiff.HasValue)
                 {
-                    if((!staticDiff.HasValue || nicehashDiff > staticDiff))
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
                     {
                         logger.Info(() => $"[{client.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
 

@@ -131,9 +131,31 @@ namespace Miningcore.Blockchain.Bitcoin
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
+                // Nicehash support
+                if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
+                   context.UserAgent.Contains("nicehash", StringComparison.OrdinalIgnoreCase))
+                {
+                    // query current diff
+                    var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);
+
+                    if(nicehashDiff.HasValue)
+                    {
+                        if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                        {
+                            logger.Info(() => $"[{client.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                            staticDiff = nicehashDiff;
+                        }
+
+                        else
+                            logger.Info(() => $"[{client.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                    }
+                }
+
+                // Static diff
                 if(staticDiff.HasValue &&
-                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
                     context.VarDiff = null; // disable vardiff
                     context.SetDifficulty(staticDiff.Value);

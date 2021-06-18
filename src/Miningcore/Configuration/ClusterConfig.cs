@@ -666,7 +666,7 @@ namespace Miningcore.Configuration
         /// <summary>
         /// If set to true, the Nicehash service will be started
         /// </summary>
-        public bool Enable { get; set; }
+        public bool EnableAutoDiff { get; set; }
     }
 
     public partial class PoolConfig
