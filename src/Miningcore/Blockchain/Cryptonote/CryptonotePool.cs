@@ -108,24 +108,29 @@ namespace Miningcore.Blockchain.Cryptonote
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
-            // Nicehash support
-            double? staticDiff = null;
+            // extract control vars from password
+            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
+            var staticDiff = GetStaticDiffFromPassparts(passParts);
 
+            // Nicehash support
             if(clusterConfig.Nicehash?.Enable == true &&
                context.UserAgent.Contains("nicehash", StringComparison.OrdinalIgnoreCase))
             {
                 // query current diff
-                staticDiff = await nicehashService.GetStaticDiff(manager.Coin.Name, manager.Coin.GetAlgorithmName(), CancellationToken.None);
+                var nicehashDiff = await nicehashService.GetStaticDiff(manager.Coin.Name, manager.Coin.GetAlgorithmName(), CancellationToken.None);
 
-                if(staticDiff.HasValue)
-                    logger.Info(()=> $"[{client.ConnectionId}] Nicehash detected. Using static difficulty of {staticDiff.Value}");
-            }
+                if(nicehashDiff.HasValue)
+                {
+                    if((!staticDiff.HasValue || nicehashDiff > staticDiff))
+                    {
+                        logger.Info(() => $"[{client.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
 
-            if(!staticDiff.HasValue)
-            {
-                // extract control vars from password
-                var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
-                staticDiff = GetStaticDiffFromPassparts(passParts);
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{client.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                }
             }
 
             // Static diff
