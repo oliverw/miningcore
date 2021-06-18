@@ -123,6 +123,7 @@ namespace Miningcore
                     .ConfigureServices((ctx, services) =>
                     {
                         services.AddHttpClient();
+                        services.AddMemoryCache();
 
                         services.AddHostedService<Program>();
 
