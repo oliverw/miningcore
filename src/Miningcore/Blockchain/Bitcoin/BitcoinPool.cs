@@ -35,6 +35,7 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
+using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -133,7 +134,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 // Nicehash support
                 if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
-                   context.UserAgent.Contains("nicehash", StringComparison.OrdinalIgnoreCase))
+                   context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
                 {
                     // query current diff
                     var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);

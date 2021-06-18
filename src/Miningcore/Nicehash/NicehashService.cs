@@ -18,7 +18,7 @@ namespace Miningcore.Nicehash
             IMemoryCache cache)
         {
             this.cache = cache;
-            client = new SimpleRestClient(httpClientFactory, NicehashApiConstants.BaseUrl);
+            client = new SimpleRestClient(httpClientFactory, NicehashConstants.ApiBaseUrl);
         }
 
         private readonly SimpleRestClient client;
