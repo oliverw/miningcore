@@ -540,6 +540,11 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
         public int Interval { get; set; }
 
+        /// <summary>
+        /// Indentifier used in coinbase transactions to identify the pool
+        /// </summary>
+        public string CoinbaseString  { get; set; }
+
         public string ShareRecoveryFile { get; set; }
     }
 

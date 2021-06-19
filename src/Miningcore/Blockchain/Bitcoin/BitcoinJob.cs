@@ -76,7 +76,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Transaction txOut;
 
         // serialization constants
-        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+        protected byte[] scriptSigFinalBytes;
 
         protected static byte[] sha256Empty = new byte[32];
         protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
@@ -535,6 +535,11 @@ namespace Miningcore.Blockchain.Bitcoin
             this.poolAddressDestination = poolAddressDestination;
             BlockTemplate = blockTemplate;
             JobId = jobId;
+
+            var coinbaseString = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
+                clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
+
+            scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
             //Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
             Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
