@@ -344,8 +344,8 @@ namespace Miningcore.Mining
 
         private void ConfigureRecovery()
         {
-            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
-                ? clusterConfig.PaymentProcessing.ShareRecoveryFile
+            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.ShareRecoveryFile)
+                ? clusterConfig.ShareRecoveryFile
                 : "recovered-shares.txt";
         }
 

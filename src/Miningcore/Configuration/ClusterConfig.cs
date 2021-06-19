@@ -544,8 +544,6 @@ namespace Miningcore.Configuration
         /// Indentifier used in coinbase transactions to identify the pool
         /// </summary>
         public string CoinbaseString  { get; set; }
-
-        public string ShareRecoveryFile { get; set; }
     }
 
     public partial class PersistenceConfig
@@ -753,6 +751,8 @@ namespace Miningcore.Configuration
         /// Increasing this value by one, increases pool peak memory consumption by 1 GB
         /// </summary>
         public int? EquihashMaxThreads { get; set; }
+
+        public string ShareRecoveryFile { get; set; }
 
         public PoolConfig[] Pools { get; set; }
     }
