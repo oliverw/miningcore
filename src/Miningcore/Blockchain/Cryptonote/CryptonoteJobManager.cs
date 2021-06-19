@@ -131,6 +131,9 @@ namespace Miningcore.Blockchain.Cryptonote
                                 LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
                             });
                         }
+
+                        else
+                            currentSeedHash = blockTemplate.SeedHash;
                     }
 
                     // init job
