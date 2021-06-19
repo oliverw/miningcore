@@ -118,16 +118,19 @@ namespace Miningcore.Blockchain.Cryptonote
                     {
                         logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
 
-                        LibRandomX.WithLock(() =>
+                        if(poolConfig.EnableInternalStratum == true)
                         {
-                            // delete old seed
-                            if(currentSeedHash != null)
-                                LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
+                            LibRandomX.WithLock(() =>
+                            {
+                                // delete old seed
+                                if(currentSeedHash != null)
+                                    LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
 
-                            // activate new one
-                            currentSeedHash = blockTemplate.SeedHash;
-                            LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
-                        });
+                                // activate new one
+                                currentSeedHash = blockTemplate.SeedHash;
+                                LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                            });
+                        }
                     }
 
                     // init job
@@ -262,9 +265,12 @@ namespace Miningcore.Blockchain.Cryptonote
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
             coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-            randomXRealm = poolConfig.Id;
-            randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
-            randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
+            if(poolConfig.EnableInternalStratum == true)
+            {
+                randomXRealm = poolConfig.Id;
+                randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
+                randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
+            }
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
