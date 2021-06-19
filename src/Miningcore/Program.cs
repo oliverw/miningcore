@@ -217,9 +217,9 @@ namespace Miningcore
             catch(PoolStartupAbortException ex)
             {
                 if(!string.IsNullOrEmpty(ex.Message))
-                    Console.WriteLine(ex.Message);
+                    await Console.Error.WriteLineAsync(ex.Message);
 
-                Console.WriteLine("\nCluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("\nCluster cannot start. Good Bye!");
             }
 
             catch(JsonException)
@@ -235,9 +235,9 @@ namespace Miningcore
             catch(AggregateException ex)
             {
                 if(ex.InnerExceptions.First() is not PoolStartupAbortException)
-                    Console.WriteLine(ex);
+                    Console.Error.WriteLine(ex);
 
-                Console.WriteLine("Cluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
             }
 
             catch(OperationCanceledException)
@@ -247,9 +247,9 @@ namespace Miningcore
 
             catch(Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.Error.WriteLine(ex);
 
-                Console.WriteLine("Cluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
             }
         }
 
@@ -419,7 +419,7 @@ namespace Miningcore
 
             catch(ValidationException ex)
             {
-                Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
+                Console.Error.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
             }
         }
@@ -503,13 +503,13 @@ namespace Miningcore
 
             catch(JsonException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
                 throw;
             }
 
             catch(IOException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
                 throw;
             }
         }
@@ -526,12 +526,12 @@ namespace Miningcore
                 var col = m.Groups[4].Value;
 
                 if(type == typeof(PayoutScheme))
-                    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+                    Console.Error.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
             }
 
             else
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
             }
         }
 
@@ -891,7 +891,7 @@ namespace Miningcore
                 LogManager.Flush(TimeSpan.Zero);
             }
 
-            Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
+            Console.Error.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
     }
 }
