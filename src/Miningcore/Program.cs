@@ -282,6 +282,15 @@ namespace Miningcore
                 services.AddHostedService<PayoutManager>();
             else
                 logger.Info("Payment processing is not enabled");
+
+
+            if(clusterConfig.ShareRelay == null)
+            {
+                // Pool stats
+                services.AddHostedService<StatsRecorder>();
+            }
+
+            MonitorGc();
         }
 
         private static IHost host;
@@ -320,55 +329,42 @@ namespace Miningcore
 
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            if(!isShareRecoveryMode)
+            if(isShareRecoveryMode)
             {
-                MonitorGc();
-
-                if(clusterConfig.InstanceId.HasValue)
-                    logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
-
-                var coinTemplates = LoadCoinTemplates();
-                logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
-
-                // Populate pool configs with corresponding template
-                foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
-                {
-                    // Lookup coin definition
-                    if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                        logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
-
-                    poolConfig.Template = template;
-                }
-
-                if(clusterConfig.ShareRelay == null)
-                {
-                    // start pool stats updater
-                    statsRecorder = container.Resolve<StatsRecorder>();
-                    statsRecorder.Configure(clusterConfig);
-                    statsRecorder.Start();
-                }
-
-                // start pools
-                await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
-                {
-                    // resolve pool implementation
-                    var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                        .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
-
-                    // create and configure
-                    var pool = poolImpl.Value;
-                    pool.Configure(poolConfig, clusterConfig);
-                    pools[poolConfig.Id] = pool;
-
-                    // pre-start attachments
-                    statsRecorder?.AttachPool(pool);
-
-                    await pool.StartAsync(ct);
-                }));
+                await RecoverSharesAsync(shareRecoveryOption.Value());
+                return;
             }
 
-            else
-                await RecoverSharesAsync(shareRecoveryOption.Value());
+            if(clusterConfig.InstanceId.HasValue)
+                logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
+
+            var coinTemplates = LoadCoinTemplates();
+            logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
+
+            // Populate pool configs with corresponding template
+            foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
+            {
+                // Lookup coin definition
+                if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                    logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+
+                poolConfig.Template = template;
+            }
+
+            // start pools
+            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
+            {
+                // resolve pool implementation
+                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+
+                // create and configure
+                var pool = poolImpl.Value;
+                pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
+
+                await pool.StartAsync(ct);
+            }));
         }
 
         private Task RecoverSharesAsync(string recoveryFilename)

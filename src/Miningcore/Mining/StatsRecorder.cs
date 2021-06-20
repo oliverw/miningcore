@@ -4,14 +4,19 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -21,13 +26,14 @@ using Polly;
 
 namespace Miningcore.Mining
 {
-    public class StatsRecorder
+    public class StatsRecorder : BackgroundService
     {
         public StatsRecorder(IComponentContext ctx,
             IMasterClock clock,
             IConnectionFactory cf,
             IMessageBus messageBus,
             IMapper mapper,
+            ClusterConfig clusterConfig,
             IShareRepository shareRepo,
             IStatsRepository statsRepo)
         {
@@ -46,6 +52,7 @@ namespace Miningcore.Mining
             this.messageBus = messageBus;
             this.shareRepo = shareRepo;
             this.statsRepo = statsRepo;
+            this.clusterConfig = clusterConfig;
 
             BuildFaultHandlingPolicy();
         }
@@ -57,67 +64,28 @@ namespace Miningcore.Mining
         private readonly IMessageBus messageBus;
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
-        private readonly CancellationTokenSource cts = new();
+        private readonly ClusterConfig clusterConfig;
+        private readonly CompositeDisposable disposables = new();
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
         private readonly TimeSpan interval = TimeSpan.FromMinutes(5);
         private const int HashrateCalculationWindow = 1200; // seconds
         private const int MinHashrateCalculationWindow = 300; // seconds
         private const double HashrateBoostFactor = 1.1d;
-        private ClusterConfig clusterConfig;
         private const int RetryCount = 4;
         private IAsyncPolicy readFaultPolicy;
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        #region API-Surface
-
-        public void Configure(ClusterConfig clusterConfig)
+        private void AttachPool(IMiningPool pool)
         {
-            this.clusterConfig = clusterConfig;
+            pools.TryAdd(pool.Config.Id, pool);
         }
 
-        public void AttachPool(IMiningPool pool)
+        private void OnPoolStatusNotification(PoolStatusNotification notification)
         {
-            pools[pool.Config.Id] = pool;
+            if(notification.Status == PoolStatus.Online)
+                AttachPool(notification.Pool);
         }
-
-        public void Start()
-        {
-            Task.Run(async () =>
-            {
-                logger.Info(() => "Online");
-
-                // warm-up delay
-                await Task.Delay(TimeSpan.FromSeconds(10));
-
-                while(!cts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await UpdatePoolHashratesAsync();
-                        await PerformStatsGcAsync();
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-
-                    await Task.Delay(interval, cts.Token);
-                }
-            });
-        }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            cts.Cancel();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
 
         private async Task UpdatePoolHashratesAsync()
         {
@@ -321,6 +289,49 @@ namespace Miningcore.Mining
         private static void OnPolicyRetry(Exception ex, int retry, object context)
         {
             logger.Warn(() => $"Retry {retry} due to {ex.Source}: {ex.GetType().Name} ({ex.Message})");
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken ct)
+        {
+            try
+            {
+                // monitor pool lifetime
+                disposables.Add(messageBus
+                    .Listen<PoolStatusNotification>()
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Subscribe(OnPoolStatusNotification));
+
+                await Task.Run(async () =>
+                {
+                    logger.Info(() => "Online");
+
+                    // warm-up delay
+                    await Task.Delay(TimeSpan.FromSeconds(15), ct);
+
+                    while(!ct.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            await UpdatePoolHashratesAsync();
+                            await PerformStatsGcAsync();
+                        }
+
+                        catch(Exception ex)
+                        {
+                            logger.Error(ex);
+                        }
+
+                        await Task.Delay(interval, ct);
+                    }
+
+                    logger.Info(() => "Offline");
+                }, ct);
+            }
+
+            finally
+            {
+                disposables.Dispose();
+            }
         }
     }
 }

@@ -264,41 +264,46 @@ namespace Miningcore.Payments
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
-        protected override Task ExecuteAsync(CancellationToken ct)
+        protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            // monitor pool lifetime
-            disposables.Add(messageBus
-                .Listen<PoolStatusNotification>()
-                .ObserveOn(TaskPoolScheduler.Default)
-                .Subscribe(OnPoolStatusNotification));
-
-
-            return Task.Run(async () =>
+            try
             {
-                logger.Info(() => "Online");
+                // monitor pool lifetime
+                disposables.Add(messageBus
+                    .Listen<PoolStatusNotification>()
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Subscribe(OnPoolStatusNotification));
 
-                // Allow all pools to actually come up before the first payment processing run
-                await Task.Delay(TimeSpan.FromMinutes(1), ct);
-
-                while(!ct.IsCancellationRequested)
+                await Task.Run(async () =>
                 {
-                    try
+                    logger.Info(() => "Online");
+
+                    // Allow all pools to actually come up before the first payment processing run
+                    await Task.Delay(TimeSpan.FromMinutes(1), ct);
+
+                    while(!ct.IsCancellationRequested)
                     {
-                        await ProcessPoolsAsync();
+                        try
+                        {
+                            await ProcessPoolsAsync();
+                        }
+
+                        catch(Exception ex)
+                        {
+                            logger.Error(ex);
+                        }
+
+                        await Task.Delay(interval, ct);
                     }
 
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
+                    logger.Info(() => "Offline");
+                }, ct);
+            }
 
-                    await Task.Delay(interval, ct);
-                }
-
+            finally
+            {
                 disposables.Dispose();
-
-                logger.Info(() => "Offline");
-            }, ct);
+            }
         }
     }
 }

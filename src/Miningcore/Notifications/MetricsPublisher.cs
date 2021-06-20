@@ -61,14 +61,14 @@ namespace Miningcore.Notifications
             }
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken ct)
         {
             disposables.Add(messageBus.Listen<TelemetryEvent>().Subscribe(OnTelemetryEvent));
 
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken ct)
         {
             disposables?.Dispose();
 
