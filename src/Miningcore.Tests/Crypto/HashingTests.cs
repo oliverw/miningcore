@@ -342,16 +342,5 @@ namespace Miningcore.Tests.Crypto
 
             Assert.False(result);
         }
-
-        [Fact]
-        public void Vert_Hash()
-        {
-            var hasher = new Verthash();
-            var hash = new byte[32];
-            hasher.Digest(testValue, hash);
-            var result = hash.ToHexString();
-
-            Assert.Equal("a5adc5e82053fec28c92c31e3f17c3cfe761ddcb9435ba377671ea86a4a9e83e", result);
-        }
     }
 }
