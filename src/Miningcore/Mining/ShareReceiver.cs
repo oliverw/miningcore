@@ -50,7 +50,7 @@ namespace Miningcore.Mining
         private readonly IMessageBus messageBus;
         private readonly ClusterConfig clusterConfig;
         private readonly CompositeDisposable disposables = new();
-        private readonly ConcurrentDictionary<string, PoolContext> attached = new();
+        private readonly ConcurrentDictionary<string, PoolContext> pools = new();
         private readonly BufferBlock<(string Url, ZMessage Message)> queue = new();
         private readonly CancellationTokenSource cts = new();
 
@@ -76,7 +76,7 @@ namespace Miningcore.Mining
         private void AttachPool(IMiningPool pool)
         {
             var ctx = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
-            attached.TryAdd(pool.Config.Id, ctx);
+            pools.TryAdd(pool.Config.Id, ctx);
         }
 
         private void OnPoolStatusNotification(PoolStatusNotification notification)
@@ -211,7 +211,7 @@ namespace Miningcore.Mining
             var data = msg[2].Read();
 
             // validate
-            if(string.IsNullOrEmpty(topic) || !attached.TryGetValue(topic, out var poolContext))
+            if(string.IsNullOrEmpty(topic) || !pools.TryGetValue(topic, out var poolContext))
             {
                 logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
                 return;

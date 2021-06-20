@@ -256,11 +256,13 @@ namespace Miningcore
 
         private static void ConfigureBackgroundServices(IServiceCollection services)
         {
+            // Notifications
             if(clusterConfig.Notifications?.Enabled == true)
                 services.AddHostedService<NotificationService>();
 
             services.AddHostedService<BtStreamReceiver>();
 
+            // Share processing
             if(clusterConfig.ShareRelay == null)
             {
                 services.AddHostedService<ShareRecorder>();
@@ -270,9 +272,16 @@ namespace Miningcore
             else
                 services.AddHostedService<ShareRelay>();
 
-            // start API
+            // API
             if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
                 services.AddHostedService<MetricsPublisher>();
+
+            // Payment processing
+            if(clusterConfig.PaymentProcessing?.Enabled == true &&
+               clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+                services.AddHostedService<PayoutManager>();
+            else
+                logger.Info("Payment processing is not enabled");
         }
 
         private static IHost host;
@@ -330,19 +339,6 @@ namespace Miningcore
 
                     poolConfig.Template = template;
                 }
-
-                // start payment processor
-                if(clusterConfig.PaymentProcessing?.Enabled == true &&
-                   clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-                {
-                    payoutManager = container.Resolve<PayoutManager>();
-                    payoutManager.Configure(clusterConfig);
-
-                    payoutManager.Start();
-                }
-
-                else
-                    logger.Info("Payment processing is not enabled");
 
                 if(clusterConfig.ShareRelay == null)
                 {
