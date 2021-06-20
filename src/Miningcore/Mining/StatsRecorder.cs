@@ -178,7 +178,7 @@ namespace Miningcore.Mining
 
                 string buildKey(string miner, string worker = null)
                 {
-                    return !string.IsNullOrEmpty(worker) ? $"{miner}:{worker}" : miner;
+                    return !string.IsNullOrEmpty(worker) ? $"{miner}.{worker}" : miner;
                 }
 
                 var previousNonZeroMinerWorkers = new HashSet<string>(
@@ -246,7 +246,7 @@ namespace Miningcore.Mining
                         {
                             var parts = item.Split(".");
                             var miner = parts[0];
-                            var worker = parts.Length > 1 ? parts[1] : null;
+                            var worker = parts.Length > 1 ? parts[1] : "0";
 
                             stats.Miner = miner;
                             stats.Worker = worker;
