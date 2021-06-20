@@ -390,6 +390,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
                 logger.Info(() => $"Pool Online");
                 OutputPoolInfo();
+
+                messageBus.NotifyPoolStatus(this, PoolStatus.Online);
             }
 
             catch(PoolStartupAbortException)
@@ -414,6 +416,8 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         public void Stop()
         {
             StopListeners();
+
+            messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
         }
 
         #endregion // API-Surface

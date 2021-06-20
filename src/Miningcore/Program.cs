@@ -125,9 +125,10 @@ namespace Miningcore
                         services.AddHttpClient();
                         services.AddMemoryCache();
 
-                        services.AddHostedService<Program>();
-
                         ConfigureBackgroundServices(services);
+
+                        // MUST BE THE LAST REGISTERED HOSTED SERVICE!
+                        services.AddHostedService<Program>();
                     });
 
                 if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
@@ -259,6 +260,15 @@ namespace Miningcore
                 services.AddHostedService<NotificationService>();
 
             services.AddHostedService<BtStreamReceiver>();
+
+            if(clusterConfig.ShareRelay == null)
+            {
+                services.AddHostedService<ShareRecorder>();
+                services.AddHostedService<ShareReceiver>();
+            }
+
+            else
+                services.AddHostedService<ShareRelay>();
         }
 
         private static IHost host;
@@ -267,13 +277,9 @@ namespace Miningcore
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static bool isShareRecoveryMode;
-        private ShareRecorder shareRecorder;
-        private ShareRelay shareRelay;
-        private ShareReceiver shareReceiver;
         private PayoutManager payoutManager;
         private StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
-        private BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
 
         private static readonly AdminGcStats gcStats = new();
@@ -321,24 +327,6 @@ namespace Miningcore
                     poolConfig.Template = template;
                 }
 
-                if(clusterConfig.ShareRelay == null)
-                {
-                    // start share recorder
-                    shareRecorder = container.Resolve<ShareRecorder>();
-                    shareRecorder.Start(clusterConfig);
-
-                    // start share receiver (for external shares)
-                    shareReceiver = container.Resolve<ShareReceiver>();
-                    shareReceiver.Start(clusterConfig);
-                }
-
-                else
-                {
-                    // start share relay
-                    shareRelay = container.Resolve<ShareRelay>();
-                    shareRelay.Start(clusterConfig);
-                }
-
                 // start API
                 if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
                 {
@@ -379,7 +367,6 @@ namespace Miningcore
                     pools[poolConfig.Id] = pool;
 
                     // pre-start attachments
-                    shareReceiver?.AttachPool(pool);
                     statsRecorder?.AttachPool(pool);
 
                     await pool.StartAsync(ct);
@@ -392,7 +379,7 @@ namespace Miningcore
 
         private Task RecoverSharesAsync(string recoveryFilename)
         {
-            shareRecorder = container.Resolve<ShareRecorder>();
+            var shareRecorder = container.Resolve<ShareRecorder>();
             return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
         }
 
