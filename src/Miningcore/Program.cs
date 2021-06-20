@@ -255,6 +255,9 @@ namespace Miningcore
 
         private static void ConfigureBackgroundServices(IServiceCollection services)
         {
+            // Notifications
+            if(clusterConfig.Notifications?.Enabled == true)
+                services.AddHostedService<NotificationService>();
         }
 
         private static IHost host;
@@ -316,9 +319,6 @@ namespace Miningcore
 
                     poolConfig.Template = template;
                 }
-
-                // Notifications
-                container.Resolve<NotificationService>();
 
                 // start btStream receiver
                 btStreamReceiver = container.Resolve<BtStreamReceiver>();
