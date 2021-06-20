@@ -6,6 +6,7 @@ using System.Reactive.Disposables;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Cryptonote.Configuration;
 using Miningcore.Configuration;
@@ -23,98 +24,25 @@ namespace Miningcore.Mining
     /// <summary>
     /// Receives ready made block templates from GBTRelay
     /// </summary>
-    public class BtStreamReceiver
+    public class BtStreamReceiver : BackgroundService
     {
-        public BtStreamReceiver(IMasterClock clock, IMessageBus messageBus)
+        public BtStreamReceiver(
+            IMasterClock clock,
+            IMessageBus messageBus,
+            ClusterConfig clusterConfig)
         {
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clock = clock;
             this.messageBus = messageBus;
+            this.clusterConfig = clusterConfig;
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
-        private ClusterConfig clusterConfig;
-        private readonly CompositeDisposable disposables = new();
-        private readonly CancellationTokenSource cts = new();
-
-        private void StartMessageReceiver(ZmqPubSubEndpointConfig[] endpoints)
-        {
-            Task.Run(() =>
-            {
-                Thread.CurrentThread.Name = "BtStreamReceiver Socket Poller";
-                var timeout = TimeSpan.FromMilliseconds(1000);
-                var reconnectTimeout = TimeSpan.FromSeconds(300);
-
-                var relays = endpoints
-                    .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
-                    .ToArray();
-
-                while(!cts.IsCancellationRequested)
-                {
-                    // track last message received per endpoint
-                    var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
-
-                    try
-                    {
-                        // setup sockets
-                        var sockets = relays.Select(SetupSubSocket).ToArray();
-
-                        using(new CompositeDisposable(sockets))
-                        {
-                            var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
-
-                            while(!cts.IsCancellationRequested)
-                            {
-                                if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
-                                {
-                                    for(var i = 0; i < messages.Length; i++)
-                                    {
-                                        var msg = messages[i];
-
-                                        if(msg != null)
-                                        {
-                                            lastMessageReceived[i] = clock.Now;
-
-                                            using(msg)
-                                            {
-                                                ProcessMessage(msg);
-                                            }
-                                        }
-
-                                        else if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
-                                        {
-                                            // re-create socket
-                                            sockets[i].Dispose();
-                                            sockets[i] = SetupSubSocket(relays[i]);
-
-                                            // reset clock
-                                            lastMessageReceived[i] = clock.Now;
-
-                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
-                                        }
-                                    }
-
-                                    if(error != null)
-                                        logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
-                                }
-                            }
-                        }
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
-
-                        if(!cts.IsCancellationRequested)
-                            Thread.Sleep(1000);
-                    }
-                }
-            }, cts.Token);
-        }
+        private readonly ClusterConfig clusterConfig;
 
         private static ZSocket SetupSubSocket(ZmqPubSubEndpointConfig relay)
         {
@@ -167,12 +95,8 @@ namespace Miningcore.Mining
             messageBus.SendMessage(new BtStreamMessage(topic, content, sent, DateTime.UtcNow));
         }
 
-        #region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
+        protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            this.clusterConfig = clusterConfig;
-
             var endpoints = clusterConfig.Pools.Select(x =>
                     x.Extra.SafeExtensionDataAs<BitcoinPoolConfigExtra>()?.BtStream ??
                     x.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>()?.BtStream)
@@ -181,19 +105,82 @@ namespace Miningcore.Mining
                 .ToArray();
 
             if(endpoints.Any())
-                StartMessageReceiver(endpoints);
+            {
+                await Task.Run(() =>
+                {
+                    var timeout = TimeSpan.FromMilliseconds(1000);
+                    var reconnectTimeout = TimeSpan.FromSeconds(300);
+
+                    var relays = endpoints
+                        .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
+                        .ToArray();
+
+                    logger.Info(() => "Online");
+
+                    while(!ct.IsCancellationRequested)
+                    {
+                        // track last message received per endpoint
+                        var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
+
+                        try
+                        {
+                            // setup sockets
+                            var sockets = relays.Select(SetupSubSocket).ToArray();
+
+                            using(new CompositeDisposable(sockets))
+                            {
+                                var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
+
+                                while(!ct.IsCancellationRequested)
+                                {
+                                    if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
+                                    {
+                                        for(var i = 0; i < messages.Length; i++)
+                                        {
+                                            var msg = messages[i];
+
+                                            if(msg != null)
+                                            {
+                                                lastMessageReceived[i] = clock.Now;
+
+                                                using(msg)
+                                                {
+                                                    ProcessMessage(msg);
+                                                }
+                                            }
+
+                                            else if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                            {
+                                                // re-create socket
+                                                sockets[i].Dispose();
+                                                sockets[i] = SetupSubSocket(relays[i]);
+
+                                                // reset clock
+                                                lastMessageReceived[i] = clock.Now;
+
+                                                logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
+                                            }
+                                        }
+
+                                        if(error != null)
+                                            logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                    }
+                                }
+                            }
+                        }
+
+                        catch(Exception ex)
+                        {
+                            logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
+
+                            if(!ct.IsCancellationRequested)
+                                Thread.Sleep(1000);
+                        }
+                    }
+
+                    logger.Info(() => "Offline");
+                }, ct);
+            }
         }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            cts.Cancel();
-            disposables.Dispose();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
     }
 }

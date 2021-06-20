@@ -109,7 +109,6 @@ namespace Miningcore
             // Background services
 
             builder.RegisterType<PayoutManager>()
-                .AsSelf()
                 .SingleInstance();
 
             builder.RegisterType<ShareRecorder>()
