@@ -269,6 +269,10 @@ namespace Miningcore
 
             else
                 services.AddHostedService<ShareRelay>();
+
+            // start API
+            if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
+                services.AddHostedService<MetricsPublisher>();
         }
 
         private static IHost host;
@@ -325,12 +329,6 @@ namespace Miningcore
                         logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
                     poolConfig.Template = template;
-                }
-
-                // start API
-                if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
-                {
-                    container.Resolve<MetricsPublisher>();
                 }
 
                 // start payment processor
