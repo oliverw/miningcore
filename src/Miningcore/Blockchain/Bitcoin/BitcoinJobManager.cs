@@ -103,7 +103,7 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             base.PostChainIdentifyConfigure();
 
-            if(coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
+            if(poolConfig.EnableInternalStratum == true && coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
             {
                 if(!hashInit.DigestInit(poolConfig))
                     logger.Error(()=> $"{hashInit.GetType().Name} initialization failed");

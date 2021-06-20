@@ -299,8 +299,6 @@ namespace Miningcore
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static bool isShareRecoveryMode;
-        private PayoutManager payoutManager;
-        private StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
 
