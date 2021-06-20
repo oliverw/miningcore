@@ -535,17 +535,21 @@ int verthash_init(const char* dat_file_name, int createIfMissing) {
 
     FILE* datfile = fopen(dat_file_name, "rb");
 
-    if(datfile == NULL && createIfMissing) {
-        // create if missing
-        static const char *hashInput = "Verthash Proof-of-Space Datafile";
-        uint8_t *pk = (uint8_t *)malloc(NODE_SIZE);
-        sha3(hashInput, 32, pk, NODE_SIZE);
+    if(datfile == NULL) {
+        if(createIfMissing) {
+            // create if missing
+            static const char *hashInput = "Verthash Proof-of-Space Datafile";
+            uint8_t *pk = (uint8_t *)malloc(NODE_SIZE);
+            sha3(hashInput, 32, pk, NODE_SIZE);
 
-        int64_t index = 17;
-        NewGraph(index, dat_file_name, pk);
+            int64_t index = 17;
+            NewGraph(index, dat_file_name, pk);
 
-        // open
-        datfile = fopen(dat_file_name, "rb");
+            // open
+            datfile = fopen(dat_file_name, "rb");
+        } else {
+            return -1;
+        }
     }
 
     fseek(datfile, 0, SEEK_END);
