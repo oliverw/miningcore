@@ -22,6 +22,7 @@ using System;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Native;
+using NLog;
 
 namespace Miningcore.Crypto.Hashing.Algorithms
 {
@@ -43,12 +44,16 @@ namespace Miningcore.Crypto.Hashing.Algorithms
             }
         }
 
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         public bool DigestInit(PoolConfig poolConfig)
         {
             var vertHashDataFile = "verthash.dat";
 
             if(poolConfig.Extra.TryGetValue("vertHashDataFile", out var result))
                 vertHashDataFile = ((string) result).Trim();
+
+            logger.Info(()=> $"Loading verthash data file {vertHashDataFile}");
 
             return LibMultihash.verthash_init(vertHashDataFile, false) == 0;
         }
