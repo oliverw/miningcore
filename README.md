@@ -41,7 +41,7 @@ Miningcore implements the [Ethereum stratum mining protocol](https://github.com/
 
 - Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
 - Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
-- <code>./geth --cache 1024 --mine --http --http.port 8545 --unlock <your-wallet-address> --password <your-password-file> --allow-insecure-unlock</code>
+- <code>./geth --cache 1024 --mine --http --http.port 8545 --unlock your-wallet-address --password your-password-file --allow-insecure-unlock</code>
 
 
 ### Donations
