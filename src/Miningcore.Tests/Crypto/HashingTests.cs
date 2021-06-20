@@ -344,25 +344,14 @@ namespace Miningcore.Tests.Crypto
         }
 
         [Fact]
-        public void Sha3_256_Hash()
+        public void Vert_Hash()
         {
-            var hasher = new Sha3_256();
+            var hasher = new Verthash();
             var hash = new byte[32];
             hasher.Digest(testValue, hash);
             var result = hash.ToHexString();
 
-            Assert.Equal("00b11e72b948db16a181437150237fa247f9b5932758b7d3f648832ed88e7919", result);
-        }
-
-        [Fact]
-        public void Sha3_512_Hash()
-        {
-            var hasher = new Sha3_512();
-            var hash = new byte[64];
-            hasher.Digest(testValue, hash);
-            var result = hash.ToHexString();
-
-            Assert.Equal("e0883cffc9ff0ecf41fca8ade29dba1fc0df4b15beccc06ca03283805e176e497f0dd33db3bda375b199a4bb5eb1bb3ba884f3cc26f65f7acf08e1307058cc8d", result);
+            Assert.Equal("a5adc5e82053fec28c92c31e3f17c3cfe761ddcb9435ba377671ea86a4a9e83e", result);
         }
     }
 }

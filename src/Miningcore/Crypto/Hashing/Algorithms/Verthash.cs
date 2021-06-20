@@ -19,27 +19,38 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Native;
 
 namespace Miningcore.Crypto.Hashing.Algorithms
 {
-    /// <summary>
-    /// Sha3-256
-    /// </summary>
-    public unsafe class Sha3_512 : IHashAlgorithm
+    public unsafe class Verthash :
+        IHashAlgorithm,
+        IHashAlgorithmInit
     {
         public void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra)
         {
-            Contract.Requires<ArgumentException>(result.Length >= 64, $"{nameof(result)} must be greater or equal 32 bytes");
+            Contract.Requires<ArgumentException>(data.Length == 80, $"{nameof(data)} must be exactly 80 bytes long");
+            Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
             fixed (byte* input = data)
             {
                 fixed (byte* output = result)
                 {
-                    LibMultihash.sha3_512(input, output, (uint) data.Length);
+                    LibMultihash.verthash(input, output, data.Length);
                 }
             }
+        }
+
+        public bool DigestInit(PoolConfig poolConfig)
+        {
+            var vertHashDataFile = "verthash.dat";
+
+            if(poolConfig.Extra.TryGetValue("vertHashDataFile", out var result))
+                vertHashDataFile = ((string) result).Trim();
+
+            return LibMultihash.verthash_init(vertHashDataFile, false) == 0;
         }
     }
 }

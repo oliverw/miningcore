@@ -28,10 +28,13 @@ using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
+using Miningcore.Crypto;
+using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Native;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
@@ -94,6 +97,17 @@ namespace Miningcore.Blockchain.Bitcoin
         private BitcoinJob CreateJob()
         {
             return new();
+        }
+
+        protected override void PostChainIdentifyConfigure()
+        {
+            base.PostChainIdentifyConfigure();
+
+            if(coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
+            {
+                if(!hashInit.DigestInit(poolConfig))
+                    logger.Error(()=> $"{hashInit.GetType().Name} initialization failed");
+            }
         }
 
         protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
