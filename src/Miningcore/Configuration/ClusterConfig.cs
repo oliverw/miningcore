@@ -664,6 +664,14 @@ namespace Miningcore.Configuration
         public string SharedEncryptionKey { get; set; }
     }
 
+    public partial class Statistics
+    {
+        public int StatsInterval { get; set; }
+        public int HashrateCalculationWindow { get; set; }
+        public int StatsCleanupInterval { get; set; }
+        public int StatsDbCleanupHistory { get; set; }
+
+    }
     public class NicehashClusterConfig
     {
         /// <summary>
@@ -732,6 +740,7 @@ namespace Miningcore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
+        public Statistics Statistics { get; set; }
         public NicehashClusterConfig Nicehash { get; set; }
 
         /// <summary>

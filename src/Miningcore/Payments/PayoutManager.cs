@@ -274,30 +274,27 @@ namespace Miningcore.Payments
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Subscribe(OnPoolStatusNotification));
 
-                await Task.Run(async () =>
+                logger.Info(() => "Online");
+
+                // Allow all pools to actually come up before the first payment processing run
+                await Task.Delay(TimeSpan.FromMinutes(1), ct);
+
+                while(!ct.IsCancellationRequested)
                 {
-                    logger.Info(() => "Online");
-
-                    // Allow all pools to actually come up before the first payment processing run
-                    await Task.Delay(TimeSpan.FromMinutes(1), ct);
-
-                    while(!ct.IsCancellationRequested)
+                    try
                     {
-                        try
-                        {
-                            await ProcessPoolsAsync();
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Error(ex);
-                        }
-
-                        await Task.Delay(interval, ct);
+                        await ProcessPoolsAsync();
                     }
 
-                    logger.Info(() => "Offline");
-                }, ct);
+                    catch(Exception ex)
+                    {
+                        logger.Error(ex);
+                    }
+
+                    await Task.Delay(interval, ct);
+                }
+
+                logger.Info(() => "Offline");
             }
 
             finally
