@@ -156,9 +156,6 @@ namespace Miningcore.Mining
 
                     logger.Info(() => $"[{poolId}] Reset performance stats for pool");
                 }
-				logger.Info(() => $"[{poolId}] Connected Miners : {pool.PoolStats.ConnectedMiners} miners");
-				logger.Info(() => $"[{poolId}] Pool hashrate    : {pool.PoolStats.PoolHashrate} hashes/sec");
-                logger.Info(() => $"[{poolId}] Pool shares      : {pool.PoolStats.SharesPerSecond} shares/sec");
 
 				// persist. Save pool stats in DB.
                 await cf.RunTx(async (con, tx) =>
