@@ -120,42 +120,42 @@ namespace Miningcore.Mining
             return null;
         }
 
-        protected override void OnConnect(StratumClient client, IPEndPoint ipEndPoint)
+        protected override void OnConnect(StratumConnection connection, IPEndPoint ipEndPoint)
         {
             // client setup
             var context = CreateClientContext();
 
             var poolEndpoint = poolConfig.Ports[ipEndPoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
-            client.SetContext(context);
+            connection.SetContext(context);
 
             // varDiff setup
             if(context.VarDiff != null)
             {
                 lock(context.VarDiff)
                 {
-                    StartVarDiffIdleUpdate(client, poolEndpoint);
+                    StartVarDiffIdleUpdate(connection, poolEndpoint);
                 }
             }
 
             // expect miner to establish communication within a certain time
-            EnsureNoZombieClient(client);
+            EnsureNoZombieClient(connection);
         }
 
-        private void EnsureNoZombieClient(StratumClient client)
+        private void EnsureNoZombieClient(StratumConnection connection)
         {
             Observable.Timer(clock.Now.AddSeconds(10))
-                .TakeUntil(client.Terminated)
-                .Where(_ => client.IsAlive)
+                .TakeUntil(connection.Terminated)
+                .Where(_ => connection.IsAlive)
                 .Subscribe(_ =>
                 {
                     try
                     {
-                        if(client.LastReceive == null)
+                        if(connection.LastReceive == null)
                         {
-                            logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (post-connect silence)");
+                            logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (post-connect silence)");
 
-                            DisconnectClient(client);
+                            CloseConnection(connection);
                         }
                     }
 
@@ -176,17 +176,17 @@ namespace Miningcore.Mining
 
         #region VarDiff
 
-        protected async Task UpdateVarDiffAsync(StratumClient client, bool isIdleUpdate = false)
+        protected async Task UpdateVarDiffAsync(StratumConnection connection, bool isIdleUpdate = false)
         {
-            var context = client.ContextAs<WorkerContextBase>();
+            var context = connection.ContextAs<WorkerContextBase>();
 
             if(context.VarDiff != null)
             {
-                logger.Debug(() => $"[{client.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
+                logger.Debug(() => $"[{connection.ConnectionId}] Updating VarDiff" + (isIdleUpdate ? " [idle]" : string.Empty));
 
                 // get or create manager
                 VarDiffManager varDiffManager;
-                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
 
                 lock(varDiffManagers)
                 {
@@ -201,7 +201,7 @@ namespace Miningcore.Mining
 
                 lock(context.VarDiff)
                 {
-                    StartVarDiffIdleUpdate(client, poolEndpoint);
+                    StartVarDiffIdleUpdate(connection, poolEndpoint);
 
                     // update it
                     newDiff = varDiffManager.Update(context.VarDiff, context.Difficulty, isIdleUpdate);
@@ -209,9 +209,9 @@ namespace Miningcore.Mining
 
                 if(newDiff != null)
                 {
-                    logger.Info(() => $"[{client.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
+                    logger.Info(() => $"[{connection.ConnectionId}] VarDiff update to {Math.Round(newDiff.Value, 3)}");
 
-                    await OnVarDiffUpdateAsync(client, newDiff.Value);
+                    await OnVarDiffUpdateAsync(connection, newDiff.Value);
                 }
             }
         }
@@ -220,23 +220,23 @@ namespace Miningcore.Mining
         /// Wire interval based vardiff updates for client
         /// WARNING: Assumes to be invoked with lock held on context.VarDiff
         /// </summary>
-        private void StartVarDiffIdleUpdate(StratumClient client, PoolEndpoint poolEndpoint)
+        private void StartVarDiffIdleUpdate(StratumConnection connection, PoolEndpoint poolEndpoint)
         {
             // Check Every Target Time as we adjust the diff to meet target
             // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
 
             var shareReceived = messageBus.Listen<ClientShare>()
-                .Where(x => x.Share.PoolId == poolConfig.Id && x.Client == client)
+                .Where(x => x.Share.PoolId == poolConfig.Id && x.Connection == connection)
                 .Select(_ => Unit.Default)
                 .Take(1);
 
             var timeout = poolEndpoint.VarDiff.TargetTime;
 
             Observable.Timer(TimeSpan.FromSeconds(timeout))
-                .TakeUntil(Observable.Merge(shareReceived, client.Terminated))
-                .Where(_ => client.IsAlive)
-                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(client, true)))
+                .TakeUntil(Observable.Merge(shareReceived, connection.Terminated))
+                .Where(_ => connection.IsAlive)
+                .Select(x => Observable.FromAsync(() => UpdateVarDiffAsync(connection, true)))
                 .Concat()
                 .Subscribe(_ => { }, ex =>
                 {
@@ -244,9 +244,9 @@ namespace Miningcore.Mining
                 });
         }
 
-        protected virtual Task OnVarDiffUpdateAsync(StratumClient client, double newDiff)
+        protected virtual Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
-            var context = client.ContextAs<WorkerContextBase>();
+            var context = connection.ContextAs<WorkerContextBase>();
             context.EnqueueNewDifficulty(newDiff);
 
             return Task.FromResult(true);
@@ -290,7 +290,7 @@ namespace Miningcore.Mining
             }
         }
 
-        protected void ConsiderBan(StratumClient client, WorkerContextBase context, PoolShareBasedBanningConfig config)
+        protected void ConsiderBan(StratumConnection connection, WorkerContextBase context, PoolShareBasedBanningConfig config)
         {
             var totalShares = context.Stats.ValidShares + context.Stats.InvalidShares;
 
@@ -311,11 +311,11 @@ namespace Miningcore.Mining
                         (clusterConfig.Banning?.BanOnInvalidShares.HasValue == false ||
                             clusterConfig.Banning?.BanOnInvalidShares == true))
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
+                        logger.Info(() => $"[{connection.ConnectionId}] Banning worker for {config.Time} sec: {Math.Floor(ratioBad * 100)}% of the last {totalShares} shares were invalid");
 
-                        banManager.Ban(client.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
+                        banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(config.Time));
 
-                        DisconnectClient(client);
+                        CloseConnection(connection);
                     }
                 }
             }

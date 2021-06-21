@@ -49,9 +49,9 @@ using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Stratum
 {
-    public class StratumClient
+    public class StratumConnection
     {
-        public StratumClient(ILogger logger, IMasterClock clock, string connectionId)
+        public StratumConnection(ILogger logger, IMasterClock clock, string connectionId)
         {
             this.logger = logger;
 
@@ -68,7 +68,7 @@ namespace Miningcore.Stratum
             IsAlive = true;
         }
 
-        public StratumClient()
+        public StratumConnection()
         {
             // For unit testing only
         }
@@ -96,12 +96,12 @@ namespace Miningcore.Stratum
 
         #region API-Surface
 
-        public void Run(Socket socket, CancellationToken ct,
+        public void DispatchAsync(Socket socket, CancellationToken ct,
             (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpoint,
             X509Certificate2 cert,
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
-            Action<StratumClient> onCompleted,
-            Action<StratumClient, Exception> onError)
+            Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
+            Action<StratumConnection> onCompleted,
+            Action<StratumConnection, Exception> onError)
         {
             PoolEndpoint = endpoint.IPEndPoint;
             RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
@@ -276,7 +276,7 @@ namespace Miningcore.Stratum
 
         private async Task ProcessReceivePipeAsync(CancellationToken ct,
             TcpProxyProtocolConfig proxyProtocol,
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
+            Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync)
         {
             while(true)
             {
@@ -363,7 +363,7 @@ namespace Miningcore.Stratum
 
         private async Task ProcessRequestAsync(
             CancellationToken ct,
-            Func<StratumClient, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
+            Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             ReadOnlySequence<byte> lineBuffer)
         {
             using(var reader = new JsonTextReader(new StreamReader(new MemoryStream(lineBuffer.ToArray()), StratumConstants.Encoding)))

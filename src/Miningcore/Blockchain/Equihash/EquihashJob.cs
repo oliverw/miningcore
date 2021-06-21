@@ -225,7 +225,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        private (Share Share, string BlockHex) ProcessShareInternal(StratumClient worker, string nonce,
+        private (Share Share, string BlockHex) ProcessShareInternal(StratumConnection worker, string nonce,
             uint nTime, string solution)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
@@ -423,7 +423,7 @@ namespace Miningcore.Blockchain.Equihash
 
         public string JobId { get; protected set; }
 
-        public (Share Share, string BlockHex) ProcessShare(StratumClient worker, string extraNonce2, string nTime, string solution)
+        public (Share Share, string BlockHex) ProcessShare(StratumConnection worker, string extraNonce2, string nTime, string solution)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(extraNonce2), $"{nameof(extraNonce2)} must not be empty");

@@ -644,9 +644,9 @@ namespace Miningcore.Blockchain.Bitcoin
             return result.Response is {IsValid: true};
         }
 
-        public abstract object[] GetSubscriberData(StratumClient worker);
+        public abstract object[] GetSubscriberData(StratumConnection worker);
 
-        public abstract ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public abstract ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct);
 
         #endregion // API-Surface

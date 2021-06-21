@@ -83,7 +83,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected readonly Dictionary<string, StratumClient> clients = new();
+        protected readonly Dictionary<string, StratumConnection> clients = new();
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new();
         protected static readonly HashSet<int> ignoredSocketErrors;
         protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
@@ -125,7 +125,7 @@ namespace Miningcore.Stratum
             {
                 try
                 {
-                    // Wait incoming for connection on monitored sockets
+                    // Wait incoming connection
                     await Task.WhenAny(tasks);
 
                     // check tasks
@@ -184,11 +184,11 @@ namespace Miningcore.Stratum
             }
 
             // setup client
-            var client = new StratumClient(logger, clock, connectionId);
+            var connection = new StratumConnection(logger, clock, connectionId);
 
-            RegisterClient(client, connectionId);
-            OnConnect(client, port.IPEndPoint);
-            client.Run(socket, ct, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
+            RegisterConnection(connection, connectionId);
+            OnConnect(connection, port.IPEndPoint);
+            connection.DispatchAsync(socket, ct, port, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
         }
 
         public void StopListeners()
@@ -206,21 +206,21 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected virtual void RegisterClient(StratumClient client, string connectionId)
+        protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
         {
-            Contract.RequiresNonNull(client, nameof(client));
+            Contract.RequiresNonNull(connection, nameof(connection));
 
             lock(clients)
             {
-                clients[connectionId] = client;
+                clients[connectionId] = connection;
             }
         }
 
-        protected virtual void UnregisterClient(StratumClient client)
+        protected virtual void UnregisterConnection(StratumConnection connection)
         {
-            Contract.RequiresNonNull(client, nameof(client));
+            Contract.RequiresNonNull(connection, nameof(connection));
 
-            var subscriptionId = client.ConnectionId;
+            var subscriptionId = connection.ConnectionId;
 
             if(!string.IsNullOrEmpty(subscriptionId))
             {
@@ -231,24 +231,24 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected abstract void OnConnect(StratumClient client, IPEndPoint portItem1);
+        protected abstract void OnConnect(StratumConnection connection, IPEndPoint portItem1);
 
-        protected async Task OnRequestAsync(StratumClient client, JsonRpcRequest request, CancellationToken ct)
+        protected async Task OnRequestAsync(StratumConnection connection, JsonRpcRequest request, CancellationToken ct)
         {
             // boot pre-connected clients
-            if(banManager?.IsBanned(client.RemoteEndpoint.Address) == true)
+            if(banManager?.IsBanned(connection.RemoteEndpoint.Address) == true)
             {
-                logger.Info(() => $"[{client.ConnectionId}] Disconnecting banned client @ {client.RemoteEndpoint.Address}");
-                DisconnectClient(client);
+                logger.Info(() => $"[{connection.ConnectionId}] Disconnecting banned client @ {connection.RemoteEndpoint.Address}");
+                CloseConnection(connection);
                 return;
             }
 
-            logger.Debug(() => $"[{client.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
+            logger.Debug(() => $"[{connection.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-            await OnRequestAsync(client, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
+            await OnRequestAsync(connection, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
         }
 
-        protected virtual void OnClientError(StratumClient client, Exception ex)
+        protected virtual void OnConnectionError(StratumConnection connection, Exception ex)
         {
             if(ex is AggregateException)
                 ex = ex.InnerException;
@@ -260,41 +260,41 @@ namespace Miningcore.Stratum
             {
                 case SocketException sockEx:
                     if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
-                        logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
+                        logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
 
                 case JsonException jsonEx:
                     // junk received (invalid json)
-                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {jsonEx.Message}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {jsonEx.Message}");
 
                     if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Banning client for sending junk");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                        logger.Info(() => $"[{connection.ConnectionId}] Banning client for sending junk");
+                        banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
                     break;
 
                 case AuthenticationException authEx:
                     // junk received (SSL handshake)
-                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {authEx.Message}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {authEx.Message}");
 
                     if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
-                        banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                        logger.Info(() => $"[{connection.ConnectionId}] Banning client for failing SSL handshake");
+                        banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
                     break;
 
                 case IOException ioEx:
                     // junk received (SSL handshake)
-                    logger.Error(() => $"[{client.ConnectionId}] Connection json error state: {ioEx.Message}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection json error state: {ioEx.Message}");
 
                     if(ioEx.Source == "System.Net.Security")
                     {
                         if(clusterConfig.Banning?.BanOnJunkReceive.HasValue == false || clusterConfig.Banning?.BanOnJunkReceive == true)
                         {
-                            logger.Info(() => $"[{client.ConnectionId}] Banning client for failing SSL handshake");
-                            banManager?.Ban(client.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
+                            logger.Info(() => $"[{connection.ConnectionId}] Banning client for failing SSL handshake");
+                            banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                         }
                     }
                     break;
@@ -305,7 +305,7 @@ namespace Miningcore.Stratum
 
                 case ArgumentException argEx:
                     if(argEx.TargetSite != StreamWriterCtor || argEx.ParamName != "stream")
-                        logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
+                        logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
 
                 case InvalidOperationException invOpEx:
@@ -313,26 +313,26 @@ namespace Miningcore.Stratum
                     break;
 
                 default:
-                    logger.Error(() => $"[{client.ConnectionId}] Connection error state: {ex}");
+                    logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
             }
 
-            UnregisterClient(client);
+            UnregisterConnection(connection);
         }
 
-        protected virtual void OnClientComplete(StratumClient client)
+        protected virtual void OnConnectionComplete(StratumConnection connection)
         {
-            logger.Debug(() => $"[{client.ConnectionId}] Received EOF");
+            logger.Debug(() => $"[{connection.ConnectionId}] Received EOF");
 
-            UnregisterClient(client);
+            UnregisterConnection(connection);
         }
 
-        protected virtual void DisconnectClient(StratumClient client)
+        protected virtual void CloseConnection(StratumConnection connection)
         {
-            Contract.RequiresNonNull(client, nameof(client));
+            Contract.RequiresNonNull(connection, nameof(connection));
 
-            client.Disconnect();
-            UnregisterClient(client);
+            connection.Disconnect();
+            UnregisterConnection(connection);
         }
 
         private X509Certificate2 AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
@@ -351,9 +351,9 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected void ForEachClient(Action<StratumClient> action)
+        protected void ForEachConnection(Action<StratumConnection> action)
         {
-            StratumClient[] tmp;
+            StratumConnection[] tmp;
 
             lock(clients)
             {
@@ -374,19 +374,19 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected IEnumerable<Task> ForEachClient(Func<StratumClient, Task> func)
+        protected IEnumerable<Task> ForEachConnection(Func<StratumConnection, Task> func)
         {
-            StratumClient[] tmp;
+            StratumConnection[] tmp;
 
             lock(clients)
             {
                 tmp = clients.Values.ToArray();
             }
 
-            return tmp.Select(x => func(x));
+            return tmp.Select(func);
         }
 
-        protected abstract Task OnRequestAsync(StratumClient client,
+        protected abstract Task OnRequestAsync(StratumConnection connection,
             Timestamped<JsonRpcRequest> request, CancellationToken ct);
     }
 }
