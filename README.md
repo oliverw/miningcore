@@ -36,11 +36,9 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 
 #### Ethereum
 
-Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-
-- Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
-- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
-- <code>./geth --cache 1024 --mine --http --http.port 8545 --unlock your-wallet-address --password your-password-file --allow-insecure-unlock</code>
+- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
+- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
 
 
 ### Donations
