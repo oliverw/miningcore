@@ -27,7 +27,7 @@ namespace Miningcore.Blockchain.Ethereum
             blockTarget = new uint256(target.HexToReverseByteArray());
         }
 
-        private readonly Dictionary<StratumClient, HashSet<string>> workerNonces =
+        private readonly Dictionary<StratumConnection, HashSet<string>> workerNonces =
              new();
 
         public string Id { get; }
@@ -35,7 +35,7 @@ namespace Miningcore.Blockchain.Ethereum
         private readonly uint256 blockTarget;
         private readonly ILogger logger;
 
-        private void RegisterNonce(StratumClient worker, string nonce)
+        private void RegisterNonce(StratumConnection worker, string nonce)
         {
             var nonceLower = nonce.ToLower();
 
@@ -55,7 +55,7 @@ namespace Miningcore.Blockchain.Ethereum
         }
 
         public async ValueTask<(Share Share, string FullNonceHex, string HeaderHash, string MixHash)> ProcessShareAsync(
-            StratumClient worker, string nonce, EthashFull ethash, CancellationToken ct)
+            StratumConnection worker, string nonce, EthashFull ethash, CancellationToken ct)
         {
             // duplicate nonce?
             lock(workerNonces)

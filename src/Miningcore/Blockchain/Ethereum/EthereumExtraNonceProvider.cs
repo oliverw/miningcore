@@ -9,7 +9,7 @@ namespace Miningcore.Blockchain.Ethereum
 {
     public class EthereumExtraNonceProvider : ExtraNonceProviderBase
     {
-        public EthereumExtraNonceProvider() : base(2)
+        public EthereumExtraNonceProvider(byte? clusterInstanceId) : base(2, clusterInstanceId)
         {
         }
     }

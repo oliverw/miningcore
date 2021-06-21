@@ -59,14 +59,17 @@ namespace Miningcore.Blockchain.Ethereum
             IComponentContext ctx,
             IMasterClock clock,
             IMessageBus messageBus,
+            IExtraNonceProvider extraNonceProvider,
             JsonSerializerSettings serializerSettings) :
             base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
             this.clock = clock;
+            this.extraNonceProvider = extraNonceProvider;
 
             serializer = new JsonSerializer
             {
@@ -80,7 +83,7 @@ namespace Miningcore.Blockchain.Ethereum
         private GethChainType chainType;
         private EthashFull ethash;
         private readonly IMasterClock clock;
-        private readonly EthereumExtraNonceProvider extraNonceProvider = new();
+        private readonly IExtraNonceProvider extraNonceProvider;
 
         private const int MaxBlockBacklog = 3;
         protected readonly Dictionary<string, EthereumJob> validJobs = new();
@@ -396,13 +399,13 @@ namespace Miningcore.Blockchain.Ethereum
             return true;
         }
 
-        public void PrepareWorker(StratumClient client)
+        public void PrepareWorker(StratumConnection client)
         {
             var context = client.ContextAs<EthereumWorkerContext>();
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async ValueTask<Share> SubmitShareAsync(StratumClient worker, string[] request, CancellationToken ct)
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, string[] request, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
