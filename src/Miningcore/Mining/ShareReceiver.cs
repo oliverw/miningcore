@@ -52,7 +52,6 @@ namespace Miningcore.Mining
         private readonly CompositeDisposable disposables = new();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new();
         private readonly BufferBlock<(string Url, ZMessage Message)> queue = new();
-        private readonly CancellationTokenSource cts = new();
 
         readonly JsonSerializer serializer = new()
         {
@@ -85,7 +84,7 @@ namespace Miningcore.Mining
                 AttachPool(notification.Pool);
         }
 
-        private Task StartMessageReceiver()
+        private Task StartMessageReceiver(CancellationToken ct)
         {
             return Task.Run(() =>
             {
@@ -97,7 +96,7 @@ namespace Miningcore.Mining
                     .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                     .ToArray();
 
-                while(!cts.IsCancellationRequested)
+                while(!ct.IsCancellationRequested)
                 {
                     // track last message received per endpoint
                     var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
@@ -111,7 +110,7 @@ namespace Miningcore.Mining
                         {
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
-                            while(!cts.IsCancellationRequested)
+                            while(!ct.IsCancellationRequested)
                             {
                                 if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
@@ -150,11 +149,11 @@ namespace Miningcore.Mining
                     {
                         logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
 
-                        if(!cts.IsCancellationRequested)
+                        if(!ct.IsCancellationRequested)
                             Thread.Sleep(5000);
                     }
                 }
-            }, cts.Token);
+            }, ct);
         }
 
         private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay)
@@ -172,35 +171,32 @@ namespace Miningcore.Mining
             return subSocket;
         }
 
-        private Task StartMessageProcessors()
+        private Task StartMessageProcessors(CancellationToken ct)
         {
-            var tasks = Enumerable.Repeat(ProcessMessages(), Environment.ProcessorCount);
+            var tasks = Enumerable.Repeat(ProcessMessages(ct), Environment.ProcessorCount);
 
             return Task.WhenAll(tasks);
         }
 
-        private Task ProcessMessages()
+        private async Task ProcessMessages(CancellationToken ct)
         {
-            return Task.Run(async () =>
+            while(!ct.IsCancellationRequested)
             {
-                while(!cts.IsCancellationRequested)
+                try
                 {
-                    try
-                    {
-                        var (url, msg) = await queue.ReceiveAsync(cts.Token);
+                    var (url, msg) = await queue.ReceiveAsync(ct);
 
-                        using(msg)
-                        {
-                            ProcessMessage(url, msg);
-                        }
-                    }
-
-                    catch(Exception ex)
+                    using(msg)
                     {
-                        logger.Error(ex);
+                        ProcessMessage(url, msg);
                     }
                 }
-            }, cts.Token);
+
+                catch(Exception ex)
+                {
+                    logger.Error(ex);
+                }
+            }
         }
 
         private void ProcessMessage(string url, ZMessage msg)
@@ -318,8 +314,8 @@ namespace Miningcore.Mining
 
                     // process messages
                     await Task.WhenAll(
-                        StartMessageReceiver(),
-                        StartMessageProcessors());
+                        StartMessageReceiver(ct),
+                        StartMessageProcessors(ct));
                 }
 
                 finally
