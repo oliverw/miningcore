@@ -15,7 +15,6 @@
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
-- [Gitter Channel](https://gitter.im/miningcore/Lobby)
 
 ### Supported Currencies
 
@@ -50,29 +49,31 @@ This software comes with a built-in donation of 0.1% per block-reward to support
 * ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
 * BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
 
-### Running pre-built Release Binaries on Linux
+### Running pre-built Release Binaries
+
+#### Linux
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
-- Debian/Ubuntu Packages to install
-  - postgresql-11 (or higher, the higher the better)
-  - libzmq5
-  - libboost-system1.67.0
-  - libboost-date-time1.67.0
-- Download miningcore-linux-ubuntu-x64.tar.gz from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
-- Extract the Archive
+- For Debian/Ubuntu, install these packages
+  - `postgresql-11` (or higher, the higher the better)
+  - `libzmq5`
+  - `libboost-system1.67.0`
+  - `libboost-date-time1.67.0`
+- Download `miningcore-linux-ubuntu-x64.tar.gz` from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Extract the archive
 - Setup the database as outlined below
-- Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
-- Run <code>dotnet Miningcore.dll -c config.json</code>
+- Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Run `dotnet Miningcore.dll -c config.json`
 
-### Running pre-built Release Binaries on Windows
+#### Windows
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - Install [PostgreSQL Database](https://www.postgresql.org/)
-- Download miningcore-win-x64.zip from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
+- Download `miningcore-win-x64.zip` from the latest [Release](https://github.com/coinfoundry/miningcore/releases)
 - Extract the Archive
 - Setup the database as outlined below
-- Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
-- Run <code>dotnet Miningcore.dll -c config.json</code>
+- Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+- Run `dotnet Miningcore.dll -c config.json`
 
 ### Basic PostgreSQL Database setup
 
@@ -84,7 +85,7 @@ $ createdb miningcore
 $ psql (enter the password for postgres)
 ```
 
-Inside psql execute:
+Inside `psql` execute:
 
 ```sql
 alter user miningcore with encrypted password 'some-secure-password';
@@ -102,16 +103,16 @@ $ psql -d miningcore -U miningcore -f createdb.sql
 
 If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
 
-**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your <code>shares</code> table using <code>pg_backup</code> first!
+**WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
 $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
 $ psql -d miningcore -U miningcore -f createdb_postgresql_11_appendix.sql
 ```
 
-After executing the command, your <code>shares</code> table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
+After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
 
-The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of <code>mypool1</code> in the statement below with the id of your pool from your Miningcore configuration file:
+The following step needs to performed **once for every new pool** you add to your cluster. Be sure to **replace all occurences** of `mypool1` in the statement below with the id of your pool from your Miningcore configuration file:
 
 ```sql
 CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
@@ -157,7 +158,7 @@ Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotn
 
 #### After successful build
 
-Create a configuration file <code>config.json</code> as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
 ```console
 $ cd ../../build
