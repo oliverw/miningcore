@@ -92,7 +92,7 @@ namespace Miningcore.Mining
 
         private async Task UpdatePoolHashratesAsync(CancellationToken ct)
         {
-            DateTime now = clock.Now;
+            var now = clock.Now;
             var timeFrom = now.Add(-hashrateCalculationWindow);
 
             var stats = new MinerWorkerPerformanceStats
@@ -112,7 +112,6 @@ namespace Miningcore.Mining
                 var pool = pools[poolId];
 
 				// fetch stats from DB for the last X minutes
-                // MinerNL get stats
                 var result = await readFaultPolicy.ExecuteAsync(() =>
                     cf.Run(con => shareRepo.GetHashAccumulationBetweenCreatedAsync(con, poolId, timeFrom, now)));
 
@@ -143,7 +142,6 @@ namespace Miningcore.Mining
                     pool.PoolStats.SharesPerSecond = (int) (poolHashesCountAccumulated / poolHashTimeFrame);
 
 					messageBus.NotifyHashrateUpdated(pool.Config.Id, poolHashrate);
-					// MinerNL end
                 }
                 else
                 {
@@ -221,7 +219,6 @@ namespace Miningcore.Mining
                         }
                     });
 
-                    logger.Info(() => "--------------------------------------------");
                     continue;
                 };
 
