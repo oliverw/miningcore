@@ -3,7 +3,7 @@ CXXFLAGS += -g -Wall -fPIC -fpermissive -O2 -Wno-char-subscripts -Wno-unused-var
 LDFLAGS += -shared
 TARGET = libethhash.so
 
-OBJECTS = internal.o io.o io_posix.o sha3.o
+OBJECTS = internal.o io.o io_posix.o sha3.o exports.o
 
 all: $(TARGET)
 
