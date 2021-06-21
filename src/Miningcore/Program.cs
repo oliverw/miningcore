@@ -361,7 +361,7 @@ namespace Miningcore
                 pool.Configure(poolConfig, clusterConfig);
                 pools[poolConfig.Id] = pool;
 
-                await pool.StartAsync(ct);
+                await pool.RunAsync(ct);
             }));
         }
 

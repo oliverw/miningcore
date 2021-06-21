@@ -367,7 +367,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
         public abstract double HashrateFromShares(double shares, double interval);
 
-        public virtual async Task StartAsync(CancellationToken ct)
+        public virtual async Task RunAsync(CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -379,19 +379,22 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 await SetupJobManager(ct);
                 await InitStatsAsync();
 
+                logger.Info(() => $"Pool Online");
+                OutputPoolInfo();
+
+                messageBus.NotifyPoolStatus(this, PoolStatus.Online);
+
                 if(poolConfig.EnableInternalStratum == true)
                 {
                     var ipEndpoints = poolConfig.Ports.Keys
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
                         .ToArray();
 
-                    StartListeners(ipEndpoints);
+                    await ServeStratum(ct, ipEndpoints);
                 }
 
-                logger.Info(() => $"Pool Online");
-                OutputPoolInfo();
-
-                messageBus.NotifyPoolStatus(this, PoolStatus.Online);
+                messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
+                logger.Info(() => $"Pool Offline");
             }
 
             catch(PoolStartupAbortException)
@@ -411,13 +414,6 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 logger.Error(ex);
                 throw;
             }
-        }
-
-        public void Stop()
-        {
-            StopListeners();
-
-            messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
         }
 
         #endregion // API-Surface

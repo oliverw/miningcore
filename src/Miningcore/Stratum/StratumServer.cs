@@ -95,75 +95,72 @@ namespace Miningcore.Stratum
         protected IBanManager banManager;
         protected ILogger logger;
 
-        public void StartListeners(params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
+        public async Task ServeStratum(CancellationToken ct, params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
         {
             Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
 
-            Task.Run(async () =>
+            // Setup sockets
+            var sockets = stratumPorts.Select(port =>
             {
-                // Setup sockets
-                var sockets = stratumPorts.Select(port =>
+                // Setup socket
+                var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                server.Bind(port.IPEndPoint);
+                server.Listen(512);
+
+                lock(ports)
                 {
-                    // Setup socket
-                    var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
-                    server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                    server.Bind(port.IPEndPoint);
-                    server.Listen(512);
+                    ports[port.IPEndPoint.Port] = server;
+                }
 
-                    lock(ports)
-                    {
-                        ports[port.IPEndPoint.Port] = server;
-                    }
+                return server;
+            }).ToArray();
 
-                    return server;
-                }).ToArray();
+            logger.Info(() => $"Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
 
-                logger.Info(() => $"Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
+            // Setup accept tasks
+            var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
 
-                // Setup accept tasks
-                var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
-
-                while(true)
+            while(!ct.IsCancellationRequested)
+            {
+                try
                 {
-                    try
+                    // Wait incoming for connection on monitored sockets
+                    await Task.WhenAny(tasks);
+
+                    // check tasks
+                    for(var i = 0; i < tasks.Length; i++)
                     {
-                        // Wait incoming for connection on monitored sockets
-                        await Task.WhenAny(tasks);
+                        var task = tasks[i];
+                        var port = stratumPorts[i];
 
-                        // check tasks
-                        for(var i = 0; i < tasks.Length; i++)
-                        {
-                            var task = tasks[i];
-                            var port = stratumPorts[i];
+                        // skip running tasks
+                        if(!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
+                            continue;
 
-                            // skip running tasks
-                            if(!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
-                                continue;
+                        // accept connection if successful
+                        if(task.IsCompletedSuccessfully)
+                            AcceptConnection(task.Result, port, ct);
 
-                            // accept connection if successful
-                            if(task.IsCompletedSuccessfully)
-                                AcceptConnection(task.Result, port);
-
-                            // Refresh task
-                            tasks[i] = sockets[i].AcceptAsync();
-                        }
-                    }
-
-                    catch(ObjectDisposedException)
-                    {
-                        // ignored
-                        break;
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
+                        // Refresh task
+                        tasks[i] = sockets[i].AcceptAsync();
                     }
                 }
-            });
+
+                catch(ObjectDisposedException)
+                {
+                    // ignored
+                    break;
+                }
+
+                catch(Exception ex)
+                {
+                    logger.Error(ex);
+                }
+            }
         }
 
-        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port, CancellationToken ct)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
@@ -191,7 +188,7 @@ namespace Miningcore.Stratum
 
             RegisterClient(client, connectionId);
             OnConnect(client, port.IPEndPoint);
-            client.Run(socket, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
+            client.Run(socket, ct, port, cert, OnRequestAsync, OnClientComplete, OnClientError);
         }
 
         public void StopListeners()
