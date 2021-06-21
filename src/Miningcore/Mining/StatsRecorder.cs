@@ -183,7 +183,7 @@ namespace Miningcore.Mining
 
                 string buildKey(string miner, string worker = null)
                 {
-                    return !string.IsNullOrEmpty(worker) ? $"{miner}:{worker}" : miner;
+                    return !string.IsNullOrEmpty(worker) ? $"{miner}.{worker}" : miner;
                 }
 
                 var previousNonZeroMinerWorkers = new HashSet<string>(
@@ -206,9 +206,9 @@ namespace Miningcore.Mining
                         {
                             var parts = item.Split(":");
                             var miner = parts[0];
-                            var worker = parts.Length > 1 ? parts[1] : null;
+                            var worker = parts.Length > 1 ? parts[1] : "0";
 
-                            stats.Miner = parts[0];
+                            stats.Miner = miner;
                             stats.Worker = worker;
 
                             // persist
@@ -268,8 +268,6 @@ namespace Miningcore.Mining
                                 minerHashTimeFrame = (hashrateCalculationWindow.TotalSeconds - timeFrameBeforeFirstShare + timeFrameAfterLastShare);
 
                             if(minerHashTimeFrame < 1) { minerHashTimeFrame = 1; };
-
-                            // logger.Info(() => $"[{poolId}] hashrateCalculationWindow : {hashrateCalculationWindow.TotalSeconds} | minerHashTimeFrame : {minerHashTimeFrame} |  TimeFrameFirstLastShare : {TimeFrameFirstLastShare} | TimeFrameBeforeFirstShare: {TimeFrameBeforeFirstShare} | TimeFrameAfterLastShare: {TimeFrameAfterLastShare}");
 
                             // calculate miner/worker stats
                             minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
