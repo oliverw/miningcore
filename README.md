@@ -34,6 +34,15 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 - To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
 - Miners may use both t-addresses and z-addresses when connecting to the pool
 
+#### Ethereum
+
+Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+
+- Claymore Miner must be configured to communicate using this protocol by supplying the <code>-esm 3</code> command line option
+- Genoil's ethminer must be configured to communicate using this protocol by supplying the <code>-SP 2</code> command line option
+- <code>./geth --cache 1024 --mine --http --http.port 8545 --unlock your-wallet-address --password your-password-file --allow-insecure-unlock</code>
+
+
 ### Donations
 
 This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:

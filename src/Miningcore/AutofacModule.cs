@@ -26,6 +26,7 @@ using Miningcore.Banning;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Cryptonote;
 using Miningcore.Blockchain.Equihash;
+using Miningcore.Blockchain.Ethereum;
 using Miningcore.Configuration;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Equihash;
@@ -148,6 +149,13 @@ namespace Miningcore
 
             builder.RegisterType<CryptonoteJobManager>()
                 .AsSelf();
+
+            //////////////////////
+            // Ethereum
+
+            builder.RegisterType<EthereumJobManager>()
+                .AsSelf();
+
 
             //////////////////////
             // ZCash
