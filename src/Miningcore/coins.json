@@ -1280,5 +1280,16 @@
         "addressPrefixIntegratedTestnet": 54,
         "explorerBlockLink": "https://www.exploremonero.com/block/$height$",
         "explorerTxLink": "https://www.exploremonero.com/transaction/{0}"
+    },
+    "ethereum": {
+        "name": "Ethereum",
+        "symbol": "ETH",
+        "family": "ethereum",
+        "explorerBlockLinks": {
+            "block": "https://etherscan.io/block/$height$",
+            "uncle": "https://etherscan.io/uncle/$height$"
+        },
+        "explorerTxLink": "https://etherscan.io/tx/{0}",
+        "explorerAccountLink": "https://etherscan.io/address/{0}"
     }
 }

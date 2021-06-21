@@ -4,23 +4,24 @@
         "enableConsoleLog": true,
         "enableConsoleColors": true,
         "logFile": "",
+        "apiLogFile": "",
         "logBaseDirectory": "",
         "perPoolLogFile": false
     },
     "banning": {
         "manager": "integrated",
-        "banOnJunkReceive": true,
+        "banOnJunkReceive": false,
         "banOnInvalidShares": false
     },
     "notifications": {
-        "enabled": true,
+        "enabled": false,
         "email": {
             "host": "smtp.example.com",
             "port": 587,
             "user": "user",
             "password": "password",
             "fromAddress": "info@yourpool.org",
-            "fromName": "support"
+            "fromName": "pool support"
         },
         "admin": {
             "enabled": false,
@@ -39,61 +40,84 @@
     },
     "paymentProcessing": {
         "enabled": true,
-        "interval": 600,
+        "interval": 100,
         "shareRecoveryFile": "recovered-shares.txt"
     },
-    "pools": [{
-        "id": "eth1",
+    "api": {
         "enabled": true,
-        "coin": "ethereum",
-        "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
-        "rewardRecipients": [{
-                "type": "op",
-                "address": "0x0942e9144606ad43f2e61a7ee332fe9914424712",
-                "percentage": 0
-        }],
-        "blockRefreshInterval": 500,
-        "clientConnectionTimeout": 600,
-        "banning": {
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "clusterName": "eu1",
+    "pools": [
+        {
+            "id": "eth1",
             "enabled": true,
-            "time": 600,
-            "invalidPercent": 50,
-            "checkThreshold": 50
-        },
-        "ports": {
-            "3072": {
-                "difficulty": 0.1,
-                "varDiff": {
-                    "minDiff": 0.05,
-                    "maxDiff": null,
-                    "targetTime": 15,
-                    "retargetTime": 90,
-                    "variancePercent": 30
+            "coin": "ethereum",
+            "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
+            "rewardRecipients": [
+                {
+                    "type": "op",
+                    "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
+                    "percentage": 1.0
+                }
+            ],
+            "blockRefreshInterval": 120,
+            "clientConnectionTimeout": 600,
+            "banning": {
+                "enabled": true,
+                "time": 600,
+                "invalidPercent": 50,
+                "checkThreshold": 50
+            },
+            "ports": {
+                "4073": {
+                    "name": "GPU-SMALL",
+                    "listenAddress": "*",
+                    "difficulty": 0.1,
+                    "varDiff": {
+                        "minDiff": 0.1,
+                        "maxDiff": null,
+                        "targetTime": 15,
+                        "retargetTime": 90,
+                        "variancePercent": 30
+                    }
                 }
             },
-            "3073": {
-                "difficulty": 5000
+			"chainTypeOverride": "Mainnet",
+            "dagDir": "<Your directory for the dag file>",
+            "daemons": [
+                {
+                    "host": "127.0.0.1",
+                    "port": 8545,
+                    "user": "",
+                    "password": ""
+                }
+            ],
+            "paymentProcessing": {
+                "enabled": true,
+                "minimumPayment": 1,
+                "payoutScheme": "PPLNS",
+                "payoutSchemeConfig": {
+                    "factor": 0.5
+                },
+                "keepUncles": false,
+                "keepTransactionFees": false
             }
-        },
-        "daemons": [
-            {
-                "host": "127.0.0.1",
-                "port": 8545,
-                "user": "user",
-                "password": "password"
-            }
-        ],
-        "paymentProcessing": {
-            "enabled": true,
-            "minimumPayment": 0.01,
-            "minimumPaymentToPaymentId": 5.0,
-            "payoutScheme": "PPLNS",
-            "payoutSchemeConfig": {
-                "factor": 2.0
-            },
-            "coinbasePassword": "<your wallet password if you are running parity with wallet locked>",
-            "keepUncles": false,
-            "keepTransactionFees": false
         }
-    }]
+    ]
 }
