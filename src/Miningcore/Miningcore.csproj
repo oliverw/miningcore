@@ -58,7 +58,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
         <PackageReference Include="morelinq" Version="3.3.2" />
-        <PackageReference Include="NBitcoin" Version="5.0.82" />
+        <PackageReference Include="NBitcoin" Version="5.0.83" />
         <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="NLog" Version="4.7.10" />
