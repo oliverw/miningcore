@@ -155,13 +155,13 @@ namespace Miningcore.Mining
                     logger.Info(() => $"[{poolId}] Reset performance stats for pool");
                 }
 
-				// persist. Save pool stats in DB.
+				// persist
                 await cf.RunTx(async (con, tx) =>
                 {
                     var mapped = new Persistence.Model.PoolStats
                     {
                         PoolId = poolId,
-                        Created = now   // MinerNL time to UTC
+                        Created = now
                     };
 
                     mapper.Map(pool.PoolStats, mapped);
@@ -170,19 +170,18 @@ namespace Miningcore.Mining
                     await statsRepo.InsertPoolStatsAsync(con, tx, mapped);
                 });
 
-                // retrieve most recent miner/worker hashrate sample, if non-zero
-                var previousMinerWorkerHashrates = await cf.Run(async (con) =>
-                {
-                    return await statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId);
-                });
+                // retrieve most recent miner/worker non-zero hashrate sample
+                var previousMinerWorkerHashrates = await cf.Run(con => statsRepo.GetPoolMinerWorkerHashratesAsync(con, poolId));
 
-                string buildKey(string miner, string worker = null)
+                const char keySeparator = '.';
+
+                string BuildKey(string miner, string worker = null)
                 {
-                    return !string.IsNullOrEmpty(worker) ? $"{miner}.{worker}" : miner;
+                    return !string.IsNullOrEmpty(worker) ? $"{miner}{keySeparator}{worker}" : miner;
                 }
 
                 var previousNonZeroMinerWorkers = new HashSet<string>(
-                    previousMinerWorkerHashrates.Select(x => buildKey(x.Miner, x.Worker)));
+                    previousMinerWorkerHashrates.Select(x => BuildKey(x.Miner, x.Worker)));
 
                 var currentNonZeroMinerWorkers = new HashSet<string>();
 
@@ -199,7 +198,7 @@ namespace Miningcore.Mining
 
                         foreach(var item in orphanedHashrateForMinerWorker)
                         {
-                            var parts = item.Split(":");
+                            var parts = item.Split(keySeparator);
                             var miner = parts[0];
                             var worker = parts.Length > 1 ? parts[1] : "0";
 
@@ -235,7 +234,7 @@ namespace Miningcore.Mining
                         stats.Miner = minerHashes.Key;
 
 						// book keeping
-						currentNonZeroMinerWorkers.Add(buildKey(stats.Miner));
+						currentNonZeroMinerWorkers.Add(BuildKey(stats.Miner));
 
                         foreach (var item in minerHashes)
                         {
@@ -280,7 +279,7 @@ namespace Miningcore.Mining
 							logger.Info(() => $"[{poolId}] Miner: {stats.Miner}.{stats.Worker} | Hashrate: {minerHashrate} | HashTimeFrame : {minerHashTimeFrame} | Shares per sec: {stats.SharesPerSecond}");
 
 							// book keeping
-							currentNonZeroMinerWorkers.Add(buildKey(stats.Miner, stats.Worker));
+							currentNonZeroMinerWorkers.Add(BuildKey(stats.Miner, stats.Worker));
 
 						}
                     });
