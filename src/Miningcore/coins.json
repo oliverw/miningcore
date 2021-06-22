@@ -442,7 +442,7 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "verthash"
+            "hash": "lyra2rev3"
         },
         "blockHasher": {
             "hash": "reverse",
