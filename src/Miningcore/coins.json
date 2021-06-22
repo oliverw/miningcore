@@ -1,5 +1,5 @@
 {
-     "auroracoin-sha256": {
+    "auroracoin-sha256": {
         "name": "Auroracoin-Sha256",
         "canonicalName": "Auroracoin",
         "symbol": "AUR",
@@ -173,7 +173,6 @@
         "explorerTxLink": "http://46.232.249.107:3009/tx/{0}",
         "explorerAccountLink": "http://46.232.249.107:3009/address/{0}"
     },
-    "namecoin": {
     "bitcoin-cash-abc": {
         "name": "Bitcoin Cash ABC",
         "symbol": "BCHA",
@@ -192,8 +191,7 @@
         "explorerTxLink": "https://blockchair.com/bitcoin-abc/transaction/{0}",
         "explorerAccountLink": "https://blockchair.com/bitcoin-abc/address/{0}"
     },
-    "namecoin":
-    {
+    "namecoin": {
         "name": "Namecoin",
         "symbol": "NMC",
         "family": "bitcoin",
