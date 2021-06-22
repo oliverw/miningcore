@@ -326,7 +326,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -415,7 +415,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -443,13 +443,13 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -541,7 +541,7 @@ namespace Miningcore.Blockchain.Bitcoin
             else if(submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method");
+                logger.ThrowLogPoolStartupException("Unable detect block submission RPC method");
 
             if(!hasLegacyDaemon)
                 await UpdateNetworkStatsAsync();

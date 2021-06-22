@@ -77,7 +77,7 @@ namespace Miningcore.Notifications
 
         private async Task SendNotificationAsync(QueuedNotification notification)
         {
-            logger.Debug(() => $"SendNotificationAsync");
+            logger.Debug(() => "SendNotificationAsync");
 
             try
             {
@@ -107,7 +107,7 @@ namespace Miningcore.Notifications
 
             catch(Exception ex)
             {
-                logger.Error(ex, $"Error sending notification");
+                logger.Error(ex, "Error sending notification");
             }
         }
 

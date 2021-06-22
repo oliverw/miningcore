@@ -399,7 +399,7 @@ namespace Miningcore.Util
             var result = baseValue;
             while(exponent > BigInteger.One)
             {
-                result = result * baseValue;
+                result *= baseValue;
                 exponent--;
             }
 
@@ -608,10 +608,10 @@ namespace Miningcore.Util
                     }
                     else
                     {
-                        denormalized = denormalized / 10;
+                        denormalized /= 10;
                     }
 
-                result = result / 10;
+                result /= 10;
                 scale--;
             }
 
@@ -635,7 +635,7 @@ namespace Miningcore.Util
             for(var scale = DecimalMaxScale; scale >= 0; scale--)
                 if(!SafeCastToDecimal(denormalized))
                 {
-                    denormalized = denormalized / 10;
+                    denormalized /= 10;
                 }
                 else
                 {
@@ -784,8 +784,8 @@ namespace Miningcore.Util
             var gcd = BigInteger.GreatestCommonDivisor(m_numerator, Denominator);
             if(gcd > BigInteger.One)
             {
-                m_numerator = m_numerator / gcd;
-                Denominator = Denominator / gcd;
+                m_numerator /= gcd;
+                Denominator /= gcd;
             }
         }
 

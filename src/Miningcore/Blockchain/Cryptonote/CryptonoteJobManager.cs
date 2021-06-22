@@ -470,7 +470,7 @@ namespace Miningcore.Blockchain.Cryptonote
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             if(responses.Any(x => x.Error != null))
                 return false;
@@ -483,7 +483,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                     .Select(x => (DaemonClientException) x.Error.InnerException)
                     .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                    logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials");
+                    logger.ThrowLogPoolStartupException("Wallet-Daemon reports invalid credentials");
 
                 return responses2.All(x => x.Error == null);
             }
@@ -518,13 +518,13 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 

@@ -64,16 +64,16 @@ namespace Miningcore.Blockchain
         {
             while(!await AreDaemonsHealthyAsync())
             {
-                logger.Info(() => $"Waiting for daemons to come online ...");
+                logger.Info(() => "Waiting for daemons to come online ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
 
-            logger.Info(() => $"All daemons online");
+            logger.Info(() => "All daemons online");
 
             while(!await AreDaemonsConnectedAsync())
             {
-                logger.Info(() => $"Waiting for daemons to connect to peers ...");
+                logger.Info(() => "Waiting for daemons to connect to peers ...");
 
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
             }
@@ -127,13 +127,13 @@ namespace Miningcore.Blockchain
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"Starting Job Manager ...");
+            logger.Info(() => "Starting Job Manager ...");
 
             await StartDaemonAsync(ct);
             await EnsureDaemonsSynchedAsync(ct);
             await PostStartInitAsync(ct);
 
-            logger.Info(() => $"Job Manager Online");
+            logger.Info(() => "Job Manager Online");
         }
 
         #endregion // API-Surface

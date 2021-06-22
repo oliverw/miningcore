@@ -74,7 +74,7 @@ namespace Miningcore.Blockchain.Equihash
 
             if(poolConfig.Template.As<EquihashCoinTemplate>().UsesZCashAddressFormat &&
                 string.IsNullOrEmpty(extraConfig?.ZAddress))
-                logger.ThrowLogPoolStartupException($"Pool z-address is not configured");
+                logger.ThrowLogPoolStartupException("Pool z-address is not configured");
         }
 
         /// <param name="ct"></param>
@@ -371,7 +371,7 @@ namespace Miningcore.Blockchain.Equihash
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"Broadcasting job");
+            logger.Info(() => "Broadcasting job");
 
             var tasks = ForEachConnection(async client =>
             {

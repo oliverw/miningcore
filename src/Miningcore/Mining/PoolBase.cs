@@ -273,7 +273,7 @@ namespace Miningcore.Mining
         {
             try
             {
-                logger.Debug(() => $"Loading pool stats");
+                logger.Debug(() => "Loading pool stats");
 
                 var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, poolConfig.Id));
 
@@ -286,7 +286,7 @@ namespace Miningcore.Mining
 
             catch(Exception ex)
             {
-                logger.Warn(ex, () => $"Unable to load pool stats");
+                logger.Warn(ex, () => "Unable to load pool stats");
             }
         }
 
@@ -371,7 +371,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
-            logger.Info(() => $"Starting Pool ...");
+            logger.Info(() => "Starting Pool ...");
 
             try
             {
@@ -379,7 +379,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 await SetupJobManager(ct);
                 await InitStatsAsync();
 
-                logger.Info(() => $"Pool Online");
+                logger.Info(() => "Pool Online");
                 OutputPoolInfo();
 
                 messageBus.NotifyPoolStatus(this, PoolStatus.Online);
@@ -394,7 +394,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                 }
 
                 messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
-                logger.Info(() => $"Pool Offline");
+                logger.Info(() => "Pool Offline");
             }
 
             catch(PoolStartupAbortException)

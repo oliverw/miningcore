@@ -337,7 +337,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var statsResult = await cf.RunTx((con, tx) =>
                 statsRepo.GetMinerStatsAsync(con, tx, pool.Id, address), true, IsolationLevel.Serializable);
@@ -373,7 +373,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var payments = (await cf.Run(con => paymentsRepo.PagePaymentsAsync(
                     con, pool.Id, address, page, pageSize)))
@@ -405,7 +405,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetPaymentsCountAsync(con, poolId, address))) / (double) pageSize);
 
@@ -440,7 +440,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var balanceChanges = (await cf.Run(con => paymentsRepo.PageBalanceChangesAsync(
                     con, pool.Id, address, page, pageSize)))
@@ -457,7 +457,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetBalanceChangesCountAsync(con, poolId, address))) / (double) pageSize);
 
@@ -477,7 +477,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var earnings = (await cf.Run(con => paymentsRepo.PageMinerPaymentsByDayAsync(
                     con, pool.Id, address, page, pageSize)))
@@ -493,7 +493,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             uint pageCount = (uint) Math.Floor((await cf.Run(con => paymentsRepo.GetMinerPaymentsByDayCountAsync(con, poolId, address))) / (double) pageSize);
 
@@ -512,7 +512,7 @@ namespace Miningcore.Api.Controllers
             var pool = GetPool(poolId);
 
             if(string.IsNullOrEmpty(address))
-                throw new ApiException($"Invalid or missing miner address", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid or missing miner address", HttpStatusCode.NotFound);
 
             var result = await GetMinerPerformanceInternal(mode, pool, address);
 
@@ -524,7 +524,7 @@ namespace Miningcore.Api.Controllers
         private PoolConfig GetPool(string poolId)
         {
             if(string.IsNullOrEmpty(poolId))
-                throw new ApiException($"Invalid pool id", HttpStatusCode.NotFound);
+                throw new ApiException("Invalid pool id", HttpStatusCode.NotFound);
 
             var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
@@ -553,8 +553,7 @@ namespace Miningcore.Api.Controllers
 
                     start = end.AddDays(-1);
 
-                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(
-                        con, pool.Id, address, start, end));
+                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenHourlyAsync(con, pool.Id, address, start, end));
                     break;
 
                 case SampleRange.Month:
@@ -566,8 +565,7 @@ namespace Miningcore.Api.Controllers
                     // set range
                     start = end.AddMonths(-1);
 
-                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(
-                        con, pool.Id, address, start, end));
+                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenDailyAsync(con, pool.Id, address, start, end));
                     break;
             }
 

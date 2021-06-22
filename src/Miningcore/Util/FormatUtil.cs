@@ -19,7 +19,7 @@ namespace Miningcore.Util
 
             while (hashrate > 1024 && i < hashrateUnits.Length - 1)
             {
-                hashrate = hashrate / 1024;
+                hashrate /= 1024;
                 i++;
             }
 
@@ -32,7 +32,7 @@ namespace Miningcore.Util
 
             do
             {
-                hashrate = hashrate / 1024;
+                hashrate /= 1024;
                 i++;
             } while(hashrate > 1024 && i < CapacityUnits.Length - 1);
 
@@ -45,7 +45,7 @@ namespace Miningcore.Util
 
             do
             {
-                value = value / 1000;
+                value /= 1000;
                 i++;
             } while(value > 1000);
 

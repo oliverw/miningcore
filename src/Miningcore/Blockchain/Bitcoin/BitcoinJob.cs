@@ -559,7 +559,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     txVersion = 3;
                     var txType = 5;
-                    txVersion = txVersion + ((uint) (txType << 16));
+                    txVersion += ((uint) (txType << 16));
                 }
             }
 

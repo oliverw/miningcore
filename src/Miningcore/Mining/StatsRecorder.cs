@@ -292,7 +292,7 @@ namespace Miningcore.Mining
 
         private async Task StatsGcAsync(CancellationToken ct)
         {
-            logger.Info(() => $"Performing Stats GC");
+            logger.Info(() => "Performing Stats GC");
 
             await cf.Run(async con =>
             {
@@ -307,7 +307,7 @@ namespace Miningcore.Mining
                     logger.Info(() => $"Deleted {rowCount} old minerstats records");
             });
 
-            logger.Info(() => $"Stats GC complete");
+            logger.Info(() => "Stats GC complete");
         }
 
         private async Task UpdateAsync(CancellationToken ct)

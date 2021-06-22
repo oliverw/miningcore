@@ -242,7 +242,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"Broadcasting job");
+            logger.Info(() => "Broadcasting job");
 
             var tasks = ForEachConnection(async connection =>
             {

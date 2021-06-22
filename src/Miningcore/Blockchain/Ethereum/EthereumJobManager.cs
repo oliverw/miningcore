@@ -204,7 +204,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             if(work.Length < 4)
             {
-                logger.Error(() => $"Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
+                logger.Error(() => "Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
                 return null;
             }
 
@@ -471,7 +471,7 @@ namespace Miningcore.Blockchain.Ethereum
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -496,13 +496,13 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -573,15 +573,15 @@ namespace Miningcore.Blockchain.Ethereum
 
                     if(blockTemplate != null)
                     {
-                        logger.Info(() => $"Loading current DAG ...");
+                        logger.Info(() => "Loading current DAG ...");
 
                         await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
 
-                        logger.Info(() => $"Loaded current DAG");
+                        logger.Info(() => "Loaded current DAG");
                         break;
                     }
 
-                    logger.Info(() => $"Waiting for first valid block template");
+                    logger.Info(() => "Waiting for first valid block template");
                     await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
             }

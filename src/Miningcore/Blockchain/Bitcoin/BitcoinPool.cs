@@ -350,7 +350,7 @@ namespace Miningcore.Blockchain.Bitcoin
         {
             currentJobParams = jobParams;
 
-            logger.Info(() => $"Broadcasting job");
+            logger.Info(() => "Broadcasting job");
 
             var tasks = ForEachConnection(async client =>
             {

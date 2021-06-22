@@ -245,7 +245,7 @@ namespace Miningcore.Mining
 
                             catch(Exception ex)
                             {
-                                logger.Error(ex, () => $"Unable to import shares");
+                                logger.Error(ex, () => "Unable to import shares");
                                 failCount++;
                             }
 
@@ -271,7 +271,7 @@ namespace Miningcore.Mining
 
                         catch(Exception ex)
                         {
-                            logger.Error(ex, () => $"Unable to import shares");
+                            logger.Error(ex, () => "Unable to import shares");
                             failCount++;
                         }
                     }
