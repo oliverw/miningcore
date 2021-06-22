@@ -240,7 +240,6 @@ namespace Miningcore.Mining
                         {
                             // set default values
                             double minerHashrate = 0;
-                            stats.Worker = "Default_Miner";
                             stats.Hashrate = 0;
                             stats.SharesPerSecond = 0;
 
@@ -276,7 +275,7 @@ namespace Miningcore.Mining
 
                             // broadcast
 							messageBus.NotifyHashrateUpdated(pool.Config.Id, minerHashrate, stats.Miner, stats.Worker);
-							logger.Info(() => $"[{poolId}] Miner: {stats.Miner}.{stats.Worker} | Hashrate: {minerHashrate} | HashTimeFrame : {minerHashTimeFrame} | Shares per sec: {stats.SharesPerSecond}");
+							logger.Info(() => $"[{poolId}] Miner: {stats.Miner}{(!string.IsNullOrEmpty(stats.Worker) ? $".{stats.Worker}" : string.Empty)} | Hashrate: {minerHashrate} | HashTimeFrame : {minerHashTimeFrame} | Shares per sec: {stats.SharesPerSecond}");
 
 							// book keeping
 							currentNonZeroMinerWorkers.Add(BuildKey(stats.Miner, stats.Worker));

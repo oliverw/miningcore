@@ -507,9 +507,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(validateAddressResponse is not {IsValid: true})
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            var coinTemplate = poolConfig.Template as BitcoinTemplate;
-
-            isPoS = coinTemplate.IsPseudoPoS || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
             if(!isPoS)
