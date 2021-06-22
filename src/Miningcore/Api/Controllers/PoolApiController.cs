@@ -529,7 +529,7 @@ namespace Miningcore.Api.Controllers
             var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
 
             if(pool == null)
-                throw new ApiException($"Pool {poolId} is not known", HttpStatusCode.NotFound);
+                throw new ApiException($"Unknown pool {poolId}", HttpStatusCode.NotFound);
 
             return pool;
         }

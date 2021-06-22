@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 
 namespace Miningcore.Api
@@ -9,6 +9,11 @@ namespace Miningcore.Api
         {
             if(responseStatusCode.HasValue)
                 ResponseStatusCode = (int) responseStatusCode.Value;
+        }
+
+        public ApiException(HttpStatusCode responseStatusCode) : base(string.Empty)
+        {
+            ResponseStatusCode = (int) responseStatusCode;
         }
 
         public ApiException()

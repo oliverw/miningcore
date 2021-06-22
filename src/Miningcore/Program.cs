@@ -151,9 +151,8 @@ namespace Miningcore
                                 services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
                                 services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
                                 services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+                                services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
                             }
-
-                            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
                             // Controllers
                             services.AddSingleton<PoolApiController, PoolApiController>();
