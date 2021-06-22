@@ -21,6 +21,7 @@ using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using Miningcore.Util;
 using NLog;
 using Polly;
 
@@ -239,14 +240,12 @@ namespace Miningcore.Mining
                         foreach (var item in minerHashes)
                         {
                             // set default values
-                            double minerHashrate = 0;
                             stats.Hashrate = 0;
                             stats.SharesPerSecond = 0;
 
                             // miner stats calculation windows
                             var timeFrameBeforeFirstShare = ((minerHashes.Min(x => x.FirstShare) - timeFrom).TotalSeconds);
                             var timeFrameAfterLastShare   = ((now - minerHashes.Max(x => x.LastShare)).TotalSeconds);
-                            var timeFrameFirstLastShare   = (hashrateCalculationWindow.TotalSeconds - timeFrameBeforeFirstShare - timeFrameAfterLastShare);
 
                             var minerHashTimeFrame = hashrateCalculationWindow.TotalSeconds;
 
@@ -259,32 +258,34 @@ namespace Miningcore.Mining
                             if( (timeFrameBeforeFirstShare >= (hashrateCalculationWindow.TotalSeconds * 0.1)) && (timeFrameAfterLastShare >= (hashrateCalculationWindow.TotalSeconds * 0.1)) )
                                 minerHashTimeFrame = (hashrateCalculationWindow.TotalSeconds - timeFrameBeforeFirstShare + timeFrameAfterLastShare);
 
-                            if(minerHashTimeFrame < 1) { minerHashTimeFrame = 1; };
+                            if(minerHashTimeFrame < 1)
+                                minerHashTimeFrame = 1;
 
                             // calculate miner/worker stats
-                            minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
+                            var minerHashrate = pool.HashrateFromShares(item.Sum, minerHashTimeFrame);
                             minerHashrate = Math.Floor(minerHashrate);
                             minerTotalHashrate += minerHashrate;
                             stats.Hashrate = minerHashrate;
+                            stats.Worker = item.Worker;
 
-                            if (item.Worker != null) {stats.Worker = item.Worker;}
-                            stats.SharesPerSecond = Math.Round(((double) item.Count / minerHashTimeFrame),3);
+                            stats.SharesPerSecond = Math.Round(item.Count / minerHashTimeFrame, 3);
 
-                            // persist. Save miner stats in DB.
+                            // persist
                             await statsRepo.InsertMinerWorkerPerformanceStatsAsync(con, tx, stats);
 
                             // broadcast
 							messageBus.NotifyHashrateUpdated(pool.Config.Id, minerHashrate, stats.Miner, stats.Worker);
-							logger.Info(() => $"[{poolId}] Miner: {stats.Miner}{(!string.IsNullOrEmpty(stats.Worker) ? $".{stats.Worker}" : string.Empty)} | Hashrate: {minerHashrate} | HashTimeFrame : {minerHashTimeFrame} | Shares per sec: {stats.SharesPerSecond}");
+
+                            logger.Info(() => $"[{poolId}] Worker {stats.Miner}{(!string.IsNullOrEmpty(stats.Worker) ? $".{stats.Worker}" : string.Empty)}: {FormatUtil.FormatHashrate(minerHashrate)}, {stats.SharesPerSecond} shares/sec");
 
 							// book keeping
 							currentNonZeroMinerWorkers.Add(BuildKey(stats.Miner, stats.Worker));
-
 						}
                     });
 
                     messageBus.NotifyHashrateUpdated(pool.Config.Id, minerTotalHashrate, stats.Miner, null);
-					logger.Info(() => $"[{poolId}] Total miner hashrate: {stats.Miner} | {minerTotalHashrate}");
+
+                    logger.Info(() => $"[{poolId}] Miner {stats.Miner}: {FormatUtil.FormatHashrate(minerTotalHashrate)}");
                 }
             }
         }
