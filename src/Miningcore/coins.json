@@ -1,4 +1,121 @@
 {
+     "auroracoin-sha256": {
+        "name": "Auroracoin-Sha256",
+        "canonicalName": "Auroracoin",
+        "symbol": "AUR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "http://insight.auroracoin.is/block/$hash$",
+        "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
+        "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
+    },
+    "auroracoin-scrypt": {
+        "name": "Auroracoin-Scrypt",
+        "canonicalName": "Auroracoin",
+        "symbol": "AUR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "http://insight.auroracoin.is/block/$hash$",
+        "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
+        "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
+    },
+    "auroracoin-skein": {
+        "name": "Auroracoin-Skein",
+        "canonicalName": "Auroracoin",
+        "symbol": "AUR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "skein"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "http://insight.auroracoin.is/block/$hash$",
+        "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
+        "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
+    },
+    "auroracoin-qubit": {
+        "name": "Auroracoin-Qubit",
+        "canonicalName": "Auroracoin",
+        "symbol": "AUR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "qubit"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "http://insight.auroracoin.is/block/$hash$",
+        "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
+        "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
+    },
+    "auroracoin-groestl": {
+        "name": "Auroracoin-Groestl",
+        "canonicalName": "Auroracoin",
+        "symbol": "AUR",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256s"
+        },
+        "headerHasher": {
+            "hash": "groestlmyriad"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "shareMultiplier": 256,
+        "explorerBlockLink": "http://insight.auroracoin.is/block/$hash$",
+        "explorerTxLink": "http://insight.auroracoin.is/tx/{0}",
+        "explorerAccountLink": "http://insight.auroracoin.is/address/{0}"
+    },
+    "axe": {
+        "name": "Axe",
+        "symbol": "AXE",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "x11"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "x11" } ]
+        },
+        "hasMasterNodes": true,
+        "explorerBlockLink": "https://insight.axecore.net/block/$height$",
+        "explorerTxLink": "https://insight.axecore.net/tx/{0}",
+        "explorerAccountLink": "https://insight.axecore.net/address/{0}"
+    },
     "bitcoin": {
         "name": "Bitcoin",
         "symbol": "BTC",
@@ -36,6 +153,26 @@
         "explorerTxLink": "https://www.blockchain.com/bch/tx/{0}",
         "explorerAccountLink": "https://www.blockchain.com/bch/address/{0}"
     },
+    "emark": {
+        "name": "Deutsche eMark",
+        "symbol": "DEM",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "coinbaseTxVersion": 2,
+        "coinbaseTxComment": "DEM Miningcore",
+        "explorerBlockLink": "http://46.232.249.107:3009/block/$hash$",
+        "explorerTxLink": "http://46.232.249.107:3009/tx/{0}",
+        "explorerAccountLink": "http://46.232.249.107:3009/address/{0}"
+    },
     "namecoin": {
         "name": "Namecoin",
         "symbol": "NMC",
@@ -53,6 +190,35 @@
         "explorerBlockLink": "https://explorer.namecoin.info/b/$height$",
         "explorerTxLink": "https://explorer.namecoin.info/tx/{0}",
         "explorerAccountLink": "https://explorer.namecoin.info/a/{0}"
+    },
+    "note-blockchain": {
+        "name": "Notecoin",
+        "symbol": "NTBC",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "scrypt",
+            "args": [ 1024, 1 ]
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "posBlockHasher": {
+            "hash": "reverse",
+            "args": [
+                {
+                    "hash": "scrypt",
+                    "args": [ 1024, 1 ]
+                }
+            ]
+        },
+        "shareMultiplier": 65536,
+        "explorerBlockLink": "https://blocks.notebc.space/block/$height$",
+        "explorerTxLink": "https://blocks.notebc.space/tx/{0}",
+        "explorerAccountLink": "https://blocks.notebc.space/address/{0}"
     },
     "peercoin": {
         "name": "Peercoin",
