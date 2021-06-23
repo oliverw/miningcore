@@ -326,7 +326,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -415,7 +415,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -443,13 +443,13 @@ namespace Miningcore.Blockchain.Bitcoin
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -507,9 +507,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(validateAddressResponse is not {IsValid: true})
                 logger.ThrowLogPoolStartupException($"Daemon reports pool-address '{poolConfig.Address}' as invalid");
 
-            var coinTemplate = poolConfig.Template as BitcoinTemplate;
-
-            isPoS = coinTemplate.IsPseudoPoS || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
+            isPoS = poolConfig.Template is BitcoinTemplate {IsPseudoPoS: true} || difficultyResponse.Values().Any(x => x.Path == "proof-of-stake");
 
             // Create pool address script from response
             if(!isPoS)
@@ -543,7 +541,7 @@ namespace Miningcore.Blockchain.Bitcoin
             else if(submitBlockResponse.Error?.Code == -1)
                 hasSubmitBlockMethod = true;
             else
-                logger.ThrowLogPoolStartupException($"Unable detect block submission RPC method");
+                logger.ThrowLogPoolStartupException("Unable detect block submission RPC method");
 
             if(!hasLegacyDaemon)
                 await UpdateNetworkStatsAsync();
@@ -600,7 +598,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected void ConfigureRewards()
         {
             // Donation to MiningCore development
-            if(network.NetworkType == NetworkType.Mainnet &&
+            if(network.ChainName == ChainName.Mainnet &&
                 DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
             {
                 poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
@@ -644,9 +642,9 @@ namespace Miningcore.Blockchain.Bitcoin
             return result.Response is {IsValid: true};
         }
 
-        public abstract object[] GetSubscriberData(StratumClient worker);
+        public abstract object[] GetSubscriberData(StratumConnection worker);
 
-        public abstract ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public abstract ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct);
 
         #endregion // API-Surface

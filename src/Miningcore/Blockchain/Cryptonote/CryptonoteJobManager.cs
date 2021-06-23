@@ -66,15 +66,9 @@ namespace Miningcore.Blockchain.Cryptonote
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.clock = clock;
-
-            using(var rng = RandomNumberGenerator.Create())
-            {
-                instanceId = new byte[CryptonoteConstants.InstanceIdSize];
-                rng.GetNonZeroBytes(instanceId);
-            }
         }
 
-        private readonly byte[] instanceId;
+        private byte[] instanceId;
         private DaemonEndpointConfig[] daemonEndpoints;
         private DaemonClient daemon;
         private DaemonClient walletDaemon;
@@ -124,16 +118,22 @@ namespace Miningcore.Blockchain.Cryptonote
                     {
                         logger.Info(()=> $"Detected new seed hash {blockTemplate.SeedHash} starting @ height {blockTemplate.Height}");
 
-                        LibRandomX.WithLock(() =>
+                        if(poolConfig.EnableInternalStratum == true)
                         {
-                            // delete old seed
-                            if(currentSeedHash != null)
-                                LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
+                            LibRandomX.WithLock(() =>
+                            {
+                                // delete old seed
+                                if(currentSeedHash != null)
+                                    LibRandomX.DeleteSeed(randomXRealm, currentSeedHash);
 
-                            // activate new one
+                                // activate new one
+                                currentSeedHash = blockTemplate.SeedHash;
+                                LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
+                            });
+                        }
+
+                        else
                             currentSeedHash = blockTemplate.SeedHash;
-                            LibRandomX.CreateSeed(randomXRealm, currentSeedHash, randomXFlagsOverride, randomXFlagsAdd, extraPoolConfig.RandomXVMCount);
-                        });
                     }
 
                     // init job
@@ -268,9 +268,12 @@ namespace Miningcore.Blockchain.Cryptonote
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<CryptonotePoolConfigExtra>();
             coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
 
-            randomXRealm = poolConfig.Id;
-            randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
-            randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
+            if(poolConfig.EnableInternalStratum == true)
+            {
+                randomXRealm = poolConfig.Id;
+                randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
+                randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
+            }
 
             // extract standard daemon endpoints
             daemonEndpoints = poolConfig.Daemons
@@ -349,7 +352,7 @@ namespace Miningcore.Blockchain.Cryptonote
             }
         }
 
-        public async ValueTask<Share> SubmitShareAsync(StratumClient worker,
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker,
             CryptonoteSubmitShareRequest request, CryptonoteWorkerJob workerJob, double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
@@ -467,7 +470,7 @@ namespace Miningcore.Blockchain.Cryptonote
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             if(responses.Any(x => x.Error != null))
                 return false;
@@ -480,7 +483,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 if(responses2.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                     .Select(x => (DaemonClientException) x.Error.InnerException)
                     .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                    logger.ThrowLogPoolStartupException($"Wallet-Daemon reports invalid credentials");
+                    logger.ThrowLogPoolStartupException("Wallet-Daemon reports invalid credentials");
 
                 return responses2.All(x => x.Error == null);
             }
@@ -515,13 +518,13 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -534,6 +537,9 @@ namespace Miningcore.Blockchain.Cryptonote
 
         protected override async Task PostStartInitAsync(CancellationToken ct)
         {
+            SetInstanceId();
+
+            // coin config
             var coin = poolConfig.Template.As<CryptonoteCoinTemplate>();
             var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo);
 
@@ -624,6 +630,19 @@ namespace Miningcore.Blockchain.Cryptonote
                 .Subscribe();
 
             SetupJobUpdates();
+        }
+
+        private void SetInstanceId()
+        {
+            instanceId = new byte[CryptonoteConstants.InstanceIdSize];
+
+            using(var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetNonZeroBytes(instanceId);
+            }
+
+            if(clusterConfig.InstanceId.HasValue)
+                instanceId[0] = clusterConfig.InstanceId.Value;
         }
 
         private void ConfigureRewards()

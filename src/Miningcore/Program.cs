@@ -53,7 +53,7 @@ using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Native;
+using Miningcore.Nicehash;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence.Dummy;
@@ -122,6 +122,12 @@ namespace Miningcore
                     })
                     .ConfigureServices((ctx, services) =>
                     {
+                        services.AddHttpClient();
+                        services.AddMemoryCache();
+
+                        ConfigureBackgroundServices(services);
+
+                        // MUST BE THE LAST REGISTERED HOSTED SERVICE!
                         services.AddHostedService<Program>();
                     });
 
@@ -145,9 +151,8 @@ namespace Miningcore
                                 services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
                                 services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
                                 services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+                                services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
                             }
-
-                            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
                             // Controllers
                             services.AddSingleton<PoolApiController, PoolApiController>();
@@ -202,15 +207,19 @@ namespace Miningcore
                     });
                 }
 
-                await hostBuilder.RunConsoleAsync();
+                host = hostBuilder
+                    .UseConsoleLifetime()
+                    .Build();
+
+                await host.RunAsync();
             }
 
             catch(PoolStartupAbortException ex)
             {
                 if(!string.IsNullOrEmpty(ex.Message))
-                    Console.WriteLine(ex.Message);
+                    await Console.Error.WriteLineAsync(ex.Message);
 
-                Console.WriteLine("\nCluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("\nCluster cannot start. Good Bye!");
             }
 
             catch(JsonException)
@@ -226,9 +235,9 @@ namespace Miningcore
             catch(AggregateException ex)
             {
                 if(ex.InnerExceptions.First() is not PoolStartupAbortException)
-                    Console.WriteLine(ex);
+                    Console.Error.WriteLine(ex);
 
-                Console.WriteLine("Cluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
             }
 
             catch(OperationCanceledException)
@@ -238,26 +247,58 @@ namespace Miningcore
 
             catch(Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.Error.WriteLine(ex);
 
-                Console.WriteLine("Cluster cannot start. Good Bye!");
+                await Console.Error.WriteLineAsync("Cluster cannot start. Good Bye!");
             }
         }
 
+        private static void ConfigureBackgroundServices(IServiceCollection services)
+        {
+            // Notifications
+            if(clusterConfig.Notifications?.Enabled == true)
+                services.AddHostedService<NotificationService>();
+
+            services.AddHostedService<BtStreamReceiver>();
+
+            // Share processing
+            if(clusterConfig.ShareRelay == null)
+            {
+                services.AddHostedService<ShareRecorder>();
+                services.AddHostedService<ShareReceiver>();
+            }
+
+            else
+                services.AddHostedService<ShareRelay>();
+
+            // API
+            if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
+                services.AddHostedService<MetricsPublisher>();
+
+            // Payment processing
+            if(clusterConfig.PaymentProcessing?.Enabled == true &&
+               clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
+                services.AddHostedService<PayoutManager>();
+            else
+                logger.Info("Payment processing is not enabled");
+
+
+            if(clusterConfig.ShareRelay == null)
+            {
+                // Pool stats
+                services.AddHostedService<StatsRecorder>();
+            }
+
+            MonitorGc();
+        }
+
+        private static IHost host;
         private readonly IComponentContext container;
         private static ILogger logger;
         private static CommandOption dumpConfigOption;
         private static CommandOption shareRecoveryOption;
         private static bool isShareRecoveryMode;
-        private ShareRecorder shareRecorder;
-        private ShareRelay shareRelay;
-        private ShareReceiver shareReceiver;
-        private PayoutManager payoutManager;
-        private StatsRecorder statsRecorder;
         private static ClusterConfig clusterConfig;
-        private NotificationService notificationService;
-        private MetricsPublisher metricsPublisher;
-        private BtStreamReceiver btStreamReceiver;
         private static readonly ConcurrentDictionary<string, IMiningPool> pools = new();
 
         private static readonly AdminGcStats gcStats = new();
@@ -285,102 +326,47 @@ namespace Miningcore
 
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            if(!isShareRecoveryMode)
+            if(isShareRecoveryMode)
             {
-                MonitorGc();
-
-                var coinTemplates = LoadCoinTemplates();
-                logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
-
-                // Populate pool configs with corresponding template
-                foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
-                {
-                    // Lookup coin definition
-                    if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                        logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
-
-                    poolConfig.Template = template;
-                }
-
-                // Notifications
-                notificationService = container.Resolve<NotificationService>();
-
-                // start btStream receiver
-                btStreamReceiver = container.Resolve<BtStreamReceiver>();
-                btStreamReceiver.Start(clusterConfig);
-
-                if(clusterConfig.ShareRelay == null)
-                {
-                    // start share recorder
-                    shareRecorder = container.Resolve<ShareRecorder>();
-                    shareRecorder.Start(clusterConfig);
-
-                    // start share receiver (for external shares)
-                    shareReceiver = container.Resolve<ShareReceiver>();
-                    shareReceiver.Start(clusterConfig);
-                }
-
-                else
-                {
-                    // start share relay
-                    shareRelay = container.Resolve<ShareRelay>();
-                    shareRelay.Start(clusterConfig);
-                }
-
-                // start API
-                if(clusterConfig.Api == null || clusterConfig.Api.Enabled)
-                {
-                    metricsPublisher = container.Resolve<MetricsPublisher>();
-                }
-
-                // start payment processor
-                if(clusterConfig.PaymentProcessing?.Enabled == true &&
-                   clusterConfig.Pools.Any(x => x.PaymentProcessing?.Enabled == true))
-                {
-                    payoutManager = container.Resolve<PayoutManager>();
-                    payoutManager.Configure(clusterConfig);
-
-                    payoutManager.Start();
-                }
-
-                else
-                    logger.Info("Payment processing is not enabled");
-
-                if(clusterConfig.ShareRelay == null)
-                {
-                    // start pool stats updater
-                    statsRecorder = container.Resolve<StatsRecorder>();
-                    statsRecorder.Configure(clusterConfig);
-                    statsRecorder.Start();
-                }
-
-                // start pools
-                await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
-                {
-                    // resolve pool implementation
-                    var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                        .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
-
-                    // create and configure
-                    var pool = poolImpl.Value;
-                    pool.Configure(poolConfig, clusterConfig);
-                    pools[poolConfig.Id] = pool;
-
-                    // pre-start attachments
-                    shareReceiver?.AttachPool(pool);
-                    statsRecorder?.AttachPool(pool);
-
-                    await pool.StartAsync(ct);
-                }));
+                await RecoverSharesAsync(shareRecoveryOption.Value());
+                return;
             }
 
-            else
-                await RecoverSharesAsync(shareRecoveryOption.Value());
+            if(clusterConfig.InstanceId.HasValue)
+                logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
+
+            var coinTemplates = LoadCoinTemplates();
+            logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
+
+            // Populate pool configs with corresponding template
+            foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
+            {
+                // Lookup coin definition
+                if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                    logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+
+                poolConfig.Template = template;
+            }
+
+            // start pools
+            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
+            {
+                // resolve pool implementation
+                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+
+                // create and configure
+                var pool = poolImpl.Value;
+                pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
+
+                await pool.RunAsync(ct);
+            }));
         }
 
         private Task RecoverSharesAsync(string recoveryFilename)
         {
-            shareRecorder = container.Resolve<ShareRecorder>();
+            var shareRecorder = container.Resolve<ShareRecorder>();
             return shareRecorder.RecoverSharesAsync(clusterConfig, recoveryFilename);
         }
 
@@ -404,7 +390,7 @@ namespace Miningcore
 
             catch(ValidationException ex)
             {
-                Console.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
+                Console.Error.WriteLine($"Configuration is not valid:\n\n{string.Join("\n", ex.Errors.Select(x => "=> " + x.ErrorMessage))}");
                 throw new PoolStartupAbortException(string.Empty);
             }
         }
@@ -488,13 +474,13 @@ namespace Miningcore
 
             catch(JsonException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
                 throw;
             }
 
             catch(IOException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
                 throw;
             }
         }
@@ -511,12 +497,12 @@ namespace Miningcore
                 var col = m.Groups[4].Value;
 
                 if(type == typeof(PayoutScheme))
-                    Console.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
+                    Console.Error.WriteLine($"Error: Payout scheme '{value}' is not (yet) supported (line {line}, column {col})");
             }
 
             else
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex.Message}");
             }
         }
 
@@ -876,7 +862,7 @@ namespace Miningcore
                 LogManager.Flush(TimeSpan.Zero);
             }
 
-            Console.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
+            Console.Error.WriteLine("** AppDomain unhandled exception: {0}", e.ExceptionObject);
         }
     }
 }

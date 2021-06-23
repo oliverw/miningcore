@@ -26,7 +26,7 @@ namespace Miningcore.Blockchain.Bitcoin
 {
     public class BitcoinExtraNonceProvider : ExtraNonceProviderBase
     {
-        public BitcoinExtraNonceProvider() : base(4)
+        public BitcoinExtraNonceProvider(byte? clusterInstanceId) : base(4, clusterInstanceId)
         {
         }
     }

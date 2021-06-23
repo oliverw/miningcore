@@ -1,5 +1,5 @@
 {
-     "auroracoin-sha256": {
+    "auroracoin-sha256": {
         "name": "Auroracoin-Sha256",
         "canonicalName": "Auroracoin",
         "symbol": "AUR",
@@ -172,6 +172,24 @@
         "explorerBlockLink": "http://46.232.249.107:3009/block/$hash$",
         "explorerTxLink": "http://46.232.249.107:3009/tx/{0}",
         "explorerAccountLink": "http://46.232.249.107:3009/address/{0}"
+    },
+    "bitcoin-cash-abc": {
+        "name": "Bitcoin Cash ABC",
+        "symbol": "BCHA",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "https://blockchair.com/bitcoin-abc/block/$height$",
+        "explorerTxLink": "https://blockchair.com/bitcoin-abc/transaction/{0}",
+        "explorerAccountLink": "https://blockchair.com/bitcoin-abc/address/{0}"
     },
     "namecoin": {
         "name": "Namecoin",
@@ -424,7 +442,7 @@
             "hash": "sha256d"
         },
         "headerHasher": {
-            "hash": "lyra2rev3"
+            "hash": "verthash"
         },
         "blockHasher": {
             "hash": "reverse",

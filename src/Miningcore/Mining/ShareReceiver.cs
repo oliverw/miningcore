@@ -2,17 +2,20 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
 using MoreLinq;
@@ -27,13 +30,17 @@ namespace Miningcore.Mining
     /// <summary>
     /// Receives external shares from relays and re-publishes for consumption
     /// </summary>
-    public class ShareReceiver
+    public class ShareReceiver : BackgroundService
     {
-        public ShareReceiver(IMasterClock clock, IMessageBus messageBus)
+        public ShareReceiver(
+            ClusterConfig clusterConfig,
+            IMasterClock clock,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
+            this.clusterConfig = clusterConfig;
             this.clock = clock;
             this.messageBus = messageBus;
         }
@@ -41,11 +48,10 @@ namespace Miningcore.Mining
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
-        private ClusterConfig clusterConfig;
+        private readonly ClusterConfig clusterConfig;
         private readonly CompositeDisposable disposables = new();
         private readonly ConcurrentDictionary<string, PoolContext> pools = new();
         private readonly BufferBlock<(string Url, ZMessage Message)> queue = new();
-        private readonly CancellationTokenSource cts = new();
 
         readonly JsonSerializer serializer = new()
         {
@@ -66,9 +72,21 @@ namespace Miningcore.Mining
             public long BlockHeight;
         }
 
-        private void StartMessageReceiver()
+        private void AttachPool(IMiningPool pool)
         {
-            Task.Run(() =>
+            var ctx = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
+            pools.TryAdd(pool.Config.Id, ctx);
+        }
+
+        private void OnPoolStatusNotification(PoolStatusNotification notification)
+        {
+            if(notification.Status == PoolStatus.Online)
+                AttachPool(notification.Pool);
+        }
+
+        private Task StartMessageReceiver(CancellationToken ct)
+        {
+            return Task.Run(() =>
             {
                 Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
                 var timeout = TimeSpan.FromMilliseconds(1000);
@@ -78,7 +96,7 @@ namespace Miningcore.Mining
                     .DistinctBy(x => $"{x.Url}:{x.SharedEncryptionKey}")
                     .ToArray();
 
-                while(!cts.IsCancellationRequested)
+                while(!ct.IsCancellationRequested)
                 {
                     // track last message received per endpoint
                     var lastMessageReceived = relays.Select(_ => clock.Now).ToArray();
@@ -92,7 +110,7 @@ namespace Miningcore.Mining
                         {
                             var pollItems = sockets.Select(_ => ZPollItem.CreateReceiver()).ToArray();
 
-                            while(!cts.IsCancellationRequested)
+                            while(!ct.IsCancellationRequested)
                             {
                                 if(sockets.PollIn(pollItems, out var messages, out var error, timeout))
                                 {
@@ -131,11 +149,11 @@ namespace Miningcore.Mining
                     {
                         logger.Error(() => $"{nameof(ShareReceiver)}: {ex}");
 
-                        if(!cts.IsCancellationRequested)
+                        if(!ct.IsCancellationRequested)
                             Thread.Sleep(5000);
                     }
                 }
-            }, cts.Token);
+            }, ct);
         }
 
         private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay)
@@ -153,34 +171,32 @@ namespace Miningcore.Mining
             return subSocket;
         }
 
-        private void StartMessageProcessors()
+        private Task StartMessageProcessors(CancellationToken ct)
         {
-            for(var i = 0; i < Environment.ProcessorCount; i++)
-                ProcessMessages();
+            var tasks = Enumerable.Repeat(ProcessMessages(ct), Environment.ProcessorCount);
+
+            return Task.WhenAll(tasks);
         }
 
-        private void ProcessMessages()
+        private async Task ProcessMessages(CancellationToken ct)
         {
-            Task.Run(async () =>
+            while(!ct.IsCancellationRequested)
             {
-                while(!cts.IsCancellationRequested)
+                try
                 {
-                    try
-                    {
-                        var (url, msg) = await queue.ReceiveAsync(cts.Token);
+                    var (url, msg) = await queue.ReceiveAsync(ct);
 
-                        using(msg)
-                        {
-                            ProcessMessage(url, msg);
-                        }
-                    }
-
-                    catch(Exception ex)
+                    using(msg)
                     {
-                        logger.Error(ex);
+                        ProcessMessage(url, msg);
                     }
                 }
-            }, cts.Token);
+
+                catch(Exception ex)
+                {
+                    logger.Error(ex);
+                }
+            }
         }
 
         private void ProcessMessage(string url, ZMessage msg)
@@ -191,7 +207,7 @@ namespace Miningcore.Mining
             var data = msg[2].Read();
 
             // validate
-            if(string.IsNullOrEmpty(topic) || !pools.ContainsKey(topic))
+            if(string.IsNullOrEmpty(topic) || !pools.TryGetValue(topic, out var poolContext))
             {
                 logger.Warn(() => $"Received share for pool '{topic}' which is not known locally. Ignoring ...");
                 return;
@@ -254,7 +270,7 @@ namespace Miningcore.Mining
             messageBus.SendMessage(new ClientShare(null, share));
 
             // update poolstats from shares
-            if(pools.TryGetValue(topic, out var poolContext))
+            if(poolContext != null)
             {
                 var pool = poolContext.Pool;
 
@@ -284,34 +300,29 @@ namespace Miningcore.Mining
                 logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
         }
 
-        #region API-Surface
-
-        public void AttachPool(IMiningPool pool)
+        protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            pools[pool.Config.Id] = new PoolContext(pool, LogUtil.GetPoolScopedLogger(typeof(ShareRecorder), pool.Config));
-        }
-
-        public void Start(ClusterConfig clusterConfig)
-        {
-            this.clusterConfig = clusterConfig;
-
             if(clusterConfig.ShareRelays != null)
             {
-                StartMessageReceiver();
-                StartMessageProcessors();
+                try
+                {
+                    // monitor pool lifetime
+                    disposables.Add(messageBus
+                        .Listen<PoolStatusNotification>()
+                        .ObserveOn(TaskPoolScheduler.Default)
+                        .Subscribe(OnPoolStatusNotification));
+
+                    // process messages
+                    await Task.WhenAll(
+                        StartMessageReceiver(ct),
+                        StartMessageProcessors(ct));
+                }
+
+                finally
+                {
+                    disposables.Dispose();
+                }
             }
         }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            cts.Cancel();
-            disposables.Dispose();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
     }
 }

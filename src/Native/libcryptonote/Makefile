@@ -1,4 +1,3 @@
-CC = gcc
 INC_DIRS = -I. -Icontrib/epee/include
 CFLAGS = -g -Wall -c -fPIC -maes -O2 $(INC_DIRS) -Wno-strict-aliasing
 CXXFLAGS = -Wall -Wno-unused-function -fPIC -fpermissive -std=c++0x -fexceptions -frtti -O2 -g $(INC_DIRS)
@@ -17,10 +16,9 @@ OBJECTS = contrib/epee/src/hex.o \
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 .PHONY: clean
 
 clean:
-	find . -name '*.o' -exec rm -r {} \;
-	rm -f libcryptonote.so
+	$(RM) $(TARGET) $(OBJECTS)

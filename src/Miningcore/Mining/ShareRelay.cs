@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
@@ -16,19 +19,23 @@ using ZeroMQ;
 
 namespace Miningcore.Mining
 {
-    public class ShareRelay
+    public class ShareRelay : IHostedService
     {
-        public ShareRelay(JsonSerializerSettings serializerSettings, IMessageBus messageBus)
+        public ShareRelay(
+            ClusterConfig clusterConfig,
+            JsonSerializerSettings serializerSettings,
+            IMessageBus messageBus)
         {
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
+            this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
             this.messageBus = messageBus;
         }
 
         private readonly IMessageBus messageBus;
-        private ClusterConfig clusterConfig;
+        private readonly ClusterConfig clusterConfig;
         private readonly BlockingCollection<Share> queue = new();
         private IDisposable queueSub;
         private readonly int QueueSizeWarningThreshold = 1024;
@@ -46,56 +53,6 @@ namespace Miningcore.Mining
         }
 
         public const int WireFormatMask = 0xF;
-
-        #region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
-        {
-            this.clusterConfig = clusterConfig;
-
-            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
-
-            pubSocket = new ZSocket(ZSocketType.PUB);
-
-            if(!clusterConfig.ShareRelay.Connect)
-            {
-                pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
-
-                pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
-
-                if(pubSocket.CurveServer)
-                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
-                else
-                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
-            }
-
-            else
-            {
-                if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
-                    logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
-
-                pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
-                logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
-            }
-
-            InitializeQueue();
-
-            logger.Info(() => "Online");
-        }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            pubSocket.Dispose();
-
-            queueSub?.Dispose();
-            queueSub = null;
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
 
         private void InitializeQueue()
         {
@@ -152,6 +109,50 @@ namespace Miningcore.Mining
             {
                 hasWarnedAboutBacklogSize = false;
             }
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
+
+            pubSocket = new ZSocket(ZSocketType.PUB);
+
+            if(!clusterConfig.ShareRelay.Connect)
+            {
+                pubSocket.SetupCurveTlsServer(clusterConfig.ShareRelay.SharedEncryptionKey, logger);
+
+                pubSocket.Bind(clusterConfig.ShareRelay.PublishUrl);
+
+                if(pubSocket.CurveServer)
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl} using Curve public-key {pubSocket.CurvePublicKey.ToHexString()}");
+                else
+                    logger.Info(() => $"Bound to {clusterConfig.ShareRelay.PublishUrl}");
+            }
+
+            else
+            {
+                if(!string.IsNullOrEmpty(clusterConfig.ShareRelay.SharedEncryptionKey?.Trim()))
+                    logger.ThrowLogPoolStartupException("ZeroMQ Curve is not supported in ShareRelay Connect-Mode");
+
+                pubSocket.Connect(clusterConfig.ShareRelay.PublishUrl);
+                logger.Info(() => $"Connected to {clusterConfig.ShareRelay.PublishUrl}");
+            }
+
+            InitializeQueue();
+
+            logger.Info(() => "Online");
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            pubSocket.Dispose();
+
+            queueSub?.Dispose();
+            queueSub = null;
+
+            return Task.CompletedTask;
         }
     }
 }

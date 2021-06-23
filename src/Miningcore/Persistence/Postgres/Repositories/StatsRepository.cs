@@ -235,7 +235,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             // ensure worker is not null
             foreach(var entity in entities)
-                entity.Worker = entity.Worker ?? string.Empty;
+                entity.Worker ??= string.Empty;
 
             // group
             var entitiesByDate = entities

@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
@@ -50,11 +51,14 @@ namespace Miningcore.Mining
     /// <summary>
     /// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
     /// </summary>
-    public class ShareRecorder
+    public class ShareRecorder : IHostedService
     {
-        public ShareRecorder(IConnectionFactory cf, IMapper mapper,
+        public ShareRecorder(IConnectionFactory cf,
+            IMapper mapper,
             JsonSerializerSettings jsonSerializerSettings,
-            IShareRepository shareRepo, IBlockRepository blockRepo,
+            IShareRepository shareRepo,
+            IBlockRepository blockRepo,
+            ClusterConfig clusterConfig,
             IMasterClock clock,
             IMessageBus messageBus)
         {
@@ -71,9 +75,12 @@ namespace Miningcore.Mining
             this.jsonSerializerSettings = jsonSerializerSettings;
             this.clock = clock;
             this.messageBus = messageBus;
+            this.clusterConfig = clusterConfig;
 
             this.shareRepo = shareRepo;
             this.blockRepo = blockRepo;
+
+            pools = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
             BuildFaultHandlingPolicy();
         }
@@ -85,8 +92,8 @@ namespace Miningcore.Mining
         private readonly JsonSerializerSettings jsonSerializerSettings;
         private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
-        private ClusterConfig clusterConfig;
-        private Dictionary<string, PoolConfig> pools;
+        private readonly ClusterConfig clusterConfig;
+        private readonly Dictionary<string, PoolConfig> pools;
         private readonly IMapper mapper;
 
         private IAsyncPolicy faultPolicy;
@@ -122,7 +129,10 @@ namespace Miningcore.Mining
                     blockEntity.Status = BlockStatus.Pending;
                     await blockRepo.InsertAsync(con, tx, blockEntity);
 
-                    messageBus.NotifyBlockFound(share.PoolId, blockEntity, pools[share.PoolId].Template);
+                    if(pools.TryGetValue(share.PoolId, out var poolConfig))
+                        messageBus.NotifyBlockFound(share.PoolId, blockEntity, poolConfig.Template);
+                    else
+                        logger.Warn(()=> $"Block found for unknown pool {share.PoolId}");
                 }
             });
         }
@@ -235,7 +245,7 @@ namespace Miningcore.Mining
 
                             catch(Exception ex)
                             {
-                                logger.Error(ex, () => $"Unable to import shares");
+                                logger.Error(ex, () => "Unable to import shares");
                                 failCount++;
                             }
 
@@ -261,7 +271,7 @@ namespace Miningcore.Mining
 
                         catch(Exception ex)
                         {
-                            logger.Error(ex, () => $"Unable to import shares");
+                            logger.Error(ex, () => "Unable to import shares");
                             failCount++;
                         }
                     }
@@ -292,30 +302,6 @@ namespace Miningcore.Mining
             }
         }
 
-        #region API-Surface
-
-        public void Start(ClusterConfig clusterConfig)
-        {
-            this.clusterConfig = clusterConfig;
-            pools = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
-
-            ConfigureRecovery();
-            StartQueue();
-
-            logger.Info(() => "Online");
-        }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            queueSub?.Dispose();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
-
         private void StartQueue()
         {
             queueSub = messageBus.Listen<ClientShare>()
@@ -344,8 +330,8 @@ namespace Miningcore.Mining
 
         private void ConfigureRecovery()
         {
-            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.ShareRecoveryFile)
-                ? clusterConfig.PaymentProcessing.ShareRecoveryFile
+            recoveryFilename = !string.IsNullOrEmpty(clusterConfig.ShareRecoveryFile)
+                ? clusterConfig.ShareRecoveryFile
                 : "recovered-shares.txt";
         }
 
@@ -380,6 +366,25 @@ namespace Miningcore.Mining
             faultPolicy = Policy.WrapAsync(
                 fallbackOnBrokenCircuit,
                 Policy.WrapAsync(fallback, breaker, retry));
+        }
+
+        public Task StartAsync(CancellationToken ct)
+        {
+            ConfigureRecovery();
+            StartQueue();
+
+            logger.Info(() => "Online");
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken ct)
+        {
+            queueSub?.Dispose();
+
+            logger.Info(() => "Offline");
+
+            return Task.CompletedTask;
         }
     }
 }

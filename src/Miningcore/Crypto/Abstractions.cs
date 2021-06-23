@@ -19,11 +19,17 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using Miningcore.Configuration;
 
 namespace Miningcore.Crypto
 {
     public interface IHashAlgorithm
     {
         void Digest(ReadOnlySpan<byte> data, Span<byte> result, params object[] extra);
+    }
+
+    public interface IHashAlgorithmInit
+    {
+        bool DigestInit(PoolConfig poolConfig);
     }
 }

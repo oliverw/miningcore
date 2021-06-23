@@ -48,13 +48,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "x16s.h"
 #include "x21s.h"
 #include "x25x.h"
-#include "hashodo.h"
+#include "verthash/h2.h"
 #include "equi/equihashverify.h"
-#include "libethash/sha3.h"
-#include "libethash/internal.h"
-#include "libethash/ethash.h"
-
-extern "C" bool ethash_get_default_dirname(char* strbuf, size_t buffsize);
 
 #ifdef _WIN32
 #define MODULE_API __declspec(dllexport)
@@ -234,9 +229,14 @@ extern "C" MODULE_API void x25x_export(const char* input, char* output, uint32_t
     x25x_hash(input, output, input_len);
 }
 
-extern "C" MODULE_API void odocrypt_export(const char* input, char* output, uint32_t input_len, uint32_t key)
+extern "C" MODULE_API int verthash_init_export(const char* filename, int createIfMissing)
 {
-    odocrypt_hash(input, output, input_len, key);
+    return verthash_init(filename, createIfMissing);
+}
+
+extern "C" MODULE_API int verthash_export(const unsigned char* input, unsigned char* output, uint32_t input_len)
+{
+    return verthash(input, input_len, output);
 }
 
 extern "C" MODULE_API void x16s_export(const char* input, char* output, uint32_t input_len)
@@ -275,84 +275,4 @@ extern "C" MODULE_API bool equihash_verify_96_5_export(const char* header, int h
     std::vector<unsigned char> vecSolution(solution, solution + solution_length);
 
     return verifyEH_96_5(header, vecSolution, personalization);
-}
-
-extern "C" MODULE_API void sha3_256_export(const char* input, char* output, uint32_t input_len)
-{
-	SHA3_256((ethash_h256 const*) output, (uint8_t const*) input, input_len);
-}
-
-extern "C" MODULE_API void sha3_512_export(const char* input, char* output, uint32_t input_len)
-{
-	SHA3_512((uint8_t*) output, (uint8_t const*)input, input_len);
-}
-
-extern "C" MODULE_API uint64_t ethash_get_datasize_export(uint64_t const block_number)
-{
-	return ethash_get_datasize(block_number);
-}
-
-extern "C" MODULE_API uint64_t ethash_get_cachesize_export(uint64_t const block_number)
-{
-	return ethash_get_cachesize(block_number);
-}
-
-extern "C" MODULE_API ethash_light_t ethash_light_new_export(uint64_t block_number)
-{
-	return ethash_light_new(block_number);
-}
-
-extern "C" MODULE_API void ethash_light_delete_export(ethash_light_t light)
-{
-	ethash_light_delete(light);
-}
-
-extern "C" MODULE_API void ethash_light_compute_export(
-	ethash_light_t light,
-	ethash_h256_t const *header_hash,
-	uint64_t nonce,
-	ethash_return_value_t *result)
-{
-	*result = ethash_light_compute(light, *header_hash, nonce);
-}
-
-extern "C" MODULE_API ethash_full_t ethash_full_new_export(const char *dirname, ethash_light_t light, ethash_callback_t callback)
-{
-	uint64_t full_size = ethash_get_datasize(light->block_number);
-	ethash_h256_t seedhash = ethash_get_seedhash(light->block_number);
-	return ethash_full_new_internal(dirname, seedhash, full_size, light, callback);
-}
-
-extern "C" MODULE_API void ethash_full_delete_export(ethash_full_t full)
-{
-	ethash_full_delete(full);
-}
-
-extern "C" MODULE_API void ethash_full_compute_export(
-	ethash_full_t full,
-	ethash_h256_t const *header_hash,
-	uint64_t nonce,
-	ethash_return_value_t *result)
-{
-	*result = ethash_full_compute(full, *header_hash, nonce);
-}
-
-extern "C" MODULE_API void const* ethash_full_dag_export(ethash_full_t full)
-{
-	return ethash_full_dag(full);
-}
-
-extern "C" MODULE_API uint64_t ethash_full_dag_size_export(ethash_full_t full)
-{
-	return ethash_full_dag_size(full);
-}
-
-extern "C" MODULE_API ethash_h256_t ethash_get_seedhash_export(uint64_t block_number)
-{
-	return ethash_get_seedhash(block_number);
-}
-
-extern "C" MODULE_API bool ethash_get_default_dirname_export(char *buf, size_t buf_size)
-{
-	return ethash_get_default_dirname(buf, buf_size);
 }

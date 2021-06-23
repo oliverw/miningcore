@@ -27,16 +27,16 @@ using Miningcore.Stratum;
 
 namespace Miningcore.Mining
 {
-    public struct ClientShare
+    public readonly struct ClientShare
     {
-        public ClientShare(StratumClient client, Share share)
+        public ClientShare(StratumConnection connection, Share share)
         {
-            Client = client;
+            Connection = connection;
             Share = share;
         }
 
-        public StratumClient Client;
-        public Share Share;
+        public StratumConnection Connection { get; }
+        public Share Share { get; }
     }
 
     public interface IMiningPool
@@ -46,7 +46,6 @@ namespace Miningcore.Mining
         BlockchainStats NetworkStats { get; }
         void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig);
         double HashrateFromShares(double shares, double interval);
-        Task StartAsync(CancellationToken ctsToken);
-        void Stop();
+        Task RunAsync(CancellationToken ct);
     }
 }

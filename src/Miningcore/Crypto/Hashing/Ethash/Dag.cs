@@ -31,7 +31,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
             fixed (byte* data = chars)
             {
-                if(LibMultihash.ethash_get_default_dirname(data, chars.Length))
+                if(LibEthhash.ethash_get_default_dirname(data, chars.Length))
                 {
                     int length;
                     for(length = 0; length < chars.Length; length++)
@@ -51,7 +51,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
         {
             if(handle != IntPtr.Zero)
             {
-                LibMultihash.ethash_full_delete(handle);
+                LibEthhash.ethash_full_delete(handle);
                 handle = IntPtr.Zero;
             }
         }
@@ -78,12 +78,12 @@ namespace Miningcore.Crypto.Hashing.Ethash
                         var block = Epoch * EthereumConstants.EpochLength;
 
                         // Generate a temporary cache
-                        var light = LibMultihash.ethash_light_new(block);
+                        var light = LibEthhash.ethash_light_new(block);
 
                         try
                         {
                             // Generate the actual DAG
-                            handle = LibMultihash.ethash_full_new(dagDir, light, progress =>
+                            handle = LibEthhash.ethash_full_new(dagDir, light, progress =>
                             {
                                 logger.Info(() => $"Generating DAG for epoch {Epoch}: {progress}%");
 
@@ -99,7 +99,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                         finally
                         {
                             if(light != IntPtr.Zero)
-                                LibMultihash.ethash_light_delete(light);
+                                LibEthhash.ethash_light_delete(light);
                         }
                     }
 
@@ -120,11 +120,11 @@ namespace Miningcore.Crypto.Hashing.Ethash
             mixDigest = null;
             result = null;
 
-            var value = new LibMultihash.ethash_return_value();
+            var value = new LibEthhash.ethash_return_value();
 
             fixed (byte* input = hash)
             {
-                LibMultihash.ethash_full_compute(handle, input, nonce, ref value);
+                LibEthhash.ethash_full_compute(handle, input, nonce, ref value);
             }
 
             if(value.success)

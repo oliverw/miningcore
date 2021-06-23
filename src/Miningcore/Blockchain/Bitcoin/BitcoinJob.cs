@@ -76,7 +76,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected Transaction txOut;
 
         // serialization constants
-        protected static byte[] scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes("/MiningCore/"))).ToBytes();
+        protected byte[] scriptSigFinalBytes;
 
         protected static byte[] sha256Empty = new byte[32];
         protected uint txVersion = 1u; // transaction version (currently 1) - see https://en.bitcoin.it/wiki/Transaction
@@ -327,7 +327,7 @@ namespace Miningcore.Blockchain.Bitcoin
         }
 
         protected virtual (Share Share, string BlockHex) ProcessShareInternal(
-            StratumClient worker, string extraNonce2, uint nTime, uint nonce, uint? versionBits)
+            StratumConnection worker, string extraNonce2, uint nTime, uint nonce, uint? versionBits)
         {
             var context = worker.ContextAs<BitcoinWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
@@ -528,13 +528,18 @@ namespace Miningcore.Blockchain.Bitcoin
 
             this.poolConfig = poolConfig;
             coin = poolConfig.Template.As<BitcoinTemplate>();
-            networkParams = coin.GetNetwork(network.NetworkType);
+            networkParams = coin.GetNetwork(network.ChainName);
             txVersion = coin.CoinbaseTxVersion;
             this.network = network;
             this.clock = clock;
             this.poolAddressDestination = poolAddressDestination;
             BlockTemplate = blockTemplate;
             JobId = jobId;
+
+            var coinbaseString = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
+                clusterConfig.PaymentProcessing?.CoinbaseString.Trim() : "Miningcore";
+
+            scriptSigFinalBytes = new Script(Op.GetPushOp(Encoding.UTF8.GetBytes(coinbaseString))).ToBytes();
 
             //Difficulty = new Target(new NBitcoin.BouncyCastle.Math.BigInteger(BlockTemplate.Target, 16)).Difficulty;
             Difficulty = new Target(System.Numerics.BigInteger.Parse(BlockTemplate.Target, NumberStyles.HexNumber)).Difficulty;
@@ -554,7 +559,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 {
                     txVersion = 3;
                     var txType = 5;
-                    txVersion = txVersion + ((uint) (txType << 16));
+                    txVersion += ((uint) (txType << 16));
                 }
             }
 
@@ -601,7 +606,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return jobParams;
         }
 
-        public virtual (Share Share, string BlockHex) ProcessShare(StratumClient worker,
+        public virtual (Share Share, string BlockHex) ProcessShare(StratumConnection worker,
             string extraNonce2, string nTime, string nonce, string versionBits = null)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

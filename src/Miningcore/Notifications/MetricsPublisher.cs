@@ -1,23 +1,29 @@
-﻿using System;
-using Miningcore.Configuration;
+using System;
+using System.Reactive.Disposables;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using Prometheus;
 
 namespace Miningcore.Notifications
 {
-    public class MetricsPublisher
+    public class MetricsPublisher : IHostedService
     {
-        public MetricsPublisher(IMessageBus messageBus)
+        public MetricsPublisher(
+            IMessageBus messageBus)
         {
             CreateMetrics();
 
-            messageBus.Listen<TelemetryEvent>().Subscribe(OnTelemetryEvent);
+            this.messageBus = messageBus;
         }
 
         private Summary btStreamLatencySummary;
         private Counter shareCounter;
         private Summary rpcRequestDurationSummary;
+        private readonly CompositeDisposable disposables = new();
+        private readonly IMessageBus messageBus;
 
         private void CreateMetrics()
         {
@@ -53,6 +59,20 @@ namespace Miningcore.Notifications
                     rpcRequestDurationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
             }
+        }
+
+        public Task StartAsync(CancellationToken ct)
+        {
+            disposables.Add(messageBus.Listen<TelemetryEvent>().Subscribe(OnTelemetryEvent));
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken ct)
+        {
+            disposables?.Dispose();
+
+            return Task.CompletedTask;
         }
     }
 }

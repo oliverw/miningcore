@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Autofac;
@@ -27,7 +27,7 @@ namespace Miningcore.Configuration
 
                     var value = o.Value[nameof(CoinTemplate.Family).ToLower()];
                     if(value == null)
-                        logger.ThrowLogPoolStartupException("Invalid coin-template: missing 'family' property");
+                        logger.ThrowLogPoolStartupException($"Invalid coin-template '{o.Key}': missing 'family' property");
 
                     var family = value.ToObject<CoinFamily>();
                     var result = (CoinTemplate) o.Value.ToObject(CoinTemplate.Families[family]);

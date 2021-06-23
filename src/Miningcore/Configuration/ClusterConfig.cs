@@ -540,7 +540,10 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
         public int Interval { get; set; }
 
-        public string ShareRecoveryFile { get; set; }
+        /// <summary>
+        /// Indentifier used in coinbase transactions to identify the pool
+        /// </summary>
+        public string CoinbaseString  { get; set; }
     }
 
     public partial class PersistenceConfig
@@ -661,6 +664,22 @@ namespace Miningcore.Configuration
         public string SharedEncryptionKey { get; set; }
     }
 
+    public partial class Statistics
+    {
+        public int StatsInterval { get; set; }
+        public int HashrateCalculationWindow { get; set; }
+        public int StatsCleanupInterval { get; set; }
+        public int StatsDbCleanupHistory { get; set; }
+
+    }
+    public class NicehashClusterConfig
+    {
+        /// <summary>
+        /// If set to true, the Nicehash service will be started
+        /// </summary>
+        public bool EnableAutoDiff { get; set; }
+    }
+
     public partial class PoolConfig
     {
         /// <summary>
@@ -705,6 +724,11 @@ namespace Miningcore.Configuration
     public partial class ClusterConfig
     {
         /// <summary>
+        /// cluster instance id (only used in clustering setups)
+        /// </summary>
+        public byte? InstanceId { get; set; }
+
+        /// <summary>
         /// One or more files containing coin definitions
         /// </summary>
         public string[] CoinTemplates { get; set; }
@@ -716,6 +740,8 @@ namespace Miningcore.Configuration
         public ClusterPaymentProcessingConfig PaymentProcessing { get; set; }
         public NotificationsConfig Notifications { get; set; }
         public ApiConfig Api { get; set; }
+        public Statistics Statistics { get; set; }
+        public NicehashClusterConfig Nicehash { get; set; }
 
         /// <summary>
         /// If this is enabled, shares are not written to the database
@@ -734,6 +760,8 @@ namespace Miningcore.Configuration
         /// Increasing this value by one, increases pool peak memory consumption by 1 GB
         /// </summary>
         public int? EquihashMaxThreads { get; set; }
+
+        public string ShareRecoveryFile { get; set; }
 
         public PoolConfig[] Pools { get; set; }
     }

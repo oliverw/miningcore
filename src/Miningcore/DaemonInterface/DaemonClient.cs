@@ -560,7 +560,7 @@ namespace Miningcore.DaemonInterface
                                 await Task.Delay(TimeSpan.FromSeconds(5), cts.Token);
                         }
                     }
-                });
+                }, cts.Token);
 
                 return Disposable.Create(() => { cts.Cancel(); });
             }));

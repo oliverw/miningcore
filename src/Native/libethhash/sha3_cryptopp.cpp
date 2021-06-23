@@ -20,7 +20,7 @@
 * @date 2015
 */
 #include <stdint.h>
-#include <cryptopp/sha3.h>
+#include <cryptopp_sha3.h>
 
 extern "C" {
 struct ethash_h256;

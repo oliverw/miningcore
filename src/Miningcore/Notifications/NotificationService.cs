@@ -7,9 +7,11 @@ using System.Net.Http;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Hosting;
 using MimeKit;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
@@ -20,7 +22,7 @@ using NLog;
 
 namespace Miningcore.Notifications
 {
-    public class NotificationService
+    public class NotificationService : IHostedService
     {
         public NotificationService(
             ClusterConfig clusterConfig,
@@ -32,79 +34,12 @@ namespace Miningcore.Notifications
 
             this.clusterConfig = clusterConfig;
             this.serializerSettings = serializerSettings;
+            this.messageBus = messageBus;
 
             poolConfigs = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
             adminEmail = clusterConfig.Notifications?.Admin?.EmailAddress;
             //adminPhone = null;
-
-            if(clusterConfig.Notifications?.Enabled == true)
-            {
-                queue = new BlockingCollection<QueuedNotification>();
-
-                queueSub = queue.GetConsumingEnumerable()
-                    .ToObservable(TaskPoolScheduler.Default)
-                    .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
-                    .Concat()
-                    .Subscribe();
-
-                messageBus.Listen<AdminNotification>()
-                    .Subscribe(x =>
-                    {
-                        queue?.Add(new QueuedNotification
-                        {
-                            Category = NotificationCategory.Admin,
-                            Subject = x.Subject,
-                            Msg = x.Message
-                        });
-                    });
-
-                messageBus.Listen<BlockFoundNotification>()
-                    .Subscribe(x =>
-                    {
-                        queue?.Add(new QueuedNotification
-                        {
-                            Category = NotificationCategory.Block,
-                            PoolId = x.PoolId,
-                            Subject = "Block Notification",
-                            Msg = $"Pool {x.PoolId} found block candidate {x.BlockHeight}"
-                        });
-                    });
-
-                messageBus.Listen<PaymentNotification>()
-                    .Subscribe(x =>
-                    {
-                        if(string.IsNullOrEmpty(x.Error))
-                        {
-                            var coin = poolConfigs[x.PoolId].Template;
-
-                            // prepare tx links
-                            string[] txLinks = null;
-
-                            if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
-                                txLinks = x.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
-
-                            queue?.Add(new QueuedNotification
-                            {
-                                Category = NotificationCategory.PaymentSuccess,
-                                PoolId = x.PoolId,
-                                Subject = "Payout Success Notification",
-                                Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {txLinks}."
-                            });
-                        }
-
-                        else
-                        {
-                            queue?.Add(new QueuedNotification
-                            {
-                                Category = NotificationCategory.PaymentFailure,
-                                PoolId = x.PoolId,
-                                Subject = "Payout Failure Notification",
-                                Msg = $"Failed to pay out {x.Amount} {poolConfigs[x.PoolId].Template.Symbol} from pool {x.PoolId}: {x.Error}"
-                            });
-                        }
-                    });
-            }
         }
 
         private readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -115,8 +50,9 @@ namespace Miningcore.Notifications
         private readonly string adminEmail;
 
         //private readonly string adminPhone;
-        private readonly BlockingCollection<QueuedNotification> queue;
+        private BlockingCollection<QueuedNotification> queue;
         private IDisposable queueSub;
+        private readonly IMessageBus messageBus;
 
         enum NotificationCategory
         {
@@ -141,7 +77,7 @@ namespace Miningcore.Notifications
 
         private async Task SendNotificationAsync(QueuedNotification notification)
         {
-            logger.Debug(() => $"SendNotificationAsync");
+            logger.Debug(() => "SendNotificationAsync");
 
             try
             {
@@ -171,7 +107,7 @@ namespace Miningcore.Notifications
 
             catch(Exception ex)
             {
-                logger.Error(ex, $"Error sending notification");
+                logger.Error(ex, "Error sending notification");
             }
         }
 
@@ -196,6 +132,87 @@ namespace Miningcore.Notifications
             }
 
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
+        }
+
+        public Task StartAsync(CancellationToken ct)
+        {
+            queue = new BlockingCollection<QueuedNotification>();
+
+            queueSub = queue.GetConsumingEnumerable()
+                .ToObservable(TaskPoolScheduler.Default)
+                .Select(notification => Observable.FromAsync(() => SendNotificationAsync(notification)))
+                .Concat()
+                .Subscribe();
+
+            messageBus.Listen<AdminNotification>()
+                .Subscribe(x =>
+                {
+                    queue?.Add(new QueuedNotification
+                    {
+                        Category = NotificationCategory.Admin,
+                        Subject = x.Subject,
+                        Msg = x.Message
+                    });
+                });
+
+            messageBus.Listen<BlockFoundNotification>()
+                .Subscribe(x =>
+                {
+                    queue?.Add(new QueuedNotification
+                    {
+                        Category = NotificationCategory.Block,
+                        PoolId = x.PoolId,
+                        Subject = "Block Notification",
+                        Msg = $"Pool {x.PoolId} found block candidate {x.BlockHeight}"
+                    });
+                });
+
+            messageBus.Listen<PaymentNotification>()
+                .Subscribe(x =>
+                {
+                    if(string.IsNullOrEmpty(x.Error))
+                    {
+                        var coin = poolConfigs[x.PoolId].Template;
+
+                        // prepare tx links
+                        string[] txLinks = null;
+
+                        if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                            txLinks = x.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
+
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.PaymentSuccess,
+                            PoolId = x.PoolId,
+                            Subject = "Payout Success Notification",
+                            Msg = $"Paid {FormatAmount(x.Amount, x.PoolId)} from pool {x.PoolId} to {x.RecpientsCount} recipients in Transaction(s) {txLinks}."
+                        });
+                    }
+
+                    else
+                    {
+                        queue?.Add(new QueuedNotification
+                        {
+                            Category = NotificationCategory.PaymentFailure,
+                            PoolId = x.PoolId,
+                            Subject = "Payout Failure Notification",
+                            Msg = $"Failed to pay out {x.Amount} {poolConfigs[x.PoolId].Template.Symbol} from pool {x.PoolId}: {x.Error}"
+                        });
+                    }
+                });
+
+            logger.Info(() => "Online");
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken ct)
+        {
+            queueSub?.Dispose();
+
+            logger.Info(() => "Offline");
+
+            return Task.CompletedTask;
         }
     }
 }

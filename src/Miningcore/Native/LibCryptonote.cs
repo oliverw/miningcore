@@ -32,10 +32,10 @@ namespace Miningcore.Native
         private static extern bool convert_blob(byte* input, int inputSize, byte* output, ref int outputSize);
 
         [DllImport("libcryptonote", EntryPoint = "decode_address_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern UInt64 decode_address(byte* input, int inputSize);
+        private static extern ulong decode_address(byte* input, int inputSize);
 
         [DllImport("libcryptonote", EntryPoint = "decode_integrated_address_export", CallingConvention = CallingConvention.Cdecl)]
-        private static extern UInt64 decode_integrated_address(byte* input, int inputSize);
+        private static extern ulong decode_integrated_address(byte* input, int inputSize);
 
         [DllImport("libcryptonote", EntryPoint = "cn_fast_hash_export", CallingConvention = CallingConvention.Cdecl)]
         private static extern int cn_fast_hash(byte* input, byte* output, uint inputLength);
@@ -92,7 +92,7 @@ namespace Miningcore.Native
             }
         }
 
-        public static UInt64 DecodeAddress(string address)
+        public static ulong DecodeAddress(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 
@@ -104,7 +104,7 @@ namespace Miningcore.Native
             }
         }
 
-        public static UInt64 DecodeIntegratedAddress(string address)
+        public static ulong DecodeIntegratedAddress(string address)
         {
             Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
 

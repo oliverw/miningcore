@@ -227,7 +227,10 @@ namespace Miningcore.Blockchain.Bitcoin
 
             if(extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
             {
-                var comment = (poolConfig.PoolName ?? clusterConfig.ClusterName ?? "MiningCore").Trim() + " Payment";
+                var identifier = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
+                    clusterConfig.PaymentProcessing.CoinbaseString.Trim() : "Miningcore";
+
+                var comment = $"{identifier} Payment";
                 var subtractFeesFrom = amounts.Keys.ToArray();
 
                 if(!poolConfig.Template.As<BitcoinTemplate>().HasMasterNodes)

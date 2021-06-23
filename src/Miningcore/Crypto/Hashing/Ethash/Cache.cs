@@ -27,7 +27,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
         {
             if(handle != IntPtr.Zero)
             {
-                LibMultihash.ethash_light_delete(handle);
+                LibEthhash.ethash_light_delete(handle);
                 handle = IntPtr.Zero;
             }
         }
@@ -44,7 +44,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                         logger.Debug(() => $"Generating cache for epoch {Epoch}");
 
                         var block = Epoch * EthereumConstants.EpochLength;
-                        handle = LibMultihash.ethash_light_new(block);
+                        handle = LibEthhash.ethash_light_new(block);
 
                         logger.Debug(() => $"Done generating cache for epoch {Epoch} after {DateTime.Now - started}");
                         isGenerated = true;
@@ -62,11 +62,11 @@ namespace Miningcore.Crypto.Hashing.Ethash
             mixDigest = null;
             result = null;
 
-            var value = new LibMultihash.ethash_return_value();
+            var value = new LibEthhash.ethash_return_value();
 
             fixed (byte* input = hash)
             {
-                LibMultihash.ethash_light_compute(handle, input, nonce, ref value);
+                LibEthhash.ethash_light_compute(handle, input, nonce, ref value);
             }
 
             if(value.success)

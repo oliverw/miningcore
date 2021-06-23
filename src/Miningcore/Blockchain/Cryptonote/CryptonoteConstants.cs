@@ -54,7 +54,7 @@ namespace Miningcore.Blockchain.Cryptonote
         public const int PayoutMinBlockConfirmations = 60;
 #endif
 
-        public const int InstanceIdSize = 3;
+        public const int InstanceIdSize = 4;
         public const int ExtraNonceSize = 4;
 
         // NOTE: for whatever strange reason only reserved_size -1 can be used,

@@ -4,6 +4,7 @@ using Miningcore.Persistence.Model;
 using System.Globalization;
 using Miningcore.Notifications.Messages;
 using Miningcore.Configuration;
+using Miningcore.Mining;
 
 namespace Miningcore.Extensions
 {
@@ -100,6 +101,15 @@ namespace Miningcore.Extensions
                 Hashrate = hashrate,
                 Miner = miner,
                 Worker = worker,
+            });
+        }
+
+        public static void NotifyPoolStatus(this IMessageBus messageBus, IMiningPool pool, PoolStatus status)
+        {
+            messageBus.SendMessage(new PoolStatusNotification
+            {
+                Pool = pool,
+                Status = status
             });
         }
     }

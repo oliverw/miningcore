@@ -80,7 +80,7 @@ namespace Miningcore.Blockchain.Equihash
 
             network = Network.GetNetwork(blockchainInfoResponse.Response.Chain.ToLower());
 
-            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.NetworkType);
+            chainConfig = poolConfig.Template.As<EquihashCoinTemplate>().GetNetwork(network.ChainName);
 
             // detect z_shieldcoinbase support
             var response = await daemon.ExecuteCmdSingleAsync<JObject>(logger, EquihashCommands.ZShieldCoinbase);
@@ -239,7 +239,7 @@ namespace Miningcore.Blockchain.Equihash
                         else
                         {
                             logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
-                            NotifyPayoutFailure(poolConfig.Id, page, $"Wallet is locked but walletPassword was not configured. Unable to send funds.", null);
+                            NotifyPayoutFailure(poolConfig.Id, page, "Wallet is locked but walletPassword was not configured. Unable to send funds.", null);
                             break;
                         }
                     }

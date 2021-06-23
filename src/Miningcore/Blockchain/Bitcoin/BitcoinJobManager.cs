@@ -28,10 +28,13 @@ using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
+using Miningcore.Crypto;
+using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Native;
 using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
@@ -61,7 +64,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(coin.BlockTemplateRpcExtraParams != null)
             {
                 if(coin.BlockTemplateRpcExtraParams.Type == JTokenType.Array)
-                    result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>()).ToArray();
+                    result = result.Concat(coin.BlockTemplateRpcExtraParams.ToObject<object[]>() ?? Array.Empty<object>()).ToArray();
                 else
                     result = result.Concat(new []{ coin.BlockTemplateRpcExtraParams.ToObject<object>()}).ToArray();
             }
@@ -94,6 +97,17 @@ namespace Miningcore.Blockchain.Bitcoin
         private BitcoinJob CreateJob()
         {
             return new();
+        }
+
+        protected override void PostChainIdentifyConfigure()
+        {
+            base.PostChainIdentifyConfigure();
+
+            if(poolConfig.EnableInternalStratum == true && coin.HeaderHasherValue is IHashAlgorithmInit hashInit)
+            {
+                if(!hashInit.DigestInit(poolConfig))
+                    logger.Error(()=> $"{hashInit.GetType().Name} initialization failed");
+            }
         }
 
         protected override async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
@@ -204,7 +218,7 @@ namespace Miningcore.Blockchain.Bitcoin
             base.Configure(poolConfig, clusterConfig);
         }
 
-        public override object[] GetSubscriberData(StratumClient worker)
+        public override object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -223,7 +237,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

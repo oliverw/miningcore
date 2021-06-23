@@ -41,7 +41,7 @@ namespace Miningcore.Blockchain.Equihash
 
         protected override void PostChainIdentifyConfigure()
         {
-            ChainConfig = coin.GetNetwork(network.NetworkType);
+            ChainConfig = coin.GetNetwork(network.ChainName);
             solver = EquihashSolverFactory.GetSolver(ctx, ChainConfig.Solver);
 
             base.PostChainIdentifyConfigure();
@@ -215,7 +215,7 @@ namespace Miningcore.Blockchain.Equihash
             return result.Response != null && result.Response.IsValid;
         }
 
-        public override object[] GetSubscriberData(StratumClient worker)
+        public override object[] GetSubscriberData(StratumConnection worker)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
 
@@ -233,7 +233,7 @@ namespace Miningcore.Blockchain.Equihash
             return responseData;
         }
 
-        public override async ValueTask<Share> SubmitShareAsync(StratumClient worker, object submission,
+        public override async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission,
             double stratumDifficultyBase, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));

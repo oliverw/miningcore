@@ -59,14 +59,17 @@ namespace Miningcore.Blockchain.Ethereum
             IComponentContext ctx,
             IMasterClock clock,
             IMessageBus messageBus,
+            IExtraNonceProvider extraNonceProvider,
             JsonSerializerSettings serializerSettings) :
             base(ctx, messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
             this.clock = clock;
+            this.extraNonceProvider = extraNonceProvider;
 
             serializer = new JsonSerializer
             {
@@ -80,7 +83,7 @@ namespace Miningcore.Blockchain.Ethereum
         private GethChainType chainType;
         private EthashFull ethash;
         private readonly IMasterClock clock;
-        private readonly EthereumExtraNonceProvider extraNonceProvider = new();
+        private readonly IExtraNonceProvider extraNonceProvider;
 
         private const int MaxBlockBacklog = 3;
         protected readonly Dictionary<string, EthereumJob> validJobs = new();
@@ -201,7 +204,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             if(work.Length < 4)
             {
-                logger.Error(() => $"Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
+                logger.Error(() => "Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
                 return null;
             }
 
@@ -396,13 +399,13 @@ namespace Miningcore.Blockchain.Ethereum
             return true;
         }
 
-        public void PrepareWorker(StratumClient client)
+        public void PrepareWorker(StratumConnection client)
         {
             var context = client.ContextAs<EthereumWorkerContext>();
             context.ExtraNonce1 = extraNonceProvider.Next();
         }
 
-        public async ValueTask<Share> SubmitShareAsync(StratumClient worker, string[] request, CancellationToken ct)
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, string[] request, CancellationToken ct)
         {
             Contract.RequiresNonNull(worker, nameof(worker));
             Contract.RequiresNonNull(request, nameof(request));
@@ -468,7 +471,7 @@ namespace Miningcore.Blockchain.Ethereum
             if(responses.Where(x => x.Error?.InnerException?.GetType() == typeof(DaemonClientException))
                 .Select(x => (DaemonClientException) x.Error.InnerException)
                 .Any(x => x.Code == HttpStatusCode.Unauthorized))
-                logger.ThrowLogPoolStartupException($"Daemon reports invalid credentials");
+                logger.ThrowLogPoolStartupException("Daemon reports invalid credentials");
 
             return responses.All(x => x.Error == null);
         }
@@ -493,13 +496,13 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if(isSynched)
                 {
-                    logger.Info(() => $"All daemons synched with blockchain");
+                    logger.Info(() => "All daemons synched with blockchain");
                     break;
                 }
 
                 if(!syncPendingNotificationShown)
                 {
-                    logger.Info(() => $"Daemons still syncing with network. Manager will be started once synced");
+                    logger.Info(() => "Daemons still syncing with network. Manager will be started once synced");
                     syncPendingNotificationShown = true;
                 }
 
@@ -570,15 +573,15 @@ namespace Miningcore.Blockchain.Ethereum
 
                     if(blockTemplate != null)
                     {
-                        logger.Info(() => $"Loading current DAG ...");
+                        logger.Info(() => "Loading current DAG ...");
 
                         await ethash.GetDagAsync(blockTemplate.Height, logger, ct);
 
-                        logger.Info(() => $"Loaded current DAG");
+                        logger.Info(() => "Loaded current DAG");
                         break;
                     }
 
-                    logger.Info(() => $"Waiting for first valid block template");
+                    logger.Info(() => "Waiting for first valid block template");
                     await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 }
             }

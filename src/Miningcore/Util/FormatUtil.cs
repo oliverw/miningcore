@@ -6,35 +6,24 @@ namespace Miningcore.Util
 {
     public static class FormatUtil
     {
-        public static readonly string[] HashrateUnits = { " KH/s", " MH/s", " GH/s", " TH/s", " PH/s" };
+	    public static readonly string[] HashrateUnits = { " H/s", " KH/s", " MH/s", " GH/s", " TH/s", " PH/s" , " EH/s" };
         public static readonly string[] DifficultyUnits = { " K", " M", " G", " T", " P" };
         public static readonly string[] CapacityUnits = { " KB", " MB", " GB", " TB", " PB" };
         public static readonly string[] QuantityUnits = { "K", "M", "B", "T", "Q" };
 
         public static string FormatHashrate(double hashrate)
         {
-            var i = -1;
+            var hashrateUnits = HashrateUnits;// GetHashrateUnitsForCoin(coin);
 
-            do
+            var i = 0;
+
+            while (hashrate > 1024 && i < hashrateUnits.Length - 1)
             {
-                hashrate = hashrate / 1024;
+                hashrate /= 1024;
                 i++;
-            } while(hashrate > 1024 && i < HashrateUnits.Length - 1);
+            }
 
-            return (int) Math.Abs(hashrate) + HashrateUnits[i];
-        }
-
-        public static string FormatDifficulty(double difficulty)
-        {
-            var i = -1;
-
-            do
-            {
-                difficulty = difficulty / 1024;
-                i++;
-            } while(difficulty > 1024);
-
-            return (int) Math.Abs(difficulty) + DifficultyUnits[i];
+            return Math.Round(hashrate, 2).ToString("F2") + hashrateUnits[i];
         }
 
         public static string FormatCapacity(double hashrate)
@@ -43,7 +32,7 @@ namespace Miningcore.Util
 
             do
             {
-                hashrate = hashrate / 1024;
+                hashrate /= 1024;
                 i++;
             } while(hashrate > 1024 && i < CapacityUnits.Length - 1);
 
@@ -56,7 +45,7 @@ namespace Miningcore.Util
 
             do
             {
-                value = value / 1000;
+                value /= 1000;
                 i++;
             } while(value > 1000);
 

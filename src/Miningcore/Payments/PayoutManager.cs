@@ -19,16 +19,22 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Features.Metadata;
+using Microsoft.Extensions.Hosting;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -41,13 +47,14 @@ namespace Miningcore.Payments
     /// <summary>
     /// Coin agnostic payment processor
     /// </summary>
-    public class PayoutManager
+    public class PayoutManager : BackgroundService
     {
         public PayoutManager(IComponentContext ctx,
             IConnectionFactory cf,
             IBlockRepository blockRepo,
             IShareRepository shareRepo,
             IBalanceRepository balanceRepo,
+            ClusterConfig clusterConfig,
             IMessageBus messageBus)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
@@ -63,6 +70,10 @@ namespace Miningcore.Payments
             this.shareRepo = shareRepo;
             this.balanceRepo = balanceRepo;
             this.messageBus = messageBus;
+            this.clusterConfig = clusterConfig;
+
+            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ?
+                clusterConfig.PaymentProcessing.Interval : 600);
         }
 
         private readonly IBalanceRepository balanceRepo;
@@ -71,14 +82,26 @@ namespace Miningcore.Payments
         private readonly IComponentContext ctx;
         private readonly IShareRepository shareRepo;
         private readonly IMessageBus messageBus;
-        private readonly CancellationTokenSource cts = new();
-        private TimeSpan interval;
-        private ClusterConfig clusterConfig;
+        private readonly TimeSpan interval;
+        private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
+        private readonly ClusterConfig clusterConfig;
+        private readonly CompositeDisposable disposables = new();
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        private void AttachPool(IMiningPool pool)
+        {
+            pools.TryAdd(pool.Config.Id, pool);
+        }
+
+        private void OnPoolStatusNotification(PoolStatusNotification notification)
+        {
+            if(notification.Status == PoolStatus.Online)
+                AttachPool(notification.Pool);
+        }
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in clusterConfig.Pools.Where(x => x.Enabled && x.PaymentProcessing.Enabled))
+            foreach(var pool in pools.Values.ToArray().Select(x=> x.Config).Where(x => x.Enabled && x.PaymentProcessing.Enabled))
             {
                 logger.Info(() => $"Processing payments for pool {pool.Id}");
 
@@ -241,23 +264,22 @@ namespace Miningcore.Payments
                 await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
         }
 
-        #region API-Surface
-
-        public void Configure(ClusterConfig clusterConfig)
+        protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            this.clusterConfig = clusterConfig;
-
-            interval = TimeSpan.FromSeconds(clusterConfig.PaymentProcessing.Interval > 0 ?
-                clusterConfig.PaymentProcessing.Interval : 600);
-        }
-
-        public void Start()
-        {
-            Task.Run(async () =>
+            try
             {
+                // monitor pool lifetime
+                disposables.Add(messageBus
+                    .Listen<PoolStatusNotification>()
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Subscribe(OnPoolStatusNotification));
+
                 logger.Info(() => "Online");
 
-                while(!cts.IsCancellationRequested)
+                // Allow all pools to actually come up before the first payment processing run
+                await Task.Delay(TimeSpan.FromMinutes(1), ct);
+
+                while(!ct.IsCancellationRequested)
                 {
                     try
                     {
@@ -269,20 +291,16 @@ namespace Miningcore.Payments
                         logger.Error(ex);
                     }
 
-                    await Task.Delay(interval, cts.Token);
+                    await Task.Delay(interval, ct);
                 }
-            });
+
+                logger.Info(() => "Offline");
+            }
+
+            finally
+            {
+                disposables.Dispose();
+            }
         }
-
-        public void Stop()
-        {
-            logger.Info(() => "Stopping ..");
-
-            cts.Cancel();
-
-            logger.Info(() => "Stopped");
-        }
-
-        #endregion // API-Surface
     }
 }
