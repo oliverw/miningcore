@@ -207,7 +207,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        private StratumConnection AcceptConnection(Socket socket, StratumEndpoint endpoint, CancellationToken ct)
+        private StratumConnection AcceptConnection(Socket socket, StratumEndpoint endpoint)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
