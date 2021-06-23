@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Miningcore.Banning;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -61,7 +62,7 @@ namespace Miningcore.Stratum
         {
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                ignoredSocketErrors = new HashSet<int>
+                IgnoredSocketErrors = new HashSet<int>
                 {
                     (int) SocketError.ConnectionReset,
                     (int) SocketError.ConnectionAborted,
@@ -72,7 +73,7 @@ namespace Miningcore.Stratum
             else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 // see: http://www.virtsync.com/c-error-codes-include-errno
-                ignoredSocketErrors = new HashSet<int>
+                IgnoredSocketErrors = new HashSet<int>
                 {
                     104, // ECONNRESET
                     125, // ECANCELED
@@ -83,11 +84,11 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected record ConnectionContext(StratumConnection Connection, Task Task);
+        protected record ConnectionContext(StratumConnection Connection, Lazy<Task> Task);
         protected readonly Dictionary<string, ConnectionContext> connections = new();
         protected Task connectionsTask;
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new();
-        protected static readonly HashSet<int> ignoredSocketErrors;
+        protected static readonly HashSet<int> IgnoredSocketErrors;
         protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] {typeof(Stream), typeof(Encoding), typeof(int), typeof(bool)});
 
         protected readonly IComponentContext ctx;
@@ -99,7 +100,11 @@ namespace Miningcore.Stratum
 
         public async Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
         {
+            logger.LogInvoke();
+
             Contract.RequiresNonNull(endpoints, nameof(endpoints));
+
+            var hasLogged = false;
 
             // Setup sockets
             var sockets = endpoints.Select(port =>
@@ -117,8 +122,6 @@ namespace Miningcore.Stratum
 
                 return server;
             }).ToArray();
-
-            logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IpEndPoint.Address}:{x.IpEndPoint.Port}").ToArray())} online");
 
             // Setup accept tasks
             var acceptTasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
@@ -138,29 +141,51 @@ namespace Miningcore.Stratum
                             task = Task.WhenAny(acceptTasks);
                     }
 
+                    logger.Debug(() => "Awaiting accept tasks ...");
+
+                    if(!hasLogged)
+                    {
+                        logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IpEndPoint.Address}:{x.IpEndPoint.Port}").ToArray())} online");
+                        hasLogged = true;
+                    }
+
                     // wait for either a client connect to a socket or an existing connection to terminate
                     await task;
+
+                    logger.Debug(() => "Task(s) completed");
 
                     // check socket tasks for changes
                     for(var i = 0; i < acceptTasks.Length; i++)
                     {
                         var acceptTask = acceptTasks[i];
-                        var port = endpoints[i];
+                        var socket = acceptTask.Result;
+                        var endpoint = endpoints[i];
 
                         // skip running tasks
                         if(!(acceptTask.IsCompleted || acceptTask.IsFaulted || acceptTask.IsCanceled))
                             continue;
 
-                        if(acceptTask.IsCompletedSuccessfully && acceptTask.Result != null)
+                        logger.Debug(() => $"Found completed task {i}");
+
+                        if(acceptTask.IsCompletedSuccessfully)
                         {
-                            var connection = AcceptConnection(acceptTask.Result, port, ct);
-
-                            if(connection != null)
+                            try
                             {
-                                OnConnect(connection, port.IpEndPoint);
+                                var connection = AcceptConnection(socket, endpoint, ct);
 
-                                RegisterConnection(connection,
-                                    connection.RunAsync(ct, port, OnRequestAsync, OnConnectionComplete, OnConnectionError));
+                                if(connection != null)
+                                {
+                                    socket = null; // now owned by connection object
+                                    OnConnect(connection, endpoint.IpEndPoint);
+
+                                    RegisterConnection(connection,
+                                        ()=> connection.RunAsync(ct, endpoint, OnRequestAsync, OnConnectionComplete, OnConnectionError));
+                                }
+                            }
+
+                            finally
+                            {
+                                socket?.Close();
                             }
                         }
 
@@ -182,7 +207,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        private StratumConnection AcceptConnection(Socket socket, StratumEndpoint port, CancellationToken ct)
+        private StratumConnection AcceptConnection(Socket socket, StratumEndpoint endpoint, CancellationToken ct)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
@@ -190,7 +215,6 @@ namespace Miningcore.Stratum
             if(remoteEndpoint != null && banManager?.IsBanned(remoteEndpoint.Address) == true)
             {
                 logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
-                socket.Close();
                 return null;
             }
 
@@ -200,26 +224,26 @@ namespace Miningcore.Stratum
             // TLS cert loading
             X509Certificate2 cert = null;
 
-            if(port.PoolEndpoint.Tls)
+            if(endpoint.PoolEndpoint.Tls)
             {
-                if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
-                    cert = AddCert(port);
+                if(!certs.TryGetValue(endpoint.PoolEndpoint.TlsPfxFile, out cert))
+                    cert = AddCert(endpoint);
             }
 
             // create it but don't run it yet
             return new StratumConnection(logger, clock, connectionId, socket, cert);
         }
 
-        protected virtual void RegisterConnection(StratumConnection connection, Task task)
+        protected virtual void RegisterConnection(StratumConnection connection, Func<Task> taskFactory)
         {
             Contract.RequiresNonNull(connection, nameof(connection));
-            Contract.RequiresNonNull(task, nameof(task));
+            Contract.RequiresNonNull(taskFactory, nameof(taskFactory));
 
             logger.Debug(() => $"Registering connection {connection.ConnectionId}");
 
             lock(connections)
             {
-                connections[connection.ConnectionId] = new ConnectionContext(connection, task);
+                connections[connection.ConnectionId] = new ConnectionContext(connection, new Lazy<Task>(taskFactory));
 
                 BuildConnectionsTask();
             }
@@ -241,30 +265,31 @@ namespace Miningcore.Stratum
 
         protected void BuildConnectionsTask()
         {
-            var tasks = connections.Values;
-
             logger.Debug(() => "Building connection task");
 
-            connectionsTask = tasks.Any() ?
-                Task.WhenAny(connections.Values.Select(x => x.Task)) :
+            var contexts = connections.Values.ToArray();
+
+            connectionsTask = contexts.Any() ?
+                Task.WhenAny(contexts.Select(x => x.Task.Value)) :
                 null;
         }
 
         protected abstract void OnConnect(StratumConnection connection, IPEndPoint portItem1);
 
-        protected async Task OnRequestAsync(StratumConnection connection, JsonRpcRequest request, CancellationToken ct)
+        protected Task OnRequestAsync(StratumConnection connection, JsonRpcRequest request, CancellationToken ct)
         {
             // boot pre-connected clients
             if(banManager?.IsBanned(connection.RemoteEndpoint.Address) == true)
             {
                 logger.Info(() => $"[{connection.ConnectionId}] Disconnecting banned client @ {connection.RemoteEndpoint.Address}");
                 CloseConnection(connection);
-                return;
+
+                return Task.CompletedTask;
             }
 
             logger.Debug(() => $"[{connection.ConnectionId}] Dispatching request '{request.Method}' [{request.Id}]");
 
-            await OnRequestAsync(connection, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
+            return OnRequestAsync(connection, new Timestamped<JsonRpcRequest>(request, clock.Now), ct);
         }
 
         protected virtual void OnConnectionError(StratumConnection connection, Exception ex)
@@ -278,7 +303,7 @@ namespace Miningcore.Stratum
             switch(ex)
             {
                 case SocketException sockEx:
-                    if(!ignoredSocketErrors.Contains(sockEx.ErrorCode))
+                    if(!IgnoredSocketErrors.Contains(sockEx.ErrorCode))
                         logger.Error(() => $"[{connection.ConnectionId}] Connection error state: {ex}");
                     break;
 

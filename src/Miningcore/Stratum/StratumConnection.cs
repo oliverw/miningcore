@@ -107,7 +107,7 @@ namespace Miningcore.Stratum
             Action<StratumConnection> onCompleted,
             Action<StratumConnection, Exception> onError)
         {
-            logger.Debug(() => $"[{ConnectionId}] Starting");
+            logger.LogInvoke();
 
             PoolEndpoint = endpoint.IpEndPoint;
             RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
