@@ -78,15 +78,17 @@ namespace Miningcore.Stratum
                     125, // ECANCELED
                     103, // ECONNABORTED
                     110, // ETIMEDOUT
-                    32,  // EPIPE
+                    32, // EPIPE
                 };
             }
         }
 
-        protected readonly Dictionary<string, StratumConnection> clients = new();
+        protected record ConnectionContext(StratumConnection Connection, Task Task);
+        protected readonly Dictionary<string, ConnectionContext> connections = new();
+        protected Task connectionsTask;
         protected static readonly ConcurrentDictionary<string, X509Certificate2> certs = new();
         protected static readonly HashSet<int> ignoredSocketErrors;
-        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
+        protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] {typeof(Stream), typeof(Encoding), typeof(int), typeof(bool)});
 
         protected readonly IComponentContext ctx;
         protected readonly IMasterClock clock;
@@ -95,55 +97,75 @@ namespace Miningcore.Stratum
         protected IBanManager banManager;
         protected ILogger logger;
 
-        public async Task ServeStratum(CancellationToken ct, params (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint)[] stratumPorts)
+        public async Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
         {
-            Contract.RequiresNonNull(stratumPorts, nameof(stratumPorts));
+            Contract.RequiresNonNull(endpoints, nameof(endpoints));
 
             // Setup sockets
-            var sockets = stratumPorts.Select(port =>
+            var sockets = endpoints.Select(port =>
             {
                 // Setup socket
                 var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                 server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                server.Bind(port.IPEndPoint);
+                server.Bind(port.IpEndPoint);
                 server.Listen(512);
 
                 lock(ports)
                 {
-                    ports[port.IPEndPoint.Port] = server;
+                    ports[port.IpEndPoint.Port] = server;
                 }
 
                 return server;
             }).ToArray();
 
-            logger.Info(() => $"Stratum ports {string.Join(", ", stratumPorts.Select(x => $"{x.IPEndPoint.Address}:{x.IPEndPoint.Port}").ToArray())} online");
+            logger.Info(() => $"Stratum ports {string.Join(", ", endpoints.Select(x => $"{x.IpEndPoint.Address}:{x.IpEndPoint.Port}").ToArray())} online");
 
             // Setup accept tasks
-            var tasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
+            var acceptTasks = sockets.Select(socket => socket.AcceptAsync()).ToArray();
 
             while(!ct.IsCancellationRequested)
             {
                 try
                 {
-                    // Wait incoming connection
-                    await Task.WhenAny(tasks);
+                    // build compound task
+                    Task task;
 
-                    // check tasks
-                    for(var i = 0; i < tasks.Length; i++)
+                    lock(connections)
                     {
-                        var task = tasks[i];
-                        var port = stratumPorts[i];
+                        if(connectionsTask != null)
+                            task = Task.WhenAny(Task.WhenAny(acceptTasks), connectionsTask);
+                        else
+                            task = Task.WhenAny(acceptTasks);
+                    }
+
+                    // wait for either a client connect to a socket or an existing connection to terminate
+                    await task;
+
+                    // check socket tasks for changes
+                    for(var i = 0; i < acceptTasks.Length; i++)
+                    {
+                        var acceptTask = acceptTasks[i];
+                        var port = endpoints[i];
 
                         // skip running tasks
-                        if(!(task.IsCompleted || task.IsFaulted || task.IsCanceled))
+                        if(!(acceptTask.IsCompleted || acceptTask.IsFaulted || acceptTask.IsCanceled))
                             continue;
 
-                        // accept connection if successful
-                        if(task.IsCompletedSuccessfully)
-                            AcceptConnection(task.Result, port, ct);
+                        if(acceptTask.IsCompletedSuccessfully && acceptTask.Result != null)
+                        {
+                            var connection = AcceptConnection(acceptTask.Result, port, ct);
+
+                            if(connection != null)
+                            {
+                                OnConnect(connection, port.IpEndPoint);
+
+                                RegisterConnection(connection,
+                                    connection.RunAsync(ct, port, OnRequestAsync, OnConnectionComplete, OnConnectionError));
+                            }
+                        }
 
                         // Refresh task
-                        tasks[i] = sockets[i].AcceptAsync();
+                        acceptTasks[i] = sockets[i].AcceptAsync();
                     }
                 }
 
@@ -160,7 +182,7 @@ namespace Miningcore.Stratum
             }
         }
 
-        private void AcceptConnection(Socket socket, (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port, CancellationToken ct)
+        private StratumConnection AcceptConnection(Socket socket, StratumEndpoint port, CancellationToken ct)
         {
             var remoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
@@ -169,9 +191,10 @@ namespace Miningcore.Stratum
             {
                 logger.Debug(() => $"Disconnecting banned ip {remoteEndpoint.Address}");
                 socket.Close();
-                return;
+                return null;
             }
 
+            // unique connection id
             var connectionId = CorrelationIdGenerator.GetNextId();
 
             // TLS cert loading
@@ -183,36 +206,20 @@ namespace Miningcore.Stratum
                     cert = AddCert(port);
             }
 
-            // setup client
-            var connection = new StratumConnection(logger, clock, connectionId);
-
-            RegisterConnection(connection, connectionId);
-            OnConnect(connection, port.IPEndPoint);
-            connection.DispatchAsync(socket, ct, port, cert, OnRequestAsync, OnConnectionComplete, OnConnectionError);
+            // create it but don't run it yet
+            return new StratumConnection(logger, clock, connectionId, socket, cert);
         }
 
-        public void StopListeners()
-        {
-            lock(ports)
-            {
-                var portValues = ports.Values.ToArray();
-
-                for(int i = 0; i < portValues.Length; i++)
-                {
-                    var socket = portValues[i];
-
-                    socket.Close();
-                }
-            }
-        }
-
-        protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
+        protected virtual void RegisterConnection(StratumConnection connection, Task task)
         {
             Contract.RequiresNonNull(connection, nameof(connection));
+            Contract.RequiresNonNull(task, nameof(task));
 
-            lock(clients)
+            lock(connections)
             {
-                clients[connectionId] = connection;
+                connections[connection.ConnectionId] = new ConnectionContext(connection, task);
+
+                BuildConnectionsTask();
             }
         }
 
@@ -220,15 +227,21 @@ namespace Miningcore.Stratum
         {
             Contract.RequiresNonNull(connection, nameof(connection));
 
-            var subscriptionId = connection.ConnectionId;
-
-            if(!string.IsNullOrEmpty(subscriptionId))
+            lock(connections)
             {
-                lock(clients)
-                {
-                    clients.Remove(subscriptionId);
-                }
+                connections.Remove(connection.ConnectionId);
+
+                BuildConnectionsTask();
             }
+        }
+
+        protected void BuildConnectionsTask()
+        {
+            var tasks = connections.Values;
+
+            connectionsTask = tasks.Any() ?
+                Task.WhenAny(connections.Values.Select(x => x.Task)) :
+                null;
         }
 
         protected abstract void OnConnect(StratumConnection connection, IPEndPoint portItem1);
@@ -272,6 +285,7 @@ namespace Miningcore.Stratum
                         logger.Info(() => $"[{connection.ConnectionId}] Banning client for sending junk");
                         banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
+
                     break;
 
                 case AuthenticationException authEx:
@@ -283,6 +297,7 @@ namespace Miningcore.Stratum
                         logger.Info(() => $"[{connection.ConnectionId}] Banning client for failing SSL handshake");
                         banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                     }
+
                     break;
 
                 case IOException ioEx:
@@ -297,6 +312,7 @@ namespace Miningcore.Stratum
                             banManager?.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromMinutes(3));
                         }
                     }
+
                     break;
 
                 case ObjectDisposedException odEx:
@@ -335,36 +351,36 @@ namespace Miningcore.Stratum
             UnregisterConnection(connection);
         }
 
-        private X509Certificate2 AddCert((IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) port)
+        private X509Certificate2 AddCert(StratumEndpoint endpoint)
         {
             try
             {
-                var tlsCert = new X509Certificate2(port.PoolEndpoint.TlsPfxFile);
-                certs.TryAdd(port.PoolEndpoint.TlsPfxFile, tlsCert);
+                var tlsCert = new X509Certificate2(endpoint.PoolEndpoint.TlsPfxFile);
+                certs.TryAdd(endpoint.PoolEndpoint.TlsPfxFile, tlsCert);
                 return tlsCert;
             }
 
             catch(Exception ex)
             {
-                logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
+                logger.Info(() => $"Failed to load TLS certificate {endpoint.PoolEndpoint.TlsPfxFile}: {ex.Message}");
                 throw;
             }
         }
 
         protected void ForEachConnection(Action<StratumConnection> action)
         {
-            StratumConnection[] tmp;
+            ConnectionContext[] tmp;
 
-            lock(clients)
+            lock(connections)
             {
-                tmp = clients.Values.ToArray();
+                tmp = connections.Values.ToArray();
             }
 
-            foreach(var client in tmp)
+            foreach(var (connection, _) in tmp)
             {
                 try
                 {
-                    action(client);
+                    action(connection);
                 }
 
                 catch(Exception ex)
@@ -376,14 +392,14 @@ namespace Miningcore.Stratum
 
         protected IEnumerable<Task> ForEachConnection(Func<StratumConnection, Task> func)
         {
-            StratumConnection[] tmp;
+            ConnectionContext[] tmp;
 
-            lock(clients)
+            lock(connections)
             {
-                tmp = clients.Values.ToArray();
+                tmp = connections.Values.ToArray();
             }
 
-            return tmp.Select(func);
+            return tmp.Select(x => func(x.Connection));
         }
 
         protected abstract Task OnRequestAsync(StratumConnection connection,

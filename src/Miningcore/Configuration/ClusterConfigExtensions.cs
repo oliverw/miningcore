@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 using Autofac;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Crypto;
@@ -204,5 +205,18 @@ namespace Miningcore.Configuration
         /// </summary>
         [JsonIgnore]
         public CoinTemplate Template { get; set; }
+    }
+
+    public partial class PoolEndpoint
+    {
+        public override string ToString()
+        {
+            var sb = new StringBuilder(Name);
+
+            if(Tls)
+                sb.Append(" | TLS");
+
+            return sb.ToString();
+        }
     }
 }

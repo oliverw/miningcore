@@ -438,7 +438,7 @@ namespace Miningcore.Configuration
         public string[] ProxyAddresses { get; set; }
     }
 
-    public class PoolEndpoint
+    public partial class PoolEndpoint
     {
         public string ListenAddress { get; set; }
         public string Name { get; set; }
