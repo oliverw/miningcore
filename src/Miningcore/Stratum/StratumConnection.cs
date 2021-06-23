@@ -107,6 +107,8 @@ namespace Miningcore.Stratum
             Action<StratumConnection> onCompleted,
             Action<StratumConnection, Exception> onError)
         {
+            logger.Debug(() => $"[{ConnectionId}] Starting");
+
             PoolEndpoint = endpoint.IpEndPoint;
             RemoteEndpoint = (IPEndPoint) socket.RemoteEndPoint;
 
@@ -150,6 +152,8 @@ namespace Miningcore.Stratum
                     };
 
                     await Task.WhenAny(tasks);
+
+                    logger.Info(() => $"[{ConnectionId}] completed");
 
                     // We are done with this client, make sure all tasks complete
                     await receivePipe.Reader.CompleteAsync();

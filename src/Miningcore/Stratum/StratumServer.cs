@@ -215,6 +215,8 @@ namespace Miningcore.Stratum
             Contract.RequiresNonNull(connection, nameof(connection));
             Contract.RequiresNonNull(task, nameof(task));
 
+            logger.Debug(() => $"Registering connection {connection.ConnectionId}");
+
             lock(connections)
             {
                 connections[connection.ConnectionId] = new ConnectionContext(connection, task);
@@ -227,6 +229,8 @@ namespace Miningcore.Stratum
         {
             Contract.RequiresNonNull(connection, nameof(connection));
 
+            logger.Debug(() => $"Unregistering connection {connection.ConnectionId}");
+
             lock(connections)
             {
                 connections.Remove(connection.ConnectionId);
@@ -238,6 +242,8 @@ namespace Miningcore.Stratum
         protected void BuildConnectionsTask()
         {
             var tasks = connections.Values;
+
+            logger.Debug(() => "Building connection task");
 
             connectionsTask = tasks.Any() ?
                 Task.WhenAny(connections.Values.Select(x => x.Task)) :
