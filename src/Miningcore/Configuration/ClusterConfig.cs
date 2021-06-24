@@ -666,10 +666,25 @@ namespace Miningcore.Configuration
 
     public partial class Statistics
     {
-        public int StatsInterval { get; set; }
-        public int HashrateCalculationWindow { get; set; }
-        public int StatsCleanupInterval { get; set; }
-        public int StatsDbCleanupHistory { get; set; }
+        /// <summary>
+        /// Statistics update interval in seconds
+        /// </summary>
+        public int? UpdateInterval { get; set; }
+
+        /// <summary>
+        /// Time window of shares to take into account when calculating - in minutes
+        /// </summary>
+        public int? HashrateCalculationWindow { get; set; }
+
+        /// <summary>
+        /// Stats cleanup interval in hours
+        /// </summary>
+        public int? GcInterval { get; set; }
+
+        /// <summary>
+        /// Time window in days of stats to discard when cleaning up periodically
+        /// </summary>
+        public int? CleanupDays { get; set; }
 
     }
     public class NicehashClusterConfig
