@@ -55,10 +55,10 @@ namespace Miningcore.Mining
             this.statsRepo = statsRepo;
             this.clusterConfig = clusterConfig;
 
-            updateInterval = TimeSpan.FromSeconds(clusterConfig.Statistics?.StatsInterval ?? 60);
-            gcInterval = TimeSpan.FromHours(clusterConfig.Statistics?.StatsCleanupInterval ?? 96);
+            updateInterval = TimeSpan.FromSeconds(clusterConfig.Statistics?.UpdateInterval ?? 120);
+            gcInterval = TimeSpan.FromHours(clusterConfig.Statistics?.GcInterval ?? 4);
             hashrateCalculationWindow = TimeSpan.FromMinutes(clusterConfig.Statistics?.HashrateCalculationWindow ?? 10);
-            historyCleanupOffset  = TimeSpan.FromDays(clusterConfig.Statistics?.StatsDbCleanupHistory ?? 180);
+            cleanupDays  = TimeSpan.FromDays(clusterConfig.Statistics?.CleanupDays ?? 180);
 
             BuildFaultHandlingPolicy();
         }
@@ -73,7 +73,7 @@ namespace Miningcore.Mining
         private readonly CompositeDisposable disposables = new();
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
         private readonly TimeSpan updateInterval;
-        private readonly TimeSpan historyCleanupOffset;
+        private readonly TimeSpan cleanupDays;
         private readonly TimeSpan gcInterval;
         private readonly TimeSpan hashrateCalculationWindow;
         private const int RetryCount = 4;
@@ -297,7 +297,7 @@ namespace Miningcore.Mining
 
             await cf.Run(async con =>
             {
-                var cutOff = clock.Now.Add(-historyCleanupOffset);
+                var cutOff = clock.Now.Add(-cleanupDays);
 
                 var rowCount = await statsRepo.DeletePoolStatsBeforeAsync(con, cutOff);
                 if(rowCount > 0)
