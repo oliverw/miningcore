@@ -247,6 +247,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var entitiesByDate = entities
                 .GroupBy(x => x.Created);
 
+logger.Warn(()=> string.Join(", ", entitiesByDate.Select(x=> x.Key)));
+
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
