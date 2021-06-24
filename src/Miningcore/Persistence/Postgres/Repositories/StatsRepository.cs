@@ -29,6 +29,7 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using Newtonsoft.Json;
 using NLog;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
@@ -247,7 +248,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var entitiesByDate = entities
                 .GroupBy(x => x.Created);
 
-logger.Warn(()=> string.Join(", ", entitiesByDate.Select(x=> x.Key)));
+logger.Warn(JsonConvert.SerializeObject(entitiesByDate));
 
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
