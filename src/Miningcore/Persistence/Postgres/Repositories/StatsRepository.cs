@@ -220,12 +220,12 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenFiveMinutesAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutesAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
             const string query = "SELECT date_trunc('hour', created) AS created, " +
-                                 "(extract(minute FROM created)::int / 5) AS created_partition, " +
+                                 "(extract(minute FROM created)::int / 3) AS created_partition, " +
                                  "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
                                  "FROM minerstats " +
                                  "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
@@ -241,7 +241,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             // adjust creation time by partition
             foreach(var entity in entities)
-                entity.Created = entity.Created.AddMinutes(5 * entity.CreatedPartition);
+                entity.Created = entity.Created.AddMinutes(3 * entity.CreatedPartition);
 
             // group
             var entitiesByDate = entities

@@ -548,7 +548,7 @@ namespace Miningcore.Api.Controllers
 
                     start = end.AddHours(-1);
 
-                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenFiveMinutesAsync(con, pool.Id, address, start, end));
+                    stats = await cf.Run(con => statsRepo.GetMinerPerformanceBetweenThreeMinutesAsync(con, pool.Id, address, start, end));
                     break;
 
                 case SampleRange.Day:
