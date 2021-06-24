@@ -224,12 +224,13 @@ namespace Miningcore.Persistence.Postgres.Repositories
         {
             logger.LogInvoke(new[] { poolId });
 
-            const string query = "SELECT date_trunc('hour', created) AS created, AVG(hashrate) AS hashrate," +
+            const string query = "SELECT date_trunc('hour', created) AS created, " +
                                  "(extract(minute FROM created)::int / 5) AS min5_slot, " +
-                                 "worker, AVG(sharespersecond) AS sharespersecond FROM minerstats " +
+                                 "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
+                                 "FROM minerstats " +
                                  "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
                                  "GROUP BY 1, 2, worker " +
-                                 "ORDER BY 1, 2, worker;";
+                                 "ORDER BY 1, 2, worker";
 
             var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
                 .ToArray();
