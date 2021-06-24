@@ -225,7 +225,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             logger.LogInvoke(new[] { poolId });
 
             const string query = "SELECT date_trunc('hour', created) AS created, " +
-                                 "(extract(minute FROM created)::int / 5) AS min5_slot, " +
+                                 "(extract(minute FROM created)::int / 5) AS created_partition, " +
                                  "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
                                  "FROM minerstats " +
                                  "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
@@ -238,6 +238,10 @@ namespace Miningcore.Persistence.Postgres.Repositories
             // ensure worker is not null
             foreach(var entity in entities)
                 entity.Worker ??= string.Empty;
+
+            // adjust creation time by partition
+            foreach(var entity in entities)
+                entity.Created = entity.Created.AddMinutes(5 * entity.CreatedPartition);
 
             // group
             var entitiesByDate = entities

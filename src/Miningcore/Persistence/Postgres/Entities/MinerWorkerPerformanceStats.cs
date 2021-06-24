@@ -19,6 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using Newtonsoft.Json;
 
 namespace Miningcore.Persistence.Postgres.Entities
 {
@@ -31,5 +32,8 @@ namespace Miningcore.Persistence.Postgres.Entities
         public double Hashrate { get; set; }
         public double SharesPerSecond { get; set; }
         public DateTime Created { get; set; }
+
+        [JsonProperty("created_partition")]
+        public int CreatedPartition { get; set; }
     }
 }
