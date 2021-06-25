@@ -37,7 +37,8 @@ namespace Miningcore.Persistence.Repositories
         Task<MinerStats> GetMinerStatsAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner);
         Task<MinerWorkerHashrate[]> GetPoolMinerWorkerHashratesAsync(IDbConnection con, string poolId);
         Task<MinerWorkerPerformanceStats[]> PagePoolMinersByHashrateAsync(IDbConnection con, string poolId, DateTime from, int page, int pageSize);
-        Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutesAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
+        Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
+        Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
         Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
         Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenDailyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end);
         Task<int> DeletePoolStatsBeforeAsync(IDbConnection con, DateTime date);

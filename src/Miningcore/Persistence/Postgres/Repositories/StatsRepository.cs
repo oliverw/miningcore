@@ -221,7 +221,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
-        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutesAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
 
@@ -249,12 +249,45 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var entitiesByDate = entities
                 .GroupBy(x => x.Created);
 
-logger.Warn(JsonConvert.SerializeObject(entitiesByDate));
-
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
                 Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                {
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
+                })
+            })
+            .ToArray();
+
+            return tmp;
+        }
+
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT worker, date_trunc('minute', created) AS created, AVG(hashrate) AS hashrate, " +
+                                 "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
+                                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
+                                 "GROUP BY date_trunc('minute', created), worker " +
+                                 "ORDER BY created, worker;";
+
+            var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+                .ToArray();
+
+            // ensure worker is not null
+            foreach(var entity in entities)
+                entity.Worker ??= string.Empty;
+
+            // group
+            var entitiesByDate = entities
+                .GroupBy(x => x.Created);
+
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond
