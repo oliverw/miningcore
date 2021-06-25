@@ -33,7 +33,6 @@ namespace Miningcore.Persistence.Postgres.Entities
         public double SharesPerSecond { get; set; }
         public DateTime Created { get; set; }
 
-        [JsonProperty("created_partition")]
-        public int CreatedPartition { get; set; }
+        public int Partition { get; set; }
     }
 }

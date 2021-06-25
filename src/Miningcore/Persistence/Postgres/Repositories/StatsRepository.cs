@@ -226,7 +226,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             logger.LogInvoke(new[] { poolId });
 
             const string query = "SELECT date_trunc('hour', created) AS created, " +
-                                 "(extract(minute FROM created)::int / 3) AS created_partition, " +
+                                 "(extract(minute FROM created)::int / 3) AS partition, " +
                                  "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
                                  "FROM minerstats " +
                                  "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
@@ -236,13 +236,14 @@ namespace Miningcore.Persistence.Postgres.Repositories
             var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
                 .ToArray();
 
-            // ensure worker is not null
             foreach(var entity in entities)
+            {
+                // ensure worker is not null
                 entity.Worker ??= string.Empty;
 
-            // adjust creation time by partition
-            foreach(var entity in entities)
-                entity.Created = entity.Created.AddMinutes(3 * entity.CreatedPartition);
+                // adjust creation time by partition
+                entity.Created = entity.Created.AddMinutes(3 * entity.Partition);
+            }
 
             // group
             var entitiesByDate = entities
@@ -253,7 +254,7 @@ logger.Warn(JsonConvert.SerializeObject(entitiesByDate));
             var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
             {
                 Created = x.Key,
-                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
+                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
                 {
                     Hashrate = y.Hashrate,
                     SharesPerSecond = y.SharesPerSecond
