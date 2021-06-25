@@ -325,7 +325,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             switch(chainType)
             {
-                case GethChainType.Mainnet:
+                case GethChainType.Ethereum:
                     if(height >= EthereumConstants.ConstantinopleHardForkHeight)
                         return EthereumConstants.ConstantinopleReward;
 
@@ -336,6 +336,9 @@ namespace Miningcore.Blockchain.Ethereum
 
                 case GethChainType.Ropsten:
                     return EthereumConstants.ByzantiumBlockReward;
+
+                case GethChainType.Callisto:
+                    return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);
 
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");
@@ -393,7 +396,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             // convert network
             var netVersion = results[0].Response.ToObject<string>();
-            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Mainnet";
+            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
             EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
         }
