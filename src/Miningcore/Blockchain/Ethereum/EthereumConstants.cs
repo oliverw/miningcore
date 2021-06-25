@@ -60,6 +60,7 @@ namespace Miningcore.Blockchain.Ethereum
     public enum GethChainType
     {
         Ethereum,
+        Ropsten,
         Callisto,
 
         Unknown = -1,

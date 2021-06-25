@@ -342,6 +342,9 @@ namespace Miningcore.Blockchain.Ethereum
                 case GethChainType.Callisto:
                     return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);
 
+                case GethChainType.Callisto:
+                    return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);
+
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");
             }
