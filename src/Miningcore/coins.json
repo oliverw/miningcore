@@ -1451,8 +1451,8 @@
         "symbol": "ETH",
         "family": "ethereum",
         "explorerBlockLinks": {
-            "block": "https://etherscan.io/block/$hash$",
-            "uncle": "https://etherscan.io/uncle/$hash$"
+            "block": "https://etherscan.io/block/$height$",
+            "uncle": "https://etherscan.io/uncle/$height$"
         },
         "explorerTxLink": "https://etherscan.io/tx/{0}",
         "explorerAccountLink": "https://etherscan.io/address/{0}"
@@ -1462,8 +1462,8 @@
         "symbol": "CLO",
         "family": "ethereum",
         "explorerBlockLinks": {
-            "block": "https://explorer.callisto.network/blocks/$hash$",
-            "uncle": "https://explorer.callisto.network/blocks/$hash$"
+            "block": "https://explorer.callisto.network/blocks/$height$",
+            "uncle": "https://explorer.callisto.network/blocks/$height$"
         },
         "explorerTxLink": "https://explorer.callisto.network/tx/{0}",
         "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
