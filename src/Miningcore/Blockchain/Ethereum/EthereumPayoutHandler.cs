@@ -325,7 +325,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             switch(chainType)
             {
-                case GethChainType.Mainnet:
+                case GethChainType.Ethereum:
                     if(height >= EthereumConstants.ConstantinopleHardForkHeight)
                         return EthereumConstants.ConstantinopleReward;
 
@@ -393,7 +393,7 @@ namespace Miningcore.Blockchain.Ethereum
 
             // convert network
             var netVersion = results[0].Response.ToObject<string>();
-            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Mainnet";
+            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
             EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
         }
