@@ -27,6 +27,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
+// ReSharper disable InconsistentNaming
+
 namespace Miningcore.Configuration
 {
     #region Coin Definitions
@@ -358,9 +360,11 @@ namespace Miningcore.Configuration
 
     public enum PayoutScheme
     {
-        // ReSharper disable once InconsistentNaming
         PPLNS = 1,
-        Solo
+        PROP = 2,
+        SOLO = 3,
+        PPS = 4,
+        PPBS = 5,
     }
 
     public partial class ClusterLoggingConfig

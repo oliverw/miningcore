@@ -38,6 +38,9 @@ namespace Miningcore.Persistence.Repositories
         Task<long> CountSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
         Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before);
 
+        Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner);
+        Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner);
+
         Task<long> CountSharesBetweenCreatedAsync(IDbConnection con, string poolId, string miner, DateTime? start, DateTime? end);
         Task<double?> GetAccumulatedShareDifficultyBetweenCreatedAsync(IDbConnection con, string poolId, DateTime start, DateTime end);
         Task<MinerWorkerHashes[]> GetAccumulatedShareDifficultyTotalAsync(IDbConnection con, string poolId);

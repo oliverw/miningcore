@@ -60,7 +60,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
+        public Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
         {
             logger.LogInvoke();
 
@@ -72,26 +72,28 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "COPY shares (poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-            await using(var writer = pgCon.BeginBinaryImport(query))
+            using(var writer = pgCon.BeginBinaryImport(query))
             {
                 foreach(var share in shares)
                 {
-                    await writer.StartRowAsync();
+                    writer.StartRow();
 
-                    await writer.WriteAsync(share.PoolId);
-                    await writer.WriteAsync((long) share.BlockHeight, NpgsqlDbType.Bigint);
-                    await writer.WriteAsync(share.Difficulty, NpgsqlDbType.Double);
-                    await writer.WriteAsync(share.NetworkDifficulty, NpgsqlDbType.Double);
-                    await writer.WriteAsync(share.Miner);
-                    await writer.WriteAsync(share.Worker);
-                    await writer.WriteAsync(share.UserAgent);
-                    await writer.WriteAsync(share.IpAddress);
-                    await writer.WriteAsync(share.Source);
-                    await writer.WriteAsync(share.Created, NpgsqlDbType.Timestamp);
+                    writer.Write(share.PoolId);
+                    writer.Write((long) share.BlockHeight, NpgsqlDbType.Bigint);
+                    writer.Write(share.Difficulty, NpgsqlDbType.Double);
+                    writer.Write(share.NetworkDifficulty, NpgsqlDbType.Double);
+                    writer.Write(share.Miner);
+                    writer.Write(share.Worker);
+                    writer.Write(share.UserAgent);
+                    writer.Write(share.IpAddress);
+                    writer.Write(share.Source);
+                    writer.Write(share.Created, NpgsqlDbType.Timestamp);
                 }
 
-                await writer.CompleteAsync();
+                writer.Complete();
             }
+
+            return Task.FromResult(true);
         }
 
         public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
@@ -138,6 +140,24 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
             return con.QuerySingleAsync<long>(query, new { poolId, before }, tx);
+        }
+
+        public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND miner = @miner";
+
+            return con.QuerySingleAsync<long>(query, new { poolId, miner}, tx);
+        }
+
+        public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "DELETE FROM shares WHERE poolid = @poolId AND miner = @miner";
+
+            await con.ExecuteAsync(query, new { poolId, miner}, tx);
         }
 
         public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)

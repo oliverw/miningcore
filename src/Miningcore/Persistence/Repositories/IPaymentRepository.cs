@@ -29,7 +29,7 @@ namespace Miningcore.Persistence.Repositories
     public interface IPaymentRepository
     {
         Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment);
-        Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> payments);
+        Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> shares);
 
         Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
         Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
