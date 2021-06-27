@@ -64,60 +64,60 @@
     },
     "clusterName": "eu1",
     "pools": [
-        {
-            "id": "eth1",
-            "enabled": true,
-            "coin": "ethereum",
+      {
+        "id": "eth1",
+        "enabled": true,
+        "coin": "ethereum",
+        "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
+        "rewardRecipients": [
+          {
+            "type": "op",
             "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
-            "rewardRecipients": [
-                {
-                    "type": "op",
-                    "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
-                    "percentage": 1.0
-                }
-            ],
-            "blockRefreshInterval": 120,
-            "clientConnectionTimeout": 600,
-            "banning": {
-                "enabled": true,
-                "time": 600,
-                "invalidPercent": 50,
-                "checkThreshold": 50
-            },
-            "ports": {
-                "4073": {
-                    "name": "GPU-SMALL",
-                    "listenAddress": "*",
-                    "difficulty": 0.1,
-                    "varDiff": {
-                        "minDiff": 0.1,
-                        "maxDiff": null,
-                        "targetTime": 15,
-                        "retargetTime": 90,
-                        "variancePercent": 30
-                    }
-                }
-            },
-			"chainTypeOverride": "Mainnet",
-            "dagDir": "<Your directory for the dag file>",
-            "daemons": [
-                {
-                    "host": "127.0.0.1",
-                    "port": 8545,
-                    "user": "",
-                    "password": ""
-                }
-            ],
-            "paymentProcessing": {
-                "enabled": true,
-                "minimumPayment": 1,
-                "payoutScheme": "PPLNS",
-                "payoutSchemeConfig": {
-                    "factor": 0.5
-                },
-                "keepUncles": false,
-                "keepTransactionFees": false
+            "percentage": 1.0
+          }
+        ],
+        "blockRefreshInterval": 120,
+        "clientConnectionTimeout": 600,
+        "banning": {
+          "enabled": true,
+          "time": 600,
+          "invalidPercent": 50,
+          "checkThreshold": 50
+        },
+        "ports": {
+          "4073": {
+            "name": "GPU-SMALL",
+            "listenAddress": "*",
+            "difficulty": 0.1,
+            "varDiff": {
+              "minDiff": 0.1,
+              "maxDiff": null,
+              "targetTime": 15,
+              "retargetTime": 90,
+              "variancePercent": 30
             }
+          }
+        },
+        "chainTypeOverride": "Ethereum",
+        "dagDir": "<Your directory for the dag file>",
+        "daemons": [
+          {
+            "host": "127.0.0.1",
+            "port": 8545,
+            "user": "",
+            "password": ""
+          }
+        ],
+        "paymentProcessing": {
+          "enabled": true,
+          "minimumPayment": 1,
+          "payoutScheme": "PPLNS",
+          "payoutSchemeConfig": {
+            "factor": 0.5
+          },
+          "keepUncles": false,
+          "keepTransactionFees": false
         }
+      }
     ]
 }
