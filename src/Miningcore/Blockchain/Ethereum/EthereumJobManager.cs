@@ -263,6 +263,7 @@ namespace Miningcore.Blockchain.Ethereum
                 var commands = new[]
                 {
                     new DaemonCmd(EC.GetPeerCount),
+                    new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true })
                 };
 
                 var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
@@ -278,8 +279,21 @@ namespace Miningcore.Blockchain.Ethereum
 
                 // extract results
                 var peerCount = results[0].Response.ToObject<string>().IntegralFromHex<int>();
+                var latestBlockInfo = results[1].Response.ToObject<Block>();
 
-                BlockchainStats.NetworkHashrate = 0; // TODO
+                var latestBlockHeight = latestBlockInfo.Height.Value;
+                var latestBlockTimestamp = latestBlockInfo.Timestamp;
+                var latestBlockDifficulty = latestBlockInfo.Difficulty.IntegralFromHex<ulong>();
+
+                var sampleSize = (ulong) 300;
+                var sampleBlockNumber = latestBlockHeight - sampleSize;
+                var sampleBlockResults = await daemon.ExecuteCmdAllAsync<Block>(logger, EC.GetBlockByNumber, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
+                var sampleBlockTimestamp = sampleBlockResults.First(x => x.Error == null && x.Response?.Height != null).Response.Timestamp;
+
+                var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
+                var networkHashrate = (double) (latestBlockDifficulty / blockTime);
+
+                BlockchainStats.NetworkHashrate = blockTime > 0 ? networkHashrate : 0;
                 BlockchainStats.ConnectedPeers = peerCount;
             }
 
