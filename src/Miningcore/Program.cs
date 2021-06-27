@@ -288,8 +288,6 @@ namespace Miningcore
                 // Pool stats
                 services.AddHostedService<StatsRecorder>();
             }
-
-            MonitorGc();
         }
 
         private static IHost host;
@@ -331,6 +329,8 @@ namespace Miningcore
                 await RecoverSharesAsync(shareRecoveryOption.Value());
                 return;
             }
+
+            MonitorGc(ct);
 
             if(clusterConfig.InstanceId.HasValue)
                 logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
@@ -517,33 +517,43 @@ namespace Miningcore
                 throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
         }
 
-        private static void MonitorGc()
+        private static void MonitorGc(CancellationToken ct)
         {
             var thread = new Thread(() =>
             {
                 var sw = new Stopwatch();
 
-                while(true)
+                while(!ct.IsCancellationRequested)
                 {
-                    var s = GC.WaitForFullGCApproach();
+                    var s = GC.WaitForFullGCApproach(1000);
+
+                    if(s == GCNotificationStatus.Timeout)
+                        continue;
+
                     if(s == GCNotificationStatus.Succeeded)
                     {
                         logger.Info(() => "FullGC soon");
                         sw.Start();
-                    }
 
-                    s = GC.WaitForFullGCComplete();
+                        while(!ct.IsCancellationRequested)
+                        {
+                            s = GC.WaitForFullGCComplete(1000);
 
-                    if(s == GCNotificationStatus.Succeeded)
-                    {
-                        logger.Info(() => "FullGC completed");
+                            if(s == GCNotificationStatus.Timeout)
+                                continue;
 
-                        sw.Stop();
+                            if(s == GCNotificationStatus.Succeeded)
+                            {
+                                logger.Info(() => "FullGC completed");
 
-                        if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
-                            gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
+                                sw.Stop();
 
-                        sw.Reset();
+                                if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
+                                    gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
+
+                                sw.Reset();
+                            }
+                        }
                     }
                 }
             });
