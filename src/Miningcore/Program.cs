@@ -179,7 +179,7 @@ namespace Miningcore
                         {
                             options.Listen(address, port, listenOptions =>
                             {
-                                if(clusterConfig.Api.SSLConfig?.Enabled == true)
+                                if(clusterConfig.Api?.SSLConfig?.Enabled == true)
                                     listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
                             });
                         })
