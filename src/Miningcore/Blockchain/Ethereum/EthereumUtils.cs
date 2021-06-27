@@ -25,8 +25,8 @@ namespace Miningcore.Blockchain.Ethereum
                chainType = GethChainType.Unknown;
             }
 
-            if(chainType == GethChainType.Mainnet)
-                chainType = GethChainType.Mainnet;
+            if(chainType == GethChainType.Ethereum)
+                chainType = GethChainType.Ethereum;
         }
     }
 }

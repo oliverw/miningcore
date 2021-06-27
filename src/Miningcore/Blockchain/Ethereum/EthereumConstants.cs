@@ -50,7 +50,7 @@ namespace Miningcore.Blockchain.Ethereum
 
     public enum GethChainType
     {
-        Mainnet,
+        Ethereum,
         Ropsten,
 
         Unknown = -1,

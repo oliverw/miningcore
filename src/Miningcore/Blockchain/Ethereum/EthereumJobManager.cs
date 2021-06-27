@@ -537,7 +537,7 @@ namespace Miningcore.Blockchain.Ethereum
             var netVersion = results[0].Response.ToObject<string>();
             var accounts = results[1].Response.ToObject<string[]>();
             var coinbase = results[2].Response.ToObject<string>();
-            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Mainnet";
+            var gethChain = extraPoolConfig?.ChainTypeOverride ?? "Ethereum";
 
             EthereumUtils.DetectNetworkAndChain(netVersion, gethChain, out networkType, out chainType);
 
@@ -593,7 +593,7 @@ namespace Miningcore.Blockchain.Ethereum
         {
             // Donation to MiningCore development
             if(networkType == EthereumNetworkType.Mainnet &&
-                chainType == GethChainType.Mainnet &&
+                chainType == GethChainType.Ethereum &&
                 DevDonation.Addresses.TryGetValue(poolConfig.Template.As<CoinTemplate>().Symbol, out var address))
             {
                 poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
