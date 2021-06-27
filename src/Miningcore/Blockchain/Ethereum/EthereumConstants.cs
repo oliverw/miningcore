@@ -40,10 +40,19 @@ namespace Miningcore.Blockchain.Ethereum
         public const int MinConfimations = 16;
     }
 
+    // Callisto Monetary Policy
+    // https://github.com/EthereumCommonwealth/Roadmap/issues/56
+    public class CallistoConstants
+    {
+        public const decimal BaseRewardInitial = 77.76m;
+        public const decimal TreasuryPercent = 50m;
+    }
+
     public enum EthereumNetworkType
     {
         Mainnet = 1,
         Ropsten = 3,
+        Callisto = 820,
 
         Unknown = -1,
     }
@@ -51,7 +60,7 @@ namespace Miningcore.Blockchain.Ethereum
     public enum GethChainType
     {
         Ethereum,
-        Ropsten,
+        Callisto,
 
         Unknown = -1,
     }

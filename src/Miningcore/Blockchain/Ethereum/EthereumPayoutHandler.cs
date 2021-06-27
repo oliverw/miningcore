@@ -134,10 +134,6 @@ namespace Miningcore.Blockchain.Ethereum
                     var blockInfo = blockInfos[j];
                     var block = page[j];
 
-                    // extract confirmation data from stored block
-                    var mixHash = block.TransactionConfirmationData.Split(":").First();
-                    var nonce = block.TransactionConfirmationData.Split(":").Last();
-
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
@@ -150,6 +146,10 @@ namespace Miningcore.Blockchain.Ethereum
                         // mature?
                         if(latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
                         {
+                            var blockHashResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) block.BlockHeight.ToStringHexWithPrefix(), true });
+                            var blockHash = blockHashResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+
+                            block.Hash = blockHash;
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
                             block.BlockHeight = (ulong) blockInfo.Height;
@@ -206,6 +206,10 @@ namespace Miningcore.Blockchain.Ethereum
                                 // mature?
                                 if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
                                 {
+                                    var blockHashUncleResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) uncle.Height.Value.ToStringHexWithPrefix(), true });
+                                    var blockHashUncle = blockHashUncleResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+
+                                    block.Hash = blockHashUncle;
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
                                     block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
@@ -228,6 +232,7 @@ namespace Miningcore.Blockchain.Ethereum
                     if(block.Status == BlockStatus.Pending && block.ConfirmationProgress > 0.75)
                     {
                         // we've lost this one
+                        block.Hash = "0x0";
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
@@ -334,8 +339,8 @@ namespace Miningcore.Blockchain.Ethereum
 
                     return EthereumConstants.HomesteadBlockReward;
 
-                case GethChainType.Ropsten:
-                    return EthereumConstants.ByzantiumBlockReward;
+                case GethChainType.Callisto:
+                    return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);
 
                 default:
                     throw new Exception("Unable to determine block reward: Unsupported chain type");

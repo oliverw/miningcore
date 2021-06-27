@@ -113,8 +113,7 @@ namespace Miningcore.Blockchain.Ethereum
                 Worker = context.Worker,
                 UserAgent = context.UserAgent,
                 IsBlockCandidate = isBlockCandidate,
-                Difficulty = stratumDifficulty * EthereumConstants.Pow2x32,
-                BlockHash = mixDigest.ToHexString(true)
+                Difficulty = stratumDifficulty * EthereumConstants.Pow2x32
             };
 
             if(share.IsBlockCandidate)
@@ -123,7 +122,7 @@ namespace Miningcore.Blockchain.Ethereum
                 var headerHash = BlockTemplate.Header;
                 var mixHash = mixDigest.ToHexString(true);
 
-                share.TransactionConfirmationData = $"{mixDigest.ToHexString(true)}:{fullNonceHex}";
+                share.TransactionConfirmationData = "";
 
                 return (share, fullNonceHex, headerHash, mixHash);
             }

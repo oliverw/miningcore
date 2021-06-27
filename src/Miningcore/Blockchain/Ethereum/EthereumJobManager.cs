@@ -117,8 +117,6 @@ namespace Miningcore.Blockchain.Ethereum
                 if(blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
-                // logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
-
                 var job = currentJob;
                 var isNew = currentJob == null ||
                     job.BlockTemplate.Height < blockTemplate.Height ||
@@ -194,18 +192,6 @@ namespace Miningcore.Blockchain.Ethereum
             {
                 var currentHeight = block.Height.Value;
                 work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
-            }
-
-            var result = AssembleBlockTemplate(work);
-            return result;
-        }
-
-        private EthereumBlockTemplate AssembleBlockTemplate(string[] work)
-        {
-            if(work.Length < 4)
-            {
-                logger.Error(() => "Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
-                return null;
             }
 
             // extract values
