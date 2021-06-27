@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Miningcore.Persistence.Model;
@@ -28,6 +29,7 @@ namespace Miningcore.Persistence.Repositories
     public interface IPaymentRepository
     {
         Task InsertAsync(IDbConnection con, IDbTransaction tx, Payment payment);
+        Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> payments);
 
         Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize);
         Task<BalanceChange[]> PageBalanceChangesAsync(IDbConnection con, string poolId, string address, int page, int pageSize);

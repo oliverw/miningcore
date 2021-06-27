@@ -18,6 +18,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using NLog;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace Miningcore.Persistence.Postgres.Repositories
 {
@@ -51,6 +54,35 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 "VALUES(@poolid, @coin, @address, @amount, @transactionconfirmationdata, @created)";
 
             await con.ExecuteAsync(query, mapped, tx);
+        }
+
+        public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Payment> payments)
+        {
+            logger.LogInvoke();
+
+            // NOTE: Even though the tx parameter is completely ignored here,
+            // the COPY command still honors a current ambient transaction
+
+            var pgCon = (NpgsqlConnection) con;
+
+            const string query = "COPY payments (poolid, coin, address, amount, transactionconfirmationdata, created) FROM STDIN (FORMAT BINARY)";
+
+            await using(var writer = pgCon.BeginBinaryImport(query))
+            {
+                foreach(var payment in payments)
+                {
+                    await writer.StartRowAsync();
+
+                    await writer.WriteAsync(payment.PoolId);
+                    await writer.WriteAsync(payment.Coin);
+                    await writer.WriteAsync(payment.Address);
+                    await writer.WriteAsync(payment.Amount, NpgsqlDbType.Numeric);
+                    await writer.WriteAsync(payment.TransactionConfirmationData);
+                    await writer.WriteAsync(payment.Created, NpgsqlDbType.Timestamp);
+                }
+
+                await writer.CompleteAsync();
+            }
         }
 
         public async Task<Payment[]> PagePaymentsAsync(IDbConnection con, string poolId, string address, int page, int pageSize)
