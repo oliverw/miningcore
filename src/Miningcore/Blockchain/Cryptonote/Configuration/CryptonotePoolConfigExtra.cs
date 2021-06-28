@@ -31,6 +31,12 @@ namespace Miningcore.Blockchain.Cryptonote.Configuration
         public ZmqPubSubEndpointConfig BtStream { get; set; }
 
         /// <summary>
+        /// RandomX virtual machine bucket
+        /// Defaults to poolId if not specified
+        /// </summary>
+        public string RandomXRealm { get; set; }
+
+        /// <summary>
         /// Optional override value for RandomX VM Flags (see Native/LibRandomX.cs)
         /// </summary>
         public JToken RandomXFlagsOverride { get; set; }

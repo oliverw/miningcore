@@ -270,7 +270,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             if(poolConfig.EnableInternalStratum == true)
             {
-                randomXRealm = poolConfig.Id;
+                randomXRealm = !string.IsNullOrEmpty(extraPoolConfig.RandomXRealm) ? extraPoolConfig.RandomXRealm : poolConfig.Id;
                 randomXFlagsOverride = MakeRandomXFlags(extraPoolConfig.RandomXFlagsOverride);
                 randomXFlagsAdd = MakeRandomXFlags(extraPoolConfig.RandomXFlagsAdd);
             }
