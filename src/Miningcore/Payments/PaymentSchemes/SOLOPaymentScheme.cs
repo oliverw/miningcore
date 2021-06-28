@@ -39,14 +39,11 @@ namespace Miningcore.Payments.PaymentSchemes
     /// ReSharper disable once InconsistentNaming
     public class SOLOPaymentScheme : IPayoutScheme
     {
-        public SOLOPaymentScheme(IConnectionFactory cf,
+        public SOLOPaymentScheme(
             IShareRepository shareRepo,
-            IBlockRepository blockRepo,
             IBalanceRepository balanceRepo)
         {
-            Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
-            Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
 
             this.shareRepo = shareRepo;
