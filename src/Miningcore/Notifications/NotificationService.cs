@@ -1,25 +1,19 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Hosting;
 using MimeKit;
 using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
-using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Notifications
@@ -146,7 +140,13 @@ namespace Miningcore.Notifications
             }
 
             if(obs.Count > 0)
-                await obs.Merge().ObserveOn(TaskPoolScheduler.Default).Concat().ToTask(ct);
+            {
+                await obs
+                    .Merge()
+                    .ObserveOn(TaskPoolScheduler.Default)
+                    .Concat()
+                    .ToTask(ct);
+            }
         }
     }
 }
