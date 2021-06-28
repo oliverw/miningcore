@@ -199,6 +199,7 @@ namespace Miningcore.Configuration
             public string CoinbaseTxNetwork { get; set; }
 
             public bool PayFoundersReward { get; set; }
+            public bool PayFundingStream { get; set; }
 
             [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public decimal PercentFoundersReward { get; set; }
