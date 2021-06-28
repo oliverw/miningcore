@@ -532,44 +532,51 @@ namespace Miningcore
         {
             var thread = new Thread(() =>
             {
-                var sw = new Stopwatch();
-
                 while(!ct.IsCancellationRequested)
                 {
                     var s = GC.WaitForFullGCApproach(1000);
 
-                    if(s == GCNotificationStatus.Timeout)
-                        continue;
-
-                    if(s == GCNotificationStatus.Succeeded)
+                    switch (s)
                     {
-                        logger.Info(() => "FullGC soon");
-                        sw.Start();
+                        case GCNotificationStatus.Timeout:
+                            continue;
 
-                        while(!ct.IsCancellationRequested)
+                        case GCNotificationStatus.Succeeded:
                         {
-                            s = GC.WaitForFullGCComplete(1000);
+                            logger.Info(() => "FullGC soon");
+                            var start = DateTime.Now;
 
-                            if(s == GCNotificationStatus.Timeout)
-                                continue;
-
-                            if(s == GCNotificationStatus.Succeeded)
+                            while(!ct.IsCancellationRequested)
                             {
-                                logger.Info(() => "FullGC completed");
+                                s = GC.WaitForFullGCComplete(1000);
 
-                                sw.Stop();
+                                switch (s)
+                                {
+                                    case GCNotificationStatus.Timeout:
+                                        continue;
 
-                                if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
-                                    gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
+                                    case GCNotificationStatus.Succeeded:
+                                    {
+                                        logger.Info(() => "FullGC completed");
 
-                                sw.Reset();
+                                        var elapsed = DateTime.Now - start;
+
+                                        if(elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
+                                            gcStats.MaxFullGcDuration = elapsed.TotalSeconds;
+
+                                        break;
+                                    }
+                                }
                             }
+
+                            break;
                         }
                     }
                 }
             });
 
             GC.RegisterForFullGCNotification(1, 1);
+
             thread.Start();
         }
 
