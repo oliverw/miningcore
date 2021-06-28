@@ -256,8 +256,7 @@ namespace Miningcore
         private static void ConfigureBackgroundServices(IServiceCollection services)
         {
             // Notifications
-            if(clusterConfig.Notifications?.Enabled == true)
-                services.AddHostedService<NotificationService>();
+            services.AddHostedService<NotificationService>();
 
             services.AddHostedService<BtStreamReceiver>();
 
@@ -386,6 +385,18 @@ namespace Miningcore
             try
             {
                 clusterConfig.Validate();
+
+                if(clusterConfig.Notifications?.Admin?.Enabled == true)
+                {
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromName))
+                        logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
+
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromAddress))
+                        logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
+
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Admin?.EmailAddress))
+                        logger.ThrowLogPoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+                }
             }
 
             catch(ValidationException ex)
