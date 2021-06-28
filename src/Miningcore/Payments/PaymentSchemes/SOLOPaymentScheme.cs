@@ -106,6 +106,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private DateTime? CalculateRewards(PoolConfig poolConfig, Block block, decimal blockReward, Dictionary<string, decimal> rewards)
         {
             rewards[block.Miner] = blockReward;
+
             return block.Created;
         }
     }
