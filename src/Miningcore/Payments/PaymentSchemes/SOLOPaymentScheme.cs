@@ -49,22 +49,13 @@ namespace Miningcore.Payments.PaymentSchemes
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
 
-            this.cf = cf;
             this.shareRepo = shareRepo;
-            this.blockRepo = blockRepo;
             this.balanceRepo = balanceRepo;
         }
 
         private readonly IBalanceRepository balanceRepo;
-        private readonly IBlockRepository blockRepo;
-        private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
         private static readonly ILogger logger = LogManager.GetLogger("SOLO Payment", typeof(SOLOPaymentScheme));
-
-        private class Config
-        {
-            public decimal Factor { get; set; }
-        }
 
         #region IPayoutScheme
 
@@ -72,7 +63,7 @@ namespace Miningcore.Payments.PaymentSchemes
         {
             // calculate rewards
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = CalculateRewards(poolConfig, block, blockReward, rewards);
+            var shareCutOffDate = CalculateRewards(block, blockReward, rewards);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -82,6 +73,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 if(amount > 0)
                 {
                     logger.Info(() => $"Adding {payoutHandler.FormatAmount(amount)} to balance of {address} for block {block.BlockHeight}");
+
                     await balanceRepo.AddAmountAsync(con, tx, poolConfig.Id, address, amount, $"Reward for block {block.BlockHeight}");
                 }
             }
@@ -95,6 +87,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 {
 #if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares for {block.Miner}");
+
                     await shareRepo.DeleteSharesByMinerAsync(con, tx, poolConfig.Id, block.Miner);
 #endif
                 }
@@ -103,7 +96,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private DateTime? CalculateRewards(PoolConfig poolConfig, Block block, decimal blockReward, Dictionary<string, decimal> rewards)
+        private DateTime? CalculateRewards(Block block, decimal blockReward, Dictionary<string, decimal> rewards)
         {
             rewards[block.Miner] = blockReward;
 
