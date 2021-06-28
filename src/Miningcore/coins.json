@@ -923,6 +923,7 @@
                 },
                 "coinbaseTxNetwork": "zcash-main",
                 "payFoundersReward": true,
+                "payFundingStream": true,
                 "percentFoundersReward": 20,
                 "foundersRewardAddresses": [
                     "t3Vz22vK5z2LcKEdg16Yv4FFneEL1zg9ojd",
@@ -993,6 +994,7 @@
                 },
                 "coinbaseTxNetwork": "zcash-test",
                 "payFoundersReward": true,
+                "payFundingStream": true,
                 "percentFoundersReward": 20,
                 "foundersRewardAddresses": [
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
