@@ -15,6 +15,7 @@ using Miningcore.Contracts;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
 using NLog;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Notifications
 {
@@ -50,58 +51,34 @@ namespace Miningcore.Notifications
 
         private async Task OnAdminNotificationAsync(AdminNotification notification, CancellationToken ct)
         {
-            try
-            {
-                await SendEmailAsync(adminEmail, notification.Subject, notification.Message);
-            }
-
-            catch(Exception ex)
-            {
-                logger.Error(ex);
-            }
+            await SendEmailAsync(adminEmail, notification.Subject, notification.Message);
         }
 
         private async Task OnBlockFoundNotificationAsync(BlockFoundNotification notification, CancellationToken ct)
         {
-            try
-            {
-                await SendEmailAsync(adminEmail, "Block Notification", $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}");
-            }
-
-            catch(Exception ex)
-            {
-                logger.Error(ex);
-            }
+            await SendEmailAsync(adminEmail, "Block Notification", $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}");
         }
 
         private async Task OnPaymentNotificationAsync(PaymentNotification notification, CancellationToken ct)
         {
-            try
+            if(string.IsNullOrEmpty(notification.Error))
             {
-                if(string.IsNullOrEmpty(notification.Error))
-                {
-                    var coin = poolConfigs[notification.PoolId].Template;
+                var coin = poolConfigs[notification.PoolId].Template;
 
-                    // prepare tx links
-                    string[] txLinks = null;
+                // prepare tx links
+                string[] txLinks = null;
 
-                    if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
-                        txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
+                if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
+                    txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
-                    if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                        await SendEmailAsync(adminEmail, "Payout Success Notification", $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.");
-                }
-
-                else
-                {
-                    await SendEmailAsync(adminEmail, "Payout Failure Notification",
-                        $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}");
-                }
+                if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
+                    await SendEmailAsync(adminEmail, "Payout Success Notification", $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.");
             }
 
-            catch(Exception ex)
+            else
             {
-                logger.Error(ex);
+                await SendEmailAsync(adminEmail, "Payout Failure Notification",
+                    $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}");
             }
         }
 
@@ -126,17 +103,23 @@ namespace Miningcore.Notifications
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
         }
 
+        private IObservable<IObservable<Unit>> OnMessageBus<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
+        {
+            return messageBus
+                .Listen<T>()
+                .Select(msg => Observable.FromAsync(() =>
+                    Guard(()=> handler(msg, ct), ex=> logger.Error(ex))));
+        }
+
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            var obs = new List<IObservable<IObservable<Unit>>>
-            {
-            };
+            var obs = new List<IObservable<IObservable<Unit>>>();
 
             if(clusterConfig.Notifications?.Admin?.Enabled == true)
             {
-                obs.Add(messageBus.Listen<AdminNotification>().Select(x => Observable.FromAsync(() => OnAdminNotificationAsync(x, ct))));
-                obs.Add(messageBus.Listen<BlockFoundNotification>().Select(x => Observable.FromAsync(() => OnBlockFoundNotificationAsync(x, ct))));
-                obs.Add(messageBus.Listen<PaymentNotification>().Select(x => Observable.FromAsync(() => OnPaymentNotificationAsync(x, ct))));
+                obs.Add(OnMessageBus<AdminNotification>(OnAdminNotificationAsync, ct));
+                obs.Add(OnMessageBus<BlockFoundNotification>(OnBlockFoundNotificationAsync, ct));
+                obs.Add(OnMessageBus<PaymentNotification>(OnPaymentNotificationAsync, ct));
             }
 
             if(obs.Count > 0)
