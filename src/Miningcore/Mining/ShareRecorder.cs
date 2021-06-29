@@ -26,6 +26,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,7 +53,7 @@ namespace Miningcore.Mining
     /// <summary>
     /// Asynchronously persist shares produced by all pools for processing by coin-specific payment processor(s)
     /// </summary>
-    public class ShareRecorder : IHostedService
+    public class ShareRecorder : BackgroundService
     {
         public ShareRecorder(IConnectionFactory cf,
             IMapper mapper,
@@ -84,6 +85,7 @@ namespace Miningcore.Mining
             pools = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
             BuildFaultHandlingPolicy();
+            ConfigureRecovery();
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
@@ -303,24 +305,6 @@ namespace Miningcore.Mining
             }
         }
 
-        private void StartQueue()
-        {
-            queueSub = messageBus.Listen<ClientShare>()
-                .ObserveOn(TaskPoolScheduler.Default)
-                .Select(x => x.Share)
-                .Buffer(TimeSpan.FromSeconds(5), 250)
-                .Where(shares => shares.Any())
-                .Select(shares => Observable.FromAsync(() =>
-                    Guard(()=>
-                        PersistSharesAsync(shares),
-                            ex=> logger.Error(ex))))
-                .Concat()
-                .Subscribe(
-                    _ => { },
-                    ex => logger.Fatal(() => $"{nameof(ShareRecorder)} queue terminated with {ex}"),
-                    () => logger.Info(() => $"{nameof(ShareRecorder)} queue completed"));
-        }
-
         private void ConfigureRecovery()
         {
             recoveryFilename = !string.IsNullOrEmpty(clusterConfig.ShareRecoveryFile)
@@ -361,23 +345,29 @@ namespace Miningcore.Mining
                 Policy.WrapAsync(fallback, breaker, retry));
         }
 
-        public Task StartAsync(CancellationToken ct)
+        protected override Task ExecuteAsync(CancellationToken ct)
         {
-            ConfigureRecovery();
-            StartQueue();
-
             logger.Info(() => "Online");
 
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken ct)
-        {
-            queueSub?.Dispose();
-
-            logger.Info(() => "Offline");
-
-            return Task.CompletedTask;
+            return messageBus.Listen<ClientShare>()
+                .ObserveOn(TaskPoolScheduler.Default)
+                .Where(x => x.Share != null)
+                .Select(x => x.Share)
+                .Buffer(TimeSpan.FromSeconds(5), 250)
+                .Where(shares => shares.Any())
+                .Select(shares => Observable.FromAsync(() =>
+                    Guard(() =>
+                        PersistSharesAsync(shares),
+                            ex => logger.Error(ex))))
+                .Concat()
+                .ToTask(ct)
+                .ContinueWith(task =>
+                {
+                    if(task.IsFaulted)
+                        logger.Fatal(() => $"{nameof(ShareRecorder)} queue terminated due to error: {task.Exception}");
+                    else
+                        logger.Info(() => "Offline");
+                }, ct);
         }
     }
 }
