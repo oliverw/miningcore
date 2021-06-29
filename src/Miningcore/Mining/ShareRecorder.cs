@@ -61,7 +61,6 @@ namespace Miningcore.Mining
             IShareRepository shareRepo,
             IBlockRepository blockRepo,
             ClusterConfig clusterConfig,
-            IMasterClock clock,
             IMessageBus messageBus)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
@@ -69,13 +68,11 @@ namespace Miningcore.Mining
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
             Contract.RequiresNonNull(blockRepo, nameof(blockRepo));
             Contract.RequiresNonNull(jsonSerializerSettings, nameof(jsonSerializerSettings));
-            Contract.RequiresNonNull(clock, nameof(clock));
             Contract.RequiresNonNull(messageBus, nameof(messageBus));
 
             this.cf = cf;
             this.mapper = mapper;
             this.jsonSerializerSettings = jsonSerializerSettings;
-            this.clock = clock;
             this.messageBus = messageBus;
             this.clusterConfig = clusterConfig;
 
@@ -93,7 +90,6 @@ namespace Miningcore.Mining
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly JsonSerializerSettings jsonSerializerSettings;
-        private readonly IMasterClock clock;
         private readonly IMessageBus messageBus;
         private readonly ClusterConfig clusterConfig;
         private readonly Dictionary<string, PoolConfig> pools;
@@ -101,7 +97,6 @@ namespace Miningcore.Mining
 
         private IAsyncPolicy faultPolicy;
         private bool hasLoggedPolicyFallbackFailure;
-        private IDisposable queueSub;
         private string recoveryFilename;
         private const int RetryCount = 3;
         private const string PolicyContextKeyShares = "share";
@@ -364,7 +359,7 @@ namespace Miningcore.Mining
                 .ContinueWith(task =>
                 {
                     if(task.IsFaulted)
-                        logger.Fatal(() => $"{nameof(ShareRecorder)} queue terminated due to error: {task.Exception}");
+                        logger.Fatal(() => $"Terminated due to error {task.Exception?.InnerException ?? task.Exception}");
                     else
                         logger.Info(() => "Offline");
                 }, ct);
