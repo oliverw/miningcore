@@ -21,6 +21,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Runtime.InteropServices;
 
+// ReSharper disable InconsistentNaming
+
 namespace Miningcore.Native
 {
     public static unsafe class LibEthhash
