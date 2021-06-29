@@ -45,6 +45,7 @@ using Polly;
 using Polly.CircuitBreaker;
 using Contract = Miningcore.Contracts.Contract;
 using Share = Miningcore.Blockchain.Share;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Mining
 {
@@ -309,18 +310,10 @@ namespace Miningcore.Mining
                 .Select(x => x.Share)
                 .Buffer(TimeSpan.FromSeconds(5), 250)
                 .Where(shares => shares.Any())
-                .Select(shares => Observable.FromAsync(async () =>
-                {
-                    try
-                    {
-                        await PersistSharesAsync(shares);
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                }))
+                .Select(shares => Observable.FromAsync(() =>
+                    Guard(()=>
+                        PersistSharesAsync(shares),
+                            ex=> logger.Error(ex))))
                 .Concat()
                 .Subscribe(
                     _ => { },
