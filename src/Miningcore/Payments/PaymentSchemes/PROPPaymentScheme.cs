@@ -23,10 +23,10 @@ namespace Miningcore.Payments.PaymentSchemes
     // ReSharper disable once InconsistentNaming
     public class PROPPaymentScheme : IPayoutScheme
     {
-     public PROPPaymentScheme(IConnectionFactory cf,
-            IShareRepository shareRepo,
-            IBlockRepository blockRepo,
-            IBalanceRepository balanceRepo)
+        public PROPPaymentScheme(IConnectionFactory cf,
+               IShareRepository shareRepo,
+               IBlockRepository blockRepo,
+               IBalanceRepository balanceRepo)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
@@ -130,7 +130,7 @@ namespace Miningcore.Payments.PaymentSchemes
                 if(page.Length < pageSize)
                     break;
 
-                before = page[page.Length - 1].Created;
+                before = page[^1].Created;
             }
 
             if(shares.Keys.Count > 0)
@@ -158,7 +158,7 @@ namespace Miningcore.Payments.PaymentSchemes
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
-            Dictionary<string, decimal> scores = new Dictionary<string, decimal>();
+            var scores = new Dictionary<string, decimal>();
 
             while(!done)
             {
@@ -166,10 +166,11 @@ namespace Miningcore.Payments.PaymentSchemes
 
                 var page = await shareReadFaultPolicy.ExecuteAsync(() =>
                     cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize)));
+
                 inclusive = false;
                 currentPage++;
 
-                for(var i = 0; !done && i < page.Length; i++)
+                for(var i = 0; i < page.Length; i++)
                 {
                     var share = page[i];
                     var address = share.Miner;
@@ -182,54 +183,56 @@ namespace Miningcore.Payments.PaymentSchemes
 
                     var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
-                    if (!scores.ContainsKey(address))
+                    if(!scores.ContainsKey(address))
                         scores[address] = score;
                     else
                         scores[address] += score;
-                        accumulatedScore += score;
+
+                    accumulatedScore += score;
 
                     // set the cutoff date to clean up old shares after a successful payout
-                    if (shareCutOffDate == null || share.Created > shareCutOffDate)
-
+                    if(shareCutOffDate == null || share.Created > shareCutOffDate)
                         shareCutOffDate = share.Created;
                 }
 
-                if (page.Length < pageSize)
+                if(page.Length < pageSize)
                 {
                     done = true;
                     break;
                 }
 
-                before = page[page.Length - 1].Created;
+                before = page[^1].Created;
                 done = page.Length <= 0;
             }
 
-            if (accumulatedScore > 0)
+            if(accumulatedScore > 0)
             {
                 var rewardPerScorePoint = blockReward / accumulatedScore;
 
                 // build rewards for all addresses that contributed to the round
-                foreach (var address in scores.Select(x => x.Key).Distinct())
+                foreach(var address in scores.Select(x => x.Key).Distinct())
                 {
-                  // loop all scores for the current addres
-                  foreach (var score in scores.Where(x => x.Key == address))
-                {
-                var reward = score.Value * rewardPerScorePoint;
-                if (reward > 0)
-                {
-                  // accumulate miner reward
-                  if (!rewards.ContainsKey(address))
-                     rewards[address] = reward;
-                  else
-                     rewards[address] += reward;
-                }                            
-                  blockRewardRemaining -= reward;
+                    // loop all scores for the current addres
+                    foreach(var score in scores.Where(x => x.Key == address))
+                    {
+                        var reward = score.Value * rewardPerScorePoint;
+
+                        if(reward > 0)
+                        {
+                            // accumulate miner reward
+                            if(!rewards.ContainsKey(address))
+                                rewards[address] = reward;
+                            else
+                                rewards[address] += reward;
+                        }
+
+                        blockRewardRemaining -= reward;
+                    }
                 }
-              }
             }
-                
+
             // this should never happen
-            if (blockRewardRemaining <= 0 && !done)
+            if(blockRewardRemaining <= 0 && !done)
                 throw new OverflowException("blockRewardRemaining < 0");
 
             logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({accumulatedScore * 100:0.#}%)");
