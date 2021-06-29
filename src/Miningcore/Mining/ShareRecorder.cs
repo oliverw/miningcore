@@ -307,7 +307,7 @@ namespace Miningcore.Mining
             queueSub = messageBus.Listen<ClientShare>()
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Select(x => x.Share)
-                .Buffer(TimeSpan.FromSeconds(5), 200)
+                .Buffer(TimeSpan.FromSeconds(5), 250)
                 .Where(shares => shares.Any())
                 .Select(shares => Observable.FromAsync(async () =>
                 {
