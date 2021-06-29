@@ -32,7 +32,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -97,8 +96,7 @@ namespace Miningcore.Stratum
         #region API-Surface
 
         public void DispatchAsync(Socket socket, CancellationToken ct,
-            StratumEndpoint endpoint,
-            X509Certificate2 cert,
+            StratumEndpoint endpoint, X509Certificate2 cert,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumConnection> onCompleted,
             Action<StratumConnection, Exception> onError)
