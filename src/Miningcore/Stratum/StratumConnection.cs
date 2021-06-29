@@ -97,7 +97,7 @@ namespace Miningcore.Stratum
         #region API-Surface
 
         public void DispatchAsync(Socket socket, CancellationToken ct,
-            (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) endpoint,
+            StratumEndpoint endpoint,
             X509Certificate2 cert,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumConnection> onCompleted,

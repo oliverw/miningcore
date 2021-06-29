@@ -321,13 +321,13 @@ namespace Miningcore.Mining
             }
         }
 
-        private (IPEndPoint IPEndPoint, PoolEndpoint PoolEndpoint) PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
+        private StratumEndpoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)
         {
             var listenAddress = IPAddress.Parse("127.0.0.1");
             if(!string.IsNullOrEmpty(pep.ListenAddress))
                 listenAddress = pep.ListenAddress != "*" ? IPAddress.Parse(pep.ListenAddress) : IPAddress.Any;
 
-            return (new IPEndPoint(listenAddress, port), pep);
+            return new StratumEndpoint(new IPEndPoint(listenAddress, port), pep);
         }
 
         private void OutputPoolInfo()
