@@ -329,8 +329,6 @@ namespace Miningcore
                 return;
             }
 
-            MonitorGc(ct);
-
             if(clusterConfig.InstanceId.HasValue)
                 logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
 
@@ -526,58 +524,6 @@ namespace Miningcore
             // require 64-bit on Windows
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
                 throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
-        }
-
-        private static void MonitorGc(CancellationToken ct)
-        {
-            var thread = new Thread(() =>
-            {
-                while(!ct.IsCancellationRequested)
-                {
-                    var s = GC.WaitForFullGCApproach(1000);
-
-                    switch (s)
-                    {
-                        case GCNotificationStatus.Timeout:
-                            continue;
-
-                        case GCNotificationStatus.Succeeded:
-                        {
-                            logger.Info(() => "FullGC soon");
-                            var start = DateTime.Now;
-
-                            while(!ct.IsCancellationRequested)
-                            {
-                                s = GC.WaitForFullGCComplete(1000);
-
-                                switch (s)
-                                {
-                                    case GCNotificationStatus.Timeout:
-                                        continue;
-
-                                    case GCNotificationStatus.Succeeded:
-                                    {
-                                        logger.Info(() => "FullGC completed");
-
-                                        var elapsed = DateTime.Now - start;
-
-                                        if(elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
-                                            gcStats.MaxFullGcDuration = elapsed.TotalSeconds;
-
-                                        break;
-                                    }
-                                }
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            });
-
-            GC.RegisterForFullGCNotification(1, 1);
-
-            thread.Start();
         }
 
         private static void Logo()
