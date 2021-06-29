@@ -51,12 +51,12 @@ namespace Miningcore.Notifications
 
         private async Task OnAdminNotificationAsync(AdminNotification notification, CancellationToken ct)
         {
-            await SendEmailAsync(adminEmail, notification.Subject, notification.Message);
+            await SendEmailAsync(adminEmail, notification.Subject, notification.Message, ct);
         }
 
         private async Task OnBlockFoundNotificationAsync(BlockFoundNotification notification, CancellationToken ct)
         {
-            await SendEmailAsync(adminEmail, "Block Notification", $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}");
+            await SendEmailAsync(adminEmail, "Block Notification", $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}", ct);
         }
 
         private async Task OnPaymentNotificationAsync(PaymentNotification notification, CancellationToken ct)
@@ -72,17 +72,17 @@ namespace Miningcore.Notifications
                     txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
                 if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                    await SendEmailAsync(adminEmail, "Payout Success Notification", $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.");
+                    await SendEmailAsync(adminEmail, "Payout Success Notification", $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.", ct);
             }
 
             else
             {
                 await SendEmailAsync(adminEmail, "Payout Failure Notification",
-                    $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}");
+                    $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}", ct);
             }
         }
 
-        public async Task SendEmailAsync(string recipient, string subject, string body)
+        public async Task SendEmailAsync(string recipient, string subject, string body, CancellationToken ct)
         {
             logger.Info(() => $"Sending '{subject.ToLower()}' email to {recipient}");
 
@@ -94,10 +94,10 @@ namespace Miningcore.Notifications
 
             using(var client = new SmtpClient())
             {
-                await client.ConnectAsync(emailSenderConfig.Host, emailSenderConfig.Port);
-                await client.AuthenticateAsync(emailSenderConfig.User, emailSenderConfig.Password);
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
+                await client.ConnectAsync(emailSenderConfig.Host, emailSenderConfig.Port, cancellationToken: ct);
+                await client.AuthenticateAsync(emailSenderConfig.User, emailSenderConfig.Password, ct);
+                await client.SendAsync(message, ct);
+                await client.DisconnectAsync(true, ct);
             }
 
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
