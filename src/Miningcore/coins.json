@@ -191,6 +191,24 @@
         "explorerTxLink": "https://blockchair.com/bitcoin-abc/transaction/{0}",
         "explorerAccountLink": "https://blockchair.com/bitcoin-abc/address/{0}"
     },
+    "ecash": {
+        "name": "eCash",
+        "symbol": "XEC",
+        "family": "bitcoin",
+        "coinbaseHasher": {
+            "hash": "sha256d"
+        },
+        "headerHasher": {
+            "hash": "sha256d"
+        },
+        "blockHasher": {
+            "hash": "reverse",
+            "args": [ { "hash": "sha256d" } ]
+        },
+        "explorerBlockLink": "https://blockchair.com/bitcoin-abc/block/$height$",
+        "explorerTxLink": "https://blockchair.com/bitcoin-abc/transaction/{0}",
+        "explorerAccountLink": "https://blockchair.com/bitcoin-abc/address/{0}"
+    },
     "namecoin": {
         "name": "Namecoin",
         "symbol": "NMC",
