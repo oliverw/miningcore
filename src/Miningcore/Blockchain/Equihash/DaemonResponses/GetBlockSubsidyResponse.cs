@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 
 namespace Miningcore.Blockchain.Equihash.DaemonResponses
 {
@@ -10,10 +7,10 @@ namespace Miningcore.Blockchain.Equihash.DaemonResponses
         public decimal Miner { get; set; }
         public decimal? Founders { get; set; }
         public decimal? Community { get; set; }
-        public List<fundingStreams> FundingStreams { get; set; }
+        public List<FundingStream> FundingStreams { get; set; }
     }
 
-    public class fundingStreams
+    public class FundingStream
     {
         public string Recipient { get; set; }
         public string Specification { get; set; }

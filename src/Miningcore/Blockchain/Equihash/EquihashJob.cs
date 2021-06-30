@@ -87,7 +87,7 @@ namespace Miningcore.Blockchain.Equihash
                 rewardToPool = new Money(Math.Round(blockReward * (1m - (networkParams.PercentFoundersReward) / 100m)) + rewardFees, MoneyUnit.Satoshi);
                 tx.Outputs.Add(rewardToPool, poolAddressDestination);
 
-                foreach(fundingStreams fundingstream in BlockTemplate.Subsidy.FundingStreams)
+                foreach(FundingStream fundingstream in BlockTemplate.Subsidy.FundingStreams)
                 {
                     var amount = new Money(Math.Round(fundingstream.ValueZat / 1m), MoneyUnit.Satoshi);
                     var destination = FoundersAddressToScriptDestination(fundingstream.Address);
