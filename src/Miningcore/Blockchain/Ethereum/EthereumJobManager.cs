@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -117,8 +97,6 @@ namespace Miningcore.Blockchain.Ethereum
                 if(blockTemplate == null || blockTemplate.Header?.Length == 0)
                     return false;
 
-                // logger.Info(() => $"Blocktemplate {blockTemplate.Height}-{blockTemplate.Header}");
-
                 var job = currentJob;
                 var isNew = currentJob == null ||
                     job.BlockTemplate.Height < blockTemplate.Height ||
@@ -196,18 +174,6 @@ namespace Miningcore.Blockchain.Ethereum
                 work = work.Concat(new[] { (currentHeight + 1).ToStringHexWithPrefix() }).ToArray();
             }
 
-            var result = AssembleBlockTemplate(work);
-            return result;
-        }
-
-        private EthereumBlockTemplate AssembleBlockTemplate(string[] work)
-        {
-            if(work.Length < 4)
-            {
-                logger.Error(() => "Error(s) refreshing blocktemplate: getWork did not return blockheight. Are you really connected to a older geth daemon?");
-                return null;
-            }
-
             // extract values
             var height = work[3].IntegralFromHex<ulong>();
             var targetString = work[2];
@@ -277,6 +243,7 @@ namespace Miningcore.Blockchain.Ethereum
                 var commands = new[]
                 {
                     new DaemonCmd(EC.GetPeerCount),
+                    new DaemonCmd(EC.GetBlockByNumber, new[] { (object) "latest", true })
                 };
 
                 var results = await daemon.ExecuteBatchAnyAsync(logger, commands);
@@ -292,8 +259,21 @@ namespace Miningcore.Blockchain.Ethereum
 
                 // extract results
                 var peerCount = results[0].Response.ToObject<string>().IntegralFromHex<int>();
+                var latestBlockInfo = results[1].Response.ToObject<Block>();
 
-                BlockchainStats.NetworkHashrate = 0; // TODO
+                var latestBlockHeight = latestBlockInfo.Height.Value;
+                var latestBlockTimestamp = latestBlockInfo.Timestamp;
+                var latestBlockDifficulty = latestBlockInfo.Difficulty.IntegralFromHex<ulong>();
+
+                var sampleSize = (ulong) 300;
+                var sampleBlockNumber = latestBlockHeight - sampleSize;
+                var sampleBlockResults = await daemon.ExecuteCmdAllAsync<Block>(logger, EC.GetBlockByNumber, new[] { (object) sampleBlockNumber.ToStringHexWithPrefix(), true });
+                var sampleBlockTimestamp = sampleBlockResults.First(x => x.Error == null && x.Response?.Height != null).Response.Timestamp;
+
+                var blockTime = (double) (latestBlockTimestamp - sampleBlockTimestamp) / sampleSize;
+                var networkHashrate = (double) (latestBlockDifficulty / blockTime);
+
+                BlockchainStats.NetworkHashrate = blockTime > 0 ? networkHashrate : 0;
                 BlockchainStats.ConnectedPeers = peerCount;
             }
 

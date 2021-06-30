@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Data;
 using System.Linq;
@@ -29,6 +9,7 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using Newtonsoft.Json;
 using NLog;
 using MinerStats = Miningcore.Persistence.Model.Projections.MinerStats;
 
@@ -220,6 +201,83 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 .ToArray();
         }
 
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenThreeMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT date_trunc('hour', created) AS created, " +
+                                 "(extract(minute FROM created)::int / 3) AS partition, " +
+                                 "worker, AVG(hashrate) AS hashrate, AVG(sharespersecond) AS sharespersecond " +
+                                 "FROM minerstats " +
+                                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
+                                 "GROUP BY 1, 2, worker " +
+                                 "ORDER BY 1, 2, worker";
+
+            var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+                .ToArray();
+
+            foreach(var entity in entities)
+            {
+                // ensure worker is not null
+                entity.Worker ??= string.Empty;
+
+                // adjust creation time by partition
+                entity.Created = entity.Created.AddMinutes(3 * entity.Partition);
+            }
+
+            // group
+            var entitiesByDate = entities
+                .GroupBy(x => x.Created);
+
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker, y => new WorkerPerformanceStats
+                {
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
+                })
+            })
+            .ToArray();
+
+            return tmp;
+        }
+
+        public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenMinutelyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT worker, date_trunc('minute', created) AS created, AVG(hashrate) AS hashrate, " +
+                                 "AVG(sharespersecond) AS sharespersecond FROM minerstats " +
+                                 "WHERE poolid = @poolId AND miner = @miner AND created >= @start AND created <= @end " +
+                                 "GROUP BY date_trunc('minute', created), worker " +
+                                 "ORDER BY created, worker;";
+
+            var entities = (await con.QueryAsync<Entities.MinerWorkerPerformanceStats>(query, new { poolId, miner, start, end }))
+                .ToArray();
+
+            // ensure worker is not null
+            foreach(var entity in entities)
+                entity.Worker ??= string.Empty;
+
+            // group
+            var entitiesByDate = entities
+                .GroupBy(x => x.Created);
+
+            var tmp = entitiesByDate.Select(x => new WorkerPerformanceStatsContainer
+            {
+                Created = x.Key,
+                Workers = x.ToDictionary(y => y.Worker ?? string.Empty, y => new WorkerPerformanceStats
+                {
+                    Hashrate = y.Hashrate,
+                    SharesPerSecond = y.SharesPerSecond
+                })
+            })
+            .ToArray();
+
+            return tmp;
+        }
+
         public async Task<WorkerPerformanceStatsContainer[]> GetMinerPerformanceBetweenHourlyAsync(IDbConnection con, string poolId, string miner, DateTime start, DateTime end)
         {
             logger.LogInvoke(new[] { poolId });
@@ -250,23 +308,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-                .ToArray();
-            //.ToDictionary(x=> x.Created.ToUniversalTime().ToUnixTimestamp(), x=> x);
+            .ToArray();
 
-            //// fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
-
-            //for (var i = 0; i < 24; i++)
-            //{
-            //    if(tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
-            //        result.Insert(0, item);
-            //    else
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
-
-            //    end = end.AddHours(-1);
-            //}
-
-            //return result.ToArray();
             return tmp;
         }
 
@@ -293,23 +336,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                     SharesPerSecond = y.SharesPerSecond
                 })
             })
-                .ToArray();
-            //.ToDictionary(x => x.Created.ToUniversalTime().ToUnixTimestamp(), x => x);
+            .ToArray();
 
-            //// fill in blanks
-            //var result = new List<WorkerPerformanceStatsContainer>();
-
-            //for (var i = 0; i < 30; i++)
-            //{
-            //    if (tmp.TryGetValue(end.ToUnixTimestamp(), out var item))
-            //        result.Insert(0, item);
-            //    else
-            //        result.Add(new WorkerPerformanceStatsContainer { Created = end, Workers = new Dictionary<string, WorkerPerformanceStats>() });
-
-            //    end = end.AddDays(-1);
-            //}
-
-            //return result.ToArray();
             return tmp;
         }
 

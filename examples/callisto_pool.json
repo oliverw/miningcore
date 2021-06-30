@@ -1,0 +1,123 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "integrated",
+        "banOnJunkReceive": false,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "pool support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 100,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "clusterName": "eu1",
+    "pools": [
+      {
+        "id": "clo1",
+        "enabled": true,
+        "coin": "callisto",
+        "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
+        "rewardRecipients": [
+          {
+            "type": "op",
+            "address": "0xF8470A06f46Ab6340f94d8E153cB9c548744546E",
+            "percentage": 1.0
+          }
+        ],
+        "blockRefreshInterval": 120,
+        "clientConnectionTimeout": 600,
+        "banning": {
+          "enabled": true,
+          "time": 600,
+          "invalidPercent": 50,
+          "checkThreshold": 50
+        },
+        "ports": {
+          "4073": {
+            "name": "GPU-SMALL",
+            "listenAddress": "*",
+            "difficulty": 0.1,
+            "varDiff": {
+              "minDiff": 0.1,
+              "maxDiff": null,
+              "targetTime": 15,
+              "retargetTime": 90,
+              "variancePercent": 30
+            }
+          }
+        },
+        "chainTypeOverride": "Callisto",
+        "dagDir": "<Your directory for the dag file>",
+        "daemons": [
+          {
+            "host": "127.0.0.1",
+            "port": 8545,
+            "user": "",
+            "password": ""
+          }
+        ],
+        "paymentProcessing": {
+          "enabled": true,
+          "minimumPayment": 1,
+          "payoutScheme": "PPLNS",
+          "payoutSchemeConfig": {
+            "factor": 0.5
+          },
+          "keepUncles": false,
+          "keepTransactionFees": false
+        }
+      }
+    ]
+}

@@ -99,7 +99,7 @@ namespace Miningcore.Mining
 
             var stats = new MinerWorkerPerformanceStats
             {
-                Created = now      // MinerNL Time to UTC
+                Created = now
             };
 
             foreach(var poolId in pools.Keys)

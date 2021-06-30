@@ -18,15 +18,15 @@ using Contract = Miningcore.Contracts.Contract;
 namespace Miningcore.Payments.PaymentSchemes
 {
     /// <summary>
-    /// PPLNS payout scheme implementation
+    /// PROP payout scheme implementation
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public class PPLNSPaymentScheme : IPayoutScheme
+    public class PROPPaymentScheme : IPayoutScheme
     {
-        public PPLNSPaymentScheme(IConnectionFactory cf,
-            IShareRepository shareRepo,
-            IBlockRepository blockRepo,
-            IBalanceRepository balanceRepo)
+        public PROPPaymentScheme(IConnectionFactory cf,
+               IShareRepository shareRepo,
+               IBlockRepository blockRepo,
+               IBalanceRepository balanceRepo)
         {
             Contract.RequiresNonNull(cf, nameof(cf));
             Contract.RequiresNonNull(shareRepo, nameof(shareRepo));
@@ -45,7 +45,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
         private readonly IShareRepository shareRepo;
-        private static readonly ILogger logger = LogManager.GetLogger("PPLNS Payment", typeof(PPLNSPaymentScheme));
+        private static readonly ILogger logger = LogManager.GetLogger("PROP Payment", typeof(PROPPaymentScheme));
 
         private const int RetryCount = 4;
         private IAsyncPolicy shareReadFaultPolicy;
@@ -61,14 +61,9 @@ namespace Miningcore.Payments.PaymentSchemes
             IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
-
-            // PPLNS window (see https://bitcointalk.org/index.php?topic=39832)
-            var window = payoutConfig?.ToObject<Config>()?.Factor ?? 2.0m;
-
-            // calculate rewards
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = await CalculateRewardsAsync(poolConfig, window, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(poolConfig, block, blockReward, shares, rewards);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -91,10 +86,8 @@ namespace Miningcore.Payments.PaymentSchemes
                 {
                     await LogDiscardedSharesAsync(poolConfig, block, shareCutOffDate.Value);
 
-#if !DEBUG
                     logger.Info(() => $"Deleting {cutOffCount} discarded shares before {shareCutOffDate.Value:O}");
                     await shareRepo.DeleteSharesBeforeCreatedAsync(con, tx, poolConfig.Id, shareCutOffDate.Value);
-#endif
                 }
             }
 
@@ -109,7 +102,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private async Task LogDiscardedSharesAsync(PoolConfig poolConfig, Block block, DateTime value)
         {
             var before = value;
-            var pageSize = 50000;
+            var pageSize = 100000;
             var currentPage = 0;
             var shares = new Dictionary<string, double>();
 
@@ -154,34 +147,32 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private async Task<DateTime?> CalculateRewardsAsync(PoolConfig poolConfig, decimal window, Block block, decimal blockReward,
+        private async Task<DateTime?> CalculateRewardsAsync(PoolConfig poolConfig, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var done = false;
             var before = block.Created;
             var inclusive = true;
-            var pageSize = 50000;
+            var pageSize = 100000;
             var currentPage = 0;
             var accumulatedScore = 0.0m;
             var blockRewardRemaining = blockReward;
             DateTime? shareCutOffDate = null;
-            //var sw = new Stopwatch();
+            var scores = new Dictionary<string, decimal>();
 
             while(!done)
             {
                 logger.Info(() => $"Fetching page {currentPage} of shares for pool {poolConfig.Id}, block {block.BlockHeight}");
 
                 var page = await shareReadFaultPolicy.ExecuteAsync(() =>
-                    cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize))); //, sw, logger));
+                    cf.Run(con => shareRepo.ReadSharesBeforeCreatedAsync(con, poolConfig.Id, before, inclusive, pageSize)));
 
                 inclusive = false;
                 currentPage++;
 
-                for(var i = 0; !done && i < page.Length; i++)
+                for(var i = 0; i < page.Length; i++)
                 {
                     var share = page[i];
-
-                    // build address
                     var address = share.Miner;
 
                     // record attributed shares for diagnostic purposes
@@ -192,40 +183,59 @@ namespace Miningcore.Payments.PaymentSchemes
 
                     var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
 
-                    // if accumulated score would cross threshold, cap it to the remaining value
-                    if(accumulatedScore + score >= window)
-                    {
-                        score = window - accumulatedScore;
-                        shareCutOffDate = share.Created;
-                        done = true;
-                    }
+                    if(!scores.ContainsKey(address))
+                        scores[address] = score;
+                    else
+                        scores[address] += score;
 
-                    // calculate reward
-                    var reward = score * blockReward / window;
                     accumulatedScore += score;
-                    blockRewardRemaining -= reward;
 
-                    // this should never happen
-                    if(blockRewardRemaining <= 0 && !done)
-                        throw new OverflowException("blockRewardRemaining < 0");
-
-                    if(reward > 0)
-                    {
-                        // accumulate miner reward
-                        if(!rewards.ContainsKey(address))
-                            rewards[address] = reward;
-                        else
-                            rewards[address] += reward;
-                    }
+                    // set the cutoff date to clean up old shares after a successful payout
+                    if(shareCutOffDate == null || share.Created > shareCutOffDate)
+                        shareCutOffDate = share.Created;
                 }
 
                 if(page.Length < pageSize)
+                {
+                    done = true;
                     break;
+                }
 
                 before = page[^1].Created;
+                done = page.Length <= 0;
             }
 
-            logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({(accumulatedScore / window) * 100:0.#}%)");
+            if(accumulatedScore > 0)
+            {
+                var rewardPerScorePoint = blockReward / accumulatedScore;
+
+                // build rewards for all addresses that contributed to the round
+                foreach(var address in scores.Select(x => x.Key).Distinct())
+                {
+                    // loop all scores for the current addres
+                    foreach(var score in scores.Where(x => x.Key == address))
+                    {
+                        var reward = score.Value * rewardPerScorePoint;
+
+                        if(reward > 0)
+                        {
+                            // accumulate miner reward
+                            if(!rewards.ContainsKey(address))
+                                rewards[address] = reward;
+                            else
+                                rewards[address] += reward;
+                        }
+
+                        blockRewardRemaining -= reward;
+                    }
+                }
+            }
+
+            // this should never happen
+            if(blockRewardRemaining <= 0 && !done)
+                throw new OverflowException("blockRewardRemaining < 0");
+
+            logger.Info(() => $"Balance-calculation for pool {poolConfig.Id}, block {block.BlockHeight} completed with accumulated score {accumulatedScore:0.####} ({accumulatedScore * 100:0.#}%)");
 
             return shareCutOffDate;
         }

@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -60,7 +40,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
             await con.ExecuteAsync(query, mapped, tx);
         }
 
-        public Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
+        public async Task BatchInsertAsync(IDbConnection con, IDbTransaction tx, IEnumerable<Share> shares)
         {
             logger.LogInvoke();
 
@@ -72,28 +52,26 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "COPY shares (poolid, blockheight, difficulty, " +
                 "networkdifficulty, miner, worker, useragent, ipaddress, source, created) FROM STDIN (FORMAT BINARY)";
 
-            using(var writer = pgCon.BeginBinaryImport(query))
+            await using(var writer = pgCon.BeginBinaryImport(query))
             {
                 foreach(var share in shares)
                 {
-                    writer.StartRow();
+                    await writer.StartRowAsync();
 
-                    writer.Write(share.PoolId);
-                    writer.Write((long) share.BlockHeight, NpgsqlDbType.Bigint);
-                    writer.Write(share.Difficulty, NpgsqlDbType.Double);
-                    writer.Write(share.NetworkDifficulty, NpgsqlDbType.Double);
-                    writer.Write(share.Miner);
-                    writer.Write(share.Worker);
-                    writer.Write(share.UserAgent);
-                    writer.Write(share.IpAddress);
-                    writer.Write(share.Source);
-                    writer.Write(share.Created, NpgsqlDbType.Timestamp);
+                    await writer.WriteAsync(share.PoolId);
+                    await writer.WriteAsync((long) share.BlockHeight, NpgsqlDbType.Bigint);
+                    await writer.WriteAsync(share.Difficulty, NpgsqlDbType.Double);
+                    await writer.WriteAsync(share.NetworkDifficulty, NpgsqlDbType.Double);
+                    await writer.WriteAsync(share.Miner);
+                    await writer.WriteAsync(share.Worker);
+                    await writer.WriteAsync(share.UserAgent);
+                    await writer.WriteAsync(share.IpAddress);
+                    await writer.WriteAsync(share.Source);
+                    await writer.WriteAsync(share.Created, NpgsqlDbType.Timestamp);
                 }
 
-                writer.Complete();
+                await writer.CompleteAsync();
             }
-
-            return Task.FromResult(true);
         }
 
         public async Task<Share[]> ReadSharesBeforeCreatedAsync(IDbConnection con, string poolId, DateTime before, bool inclusive, int pageSize)
@@ -140,6 +118,24 @@ namespace Miningcore.Persistence.Postgres.Repositories
             const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND created < @before";
 
             return con.QuerySingleAsync<long>(query, new { poolId, before }, tx);
+        }
+
+        public Task<long> CountSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT count(*) FROM shares WHERE poolid = @poolId AND miner = @miner";
+
+            return con.QuerySingleAsync<long>(query, new { poolId, miner}, tx);
+        }
+
+        public async Task DeleteSharesByMinerAsync(IDbConnection con, IDbTransaction tx, string poolId, string miner)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "DELETE FROM shares WHERE poolid = @poolId AND miner = @miner";
+
+            await con.ExecuteAsync(query, new { poolId, miner}, tx);
         }
 
         public async Task DeleteSharesBeforeCreatedAsync(IDbConnection con, IDbTransaction tx, string poolId, DateTime before)

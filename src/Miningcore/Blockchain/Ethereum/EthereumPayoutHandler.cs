@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -134,10 +114,6 @@ namespace Miningcore.Blockchain.Ethereum
                     var blockInfo = blockInfos[j];
                     var block = page[j];
 
-                    // extract confirmation data from stored block
-                    var mixHash = block.TransactionConfirmationData.Split(":").First();
-                    var nonce = block.TransactionConfirmationData.Split(":").Last();
-
                     // update progress
                     block.ConfirmationProgress = Math.Min(1.0d, (double) (latestBlockHeight - block.BlockHeight) / EthereumConstants.MinConfimations);
                     result.Add(block);
@@ -150,6 +126,10 @@ namespace Miningcore.Blockchain.Ethereum
                         // mature?
                         if(latestBlockHeight - block.BlockHeight >= EthereumConstants.MinConfimations)
                         {
+                            var blockHashResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) block.BlockHeight.ToStringHexWithPrefix(), true });
+                            var blockHash = blockHashResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+
+                            block.Hash = blockHash;
                             block.Status = BlockStatus.Confirmed;
                             block.ConfirmationProgress = 1;
                             block.BlockHeight = (ulong) blockInfo.Height;
@@ -206,6 +186,10 @@ namespace Miningcore.Blockchain.Ethereum
                                 // mature?
                                 if(latestBlockHeight - uncle.Height.Value >= EthereumConstants.MinConfimations)
                                 {
+                                    var blockHashUncleResponses = await daemon.ExecuteCmdAllAsync<DaemonResponses.Block>(logger, EC.GetBlockByNumber, new[] { (object) uncle.Height.Value.ToStringHexWithPrefix(), true });
+                                    var blockHashUncle = blockHashUncleResponses.First(x => x.Error == null && x.Response?.Hash != null).Response.Hash;
+
+                                    block.Hash = blockHashUncle;
                                     block.Status = BlockStatus.Confirmed;
                                     block.ConfirmationProgress = 1;
                                     block.Reward = GetUncleReward(chainType, uncle.Height.Value, blockInfo2.Height.Value);
@@ -228,6 +212,7 @@ namespace Miningcore.Blockchain.Ethereum
                     if(block.Status == BlockStatus.Pending && block.ConfirmationProgress > 0.75)
                     {
                         // we've lost this one
+                        block.Hash = "0x0";
                         block.Status = BlockStatus.Orphaned;
                         block.Reward = 0;
 
@@ -333,9 +318,6 @@ namespace Miningcore.Blockchain.Ethereum
                         return EthereumConstants.ByzantiumBlockReward;
 
                     return EthereumConstants.HomesteadBlockReward;
-
-                case GethChainType.Ropsten:
-                    return EthereumConstants.ByzantiumBlockReward;
 
                 case GethChainType.Callisto:
                     return CallistoConstants.BaseRewardInitial * (CallistoConstants.TreasuryPercent / 100);

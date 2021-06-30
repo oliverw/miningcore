@@ -1,23 +1,3 @@
-/*
-Copyright 2017 Coin Foundry (coinfoundry.org)
-Authors: Oliver Weichhold (oliver@weichhold.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial
-portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -179,7 +159,7 @@ namespace Miningcore
                         {
                             options.Listen(address, port, listenOptions =>
                             {
-                                if(clusterConfig.Api.SSLConfig?.Enabled == true)
+                                if(clusterConfig.Api?.SSLConfig?.Enabled == true)
                                     listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
                             });
                         })
@@ -256,8 +236,7 @@ namespace Miningcore
         private static void ConfigureBackgroundServices(IServiceCollection services)
         {
             // Notifications
-            if(clusterConfig.Notifications?.Enabled == true)
-                services.AddHostedService<NotificationService>();
+            services.AddHostedService<NotificationService>();
 
             services.AddHostedService<BtStreamReceiver>();
 
@@ -288,8 +267,6 @@ namespace Miningcore
                 // Pool stats
                 services.AddHostedService<StatsRecorder>();
             }
-
-            MonitorGc();
         }
 
         private static IHost host;
@@ -386,6 +363,18 @@ namespace Miningcore
             try
             {
                 clusterConfig.Validate();
+
+                if(clusterConfig.Notifications?.Admin?.Enabled == true)
+                {
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromName))
+                        logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender name is not configured (notifications.email.fromName)");
+
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Email?.FromAddress))
+                        logger.ThrowLogPoolStartupException($"Notifications are enabled but email sender address name is not configured (notifications.email.fromAddress)");
+
+                    if(string.IsNullOrEmpty(clusterConfig.Notifications?.Admin?.EmailAddress))
+                        logger.ThrowLogPoolStartupException($"Admin notifications are enabled but recipient address is not configured (notifications.admin.emailAddress)");
+                }
             }
 
             catch(ValidationException ex)
@@ -515,41 +504,6 @@ namespace Miningcore
             // require 64-bit on Windows
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
                 throw new PoolStartupAbortException("Miningcore requires 64-Bit Windows");
-        }
-
-        private static void MonitorGc()
-        {
-            var thread = new Thread(() =>
-            {
-                var sw = new Stopwatch();
-
-                while(true)
-                {
-                    var s = GC.WaitForFullGCApproach();
-                    if(s == GCNotificationStatus.Succeeded)
-                    {
-                        logger.Info(() => "FullGC soon");
-                        sw.Start();
-                    }
-
-                    s = GC.WaitForFullGCComplete();
-
-                    if(s == GCNotificationStatus.Succeeded)
-                    {
-                        logger.Info(() => "FullGC completed");
-
-                        sw.Stop();
-
-                        if(sw.Elapsed.TotalSeconds > gcStats.MaxFullGcDuration)
-                            gcStats.MaxFullGcDuration = sw.Elapsed.TotalSeconds;
-
-                        sw.Reset();
-                    }
-                }
-            });
-
-            GC.RegisterForFullGCNotification(1, 1);
-            thread.Start();
         }
 
         private static void Logo()
