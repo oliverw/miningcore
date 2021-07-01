@@ -577,11 +577,11 @@ namespace Miningcore.Configuration
         public string[] IpWhitelist { get; set; }
     }
 
-    public class ApiSSLConfig
+    public class ApiTlsConfig
     {
         public bool Enabled { get; set; }
-        public string SSLPath { get; set; }
-        public string SSLPassword { get; set; }
+        public string TlsPfxFile { get; set; }
+        public string TlsPfxPassword { get; set; }
     }
 
     public partial class ApiConfig
@@ -590,7 +590,7 @@ namespace Miningcore.Configuration
         public string ListenAddress { get; set; }
         public int Port { get; set; }
 
-        public ApiSSLConfig SSLConfig { get; set; }
+        public ApiTlsConfig Tls { get; set; }
 
         public ApiRateLimitConfig RateLimiting { get; set; }
 

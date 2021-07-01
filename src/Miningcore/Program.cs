@@ -120,6 +120,16 @@ namespace Miningcore
                     var port = clusterConfig.Api?.Port ?? 4000;
                     var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
 
+                    var apiTlsEnable =
+                        clusterConfig.Api?.Tls?.Enabled == true ||
+                        !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
+
+                    if(apiTlsEnable)
+                    {
+                        if(!File.Exists(clusterConfig.Api.Tls.TlsPfxFile))
+                            logger.ThrowLogPoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
+                    }
+
                     hostBuilder.ConfigureWebHost(builder =>
                     {
                         builder.ConfigureServices(services =>
@@ -159,8 +169,8 @@ namespace Miningcore
                         {
                             options.Listen(address, port, listenOptions =>
                             {
-                                if(clusterConfig.Api?.SSLConfig?.Enabled == true)
-                                    listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
+                                if(apiTlsEnable)
+                                    listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
                             });
                         })
                         .Configure(app =>
