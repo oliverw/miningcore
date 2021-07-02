@@ -143,10 +143,13 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
 
                 // periodically update transactions for current template
-                triggers.Add(Observable.Timer(jobRebroadcastTimeout)
-                    .TakeUntil(pollTimerRestart)
-                    .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
-                    .Repeat());
+                if(poolConfig.JobRebroadcastTimeout > 0)
+                {
+                    triggers.Add(Observable.Timer(jobRebroadcastTimeout)
+                        .TakeUntil(pollTimerRestart)
+                        .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
+                        .Repeat());
+                }
             }
 
             else
