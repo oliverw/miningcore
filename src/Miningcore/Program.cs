@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -31,9 +30,7 @@ using Miningcore.Api.Middlewares;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
-using Miningcore.Extensions;
 using Miningcore.Mining;
-using Miningcore.Nicehash;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence.Dummy;

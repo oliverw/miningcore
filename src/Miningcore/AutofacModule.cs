@@ -21,6 +21,7 @@ using Newtonsoft.Json.Serialization;
 using Module = Autofac.Module;
 using Microsoft.AspNetCore.Mvc;
 using Miningcore.Nicehash;
+using Miningcore.Pushover;
 
 namespace Miningcore
 {
@@ -84,6 +85,9 @@ namespace Miningcore
                 .SingleInstance();
 
             builder.RegisterType<NicehashService>()
+                .SingleInstance();
+
+            builder.RegisterType<PushoverClient>()
                 .SingleInstance();
 
             //////////////////////

@@ -14,6 +14,7 @@ using Miningcore.Configuration;
 using Miningcore.Contracts;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
+using Miningcore.Pushover;
 using NLog;
 using static Miningcore.Util.ActionUtils;
 
@@ -23,6 +24,7 @@ namespace Miningcore.Notifications
     {
         public NotificationService(
             ClusterConfig clusterConfig,
+            PushoverClient pushoverClient,
             IMessageBus messageBus)
         {
             Contract.RequiresNonNull(clusterConfig, nameof(clusterConfig));
@@ -31,6 +33,7 @@ namespace Miningcore.Notifications
             this.clusterConfig = clusterConfig;
             this.emailSenderConfig = clusterConfig.Notifications.Email;
             this.messageBus = messageBus;
+            this.pushoverClient = pushoverClient;
 
             poolConfigs = clusterConfig.Pools.ToDictionary(x => x.Id, x => x);
 
@@ -43,6 +46,7 @@ namespace Miningcore.Notifications
         private readonly string adminEmail;
         private readonly IMessageBus messageBus;
         private readonly EmailSenderConfig emailSenderConfig;
+        private readonly PushoverClient pushoverClient;
 
         public string FormatAmount(decimal amount, string poolId)
         {
@@ -51,12 +55,22 @@ namespace Miningcore.Notifications
 
         private async Task OnAdminNotificationAsync(AdminNotification notification, CancellationToken ct)
         {
-            await SendEmailAsync(adminEmail, notification.Subject, notification.Message, ct);
+            if(!string.IsNullOrEmpty(adminEmail))
+                await Guard(()=> SendEmailAsync(adminEmail, notification.Subject, notification.Message, ct), LogGuarded);
+
+            if(clusterConfig.Notifications?.Pushover?.Enabled == true)
+                await Guard(()=> pushoverClient.PushMessage(notification.Subject, notification.Message, PushoverMessagePriority.None, ct), LogGuarded);
         }
 
         private async Task OnBlockFoundNotificationAsync(BlockFoundNotification notification, CancellationToken ct)
         {
-            await SendEmailAsync(adminEmail, "Block Notification", $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}", ct);
+            const string subject = "Block Notification";
+            var message = $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}";
+
+            await Guard(()=> SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
+
+            if(clusterConfig.Notifications?.Pushover?.Enabled == true && clusterConfig.Notifications.Pushover.NotifyBlockFound)
+                await Guard(()=> pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
         }
 
         private async Task OnPaymentNotificationAsync(PaymentNotification notification, CancellationToken ct)
@@ -71,14 +85,25 @@ namespace Miningcore.Notifications
                 if(!string.IsNullOrEmpty(coin.ExplorerTxLink))
                     txLinks = notification.TxIds.Select(txHash => string.Format(coin.ExplorerTxLink, txHash)).ToArray();
 
+                const string subject = "Payout Success Notification";
+                var message = $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.";
+
                 if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                    await SendEmailAsync(adminEmail, "Payout Success Notification", $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.", ct);
+                    await Guard(()=> SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
+
+                if(clusterConfig.Notifications?.Pushover?.Enabled == true && clusterConfig.Notifications.Pushover.NotifyPaymentSuccess)
+                    await Guard(()=> pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
             }
 
             else
             {
-                await SendEmailAsync(adminEmail, "Payout Failure Notification",
-                    $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}", ct);
+                const string subject = "Payout Failure Notification";
+                var message = $"Failed to pay out {notification.Amount} {poolConfigs[notification.PoolId].Template.Symbol} from pool {notification.PoolId}: {notification.Error}";
+
+                await Guard(()=> SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
+
+                if(clusterConfig.Notifications?.Pushover?.Enabled == true)
+                    await Guard(()=> pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
             }
         }
 
@@ -103,12 +128,17 @@ namespace Miningcore.Notifications
             logger.Info(() => $"Sent '{subject.ToLower()}' email to {recipient}");
         }
 
+        private void LogGuarded(Exception ex)
+        {
+            logger.Error(ex);
+        }
+
         private IObservable<IObservable<Unit>> OnMessageBus<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
         {
             return messageBus
                 .Listen<T>()
                 .Select(msg => Observable.FromAsync(() =>
-                    Guard(()=> handler(msg, ct), ex=> logger.Error(ex))));
+                    Guard(()=> handler(msg, ct), LogGuarded)));
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)

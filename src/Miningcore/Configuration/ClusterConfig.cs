@@ -553,6 +553,15 @@ namespace Miningcore.Configuration
         public string FromName { get; set; }
     }
 
+    public partial class PushoverConfig
+    {
+        public bool Enabled { get; set; }
+        public string User { get; set; }
+        public string Token { get; set; }
+        public bool NotifyBlockFound { get; set; }
+        public bool NotifyPaymentSuccess { get; set; }
+    }
+
     public partial class AdminNotifications
     {
         public bool Enabled { get; set; }
@@ -566,6 +575,7 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
 
         public EmailSenderConfig Email { get; set; }
+        public PushoverConfig Pushover { get; set; }
         public AdminNotifications Admin { get; set; }
     }
 

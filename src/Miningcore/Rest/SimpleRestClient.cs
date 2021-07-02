@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Miningcore.Contracts;
 
 namespace Miningcore.Rest
 {
@@ -118,6 +119,8 @@ namespace Miningcore.Rest
 
         public async Task<T> Send<T>(HttpRequestMessage request, CancellationToken ct)
         {
+            Contract.RequiresNonNull(request, nameof(request));
+
             PrepareRequest(request, null);
 
             using var response = await httpClient.SendAsync(request, ct);
@@ -131,6 +134,8 @@ namespace Miningcore.Rest
 
         public async Task<ResponseContent<T>> SendWithResponse<T>(HttpRequestMessage request, CancellationToken ct)
         {
+            Contract.RequiresNonNull(request, nameof(request));
+
             PrepareRequest(request, null);
 
             using var response = await httpClient.SendAsync(request, ct);
@@ -164,6 +169,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
             var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
@@ -180,6 +187,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null) where T: class
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
             var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
@@ -202,6 +211,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
 
             var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
@@ -221,6 +232,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
@@ -233,6 +246,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
@@ -251,6 +266,8 @@ namespace Miningcore.Rest
             IEnumerable<KeyValuePair<string, string>> queryParams = null,
             IEnumerable<KeyValuePair<string, string>> headers = null)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(path), $"{nameof(path)} must not be empty");
+
             var requestUri = BuildRequestUri(path, PrepareQueryParams(queryParams));
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
 
