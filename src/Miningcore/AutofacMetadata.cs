@@ -19,5 +19,4 @@ namespace Miningcore
 
         public CoinFamily[] SupportedFamilies { get; }
     }
-
 }
