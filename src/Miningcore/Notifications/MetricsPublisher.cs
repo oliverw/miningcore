@@ -71,27 +71,27 @@ namespace Miningcore.Notifications
             switch(msg.Category)
             {
                 case TelemetryCategory.Share:
-                    shareCounter.WithLabels(msg.PoolId).Inc();
+                    shareCounter.WithLabels(msg.GroupId).Inc();
 
                     if(msg.Success.HasValue)
                     {
                         if(msg.Success.Value)
-                            validShareCounter.WithLabels(msg.PoolId).Inc();
+                            validShareCounter.WithLabels(msg.GroupId).Inc();
                         else
-                            invalidShareCounter.WithLabels(msg.PoolId).Inc();
+                            invalidShareCounter.WithLabels(msg.GroupId).Inc();
                     }
                     break;
 
                 case TelemetryCategory.BtStream:
-                    btStreamLatencySummary.WithLabels(msg.PoolId).Observe(msg.Elapsed.TotalMilliseconds);
+                    btStreamLatencySummary.WithLabels(msg.GroupId).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
 
                 case TelemetryCategory.RpcRequest:
-                    rpcRequestDurationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                    rpcRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
 
                 case TelemetryCategory.Hash:
-                    hashComputationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                    hashComputationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
             }
         }

@@ -1,6 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
+using Miningcore.Extensions;
+using Miningcore.Messaging;
 using Miningcore.Native;
+using Miningcore.Notifications.Messages;
 
 // ReSharper disable InconsistentNaming
 
@@ -21,6 +25,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
                 maxThreads = value;
             }
         }
+
+        internal static IMessageBus messageBus;
 
         protected static readonly Lazy<Semaphore> sem = new(() =>
             new Semaphore(maxThreads, maxThreads));
@@ -47,6 +53,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
 
         public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 sem.Value.WaitOne();
@@ -55,7 +63,11 @@ namespace Miningcore.Crypto.Hashing.Equihash
                 {
                     fixed (byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
+                        var result = LibMultihash.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
+
+                        messageBus.SendTelemetry("Equihash 200-9", TelemetryCategory.Hash, sw.Elapsed, result);
+
+                        return result;
                     }
                 }
             }
@@ -76,6 +88,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
 
         public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 sem.Value.WaitOne();
@@ -84,7 +98,11 @@ namespace Miningcore.Crypto.Hashing.Equihash
                 {
                     fixed (byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
+                        var result = LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
+
+                        messageBus.SendTelemetry(personalization ?? "Equihash 144-5", TelemetryCategory.Hash, sw.Elapsed, result);
+
+                        return result;
                     }
                 }
             }
@@ -105,6 +123,8 @@ namespace Miningcore.Crypto.Hashing.Equihash
 
         public override bool Verify(ReadOnlySpan<byte> header, ReadOnlySpan<byte> solution)
         {
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 sem.Value.WaitOne();
@@ -113,7 +133,11 @@ namespace Miningcore.Crypto.Hashing.Equihash
                 {
                     fixed (byte* s = solution)
                     {
-                        return LibMultihash.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
+                        var result = LibMultihash.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
+
+                        messageBus.SendTelemetry("Equihash 96-5", TelemetryCategory.Hash, sw.Elapsed, result);
+
+                        return result;
                     }
                 }
             }

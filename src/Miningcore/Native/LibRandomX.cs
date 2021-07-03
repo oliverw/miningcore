@@ -306,7 +306,7 @@ namespace Miningcore.Native
                     ctx.LastAccess = DateTime.Now;
                     success = true;
 
-                    messageBus.SendMessage(new TelemetryEvent(realm, TelemetryCategory.Hash, "RandomX", sw.Elapsed, true));
+                    messageBus.SendTelemetry("RandomX", TelemetryCategory.Hash, sw.Elapsed, true);
                 }
 
                 catch(Exception ex)
@@ -317,8 +317,6 @@ namespace Miningcore.Native
 
                 finally
                 {
-                    sw.Stop();
-
                     // return VM
                     if(vm != null)
                         seedVms.Add(vm);

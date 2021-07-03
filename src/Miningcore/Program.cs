@@ -30,6 +30,7 @@ using Miningcore.Api.Middlewares;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Native;
@@ -671,12 +672,19 @@ namespace Miningcore
         {
             ZcashNetworks.Instance.EnsureRegistered();
 
+            var messageBus = container.Resolve<IMessageBus>();
+
             // Configure Equihash
+            EquihashSolver.messageBus = messageBus;
+
             if(clusterConfig.EquihashMaxThreads.HasValue)
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
 
+            // Configure Ethhash
+            Dag.messageBus = messageBus;
+
             // Configure RandomX
-            LibRandomX.messageBus = container.Resolve<IMessageBus>();
+            LibRandomX.messageBus = messageBus;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)

@@ -34,22 +34,22 @@ namespace Miningcore.Notifications.Messages
 
     public record TelemetryEvent
     {
-        public TelemetryEvent(string poolId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null)
+        public TelemetryEvent(string groupId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null)
         {
-            PoolId = poolId;
+            GroupId = groupId;
             Category = category;
             Elapsed = elapsed;
             Success = success;
             Error = error;
         }
 
-        public TelemetryEvent(string poolId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null) :
-            this(poolId, category, elapsed, success, error)
+        public TelemetryEvent(string groupId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null) :
+            this(groupId, category, elapsed, success, error)
         {
             Info = info;
         }
 
-        public string PoolId { get; }
+        public string GroupId { get; }
         public TelemetryCategory Category { get; }
         public string Info { get; }
         public TimeSpan Elapsed { get; }

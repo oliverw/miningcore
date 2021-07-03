@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Miningcore.Banning;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
@@ -367,10 +368,7 @@ namespace Miningcore.Stratum
 
         protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
         {
-            messageBus.SendMessage(new TelemetryEvent(poolConfig.Id, cat, elapsed, success)
-            {
-                Total = total ?? 0,
-            });
+            messageBus.SendTelemetry(poolConfig.Id, cat, elapsed, success, null, total);
         }
 
         protected abstract Task OnRequestAsync(StratumConnection connection, Timestamped<JsonRpcRequest> request, CancellationToken ct);
