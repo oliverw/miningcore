@@ -6,14 +6,30 @@ namespace Miningcore.Notifications.Messages
 {
     public enum TelemetryCategory
     {
-        Share = 1, // Share processed
-        BtStream, // Blocktemplate over BTStream
-        RpcRequest // JsonRPC Request to Daemon
+        /// <summary>
+        /// Share processed
+        /// </summary>
+        Share = 1,
+
+        /// <summary>
+        /// Blocktemplate over BTStream received
+        /// </summary>
+        BtStream,
+
+        /// <summary>
+        /// JsonRPC Request to Daemon
+        /// </summary>
+        RpcRequest,
+
+        /// <summary>
+        /// Number of TCP connections to a pool
+        /// </summary>
+        Connections,
     }
 
     public class TelemetryEvent
     {
-        public TelemetryEvent(string server, string poolId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null)
+        public TelemetryEvent(string server, string poolId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null, int? total = null)
         {
             Server = server;
             PoolId = poolId;
@@ -21,10 +37,13 @@ namespace Miningcore.Notifications.Messages
             Elapsed = elapsed;
             Success = success;
             Error = error;
+
+            if(total.HasValue)
+                Total = total.Value;
         }
 
-        public TelemetryEvent(string server, string poolId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null) :
-            this(server, poolId, category, elapsed, success, error)
+        public TelemetryEvent(string server, string poolId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null, int? total = null) :
+            this(server, poolId, category, elapsed, success, error, total)
         {
             Info = info;
         }
@@ -36,5 +55,6 @@ namespace Miningcore.Notifications.Messages
         public TimeSpan Elapsed { get; set; }
         public bool? Success { get; set; }
         public string Error { get; }
+        public int Total { get; set; }
     }
 }

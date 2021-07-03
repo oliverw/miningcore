@@ -40,7 +40,7 @@ namespace Miningcore.Mining
             IMapper mapper,
             IMasterClock clock,
             IMessageBus messageBus,
-            NicehashService nicehashService) : base(ctx, clock)
+            NicehashService nicehashService) : base(ctx, messageBus, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -55,7 +55,6 @@ namespace Miningcore.Mining
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.messageBus = messageBus;
             this.nicehashService = nicehashService;
         }
 
@@ -64,17 +63,14 @@ namespace Miningcore.Mining
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
-        protected readonly IMessageBus messageBus;
         protected readonly NicehashService nicehashService;
         protected readonly CompositeDisposable disposables = new();
         protected BlockchainStats blockchainStats;
-        protected PoolConfig poolConfig;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
         protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
-        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
-            new();
+        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = new();
 
         protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
@@ -147,11 +143,6 @@ namespace Miningcore.Mining
                 {
                     logger.Error(ex, nameof(EnsureNoZombieClient));
                 });
-        }
-
-        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
-        {
-            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
         }
 
         #region VarDiff

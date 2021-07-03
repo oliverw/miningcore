@@ -23,15 +23,33 @@ namespace Miningcore.Notifications
         private Counter shareCounter;
         private Summary rpcRequestDurationSummary;
         private readonly IMessageBus messageBus;
+        private Counter validShareCounter;
+        private Counter invalidShareCounter;
+        private Summary poolConnectionsSummary;
 
         private void CreateMetrics()
         {
+            poolConnectionsSummary = Metrics.CreateSummary("miningcore_pool_connections", "Number of connections per pool", new SummaryConfiguration
+            {
+                LabelNames = new[] { "pool" }
+            });
+
             btStreamLatencySummary = Metrics.CreateSummary("miningcore_btstream_latency", "Latency of streaming block-templates in ms", new SummaryConfiguration
             {
                 LabelNames = new[] { "pool" }
             });
 
-            shareCounter = Metrics.CreateCounter("miningcore_valid_shares_total", "Valid received shares per pool", new CounterConfiguration
+            shareCounter = Metrics.CreateCounter("miningcore_shares_total", "Received shares per pool", new CounterConfiguration
+            {
+                LabelNames = new[] { "pool" }
+            });
+
+            validShareCounter = Metrics.CreateCounter("miningcore_valid_shares_total", "Valid received shares per pool", new CounterConfiguration
+            {
+                LabelNames = new[] { "pool" }
+            });
+
+            invalidShareCounter = Metrics.CreateCounter("miningcore_invalid_shares_total", "Invalid received shares per pool", new CounterConfiguration
             {
                 LabelNames = new[] { "pool" }
             });
@@ -48,6 +66,14 @@ namespace Miningcore.Notifications
             {
                 case TelemetryCategory.Share:
                     shareCounter.WithLabels(msg.PoolId).Inc();
+
+                    if(msg.Success.HasValue)
+                    {
+                        if(msg.Success.Value)
+                            validShareCounter.WithLabels(msg.PoolId).Inc();
+                        else
+                            invalidShareCounter.WithLabels(msg.PoolId).Inc();
+                    }
                     break;
 
                 case TelemetryCategory.BtStream:
@@ -56,6 +82,10 @@ namespace Miningcore.Notifications
 
                 case TelemetryCategory.RpcRequest:
                     rpcRequestDurationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                    break;
+
+                case TelemetryCategory.Connections:
+                    poolConnectionsSummary.WithLabels(msg.PoolId).Observe(msg.Total);
                     break;
             }
         }

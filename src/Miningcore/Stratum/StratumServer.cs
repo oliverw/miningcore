@@ -17,6 +17,8 @@ using Autofac;
 using Miningcore.Banning;
 using Miningcore.Configuration;
 using Miningcore.JsonRpc;
+using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
@@ -27,12 +29,17 @@ namespace Miningcore.Stratum
 {
     public abstract class StratumServer
     {
-        protected StratumServer(IComponentContext ctx, IMasterClock clock)
+        protected StratumServer(
+            IComponentContext ctx,
+            IMessageBus messageBus,
+            IMasterClock clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
+            Contract.RequiresNonNull(messageBus, nameof(messageBus));
             Contract.RequiresNonNull(clock, nameof(clock));
 
             this.ctx = ctx;
+            this.messageBus = messageBus;
             this.clock = clock;
         }
 
@@ -62,15 +69,17 @@ namespace Miningcore.Stratum
             }
         }
 
-        protected readonly Dictionary<string, StratumConnection> clients = new();
+        protected readonly Dictionary<string, StratumConnection> connections = new();
         protected static readonly ConcurrentDictionary<string, X509Certificate2> Certs = new();
         protected static readonly HashSet<int> IgnoredSocketErrors;
         protected static readonly MethodBase StreamWriterCtor = typeof(StreamWriter).GetConstructor(new[] { typeof(Stream), typeof(Encoding), typeof(int), typeof(bool) });
 
         protected readonly IComponentContext ctx;
+        protected readonly IMessageBus messageBus;
         protected readonly IMasterClock clock;
         protected readonly Dictionary<int, Socket> ports = new();
         protected ClusterConfig clusterConfig;
+        protected PoolConfig poolConfig;
         protected IBanManager banManager;
         protected ILogger logger;
 
@@ -174,10 +183,13 @@ namespace Miningcore.Stratum
         {
             Contract.RequiresNonNull(connection, nameof(connection));
 
-            lock(clients)
+            lock(connections)
             {
-                clients[connectionId] = connection;
+                connections[connectionId] = connection;
             }
+
+            // ReSharper disable once InconsistentlySynchronizedField
+            PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, connections.Count);
         }
 
         protected virtual void UnregisterConnection(StratumConnection connection)
@@ -188,11 +200,14 @@ namespace Miningcore.Stratum
 
             if(!string.IsNullOrEmpty(subscriptionId))
             {
-                lock(clients)
+                lock(connections)
                 {
-                    clients.Remove(subscriptionId);
+                    connections.Remove(subscriptionId);
                 }
             }
+
+            // ReSharper disable once InconsistentlySynchronizedField
+            PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, connections.Count);
         }
 
         protected abstract void OnConnect(StratumConnection connection, IPEndPoint portItem1);
@@ -319,9 +334,9 @@ namespace Miningcore.Stratum
         {
             StratumConnection[] tmp;
 
-            lock(clients)
+            lock(connections)
             {
-                tmp = clients.Values.ToArray();
+                tmp = connections.Values.ToArray();
             }
 
             foreach(var client in tmp)
@@ -342,12 +357,17 @@ namespace Miningcore.Stratum
         {
             StratumConnection[] tmp;
 
-            lock(clients)
+            lock(connections)
             {
-                tmp = clients.Values.ToArray();
+                tmp = connections.Values.ToArray();
             }
 
             return tmp.Select(func);
+        }
+
+        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success, null, total));
         }
 
         protected abstract Task OnRequestAsync(StratumConnection connection, Timestamped<JsonRpcRequest> request, CancellationToken ct);
