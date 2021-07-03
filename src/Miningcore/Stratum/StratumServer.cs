@@ -88,6 +88,9 @@ namespace Miningcore.Stratum
         {
             Contract.RequiresNonNull(endpoints, nameof(endpoints));
 
+            // Telemetry baseline
+            PublishTelemetry(TelemetryCategory.Connections, TimeSpan.Zero, true, 0);
+
             // Setup sockets
             var sockets = endpoints.Select(port =>
             {
