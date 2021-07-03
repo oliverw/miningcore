@@ -29,6 +29,7 @@ using Miningcore.Api.Controllers;
 using Miningcore.Api.Middlewares;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
+using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
 using Miningcore.Crypto.Hashing.Ethash;
 using Miningcore.Messaging;
@@ -682,6 +683,9 @@ namespace Miningcore
 
             // Configure Ethhash
             Dag.messageBus = messageBus;
+
+            // Configure Verthash
+            Verthash.messageBus = messageBus;
 
             // Configure RandomX
             LibRandomX.messageBus = messageBus;
