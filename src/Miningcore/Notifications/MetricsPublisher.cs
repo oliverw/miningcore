@@ -1,3 +1,4 @@
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
@@ -98,8 +99,8 @@ namespace Miningcore.Notifications
 
         protected override Task ExecuteAsync(CancellationToken ct)
         {
-            return messageBus
-                .Listen<TelemetryEvent>()
+            return messageBus.Listen<TelemetryEvent>()
+                .ObserveOn(TaskPoolScheduler.Default)
                 .Do(OnTelemetryEvent)
                 .ToTask(ct);
         }

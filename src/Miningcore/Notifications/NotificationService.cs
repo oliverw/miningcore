@@ -135,8 +135,7 @@ namespace Miningcore.Notifications
 
         private IObservable<IObservable<Unit>> OnMessageBus<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct)
         {
-            return messageBus
-                .Listen<T>()
+            return messageBus.Listen<T>()
                 .Select(msg => Observable.FromAsync(() =>
                     Guard(()=> handler(msg, ct), LogGuarded)));
         }
