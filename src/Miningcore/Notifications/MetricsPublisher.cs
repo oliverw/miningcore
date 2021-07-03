@@ -91,6 +91,10 @@ namespace Miningcore.Notifications
                     rpcRequestDurationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
 
+                case TelemetryCategory.Connections:
+                    poolConnectionsSummary.WithLabels(msg.GroupId).Observe(msg.Total);
+                    break;
+
                 case TelemetryCategory.Hash:
                     hashComputationSummary.WithLabels(msg.GroupId).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
