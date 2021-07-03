@@ -324,7 +324,7 @@ namespace Miningcore.Mining
         {
             logger.Info(() => "Online");
 
-            return messageBus.Listen<ClientShare>()
+            return messageBus.Listen<StratumShare>()
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Where(x => x.Share != null)
                 .Select(x => x.Share)

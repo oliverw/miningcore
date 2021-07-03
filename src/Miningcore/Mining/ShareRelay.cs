@@ -113,7 +113,7 @@ namespace Miningcore.Mining
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            messageBus.Listen<ClientShare>().Subscribe(x => queue.Add(x.Share));
+            messageBus.Listen<StratumShare>().Subscribe(x => queue.Add(x.Share));
 
             pubSocket = new ZSocket(ZSocketType.PUB);
 

@@ -62,7 +62,7 @@ namespace Miningcore.Notifications
 
             hashComputationSummary = Metrics.CreateSummary("miningcore_hash_computation_time", "Duration of RPC requests ms", new SummaryConfiguration
             {
-                LabelNames = new[] { "pool", "algo" }
+                LabelNames = new[] { "algo" }
             });
         }
 
@@ -91,7 +91,7 @@ namespace Miningcore.Notifications
                     break;
 
                 case TelemetryCategory.Hash:
-                    hashComputationSummary.WithLabels(msg.GroupId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
+                    hashComputationSummary.WithLabels(msg.GroupId).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
             }
         }

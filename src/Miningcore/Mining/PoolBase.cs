@@ -197,7 +197,7 @@ namespace Miningcore.Mining
             // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
 
-            var shareReceived = messageBus.Listen<ClientShare>()
+            var shareReceived = messageBus.Listen<StratumShare>()
                 .Where(x => x.Share.PoolId == poolConfig.Id && x.Connection == connection)
                 .Select(_ => Unit.Default)
                 .Take(1);

@@ -163,7 +163,7 @@ namespace Miningcore.Blockchain.Ethereum
                 await client.RespondAsync(true, request.Id);
 
                 // publish
-                messageBus.SendMessage(new ClientShare(client, share));
+                messageBus.SendMessage(new StratumShare(client, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);

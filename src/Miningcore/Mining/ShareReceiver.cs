@@ -267,7 +267,7 @@ namespace Miningcore.Mining
             // store
             share.PoolId = topic;
             share.Created = clock.Now;
-            messageBus.SendMessage(new ClientShare(null, share));
+            messageBus.SendMessage(new StratumShare(null, share));
 
             // update poolstats from shares
             if(poolContext != null)

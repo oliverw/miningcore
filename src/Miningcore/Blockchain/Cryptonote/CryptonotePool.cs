@@ -241,7 +241,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
 
                 // publish
-                messageBus.SendMessage(new ClientShare(connection, share));
+                messageBus.SendMessage(new StratumShare(connection, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
