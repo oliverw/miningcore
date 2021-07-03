@@ -16,6 +16,7 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
+using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -45,9 +46,12 @@ namespace Miningcore.Blockchain.Equihash
         protected object currentJobParams;
         private double hashrateDivisor;
         private EquihashPoolConfigExtra extraConfig;
+        private EquihashCoinTemplate coin;
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
+            coin = poolConfig.Template.As<EquihashCoinTemplate>();
+
             base.Configure(poolConfig, clusterConfig);
 
             extraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
@@ -57,8 +61,6 @@ namespace Miningcore.Blockchain.Equihash
                 logger.ThrowLogPoolStartupException("Pool z-address is not configured");
         }
 
-        /// <param name="ct"></param>
-        /// <inheritdoc />
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EquihashJobManager>(
@@ -166,9 +168,32 @@ namespace Miningcore.Blockchain.Equihash
 
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
+
+                // Nicehash support
+                if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
+                   context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
+                {
+                    // query current diff
+                    var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);
+
+                    if(nicehashDiff.HasValue)
+                    {
+                        if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                        {
+                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                            staticDiff = nicehashDiff;
+                        }
+
+                        else
+                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                    }
+                }
+
+                // Static diff
                 if(staticDiff.HasValue &&
-                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
                     context.VarDiff = null; // disable vardiff
                     context.SetDifficulty(staticDiff.Value);

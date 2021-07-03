@@ -7,20 +7,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
-using Miningcore.Blockchain.Bitcoin;
-using Miningcore.Blockchain.Ethereum.Configuration;
 using Miningcore.Configuration;
-using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
+using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
-using Miningcore.Util;
 using Newtonsoft.Json;
 
 namespace Miningcore.Blockchain.Ethereum
@@ -42,11 +39,12 @@ namespace Miningcore.Blockchain.Ethereum
 
         private object currentJobParams;
         private EthereumJobManager manager;
+        private EthereumCoinTemplate coin;
 
-        private async Task OnSubscribeAsync(StratumConnection client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.ContextAs<EthereumWorkerContext>();
+            var context = connection.ContextAs<EthereumWorkerContext>();
 
             if(request.Id == null)
                 throw new StratumException(StratumError.Other, "missing request id");
@@ -56,31 +54,31 @@ namespace Miningcore.Blockchain.Ethereum
             if(requestParams == null || requestParams.Length < 2 || requestParams.Any(string.IsNullOrEmpty))
                 throw new StratumException(StratumError.MinusOne, "invalid request");
 
-            manager.PrepareWorker(client);
+            manager.PrepareWorker(connection);
 
             var data = new object[]
                 {
                     new object[]
                     {
                         EthereumStratumMethods.MiningNotify,
-                        client.ConnectionId,
+                        connection.ConnectionId,
                         EthereumConstants.EthereumStratumVersion
                     },
                     context.ExtraNonce1
                 }
                 .ToArray();
 
-            await client.RespondAsync(data, request.Id);
+            await connection.RespondAsync(data, request.Id);
 
             // setup worker context
             context.IsSubscribed = true;
             context.UserAgent = requestParams[0].Trim();
         }
 
-        private async Task OnAuthorizeAsync(StratumConnection client, Timestamped<JsonRpcRequest> tsRequest)
+        private async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = client.ContextAs<EthereumWorkerContext>();
+            var context = connection.ContextAs<EthereumWorkerContext>();
 
             if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
@@ -101,30 +99,53 @@ namespace Miningcore.Blockchain.Ethereum
             context.Worker = workerName;
 
             // respond
-            await client.RespondAsync(context.IsAuthorized, request.Id);
+            await connection.RespondAsync(context.IsAuthorized, request.Id);
 
             // extract control vars from password
             var staticDiff = GetStaticDiffFromPassparts(passParts);
+
+            // Nicehash support
+            if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
+               context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
+            {
+                // query current diff
+                var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                }
+            }
+
+            // Static diff
             if(staticDiff.HasValue &&
-                (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                context.VarDiff == null && staticDiff.Value > context.Difficulty))
             {
                 context.VarDiff = null; // disable vardiff
                 context.SetDifficulty(staticDiff.Value);
 
-                logger.Info(() => $"[{client.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+                logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
             }
 
-            await EnsureInitialWorkSent(client);
+            await EnsureInitialWorkSent(connection);
 
             // log association
-            logger.Info(() => $"[{client.ConnectionId}] Authorized worker {workerValue}");
+            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
         }
 
-        private async Task OnSubmitAsync(StratumConnection client, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
+        private async Task OnSubmitAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
-            var context = client.ContextAs<EthereumWorkerContext>();
+            var context = connection.ContextAs<EthereumWorkerContext>();
 
             try
             {
@@ -136,7 +157,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 if(requestAge > maxShareAge)
                 {
-                    logger.Warn(() => $"[{client.ConnectionId}] Dropping stale share submission request (server overloaded?)");
+                    logger.Warn(() => $"[{connection.ConnectionId}] Dropping stale share submission request (server overloaded?)");
                     return;
                 }
 
@@ -156,20 +177,20 @@ namespace Miningcore.Blockchain.Ethereum
                 // recognize activity
                 context.LastActivity = clock.Now;
 
-                var poolEndpoint = poolConfig.Ports[client.PoolEndpoint.Port];
+                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
 
-                var share = await manager.SubmitShareAsync(client, submitRequest, ct);
+                var share = await manager.SubmitShareAsync(connection, submitRequest, ct);
 
-                await client.RespondAsync(true, request.Id);
+                await connection.RespondAsync(true, request.Id);
 
                 // publish
-                messageBus.SendMessage(new StratumShare(client, share));
+                messageBus.SendMessage(new StratumShare(connection, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{client.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
-                await EnsureInitialWorkSent(client);
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty / EthereumConstants.Pow2x32, 3)}");
+                await EnsureInitialWorkSent(connection);
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -177,7 +198,7 @@ namespace Miningcore.Blockchain.Ethereum
 
                 // update client stats
                 context.Stats.ValidShares++;
-                await UpdateVarDiffAsync(client);
+                await UpdateVarDiffAsync(connection);
             }
 
             catch(StratumException ex)
@@ -187,18 +208,18 @@ namespace Miningcore.Blockchain.Ethereum
 
                 // update client stats
                 context.Stats.InvalidShares++;
-                logger.Info(() => $"[{client.ConnectionId}] Share rejected: {ex.Message}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share rejected: {ex.Message}");
 
                 // banning
-                ConsiderBan(client, context, poolConfig.Banning);
+                ConsiderBan(connection, context, poolConfig.Banning);
 
                 throw;
             }
         }
 
-        private async Task EnsureInitialWorkSent(StratumConnection client)
+        private async Task EnsureInitialWorkSent(StratumConnection connection)
         {
-            var context = client.ContextAs<EthereumWorkerContext>();
+            var context = connection.ContextAs<EthereumWorkerContext>();
             var sendInitialWork = false;
 
             lock(context)
@@ -213,8 +234,8 @@ namespace Miningcore.Blockchain.Ethereum
             if(sendInitialWork)
             {
                 // send intial update
-                await client.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-                await client.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
+                await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
             }
         }
 
@@ -257,6 +278,13 @@ namespace Miningcore.Blockchain.Ethereum
         }
 
         #region Overrides
+
+        public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
+        {
+            coin = poolConfig.Template.As<EthereumCoinTemplate>();
+
+            base.Configure(poolConfig, clusterConfig);
+        }
 
         protected override async Task SetupJobManager(CancellationToken ct)
         {
