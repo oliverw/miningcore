@@ -65,7 +65,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
                     {
                         var result = LibMultihash.equihash_verify_200_9(h, header.Length, s, solution.Length, personalization);
 
-                        messageBus.SendTelemetry("Equihash 200-9", TelemetryCategory.Hash, sw.Elapsed, result);
+                        messageBus?.SendTelemetry("Equihash 200-9", TelemetryCategory.Hash, sw.Elapsed, result);
 
                         return result;
                     }
@@ -100,7 +100,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
                     {
                         var result = LibMultihash.equihash_verify_144_5(h, header.Length, s, solution.Length, personalization);
 
-                        messageBus.SendTelemetry(personalization ?? "Equihash 144-5", TelemetryCategory.Hash, sw.Elapsed, result);
+                        messageBus?.SendTelemetry(personalization ?? "Equihash 144-5", TelemetryCategory.Hash, sw.Elapsed, result);
 
                         return result;
                     }
@@ -135,7 +135,7 @@ namespace Miningcore.Crypto.Hashing.Equihash
                     {
                         var result = LibMultihash.equihash_verify_96_5(h, header.Length, s, solution.Length, personalization);
 
-                        messageBus.SendTelemetry("Equihash 96-5", TelemetryCategory.Hash, sw.Elapsed, result);
+                        messageBus?.SendTelemetry("Equihash 96-5", TelemetryCategory.Hash, sw.Elapsed, result);
 
                         return result;
                     }

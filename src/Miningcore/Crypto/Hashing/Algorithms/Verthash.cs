@@ -31,7 +31,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
                 }
             }
 
-            messageBus.SendTelemetry("Verthash", TelemetryCategory.Hash, sw.Elapsed);
+            messageBus?.SendTelemetry("Verthash", TelemetryCategory.Hash, sw.Elapsed);
         }
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();

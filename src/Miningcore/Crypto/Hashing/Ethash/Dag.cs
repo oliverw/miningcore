@@ -140,7 +140,7 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 result = value.result.value;
             }
 
-            messageBus.SendTelemetry("Ethash", TelemetryCategory.Hash, sw.Elapsed, value.success);
+            messageBus?.SendTelemetry("Ethash", TelemetryCategory.Hash, sw.Elapsed, value.success);
 
             return value.success;
         }

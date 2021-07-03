@@ -306,7 +306,7 @@ namespace Miningcore.Native
                     ctx.LastAccess = DateTime.Now;
                     success = true;
 
-                    messageBus.SendTelemetry("RandomX", TelemetryCategory.Hash, sw.Elapsed, true);
+                    messageBus?.SendTelemetry("RandomX", TelemetryCategory.Hash, sw.Elapsed, true);
                 }
 
                 catch(Exception ex)
