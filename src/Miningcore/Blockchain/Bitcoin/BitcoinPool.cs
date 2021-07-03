@@ -153,7 +153,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 await connection.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
-                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker for 60 sec");
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for 60 sec");
 
                 banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
 
