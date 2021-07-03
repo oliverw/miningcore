@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
 namespace Miningcore.Notifications.Messages
 {
-    public class BtStreamMessage
+    public record BtStreamMessage
     {
         public BtStreamMessage(string topic, string payload, DateTime sent, DateTime received)
         {

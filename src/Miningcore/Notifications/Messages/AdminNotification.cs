@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Miningcore.Notifications.Messages
 {
-    public class AdminNotification
+    public record AdminNotification
     {
         public AdminNotification(string subject, string message)
         {

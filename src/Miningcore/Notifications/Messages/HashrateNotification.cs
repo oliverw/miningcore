@@ -2,7 +2,7 @@ using Miningcore.Persistence.Model;
 
 namespace Miningcore.Notifications.Messages
 {
-    public class HashrateNotification
+    public record HashrateNotification
     {
         public string PoolId { get; set; }
         public double Hashrate { get; set; }
