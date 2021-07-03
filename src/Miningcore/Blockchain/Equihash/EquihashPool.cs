@@ -170,25 +170,7 @@ namespace Miningcore.Blockchain.Equihash
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
-                   context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
-                {
-                    // query current diff
-                    var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);
-
-                    if(nicehashDiff.HasValue)
-                    {
-                        if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                        {
-                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                            staticDiff = nicehashDiff;
-                        }
-
-                        else
-                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
-                    }
-                }
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
 
                 // Static diff
                 if(staticDiff.HasValue &&
