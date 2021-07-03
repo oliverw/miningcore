@@ -26,12 +26,12 @@ namespace Miningcore.Notifications
         private readonly IMessageBus messageBus;
         private Counter validShareCounter;
         private Counter invalidShareCounter;
-        private Summary poolConnectionsSummary;
         private Summary hashComputationSummary;
+        private Counter poolConnectionsCounter;
 
         private void CreateMetrics()
         {
-            poolConnectionsSummary = Metrics.CreateSummary("miningcore_pool_connections", "Number of connections per pool", new SummaryConfiguration
+            poolConnectionsCounter = Metrics.CreateCounter("miningcore_pool_connections", "Number of connections per pool", new CounterConfiguration
             {
                 LabelNames = new[] { "pool" }
             });
@@ -92,7 +92,7 @@ namespace Miningcore.Notifications
                     break;
 
                 case TelemetryCategory.Connections:
-                    poolConnectionsSummary.WithLabels(msg.GroupId).Observe(msg.Total);
+                    poolConnectionsCounter.WithLabels(msg.GroupId).IncTo(msg.Total);
                     break;
 
                 case TelemetryCategory.Hash:
