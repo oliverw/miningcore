@@ -26,6 +26,7 @@ namespace Miningcore.Notifications
         private Counter validShareCounter;
         private Counter invalidShareCounter;
         private Summary poolConnectionsSummary;
+        private Summary hashComputationSummary;
 
         private void CreateMetrics()
         {
@@ -58,6 +59,11 @@ namespace Miningcore.Notifications
             {
                 LabelNames = new[] { "pool", "method" }
             });
+
+            hashComputationSummary = Metrics.CreateSummary("miningcore_hash_computation_time", "Duration of RPC requests ms", new SummaryConfiguration
+            {
+                LabelNames = new[] { "pool", "algo" }
+            });
         }
 
         private void OnTelemetryEvent(TelemetryEvent msg)
@@ -84,8 +90,8 @@ namespace Miningcore.Notifications
                     rpcRequestDurationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
 
-                case TelemetryCategory.Connections:
-                    poolConnectionsSummary.WithLabels(msg.PoolId).Observe(msg.Total);
+                case TelemetryCategory.Hash:
+                    hashComputationSummary.WithLabels(msg.PoolId, msg.Info).Observe(msg.Elapsed.TotalMilliseconds);
                     break;
             }
         }

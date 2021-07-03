@@ -25,35 +25,35 @@ namespace Miningcore.Notifications.Messages
         /// Number of TCP connections to a pool
         /// </summary>
         Connections,
+
+        /// <summary>
+        /// Hash computation time
+        /// </summary>
+        Hash,
     }
 
-    public class TelemetryEvent
+    public record TelemetryEvent
     {
-        public TelemetryEvent(string server, string poolId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null, int? total = null)
+        public TelemetryEvent(string poolId, TelemetryCategory category, TimeSpan elapsed, bool? success = null, string error = null)
         {
-            Server = server;
             PoolId = poolId;
             Category = category;
             Elapsed = elapsed;
             Success = success;
             Error = error;
-
-            if(total.HasValue)
-                Total = total.Value;
         }
 
-        public TelemetryEvent(string server, string poolId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null, int? total = null) :
-            this(server, poolId, category, elapsed, success, error, total)
+        public TelemetryEvent(string poolId, TelemetryCategory category, string info, TimeSpan elapsed, bool? success = null, string error = null) :
+            this(poolId, category, elapsed, success, error)
         {
             Info = info;
         }
 
-        public string Server { get; set; }
-        public string PoolId { get; set; }
-        public TelemetryCategory Category { get; set; }
+        public string PoolId { get; }
+        public TelemetryCategory Category { get; }
         public string Info { get; }
-        public TimeSpan Elapsed { get; set; }
-        public bool? Success { get; set; }
+        public TimeSpan Elapsed { get; }
+        public bool? Success { get; }
         public string Error { get; }
         public int Total { get; set; }
     }

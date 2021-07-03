@@ -8,22 +8,37 @@ namespace Miningcore.Util
     {
         public static async Task Timed(Func<Task> action, Action<TimeSpan> elapsedHandler)
         {
-            var sw = new Stopwatch();
+            var sw = Stopwatch.StartNew();
 
-            sw.Start();
-            await action();
-            sw.Stop();
+            try
+            {
+                await action();
+            }
+
+            finally
+            {
+                sw.Stop();
+            }
 
             elapsedHandler(sw.Elapsed);
         }
 
         public static async Task<T> Timed<T>(Func<Task<T>> action, Action<TimeSpan> elapsedHandler)
         {
-            var sw = new Stopwatch();
+            T result;
 
-            sw.Start();
-            var result = await action();
+            var sw = Stopwatch.StartNew();
             sw.Stop();
+
+            try
+            {
+                result = await action();
+            }
+
+            finally
+            {
+                sw.Stop();
+            }
 
             elapsedHandler(sw.Elapsed);
             return result;
@@ -31,13 +46,61 @@ namespace Miningcore.Util
 
         public static async Task<T> Timed<T>(Func<Task<T>> action, Action<T, TimeSpan> elapsedHandler)
         {
-            var sw = new Stopwatch();
+            T result;
 
-            sw.Start();
-            var result = await action();
+            var sw = Stopwatch.StartNew();
             sw.Stop();
 
+            try
+            {
+                result = await action();
+            }
+
+            finally
+            {
+                sw.Stop();
+            }
+
             elapsedHandler(result, sw.Elapsed);
+            return result;
+        }
+
+        public static void Timed(Action action, Action<TimeSpan> elapsedHandler)
+        {
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                action();
+            }
+
+            finally
+            {
+                sw.Stop();
+            }
+
+            elapsedHandler(sw.Elapsed);
+        }
+
+        public static T Timed<T>(Func<T> action, Action<TimeSpan> elapsedHandler)
+        {
+            T result;
+
+            var sw = Stopwatch.StartNew();
+            sw.Stop();
+
+            try
+            {
+                result = action();
+            }
+
+            finally
+            {
+                sw.Stop();
+            }
+
+            elapsedHandler(sw.Elapsed);
+
             return result;
         }
     }

@@ -367,7 +367,10 @@ namespace Miningcore.Stratum
 
         protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null, int? total = null)
         {
-            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success, null, total));
+            messageBus.SendMessage(new TelemetryEvent(poolConfig.Id, cat, elapsed, success)
+            {
+                Total = total ?? 0,
+            });
         }
 
         protected abstract Task OnRequestAsync(StratumConnection connection, Timestamped<JsonRpcRequest> request, CancellationToken ct);

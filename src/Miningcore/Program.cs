@@ -30,7 +30,9 @@ using Miningcore.Api.Middlewares;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
 using Miningcore.Crypto.Hashing.Equihash;
+using Miningcore.Messaging;
 using Miningcore.Mining;
+using Miningcore.Native;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence.Dummy;
@@ -82,7 +84,6 @@ namespace Miningcore
                 ValidateConfig();
                 ConfigureLogging();
                 LogRuntimeInfo();
-                ConfigureMisc();
                 ValidateRuntimeEnvironment();
 
                 var hostBuilder = new HostBuilder();
@@ -315,6 +316,8 @@ namespace Miningcore
                 await RecoverSharesAsync(shareRecoveryOption.Value());
                 return;
             }
+
+            ConfigureMisc();
 
             if(clusterConfig.InstanceId.HasValue)
                 logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
@@ -664,13 +667,16 @@ namespace Miningcore
             return Path.Combine(config.LogBaseDirectory, name);
         }
 
-        private static void ConfigureMisc()
+        private void ConfigureMisc()
         {
             ZcashNetworks.Instance.EnsureRegistered();
 
             // Configure Equihash
             if(clusterConfig.EquihashMaxThreads.HasValue)
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+
+            // Configure RandomX
+            LibRandomX.messageBus = container.Resolve<IMessageBus>();
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)
