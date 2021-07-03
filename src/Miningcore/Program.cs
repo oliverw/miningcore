@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -361,7 +362,15 @@ namespace Miningcore
 
         private static void LogRuntimeInfo()
         {
-            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+            var assembly = Assembly.GetEntryAssembly();
+            var gitVersionInformationType = assembly.GetType("GitVersionInformation");
+
+            var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
+            var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
+            var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
+
+            logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
+            logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
@@ -413,7 +422,7 @@ namespace Miningcore
 
             var app = new CommandLineApplication
             {
-                FullName = "MiningCore - Pool Mining Engine",
+                FullName = "Miningcore - Mining Pool Engine",
                 ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
                 LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
             };
