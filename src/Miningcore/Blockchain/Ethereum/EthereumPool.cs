@@ -122,13 +122,11 @@ namespace Miningcore.Blockchain.Ethereum
 
                 await EnsureInitialWorkSent(connection);
 
-                // log association
                 logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
             }
 
             else
             {
-                // issue short-time ban
                 logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
                 banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
