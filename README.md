@@ -165,7 +165,7 @@ $ Miningcore -c config.json
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
 
-#### Donations
+# Donations
 
 This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
 
