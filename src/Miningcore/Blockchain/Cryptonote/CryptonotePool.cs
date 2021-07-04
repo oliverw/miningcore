@@ -83,44 +83,57 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // validate login
             var result = manager.ValidateAddress(addressToValidate);
-            if(!result)
-                throw new StratumException(StratumError.MinusOne, "invalid login");
 
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
-            // extract control vars from password
-            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
-            var staticDiff = GetStaticDiffFromPassparts(passParts);
-
-            // Nicehash support
-            staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, manager.Coin.Name, manager.Coin.GetAlgorithmName());
-
-            // Static diff
-            if(staticDiff.HasValue &&
-               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            if(context.IsAuthorized)
             {
-                context.VarDiff = null; // disable vardiff
-                context.SetDifficulty(staticDiff.Value);
+                // extract control vars from password
+                var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Static difficulty set to {staticDiff.Value}");
+                // Nicehash support
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+
+                // Static diff
+                if(staticDiff.HasValue &&
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                {
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
+
+                    logger.Info(() => $"[{connection.ConnectionId}] Static difficulty set to {staticDiff.Value}");
+                }
+
+                // respond
+                var loginResponse = new CryptonoteLoginResponse
+                {
+                    Id = connection.ConnectionId,
+                    Job = CreateWorkerJob(connection)
+                };
+
+                await connection.RespondAsync(loginResponse, request.Id);
+
+                // log association
+                if(!string.IsNullOrEmpty(context.Worker))
+                    logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {context.Worker}@{context.Miner}");
+                else
+                    logger.Info(() => $"[{connection.ConnectionId}] Authorized miner {context.Miner}");
             }
 
-            // respond
-            var loginResponse = new CryptonoteLoginResponse
-            {
-                Id = connection.ConnectionId,
-                Job = CreateWorkerJob(connection)
-            };
-
-            await connection.RespondAsync(loginResponse, request.Id);
-
-            // log association
-            if(!string.IsNullOrEmpty(context.Worker))
-                logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {context.Worker}@{context.Miner}");
             else
-                logger.Info(() => $"[{connection.ConnectionId}] Authorized miner {context.Miner}");
+            {
+                await connection.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
+
+                // issue short-time ban
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {context.Miner} for 60 sec");
+
+                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+
+                CloseConnection(connection);
+            }
         }
 
         private async Task OnGetJobAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)

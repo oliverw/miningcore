@@ -290,7 +290,8 @@ namespace Miningcore.Blockchain.Cryptonote
 
         public bool ValidateAddress(string address)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+            if(string.IsNullOrEmpty(address))
+                return false;
 
             var addressPrefix = LibCryptonote.DecodeAddress(address);
             var addressIntegratedPrefix = LibCryptonote.DecodeIntegratedAddress(address);
@@ -307,6 +308,12 @@ namespace Miningcore.Blockchain.Cryptonote
                 case CryptonoteNetworkType.Test:
                     if(addressPrefix != coin.AddressPrefixTestnet &&
                         addressIntegratedPrefix != coin.AddressPrefixIntegratedTestnet)
+                        return false;
+                    break;
+
+                case CryptonoteNetworkType.Stage:
+                    if(addressPrefix != coin.AddressPrefixStagenet &&
+                       addressIntegratedPrefix != coin.AddressPrefixIntegratedStagenet)
                         return false;
                     break;
             }

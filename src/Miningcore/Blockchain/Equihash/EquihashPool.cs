@@ -154,7 +154,7 @@ namespace Miningcore.Blockchain.Equihash
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
-            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
+            context.IsAuthorized = await manager.ValidateAddressAsync(minerName, ct);
             context.Miner = minerName;
             context.Worker = workerName;
 
@@ -192,7 +192,6 @@ namespace Miningcore.Blockchain.Equihash
 
             else
             {
-                // respond
                 await connection.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)

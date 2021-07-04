@@ -617,7 +617,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public virtual async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+            if(string.IsNullOrEmpty(address))
+                return false;
 
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 BitcoinCommands.ValidateAddress, new[] { address });

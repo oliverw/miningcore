@@ -94,34 +94,48 @@ namespace Miningcore.Blockchain.Ethereum
             var workerName = workerParts?.Length > 1 ? workerParts[1].Trim() : "0";
 
             // assumes that workerName is an address
-            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && manager.ValidateAddress(minerName);
-            context.Miner = minerName.ToLower();
-            context.Worker = workerName;
+            context.IsAuthorized = manager.ValidateAddress(minerName);
 
             // respond
             await connection.RespondAsync(context.IsAuthorized, request.Id);
 
-            // extract control vars from password
-            var staticDiff = GetStaticDiffFromPassparts(passParts);
-
-            // Nicehash support
-            staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
-
-            // Static diff
-            if(staticDiff.HasValue &&
-               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                context.VarDiff == null && staticDiff.Value > context.Difficulty))
+            if(context.IsAuthorized)
             {
-                context.VarDiff = null; // disable vardiff
-                context.SetDifficulty(staticDiff.Value);
+                context.Miner = minerName.ToLower();
+                context.Worker = workerName;
 
-                logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+                // extract control vars from password
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
+
+                // Nicehash support
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+
+                // Static diff
+                if(staticDiff.HasValue &&
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                {
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
+
+                    logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
+                }
+
+                await EnsureInitialWorkSent(connection);
+
+                // log association
+                logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
             }
 
-            await EnsureInitialWorkSent(connection);
+            else
+            {
+                // issue short-time ban
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for 60 sec");
 
-            // log association
-            logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {workerValue}");
+                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+
+                CloseConnection(connection);
+            }
         }
 
         private async Task OnSubmitAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
