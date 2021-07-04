@@ -14,7 +14,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
-using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
