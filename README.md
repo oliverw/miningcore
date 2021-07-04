@@ -40,6 +40,10 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 - Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
 - Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
 
+#### Vertcoin
+
+- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
+- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
 
 ### Donations
 
