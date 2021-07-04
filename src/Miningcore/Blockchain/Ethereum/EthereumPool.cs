@@ -12,7 +12,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
-using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -130,9 +129,9 @@ namespace Miningcore.Blockchain.Ethereum
             else
             {
                 // issue short-time ban
-                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for 60 sec");
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
                 CloseConnection(connection);
             }

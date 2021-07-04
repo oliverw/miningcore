@@ -68,6 +68,7 @@ namespace Miningcore.Mining
         protected readonly CompositeDisposable disposables = new();
         protected BlockchainStats blockchainStats;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
+        protected static readonly TimeSpan loginFailureBanTimeout = TimeSpan.FromSeconds(10);
         protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 

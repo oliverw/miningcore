@@ -128,9 +128,9 @@ namespace Miningcore.Blockchain.Cryptonote
                 await connection.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
 
                 // issue short-time ban
-                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {context.Miner} for 60 sec");
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {context.Miner} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
                 CloseConnection(connection);
             }
