@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using Microsoft.Extensions.Caching.Memory;
-using NBitcoin;
 using Contract = Miningcore.Contracts.Contract;
 
 namespace Miningcore.Banning
@@ -26,7 +25,7 @@ namespace Miningcore.Banning
             Contract.RequiresNonNull(address, nameof(address));
             Contract.Requires<ArgumentException>(duration.TotalMilliseconds > 0, $"{nameof(duration)} must not be empty");
 
-            // don't ban 127.0.0.1
+            // don't ban loopback
             if(address.Equals(IPAddress.Loopback) || address.Equals(IPAddress.IPv6Loopback))
                 return;
 
