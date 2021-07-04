@@ -45,21 +45,6 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 - Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
 - In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
 
-### Donations
-
-This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
-
-* XMR: `46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46`
-* BTC:  `bc1quzdczlpfn3n4xvpdz0x9h79569afhg0ashwxxp`
-* BCH:  `qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv`
-* LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
-* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
-* ETH:  `0xcb55abBfe361B12323eb952110cE33d5F28BeeE1`
-* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
-* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
-* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
-* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
-
 ### Running pre-built Release Binaries
 
 #### Linux
@@ -179,3 +164,18 @@ $ Miningcore -c config.json
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
+
+### Donations
+
+This software comes with a built-in donation of 0.1% per block-reward to support the ongoing development of this project. You can also send donations directly to the following accounts:
+
+* XMR: `46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46`
+* BTC:  `bc1quzdczlpfn3n4xvpdz0x9h79569afhg0ashwxxp`
+* BCH:  `qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv`
+* LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
+* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
+* ETH:  `0xcb55abBfe361B12323eb952110cE33d5F28BeeE1`
+* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
+* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
+* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
+* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
