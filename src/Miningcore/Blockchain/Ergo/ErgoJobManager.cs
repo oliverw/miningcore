@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reactive.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -31,8 +34,98 @@ namespace Miningcore.Blockchain.Ergo
 
         private ErgoCoinTemplate coin;
         private ErgoClient daemon;
+        protected string network;
+        protected TimeSpan jobRebroadcastTimeout;
         private readonly IHttpClientFactory httpClientFactory;
         private readonly IExtraNonceProvider extraNonceProvider;
+
+        protected virtual void SetupJobUpdates()
+        {
+            jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
+            var blockFound = blockFoundSubject.Synchronize();
+            var pollTimerRestart = blockFoundSubject.Synchronize();
+
+            var triggers = new List<IObservable<(bool Force, string Via, string Data)>>
+            {
+                blockFound.Select(x => (false, JobRefreshBy.BlockFound, (string) null))
+            };
+
+            if(true) // extraPoolConfig?.BtStream == null)
+            {
+                if(poolConfig.BlockRefreshInterval > 0)
+                {
+                    // periodically update block-template
+                    var pollingInterval = poolConfig.BlockRefreshInterval > 0 ? poolConfig.BlockRefreshInterval : 1000;
+
+                    triggers.Add(Observable.Timer(TimeSpan.FromMilliseconds(pollingInterval))
+                        .TakeUntil(pollTimerRestart)
+                        .Select(_ => (false, JobRefreshBy.Poll, (string) null))
+                        .Repeat());
+                }
+
+                else
+                {
+                    // get initial blocktemplate
+                    triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+                        .Select(_ => (false, JobRefreshBy.Initial, (string) null))
+                        .TakeWhile(_ => !hasInitialBlockTemplate));
+                }
+
+                // periodically update transactions for current template
+                if(poolConfig.JobRebroadcastTimeout > 0)
+                {
+                    triggers.Add(Observable.Timer(jobRebroadcastTimeout)
+                        .TakeUntil(pollTimerRestart)
+                        .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
+                        .Repeat());
+                }
+            }
+
+            //else
+            //{
+            //    var btStream = BtStreamSubscribe(extraPoolConfig.BtStream);
+
+            //    if(poolConfig.JobRebroadcastTimeout > 0)
+            //    {
+            //        var interval = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout - 0.1d));
+
+            //        triggers.Add(btStream
+            //            .Select(json =>
+            //            {
+            //                var force = !lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval);
+            //                return (force, !force ? JobRefreshBy.BlockTemplateStream : JobRefreshBy.BlockTemplateStreamRefresh, json);
+            //            })
+            //            .Publish()
+            //            .RefCount());
+            //    }
+
+            //    else
+            //    {
+            //        triggers.Add(btStream
+            //            .Select(json => (false, JobRefreshBy.BlockTemplateStream, json))
+            //            .Publish()
+            //            .RefCount());
+            //    }
+
+            //    // get initial blocktemplate
+            //    triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
+            //        .Select(_ => (false, JobRefreshBy.Initial, (string) null))
+            //        .TakeWhile(_ => !hasInitialBlockTemplate));
+            //}
+
+            Jobs = Observable.Merge(triggers)
+                .Select(x => Observable.FromAsync(() => UpdateJob(x.Force, x.Via, x.Data)))
+                .Concat()
+                .Where(x => x.IsNew || x.Force)
+                .Do(x =>
+                {
+                    if(x.IsNew)
+                        hasInitialBlockTemplate = true;
+                })
+                .Select(x => GetJobParamsForStratum(x.IsNew))
+                .Publish()
+                .RefCount();
+        }
 
         protected async Task ShowDaemonSyncProgressAsync()
         {
@@ -41,8 +134,7 @@ namespace Miningcore.Blockchain.Ergo
 
             if(info.FullHeight.HasValue && info.HeadersHeight.HasValue)
             {
-                var totalBlocks = info.FullHeight.Value;
-                var percent = (double) info.HeadersHeight.Value / totalBlocks * 100;
+                var percent = (double) info.FullHeight.Value / info.HeadersHeight.Value * 100;
 
                 logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {info.PeersCount} peers");
             }
@@ -55,32 +147,39 @@ namespace Miningcore.Blockchain.Ergo
         {
             logger.LogInvoke();
 
-            //try
-            //{
-            //    var infoResponse = await daemon.ExecuteCmdAnyAsync(logger, CryptonoteCommands.GetInfo);
+            var info = await Guard(() => daemon.GetNodeInfoAsync(),
+                ex=> logger.Debug(ex));
 
-            //    if(infoResponse.Error != null)
-            //        logger.Warn(() => $"Error(s) refreshing network stats: {infoResponse.Error.Message} (Code {infoResponse.Error.Code})");
+            if(info != null)
+            {
+                BlockchainStats.ConnectedPeers = info.PeersCount;
+                // TODO: BlockchainStats.NetworkHashrate = info.HeadersScore
+            }
+        }
 
-            //    if(infoResponse.Response != null)
-            //    {
-            //        var info = infoResponse.Response.ToObject<GetInfoResponse>();
-
-            //        BlockchainStats.NetworkHashrate = info.Target > 0 ? (double) info.Difficulty / info.Target : 0;
-            //        BlockchainStats.ConnectedPeers = info.OutgoingConnectionsCount + info.IncomingConnectionsCount;
-            //    }
-            //}
-
-            //catch(Exception e)
-            //{
-            //    logger.Error(e);
-            //}
+        protected void ConfigureRewards()
+        {
+            // Donation to MiningCore development
+            if(network == "mainnet" &&
+               DevDonation.Addresses.TryGetValue(poolConfig.Template.Symbol, out var address))
+            {
+                poolConfig.RewardRecipients = poolConfig.RewardRecipients.Concat(new[]
+                {
+                    new RewardRecipient
+                    {
+                        Address = address,
+                        Percentage = DevDonation.Percent,
+                        Type = "dev"
+                    }
+                }).ToArray();
+            }
         }
 
         #region API-Surface
 
         public IObservable<object> Jobs { get; private set; }
         public BlockchainStats BlockchainStats { get; } = new();
+        public string Network => network;
 
         public ErgoCoinTemplate Coin => coin;
 
@@ -109,9 +208,48 @@ namespace Miningcore.Blockchain.Ergo
 
         #region Overrides
 
-        protected override Task PostStartInitAsync(CancellationToken ct)
+        protected override async Task PostStartInitAsync(CancellationToken ct)
         {
-            return Task.CompletedTask;
+            // validate pool address
+            if(string.IsNullOrEmpty(poolConfig.Address))
+                logger.ThrowLogPoolStartupException($"Pool address is not configured");
+
+            var validity = await Guard(() => daemon.CheckAddressValidityAsync(poolConfig.Address, ct),
+                ex=> logger.ThrowLogPoolStartupException($"Error validating pool address: {ex}"));
+
+            if(!validity.IsValid)
+                logger.ThrowLogPoolStartupException($"Daemon reports pool address {poolConfig.Address} as invalid: {validity.Error}");
+
+            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
+                ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
+
+            // chain detection
+            var m = Regex.Match(info.Name, "ergo-([^-]+)-.+");
+            if(!m.Success)
+                logger.ThrowLogPoolStartupException($"Unable to identify network type ({info.Name}");
+
+            network = m.Groups[1].Value.ToLower();
+
+            // Payment-processing setup
+            if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
+            {
+                ConfigureRewards();
+            }
+
+            // update stats
+            BlockchainStats.NetworkType = network;
+            BlockchainStats.RewardType = "POW";
+
+            await UpdateNetworkStatsAsync();
+
+            // Periodically update network stats
+            Observable.Interval(TimeSpan.FromMinutes(10))
+                .Select(via => Observable.FromAsync(async () =>
+                    await Guard(UpdateNetworkStatsAsync, ex => logger.Error(ex))))
+                .Concat()
+                .Subscribe();
+
+            SetupJobUpdates();
         }
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
@@ -159,7 +297,8 @@ namespace Miningcore.Blockchain.Ergo
                 var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
                     ex=> logger.Debug(ex));
 
-                var isSynched = info?.Difficulty.HasValue == true;
+                var isSynched = info?.FullHeight.HasValue == true && info?.HeadersHeight.HasValue == true &&
+                                info.FullHeight.Value > info.HeadersHeight.Value;
 
                 if(isSynched)
                 {

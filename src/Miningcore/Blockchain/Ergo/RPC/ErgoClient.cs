@@ -5,7 +5,6 @@
 //----------------------
 
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 
 #nullable enable
 
@@ -9407,11 +9406,11 @@ namespace Miningcore.Blockchain.Ergo
     
         /// <summary>Can be 'null' if no headers is applied since node launch</summary>
         [Newtonsoft.Json.JsonProperty("headersScore", Required = Newtonsoft.Json.Required.AllowNull)]
-        public JToken HeadersScore { get; set; }= default!;
+        public string HeadersScore { get; set; }= default!;
     
         /// <summary>Can be 'null' if no full block is applied since node launch</summary>
         [Newtonsoft.Json.JsonProperty("fullBlocksScore", Required = Newtonsoft.Json.Required.AllowNull)]
-        public JToken FullBlocksScore { get; set; }= default!;
+        public string FullBlocksScore { get; set; }= default!;
     
         /// <summary>Can be 'null' if genesis blocks is not produced yet</summary>
         [Newtonsoft.Json.JsonProperty("genesisBlockId", Required = Newtonsoft.Json.Required.AllowNull)]
