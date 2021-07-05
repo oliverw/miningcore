@@ -6,6 +6,10 @@
 
 using System.Collections.Generic;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+
 #nullable enable
 
 #pragma warning disable 108 // Disable "CS0108 '{derivedDto}.ToJson()' hides inherited member '{dtoBase}.ToJson()'. Use the new keyword if hiding was intended."
@@ -9257,7 +9261,11 @@ namespace Miningcore.Blockchain.Ergo
         [Newtonsoft.Json.JsonProperty("msg", Required = Newtonsoft.Json.Required.Always)]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Msg { get; set; }= default!;
-    
+
+        /// <summary>Block height</summary>
+        [Newtonsoft.Json.JsonProperty("h", Required = Newtonsoft.Json.Required.Always)]
+        public ulong Height { get; set; }= default!;
+
         /// <summary>Work target value</summary>
         [Newtonsoft.Json.JsonProperty("b", Required = Newtonsoft.Json.Required.Always)]
         public int B { get; set; }= default!;
@@ -9394,7 +9402,7 @@ namespace Miningcore.Blockchain.Ergo
         /// <summary>Difficulty on current bestFullHeaderId. Can be 'null' if no full block is applied since node launch</summary>
         [Newtonsoft.Json.JsonProperty("difficulty", Required = Newtonsoft.Json.Required.AllowNull)]
         [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
-        public long? Difficulty { get; set; }= default!;
+        public JToken Difficulty { get; set; }= default!;
     
         /// <summary>Current internal node time</summary>
         [Newtonsoft.Json.JsonProperty("currentTime", Required = Newtonsoft.Json.Required.Always)]

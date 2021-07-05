@@ -7,11 +7,21 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Miningcore.Blockchain.Bitcoin;
+using Miningcore.Blockchain.Bitcoin.Configuration;
+using Miningcore.Blockchain.Bitcoin.DaemonResponses;
+using Miningcore.Blockchain.Ergo.Configuration;
+using NLog;
 using Miningcore.Configuration;
+using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
+using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Stratum;
+using Miningcore.Time;
 using Miningcore.Util;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Contract = Miningcore.Contracts.Contract;
 using static Miningcore.Util.ActionUtils;
 
@@ -22,12 +32,15 @@ namespace Miningcore.Blockchain.Ergo
         public ErgoJobManager(
             IComponentContext ctx,
             IMessageBus messageBus,
+            IMasterClock clock,
             IHttpClientFactory httpClientFactory,
             IExtraNonceProvider extraNonceProvider) :
             base(ctx, messageBus)
         {
             Contract.RequiresNonNull(httpClientFactory, nameof(httpClientFactory));
+            Contract.RequiresNonNull(clock, nameof(clock));
 
+            this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
             this.httpClientFactory = httpClientFactory;
         }
@@ -36,8 +49,13 @@ namespace Miningcore.Blockchain.Ergo
         private ErgoClient daemon;
         protected string network;
         protected TimeSpan jobRebroadcastTimeout;
+        protected DateTime? lastJobRebroadcast;
+        protected readonly List<ErgoJob> validJobs = new();
+        protected int maxActiveJobs = 4;
         private readonly IHttpClientFactory httpClientFactory;
         private readonly IExtraNonceProvider extraNonceProvider;
+        private readonly IMasterClock clock;
+        private ErgoPoolConfigExtra extraPoolConfig;
 
         protected virtual void SetupJobUpdates()
         {
@@ -127,17 +145,117 @@ namespace Miningcore.Blockchain.Ergo
                 .RefCount();
         }
 
+        protected async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
+        {
+            logger.LogInvoke();
+
+            try
+            {
+                if(forceUpdate)
+                    lastJobRebroadcast = clock.Now;
+
+                var blockTemplate = string.IsNullOrEmpty(json) ?
+                    await GetBlockTemplateAsync() :
+                    GetBlockTemplateFromJson(json);
+
+                var job = currentJob;
+
+                var isNew = job == null ||
+                            (blockTemplate != null &&
+                             (job.BlockTemplate?.Work.Msg != blockTemplate.Work.Msg ||
+                              blockTemplate.Work?.Height > job.BlockTemplate.Work.Height));
+
+                if(isNew)
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Work.Height, poolConfig.Template);
+
+                if(isNew || forceUpdate)
+                {
+                    job = new ErgoJob();
+
+                    job.Init(blockTemplate, NextJobId(), poolConfig, clusterConfig, clock, network);
+
+                    lock(jobLock)
+                    {
+                        validJobs.Insert(0, job);
+
+                        // trim active jobs
+                        while(validJobs.Count > maxActiveJobs)
+                            validJobs.RemoveAt(validJobs.Count - 1);
+                    }
+
+                    if(isNew)
+                    {
+                        if(via != null)
+                            logger.Info(() => $"Detected new block {job.Height} [{via}]");
+                        else
+                            logger.Info(() => $"Detected new block {job.Height}");
+
+                        // update stats
+                        BlockchainStats.LastNetworkBlockTime = clock.Now;
+                        BlockchainStats.BlockHeight = job.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+                        //BlockchainStats.NextNetworkTarget = blockTemplate.Target;
+                        //BlockchainStats.NextNetworkBits = blockTemplate.Bits;
+                    }
+
+                    else
+                    {
+                        if(via != null)
+                            logger.Debug(() => $"Template update {job.Height} [{via}]");
+                        else
+                            logger.Debug(() => $"Template update {job.Height}");
+                    }
+
+                    currentJob = job;
+                }
+
+                return (isNew, forceUpdate);
+            }
+
+            catch(Exception ex)
+            {
+                logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
+            }
+
+            return (false, forceUpdate);
+        }
+
+        protected async Task<ErgoBlockTemplate> GetBlockTemplateAsync()
+        {
+            logger.LogInvoke();
+
+            var infoTask = daemon.GetNodeInfoAsync();
+            var miningCandidateTask = daemon.MiningRequestBlockCandidateAsync(CancellationToken.None);
+
+            await Task.WhenAll(infoTask, miningCandidateTask);
+
+            var info = infoTask.Result;
+            var work = miningCandidateTask.Result;
+
+            return new ErgoBlockTemplate(work, info);
+        }
+
+        protected ErgoBlockTemplate GetBlockTemplateFromJson(string json)
+        {
+            logger.LogInvoke();
+
+            return JsonConvert.DeserializeObject<ErgoBlockTemplate>(json);
+        }
+
         protected async Task ShowDaemonSyncProgressAsync()
         {
             var info = await Guard(() => daemon.GetNodeInfoAsync(),
-                ex=> logger.Debug(ex));
+                ex => logger.Debug(ex));
 
-            if(info.FullHeight.HasValue && info.HeadersHeight.HasValue)
+            if(info?.FullHeight.HasValue == true && info.HeadersHeight.HasValue)
             {
                 var percent = (double) info.FullHeight.Value / info.HeadersHeight.Value * 100;
 
                 logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {info.PeersCount} peers");
             }
+
+            else if(!string.IsNullOrEmpty(info?.BestFullHeaderId))
+                logger.Info(() => $"Daemon is downloading headers ...");
 
             else
                 logger.Info(() => $"Waiting for daemon to resume syncing ...");
@@ -148,11 +266,22 @@ namespace Miningcore.Blockchain.Ergo
             logger.LogInvoke();
 
             var info = await Guard(() => daemon.GetNodeInfoAsync(),
-                ex=> logger.Debug(ex));
+                ex => logger.Debug(ex));
 
             if(info != null)
             {
                 BlockchainStats.ConnectedPeers = info.PeersCount;
+
+                // Network difficulty
+                if(info.Difficulty.Type == JTokenType.Object)
+                {
+                    if(((JObject) info.Difficulty).TryGetValue("proof-of-work", out var diffVal))
+                        BlockchainStats.NetworkDifficulty = diffVal.Value<double>();
+                }
+
+                else
+                    BlockchainStats.NetworkDifficulty = info.Difficulty.Value<double>();
+
                 // TODO: BlockchainStats.NetworkHashrate = info.HeadersScore
             }
         }
@@ -199,7 +328,7 @@ namespace Miningcore.Blockchain.Ergo
                 return false;
 
             var validity = await Guard(() => daemon.CheckAddressValidityAsync(address, ct),
-                ex=> logger.Debug(ex));
+                ex => logger.Debug(ex));
 
             return validity?.IsValid == true;
         }
@@ -255,6 +384,11 @@ namespace Miningcore.Blockchain.Ergo
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             coin = poolConfig.Template.As<ErgoCoinTemplate>();
+
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
+
+            if(extraPoolConfig?.MaxActiveJobs.HasValue == true)
+                maxActiveJobs = extraPoolConfig.MaxActiveJobs.Value;
 
             base.Configure(poolConfig, clusterConfig);
         }
@@ -317,11 +451,6 @@ namespace Miningcore.Blockchain.Ergo
                 // delay retry by 5s
                 await Task.Delay(5000, ct);
             }
-        }
-
-        protected Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
-        {
-            return Task.FromResult((true, false));
         }
 
         protected object GetJobParamsForStratum(bool isNew)
