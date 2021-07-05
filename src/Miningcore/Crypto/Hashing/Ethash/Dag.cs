@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -6,7 +7,9 @@ using System.Threading.Tasks;
 using Miningcore.Blockchain.Ethereum;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
+using Miningcore.Messaging;
 using Miningcore.Native;
+using Miningcore.Notifications.Messages;
 using NLog;
 
 namespace Miningcore.Crypto.Hashing.Ethash
@@ -22,6 +25,8 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
         private IntPtr handle = IntPtr.Zero;
         private static readonly Semaphore sem = new(1, 1);
+
+        internal static IMessageBus messageBus;
 
         public DateTime LastUsed { get; set; }
 
@@ -117,6 +122,8 @@ namespace Miningcore.Crypto.Hashing.Ethash
 
             logger.LogInvoke();
 
+            var sw = Stopwatch.StartNew();
+
             mixDigest = null;
             result = null;
 
@@ -132,6 +139,8 @@ namespace Miningcore.Crypto.Hashing.Ethash
                 mixDigest = value.mix_hash.value;
                 result = value.result.value;
             }
+
+            messageBus?.SendTelemetry("Ethash", TelemetryCategory.Hash, sw.Elapsed, value.success);
 
             return value.success;
         }

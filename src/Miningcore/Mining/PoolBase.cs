@@ -17,6 +17,7 @@ using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Nicehash;
+using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -40,7 +41,7 @@ namespace Miningcore.Mining
             IMapper mapper,
             IMasterClock clock,
             IMessageBus messageBus,
-            NicehashService nicehashService) : base(ctx, clock)
+            NicehashService nicehashService) : base(ctx, messageBus, clock)
         {
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(serializerSettings, nameof(serializerSettings));
@@ -55,7 +56,6 @@ namespace Miningcore.Mining
             this.cf = cf;
             this.statsRepo = statsRepo;
             this.mapper = mapper;
-            this.messageBus = messageBus;
             this.nicehashService = nicehashService;
         }
 
@@ -64,17 +64,15 @@ namespace Miningcore.Mining
         protected readonly IConnectionFactory cf;
         protected readonly IStatsRepository statsRepo;
         protected readonly IMapper mapper;
-        protected readonly IMessageBus messageBus;
         protected readonly NicehashService nicehashService;
         protected readonly CompositeDisposable disposables = new();
         protected BlockchainStats blockchainStats;
-        protected PoolConfig poolConfig;
         protected static readonly TimeSpan maxShareAge = TimeSpan.FromSeconds(6);
+        protected static readonly TimeSpan loginFailureBanTimeout = TimeSpan.FromSeconds(10);
         protected static readonly Regex regexStaticDiff = new(@";?d=(\d*(\.\d+)?)", RegexOptions.Compiled);
         protected const string PasswordControlVarsSeparator = ";";
 
-        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers =
-            new();
+        protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = new();
 
         protected abstract Task SetupJobManager(CancellationToken ct);
         protected abstract WorkerContextBase CreateClientContext();
@@ -149,11 +147,6 @@ namespace Miningcore.Mining
                 });
         }
 
-        protected void PublishTelemetry(TelemetryCategory cat, TimeSpan elapsed, bool? success = null)
-        {
-            messageBus.SendMessage(new TelemetryEvent(clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id, cat, elapsed, success));
-        }
-
         #region VarDiff
 
         protected async Task UpdateVarDiffAsync(StratumConnection connection, bool isIdleUpdate = false)
@@ -206,7 +199,7 @@ namespace Miningcore.Mining
             // Diff may not be changed, only be changed when avg is out of the range.
             // Diff must be dropped once changed. Will not affect reject rate.
 
-            var shareReceived = messageBus.Listen<ClientShare>()
+            var shareReceived = messageBus.Listen<StratumShare>()
                 .Where(x => x.Share.PoolId == poolConfig.Id && x.Connection == connection)
                 .Select(_ => Unit.Default)
                 .Take(1);
@@ -299,6 +292,31 @@ namespace Miningcore.Mining
                     }
                 }
             }
+        }
+
+        protected async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent,
+            double? staticDiff, string coinName, string algoName)
+        {
+            if(userAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) &&
+               clusterConfig.Nicehash?.EnableAutoDiff == true)
+            {
+                var nicehashDiff = await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        return nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                }
+            }
+
+            return staticDiff;
         }
 
         private StratumEndpoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)

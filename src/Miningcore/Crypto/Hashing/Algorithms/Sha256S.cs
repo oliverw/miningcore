@@ -15,7 +15,7 @@ namespace Miningcore.Crypto.Hashing.Algorithms
 
             using(var hasher = SHA256.Create())
             {
-                hasher.TryComputeHash(data, result, out var cb);
+                hasher.TryComputeHash(data, result, out _);
             }
         }
     }

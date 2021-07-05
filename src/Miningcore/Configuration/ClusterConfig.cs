@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
+// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Configuration
@@ -553,6 +554,15 @@ namespace Miningcore.Configuration
         public string FromName { get; set; }
     }
 
+    public partial class PushoverConfig
+    {
+        public bool Enabled { get; set; }
+        public string User { get; set; }
+        public string Token { get; set; }
+        public bool NotifyBlockFound { get; set; }
+        public bool NotifyPaymentSuccess { get; set; }
+    }
+
     public partial class AdminNotifications
     {
         public bool Enabled { get; set; }
@@ -566,6 +576,7 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
 
         public EmailSenderConfig Email { get; set; }
+        public PushoverConfig Pushover { get; set; }
         public AdminNotifications Admin { get; set; }
     }
 
@@ -577,11 +588,11 @@ namespace Miningcore.Configuration
         public string[] IpWhitelist { get; set; }
     }
 
-    public class ApiSSLConfig
+    public class ApiTlsConfig
     {
         public bool Enabled { get; set; }
-        public string SSLPath { get; set; }
-        public string SSLPassword { get; set; }
+        public string TlsPfxFile { get; set; }
+        public string TlsPfxPassword { get; set; }
     }
 
     public partial class ApiConfig
@@ -590,7 +601,7 @@ namespace Miningcore.Configuration
         public string ListenAddress { get; set; }
         public int Port { get; set; }
 
-        public ApiSSLConfig SSLConfig { get; set; }
+        public ApiTlsConfig Tls { get; set; }
 
         public ApiRateLimitConfig RateLimiting { get; set; }
 

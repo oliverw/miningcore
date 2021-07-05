@@ -30,10 +30,12 @@ using Miningcore.Api.Controllers;
 using Miningcore.Api.Middlewares;
 using Miningcore.Api.Responses;
 using Miningcore.Configuration;
+using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Crypto.Hashing.Equihash;
-using Miningcore.Extensions;
+using Miningcore.Crypto.Hashing.Ethash;
+using Miningcore.Messaging;
 using Miningcore.Mining;
-using Miningcore.Nicehash;
+using Miningcore.Native;
 using Miningcore.Notifications;
 using Miningcore.Payments;
 using Miningcore.Persistence.Dummy;
@@ -85,7 +87,6 @@ namespace Miningcore
                 ValidateConfig();
                 ConfigureLogging();
                 LogRuntimeInfo();
-                ConfigureMisc();
                 ValidateRuntimeEnvironment();
 
                 var hostBuilder = new HostBuilder();
@@ -119,6 +120,16 @@ namespace Miningcore
 
                     var port = clusterConfig.Api?.Port ?? 4000;
                     var enableApiRateLimiting = clusterConfig.Api?.RateLimiting?.Disabled != true;
+
+                    var apiTlsEnable =
+                        clusterConfig.Api?.Tls?.Enabled == true ||
+                        !string.IsNullOrEmpty(clusterConfig.Api?.Tls?.TlsPfxFile);
+
+                    if(apiTlsEnable)
+                    {
+                        if(!File.Exists(clusterConfig.Api.Tls.TlsPfxFile))
+                            logger.ThrowLogPoolStartupException($"Certificate file {clusterConfig.Api.Tls.TlsPfxFile} does not exist!");
+                    }
 
                     hostBuilder.ConfigureWebHost(builder =>
                     {
@@ -159,8 +170,8 @@ namespace Miningcore
                         {
                             options.Listen(address, port, listenOptions =>
                             {
-                                if(clusterConfig.Api?.SSLConfig?.Enabled == true)
-                                    listenOptions.UseHttps(clusterConfig.Api.SSLConfig.SSLPath, clusterConfig.Api.SSLConfig.SSLPassword);
+                                if(apiTlsEnable)
+                                    listenOptions.UseHttps(clusterConfig.Api.Tls.TlsPfxFile, clusterConfig.Api.Tls.TlsPfxPassword);
                             });
                         })
                         .Configure(app =>
@@ -309,6 +320,8 @@ namespace Miningcore
                 return;
             }
 
+            ConfigureMisc();
+
             if(clusterConfig.InstanceId.HasValue)
                 logger.Info($"This is cluster node {clusterConfig.InstanceId.Value}{(!string.IsNullOrEmpty(clusterConfig.ClusterName) ? $" [{clusterConfig.ClusterName}]" : string.Empty)}");
 
@@ -349,7 +362,15 @@ namespace Miningcore
 
         private static void LogRuntimeInfo()
         {
-            logger.Info(() => $"{RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
+            var assembly = Assembly.GetEntryAssembly();
+            var gitVersionInformationType = assembly.GetType("GitVersionInformation");
+
+            var assemblySemVer = gitVersionInformationType.GetField("AssemblySemVer").GetValue(null);
+            var branchName = gitVersionInformationType.GetField("BranchName").GetValue(null);
+            var sha = gitVersionInformationType.GetField("Sha").GetValue(null);
+
+            logger.Info(() => $"Version {assemblySemVer}-{branchName} [{sha}]");
+            logger.Info(() => $"Runtime {RuntimeInformation.FrameworkDescription.Trim()} on {RuntimeInformation.OSDescription.Trim()} [{RuntimeInformation.ProcessArchitecture}]");
         }
 
         private static void ValidateConfig()
@@ -401,7 +422,7 @@ namespace Miningcore
 
             var app = new CommandLineApplication
             {
-                FullName = "MiningCore - Pool Mining Engine",
+                FullName = "Miningcore - Mining Pool Engine",
                 ShortVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}",
                 LongVersionGetter = () => $"v{Assembly.GetEntryAssembly().GetName().Version}"
             };
@@ -546,9 +567,10 @@ namespace Miningcore
 
                 loggingConfig.AddTarget(nullTarget);
 
-                // Suppress some Aspnet stuff
+                // Suppress some log spam
                 loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Internal.*", true);
                 loggingConfig.AddRule(level, NLog.LogLevel.Info, nullTarget, "Microsoft.AspNetCore.Mvc.Infrastructure.*", true);
+                loggingConfig.AddRule(level, NLog.LogLevel.Warn, nullTarget, "System.Net.Http.HttpClient.*", true);
 
                 // Api Log
                 if(!string.IsNullOrEmpty(config.ApiLogFile) && !isShareRecoveryMode)
@@ -656,13 +678,26 @@ namespace Miningcore
             return Path.Combine(config.LogBaseDirectory, name);
         }
 
-        private static void ConfigureMisc()
+        private void ConfigureMisc()
         {
             ZcashNetworks.Instance.EnsureRegistered();
 
+            var messageBus = container.Resolve<IMessageBus>();
+
             // Configure Equihash
+            EquihashSolver.messageBus = messageBus;
+
             if(clusterConfig.EquihashMaxThreads.HasValue)
                 EquihashSolver.MaxThreads = clusterConfig.EquihashMaxThreads.Value;
+
+            // Configure Ethhash
+            Dag.messageBus = messageBus;
+
+            // Configure Verthash
+            Verthash.messageBus = messageBus;
+
+            // Configure RandomX
+            LibRandomX.messageBus = messageBus;
         }
 
         private static void ConfigurePersistence(ContainerBuilder builder)

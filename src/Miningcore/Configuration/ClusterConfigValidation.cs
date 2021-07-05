@@ -199,7 +199,8 @@ namespace Miningcore.Configuration
                 .NotNull();
 
             RuleFor(j => j.Persistence)
-                .NotNull();
+                .NotNull()
+                .When(x => x.PaymentProcessing?.Enabled == true && x.ShareRelay == null);
 
             RuleFor(j => j.Pools)
                 .NotNull()

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Miningcore.Notifications.Messages
 {
-    public class PaymentNotification
+    public record PaymentNotification
     {
         public PaymentNotification(string poolId, string error, decimal amount, string symbol, int recpientsCount, string[] txIds, string[] txExplorerLinks, decimal? txFee)
         {

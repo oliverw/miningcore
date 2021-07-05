@@ -249,8 +249,7 @@ namespace Miningcore.Payments
             try
             {
                 // monitor pool lifetime
-                disposables.Add(messageBus
-                    .Listen<PoolStatusNotification>()
+                disposables.Add(messageBus.Listen<PoolStatusNotification>()
                     .ObserveOn(TaskPoolScheduler.Default)
                     .Subscribe(OnPoolStatusNotification));
 

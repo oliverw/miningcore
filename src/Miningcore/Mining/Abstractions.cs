@@ -1,24 +1,10 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Miningcore.Blockchain;
 using Miningcore.Configuration;
-using Miningcore.Stratum;
 
 namespace Miningcore.Mining
 {
-    public readonly struct ClientShare
-    {
-        public ClientShare(StratumConnection connection, Share share)
-        {
-            Connection = connection;
-            Share = share;
-        }
-
-        public StratumConnection Connection { get; }
-        public Share Share { get; }
-    }
-
     public interface IMiningPool
     {
         PoolConfig Config { get; }

@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
+using Miningcore.Contracts;
 using Miningcore.Nicehash.API;
 using Miningcore.Rest;
 using NLog;
@@ -28,6 +29,9 @@ namespace Miningcore.Nicehash
 
         public Task<double?> GetStaticDiff(string coin, string algo, CancellationToken ct)
         {
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(coin), $"{nameof(coin)} must not be empty");
+            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(algo), $"{nameof(algo)} must not be empty");
+
             return Guard(async () =>
             {
                 var algos = await cache.GetOrCreateAsync("nicehash_algos", async (entry) =>

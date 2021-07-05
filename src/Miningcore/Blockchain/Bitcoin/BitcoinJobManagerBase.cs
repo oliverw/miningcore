@@ -143,10 +143,13 @@ namespace Miningcore.Blockchain.Bitcoin
                 }
 
                 // periodically update transactions for current template
-                triggers.Add(Observable.Timer(jobRebroadcastTimeout)
-                    .TakeUntil(pollTimerRestart)
-                    .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
-                    .Repeat());
+                if(poolConfig.JobRebroadcastTimeout > 0)
+                {
+                    triggers.Add(Observable.Timer(jobRebroadcastTimeout)
+                        .TakeUntil(pollTimerRestart)
+                        .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
+                        .Repeat());
+                }
             }
 
             else
@@ -614,7 +617,8 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public virtual async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+            if(string.IsNullOrEmpty(address))
+                return false;
 
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 BitcoinCommands.ValidateAddress, new[] { address });

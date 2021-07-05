@@ -202,7 +202,8 @@ namespace Miningcore.Blockchain.Equihash
 
         public override async Task<bool> ValidateAddressAsync(string address, CancellationToken ct)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+            if(string.IsNullOrEmpty(address))
+                return false;
 
             // handle t-addr
             if(await base.ValidateAddressAsync(address, ct))
@@ -212,7 +213,7 @@ namespace Miningcore.Blockchain.Equihash
             var result = await daemon.ExecuteCmdAnyAsync<ValidateAddressResponse>(logger, ct,
                 EquihashCommands.ZValidateAddress, new[] { address });
 
-            return result.Response != null && result.Response.IsValid;
+            return result.Response is {IsValid: true};
         }
 
         public override object[] GetSubscriberData(StratumConnection worker)

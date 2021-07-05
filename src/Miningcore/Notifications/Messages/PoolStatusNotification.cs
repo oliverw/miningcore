@@ -9,7 +9,7 @@ namespace Miningcore.Notifications.Messages
         Offline
     }
 
-    public class PoolStatusNotification
+    public record PoolStatusNotification
     {
         public IMiningPool Pool { get; set; }
         public PoolStatus Status { get; set; }

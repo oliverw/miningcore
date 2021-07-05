@@ -267,7 +267,7 @@ namespace Miningcore.Mining
             // store
             share.PoolId = topic;
             share.Created = clock.Now;
-            messageBus.SendMessage(new ClientShare(null, share));
+            messageBus.SendMessage(new StratumShare(null, share));
 
             // update poolstats from shares
             if(poolContext != null)
@@ -307,8 +307,7 @@ namespace Miningcore.Mining
                 try
                 {
                     // monitor pool lifetime
-                    disposables.Add(messageBus
-                        .Listen<PoolStatusNotification>()
+                    disposables.Add(messageBus.Listen<PoolStatusNotification>()
                         .ObserveOn(TaskPoolScheduler.Default)
                         .Subscribe(OnPoolStatusNotification));
 

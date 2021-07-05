@@ -1,3 +1,4 @@
+using System;
 using Miningcore.Blockchain;
 using Miningcore.Messaging;
 using Miningcore.Persistence.Model;
@@ -110,6 +111,24 @@ namespace Miningcore.Extensions
             {
                 Pool = pool,
                 Status = status
+            });
+        }
+
+        public static void SendTelemetry(this IMessageBus messageBus, string groupId, TelemetryCategory cat, TimeSpan elapsed,
+            bool? success = null, string error = null, int? total = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(groupId, cat, elapsed, success, error)
+            {
+                Total = total ?? 0,
+            });
+        }
+
+        public static void SendTelemetry(this IMessageBus messageBus, string groupId, TelemetryCategory cat, string info, TimeSpan elapsed,
+            bool? success = null, string error = null, int? total = null)
+        {
+            messageBus.SendMessage(new TelemetryEvent(groupId, cat, info, elapsed, success, error)
+            {
+                Total = total ?? 0,
             });
         }
     }

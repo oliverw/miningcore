@@ -45,9 +45,12 @@ namespace Miningcore.Blockchain.Equihash
         protected object currentJobParams;
         private double hashrateDivisor;
         private EquihashPoolConfigExtra extraConfig;
+        private EquihashCoinTemplate coin;
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
+            coin = poolConfig.Template.As<EquihashCoinTemplate>();
+
             base.Configure(poolConfig, clusterConfig);
 
             extraConfig = poolConfig.Extra.SafeExtensionDataAs<EquihashPoolConfigExtra>();
@@ -57,8 +60,6 @@ namespace Miningcore.Blockchain.Equihash
                 logger.ThrowLogPoolStartupException("Pool z-address is not configured");
         }
 
-        /// <param name="ct"></param>
-        /// <inheritdoc />
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EquihashJobManager>(
@@ -152,7 +153,7 @@ namespace Miningcore.Blockchain.Equihash
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that workerName is an address
-            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
+            context.IsAuthorized = await manager.ValidateAddressAsync(minerName, ct);
             context.Miner = minerName;
             context.Worker = workerName;
 
@@ -166,9 +167,14 @@ namespace Miningcore.Blockchain.Equihash
 
                 // extract control vars from password
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
+
+                // Nicehash support
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+
+                // Static diff
                 if(staticDiff.HasValue &&
-                    (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                        context.VarDiff == null && staticDiff.Value > context.Difficulty))
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
                     context.VarDiff = null; // disable vardiff
                     context.SetDifficulty(staticDiff.Value);
@@ -185,13 +191,12 @@ namespace Miningcore.Blockchain.Equihash
 
             else
             {
-                // respond
                 await connection.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
-                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker for 60 sec");
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
                 CloseConnection(connection);
             }
@@ -234,7 +239,7 @@ namespace Miningcore.Blockchain.Equihash
                 await connection.RespondAsync(true, request.Id);
 
                 // publish
-                messageBus.SendMessage(new ClientShare(connection, share));
+                messageBus.SendMessage(new StratumShare(connection, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);

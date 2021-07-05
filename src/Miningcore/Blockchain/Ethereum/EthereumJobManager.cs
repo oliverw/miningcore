@@ -370,7 +370,8 @@ namespace Miningcore.Blockchain.Ethereum
 
         public bool ValidateAddress(string address)
         {
-            Contract.Requires<ArgumentException>(!string.IsNullOrEmpty(address), $"{nameof(address)} must not be empty");
+            if(string.IsNullOrEmpty(address))
+                return false;
 
             if(EthereumConstants.ZeroHashPattern.IsMatch(address) ||
                 !EthereumConstants.ValidAddressPattern.IsMatch(address))

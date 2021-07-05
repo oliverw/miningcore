@@ -15,7 +15,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
-using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
@@ -97,7 +96,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var workerName = split?.Skip(1).FirstOrDefault()?.Trim() ?? string.Empty;
 
             // assumes that minerName is an address
-            context.IsAuthorized = !string.IsNullOrEmpty(minerName) && await manager.ValidateAddressAsync(minerName, ct);
+            context.IsAuthorized = await manager.ValidateAddressAsync(minerName, ct);
             context.Miner = minerName;
             context.Worker = workerName;
 
@@ -113,25 +112,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
-                   context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
-                {
-                    // query current diff
-                    var nicehashDiff = await nicehashService.GetStaticDiff(coin.Name, coin.GetAlgorithmName(), CancellationToken.None);
-
-                    if(nicehashDiff.HasValue)
-                    {
-                        if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                        {
-                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                            staticDiff = nicehashDiff;
-                        }
-
-                        else
-                            logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
-                    }
-                }
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -149,13 +130,12 @@ namespace Miningcore.Blockchain.Bitcoin
 
             else
             {
-                // respond
                 await connection.RespondErrorAsync(StratumError.UnauthorizedWorker, "Authorization failed", request.Id, context.IsAuthorized);
 
                 // issue short-time ban if unauthorized to prevent DDos on daemon (validateaddress RPC)
-                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker for 60 sec");
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {minerName} for {loginFailureBanTimeout.TotalSeconds} sec");
 
-                banManager.Ban(connection.RemoteEndpoint.Address, TimeSpan.FromSeconds(60));
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
 
                 CloseConnection(connection);
             }
@@ -198,7 +178,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 await connection.RespondAsync(true, request.Id);
 
                 // publish
-                messageBus.SendMessage(new ClientShare(connection, share));
+                messageBus.SendMessage(new StratumShare(connection, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);

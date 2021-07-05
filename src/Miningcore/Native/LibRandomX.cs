@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Miningcore.Contracts;
 using Miningcore.Extensions;
+using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using NLog;
 
 // ReSharper disable UnusedMember.Global
@@ -15,6 +18,7 @@ namespace Miningcore.Native
     public static unsafe class LibRandomX
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        internal static IMessageBus messageBus;
 
         #region VM managment
 
@@ -282,9 +286,9 @@ namespace Miningcore.Native
         {
             Contract.Requires<ArgumentException>(result.Length >= 32, $"{nameof(result)} must be greater or equal 32 bytes");
 
+            var sw = Stopwatch.StartNew();
             var success = false;
 
-            // look up generation
             var (ctx, seedVms) = GetSeed(realm, seedHex);
 
             if(ctx != null)
@@ -300,17 +304,18 @@ namespace Miningcore.Native
 
                     ctx.LastAccess = DateTime.Now;
                     success = true;
+
+                    messageBus?.SendTelemetry("RandomX", TelemetryCategory.Hash, sw.Elapsed, true);
                 }
 
                 catch(Exception ex)
                 {
-                    // ReSharper disable once InconsistentlySynchronizedField
                     logger.Error(() => ex.Message);
                 }
 
                 finally
                 {
-                    // return VM
+                    // return it
                     if(vm != null)
                         seedVms.Add(vm);
                 }

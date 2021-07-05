@@ -4,7 +4,7 @@ using ProtoBuf;
 namespace Miningcore.Blockchain
 {
     [ProtoContract]
-    public class Share
+    public record Share
     {
         /// <summary>
         /// The pool originating this share from

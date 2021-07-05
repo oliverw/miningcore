@@ -14,7 +14,6 @@ using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
 using Miningcore.Nicehash;
-using Miningcore.Nicehash.API;
 using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
@@ -83,62 +82,56 @@ namespace Miningcore.Blockchain.Cryptonote
 
             // validate login
             var result = manager.ValidateAddress(addressToValidate);
-            if(!result)
-                throw new StratumException(StratumError.MinusOne, "invalid login");
 
             context.IsSubscribed = result;
             context.IsAuthorized = result;
 
-            // extract control vars from password
-            var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
-            var staticDiff = GetStaticDiffFromPassparts(passParts);
-
-            // Nicehash support
-            if(clusterConfig.Nicehash?.EnableAutoDiff == true &&
-               context.UserAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase))
+            if(context.IsAuthorized)
             {
-                // query current diff
-                var nicehashDiff = await nicehashService.GetStaticDiff(manager.Coin.Name, manager.Coin.GetAlgorithmName(), CancellationToken.None);
+                // extract control vars from password
+                var passParts = loginRequest.Password?.Split(PasswordControlVarsSeparator);
+                var staticDiff = GetStaticDiffFromPassparts(passParts);
 
-                if(nicehashDiff.HasValue)
+                // Nicehash support
+                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, manager.Coin.Name, manager.Coin.GetAlgorithmName());
+
+                // Static diff
+                if(staticDiff.HasValue &&
+                   (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
+                    context.VarDiff == null && staticDiff.Value > context.Difficulty))
                 {
-                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+                    context.VarDiff = null; // disable vardiff
+                    context.SetDifficulty(staticDiff.Value);
 
-                        staticDiff = nicehashDiff;
-                    }
-
-                    else
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
+                    logger.Info(() => $"[{connection.ConnectionId}] Static difficulty set to {staticDiff.Value}");
                 }
+
+                // respond
+                var loginResponse = new CryptonoteLoginResponse
+                {
+                    Id = connection.ConnectionId,
+                    Job = CreateWorkerJob(connection)
+                };
+
+                await connection.RespondAsync(loginResponse, request.Id);
+
+                // log association
+                if(!string.IsNullOrEmpty(context.Worker))
+                    logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {context.Worker}@{context.Miner}");
+                else
+                    logger.Info(() => $"[{connection.ConnectionId}] Authorized miner {context.Miner}");
             }
 
-            // Static diff
-            if(staticDiff.HasValue &&
-               (context.VarDiff != null && staticDiff.Value >= context.VarDiff.Config.MinDiff ||
-                context.VarDiff == null && staticDiff.Value > context.Difficulty))
-            {
-                context.VarDiff = null; // disable vardiff
-                context.SetDifficulty(staticDiff.Value);
-
-                logger.Info(() => $"[{connection.ConnectionId}] Static difficulty set to {staticDiff.Value}");
-            }
-
-            // respond
-            var loginResponse = new CryptonoteLoginResponse
-            {
-                Id = connection.ConnectionId,
-                Job = CreateWorkerJob(connection)
-            };
-
-            await connection.RespondAsync(loginResponse, request.Id);
-
-            // log association
-            if(!string.IsNullOrEmpty(context.Worker))
-                logger.Info(() => $"[{connection.ConnectionId}] Authorized worker {context.Worker}@{context.Miner}");
             else
-                logger.Info(() => $"[{connection.ConnectionId}] Authorized miner {context.Miner}");
+            {
+                await connection.RespondErrorAsync(StratumError.MinusOne, "invalid login", request.Id);
+
+                logger.Info(() => $"[{connection.ConnectionId}] Banning unauthorized worker {context.Miner} for {loginFailureBanTimeout.TotalSeconds} sec");
+
+                banManager.Ban(connection.RemoteEndpoint.Address, loginFailureBanTimeout);
+
+                CloseConnection(connection);
+            }
         }
 
         private async Task OnGetJobAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
@@ -241,7 +234,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 await connection.RespondAsync(new CryptonoteResponseBase(), request.Id);
 
                 // publish
-                messageBus.SendMessage(new ClientShare(connection, share));
+                messageBus.SendMessage(new StratumShare(connection, share));
 
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);

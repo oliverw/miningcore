@@ -191,7 +191,7 @@ namespace Miningcore.Configuration
 
         public override string GetAlgorithmName()
         {
-            return "Ethhash";
+            return "Ethash";
         }
 
         #endregion
