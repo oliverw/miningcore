@@ -170,7 +170,8 @@
   <ItemGroup>
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="blake.h" />
-    <ClInclude Include="blake2s.h" />
+    <ClInclude Include="blake2\ref\blake2-impl.h" />
+    <ClInclude Include="blake2\ref\blake2.h" />
     <ClInclude Include="boolberry.h" />
     <ClInclude Include="brg_endian.h" />
     <ClInclude Include="c11.h" />
@@ -216,7 +217,6 @@
     <ClInclude Include="sha3\extra.h" />
     <ClInclude Include="sha3\gost_streebog.h" />
     <ClInclude Include="sha3\sph_blake.h" />
-    <ClInclude Include="sha3\sph_blake2s.h" />
     <ClInclude Include="sha3\sph_bmw.h" />
     <ClInclude Include="sha3\sph_cubehash.h" />
     <ClInclude Include="sha3\sph_echo.h" />
@@ -261,7 +261,12 @@
   <ItemGroup>
     <ClCompile Include="bcrypt.c" />
     <ClCompile Include="blake.c" />
-    <ClCompile Include="blake2s.c" />
+    <ClCompile Include="blake2\ref\blake2b-ref.c" />
+    <ClCompile Include="blake2\ref\blake2bp-ref.c" />
+    <ClCompile Include="blake2\ref\blake2s-ref.c" />
+    <ClCompile Include="blake2\ref\blake2sp-ref.c" />
+    <ClCompile Include="blake2\ref\blake2xb-ref.c" />
+    <ClCompile Include="blake2\ref\blake2xs-ref.c" />
     <ClCompile Include="c11.c" />
     <ClCompile Include="dcrypt.c" />
     <ClCompile Include="dllmain.cpp" />
@@ -305,7 +310,6 @@
     <ClCompile Include="sha3\panama.c" />
     <ClCompile Include="sha3\sm3.c" />
     <ClCompile Include="sha3\sph_blake.c" />
-    <ClCompile Include="sha3\sph_blake2s.c" />
     <ClCompile Include="sha3\sph_bmw.c" />
     <ClCompile Include="sha3\sph_cubehash.c" />
     <ClCompile Include="sha3\sph_echo.c" />

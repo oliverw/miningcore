@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
-// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
 
 namespace Miningcore.Configuration
@@ -27,6 +26,9 @@ namespace Miningcore.Configuration
 
         [EnumMember(Value = "ethereum")]
         Ethereum,
+
+        [EnumMember(Value = "ergo")]
+        Ergo,
     }
 
     public abstract partial class CoinTemplate
@@ -97,6 +99,7 @@ namespace Miningcore.Configuration
             {CoinFamily.Equihash, typeof(EquihashCoinTemplate)},
             {CoinFamily.Cryptonote, typeof(CryptonoteCoinTemplate)},
             {CoinFamily.Ethereum, typeof(EthereumCoinTemplate)},
+            {CoinFamily.Ergo, typeof(ErgoCoinTemplate)},
         };
     }
 
@@ -336,6 +339,10 @@ namespace Miningcore.Configuration
         [DefaultValue(EthereumSubfamily.None)]
         [JsonConverter(typeof(StringEnumConverter), true)]
         public EthereumSubfamily Subfamily { get; set; }
+    }
+
+    public partial class ErgoCoinTemplate : CoinTemplate
+    {
     }
 
     #endregion // Coin Definitions
@@ -594,6 +601,7 @@ namespace Miningcore.Configuration
         public string TlsPfxFile { get; set; }
         public string TlsPfxPassword { get; set; }
     }
+
 
     public partial class ApiConfig
     {
