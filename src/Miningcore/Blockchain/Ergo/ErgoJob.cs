@@ -56,11 +56,14 @@ namespace Miningcore.Blockchain.Ergo
 
         private System.Numerics.BigInteger[] GenIndexes(byte[] seed, ulong height)
         {
+            // hash seed
             var hash = new byte[32];
             hasher.Digest(seed, hash);
 
+            // duplicate
             var extendedHash = hash.Concat(hash).ToArray();
 
+            // map indexes
             var result = Enumerable.Range(0, 32).Select(index =>
             {
                 var a = BitConverter.ToUInt32(extendedHash.Slice(index, 4).ToArray()).ToBigEndian();
@@ -115,7 +118,7 @@ namespace Miningcore.Blockchain.Ergo
             hasher.Digest(blockHash, hashResult);
             var fh = new System.Numerics.BigInteger(hashResult, true, true);
 
-            // calc share-diff
+            // diff check
             var stratumDifficulty = context.Difficulty;
             var isLowDifficulty = fh / new System.Numerics.BigInteger(context.Difficulty) > B;
 
