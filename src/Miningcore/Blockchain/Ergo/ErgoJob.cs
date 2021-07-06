@@ -114,7 +114,7 @@ namespace Miningcore.Blockchain.Ergo
             }).Aggregate((a, b) => a + b);
 
             // calculate fH
-            var blockHash = f.ToByteArray(false, true).PadFront(0, 32);
+            var blockHash = f.ToByteArray(true, true).PadFront(0, 32);
             hasher.Digest(blockHash, hashResult);
             var fh = new System.Numerics.BigInteger(hashResult, true, true);
 
