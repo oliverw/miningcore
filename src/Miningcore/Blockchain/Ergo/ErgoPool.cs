@@ -38,7 +38,7 @@ namespace Miningcore.Blockchain.Ergo
         {
         }
 
-        protected object currentJobParams;
+        protected object[] currentJobParams;
         protected ErgoJobManager manager;
         private ErgoCoinTemplate coin;
 
@@ -49,7 +49,7 @@ namespace Miningcore.Blockchain.Ergo
             if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
-            var context = connection.ContextAs<BitcoinWorkerContext>();
+            var context = connection.ContextAs<ErgoWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
 
             var data = new object[]
@@ -68,10 +68,6 @@ namespace Miningcore.Blockchain.Ergo
             // setup worker context
             context.IsSubscribed = true;
             context.UserAgent = requestParams?.Length > 0 ? requestParams[0].Trim() : null;
-
-            // send intial update
-            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-            await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
         }
 
         protected virtual async Task OnAuthorizeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
@@ -81,7 +77,7 @@ namespace Miningcore.Blockchain.Ergo
             if(request.Id == null)
                 throw new StratumException(StratumError.MinusOne, "missing request id");
 
-            var context = connection.ContextAs<BitcoinWorkerContext>();
+            var context = connection.ContextAs<ErgoWorkerContext>();
             var requestParams = request.ParamsAs<string[]>();
             var workerValue = requestParams?.Length > 0 ? requestParams[0] : null;
             var password = requestParams?.Length > 1 ? requestParams[1] : null;
@@ -123,6 +119,10 @@ namespace Miningcore.Blockchain.Ergo
 
                     await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 }
+
+                // send intial update
+                await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                await SendJob(connection, context, currentJobParams);
             }
 
             else
@@ -141,7 +141,7 @@ namespace Miningcore.Blockchain.Ergo
         protected virtual async Task OnSubmitAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest, CancellationToken ct)
         {
             var request = tsRequest.Value;
-            var context = connection.ContextAs<BitcoinWorkerContext>();
+            var context = connection.ContextAs<ErgoWorkerContext>();
 
             try
             {
@@ -180,7 +180,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-// TODO: logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * coin.ShareMultiplier, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -210,7 +210,7 @@ namespace Miningcore.Blockchain.Ergo
         private async Task OnSuggestDifficultyAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
         {
             var request = tsRequest.Value;
-            var context = connection.ContextAs<BitcoinWorkerContext>();
+            var context = connection.ContextAs<ErgoWorkerContext>();
 
             // acknowledge
             await connection.RespondAsync(true, request.Id);
@@ -237,18 +237,18 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        protected virtual async Task OnNewJobAsync(object jobParams)
+        protected virtual async Task OnNewJobAsync(object[] jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            var tasks = ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<BitcoinWorkerContext>();
+                var context = connection.ContextAs<ErgoWorkerContext>();
 
                 if(context.IsSubscribed && context.IsAuthorized)
                 {
@@ -258,17 +258,16 @@ namespace Miningcore.Blockchain.Ergo
                     if(poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
+                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        CloseConnection(connection);
                         return;
                     }
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if(context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    // send job
-                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                    await SendJob(connection, context, currentJobParams);
                 }
             });
 
@@ -281,6 +280,20 @@ namespace Miningcore.Blockchain.Ergo
             {
                 logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
             }
+        }
+
+        private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)
+        {
+            // clone job params
+            var jobParamsActual = new object[currentJobParams.Length];
+
+            for(var i = 0; i < jobParamsActual.Length; i++)
+                jobParamsActual[i] = currentJobParams[i];
+
+            // correct difficulty
+            jobParamsActual[6] = (System.Numerics.BigInteger) jobParamsActual[6] * new System.Numerics.BigInteger(context.Difficulty);
+
+            await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -352,7 +365,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override WorkerContextBase CreateClientContext()
         {
-            return new BitcoinWorkerContext();
+            return new ErgoWorkerContext();
         }
 
         protected override async Task OnRequestAsync(StratumConnection connection,
@@ -408,7 +421,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
-            var context = connection.ContextAs<BitcoinWorkerContext>();
+            var context = connection.ContextAs<ErgoWorkerContext>();
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client
@@ -417,7 +430,7 @@ namespace Miningcore.Blockchain.Ergo
                 context.ApplyPendingDifficulty();
 
                 await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-                await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                await SendJob(connection, context, currentJobParams);
             }
         }
 

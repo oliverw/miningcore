@@ -5144,6 +5144,17 @@ namespace Miningcore.Blockchain.Ergo
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
+
+                          //  var foo = JsonConvert.DeserializeObject<WorkMessage>(
+                          //  "{ " +
+                          //"  \"msg\" : \"bd5d3920fbec1eaba7687ad4c89b8a8ac614e308a2156a73ae13e2ee43c3ee79\", " +
+                          //"  \"b\" : 23243094411418442559241442600806652754957978391531899187164925523571, " +
+                          //"  \"h\" : 23850,  " +
+                          //"  \"pk\" : \"035336013fdd41ca9d1079eb72e455da6e9e0258f04c28eee0bda68eff6755790d\" " +
+                          //"}");
+
+                          //  return foo;
+
                             return objectResponse_.Object;
                         }
                         else
@@ -8822,11 +8833,11 @@ namespace Miningcore.Blockchain.Ergo
     public partial class PowSolutions 
     {
         /// <summary>Base16-encoded public key</summary>
-        [Newtonsoft.Json.JsonProperty("pk", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("pk")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Pk { get; set; }= default!;
     
-        [Newtonsoft.Json.JsonProperty("w", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("w")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string W { get; set; }= default!;
     
@@ -8834,7 +8845,7 @@ namespace Miningcore.Blockchain.Ergo
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string N { get; set; }= default!;
     
-        [Newtonsoft.Json.JsonProperty("d", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("d")]
         public int D { get; set; }= default!;
     
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
@@ -9268,7 +9279,7 @@ namespace Miningcore.Blockchain.Ergo
 
         /// <summary>Work target value</summary>
         [Newtonsoft.Json.JsonProperty("b", Required = Newtonsoft.Json.Required.Always)]
-        public int B { get; set; }= default!;
+        public string B { get; set; }= default!;
     
         /// <summary>Base16-encoded miner public key</summary>
         [Newtonsoft.Json.JsonProperty("pk", Required = Newtonsoft.Json.Required.Always)]

@@ -22,6 +22,8 @@ namespace Miningcore.Blockchain.Ergo
         private static readonly BigInteger a = new(100);
         private static readonly BigInteger b = new(105);
 
+        public const uint DiffMultiplier = 256;
+
         public static readonly byte[] M = Enumerable.Range(0, 1024)
             .SelectMany(x =>
             {

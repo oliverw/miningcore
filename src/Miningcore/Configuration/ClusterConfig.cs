@@ -566,8 +566,6 @@ namespace Miningcore.Configuration
         public bool Enabled { get; set; }
         public string User { get; set; }
         public string Token { get; set; }
-        public bool NotifyBlockFound { get; set; }
-        public bool NotifyPaymentSuccess { get; set; }
     }
 
     public partial class AdminNotifications

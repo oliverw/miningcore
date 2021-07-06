@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Reactive.Linq;
@@ -8,15 +9,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Miningcore.Blockchain.Bitcoin;
-using Miningcore.Blockchain.Bitcoin.Configuration;
-using Miningcore.Blockchain.Bitcoin.DaemonResponses;
 using Miningcore.Blockchain.Ergo.Configuration;
 using NLog;
 using Miningcore.Configuration;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
-using Miningcore.JsonRpc;
 using Miningcore.Messaging;
+using Miningcore.Notifications.Messages;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
@@ -47,17 +46,18 @@ namespace Miningcore.Blockchain.Ergo
 
         private ErgoCoinTemplate coin;
         private ErgoClient daemon;
-        protected string network;
-        protected TimeSpan jobRebroadcastTimeout;
-        protected DateTime? lastJobRebroadcast;
-        protected readonly List<ErgoJob> validJobs = new();
-        protected int maxActiveJobs = 4;
+        private string network;
+        private TimeSpan jobRebroadcastTimeout;
+        private DateTime? lastJobRebroadcast;
+        private readonly List<ErgoJob> validJobs = new();
+        private int maxActiveJobs = 4;
+        private const int ExtranonceBytes = 4;
         private readonly IHttpClientFactory httpClientFactory;
         private readonly IExtraNonceProvider extraNonceProvider;
         private readonly IMasterClock clock;
         private ErgoPoolConfigExtra extraPoolConfig;
 
-        protected virtual void SetupJobUpdates()
+        private void SetupJobUpdates()
         {
             jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
             var blockFound = blockFoundSubject.Synchronize();
@@ -145,7 +145,7 @@ namespace Miningcore.Blockchain.Ergo
                 .RefCount();
         }
 
-        protected async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
+        private async Task<(bool IsNew, bool Force)> UpdateJob(bool forceUpdate, string via = null, string json = null)
         {
             logger.LogInvoke();
 
@@ -172,7 +172,7 @@ namespace Miningcore.Blockchain.Ergo
                 {
                     job = new ErgoJob();
 
-                    job.Init(blockTemplate, NextJobId(), poolConfig, clusterConfig, clock, network);
+                    job.Init(blockTemplate, NextJobId());
 
                     lock(jobLock)
                     {
@@ -193,9 +193,6 @@ namespace Miningcore.Blockchain.Ergo
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = job.Height;
-                        BlockchainStats.NetworkDifficulty = job.Difficulty;
-                        //BlockchainStats.NextNetworkTarget = blockTemplate.Target;
-                        //BlockchainStats.NextNetworkBits = blockTemplate.Bits;
                     }
 
                     else
@@ -220,7 +217,7 @@ namespace Miningcore.Blockchain.Ergo
             return (false, forceUpdate);
         }
 
-        protected async Task<ErgoBlockTemplate> GetBlockTemplateAsync()
+        private async Task<ErgoBlockTemplate> GetBlockTemplateAsync()
         {
             logger.LogInvoke();
 
@@ -235,14 +232,14 @@ namespace Miningcore.Blockchain.Ergo
             return new ErgoBlockTemplate(work, info);
         }
 
-        protected ErgoBlockTemplate GetBlockTemplateFromJson(string json)
+        private ErgoBlockTemplate GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
             return JsonConvert.DeserializeObject<ErgoBlockTemplate>(json);
         }
 
-        protected async Task ShowDaemonSyncProgressAsync()
+        private async Task ShowDaemonSyncProgressAsync()
         {
             var info = await Guard(() => daemon.GetNodeInfoAsync(),
                 ex => logger.Debug(ex));
@@ -261,7 +258,7 @@ namespace Miningcore.Blockchain.Ergo
                 logger.Info(() => $"Waiting for daemon to resume syncing ...");
         }
 
-        protected async Task UpdateNetworkStatsAsync()
+        private async Task UpdateNetworkStatsAsync()
         {
             logger.LogInvoke();
 
@@ -282,11 +279,13 @@ namespace Miningcore.Blockchain.Ergo
                 else
                     BlockchainStats.NetworkDifficulty = info.Difficulty.Value<double>();
 
+                BlockchainStats.NetworkDifficulty *= ErgoConstants.DiffMultiplier;
+
                 // TODO: BlockchainStats.NetworkHashrate = info.HeadersScore
             }
         }
 
-        protected void ConfigureRewards()
+        private void ConfigureRewards()
         {
             // Donation to MiningCore development
             if(network == "mainnet" &&
@@ -304,9 +303,31 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
+        private async Task<bool> SubmitBlockAsync(Share share, ErgoJob job, string nonce)
+        {
+            try
+            {
+                await daemon.MiningSubmitSolutionAsync(new PowSolutions
+                {
+                    N = nonce,
+                    //Pk = job.BlockTemplate.Work.Pk,
+                });
+
+                return true;
+            }
+
+            catch(ApiException ex)
+            {
+                logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Message}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Message}"));
+            }
+
+            return false;
+        }
+
         #region API-Surface
 
-        public IObservable<object> Jobs { get; private set; }
+        public IObservable<object[]> Jobs { get; private set; }
         public BlockchainStats BlockchainStats { get; } = new();
         public string Network => network;
 
@@ -314,12 +335,100 @@ namespace Miningcore.Blockchain.Ergo
 
         public object[] GetSubscriberData(StratumConnection worker)
         {
-            throw new NotImplementedException();
+            Contract.RequiresNonNull(worker, nameof(worker));
+
+            var context = worker.ContextAs<ErgoWorkerContext>();
+
+            // assign unique ExtraNonce1 to worker (miner)
+            context.ExtraNonce1 = extraNonceProvider.Next();
+
+            // setup response data
+            var responseData = new object[]
+            {
+                context.ExtraNonce1,
+                BitcoinConstants.ExtranoncePlaceHolderLength - ExtranonceBytes,
+            };
+
+            return responseData;
         }
 
-        public ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission, double stratumDifficultyBase, CancellationToken ct)
+        public async ValueTask<Share> SubmitShareAsync(StratumConnection worker, object submission, double stratumDifficultyBase, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            Contract.RequiresNonNull(worker, nameof(worker));
+            Contract.RequiresNonNull(submission, nameof(submission));
+
+            logger.LogInvoke(new[] { worker.ConnectionId });
+
+            if(submission is not object[] submitParams)
+                throw new StratumException(StratumError.Other, "invalid params");
+
+            var context = worker.ContextAs<ErgoWorkerContext>();
+
+            // extract params
+            var workerValue = (submitParams[0] as string)?.Trim();
+            var jobId = submitParams[1] as string;
+            var extraNonce2 = submitParams[2] as string;
+            var nTime = submitParams[3] as string;
+            var nonce = submitParams[4] as string;
+
+            if(string.IsNullOrEmpty(workerValue))
+                throw new StratumException(StratumError.Other, "missing or invalid workername");
+
+            ErgoJob job;
+
+            lock(jobLock)
+            {
+                job = validJobs.FirstOrDefault(x => x.JobId == jobId);
+            }
+
+            if(job == null)
+                throw new StratumException(StratumError.JobNotFound, "job not found");
+
+            // extract worker/miner/payoutid
+            var split = workerValue.Split('.');
+            var minerName = split[0];
+            var workerName = split.Length > 1 ? split[1] : null;
+
+            // validate & process
+            var share = job.ProcessShare(worker, extraNonce2, nTime, nonce);
+
+            // enrich share with common data
+            share.PoolId = poolConfig.Id;
+            share.IpAddress = worker.RemoteEndpoint.Address.ToString();
+            share.Miner = minerName;
+            share.Worker = workerName;
+            share.UserAgent = context.UserAgent;
+            share.Source = clusterConfig.ClusterName;
+            share.Created = clock.Now;
+
+            // if block candidate, submit & check if accepted by network
+            if(share.IsBlockCandidate)
+            {
+                logger.Info(() => $"Submitting block {share.BlockHeight} [{share.BlockHash}]");
+
+                var acceptResponse = await SubmitBlockAsync(share, job, nonce);
+
+                // is it still a block candidate?
+                share.IsBlockCandidate = acceptResponse;
+
+                if(share.IsBlockCandidate)
+                {
+                    logger.Info(() => $"Daemon accepted block {share.BlockHeight} [{share.BlockHash}] submitted by {minerName}");
+
+                    OnBlockFound();
+
+                    // persist the nonce to make block unlocking a bit more reliable
+                    share.TransactionConfirmationData = nonce;
+                }
+
+                else
+                {
+                    // clear fields that no longer apply
+                    share.TransactionConfirmationData = null;
+                }
+            }
+
+            return share;
         }
 
         public async Task<bool> ValidateAddress(string address, CancellationToken ct)
@@ -432,7 +541,7 @@ namespace Miningcore.Blockchain.Ergo
                     ex=> logger.Debug(ex));
 
                 var isSynched = info?.FullHeight.HasValue == true && info?.HeadersHeight.HasValue == true &&
-                                info.FullHeight.Value > info.HeadersHeight.Value;
+                                info.FullHeight.Value >= info.HeadersHeight.Value;
 
                 if(isSynched)
                 {
@@ -453,7 +562,7 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        protected object GetJobParamsForStratum(bool isNew)
+        private object[] GetJobParamsForStratum(bool isNew)
         {
             var job = currentJob;
             return job?.GetJobParams(isNew);
