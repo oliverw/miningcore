@@ -5145,16 +5145,6 @@ namespace Miningcore.Blockchain.Ergo
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
 
-                          //  var foo = JsonConvert.DeserializeObject<WorkMessage>(
-                          //  "{ " +
-                          //"  \"msg\" : \"bd5d3920fbec1eaba7687ad4c89b8a8ac614e308a2156a73ae13e2ee43c3ee79\", " +
-                          //"  \"b\" : 23243094411418442559241442600806652754957978391531899187164925523571, " +
-                          //"  \"h\" : 23850,  " +
-                          //"  \"pk\" : \"035336013fdd41ca9d1079eb72e455da6e9e0258f04c28eee0bda68eff6755790d\" " +
-                          //"}");
-
-                          //  return foo;
-
                             return objectResponse_.Object;
                         }
                         else

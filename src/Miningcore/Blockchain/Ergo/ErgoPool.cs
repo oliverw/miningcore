@@ -180,7 +180,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -204,36 +204,6 @@ namespace Miningcore.Blockchain.Ergo
                 ConsiderBan(connection, context, poolConfig.Banning);
 
                 throw;
-            }
-        }
-
-        private async Task OnSuggestDifficultyAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
-        {
-            var request = tsRequest.Value;
-            var context = connection.ContextAs<ErgoWorkerContext>();
-
-            // acknowledge
-            await connection.RespondAsync(true, request.Id);
-
-            try
-            {
-                var requestedDiff = (double) Convert.ChangeType(request.Params, TypeCode.Double);
-
-                // client may suggest higher-than-base difficulty, but not a lower one
-                var poolEndpoint = poolConfig.Ports[connection.PoolEndpoint.Port];
-
-                if(requestedDiff > poolEndpoint.Difficulty)
-                {
-                    context.SetDifficulty(requestedDiff);
-                    await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-
-                    logger.Info(() => $"[{connection.ConnectionId}] Difficulty set to {requestedDiff} as requested by miner");
-                }
-            }
-
-            catch(Exception ex)
-            {
-                logger.Error(ex, () => $"Unable to convert suggested difficulty {request.Params}");
             }
         }
 
@@ -301,7 +271,8 @@ namespace Miningcore.Blockchain.Ergo
             var multiplier = BitcoinConstants.Pow2x32;
             var result = shares * multiplier / interval;
 
-            //result *= coin.HashrateMultiplier;
+            result /= ErgoConstants.DiffMultiplier;
+            result /= 3;
 
             return result;
         }
@@ -387,22 +358,6 @@ namespace Miningcore.Blockchain.Ergo
 
                     case BitcoinStratumMethods.SubmitShare:
                         await OnSubmitAsync(connection, tsRequest, ct);
-                        break;
-
-                    case BitcoinStratumMethods.SuggestDifficulty:
-                        await OnSuggestDifficultyAsync(connection, tsRequest);
-                        break;
-
-                    case BitcoinStratumMethods.ExtraNonceSubscribe:
-                        await connection.RespondAsync(true, request.Id);
-                        break;
-
-                    case BitcoinStratumMethods.GetTransactions:
-                        // ignored
-                        break;
-
-                    case BitcoinStratumMethods.MiningMultiVersion:
-                        // ignored
                         break;
 
                     default:

@@ -4,13 +4,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Contracts;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
-using Miningcore.Util;
 using MoreLinq;
 using NBitcoin;
 
@@ -26,8 +24,7 @@ namespace Miningcore.Blockchain.Ergo
         protected object[] jobParams;
         protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         protected static IHashAlgorithm hasher = new Blake2b();
-        private Target blockTargetValue;
-        private System.Numerics.BigInteger b;
+        private System.Numerics.BigInteger B;
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
@@ -62,7 +59,6 @@ namespace Miningcore.Blockchain.Ergo
             var hash = new byte[32];
             hasher.Digest(seed, hash);
 
-            // duplicate
             var extendedHash = hash.Concat(hash).ToArray();
 
             var result = Enumerable.Range(0, 32).Select(index =>
@@ -81,19 +77,13 @@ namespace Miningcore.Blockchain.Ergo
             var context = worker.ContextAs<ErgoWorkerContext>();
             var extraNonce1 = context.ExtraNonce1;
 
-//extraNonce1 = "c8000001";
-//extraNonce2 = "1e8ee05a";
-
-            // build coinbase
+            // hash coinbase
             var coinbase = SerializeCoinbase(BlockTemplate.Work.Msg, extraNonce1, extraNonce2);
-
-            // hash
             Span<byte> hashResult = stackalloc byte[32];
             hasher.Digest(coinbase, hashResult);
 
             // calculate i
-            var tmp = new System.Numerics.BigInteger(hashResult.Slice(24, 8), true, true);
-            var tmp2 = tmp % ErgoConstants.N(Height);
+            var tmp2 = new System.Numerics.BigInteger(hashResult.Slice(24, 8), true, true) % ErgoConstants.N(Height);
             var i = tmp2.ToByteArray(false, true).PadFront(0, 4);
 
             // calculate e
@@ -108,7 +98,7 @@ namespace Miningcore.Blockchain.Ergo
             var j = jTmp.Select(x => x.ToByteArray(true, true).PadFront(0, 4)).ToArray();
 
             // calculate f
-            var fTmp = j.Select(x =>
+            var f = j.Select(x =>
             {
                 var buf = x.Concat(h).Concat(ErgoConstants.M).ToArray();
 
@@ -118,9 +108,7 @@ namespace Miningcore.Blockchain.Ergo
 
                 // extract 31 bytes at end
                 return new System.Numerics.BigInteger(hash[1..], true, true);
-            }).ToArray();
-
-            var f = fTmp.Aggregate((a, b) => a + b);
+            }).Aggregate((a, b) => a + b);
 
             // calculate fH
             var blockHash = f.ToByteArray(false, true).PadFront(0, 32);
@@ -129,20 +117,20 @@ namespace Miningcore.Blockchain.Ergo
 
             // calc share-diff
             var stratumDifficulty = context.Difficulty;
-            var isLowDifficultyShare = fh / new System.Numerics.BigInteger(context.Difficulty) > b;
+            var isLowDifficulty = fh / new System.Numerics.BigInteger(context.Difficulty) > B;
 
             // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = b >= fh;
+            var isBlockCandidate = B >= fh;
 
             // test if share meets at least workers current difficulty
-            if(!isBlockCandidate && isLowDifficultyShare)
+            if(!isBlockCandidate && isLowDifficulty)
                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share");
 
             var result = new Share
             {
                 BlockHeight = (long) Height,
                 NetworkDifficulty = Difficulty,
-                Difficulty = stratumDifficulty / ErgoConstants.DiffMultiplier
+                Difficulty = stratumDifficulty
             };
 
             if(isBlockCandidate)
@@ -181,16 +169,12 @@ namespace Miningcore.Blockchain.Ergo
             return ProcessShareInternal(worker, extraNonce2);
         }
 
-
         public void Init(ErgoBlockTemplate blockTemplate, string jobId)
         {
             BlockTemplate = blockTemplate;
             JobId = jobId;
-
-            // Parse difficulty
-            b = System.Numerics.BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
-            blockTargetValue = new Target(b);
-            Difficulty = blockTargetValue.Difficulty;
+            B = System.Numerics.BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
+            Difficulty = new Target(B).Difficulty;
 
             jobParams = new object[]
             {
@@ -200,7 +184,7 @@ namespace Miningcore.Blockchain.Ergo
                 string.Empty,
                 string.Empty,
                 BlockTemplate.Info.Parameters.BlockVersion,
-                b,
+                B,
                 string.Empty,
                 false
             };
