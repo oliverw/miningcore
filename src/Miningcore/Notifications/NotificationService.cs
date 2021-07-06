@@ -67,10 +67,13 @@ namespace Miningcore.Notifications
             const string subject = "Block Notification";
             var message = $"Pool {notification.PoolId} found block candidate {notification.BlockHeight}";
 
-            await Guard(()=> SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
+            if(clusterConfig.Notifications?.Admin?.NotifyBlockFound == true)
+            {
+                await Guard(() => SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
 
-            if(clusterConfig.Notifications?.Pushover?.Enabled == true && clusterConfig.Notifications.Pushover.NotifyBlockFound)
-                await Guard(()=> pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
+                if(clusterConfig.Notifications?.Pushover?.Enabled == true)
+                    await Guard(() => pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
+            }
         }
 
         private async Task OnPaymentNotificationAsync(PaymentNotification notification, CancellationToken ct)
@@ -89,10 +92,12 @@ namespace Miningcore.Notifications
                 var message = $"Paid {FormatAmount(notification.Amount, notification.PoolId)} from pool {notification.PoolId} to {notification.RecpientsCount} recipients in Transaction(s) {txLinks}.";
 
                 if(clusterConfig.Notifications?.Admin?.NotifyPaymentSuccess == true)
-                    await Guard(()=> SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
+                {
+                    await Guard(() => SendEmailAsync(adminEmail, subject, message, ct), LogGuarded);
 
-                if(clusterConfig.Notifications?.Pushover?.Enabled == true && clusterConfig.Notifications.Pushover.NotifyPaymentSuccess)
-                    await Guard(()=> pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
+                    if(clusterConfig.Notifications?.Pushover?.Enabled == true)
+                        await Guard(() => pushoverClient.PushMessage(subject, message, PushoverMessagePriority.None, ct), LogGuarded);
+                }
             }
 
             else
