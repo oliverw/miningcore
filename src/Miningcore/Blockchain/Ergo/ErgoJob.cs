@@ -9,6 +9,7 @@ using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
+using System.Numerics;
 using MoreLinq;
 using NBitcoin;
 
@@ -21,10 +22,36 @@ namespace Miningcore.Blockchain.Ergo
         public ulong Height => BlockTemplate.Work.Height;
         public string JobId { get; protected set; }
 
-        protected object[] jobParams;
-        protected readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
-        protected static IHashAlgorithm hasher = new Blake2b();
-        private System.Numerics.BigInteger B;
+        private object[] jobParams;
+        private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly IHashAlgorithm hasher = new Blake2b();
+        private BigInteger B;
+
+        private static readonly BigInteger nBase = BigInteger.Pow(2, 26);
+        private const ulong IncreaseStart = 600 * 1024;
+        private const ulong IncreasePeriodForN = 50 * 1024;
+        private const ulong NIncreasementHeightMax = 9216000;
+        private static readonly BigInteger a = new(100);
+        private static readonly BigInteger b = new(105);
+
+        public static BigInteger CalculateN(ulong height)
+        {
+            height = Math.Min(NIncreasementHeightMax, height);
+
+            if(height < IncreaseStart)
+                return nBase;
+
+            if(height >= NIncreasementHeightMax)
+                return 2147387550;
+
+            var res = nBase;
+            var iterationsNumber = ((height - IncreaseStart) / IncreasePeriodForN) + 1;
+
+            for(var i = 0ul; i < iterationsNumber; i++)
+                res = res / a * b;
+
+            return res;
+        }
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
@@ -54,7 +81,7 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        private System.Numerics.BigInteger[] GenIndexes(byte[] seed, ulong height)
+        private BigInteger[] GenIndexes(byte[] seed, ulong height)
         {
             // hash seed
             var hash = new byte[32];
@@ -67,7 +94,7 @@ namespace Miningcore.Blockchain.Ergo
             var result = Enumerable.Range(0, 32).Select(index =>
             {
                 var a = BitConverter.ToUInt32(extendedHash.Slice(index, 4).ToArray()).ToBigEndian();
-                var b = ErgoConstants.N(height);
+                var b = CalculateN(height);
                 return a % b;
             })
             .ToArray();
@@ -86,11 +113,12 @@ namespace Miningcore.Blockchain.Ergo
             hasher.Digest(coinbase, hashResult);
 
             // calculate i
-            var tmp2 = new System.Numerics.BigInteger(hashResult.Slice(24, 8), true, true) % ErgoConstants.N(Height);
+            var slice = hashResult.Slice(24, 8);
+            var tmp2 = new BigInteger(slice, true, true) % CalculateN(Height);
             var i = tmp2.ToByteArray(false, true).PadFront(0, 4);
 
             // calculate e
-            var h = new System.Numerics.BigInteger(Height).ToByteArray(true, true).PadFront(0, 4);
+            var h = new BigInteger(Height).ToByteArray(true, true).PadFront(0, 4);
             var ihM = i.Concat(h).Concat(ErgoConstants.M).ToArray();
             hasher.Digest(ihM, hashResult);
             var e = hashResult[1..].ToArray();
@@ -110,17 +138,17 @@ namespace Miningcore.Blockchain.Ergo
                 hasher.Digest(buf, hash);
 
                 // extract 31 bytes at end
-                return new System.Numerics.BigInteger(hash[1..], true, true);
-            }).Aggregate((a, b) => a + b);
+                return new BigInteger(hash[1..], true, true);
+            }).Aggregate((x, y) => x + y);
 
             // calculate fH
             var blockHash = f.ToByteArray(true, true).PadFront(0, 32);
             hasher.Digest(blockHash, hashResult);
-            var fh = new System.Numerics.BigInteger(hashResult, true, true);
+            var fh = new BigInteger(hashResult, true, true);
 
             // diff check
             var stratumDifficulty = context.Difficulty;
-            var isLowDifficulty = fh / new System.Numerics.BigInteger(context.Difficulty) > B;
+            var isLowDifficulty = fh / new BigInteger(context.Difficulty) > B;
 
             // check if the share meets the much harder block difficulty (block candidate)
             var isBlockCandidate = B >= fh;
@@ -176,7 +204,7 @@ namespace Miningcore.Blockchain.Ergo
         {
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            B = System.Numerics.BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
+            B = BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
             Difficulty = new Target(B).Difficulty;
 
             jobParams = new object[]
