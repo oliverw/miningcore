@@ -16,13 +16,13 @@
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
-### Supported Currencies
-
-Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
-
 ## Support
 
 Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
+
+### Supported Currencies
+
+Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 ### Caveats
 
@@ -50,9 +50,9 @@ Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningc
 - Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
 - In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
 
-### Running pre-built Release Binaries
+## Running Miningcore
 
-#### Linux
+### Linux: pre-built binaries
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - For Debian/Ubuntu, install these packages
@@ -66,7 +66,7 @@ Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningc
 - Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
-#### Windows
+### Windows: pre-built binaries
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - Install [PostgreSQL Database](https://www.postgresql.org/)
@@ -76,7 +76,9 @@ Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningc
 - Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
-### Basic PostgreSQL Database setup
+## Database setup
+
+Miningcore currently requires PostgreSQL 10 or higher.
 
 Create the database:
 
@@ -100,7 +102,7 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
-### Advanced PostgreSQL Database setup
+### Advanced setup
 
 If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
 
@@ -121,13 +123,13 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 
 Once you have done this for all of your existing pools you should now restore your shares from backup.
 
-### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+## [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
 ### [API](https://github.com/coinfoundry/miningcore/wiki/API)
 
-### Building from Source
+## Building from Source
 
-#### Building on Ubuntu 20.04
+### Building on Ubuntu 20.04
 
 ```console
 $ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -141,7 +143,7 @@ $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework net5.0  -o ../../build
 ```
 
-#### Building on Windows
+### Building on Windows
 
 Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 
@@ -151,13 +153,13 @@ Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotn
 > dotnet publish -c Release --framework net5.0  -o ..\..\build
 ```
 
-#### Building on Windows - Visual Studio
+### Building on Windows - Visual Studio
 
 - Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in Visual Studio
 
 
-#### After successful build
+### After successful build
 
 Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
