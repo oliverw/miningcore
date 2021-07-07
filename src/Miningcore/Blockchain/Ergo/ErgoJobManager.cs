@@ -516,7 +516,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override void ConfigureDaemons()
         {
-            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, httpClientFactory, logger);
+            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync()

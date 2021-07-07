@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,11 +9,12 @@ namespace Miningcore.Blockchain.Ergo
 {
     public partial class ErgoClient
     {
-        public string ApiKey { get; set; }
+        public Dictionary<string, string> RequestHeaders { get; } = new();
 
         private Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, StringBuilder url)
         {
-            request.Headers.Add("api_key", ApiKey);
+            foreach(var pair in RequestHeaders)
+                request.Headers.Add(pair.Key, pair.Value);
 
             return Task.CompletedTask;
         }

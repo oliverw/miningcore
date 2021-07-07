@@ -76,7 +76,7 @@ namespace Miningcore.Blockchain.Ergo
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
             //extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
-            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, httpClientFactory, null);
+            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, null);
 
             // detect chain
             var info = await daemon.GetNodeInfoAsync();
