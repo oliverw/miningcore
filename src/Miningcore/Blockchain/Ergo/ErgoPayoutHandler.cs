@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
 using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Bitcoin.Configuration;
 using Miningcore.Blockchain.Bitcoin.DaemonResponses;
+using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
@@ -21,6 +24,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Block = Miningcore.Persistence.Model.Block;
 using Contract = Miningcore.Contracts.Contract;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Ergo
 {
@@ -36,6 +40,7 @@ namespace Miningcore.Blockchain.Ergo
             IBlockRepository blockRepo,
             IBalanceRepository balanceRepo,
             IPaymentRepository paymentRepo,
+            IHttpClientFactory httpClientFactory,
             IMasterClock clock,
             IMessageBus messageBus) :
             base(cf, mapper, shareRepo, blockRepo, balanceRepo, paymentRepo, clock, messageBus)
@@ -43,34 +48,39 @@ namespace Miningcore.Blockchain.Ergo
             Contract.RequiresNonNull(ctx, nameof(ctx));
             Contract.RequiresNonNull(balanceRepo, nameof(balanceRepo));
             Contract.RequiresNonNull(paymentRepo, nameof(paymentRepo));
+            Contract.RequiresNonNull(httpClientFactory, nameof(httpClientFactory));
 
             this.ctx = ctx;
+            this.httpClientFactory = httpClientFactory;
         }
 
         protected readonly IComponentContext ctx;
-        protected DaemonClient daemon;
+        protected ErgoClient daemon;
+        private ErgoPoolConfigExtra extraPoolConfig;
+        private readonly IHttpClientFactory httpClientFactory;
+        private string network;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
 
         #region IPayoutHandler
 
-        public virtual Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
+
+            logger = LogUtil.GetPoolScopedLogger(typeof(ErgoPayoutHandler), poolConfig);
 
             this.poolConfig = poolConfig;
             this.clusterConfig = clusterConfig;
 
-            //extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<BitcoinDaemonEndpointConfigExtra>();
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
             //extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
 
-            logger = LogUtil.GetPoolScopedLogger(typeof(BitcoinPayoutHandler), poolConfig);
+            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, httpClientFactory, null);
 
-            var jsonSerializerSettings = ctx.Resolve<JsonSerializerSettings>();
-            daemon = new DaemonClient(jsonSerializerSettings, messageBus, clusterConfig.ClusterName ?? poolConfig.PoolName, poolConfig.Id);
-            daemon.Configure(poolConfig.Daemons);
-
-            return Task.FromResult(true);
+            // detect chain
+            var info = await daemon.GetNodeInfoAsync();
+            network = ErgoConstants.RegexChain.Match(info.Name).Groups[1].Value.ToLower();
         }
 
         public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
@@ -78,105 +88,153 @@ namespace Miningcore.Blockchain.Ergo
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
-            //var coin = poolConfig.Template.As<CoinTemplate>();
-            //var pageSize = 100;
-            //var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
-            //var result = new List<Block>();
+            if(blocks.Length == 0)
+                return blocks;
 
-            //for(var i = 0; i < pageCount; i++)
-            //{
-            //    // get a page full of blocks
-            //    var page = blocks
-            //        .Skip(i * pageSize)
-            //        .Take(pageSize)
-            //        .ToArray();
+            var coin = poolConfig.Template.As<ErgoCoinTemplate>();
+            var pageSize = 100;
+            var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
+            var result = new List<Block>();
+            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? (network == "mainnet" ? 100 : 10);
+            var minerRewardsPubKey = await daemon.MiningReadMinerRewardPubkeyAsync();
+            var minerRewardsAddress = await daemon.MiningReadMinerRewardAddressAsync();
 
-            //    // build command batch (block.TransactionConfirmationData is the hash of the blocks coinbase transaction)
-            //    var batch = page.Select(block => new DaemonCmd(BitcoinCommands.GetTransaction,
-            //        new[] { block.TransactionConfirmationData })).ToArray();
+            for(var i = 0; i < pageCount; i++)
+            {
+                // get a page full of blocks
+                var page = blocks
+                    .Skip(i * pageSize)
+                    .Take(pageSize)
+                    .ToArray();
 
-            //    // execute batch
-            //    var results = await daemon.ExecuteBatchAnyAsync(logger, batch);
+                // fetch header ids for blocks in page
+                var headerBatch = page.Select(block => daemon.GetFullBlockAtAsync((int) block.BlockHeight)).ToArray();
 
-            //    for(var j = 0; j < results.Length; j++)
-            //    {
-            //        var cmdResult = results[j];
+                await Guard(()=> Task.WhenAll(headerBatch),
+                    ex=> logger.Debug(ex));
 
-            //        var transactionInfo = cmdResult.Response?.ToObject<Transaction>();
-            //        var block = page[j];
+                for(var j = 0; j < page.Length; j++)
+                {
+                    var block = page[j];
+                    var headerTask = headerBatch[j];
 
-            //        // check error
-            //        if(cmdResult.Error != null)
-            //        {
-            //            // Code -5 interpreted as "orphaned"
-            //            if(cmdResult.Error.Code == -5)
-            //            {
-            //                block.Status = BlockStatus.Orphaned;
-            //                block.Reward = 0;
-            //                result.Add(block);
+                    if(!headerTask.IsCompletedSuccessfully)
+                    {
+                        if(headerTask.IsFaulted)
+                            logger.Warn(()=> $"Failed to fetch block {block.BlockHeight}: {headerTask.Exception?.InnerException?.Message ?? headerTask.Exception?.Message}");
+                        else
+                            logger.Warn(()=> $"Failed to fetch block {block.BlockHeight}: {headerTask.Status.ToString().ToLower()}");
 
-            //                logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to daemon error {cmdResult.Error.Code}");
-            //            }
+                        continue;
+                    }
 
-            //            else
-            //            {
-            //                logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
-            //            }
-            //        }
+                    var headerIds = headerTask.Result;
 
-            //        // missing transaction details are interpreted as "orphaned"
-            //        else if(transactionInfo?.Details == null || transactionInfo.Details.Length == 0)
-            //        {
-            //            block.Status = BlockStatus.Orphaned;
-            //            block.Reward = 0;
-            //            result.Add(block);
+                    // fetch blocks
+                    var blockBatch = headerIds.Select(x=> daemon.GetFullBlockByIdAsync(x)).ToArray();
 
-            //            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to missing tx details");
-            //        }
+                    await Guard(()=> Task.WhenAll(blockBatch),
+                        ex=> logger.Debug(ex));
 
-            //        else
-            //        {
-            //            switch(transactionInfo.Details[0].Category)
-            //            {
-            //                case "immature":
-            //                    // update progress
-            //                    var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
-            //                    block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
-            //                    block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
-            //                    result.Add(block);
+                    var blockHandled = false;
+                    var pkMismatchCount = 0;
+                    var nonceMismatchCount = 0;
+                    var coinbaseNonWalletTxCount = 0;
 
-            //                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
-            //                    break;
+                    foreach (var blockTask in blockBatch)
+                    {
+                        if(blockHandled)
+                            break;
 
-            //                case "generate":
-            //                    // matured and spendable coinbase transaction
-            //                    block.Status = BlockStatus.Confirmed;
-            //                    block.ConfirmationProgress = 1;
-            //                    block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
-            //                    result.Add(block);
+                        if(!blockTask.IsCompletedSuccessfully)
+                            continue;
 
-            //                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+                        var fullBlock = blockTask.Result;
 
-            //                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-            //                    break;
+                        // only consider blocks with pow-solution pk matching ours
+                        if(fullBlock.Header.PowSolutions.Pk != minerRewardsPubKey.RewardPubKey)
+                        {
+                            pkMismatchCount++;
+                            continue;
+                        }
 
-            //                default:
-            //                    logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned. Category: {transactionInfo.Details[0].Category}");
+                        // only consider blocks with pow-solution nonce matching what we have on file
+                        if(fullBlock.Header.PowSolutions.N != block.TransactionConfirmationData)
+                        {
+                            nonceMismatchCount++;
+                            continue;
+                        }
 
-            //                    block.Status = BlockStatus.Orphaned;
-            //                    block.Reward = 0;
-            //                    result.Add(block);
+                        var coinbaseWalletTxFound = false;
 
-            //                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
-            //                    break;
-            //            }
-            //        }
-            //    }
-            //}
+                        foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
+                        {
+                            var walletTx = await Guard(()=> daemon.WalletGetTransactionAsync(blockTx.Id));
+                            var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
 
-            //return result.ToArray();
+                            if(coinbaseOutput != null)
+                            {
+                                coinbaseWalletTxFound = true;
 
-            return blocks;
+                                // enough confirmations?
+                                if(walletTx.NumConfirmations >= minConfirmations)
+                                {
+                                    // matured and spendable coinbase transaction
+                                    block.Status = BlockStatus.Confirmed;
+                                    block.ConfirmationProgress = 1;
+                                    block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    result.Add(block);
+
+                                    logger.Info(() => $"[{LogCategory}] Unlocked block {block.BlockHeight} worth {FormatAmount(block.Reward)}");
+
+                                    messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+
+                                    blockHandled = true;
+                                    break;
+                                }
+
+                                else
+                                {
+                                    // update progress
+                                    block.ConfirmationProgress = Math.Min(1.0d, (double) walletTx.NumConfirmations / minConfirmations);
+                                    block.Reward = (decimal) (coinbaseOutput.Value / ErgoConstants.SmallestUnit);
+                                    result.Add(block);
+
+                                    messageBus.NotifyBlockConfirmationProgress(poolConfig.Id, block, coin);
+                                }
+                            }
+                        }
+
+                        if(!blockHandled && !coinbaseWalletTxFound)
+                            coinbaseNonWalletTxCount++;
+                    }
+
+                    if(!blockHandled)
+                    {
+                        string orphanReason = null;
+
+                        if(pkMismatchCount == blockBatch.Length)
+                            orphanReason = "pk mismatch";
+                        else if(nonceMismatchCount == blockBatch.Length)
+                            orphanReason = "nonce mismatch";
+                        else if(coinbaseNonWalletTxCount == blockBatch.Length)
+                            orphanReason = "no related coinbase tx found in wallet";
+
+                        if(!string.IsNullOrEmpty(orphanReason))
+                        {
+                            block.Status = BlockStatus.Orphaned;
+                            block.Reward = 0;
+                            result.Add(block);
+
+                            logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to {orphanReason}");
+
+                            messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
+                        }
+                    }
+                }
+            }
+
+            return result.ToArray();
         }
 
         public virtual Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)

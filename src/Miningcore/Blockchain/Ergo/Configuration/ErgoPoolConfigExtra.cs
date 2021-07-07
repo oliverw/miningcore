@@ -7,5 +7,7 @@ namespace Miningcore.Blockchain.Ergo.Configuration
         /// Default: 12 - you should increase this value if your blockrefreshinterval is higher than 300ms
         /// </summary>
         public int? MaxActiveJobs { get; set; }
+
+        public int? MinimumConfirmations { get; set; }
     }
 }

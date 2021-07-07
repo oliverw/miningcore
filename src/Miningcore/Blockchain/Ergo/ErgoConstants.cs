@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NBitcoin;
 
@@ -15,6 +16,10 @@ namespace Miningcore.Blockchain.Ergo
     {
         public const uint DiffMultiplier = 256;
         public static double Pow2x26 = Math.Pow(2, 26);
+
+        public const double SmallestUnit = 1000000000;
+
+        public static Regex RegexChain = new("ergo-([^-]+)-.+", RegexOptions.Compiled);
 
         public static readonly byte[] M = Enumerable.Range(0, 1024)
             .SelectMany(x =>

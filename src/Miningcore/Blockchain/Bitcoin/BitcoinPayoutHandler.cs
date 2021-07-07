@@ -87,6 +87,7 @@ namespace Miningcore.Blockchain.Bitcoin
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
+            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
 
             for(var i = 0; i < pageCount; i++)
             {
@@ -121,12 +122,12 @@ namespace Miningcore.Blockchain.Bitcoin
                             result.Add(block);
 
                             logger.Info(() => $"[{LogCategory}] Block {block.BlockHeight} classified as orphaned due to daemon error {cmdResult.Error.Code}");
+
+                            messageBus.NotifyBlockUnlocked(poolConfig.Id, block, coin);
                         }
 
                         else
-                        {
                             logger.Warn(() => $"[{LogCategory}] Daemon reports error '{cmdResult.Error.Message}' (Code {cmdResult.Error.Code}) for transaction {page[j].TransactionConfirmationData}");
-                        }
                     }
 
                     // missing transaction details are interpreted as "orphaned"
@@ -145,7 +146,6 @@ namespace Miningcore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);

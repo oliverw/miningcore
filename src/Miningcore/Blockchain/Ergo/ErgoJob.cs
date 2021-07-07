@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,7 +10,6 @@ using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
 using System.Numerics;
-using MoreLinq;
 using NBitcoin;
 
 namespace Miningcore.Blockchain.Ergo
@@ -20,7 +18,7 @@ namespace Miningcore.Blockchain.Ergo
     {
         public ErgoBlockTemplate BlockTemplate { get; private set; }
         public double Difficulty { get; private set; }
-        public ulong Height => BlockTemplate.Work.Height;
+        public uint Height => BlockTemplate.Work.Height;
         public string JobId { get; protected set; }
 
         private object[] jobParams;
@@ -28,14 +26,12 @@ namespace Miningcore.Blockchain.Ergo
         private static readonly IHashAlgorithm hasher = new Blake2b();
         private BigInteger B;
 
-        private static readonly BigInteger nBase = BigInteger.Pow(2, 26);
-        private const ulong IncreaseStart = 600 * 1024;
-        private const ulong IncreasePeriodForN = 50 * 1024;
-        private const ulong NIncreasementHeightMax = 9216000;
-        private static readonly BigInteger a = new(100);
-        private static readonly BigInteger b = new(105);
+        private static readonly uint nBase = (uint) Math.Pow(2, 26);
+        private const uint IncreaseStart = 600 * 1024;
+        private const uint IncreasePeriodForN = 50 * 1024;
+        private const uint NIncreasementHeightMax = 9216000;
 
-        public static BigInteger CalculateN(ulong height)
+        public static uint CalcN(uint height)
         {
             height = Math.Min(NIncreasementHeightMax, height);
 
@@ -47,13 +43,13 @@ namespace Miningcore.Blockchain.Ergo
                     return 2147387550;
             }
 
-            var res = nBase;
-            var iterationsNumber = ((height - IncreaseStart) / IncreasePeriodForN) + 1;
+            var step = nBase;
+            var iterationsNumber = (height - IncreaseStart) / IncreasePeriodForN + 1;
 
-            for(var i = 0ul; i < iterationsNumber; i++)
-                res = res / a * b;
+            for(var i = 0; i < iterationsNumber; i++)
+                step = step / 100 * 105;
 
-            return res;
+            return step;
         }
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
@@ -84,7 +80,7 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        private BigInteger[] GenIndexes(byte[] seed, ulong height)
+        private BigInteger[] GenIndexes(byte[] seed, uint height)
         {
             // hash seed
             Span<byte> hash = stackalloc byte[32];
@@ -101,7 +97,7 @@ namespace Miningcore.Blockchain.Ergo
             for(var i = 0; i < 32; i++)
             {
                 var x = BitConverter.ToUInt32(extendedHash.Slice(i, 4)).ToBigEndian();
-                var y = CalculateN(height);
+                var y = CalcN(height);
                 result[i] = x % y;
             }
 
@@ -120,7 +116,7 @@ namespace Miningcore.Blockchain.Ergo
 
             // calculate i
             var slice = hashResult.Slice(24, 8);
-            var tmp2 = new BigInteger(slice, true, true) % CalculateN(Height);
+            var tmp2 = new BigInteger(slice, true, true) % CalcN(Height);
             var i = tmp2.ToByteArray(false, true).PadFront(0, 4);
 
             // calculate e
@@ -165,9 +161,9 @@ namespace Miningcore.Blockchain.Ergo
 
             var result = new Share
             {
-                BlockHeight = (long) Height,
+                BlockHeight = Height,
                 NetworkDifficulty = Difficulty,
-                Difficulty = stratumDifficulty
+                Difficulty = stratumDifficulty / ErgoConstants.DiffMultiplier
             };
 
             if(isBlockCandidate)

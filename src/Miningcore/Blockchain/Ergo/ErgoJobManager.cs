@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Reactive.Linq;
@@ -12,7 +11,6 @@ using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ergo.Configuration;
 using NLog;
 using Miningcore.Configuration;
-using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Notifications.Messages;
@@ -209,6 +207,11 @@ namespace Miningcore.Blockchain.Ergo
                 return (isNew, forceUpdate);
             }
 
+            catch(ApiException<ApiError> ex)
+            {
+                logger.Error(() => $"Error during {nameof(UpdateJob)}: {ex.Result.Detail ?? ex.Result.Reason}");
+            }
+
             catch(Exception ex)
             {
                 logger.Error(ex, () => $"Error during {nameof(UpdateJob)}");
@@ -316,7 +319,13 @@ namespace Miningcore.Blockchain.Ergo
                 return true;
             }
 
-            catch(ApiException ex)
+            catch(ApiException<ApiError> ex)
+            {
+                logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Result.Detail ?? ex.Result.Reason ?? ex.Message}");
+                messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Result.Detail ?? ex.Result.Reason ?? ex.Message}"));
+            }
+
+            catch(Exception ex)
             {
                 logger.Warn(() => $"Block {share.BlockHeight} submission failed with: {ex.Message}");
                 messageBus.SendMessage(new AdminNotification("Block submission failed", $"Pool {poolConfig.Id} {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}failed to submit block {share.BlockHeight}: {ex.Message}"));
@@ -462,7 +471,7 @@ namespace Miningcore.Blockchain.Ergo
                 ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
             // chain detection
-            var m = Regex.Match(info.Name, "ergo-([^-]+)-.+");
+            var m = ErgoConstants.RegexChain.Match(info.Name);
             if(!m.Success)
                 logger.ThrowLogPoolStartupException($"Unable to identify network type ({info.Name}");
 
@@ -471,6 +480,12 @@ namespace Miningcore.Blockchain.Ergo
             // Payment-processing setup
             if(clusterConfig.PaymentProcessing?.Enabled == true && poolConfig.PaymentProcessing?.Enabled == true)
             {
+                // check configured address belongs to wallet
+                var walletAddresses = await daemon.WalletAddressesAsync(ct);
+
+                if(!walletAddresses.Contains(poolConfig.Address))
+                    logger.ThrowLogPoolStartupException($"Pool address {info.Name} is not controlled by wallet");
+
                 ConfigureRewards();
             }
 
@@ -504,12 +519,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override void ConfigureDaemons()
         {
-            var epConfig = poolConfig.Daemons.First();
-
-            var baseUrl = new UriBuilder(epConfig.Ssl || epConfig.Http2 ? Uri.UriSchemeHttps : Uri.UriSchemeHttp,
-                epConfig.Host, epConfig.Port, epConfig.HttpPath);
-
-            daemon = new ErgoClient(baseUrl.ToString(), httpClientFactory.CreateClient());
+            daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, httpClientFactory, logger);
         }
 
         protected override async Task<bool> AreDaemonsHealthyAsync()

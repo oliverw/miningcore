@@ -180,7 +180,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -268,10 +268,10 @@ namespace Miningcore.Blockchain.Ergo
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = ErgoConstants.Pow2x26;
+            var multiplier = ErgoConstants.DiffMultiplier;
             var result = shares * multiplier / interval;
 
-            result /= 10;
+            result /= 3;
 
             return result;
         }
