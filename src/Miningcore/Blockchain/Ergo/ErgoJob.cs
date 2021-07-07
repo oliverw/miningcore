@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -38,11 +39,13 @@ namespace Miningcore.Blockchain.Ergo
         {
             height = Math.Min(NIncreasementHeightMax, height);
 
-            if(height < IncreaseStart)
-                return nBase;
-
-            if(height >= NIncreasementHeightMax)
-                return 2147387550;
+            switch (height)
+            {
+                case < IncreaseStart:
+                    return nBase;
+                case >= NIncreasementHeightMax:
+                    return 2147387550;
+            }
 
             var res = nBase;
             var iterationsNumber = ((height - IncreaseStart) / IncreasePeriodForN) + 1;
@@ -84,20 +87,23 @@ namespace Miningcore.Blockchain.Ergo
         private BigInteger[] GenIndexes(byte[] seed, ulong height)
         {
             // hash seed
-            var hash = new byte[32];
+            Span<byte> hash = stackalloc byte[32];
             hasher.Digest(seed, hash);
 
             // duplicate
-            var extendedHash = hash.Concat(hash).ToArray();
+            Span<byte> extendedHash = stackalloc byte[64];
+            hash.CopyTo(extendedHash);
+            hash.CopyTo(extendedHash.Slice(32, 32));
 
             // map indexes
-            var result = Enumerable.Range(0, 32).Select(index =>
+            var result = new BigInteger[32];
+
+            for(var i = 0; i < 32; i++)
             {
-                var a = BitConverter.ToUInt32(extendedHash.Slice(index, 4).ToArray()).ToBigEndian();
-                var b = CalculateN(height);
-                return a % b;
-            })
-            .ToArray();
+                var x = BitConverter.ToUInt32(extendedHash.Slice(i, 4)).ToBigEndian();
+                var y = CalculateN(height);
+                result[i] = x % y;
+            }
 
             return result;
         }
