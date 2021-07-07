@@ -83,7 +83,7 @@ namespace Miningcore.Blockchain.Bitcoin
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
 
-            var coin = poolConfig.Template.As<CoinTemplate>();
+            var coin = poolConfig.Template.As<BitcoinTemplate>();
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
@@ -145,7 +145,10 @@ namespace Miningcore.Blockchain.Bitcoin
                         {
                             case "immature":
                                 // update progress
-                                var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
+                                var minConfirmations = extraPoolConfig?.MinimumConfirmations.HasValue == true ?
+                                    Math.Max(extraPoolConfig.MinimumConfirmations.Value, coin.MinimumConfirmations) :
+                                    coin.MinimumConfirmations;
+
                                 block.ConfirmationProgress = Math.Min(1.0d, (double) transactionInfo.Confirmations / minConfirmations);
                                 block.Reward = transactionInfo.Amount;  // update actual block-reward from coinbase-tx
                                 result.Add(block);

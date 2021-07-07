@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using AspNetCoreRateLimit;
+using Miningcore.Blockchain.Bitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -156,6 +157,9 @@ namespace Miningcore.Configuration
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool IsPseudoPoS { get; set; }
+
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int MinimumConfirmations { get; set; } = BitcoinConstants.CoinbaseMinConfimations;
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public JToken BlockTemplateRpcExtraParams { get; set; }
