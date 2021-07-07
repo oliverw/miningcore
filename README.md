@@ -20,36 +20,6 @@
 
 Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
-### Supported Currencies
-
-Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
-
-### Caveats
-
-#### Monero
-
-- Monero's Wallet Daemon (monero-wallet-rpc) relies on HTTP digest authentication for authentication which is currently not supported by Miningcore. Therefore monero-wallet-rpc must be run with the `--disable-rpc-login` option. It is advisable to mitigate the resulting security risk by putting monero-wallet-rpc behind a reverse proxy like nginx with basic-authentication.
-- Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
-- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
-
-#### ZCash
-
-- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
-- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
-- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
-- Miners may use both t-addresses and z-addresses when connecting to the pool
-
-#### Ethereum
-
-- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
-- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
-
-#### Vertcoin
-
-- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
-- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
-
 ## Running Miningcore
 
 ### Linux: pre-built binaries
@@ -123,9 +93,9 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 
 Once you have done this for all of your existing pools you should now restore your shares from backup.
 
-## [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+## Configuration
 
-### [API](https://github.com/coinfoundry/miningcore/wiki/API)
+Please refer to this Wiki Page: https://github.com/coinfoundry/miningcore/wiki/Configuration
 
 ## Building from Source
 
@@ -167,6 +137,40 @@ Create a configuration file `config.json` as described [here](https://github.com
 $ cd ../../build
 $ Miningcore -c config.json
 ```
+
+### Supported Currencies
+
+Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+
+### Caveats
+
+#### Monero
+
+- Monero's Wallet Daemon (monero-wallet-rpc) relies on HTTP digest authentication for authentication which is currently not supported by Miningcore. Therefore monero-wallet-rpc must be run with the `--disable-rpc-login` option. It is advisable to mitigate the resulting security risk by putting monero-wallet-rpc behind a reverse proxy like nginx with basic-authentication.
+- Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
+- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
+
+#### ZCash
+
+- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
+- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
+- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
+- Miners may use both t-addresses and z-addresses when connecting to the pool
+
+#### Ethereum
+
+- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
+- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
+
+#### Vertcoin
+
+- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
+- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
+
+## API
+
+Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/coinfoundry/miningcore/wiki/API
 
 ## Running a production pool
 
