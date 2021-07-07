@@ -202,7 +202,7 @@ namespace Miningcore.Blockchain.Ergo
             return ProcessShareInternal(worker, extraNonce2);
         }
 
-        public void Init(ErgoBlockTemplate blockTemplate, string jobId)
+        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, string jobId)
         {
             BlockTemplate = blockTemplate;
             JobId = jobId;
@@ -216,7 +216,7 @@ namespace Miningcore.Blockchain.Ergo
                 BlockTemplate.Work.Msg,
                 string.Empty,
                 string.Empty,
-                BlockTemplate.Info.Parameters.BlockVersion,
+                blockVersion,
                 B,
                 string.Empty,
                 false

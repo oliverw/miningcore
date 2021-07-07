@@ -1,4 +1,4 @@
 namespace Miningcore.Blockchain.Ergo
 {
-    public record ErgoBlockTemplate(WorkMessage Work, NodeInfo Info);
+    public record ErgoBlockTemplate(WorkMessage Work);
 }
