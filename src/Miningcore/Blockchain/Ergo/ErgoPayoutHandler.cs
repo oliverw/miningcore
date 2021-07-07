@@ -248,133 +248,47 @@ namespace Miningcore.Blockchain.Ergo
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
-        //    // build args
-        //    var amounts = balances
-        //        .Where(x => x.Amount > 0)
-        //        .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
+            // build args
+            var amounts = balances
+                .Where(x => x.Amount > 0)
+                .ToDictionary(x => x.Address, x => Math.Round(x.Amount, 4));
 
-        //    if(amounts.Count == 0)
-        //        return;
+            if(amounts.Count == 0)
+                return;
 
-        //    logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-        //    object[] args;
+            // Create request batch
+            var requests = amounts.Select(x => new PaymentRequest
+            {
+                Address = x.Key,
+                Value = (long) (x.Value * ErgoConstants.SmallestUnit),
+            }).ToArray();
 
-        //    if(extraPoolPaymentProcessingConfig?.MinersPayTxFees == true)
-        //    {
-        //        var identifier = !string.IsNullOrEmpty(clusterConfig.PaymentProcessing?.CoinbaseString) ?
-        //            clusterConfig.PaymentProcessing.CoinbaseString.Trim() : "Miningcore";
+            var txId = await Guard(() => daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
+            {
+                var error = ex.Message;
 
-        //        var comment = $"{identifier} Payment";
-        //        var subtractFeesFrom = amounts.Keys.ToArray();
+                if(ex is ApiException<ApiError> apiException)
+                {
+                    error = apiException.Result.Detail ?? apiException.Result.Reason;
 
-        //        if(!poolConfig.Template.As<BitcoinTemplate>().HasMasterNodes)
-        //        {
-        //            args = new object[]
-        //            {
-        //                string.Empty, // default account
-        //                amounts, // addresses and associated amounts
-        //                1, // only spend funds covered by this many confirmations
-        //                comment, // tx comment
-        //                subtractFeesFrom, // distribute transaction fee equally over all recipients,
+                    logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
+                }
 
-        //                // workaround for https://bitcoin.stackexchange.com/questions/102508/bitcoin-cli-sendtoaddress-error-fallbackfee-is-disabled-wait-a-few-blocks-or-en
-        //                // using bitcoin regtest
-        //                //true,
-        //                //null,
-        //                //"unset",
-        //                //"1"
-        //            };
-        //        }
+                NotifyPayoutFailure(poolConfig.Id, balances, $"/wallet/payment/send returned error: {error}", null);
 
-        //        else
-        //        {
-        //            args = new object[]
-        //            {
-        //                string.Empty, // default account
-        //                amounts, // addresses and associated amounts
-        //                1, // only spend funds covered by this many confirmations
-        //                false, // Whether to add confirmations to transactions locked via InstantSend
-        //                comment, // tx comment
-        //                subtractFeesFrom, // distribute transaction fee equally over all recipients
-        //                false, // use_is: Send this transaction as InstantSend
-        //                false, // Use anonymized funds only
-        //            };
-        //        }
-        //    }
+                throw ex;
+            });
 
-        //    else
-        //    {
-        //        args = new object[]
-        //        {
-        //            string.Empty, // default account
-        //            amounts, // addresses and associated amounts
-        //        };
-        //    }
+            if(!string.IsNullOrEmpty(txId))
+            {
+                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
 
-        //    var didUnlockWallet = false;
+                await PersistPaymentsAsync(balances, txId);
 
-        //// send command
-        //tryTransfer:
-        //    var result = await daemon.ExecuteCmdSingleAsync<string>(logger, BitcoinCommands.SendMany, args, new JsonSerializerSettings());
-
-        //    if(result.Error == null)
-        //    {
-        //        if(didUnlockWallet)
-        //        {
-        //            // lock wallet
-        //            logger.Info(() => $"[{LogCategory}] Locking wallet");
-        //            await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletLock);
-        //        }
-
-        //        // check result
-        //        var txId = result.Response;
-
-        //        if(string.IsNullOrEmpty(txId))
-        //            logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
-        //        else
-        //            logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
-
-        //        await PersistPaymentsAsync(balances, txId);
-
-        //        NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
-        //    }
-
-        //    else
-        //    {
-        //        if(result.Error.Code == (int) BitcoinRPCErrorCode.RPC_WALLET_UNLOCK_NEEDED && !didUnlockWallet)
-        //        {
-        //            if(!string.IsNullOrEmpty(extraPoolPaymentProcessingConfig?.WalletPassword))
-        //            {
-        //                logger.Info(() => $"[{LogCategory}] Unlocking wallet");
-
-        //                var unlockResult = await daemon.ExecuteCmdSingleAsync<JToken>(logger, BitcoinCommands.WalletPassphrase, new[]
-        //                {
-        //                    (object) extraPoolPaymentProcessingConfig.WalletPassword,
-        //                    (object) 5 // unlock for N seconds
-        //                });
-
-        //                if(unlockResult.Error == null)
-        //                {
-        //                    didUnlockWallet = true;
-        //                    goto tryTransfer;
-        //                }
-
-        //                else
-        //                    logger.Error(() => $"[{LogCategory}] {BitcoinCommands.WalletPassphrase} returned error: {result.Error.Message} code {result.Error.Code}");
-        //            }
-
-        //            else
-        //                logger.Error(() => $"[{LogCategory}] Wallet is locked but walletPassword was not configured. Unable to send funds.");
-        //        }
-
-        //        else
-        //        {
-        //            logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}");
-
-        //            NotifyPayoutFailure(poolConfig.Id, balances, $"{BitcoinCommands.SendMany} returned error: {result.Error.Message} code {result.Error.Code}", null);
-        //        }
-        //    }
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+            }
         }
 
         #endregion // IPayoutHandler

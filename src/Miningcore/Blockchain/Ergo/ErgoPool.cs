@@ -268,10 +268,10 @@ namespace Miningcore.Blockchain.Ergo
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = ErgoConstants.DiffMultiplier;
-            var result = shares * multiplier / interval;
+            var multiplier = ErgoConstants.Pow2x26;
+            var result = shares * multiplier * ErgoConstants.DiffMultiplier / interval;
 
-            result /= 3;
+            result /= 8;
 
             return result;
         }

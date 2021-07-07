@@ -17,7 +17,7 @@ namespace Miningcore.Blockchain.Ergo
         public const uint DiffMultiplier = 256;
         public static double Pow2x26 = Math.Pow(2, 26);
 
-        public const double SmallestUnit = 1000000000;
+        public const decimal SmallestUnit = 1000000000;
 
         public static Regex RegexChain = new("ergo-([^-]+)-.+", RegexOptions.Compiled);
 
