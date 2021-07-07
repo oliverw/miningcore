@@ -16,38 +16,13 @@
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
 
-### Supported Currencies
+## Support
 
-Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+Feel free to visit the [Discussions Area](https://github.com/coinfoundry/miningcore/discussions).
 
-### Caveats
+## Running Miningcore
 
-#### Monero
-
-- Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
-- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
-
-#### ZCash
-
-- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
-- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
-- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
-- Miners may use both t-addresses and z-addresses when connecting to the pool
-
-#### Ethereum
-
-- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
-- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
-- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
-
-#### Vertcoin
-
-- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
-- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
-
-### Running pre-built Release Binaries
-
-#### Linux
+### Linux: pre-built binaries
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - For Debian/Ubuntu, install these packages
@@ -61,7 +36,7 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 - Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
-#### Windows
+### Windows: pre-built binaries
 
 - Install [.NET 5 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
 - Install [PostgreSQL Database](https://www.postgresql.org/)
@@ -71,7 +46,9 @@ Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/M
 - Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 - Run `dotnet Miningcore.dll -c config.json`
 
-### Basic PostgreSQL Database setup
+## Database setup
+
+Miningcore currently requires PostgreSQL 10 or higher.
 
 Create the database:
 
@@ -95,7 +72,7 @@ $ wget https://raw.githubusercontent.com/coinfoundry/miningcore/master/src/Minin
 $ psql -d miningcore -U miningcore -f createdb.sql
 ```
 
-### Advanced PostgreSQL Database setup
+### Advanced setup
 
 If you are planning to run a Multipool-Cluster, the simple setup might not perform well enough under high load. In this case you are strongly advised to use PostgreSQL 11 or higher. After performing the steps outlined in the basic setup above, perform these additional steps:
 
@@ -116,13 +93,13 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 
 Once you have done this for all of your existing pools you should now restore your shares from backup.
 
-### [Configuration](https://github.com/coinfoundry/miningcore/wiki/Configuration)
+## Configuration
 
-### [API](https://github.com/coinfoundry/miningcore/wiki/API)
+Please refer to this Wiki Page: https://github.com/coinfoundry/miningcore/wiki/Configuration
 
-### Building from Source
+## Building from Source
 
-#### Building on Ubuntu 20.04
+### Building on Ubuntu 20.04
 
 ```console
 $ wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -136,7 +113,7 @@ $ cd miningcore/src/Miningcore
 $ dotnet publish -c Release --framework net5.0  -o ../../build
 ```
 
-#### Building on Windows
+### Building on Windows
 
 Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 
@@ -146,13 +123,13 @@ Download and install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotn
 > dotnet publish -c Release --framework net5.0  -o ..\..\build
 ```
 
-#### Building on Windows - Visual Studio
+### Building on Windows - Visual Studio
 
 - Install [Visual Studio 2019](https://www.visualstudio.com/vs/). Visual Studio Community Edition is fine.
 - Open `Miningcore.sln` in Visual Studio
 
 
-#### After successful build
+### After successful build
 
 Create a configuration file `config.json` as described [here](https://github.com/coinfoundry/miningcore/wiki/Configuration)
 
@@ -160,6 +137,40 @@ Create a configuration file `config.json` as described [here](https://github.com
 $ cd ../../build
 $ Miningcore -c config.json
 ```
+
+### Supported Currencies
+
+Refer to [this file](https://github.com/coinfoundry/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+
+### Caveats
+
+#### Monero
+
+- Monero's Wallet Daemon (monero-wallet-rpc) relies on HTTP digest authentication for authentication which is currently not supported by Miningcore. Therefore monero-wallet-rpc must be run with the `--disable-rpc-login` option. It is advisable to mitigate the resulting security risk by putting monero-wallet-rpc behind a reverse proxy like nginx with basic-authentication.
+- Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
+- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
+
+#### ZCash
+
+- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
+- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
+- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
+- Miners may use both t-addresses and z-addresses when connecting to the pool
+
+#### Ethereum
+
+- Miningcore implements the [Ethereum stratum mining protocol](https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt) authored by NiceHash. This protocol is implemented by all major Ethereum miners.
+- Claymore Miner must be configured to communicate using this protocol by supplying the `-esm 3` command line option
+- Genoil's `ethminer` must be configured to communicate using this protocol by supplying the `-SP 2` command line option
+
+#### Vertcoin
+
+- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
+- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
+
+## API
+
+Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/coinfoundry/miningcore/wiki/API
 
 ## Running a production pool
 
