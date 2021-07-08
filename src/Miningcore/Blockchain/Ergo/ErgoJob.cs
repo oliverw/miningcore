@@ -11,13 +11,14 @@ using Miningcore.Extensions;
 using Miningcore.Stratum;
 using System.Numerics;
 using NBitcoin;
+using NLog;
 
 namespace Miningcore.Blockchain.Ergo
 {
     public class ErgoJob
     {
         public ErgoBlockTemplate BlockTemplate { get; private set; }
-        public double Difficulty { get; private set; }
+        public double Difficulty => target.Difficulty;
         public uint Height => BlockTemplate.Work.Height;
         public string JobId { get; protected set; }
 
@@ -27,6 +28,7 @@ namespace Miningcore.Blockchain.Ergo
         private BigInteger B;
 
         private static readonly uint nBase = (uint) Math.Pow(2, 26);
+        private Target target;
         private const uint IncreaseStart = 600 * 1024;
         private const uint IncreasePeriodForN = 50 * 1024;
         private const uint NIncreasementHeightMax = 9216000;
@@ -146,18 +148,34 @@ namespace Miningcore.Blockchain.Ergo
             // calculate fH
             var blockHash = f.ToByteArray(true, true).PadFront(0, 32);
             hasher.Digest(blockHash, hashResult);
-            var fh = new BigInteger(hashResult, true, true);
+            var shareTarget = new Target(new BigInteger(hashResult, true, true));
 
             // diff check
             var stratumDifficulty = context.Difficulty;
-            var isLowDifficulty = fh / new BigInteger(context.Difficulty) > B;
+            var stratumTarget = new Target(target.ToBigInteger() * (BigInteger) stratumDifficulty);
+            var ratio = shareTarget.Difficulty / stratumTarget.Difficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = B >= fh;
+            var isBlockCandidate = target >= shareTarget;
 
             // test if share meets at least workers current difficulty
-            if(!isBlockCandidate && isLowDifficulty)
-                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share");
+            if(!isBlockCandidate && ratio < 0.99)
+            {
+                // check if share matched the previous difficulty from before a vardiff retarget
+                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                {
+                    ratio = shareTarget.Difficulty / context.PreviousDifficulty.Value;
+
+                    if(ratio < 0.99)
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareTarget.Difficulty})");
+
+                    // use previous difficulty
+                    stratumDifficulty = context.PreviousDifficulty.Value;
+                }
+
+                else
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareTarget.Difficulty})");
+            }
 
             var result = new Share
             {
@@ -206,8 +224,7 @@ namespace Miningcore.Blockchain.Ergo
         {
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            B = BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
-            Difficulty = new Target(B).Difficulty;
+            target = new Target(BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer));
 
             jobParams = new object[]
             {
@@ -217,7 +234,7 @@ namespace Miningcore.Blockchain.Ergo
                 string.Empty,
                 string.Empty,
                 blockVersion,
-                B,
+                target,
                 string.Empty,
                 false
             };

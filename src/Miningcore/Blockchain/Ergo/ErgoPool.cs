@@ -5,6 +5,7 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Numerics;
 using Autofac;
 using AutoMapper;
 using Miningcore.Blockchain.Bitcoin;
@@ -18,6 +19,8 @@ using Miningcore.Persistence;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
+using Miningcore.Util;
+using NBitcoin;
 using Newtonsoft.Json;
 using NLog;
 
@@ -255,13 +258,15 @@ namespace Miningcore.Blockchain.Ergo
         private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)
         {
             // clone job params
-            var jobParamsActual = new object[currentJobParams.Length];
+            var jobParamsActual = new object[jobParams.Length];
 
             for(var i = 0; i < jobParamsActual.Length; i++)
-                jobParamsActual[i] = currentJobParams[i];
+                jobParamsActual[i] = jobParams[i];
 
             // correct difficulty
-            jobParamsActual[6] = (System.Numerics.BigInteger) jobParamsActual[6] * new System.Numerics.BigInteger(context.Difficulty);
+            var target = (Target) jobParamsActual[6];
+            var diff = new BigRational(target.ToBigInteger() * (BigInteger) (context.Difficulty * 256), 256).GetWholePart();
+            jobParamsActual[6] = diff.ToString();
 
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
         }
