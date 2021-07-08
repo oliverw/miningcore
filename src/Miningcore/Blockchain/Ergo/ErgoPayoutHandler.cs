@@ -59,8 +59,22 @@ namespace Miningcore.Blockchain.Ergo
         private ErgoPoolConfigExtra extraPoolConfig;
         private readonly IHttpClientFactory httpClientFactory;
         private string network;
+        private ErgoPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
         protected override string LogCategory => "Bitcoin Payout Handler";
+
+        private void ReportAndRethrowApiError(string action, Exception ex, bool rethrow = true)
+        {
+            var error = ex.Message;
+
+            if(ex is ApiException<ApiError> apiException)
+                error = apiException.Result.Detail ?? apiException.Result.Reason;
+
+            logger.Warn(() => $"{action}: {error}");
+
+            if(rethrow)
+                throw ex;
+        }
 
         #region IPayoutHandler
 
@@ -74,7 +88,7 @@ namespace Miningcore.Blockchain.Ergo
             this.clusterConfig = clusterConfig;
 
             extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
-            //extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<BitcoinPoolPaymentProcessingConfigExtra>();
+            extraPoolPaymentProcessingConfig = poolConfig.PaymentProcessing.Extra.SafeExtensionDataAs<ErgoPaymentProcessingConfigExtra>();
 
             daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, null);
 
@@ -258,36 +272,50 @@ namespace Miningcore.Blockchain.Ergo
 
             logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-            // Create request batch
-            var requests = amounts.Select(x => new PaymentRequest
-            {
-                Address = x.Key,
-                Value = (long) (x.Value * ErgoConstants.SmallestUnit),
-            }).ToArray();
+            // unlock wallet
+            await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty}),
+                ex => ReportAndRethrowApiError("Failed to unlock wallet", ex));
 
-            var txId = await Guard(() => daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
+            try
             {
-                var error = ex.Message;
-
-                if(ex is ApiException<ApiError> apiException)
+                // Create request batch
+                var requests = amounts.Select(x => new PaymentRequest
                 {
-                    error = apiException.Result.Detail ?? apiException.Result.Reason;
+                    Address = x.Key,
+                    Value = (long) (x.Value * ErgoConstants.SmallestUnit),
+                }).ToArray();
 
-                    logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
+                var txId = await Guard(() => daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
+                {
+                    var error = ex.Message;
+
+                    if(ex is ApiException<ApiError> apiException)
+                    {
+                        error = apiException.Result.Detail ?? apiException.Result.Reason;
+
+                        logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
+                    }
+
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"/wallet/payment/send returned error: {error}", null);
+
+                    throw ex;
+                });
+
+                if(!string.IsNullOrEmpty(txId))
+                {
+                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+
+                    await PersistPaymentsAsync(balances, txId);
+
+                    NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
                 }
+            }
 
-                NotifyPayoutFailure(poolConfig.Id, balances, $"/wallet/payment/send returned error: {error}", null);
-
-                throw ex;
-            });
-
-            if(!string.IsNullOrEmpty(txId))
+            finally
             {
-                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
-
-                await PersistPaymentsAsync(balances, txId);
-
-                NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
+                // lock wallet
+                await Guard(()=> daemon.WalletLockAsync(),
+                    ex=> ReportAndRethrowApiError("Failed to lock wallet", ex));
             }
         }
 
