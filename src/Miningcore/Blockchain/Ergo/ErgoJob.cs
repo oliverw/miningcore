@@ -10,6 +10,8 @@ using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
 using System.Numerics;
+using Miningcore.Blockchain.Bitcoin;
+using Miningcore.Util;
 using NBitcoin;
 using NLog;
 
@@ -151,9 +153,8 @@ namespace Miningcore.Blockchain.Ergo
             var shareTarget = new Target(new BigInteger(hashResult, true, true));
 
             // diff check
-            var stratumDifficulty = context.Difficulty;
-            var stratumTarget = new Target(target.ToBigInteger() * (BigInteger) stratumDifficulty);
-            var ratio = shareTarget.Difficulty / stratumTarget.Difficulty;
+            var stratumDifficulty = context.EffectiveDifficulty;
+            var ratio = shareTarget.Difficulty / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
             var isBlockCandidate = target >= shareTarget;
@@ -162,15 +163,15 @@ namespace Miningcore.Blockchain.Ergo
             if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+                if(context.VarDiff?.LastUpdate != null && context.PreviousEffectiveDifficulty.HasValue)
                 {
-                    ratio = shareTarget.Difficulty / context.PreviousDifficulty.Value;
+                    ratio = shareTarget.Difficulty / context.PreviousEffectiveDifficulty.Value;
 
                     if(ratio < 0.99)
                         throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareTarget.Difficulty})");
 
                     // use previous difficulty
-                    stratumDifficulty = context.PreviousDifficulty.Value;
+                    stratumDifficulty = context.PreviousEffectiveDifficulty.Value;
                 }
 
                 else

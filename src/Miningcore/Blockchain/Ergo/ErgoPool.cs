@@ -263,20 +263,25 @@ namespace Miningcore.Blockchain.Ergo
             for(var i = 0; i < jobParamsActual.Length; i++)
                 jobParamsActual[i] = jobParams[i];
 
-            // correct difficulty
+            // emit target
             var target = (Target) jobParamsActual[6];
-            var diff = new BigRational(target.ToBigInteger() * (BigInteger) (context.Difficulty * 256), 256).GetWholePart();
+            var tmp = ErgoConstants.ArtificialDiffCeiling / context.Difficulty;
+            var diff = new BigRational(target.ToBigInteger() * (BigInteger) (tmp * 256), 256).GetWholePart();
             jobParamsActual[6] = diff.ToString();
+
+            // also remember effective diff (based on target sent to miner), independent of artificial diff
+            context.EffectiveDifficulty = new Target(diff).Difficulty;
 
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
         }
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = ErgoConstants.Pow2x26;
-            var result = shares * multiplier * ErgoConstants.DiffMultiplier / interval;
+            var multiplier = BitcoinConstants.Pow2x32 * ErgoConstants.DiffMultiplier;
+            var result = shares * multiplier / interval;
 
-            result /= 8;
+            //result /= 8;
+            result *= 1.25;
 
             return result;
         }
@@ -387,6 +392,8 @@ namespace Miningcore.Blockchain.Ergo
             if(context.HasPendingDifficulty)
             {
                 context.ApplyPendingDifficulty();
+
+                context.PreviousEffectiveDifficulty = context.EffectiveDifficulty;
 
                 await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 await SendJob(connection, context, currentJobParams);

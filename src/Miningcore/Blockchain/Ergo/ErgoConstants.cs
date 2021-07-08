@@ -14,6 +14,8 @@ namespace Miningcore.Blockchain.Ergo
 {
     public static class ErgoConstants
     {
+        public const double ArtificialDiffCeiling = 0x10000;
+
         public const uint DiffMultiplier = 256;
         public static double Pow2x26 = Math.Pow(2, 26);
 
@@ -25,6 +27,7 @@ namespace Miningcore.Blockchain.Ergo
             .SelectMany(x =>
             {
                 const double max = 4294967296d;
+
                 var top = (uint) Math.Floor(x / max);
                 var rem  = (uint) (x - top * max);
 
