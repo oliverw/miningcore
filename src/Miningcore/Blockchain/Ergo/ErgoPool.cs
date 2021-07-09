@@ -303,7 +303,7 @@ namespace Miningcore.Blockchain.Ergo
             var extraNonce1Size = extraPoolConfig?.ExtraNonce1Size ?? 2;
 
             manager = ctx.Resolve<ErgoJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new ErgoExtraNonceProvider(extraNonce1Size, clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new ErgoExtraNonceProvider(poolConfig.Id, extraNonce1Size, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 

@@ -282,7 +282,7 @@ namespace Miningcore.Blockchain.Ethereum
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EthereumJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new EthereumExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new EthereumExtraNonceProvider(poolConfig.Id, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 

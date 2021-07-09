@@ -63,7 +63,7 @@ namespace Miningcore.Blockchain.Equihash
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EquihashJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(poolConfig.Id, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 

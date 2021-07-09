@@ -1,13 +1,16 @@
 using System;
 using System.Security.Cryptography;
+using Miningcore.Util;
 using NLog;
 
 namespace Miningcore.Blockchain
 {
     public class ExtraNonceProviderBase : IExtraNonceProvider
     {
-        public ExtraNonceProviderBase(int extranonceBytes, byte? instanceId)
+        public ExtraNonceProviderBase(string poolId, int extranonceBytes, byte? instanceId)
         {
+            this.logger = LogUtil.GetPoolScopedLogger(this.GetType(), poolId);
+
             this.extranonceBytes = extranonceBytes;
             idShift = (extranonceBytes * 8) - IdBits;
             nonceMax = (1UL << idShift) - 1;
@@ -30,9 +33,11 @@ namespace Miningcore.Blockchain
 
             id = (byte) (id & mask);
             counter = 0;
+
+            logger.Info(()=> $"ExtraNonceProvider using {IdBits} bits for instance, {extranonceBytes * 8 - IdBits} bits for values ({nonceMax} maximum), instance = 0x{id:X}");
         }
 
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger logger;
 
         private const int IdBits = 4;
         private readonly object counterLock = new();
@@ -57,7 +62,7 @@ namespace Miningcore.Blockchain
 
                 if(counter > nonceMax)
                 {
-                    logger.Warn(()=> $"Range exhausted. Rolling over to 0.");
+                    logger.Warn(()=> $"ExtraNonceProvider Range exhausted. Rolling over to 0.");
 
                     counter = 0;
                 }
