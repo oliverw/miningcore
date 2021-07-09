@@ -10,10 +10,7 @@ using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
 using Miningcore.Stratum;
 using System.Numerics;
-using Miningcore.Blockchain.Bitcoin;
-using Miningcore.Util;
 using NBitcoin;
-using NLog;
 
 namespace Miningcore.Blockchain.Ergo
 {
@@ -27,7 +24,7 @@ namespace Miningcore.Blockchain.Ergo
         private object[] jobParams;
         private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         private static readonly IHashAlgorithm hasher = new Blake2b();
-        private int extraNonceBytes;
+        private int extraNonceSize;
         private BigInteger B;
 
         private static readonly uint nBase = (uint) Math.Pow(2, 26);
@@ -204,11 +201,11 @@ namespace Miningcore.Blockchain.Ergo
             var context = worker.ContextAs<ErgoWorkerContext>();
 
             // validate nonce
-            if(nonce.Length != context.ExtraNonce1.Length + extraNonceBytes * 2)
+            if(nonce.Length != context.ExtraNonce1.Length + extraNonceSize * 2)
                 throw new StratumException(StratumError.Other, "incorrect size of nonce");
 
             if(!nonce.StartsWith(context.ExtraNonce1))
-                throw new StratumException(StratumError.Other, "incorrect extraNonce2 in nonce");
+                throw new StratumException(StratumError.Other, $"incorrect extraNonce2 in nonce (expected {context.ExtraNonce1}, got {nonce.Substring(0, Math.Min(nonce.Length, context.ExtraNonce1.Length))})");
 
             // currently unused
             if(nTime == "undefined")
@@ -221,9 +218,9 @@ namespace Miningcore.Blockchain.Ergo
             return ProcessShareInternal(worker, nonce);
         }
 
-        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, int extraNonceBytes, string jobId)
+        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, int extraNonceSize, string jobId)
         {
-            this.extraNonceBytes = extraNonceBytes;
+            this.extraNonceSize = extraNonceSize;
 
             BlockTemplate = blockTemplate;
             JobId = jobId;

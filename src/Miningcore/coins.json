@@ -1489,7 +1489,7 @@
         "explorerAccountLink": "https://explorer.callisto.network/address/{0}"
     },
     "ergo": {
-        "name": "ergo",
+        "name": "Ergo",
         "symbol": "ERG",
         "family": "ergo",
         "explorerBlockLink": "https://explorer.ergoplatform.com/en/blocks/$hash$",

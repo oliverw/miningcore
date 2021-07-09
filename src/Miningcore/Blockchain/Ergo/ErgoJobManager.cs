@@ -36,7 +36,7 @@ namespace Miningcore.Blockchain.Ergo
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
 
-            ExtranonceBytes = 8 - extraNonceProvider.ByteSize;
+            extraNonceSize = 8 - extraNonceProvider.ByteSize;
         }
 
         private ErgoCoinTemplate coin;
@@ -44,7 +44,7 @@ namespace Miningcore.Blockchain.Ergo
         private string network;
         private readonly List<ErgoJob> validJobs = new();
         private int maxActiveJobs = 4;
-        private readonly int ExtranonceBytes;
+        private readonly int extraNonceSize;
         private readonly IExtraNonceProvider extraNonceProvider;
         private readonly IMasterClock clock;
         private ErgoPoolConfigExtra extraPoolConfig;
@@ -135,7 +135,7 @@ namespace Miningcore.Blockchain.Ergo
                 {
                     job = new ErgoJob();
 
-                    job.Init(blockTemplate, blockVersion, ExtranonceBytes, NextJobId());
+                    job.Init(blockTemplate, blockVersion, extraNonceSize, NextJobId());
 
                     lock(jobLock)
                     {
@@ -311,7 +311,7 @@ namespace Miningcore.Blockchain.Ergo
             var responseData = new object[]
             {
                 context.ExtraNonce1,
-                ExtranonceBytes,
+                extraNonceSize,
             };
 
             return responseData;

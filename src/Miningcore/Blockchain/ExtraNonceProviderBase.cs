@@ -31,7 +31,7 @@ namespace Miningcore.Blockchain
             counter = 0;
         }
 
-        private const int IdBits = 5;
+        private const int IdBits = 4;
         private readonly object counterLock = new();
         protected ulong counter;
         protected byte id;
