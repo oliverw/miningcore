@@ -119,12 +119,10 @@ namespace Miningcore.Blockchain.Ergo
                     context.SetDifficulty(staticDiff.Value);
 
                     logger.Info(() => $"[{connection.ConnectionId}] Setting static difficulty of {staticDiff.Value}");
-
-                    await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 }
 
                 // send intial update
-                await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
                 await SendJob(connection, context, currentJobParams);
             }
 
@@ -183,7 +181,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)} [{requestParams[4]}]");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -238,9 +236,10 @@ namespace Miningcore.Blockchain.Ergo
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if(context.ApplyPendingDifficulty())
-                        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-
-                    await SendJob(connection, context, currentJobParams);
+                    {
+                        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {1});
+                        await SendJob(connection, context, currentJobParams);
+                    }
                 }
             });
 

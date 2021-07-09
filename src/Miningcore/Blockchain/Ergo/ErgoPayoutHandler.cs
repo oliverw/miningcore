@@ -267,7 +267,16 @@ namespace Miningcore.Blockchain.Ergo
 
             // unlock wallet
             await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty}),
-                ex => ReportAndRethrowApiError("Failed to unlock wallet", ex));
+                ex =>
+                {
+                    if(ex is ApiException<ApiError> apiException)
+                    {
+                        if(apiException.Result.Detail?.ToLower()?.Contains("already unlocked") == true)
+                            return;
+                    }
+
+                    ReportAndRethrowApiError("Failed to unlock wallet", ex);
+                });
 
             try
             {

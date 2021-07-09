@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Reactive.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
-using Miningcore.Blockchain.Bitcoin;
 using Miningcore.Blockchain.Ergo.Configuration;
 using NLog;
 using Miningcore.Configuration;
@@ -30,27 +27,22 @@ namespace Miningcore.Blockchain.Ergo
             IComponentContext ctx,
             IMessageBus messageBus,
             IMasterClock clock,
-            IHttpClientFactory httpClientFactory,
             IExtraNonceProvider extraNonceProvider) :
             base(ctx, messageBus)
         {
-            Contract.RequiresNonNull(httpClientFactory, nameof(httpClientFactory));
             Contract.RequiresNonNull(clock, nameof(clock));
+            Contract.RequiresNonNull(extraNonceProvider, nameof(extraNonceProvider));
 
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
-            this.httpClientFactory = httpClientFactory;
         }
 
         private ErgoCoinTemplate coin;
         private ErgoClient daemon;
         private string network;
-        private TimeSpan jobRebroadcastTimeout;
-        private DateTime? lastJobRebroadcast;
         private readonly List<ErgoJob> validJobs = new();
         private int maxActiveJobs = 4;
         private const int ExtranonceBytes = 4;
-        private readonly IHttpClientFactory httpClientFactory;
         private readonly IExtraNonceProvider extraNonceProvider;
         private readonly IMasterClock clock;
         private ErgoPoolConfigExtra extraPoolConfig;
@@ -58,7 +50,6 @@ namespace Miningcore.Blockchain.Ergo
 
         private void SetupJobUpdates()
         {
-            jobRebroadcastTimeout = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout));
             var blockFound = blockFoundSubject.Synchronize();
             var pollTimerRestart = blockFoundSubject.Synchronize();
 
@@ -87,42 +78,16 @@ namespace Miningcore.Blockchain.Ergo
                         .Select(_ => (false, JobRefreshBy.Initial, (string) null))
                         .TakeWhile(_ => !hasInitialBlockTemplate));
                 }
-
-                // periodically update transactions for current template
-                if(poolConfig.JobRebroadcastTimeout > 0)
-                {
-                    triggers.Add(Observable.Timer(jobRebroadcastTimeout)
-                        .TakeUntil(pollTimerRestart)
-                        .Select(_ => (true, JobRefreshBy.PollRefresh, (string) null))
-                        .Repeat());
-                }
             }
 
             else
             {
                 var btStream = BtStreamSubscribe(extraPoolConfig.BtStream);
 
-                if(poolConfig.JobRebroadcastTimeout > 0)
-                {
-                    var interval = TimeSpan.FromSeconds(Math.Max(1, poolConfig.JobRebroadcastTimeout - 0.1d));
-
-                    triggers.Add(btStream
-                        .Select(json =>
-                        {
-                            var force = !lastJobRebroadcast.HasValue || (clock.Now - lastJobRebroadcast >= interval);
-                            return (force, !force ? JobRefreshBy.BlockTemplateStream : JobRefreshBy.BlockTemplateStreamRefresh, json);
-                        })
-                        .Publish()
-                        .RefCount());
-                }
-
-                else
-                {
-                    triggers.Add(btStream
-                        .Select(json => (false, JobRefreshBy.BlockTemplateStream, json))
-                        .Publish()
-                        .RefCount());
-                }
+                triggers.Add(btStream
+                    .Select(json => (false, JobRefreshBy.BlockTemplateStream, json))
+                    .Publish()
+                    .RefCount());
 
                 // get initial blocktemplate
                 triggers.Add(Observable.Interval(TimeSpan.FromMilliseconds(1000))
@@ -150,9 +115,6 @@ namespace Miningcore.Blockchain.Ergo
 
             try
             {
-                if(forceUpdate)
-                    lastJobRebroadcast = clock.Now;
-
                 var blockTemplate = string.IsNullOrEmpty(json) ?
                     await GetBlockTemplateAsync() :
                     GetBlockTemplateFromJson(json);
@@ -171,7 +133,7 @@ namespace Miningcore.Blockchain.Ergo
                 {
                     job = new ErgoJob();
 
-                    job.Init(blockTemplate, blockVersion, NextJobId());
+                    job.Init(blockTemplate, blockVersion, ExtranonceBytes, NextJobId());
 
                     lock(jobLock)
                     {
@@ -347,7 +309,7 @@ namespace Miningcore.Blockchain.Ergo
             var responseData = new object[]
             {
                 context.ExtraNonce1,
-                BitcoinConstants.ExtranoncePlaceHolderLength - ExtranonceBytes,
+                ExtranonceBytes,
             };
 
             return responseData;

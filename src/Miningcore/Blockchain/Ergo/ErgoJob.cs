@@ -27,6 +27,7 @@ namespace Miningcore.Blockchain.Ergo
         private object[] jobParams;
         private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         private static readonly IHashAlgorithm hasher = new Blake2b();
+        private int extraNonceBytes;
         private BigInteger B;
 
         private static readonly uint nBase = (uint) Math.Pow(2, 26);
@@ -58,12 +59,14 @@ namespace Miningcore.Blockchain.Ergo
 
         protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
         {
-            var key = new StringBuilder()
-                .Append(extraNonce1)
-                .Append(extraNonce2)
-                .Append(nTime)
-                .Append(nonce)
-                .ToString();
+            var key = nonce;
+
+            //var key = new StringBuilder()
+            //    .Append(extraNonce1)
+            //    .Append(extraNonce2)
+            //    .Append(nTime)
+            //    .Append(nonce)
+            //    .ToString();
 
             return submissions.TryAdd(key, true);
         }
@@ -211,18 +214,24 @@ namespace Miningcore.Blockchain.Ergo
             var context = worker.ContextAs<ErgoWorkerContext>();
 
             // validate nonce
-            if(nonce.Length != 16)
+            if(nonce.Length != context.ExtraNonce1.Length + extraNonceBytes * 2)
                 throw new StratumException(StratumError.Other, "incorrect size of nonce");
+
+            // currently unused
+            if(nTime == "undefined")
+                nTime = string.Empty;
 
             // dupe check
             if(!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
-                throw new StratumException(StratumError.DuplicateShare, "duplicate share");
+                throw new StratumException(StratumError.DuplicateShare, $"duplicate share [{nonce}]");
 
             return ProcessShareInternal(worker, extraNonce2);
         }
 
-        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, string jobId)
+        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, int extraNonceBytes, string jobId)
         {
+            this.extraNonceBytes = extraNonceBytes;
+
             BlockTemplate = blockTemplate;
             JobId = jobId;
             target = new Target(BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer));
