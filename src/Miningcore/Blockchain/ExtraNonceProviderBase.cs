@@ -14,13 +14,20 @@ namespace Miningcore.Blockchain
             this.extranonceBytes = extranonceBytes;
             idShift = (extranonceBytes * 8) - IdBits;
             nonceMax = (1UL << idShift) - 1;
+            idMax = (1U << IdBits) - 1;
             stringFormat = "x" + extranonceBytes * 2;
 
             // generate instanceId if not provided
             var mask = (1L << IdBits) - 1;
 
             if(instanceId.HasValue)
+            {
                 id = instanceId.Value;
+
+                if(id > idMax)
+                    logger.ThrowLogPoolStartupException($"Provided instance id to large to fit into {IdBits} bits (limit {idMax})");
+            }
+
             else
             {
                 using(var rng = RandomNumberGenerator.Create())
@@ -34,7 +41,7 @@ namespace Miningcore.Blockchain
             id = (byte) (id & mask);
             counter = 0;
 
-            logger.Info(()=> $"ExtraNonceProvider using {IdBits} bits for instance, {extranonceBytes * 8 - IdBits} bits for {nonceMax} values, instance = 0x{id:X}");
+            logger.Info(()=> $"ExtraNonceProvider using {IdBits} bits for instance id, {extranonceBytes * 8 - IdBits} bits for {nonceMax} values, instance id = 0x{id:X}");
         }
 
         private readonly ILogger logger;
@@ -45,6 +52,7 @@ namespace Miningcore.Blockchain
         protected byte id;
         protected readonly int extranonceBytes;
         protected readonly int idShift;
+        protected readonly uint idMax;
         protected readonly ulong nonceMax;
         protected readonly string stringFormat;
 
