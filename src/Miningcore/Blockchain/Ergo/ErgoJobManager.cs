@@ -249,11 +249,8 @@ namespace Miningcore.Blockchain.Ergo
                 logger.Info(() => $"Daemon has downloaded {percent:0.00}% of blockchain from {info.PeersCount} peers");
             }
 
-            else if(!string.IsNullOrEmpty(info?.BestFullHeaderId))
-                logger.Info(() => $"Daemon is downloading headers ...");
-
             else
-                logger.Info(() => $"Waiting for daemon to resume syncing ...");
+                logger.Info(() => $"Daemon is downloading headers ...");
         }
 
         private async Task UpdateNetworkStatsAsync()
