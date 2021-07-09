@@ -1,5 +1,6 @@
 using System;
 using System.Security.Cryptography;
+using NLog;
 
 namespace Miningcore.Blockchain
 {
@@ -31,6 +32,8 @@ namespace Miningcore.Blockchain
             counter = 0;
         }
 
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         private const int IdBits = 4;
         private readonly object counterLock = new();
         protected ulong counter;
@@ -51,8 +54,13 @@ namespace Miningcore.Blockchain
             lock(counterLock)
             {
                 counter++;
+
                 if(counter > nonceMax)
+                {
+                    logger.Warn(()=> $"Range exhausted. Rolling over to 0.");
+
                     counter = 0;
+                }
 
                 // encode to hex
                 value = ((ulong) id << idShift) | counter;
