@@ -62,7 +62,7 @@ namespace Miningcore.Blockchain
 
                 if(counter > nonceMax)
                 {
-                    logger.Warn(()=> $"ExtraNonceProvider Range exhausted. Rolling over to 0.");
+                    logger.Warn(()=> $"ExtraNonceProvider range exhausted! Rolling over to 0.");
 
                     counter = 0;
                 }
