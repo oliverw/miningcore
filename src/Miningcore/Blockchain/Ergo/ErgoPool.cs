@@ -9,7 +9,9 @@ using System.Numerics;
 using Autofac;
 using AutoMapper;
 using Miningcore.Blockchain.Bitcoin;
+using Miningcore.Blockchain.Ergo.Configuration;
 using Miningcore.Configuration;
+using Miningcore.Extensions;
 using Miningcore.JsonRpc;
 using Miningcore.Messaging;
 using Miningcore.Mining;
@@ -43,6 +45,7 @@ namespace Miningcore.Blockchain.Ergo
 
         protected object[] currentJobParams;
         protected ErgoJobManager manager;
+        private ErgoPoolConfigExtra extraPoolConfig;
         private ErgoCoinTemplate coin;
 
         protected virtual async Task OnSubscribeAsync(StratumConnection connection, Timestamped<JsonRpcRequest> tsRequest)
@@ -181,7 +184,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)} [{requestParams[4]}]");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -290,14 +293,17 @@ namespace Miningcore.Blockchain.Ergo
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)
         {
             coin = poolConfig.Template.As<ErgoCoinTemplate>();
+            extraPoolConfig = poolConfig.Extra.SafeExtensionDataAs<ErgoPoolConfigExtra>();
 
             base.Configure(poolConfig, clusterConfig);
         }
 
         protected override async Task SetupJobManager(CancellationToken ct)
         {
+            var extraNonce1Size = extraPoolConfig?.ExtraNonce1Size ?? 2;
+
             manager = ctx.Resolve<ErgoJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new BitcoinExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new ErgoExtraNonceProvider(extraNonce1Size, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 

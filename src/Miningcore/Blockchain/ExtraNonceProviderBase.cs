@@ -42,6 +42,8 @@ namespace Miningcore.Blockchain
 
         #region IExtraNonceProvider
 
+        public int ByteSize => extranonceBytes;
+
         public string Next()
         {
             ulong value;

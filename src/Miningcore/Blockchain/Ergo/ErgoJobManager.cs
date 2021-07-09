@@ -35,6 +35,8 @@ namespace Miningcore.Blockchain.Ergo
 
             this.clock = clock;
             this.extraNonceProvider = extraNonceProvider;
+
+            ExtranonceBytes = 8 - extraNonceProvider.ByteSize;
         }
 
         private ErgoCoinTemplate coin;
@@ -42,7 +44,7 @@ namespace Miningcore.Blockchain.Ergo
         private string network;
         private readonly List<ErgoJob> validJobs = new();
         private int maxActiveJobs = 4;
-        private const int ExtranonceBytes = 4;
+        private readonly int ExtranonceBytes;
         private readonly IExtraNonceProvider extraNonceProvider;
         private readonly IMasterClock clock;
         private ErgoPoolConfigExtra extraPoolConfig;

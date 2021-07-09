@@ -15,6 +15,8 @@ namespace Miningcore.Blockchain.Ergo.Configuration
         /// </summary>
         public ZmqPubSubEndpointConfig BtStream { get; set; }
 
+        public int? ExtraNonce1Size { get; set; }
+
         public int? MinimumConfirmations { get; set; }
     }
 }

@@ -223,7 +223,7 @@ namespace Miningcore.Blockchain.Ergo
 
             // dupe check
             if(!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
-                throw new StratumException(StratumError.DuplicateShare, $"duplicate share [{nonce}]");
+                throw new StratumException(StratumError.DuplicateShare, $"duplicate share");
 
             return ProcessShareInternal(worker, extraNonce2);
         }
