@@ -57,31 +57,22 @@ namespace Miningcore.Blockchain.Ergo
             return step;
         }
 
-        protected bool RegisterSubmit(string extraNonce1, string extraNonce2, string nTime, string nonce)
+        protected bool RegisterSubmit(string nTime, string nonce)
         {
-            var key = nonce;
-
-            //var key = new StringBuilder()
-            //    .Append(extraNonce1)
-            //    .Append(extraNonce2)
-            //    .Append(nTime)
-            //    .Append(nonce)
-            //    .ToString();
+            var key = new StringBuilder()
+                .Append(nTime)
+                .Append(nonce)
+                .ToString();
 
             return submissions.TryAdd(key, true);
         }
 
-        protected virtual byte[] SerializeCoinbase(string msg, string extraNonce1, string extraNonce2)
+        protected virtual byte[] SerializeCoinbase(string msg, string nonce)
         {
-            var msgBytes = msg.HexToByteArray();
-            var extraNonce1Bytes = extraNonce1.HexToByteArray();
-            var extraNonce2Bytes = extraNonce2.HexToByteArray();
-
             using(var stream = new MemoryStream())
             {
-                stream.Write(msgBytes);
-                stream.Write(extraNonce1Bytes);
-                stream.Write(extraNonce2Bytes);
+                stream.Write(msg.HexToByteArray());
+                stream.Write(nonce.HexToByteArray());
 
                 return stream.ToArray();
             }
@@ -111,13 +102,12 @@ namespace Miningcore.Blockchain.Ergo
             return result;
         }
 
-        protected virtual Share ProcessShareInternal(StratumConnection worker, string extraNonce2)
+        protected virtual Share ProcessShareInternal(StratumConnection worker, string nonce)
         {
             var context = worker.ContextAs<ErgoWorkerContext>();
-            var extraNonce1 = context.ExtraNonce1;
 
             // hash coinbase
-            var coinbase = SerializeCoinbase(BlockTemplate.Work.Msg, extraNonce1, extraNonce2);
+            var coinbase = SerializeCoinbase(BlockTemplate.Work.Msg, nonce);
             Span<byte> hashResult = stackalloc byte[32];
             hasher.Digest(coinbase, hashResult);
 
@@ -217,15 +207,18 @@ namespace Miningcore.Blockchain.Ergo
             if(nonce.Length != context.ExtraNonce1.Length + extraNonceBytes * 2)
                 throw new StratumException(StratumError.Other, "incorrect size of nonce");
 
+            if(!nonce.StartsWith(context.ExtraNonce1))
+                throw new StratumException(StratumError.Other, "incorrect extraNonce2 in nonce");
+
             // currently unused
             if(nTime == "undefined")
                 nTime = string.Empty;
 
             // dupe check
-            if(!RegisterSubmit(context.ExtraNonce1, extraNonce2, nTime, nonce))
+            if(!RegisterSubmit(nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, $"duplicate share");
 
-            return ProcessShareInternal(worker, extraNonce2);
+            return ProcessShareInternal(worker, nonce);
         }
 
         public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, int extraNonceBytes, string jobId)
