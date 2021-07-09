@@ -34,7 +34,7 @@ namespace Miningcore.Blockchain
             id = (byte) (id & mask);
             counter = 0;
 
-            logger.Info(()=> $"ExtraNonceProvider using {IdBits} bits for instance, {extranonceBytes * 8 - IdBits} bits for values ({nonceMax} maximum), instance = 0x{id:X}");
+            logger.Info(()=> $"ExtraNonceProvider using {IdBits} bits for instance, {extranonceBytes * 8 - IdBits} bits for {nonceMax} values, instance = 0x{id:X}");
         }
 
         private readonly ILogger logger;
