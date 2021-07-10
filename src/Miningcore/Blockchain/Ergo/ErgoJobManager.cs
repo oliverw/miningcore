@@ -269,7 +269,6 @@ namespace Miningcore.Blockchain.Ergo
                 await daemon.MiningSubmitSolutionAsync(new PowSolutions
                 {
                     N = nonce,
-                    //Pk = job.BlockTemplate.Work.Pk,
                 });
 
                 return true;
