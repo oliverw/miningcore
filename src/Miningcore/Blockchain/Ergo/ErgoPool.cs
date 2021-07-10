@@ -111,7 +111,20 @@ namespace Miningcore.Blockchain.Ergo
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -125,7 +138,6 @@ namespace Miningcore.Blockchain.Ergo
                 }
 
                 // send intial update
-                await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
                 await SendJob(connection, context, currentJobParams);
             }
 
@@ -239,10 +251,7 @@ namespace Miningcore.Blockchain.Ergo
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if(context.ApplyPendingDifficulty())
-                    {
-                        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] {1});
                         await SendJob(connection, context, currentJobParams);
-                    }
                 }
             });
 
@@ -265,15 +274,13 @@ namespace Miningcore.Blockchain.Ergo
             for(var i = 0; i < jobParamsActual.Length; i++)
                 jobParamsActual[i] = jobParams[i];
 
-            // emit target
-            var target = (Target) jobParamsActual[6];
-            var tmp = ErgoConstants.ArtificialDiffCeiling / context.Difficulty;
-            var diff = new BigRational(target.ToBigInteger() * (BigInteger) (tmp * 256), 256).GetWholePart();
-            jobParamsActual[6] = diff.ToString();
+            var target = new BigRational(BitcoinConstants.Diff1 * (BigInteger) (1 / context.Difficulty * 0x10000), 0x10000).GetWholePart();
+            jobParamsActual[6] = target.ToString();
 
-            // also remember effective diff (based on target sent to miner), independent of artificial diff
-            context.EffectiveDifficulty = new Target(diff).Difficulty;
+            // send static diff of 1 since actual diff gets pre-multiplied to target
+            await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { 1 });
 
+            // send target
             await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, jobParamsActual);
         }
 
@@ -281,9 +288,6 @@ namespace Miningcore.Blockchain.Ergo
         {
             var multiplier = BitcoinConstants.Pow2x32 * ErgoConstants.DiffMultiplier;
             var result = shares * multiplier / interval;
-
-            //result /= 8;
-            result *= 1.25;
 
             return result;
         }
@@ -388,19 +392,27 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
+        protected override async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
+        {
+            var result= await base.GetNicehashStaticMinDiff(connection, userAgent, coinName, algoName);
+
+            // adjust value to fit with our target value calculation
+            if(result.HasValue)
+                result = result.Value / uint.MaxValue;
+
+            return result;
+        }
+
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
             var context = connection.ContextAs<ErgoWorkerContext>();
+
             context.EnqueueNewDifficulty(newDiff);
 
-            // apply immediately and notify client
             if(context.HasPendingDifficulty)
             {
                 context.ApplyPendingDifficulty();
 
-                context.PreviousEffectiveDifficulty = context.EffectiveDifficulty;
-
-                await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
                 await SendJob(connection, context, currentJobParams);
             }
         }

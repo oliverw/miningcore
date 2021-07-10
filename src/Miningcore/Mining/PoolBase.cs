@@ -294,29 +294,15 @@ namespace Miningcore.Mining
             }
         }
 
-        protected async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent,
-            double? staticDiff, string coinName, string algoName)
+        protected virtual async Task<double?> GetNicehashStaticMinDiff(StratumConnection connection, string userAgent, string coinName, string algoName)
         {
             if(userAgent.Contains(NicehashConstants.NicehashUA, StringComparison.OrdinalIgnoreCase) &&
                clusterConfig.Nicehash?.EnableAutoDiff == true)
             {
-                var nicehashDiff = await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
-
-                if(nicehashDiff.HasValue)
-                {
-                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
-
-                        return nicehashDiff;
-                    }
-
-                    else
-                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using custom difficulty of {staticDiff.Value}");
-                }
+                return await nicehashService.GetStaticDiff(coinName, algoName, CancellationToken.None);
             }
 
-            return staticDiff;
+            return null;
         }
 
         private StratumEndpoint PoolEndpoint2IPEndpoint(int port, PoolEndpoint pep)

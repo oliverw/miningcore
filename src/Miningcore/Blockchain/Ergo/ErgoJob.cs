@@ -17,7 +17,7 @@ namespace Miningcore.Blockchain.Ergo
     public class ErgoJob
     {
         public ErgoBlockTemplate BlockTemplate { get; private set; }
-        public double Difficulty => target.Difficulty;
+        public double Difficulty => bTarget.Difficulty;
         public uint Height => BlockTemplate.Work.Height;
         public string JobId { get; protected set; }
 
@@ -25,10 +25,10 @@ namespace Miningcore.Blockchain.Ergo
         private readonly ConcurrentDictionary<string, bool> submissions = new(StringComparer.OrdinalIgnoreCase);
         private static readonly IHashAlgorithm hasher = new Blake2b();
         private int extraNonceSize;
-        private BigInteger B;
 
         private static readonly uint nBase = (uint) Math.Pow(2, 26);
-        private Target target;
+        private Target bTarget;
+        private BigInteger b;
         private const uint IncreaseStart = 600 * 1024;
         private const uint IncreasePeriodForN = 50 * 1024;
         private const uint NIncreasementHeightMax = 9216000;
@@ -140,32 +140,33 @@ namespace Miningcore.Blockchain.Ergo
             // calculate fH
             var blockHash = f.ToByteArray(true, true).PadFront(0, 32);
             hasher.Digest(blockHash, hashResult);
-            var shareTarget = new Target(new BigInteger(hashResult, true, true));
+            var fh = new BigInteger(hashResult, true, true);
+            var fhTarget = new Target(fh);
 
             // diff check
-            var stratumDifficulty = context.EffectiveDifficulty;
-            var ratio = shareTarget.Difficulty / stratumDifficulty;
+            var stratumDifficulty = context.Difficulty;
+            var ratio = fhTarget.Difficulty / stratumDifficulty;
 
             // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = target >= shareTarget;
+            var isBlockCandidate = fh < b;
 
             // test if share meets at least workers current difficulty
             if(!isBlockCandidate && ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
-                if(context.VarDiff?.LastUpdate != null && context.PreviousEffectiveDifficulty.HasValue)
+                if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
                 {
-                    ratio = shareTarget.Difficulty / context.PreviousEffectiveDifficulty.Value;
+                    ratio = fhTarget.Difficulty / context.PreviousDifficulty.Value;
 
                     if(ratio < 0.99)
-                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareTarget.Difficulty})");
+                        throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({fhTarget.Difficulty})");
 
                     // use previous difficulty
-                    stratumDifficulty = context.PreviousEffectiveDifficulty.Value;
+                    stratumDifficulty = context.PreviousDifficulty.Value;
                 }
 
                 else
-                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareTarget.Difficulty})");
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({fhTarget.Difficulty})");
             }
 
             var result = new Share
@@ -224,7 +225,8 @@ namespace Miningcore.Blockchain.Ergo
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            target = new Target(BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer));
+            b = BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
+            bTarget = new Target(b);
 
             jobParams = new object[]
             {
@@ -234,7 +236,7 @@ namespace Miningcore.Blockchain.Ergo
                 string.Empty,
                 string.Empty,
                 blockVersion,
-                target,
+                null,   // to filled out by ErgoPool.SendJob
                 string.Empty,
                 false
             };

@@ -16,6 +16,9 @@ namespace Miningcore.Blockchain.Ethereum
 
         public bool IsInitialWorkSent { get; set; } = false;
 
+        /// <summary>
+        /// Unique value assigned per worker
+        /// </summary>
         public string ExtraNonce1 { get; set; }
     }
 }

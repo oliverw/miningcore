@@ -1,3 +1,4 @@
+using System.Numerics;
 using Miningcore.Mining;
 
 namespace Miningcore.Blockchain.Ergo
@@ -14,16 +15,9 @@ namespace Miningcore.Blockchain.Ergo
         /// </summary>
         public string Worker { get; set; }
 
+        /// <summary>
+        /// Unique value assigned per worker
+        /// </summary>
         public string ExtraNonce1 { get; set; }
-
-        /// <summary>
-        /// Effective adjusted diff
-        /// </summary>
-        public double EffectiveDifficulty { get; set; }
-
-        /// <summary>
-        /// Previous effective adjusted diff
-        /// </summary>
-        public double? PreviousEffectiveDifficulty { get; set; }
     }
 }

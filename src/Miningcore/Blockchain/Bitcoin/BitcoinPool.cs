@@ -112,7 +112,20 @@ namespace Miningcore.Blockchain.Bitcoin
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
@@ -483,6 +496,7 @@ namespace Miningcore.Blockchain.Bitcoin
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
             var context = connection.ContextAs<BitcoinWorkerContext>();
+
             context.EnqueueNewDifficulty(newDiff);
 
             // apply immediately and notify client

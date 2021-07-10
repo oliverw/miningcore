@@ -14,6 +14,9 @@ namespace Miningcore.Blockchain.Bitcoin
         /// </summary>
         public string Worker { get; set; }
 
+        /// <summary>
+        /// Unique value assigned per worker
+        /// </summary>
         public string ExtraNonce1 { get; set; }
 
         /// <summary>
