@@ -216,6 +216,8 @@ namespace Miningcore.Blockchain.Ergo
             if(!RegisterSubmit(nTime, nonce))
                 throw new StratumException(StratumError.DuplicateShare, $"duplicate share");
 
+nonce = "40010004b44ca7db";
+
             return ProcessShareInternal(worker, nonce);
         }
 
@@ -225,6 +227,13 @@ namespace Miningcore.Blockchain.Ergo
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
+
+BlockTemplate.B = "3670501044486883791856677069209410167401146918778074074113413089885";
+BlockTemplate.Height = 26524;
+BlockTemplate.Msg = "25d09e052990fcd25f24eac8f1ddb5df6fb7ee3c01f07366181bf308256196f2";
+BlockTemplate.Pk = "0303fc9708d4261ecb8f60c76d13b77ea754fc20a48ad0ce48f9ed2cae09ea1937";
+
+
             b = BigInteger.Parse(BlockTemplate.B, NumberStyles.Integer);
             bTarget = new Target(b);
 
