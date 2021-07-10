@@ -277,7 +277,7 @@ namespace Miningcore.Mining
                 var shareMultiplier = pool.Config.Template.Family == CoinFamily.Bitcoin ?
                     pool.Config.Template.As<BitcoinTemplate>().ShareMultiplier : 1;
 
-                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 3)}");
+                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 4)}");
 
                 if(pool.NetworkStats != null)
                 {
@@ -297,7 +297,7 @@ namespace Miningcore.Mining
             }
 
             else
-                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 4)}");
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)
