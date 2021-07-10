@@ -28,6 +28,7 @@ using Miningcore.VarDiff;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+// ReSharper disable InconsistentlySynchronizedField
 
 namespace Miningcore.Mining
 {
@@ -376,9 +377,6 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
 
                     await ServeStratum(ct, ipEndpoints);
                 }
-
-                messageBus.NotifyPoolStatus(this, PoolStatus.Offline);
-                logger.Info(() => "Pool Offline");
             }
 
             catch(PoolStartupAbortException)
