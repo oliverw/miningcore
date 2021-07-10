@@ -125,11 +125,11 @@ namespace Miningcore.Blockchain.Ergo
 
                 var isNew = job == null ||
                             (blockTemplate != null &&
-                             (job.BlockTemplate?.Work.Msg != blockTemplate.Work.Msg ||
-                              blockTemplate.Work?.Height > job.BlockTemplate.Work.Height));
+                             (job.BlockTemplate?.Msg != blockTemplate.Msg ||
+                              blockTemplate?.Height > job.BlockTemplate.Height));
 
                 if(isNew)
-                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Work.Height, poolConfig.Template);
+                    messageBus.NotifyChainHeight(poolConfig.Id, blockTemplate.Height, poolConfig.Template);
 
                 if(isNew || forceUpdate)
                 {
@@ -185,20 +185,20 @@ namespace Miningcore.Blockchain.Ergo
             return (false, forceUpdate);
         }
 
-        private async Task<ErgoBlockTemplate> GetBlockTemplateAsync()
+        private async Task<WorkMessage> GetBlockTemplateAsync()
         {
             logger.LogInvoke();
 
             var work = await daemon.MiningRequestBlockCandidateAsync(CancellationToken.None);
 
-            return new ErgoBlockTemplate(work);
+            return work;
         }
 
-        private ErgoBlockTemplate GetBlockTemplateFromJson(string json)
+        private WorkMessage GetBlockTemplateFromJson(string json)
         {
             logger.LogInvoke();
 
-            return JsonConvert.DeserializeObject<ErgoBlockTemplate>(json);
+            return JsonConvert.DeserializeObject<WorkMessage>(json);
         }
 
         private async Task ShowDaemonSyncProgressAsync()

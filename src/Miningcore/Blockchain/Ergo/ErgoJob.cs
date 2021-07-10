@@ -16,9 +16,9 @@ namespace Miningcore.Blockchain.Ergo
 {
     public class ErgoJob
     {
-        public ErgoBlockTemplate BlockTemplate { get; private set; }
+        public WorkMessage BlockTemplate { get; private set; }
         public double Difficulty => bTarget.Difficulty;
-        public uint Height => BlockTemplate.Work.Height;
+        public uint Height => BlockTemplate.Height;
         public string JobId { get; protected set; }
 
         private object[] jobParams;
@@ -104,7 +104,7 @@ namespace Miningcore.Blockchain.Ergo
             var context = worker.ContextAs<ErgoWorkerContext>();
 
             // hash coinbase
-            var coinbase = SerializeCoinbase(BlockTemplate.Work.Msg, nonce);
+            var coinbase = SerializeCoinbase(BlockTemplate.Msg, nonce);
             Span<byte> hashResult = stackalloc byte[32];
             hasher.Digest(coinbase, hashResult);
 
@@ -147,11 +147,8 @@ namespace Miningcore.Blockchain.Ergo
             var stratumDifficulty = context.Difficulty;
             var ratio = fhTarget.Difficulty / stratumDifficulty;
 
-            // check if the share meets the much harder block difficulty (block candidate)
-            var isBlockCandidate = fh < b;
-
             // test if share meets at least workers current difficulty
-            if(!isBlockCandidate && ratio < 0.99)
+            if(ratio < 0.99)
             {
                 // check if share matched the previous difficulty from before a vardiff retarget
                 if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
@@ -168,6 +165,9 @@ namespace Miningcore.Blockchain.Ergo
                 else
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({fhTarget.Difficulty})");
             }
+
+            // check if the share meets the much harder block difficulty (block candidate)
+            var isBlockCandidate = fh < b;
 
             var result = new Share
             {
@@ -219,20 +219,20 @@ namespace Miningcore.Blockchain.Ergo
             return ProcessShareInternal(worker, nonce);
         }
 
-        public void Init(ErgoBlockTemplate blockTemplate, int blockVersion, int extraNonceSize, string jobId)
+        public void Init(WorkMessage blockTemplate, int blockVersion, int extraNonceSize, string jobId)
         {
             this.extraNonceSize = extraNonceSize;
 
             BlockTemplate = blockTemplate;
             JobId = jobId;
-            b = BigInteger.Parse(BlockTemplate.Work.B, NumberStyles.Integer);
+            b = BigInteger.Parse(BlockTemplate.B, NumberStyles.Integer);
             bTarget = new Target(b);
 
             jobParams = new object[]
             {
                 JobId,
                 Height,
-                BlockTemplate.Work.Msg,
+                BlockTemplate.Msg,
                 string.Empty,
                 string.Empty,
                 blockVersion,
