@@ -135,27 +135,22 @@ namespace Miningcore
             //////////////////////
             // Bitcoin and family
 
-            builder.RegisterType<BitcoinJobManager>()
-                .AsSelf();
+            builder.RegisterType<BitcoinJobManager>();
 
             //////////////////////
             // Cryptonote
 
-            builder.RegisterType<CryptonoteJobManager>()
-                .AsSelf();
+            builder.RegisterType<CryptonoteJobManager>();
 
             //////////////////////
             // Ethereum
 
-            builder.RegisterType<EthereumJobManager>()
-                .AsSelf();
-
+            builder.RegisterType<EthereumJobManager>();
 
             //////////////////////
             // ZCash
 
-            builder.RegisterType<EquihashJobManager>()
-                .AsSelf();
+            builder.RegisterType<EquihashJobManager>();
 
             base.Load(builder);
         }

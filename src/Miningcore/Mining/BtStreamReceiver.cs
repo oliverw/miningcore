@@ -47,11 +47,14 @@ namespace Miningcore.Mining
         private static ZSocket SetupSubSocket(ZmqPubSubEndpointConfig relay)
         {
             var subSocket = new ZSocket(ZSocketType.SUB);
-            subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
+
+            if(!string.IsNullOrEmpty(relay.SharedEncryptionKey))
+                subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
+
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if(subSocket.CurveServerKey != null)
+            if(subSocket.CurveServerKey != null && subSocket.CurveServerKey.Any(x => x != 0))
                 logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
             else
                 logger.Info($"Monitoring Bt-Stream source {relay.Url}");

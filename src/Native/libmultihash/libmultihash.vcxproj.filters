@@ -167,12 +167,6 @@
     <ClInclude Include="sha3\sph_sha2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sha3\sph_blake2s.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="blake2s.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="x16r.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -276,6 +270,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="verthash\h2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\ref\blake2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="blake2\ref\blake2-impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -430,12 +430,6 @@
     <ClCompile Include="sha3\sph_sha2big.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sha3\sph_blake2s.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="blake2s.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="x16r.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -524,6 +518,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="verthash\tiny_sha3\sha3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2bp-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2b-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2sp-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2s-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2xb-ref.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="blake2\ref\blake2xs-ref.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -191,7 +191,19 @@ namespace Miningcore.Configuration
 
         public override string GetAlgorithmName()
         {
-            return "Ethash";
+            return "Ethhash";
+        }
+
+        #endregion
+    }
+
+    public partial class ErgoCoinTemplate
+    {
+        #region Overrides of CoinTemplate
+
+        public override string GetAlgorithmName()
+        {
+            return "Autolykos";
         }
 
         #endregion

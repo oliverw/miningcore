@@ -126,10 +126,6 @@ namespace Miningcore.Extensions
             return ToHexString(value.Span, null, null, withPrefix);
         }
 
-        /// <summary>
-        /// Apparently mixing big-ending and little-endian isn't confusing enough so sometimes every
-        /// block of 4 bytes must be reversed before reversing the entire buffer
-        /// </summary>
         public static byte[] ReverseByteOrder(this byte[] bytes)
         {
             using(var stream = new MemoryStream())
@@ -166,6 +162,18 @@ namespace Miningcore.Extensions
         {
             Array.Reverse(arr);
             return arr;
+        }
+
+        public static byte[] PadFront(this byte[] bytes, byte padValue, int desiredLength)
+        {
+            if(bytes.Length >= desiredLength)
+                return bytes;
+
+            var result = Enumerable.Repeat(padValue, desiredLength - bytes.Length)
+                .Concat(bytes)
+                .ToArray();
+
+            return result;
         }
     }
 }

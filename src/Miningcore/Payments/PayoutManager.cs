@@ -56,6 +56,7 @@ namespace Miningcore.Payments
                 clusterConfig.PaymentProcessing.Interval : 600);
         }
 
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private readonly IBalanceRepository balanceRepo;
         private readonly IBlockRepository blockRepo;
         private readonly IConnectionFactory cf;
@@ -66,7 +67,12 @@ namespace Miningcore.Payments
         private readonly ConcurrentDictionary<string, IMiningPool> pools = new();
         private readonly ClusterConfig clusterConfig;
         private readonly CompositeDisposable disposables = new();
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
+        #if !DEBUG
+        private static readonly TimeSpan initialRunDelay = TimeSpan.FromMinutes(1);
+        #else
+        private static readonly TimeSpan initialRunDelay = TimeSpan.FromSeconds(15);
+        #endif
 
         private void AttachPool(IMiningPool pool)
         {
@@ -256,7 +262,7 @@ namespace Miningcore.Payments
                 logger.Info(() => "Online");
 
                 // Allow all pools to actually come up before the first payment processing run
-                await Task.Delay(TimeSpan.FromMinutes(1), ct);
+                await Task.Delay(initialRunDelay, ct);
 
                 while(!ct.IsCancellationRequested)
                 {

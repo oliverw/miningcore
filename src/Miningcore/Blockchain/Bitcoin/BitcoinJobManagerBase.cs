@@ -22,6 +22,7 @@ using Miningcore.Util;
 using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
@@ -534,17 +535,8 @@ namespace Miningcore.Blockchain.Bitcoin
             // Periodically update network stats
             Observable.Interval(TimeSpan.FromMinutes(10))
                 .Select(via => Observable.FromAsync(async () =>
-                {
-                    try
-                    {
-                        await (!hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync());
-                    }
-
-                    catch(Exception ex)
-                    {
-                        logger.Error(ex);
-                    }
-                }))
+                    await Guard(()=> (!hasLegacyDaemon ? UpdateNetworkStatsAsync() : UpdateNetworkStatsLegacyAsync()),
+                        ex => logger.Error(ex))))
                 .Concat()
                 .Subscribe();
 

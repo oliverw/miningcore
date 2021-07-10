@@ -63,7 +63,7 @@ namespace Miningcore.Blockchain.Equihash
         protected override async Task SetupJobManager(CancellationToken ct)
         {
             manager = ctx.Resolve<EquihashJobManager>(
-                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(clusterConfig.InstanceId)));
+                new TypedParameter(typeof(IExtraNonceProvider), new EquihashExtraNonceProvider(poolConfig.Id, clusterConfig.InstanceId)));
 
             manager.Configure(poolConfig, clusterConfig);
 
@@ -169,7 +169,20 @@ namespace Miningcore.Blockchain.Equihash
                 var staticDiff = GetStaticDiffFromPassparts(passParts);
 
                 // Nicehash support
-                staticDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, staticDiff, coin.Name, coin.GetAlgorithmName());
+                var nicehashDiff = await GetNicehashStaticMinDiff(connection, context.UserAgent, coin.Name, coin.GetAlgorithmName());
+
+                if(nicehashDiff.HasValue)
+                {
+                    if(!staticDiff.HasValue || nicehashDiff > staticDiff)
+                    {
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using API supplied difficulty of {nicehashDiff.Value}");
+
+                        staticDiff = nicehashDiff;
+                    }
+
+                    else
+                        logger.Info(() => $"[{connection.ConnectionId}] Nicehash detected. Using miner supplied difficulty of {staticDiff.Value}");
+                }
 
                 // Static diff
                 if(staticDiff.HasValue &&
