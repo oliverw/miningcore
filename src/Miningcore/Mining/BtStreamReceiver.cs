@@ -44,7 +44,7 @@ namespace Miningcore.Mining
         private readonly IMessageBus messageBus;
         private readonly ClusterConfig clusterConfig;
 
-        private static ZSocket SetupSubSocket(ZmqPubSubEndpointConfig relay)
+        private static ZSocket SetupSubSocket(ZmqPubSubEndpointConfig relay, bool silent = false)
         {
             var subSocket = new ZSocket(ZSocketType.SUB);
 
@@ -54,10 +54,13 @@ namespace Miningcore.Mining
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if(subSocket.CurveServerKey != null && subSocket.CurveServerKey.Any(x => x != 0))
-                logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-            else
-                logger.Info($"Monitoring Bt-Stream source {relay.Url}");
+            if(!silent)
+            {
+                if(subSocket.CurveServerKey != null && subSocket.CurveServerKey.Any(x => x != 0))
+                    logger.Info($"Monitoring Bt-Stream source {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                else
+                    logger.Info($"Monitoring Bt-Stream source {relay.Url}");
+            }
 
             return subSocket;
         }
@@ -112,7 +115,7 @@ namespace Miningcore.Mining
 
             await Task.Run(() =>
             {
-                var timeout = TimeSpan.FromMilliseconds(1000);
+                var timeout = TimeSpan.FromMilliseconds(5000);
                 var reconnectTimeout = TimeSpan.FromSeconds(300);
 
                 var relays = endpoints
@@ -129,7 +132,7 @@ namespace Miningcore.Mining
                     try
                     {
                         // setup sockets
-                        var sockets = relays.Select(SetupSubSocket).ToArray();
+                        var sockets = relays.Select(x=> SetupSubSocket(x)).ToArray();
 
                         using(new CompositeDisposable(sockets))
                         {
@@ -157,7 +160,7 @@ namespace Miningcore.Mining
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
-                                            sockets[i] = SetupSubSocket(relays[i]);
+                                            sockets[i] = SetupSubSocket(relays[i], true);
 
                                             // reset clock
                                             lastMessageReceived[i] = clock.Now;
@@ -168,6 +171,25 @@ namespace Miningcore.Mining
 
                                     if(error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                }
+
+                                else
+                                {
+                                    // check for timeouts
+                                    for(var i = 0; i < messages.Length; i++)
+                                    {
+                                        if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        {
+                                            // re-create socket
+                                            sockets[i].Dispose();
+                                            sockets[i] = SetupSubSocket(relays[i], true);
+
+                                            // reset clock
+                                            lastMessageReceived[i] = clock.Now;
+
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
+                                        }
+                                    }
                                 }
                             }
                         }
