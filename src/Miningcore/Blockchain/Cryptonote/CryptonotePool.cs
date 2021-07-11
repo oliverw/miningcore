@@ -430,6 +430,8 @@ namespace Miningcore.Blockchain.Cryptonote
             return result;
         }
 
+        public override double ShareMultiplier => 1;
+
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
             await base.OnVarDiffUpdateAsync(connection, newDiff);

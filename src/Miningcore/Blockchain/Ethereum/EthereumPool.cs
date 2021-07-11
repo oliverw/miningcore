@@ -390,6 +390,8 @@ namespace Miningcore.Blockchain.Ethereum
             return result;
         }
 
+        public override double ShareMultiplier => 1;
+
         protected override async Task OnVarDiffUpdateAsync(StratumConnection client, double newDiff)
         {
             await base.OnVarDiffUpdateAsync(client, newDiff);

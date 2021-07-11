@@ -58,7 +58,7 @@ namespace Miningcore.Mining
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        class PoolContext
+        private class PoolContext
         {
             public PoolContext(IMiningPool pool, ILogger logger)
             {
@@ -66,10 +66,10 @@ namespace Miningcore.Mining
                 Logger = logger;
             }
 
-            public readonly IMiningPool Pool;
-            public readonly ILogger Logger;
-            public DateTime? LastBlock;
-            public long BlockHeight;
+            public IMiningPool Pool { get; }
+            public ILogger Logger { get; }
+            public DateTime? LastBlock { get; set; }
+            public long BlockHeight { get; set; }
         }
 
         private void AttachPool(IMiningPool pool)
@@ -273,11 +273,9 @@ namespace Miningcore.Mining
             if(poolContext != null)
             {
                 var pool = poolContext.Pool;
+                var shareMultiplier = poolContext.Pool.ShareMultiplier;
 
-                var shareMultiplier = pool.Config.Template.Family == CoinFamily.Bitcoin ?
-                    pool.Config.Template.As<BitcoinTemplate>().ShareMultiplier : 1;
-
-                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 3)}");
+                poolContext.Logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty * shareMultiplier, 4)}");
 
                 if(pool.NetworkStats != null)
                 {
@@ -297,7 +295,7 @@ namespace Miningcore.Mining
             }
 
             else
-                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 3)}");
+                logger.Info(() => $"External {(!string.IsNullOrEmpty(share.Source) ? $"[{share.Source.ToUpper()}] " : string.Empty)}share accepted: D={Math.Round(share.Difficulty, 4)}");
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)
