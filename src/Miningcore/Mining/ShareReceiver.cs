@@ -89,7 +89,7 @@ namespace Miningcore.Mining
             return Task.Run(() =>
             {
                 Thread.CurrentThread.Name = "ShareReceiver Socket Poller";
-                var timeout = TimeSpan.FromMilliseconds(1000);
+                var timeout = TimeSpan.FromMilliseconds(5000);
                 var reconnectTimeout = TimeSpan.FromSeconds(60);
 
                 var relays = clusterConfig.ShareRelays
@@ -104,7 +104,7 @@ namespace Miningcore.Mining
                     try
                     {
                         // setup sockets
-                        var sockets = relays.Select(SetupSubSocket).ToArray();
+                        var sockets = relays.Select(x=> SetupSubSocket(x)).ToArray();
 
                         using(new CompositeDisposable(sockets))
                         {
@@ -129,7 +129,7 @@ namespace Miningcore.Mining
                                         {
                                             // re-create socket
                                             sockets[i].Dispose();
-                                            sockets[i] = SetupSubSocket(relays[i]);
+                                            sockets[i] = SetupSubSocket(relays[i], true);
 
                                             // reset clock
                                             lastMessageReceived[i] = clock.Now;
@@ -140,6 +140,25 @@ namespace Miningcore.Mining
 
                                     if(error != null)
                                         logger.Error(() => $"{nameof(ShareReceiver)}: {error.Name} [{error.Name}] during receive");
+                                }
+
+                                else
+                                {
+                                    // check for timeouts
+                                    for(var i = 0; i < messages.Length; i++)
+                                    {
+                                        if(clock.Now - lastMessageReceived[i] > reconnectTimeout)
+                                        {
+                                            // re-create socket
+                                            sockets[i].Dispose();
+                                            sockets[i] = SetupSubSocket(relays[i], true);
+
+                                            // reset clock
+                                            lastMessageReceived[i] = clock.Now;
+
+                                            logger.Info(() => $"Receive timeout of {reconnectTimeout.TotalSeconds} seconds exceeded. Re-connecting to {relays[i].Url} ...");
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -156,17 +175,20 @@ namespace Miningcore.Mining
             }, ct);
         }
 
-        private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay)
+        private static ZSocket SetupSubSocket(ShareRelayEndpointConfig relay, bool silent = false)
         {
             var subSocket = new ZSocket(ZSocketType.SUB);
             subSocket.SetupCurveTlsClient(relay.SharedEncryptionKey, logger);
             subSocket.Connect(relay.Url);
             subSocket.SubscribeAll();
 
-            if(subSocket.CurveServerKey != null)
-                logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
-            else
-                logger.Info($"Monitoring external stratum {relay.Url}");
+            if(!silent)
+            {
+                if(subSocket.CurveServerKey != null)
+                    logger.Info($"Monitoring external stratum {relay.Url} using Curve public-key {subSocket.CurveServerKey.ToHexString()}");
+                else
+                    logger.Info($"Monitoring external stratum {relay.Url}");
+            }
 
             return subSocket;
         }
