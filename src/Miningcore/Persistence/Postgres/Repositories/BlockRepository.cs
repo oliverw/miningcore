@@ -67,8 +67,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 offset = page * pageSize,
                 pageSize
             }))
-                .Select(mapper.Map<Block>)
-                .ToArray();
+            .Select(mapper.Map<Block>)
+            .ToArray();
         }
 
         public async Task<Block[]> PageBlocksAsync(IDbConnection con, BlockStatus[] status, int page, int pageSize)
@@ -82,8 +82,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 offset = page * pageSize,
                 pageSize
             }))
-                .Select(mapper.Map<Block>)
-                .ToArray();
+            .Select(mapper.Map<Block>)
+            .ToArray();
         }
 
         public async Task<Block[]> GetPendingBlocksForPoolAsync(IDbConnection con, string poolId)
@@ -110,8 +110,8 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 before,
                 status = status.Select(x => x.ToString().ToLower()).ToArray()
             }))
-                .Select(mapper.Map<Block>)
-                .FirstOrDefault();
+            .Select(mapper.Map<Block>)
+            .FirstOrDefault();
         }
 
         public Task<uint> GetPoolBlockCountAsync(IDbConnection con, string poolId)
