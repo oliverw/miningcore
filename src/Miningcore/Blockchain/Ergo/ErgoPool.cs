@@ -22,9 +22,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
-using NBitcoin;
 using Newtonsoft.Json;
-using NLog;
 
 namespace Miningcore.Blockchain.Ergo
 {
@@ -196,7 +194,7 @@ namespace Miningcore.Blockchain.Ergo
                 // telemetry
                 PublishTelemetry(TelemetryCategory.Share, clock.Now - tsRequest.Timestamp.UtcDateTime, true);
 
-                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.DiffMultiplier, 3)}");
+                logger.Info(() => $"[{connection.ConnectionId}] Share accepted: D={Math.Round(share.Difficulty * ErgoConstants.ShareMultiplier, 3)}");
 
                 // update pool stats
                 if(share.IsBlockCandidate)
@@ -286,11 +284,13 @@ namespace Miningcore.Blockchain.Ergo
 
         public override double HashrateFromShares(double shares, double interval)
         {
-            var multiplier = BitcoinConstants.Pow2x32 * ErgoConstants.DiffMultiplier;
+            var multiplier = BitcoinConstants.Pow2x32 * ErgoConstants.ShareMultiplier;
             var result = shares * multiplier / interval;
 
             return result;
         }
+
+        public override double ShareMultiplier => ErgoConstants.ShareMultiplier;
 
         #region Overrides
 

@@ -173,7 +173,7 @@ namespace Miningcore.Blockchain.Ergo
             {
                 BlockHeight = Height,
                 NetworkDifficulty = Difficulty,
-                Difficulty = stratumDifficulty / ErgoConstants.DiffMultiplier
+                Difficulty = stratumDifficulty / ErgoConstants.ShareMultiplier
             };
 
             if(isBlockCandidate)

@@ -16,7 +16,7 @@ namespace Miningcore.Blockchain.Ergo
     {
         public const double ArtificialDiffCeiling = 0x10000;
 
-        public const uint DiffMultiplier = 256;
+        public const uint ShareMultiplier = 256;
         public static double Pow2x26 = Math.Pow(2, 26);
 
         public const decimal SmallestUnit = 1000000000;

@@ -412,6 +412,8 @@ namespace Miningcore.Blockchain.Equihash
             return result;
         }
 
+        public override double ShareMultiplier => 1;
+
         protected override async Task OnVarDiffUpdateAsync(StratumConnection connection, double newDiff)
         {
             var context = connection.ContextAs<BitcoinWorkerContext>();

@@ -375,6 +375,8 @@ namespace Miningcore.Blockchain.Bitcoin
             return result;
         }
 
+        public override double ShareMultiplier => coin.ShareMultiplier;
+
         #region Overrides
 
         public override void Configure(PoolConfig poolConfig, ClusterConfig clusterConfig)

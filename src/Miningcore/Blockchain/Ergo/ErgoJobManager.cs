@@ -238,7 +238,7 @@ namespace Miningcore.Blockchain.Ergo
                 else
                     BlockchainStats.NetworkDifficulty = info.Difficulty.Value<double>();
 
-                BlockchainStats.NetworkDifficulty *= ErgoConstants.DiffMultiplier;
+                BlockchainStats.NetworkDifficulty *= ErgoConstants.ShareMultiplier;
 
                 // TODO: BlockchainStats.NetworkHashrate = info.HeadersScore
             }
