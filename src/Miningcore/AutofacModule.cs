@@ -147,6 +147,7 @@ namespace Miningcore
             // Ethereum
 
             builder.RegisterType<EthereumJobManager>();
+            builder.RegisterType<EthereumJobManager>();
 
             //////////////////////
             // ZCash
@@ -156,6 +157,7 @@ namespace Miningcore
             //////////////////////
             // Ergo
 
+            builder.RegisterType<EquihashJobManager>();
             builder.RegisterType<ErgoJobManager>();
 
             base.Load(builder);
