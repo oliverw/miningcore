@@ -1,6 +1,5 @@
 using System.Data;
 using System.Threading.Tasks;
-using Miningcore.Configuration;
 using Miningcore.Persistence.Model;
 
 namespace Miningcore.Persistence.Repositories
