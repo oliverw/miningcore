@@ -58,10 +58,12 @@ CREATE TABLE balance_changes
 	address TEXT NOT NULL,
 	amount decimal(28,12) NOT NULL DEFAULT 0,
 	usage TEXT NULL,
+    tags text[] NULL,
 	created TIMESTAMP NOT NULL
 );
 
 CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, address, created desc);
+CREATE INDEX IDX_BALANCE_CHANGES_POOL_TAGS on balance_changes USING gin (tags);
 
 CREATE TABLE payments
 (
