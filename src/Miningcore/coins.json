@@ -346,7 +346,7 @@
             ]
         },
         "shareMultiplier": 65536,
-        "minimumConfirmations": 250,
+        "coinbaseMinConfimations": 250,
         "explorerBlockLink": "https://dogechain.info/block/$height$",
         "explorerTxLink": "https://dogechain.info/tx/{0}",
         "explorerAccountLink": "https://dogechain.info/address/{0}"

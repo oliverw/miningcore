@@ -165,6 +165,9 @@ namespace Miningcore.Configuration
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, BitcoinNetworkParams> Networks { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? CoinbaseMinConfimations { get; set; }
     }
 
     public enum EquihashSubfamily

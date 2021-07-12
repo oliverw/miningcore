@@ -87,7 +87,12 @@ namespace Miningcore.Blockchain.Bitcoin
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
-            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
+            int minConfirmations;
+
+            if(coin is BitcoinTemplate bitcoinTemplate)
+                minConfirmations = extraPoolConfig?.MinimumConfirmations ?? bitcoinTemplate.CoinbaseMinConfimations ?? BitcoinConstants.CoinbaseMinConfimations;
+            else
+                minConfirmations = extraPoolConfig?.MinimumConfirmations ?? BitcoinConstants.CoinbaseMinConfimations;
 
             for(var i = 0; i < pageCount; i++)
             {
