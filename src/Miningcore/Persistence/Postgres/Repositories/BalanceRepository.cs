@@ -21,15 +21,15 @@ namespace Miningcore.Persistence.Postgres.Repositories
         private readonly IMapper mapper;
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        public async Task<int> AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount, string usage)
+        public async Task<int> AddAmountAsync(IDbConnection con, IDbTransaction tx, string poolId, string address, decimal amount, string usage, params string[] tags)
         {
             logger.LogInvoke();
 
             var now = DateTime.UtcNow;
 
             // record balance change
-            var query = "INSERT INTO balance_changes(poolid, address, amount, usage, created) " +
-                "VALUES(@poolid, @address, @amount, @usage, @created)";
+            var query = "INSERT INTO balance_changes(poolid, address, amount, usage, tags, created) " +
+                "VALUES(@poolid, @address, @amount, @usage, @tags, @created)";
 
             var balanceChange = new Entities.BalanceChange
             {
@@ -38,6 +38,7 @@ namespace Miningcore.Persistence.Postgres.Repositories
                 Address = address,
                 Amount = amount,
                 Usage = usage,
+                Tags = tags
             };
 
             await con.ExecuteAsync(query, balanceChange, tx);
@@ -105,6 +106,28 @@ namespace Miningcore.Persistence.Postgres.Repositories
 
             return (await con.QueryAsync<Entities.Balance>(query, new { poolId, minimum }))
                 .Select(mapper.Map<Balance>)
+                .ToArray();
+        }
+
+        public Task<int> GetBalanceChangeCountByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT COUNT(*) FROM balance_changes WHERE poolid = @poolid AND @tag <@ tags";
+
+            return con.ExecuteScalarAsync<int>(query, new { poolId, tag = new[] { tag } }, tx);
+        }
+
+        public async Task<BalanceChange[]> GetBalanceChangesByTagAsync(IDbConnection con, IDbTransaction tx, string poolId, string tag)
+        {
+            logger.LogInvoke(new[] { poolId });
+
+            const string query = "SELECT * FROM balance_changes WHERE poolid = @poolid " +
+                                 "AND @tag <@ tags " +
+                                 "ORDER BY created DESC";
+
+            return (await con.QueryAsync<Entities.BalanceChange>(query, new { poolId, tag = new[] { tag } }, tx))
+                .Select(mapper.Map<BalanceChange>)
                 .ToArray();
         }
     }
