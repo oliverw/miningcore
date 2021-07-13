@@ -266,20 +266,23 @@ namespace Miningcore.Blockchain.Ergo
             // unlock wallet
             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-            await Guard(() => daemon.WalletUnlockAsync(new Body4
-                {
-                    Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty
-                }),
-                ex =>
-                {
-                    if(ex is ApiException<ApiError> apiException)
-                    {
-                        if(apiException.Result.Detail?.ToLower()?.Contains("already unlocked") == true)
-                            return;
-                    }
+            try
+            {
+                var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
 
-                    ReportAndRethrowApiError("Failed to unlock wallet", ex);
-                });
+                await daemon.WalletUnlockAsync(new Body4 { Pass = walletPassword });
+            }
+
+            catch(ApiException<ApiError> ex)
+            {
+                var error = ex.Result.Detail;
+
+                if(!error.ToLower().Contains("already unlocked"))
+                {
+                    logger.Error(() => $"[{LogCategory}] Failed to unlock wallet: {error}");
+                    return;
+                }
+            }
 
             logger.Info(() => $"[{LogCategory}] Wallet unlocked");
 
@@ -294,28 +297,7 @@ namespace Miningcore.Blockchain.Ergo
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
 
-                var txId = await Guard(() => daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
-                {
-                    var error = ex.Message;
-                    var noThrow = false;
-
-                    if(ex is ApiException<ApiError> apiException)
-                    {
-                        error = apiException.Result.Detail ?? apiException.Result.Reason;
-
-                        if(error.Contains("reason:"))
-                            error = error.Substring(error.IndexOf("reason:"));
-
-                        logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
-
-                        noThrow = true;
-                    }
-
-                    NotifyPayoutFailure(poolConfig.Id, balances, $"/wallet/payment/send returned error: {error}", null);
-
-                    if(!noThrow)
-                        throw ex;
-                });
+                var txId = await daemon.WalletPaymentTransactionGenerateAndSendAsync(requests);
 
                 if(!string.IsNullOrEmpty(txId))
                 {
@@ -325,6 +307,19 @@ namespace Miningcore.Blockchain.Ergo
 
                     NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
                 }
+
+                else
+                    logger.Error(() => $"[{LogCategory}] Payment transaction failed to return a transaction id");
+            }
+
+            catch(ApiException<ApiError> ex)
+            {
+                var error = ex.Result.Detail ?? ex.Result.Reason;
+
+                if(error.Contains("reason:"))
+                    error = error.Substring(error.IndexOf("reason:"));
+
+                logger.Error(() => $"[{LogCategory}] Payment transaction failed: {error}");
             }
 
             finally
