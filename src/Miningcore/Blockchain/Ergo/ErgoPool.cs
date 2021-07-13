@@ -287,6 +287,9 @@ namespace Miningcore.Blockchain.Ergo
             var multiplier = BitcoinConstants.Pow2x32 * ErgoConstants.ShareMultiplier;
             var result = shares * multiplier / interval;
 
+            // add flat pool side hashrate bonus to account for miner dataset generation
+            result *= 1.15;
+
             return result;
         }
 
