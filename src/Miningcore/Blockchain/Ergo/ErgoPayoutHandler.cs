@@ -264,9 +264,12 @@ namespace Miningcore.Blockchain.Ergo
                 return;
 
             // unlock wallet
-            logger.Info(() => $"[{LogCategory}] Unlocking wallet using {extraPoolPaymentProcessingConfig.WalletPassword}");
+            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
-            await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty}),
+            await Guard(() => daemon.WalletUnlockAsync(new Body4
+                {
+                    Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty
+                }),
                 ex =>
                 {
                     if(ex is ApiException<ApiError> apiException)
@@ -298,6 +301,9 @@ namespace Miningcore.Blockchain.Ergo
                     if(ex is ApiException<ApiError> apiException)
                     {
                         error = apiException.Result.Detail ?? apiException.Result.Reason;
+
+                        if(error.Contains("reason:"))
+                            error = error.Substring(error.IndexOf("reason:"));
 
                         logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
                     }
