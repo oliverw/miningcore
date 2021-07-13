@@ -264,7 +264,7 @@ namespace Miningcore.Blockchain.Ergo
                 return;
 
             // unlock wallet
-            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+            logger.Info(() => $"[{LogCategory}] Unlocking wallet using {extraPoolPaymentProcessingConfig.WalletPassword}");
 
             await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty}),
                 ex =>
