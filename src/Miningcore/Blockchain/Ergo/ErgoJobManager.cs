@@ -156,6 +156,11 @@ namespace Miningcore.Blockchain.Ergo
                         // update stats
                         BlockchainStats.LastNetworkBlockTime = clock.Now;
                         BlockchainStats.BlockHeight = job.Height;
+                        BlockchainStats.NetworkDifficulty = job.Difficulty;
+
+                        var blockTimeAvg = 120;
+                        BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
+                        BlockchainStats.NetworkHashrate *= Math.Pow(2, 32);
                     }
 
                     else
@@ -215,33 +220,6 @@ namespace Miningcore.Blockchain.Ergo
 
             else
                 logger.Info(() => $"Daemon is downloading headers ...");
-        }
-
-        private async Task UpdateNetworkStatsAsync()
-        {
-            logger.LogInvoke();
-
-            var info = await Guard(() => daemon.GetNodeInfoAsync(),
-                ex => logger.Debug(ex));
-
-            if(info != null)
-            {
-                BlockchainStats.ConnectedPeers = info.PeersCount;
-
-                // Network difficulty
-                if(info.Difficulty.Type == JTokenType.Object)
-                {
-                    if(((JObject) info.Difficulty).TryGetValue("proof-of-work", out var diffVal))
-                        BlockchainStats.NetworkDifficulty = diffVal.Value<double>();
-                }
-
-                else
-                    BlockchainStats.NetworkDifficulty = info.Difficulty.Value<double>();
-
-                BlockchainStats.NetworkDifficulty *= ErgoConstants.ShareMultiplier;
-
-                // TODO: BlockchainStats.NetworkHashrate = info.HeadersScore
-            }
         }
 
         private void ConfigureRewards()
@@ -441,7 +419,7 @@ namespace Miningcore.Blockchain.Ergo
                 var walletAddresses = await daemon.WalletAddressesAsync(ct);
 
                 if(!walletAddresses.Contains(poolConfig.Address))
-                    logger.ThrowLogPoolStartupException($"Pool address {info.Name} is not controlled by wallet");
+                    logger.ThrowLogPoolStartupException($"Pool address {poolConfig.Address} is not controlled by wallet");
 
                 ConfigureRewards();
             }
@@ -449,15 +427,6 @@ namespace Miningcore.Blockchain.Ergo
             // update stats
             BlockchainStats.NetworkType = network;
             BlockchainStats.RewardType = "POW";
-
-            await UpdateNetworkStatsAsync();
-
-            // Periodically update network stats
-            Observable.Interval(TimeSpan.FromMinutes(10))
-                .Select(via => Observable.FromAsync(async () =>
-                    await Guard(UpdateNetworkStatsAsync, ex => logger.Error(ex))))
-                .Concat()
-                .Subscribe();
 
             SetupJobUpdates();
         }
