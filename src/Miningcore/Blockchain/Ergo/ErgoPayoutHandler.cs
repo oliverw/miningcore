@@ -334,6 +334,8 @@ namespace Miningcore.Blockchain.Ergo
 
                 await Guard(()=> daemon.WalletLockAsync(),
                     ex=> ReportAndRethrowApiError("Failed to lock wallet", ex));
+
+                logger.Info(() => $"[{LogCategory}] Wallet locked");
             }
         }
 
