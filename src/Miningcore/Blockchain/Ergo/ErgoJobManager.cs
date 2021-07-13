@@ -160,7 +160,6 @@ namespace Miningcore.Blockchain.Ergo
 
                         var blockTimeAvg = 120;
                         BlockchainStats.NetworkHashrate = BlockchainStats.NetworkDifficulty / blockTimeAvg;
-                        BlockchainStats.NetworkHashrate *= Math.Pow(2, 32);
                     }
 
                     else
