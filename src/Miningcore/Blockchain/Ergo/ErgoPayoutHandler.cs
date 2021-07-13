@@ -54,7 +54,7 @@ namespace Miningcore.Blockchain.Ergo
         private string network;
         private ErgoPaymentProcessingConfigExtra extraPoolPaymentProcessingConfig;
 
-        protected override string LogCategory => "Bitcoin Payout Handler";
+        protected override string LogCategory => "Ergo Payout Handler";
 
         private void ReportAndRethrowApiError(string action, Exception ex, bool rethrow = true)
         {
@@ -102,7 +102,7 @@ namespace Miningcore.Blockchain.Ergo
             var pageSize = 100;
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
-            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? (network == "mainnet" ? 100 : 10);
+            var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? (network == "mainnet" ? 720 : 72);
             var minerRewardsPubKey = await daemon.MiningReadMinerRewardPubkeyAsync();
             var minerRewardsAddress = await daemon.MiningReadMinerRewardAddressAsync();
 
