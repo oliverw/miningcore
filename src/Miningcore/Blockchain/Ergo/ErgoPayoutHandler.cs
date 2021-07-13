@@ -305,9 +305,18 @@ namespace Miningcore.Blockchain.Ergo
 
             try
             {
-                await UnlockWallet();
+                // get wallet status
+                var status = await daemon.GetWalletStatusAsync();
 
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+                if(!status.IsInitialized)
+                    throw new PaymentException($"Wallet is not initialized");
+
+                if(!status.IsUnlocked)
+                    await UnlockWallet();
+
+                // get balance
+                var walletBalances = await daemon.WalletBalancesAsync();
+                logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletBalances.Balance / ErgoConstants.SmallestUnit)}");
 
                 // Create request batch
                 var requests = amounts.Select(x => new PaymentRequest
@@ -315,6 +324,8 @@ namespace Miningcore.Blockchain.Ergo
                     Address = x.Key,
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
+
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
                 var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
                 {
