@@ -263,9 +263,9 @@ namespace Miningcore.Blockchain.Ergo
             if(amounts.Count == 0)
                 return;
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
             // unlock wallet
+            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+
             await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty}),
                 ex =>
                 {
@@ -277,6 +277,10 @@ namespace Miningcore.Blockchain.Ergo
 
                     ReportAndRethrowApiError("Failed to unlock wallet", ex);
                 });
+
+            logger.Info(() => $"[{LogCategory}] Wallet unlocked");
+
+            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             try
             {
@@ -316,6 +320,8 @@ namespace Miningcore.Blockchain.Ergo
             finally
             {
                 // lock wallet
+                logger.Info(() => $"[{LogCategory}] Locking wallet");
+
                 await Guard(()=> daemon.WalletLockAsync(),
                     ex=> ReportAndRethrowApiError("Failed to lock wallet", ex));
             }
