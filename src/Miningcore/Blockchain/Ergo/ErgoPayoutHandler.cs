@@ -280,6 +280,8 @@ namespace Miningcore.Blockchain.Ergo
                 if(!error.ToLower().Contains("already unlocked"))
                 {
                     logger.Error(() => $"[{LogCategory}] Failed to unlock wallet: {error}");
+
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"Failed to unlock wallet: {error}", null);
                     return;
                 }
             }
@@ -309,7 +311,11 @@ namespace Miningcore.Blockchain.Ergo
                 }
 
                 else
+                {
                     logger.Error(() => $"[{LogCategory}] Payment transaction failed to return a transaction id");
+
+                    NotifyPayoutFailure(poolConfig.Id, balances, $"Payment transaction failed to return a transaction id", null);
+                }
             }
 
             catch(ApiException<ApiError> ex)
@@ -320,6 +326,8 @@ namespace Miningcore.Blockchain.Ergo
                     error = error.Substring(error.IndexOf("reason:"));
 
                 logger.Error(() => $"[{LogCategory}] Payment transaction failed: {error}");
+
+                NotifyPayoutFailure(poolConfig.Id, balances, $"Payment transaction failed: {error}", null);
             }
 
             finally
