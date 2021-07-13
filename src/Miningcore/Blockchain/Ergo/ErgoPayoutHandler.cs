@@ -297,6 +297,7 @@ namespace Miningcore.Blockchain.Ergo
                 var txId = await Guard(() => daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
                 {
                     var error = ex.Message;
+                    var noThrow = false;
 
                     if(ex is ApiException<ApiError> apiException)
                     {
@@ -306,11 +307,14 @@ namespace Miningcore.Blockchain.Ergo
                             error = error.Substring(error.IndexOf("reason:"));
 
                         logger.Warn(() => $"Failed to initiate batch payment transaction: {error}");
+
+                        noThrow = true;
                     }
 
                     NotifyPayoutFailure(poolConfig.Id, balances, $"/wallet/payment/send returned error: {error}", null);
 
-                    throw ex;
+                    if(!noThrow)
+                        throw ex;
                 });
 
                 if(!string.IsNullOrEmpty(txId))
