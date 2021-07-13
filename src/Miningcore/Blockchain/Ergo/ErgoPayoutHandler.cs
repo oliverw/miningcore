@@ -56,6 +56,13 @@ namespace Miningcore.Blockchain.Ergo
 
         protected override string LogCategory => "Ergo Payout Handler";
 
+        private class PaymentException : Exception
+        {
+            public PaymentException(string msg) : base(msg)
+            {
+            }
+        }
+
         private void ReportAndRethrowApiError(string action, Exception ex, bool rethrow = true)
         {
             var error = ex.Message;
@@ -67,6 +74,39 @@ namespace Miningcore.Blockchain.Ergo
 
             if(rethrow)
                 throw ex;
+        }
+
+        private async Task UnlockWallet()
+        {
+            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
+
+            var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
+
+            await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = walletPassword}), ex =>
+            {
+                if (ex is ApiException<ApiError> apiException)
+                {
+                    var error = apiException.Result.Detail;
+
+                    if (error != null && !error.ToLower().Contains("already unlocked"))
+                        throw new PaymentException($"Failed to unlock wallet: {error}");
+                }
+
+                else
+                    throw ex;
+            });
+
+            logger.Info(() => $"[{LogCategory}] Wallet unlocked");
+        }
+
+        private async Task LockWallet()
+        {
+            logger.Info(() => $"[{LogCategory}] Locking wallet");
+
+            await Guard(() => daemon.WalletLockAsync(),
+                ex => ReportAndRethrowApiError("Failed to lock wallet", ex));
+
+            logger.Info(() => $"[{LogCategory}] Wallet locked");
         }
 
         #region IPayoutHandler
@@ -263,35 +303,12 @@ namespace Miningcore.Blockchain.Ergo
             if(amounts.Count == 0)
                 return;
 
-            // unlock wallet
-            logger.Info(() => $"[{LogCategory}] Unlocking wallet");
-
             try
             {
-                var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
+                await UnlockWallet();
 
-                await daemon.WalletUnlockAsync(new Body4 { Pass = walletPassword });
-            }
+                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
-            catch(ApiException<ApiError> ex)
-            {
-                var error = ex.Result.Detail;
-
-                if(!error.ToLower().Contains("already unlocked"))
-                {
-                    logger.Error(() => $"[{LogCategory}] Failed to unlock wallet: {error}");
-
-                    NotifyPayoutFailure(poolConfig.Id, balances, $"Failed to unlock wallet: {error}", null);
-                    return;
-                }
-            }
-
-            logger.Info(() => $"[{LogCategory}] Wallet unlocked");
-
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
-
-            try
-            {
                 // Create request batch
                 var requests = amounts.Select(x => new PaymentRequest
                 {
@@ -299,46 +316,43 @@ namespace Miningcore.Blockchain.Ergo
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
 
-                var txId = await daemon.WalletPaymentTransactionGenerateAndSendAsync(requests);
-
-                if(!string.IsNullOrEmpty(txId))
+                var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
                 {
-                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                    if(ex is ApiException<ApiError> apiException)
+                    {
+                        var error = apiException.Result.Detail ?? apiException.Result.Reason;
 
-                    await PersistPaymentsAsync(balances, txId);
+                        if(error.Contains("reason:"))
+                            error = error.Substring(error.IndexOf("reason:"));
 
-                    NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txId }, null);
-                }
+                        throw new PaymentException($"Payment transaction failed: {error}");
+                    }
 
-                else
-                {
-                    logger.Error(() => $"[{LogCategory}] Payment transaction failed to return a transaction id");
+                    else
+                        throw ex;
+                });
 
-                    NotifyPayoutFailure(poolConfig.Id, balances, $"Payment transaction failed to return a transaction id", null);
-                }
+                if(string.IsNullOrEmpty(txId))
+                    throw new PaymentException("Payment transaction failed to return a transaction id");
+
+                // payment successful
+                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+
+                await PersistPaymentsAsync(balances, txId);
+
+                NotifyPayoutSuccess(poolConfig.Id, balances, new[] {txId}, null);
             }
 
-            catch(ApiException<ApiError> ex)
+            catch(PaymentException ex)
             {
-                var error = ex.Result.Detail ?? ex.Result.Reason;
+                logger.Error(() => $"[{LogCategory}] {ex.Message}");
 
-                if(error.Contains("reason:"))
-                    error = error.Substring(error.IndexOf("reason:"));
-
-                logger.Error(() => $"[{LogCategory}] Payment transaction failed: {error}");
-
-                NotifyPayoutFailure(poolConfig.Id, balances, $"Payment transaction failed: {error}", null);
+                NotifyPayoutFailure(poolConfig.Id, balances, ex.Message, null);
             }
 
             finally
             {
-                // lock wallet
-                logger.Info(() => $"[{LogCategory}] Locking wallet");
-
-                await Guard(()=> daemon.WalletLockAsync(),
-                    ex=> ReportAndRethrowApiError("Failed to lock wallet", ex));
-
-                logger.Info(() => $"[{LogCategory}] Wallet locked");
+                await LockWallet();
             }
         }
 
