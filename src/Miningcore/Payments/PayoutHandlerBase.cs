@@ -153,7 +153,7 @@ namespace Miningcore.Payments
             }
         }
 
-        public double AdjustShareDifficulty(double difficulty)
+        public virtual double AdjustShareDifficulty(double difficulty)
         {
             return difficulty;
         }
