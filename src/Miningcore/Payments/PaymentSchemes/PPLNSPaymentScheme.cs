@@ -69,7 +69,7 @@ namespace Miningcore.Payments.PaymentSchemes
             // calculate rewards
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = await CalculateRewardsAsync(pool, window, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, window, block, blockReward, shares, rewards);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -155,7 +155,7 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, decimal window, Block block, decimal blockReward,
+        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler, decimal window, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
             var poolConfig = pool.Config;
@@ -191,7 +191,7 @@ namespace Miningcore.Payments.PaymentSchemes
                     else
                         shares[address] += share.Difficulty;
 
-                    var score = (decimal) (share.Difficulty / share.NetworkDifficulty);
+                    var score = (decimal) (payoutHandler.AdjustShareDifficulty(share.Difficulty) / share.NetworkDifficulty);
 
                     // if accumulated score would cross threshold, cap it to the remaining value
                     if(accumulatedScore + score >= window)

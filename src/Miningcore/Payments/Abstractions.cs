@@ -16,6 +16,7 @@ namespace Miningcore.Payments
         Task PayoutAsync(IMiningPool pool, Balance[] balances);
 
         string FormatAmount(decimal amount);
+        double AdjustShareDifficulty(double difficulty);
     }
 
     public interface IPayoutScheme

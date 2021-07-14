@@ -153,6 +153,11 @@ namespace Miningcore.Payments
             }
         }
 
+        public double AdjustShareDifficulty(double difficulty)
+        {
+            return difficulty;
+        }
+
         public string FormatAmount(decimal amount)
         {
             var coin = poolConfig.Template.As<CoinTemplate>();
