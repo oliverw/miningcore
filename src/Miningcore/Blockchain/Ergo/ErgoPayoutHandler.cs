@@ -311,6 +311,8 @@ namespace Miningcore.Blockchain.Ergo
 
             try
             {
+                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+
                 // get wallet status
                 var status = await daemon.GetWalletStatusAsync();
 
@@ -330,8 +332,6 @@ namespace Miningcore.Blockchain.Ergo
                     Address = x.Key,
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
-
-                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
                 var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
                 {
