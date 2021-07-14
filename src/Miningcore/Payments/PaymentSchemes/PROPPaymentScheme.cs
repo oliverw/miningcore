@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
+using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -57,9 +58,9 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #region IPayoutScheme
 
-        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, PoolConfig poolConfig,
-            IPayoutHandler payoutHandler, Block block, decimal blockReward)
+        public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
+            var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();

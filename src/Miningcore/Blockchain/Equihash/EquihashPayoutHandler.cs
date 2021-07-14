@@ -11,6 +11,7 @@ using Miningcore.Blockchain.Equihash.DaemonResponses;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Repositories;
@@ -67,7 +68,7 @@ namespace Miningcore.Blockchain.Equihash
             supportsNativeShielding = response.Error.Code != (int) BitcoinRPCErrorCode.RPC_METHOD_NOT_FOUND;
         }
 
-        public override async Task PayoutAsync(Balance[] balances)
+        public override async Task PayoutAsync(IMiningPool pool, Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
