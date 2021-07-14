@@ -9603,9 +9603,10 @@ namespace Miningcore.Blockchain.Ergo
     
         [Newtonsoft.Json.JsonProperty("balance", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long Balance { get; set; }= default!;
-    
-        [Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
+
+        // The node returns an object for this rather than an array, causing deserialize to crash
+        //[Newtonsoft.Json.JsonProperty("assets", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        //public System.Collections.Generic.ICollection<Asset> Assets { get; set; }= default!;
     
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();
     
