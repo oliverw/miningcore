@@ -190,7 +190,7 @@ namespace Miningcore.Blockchain.Bitcoin
 
         public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = accumulatedBlockShareDiff * pool.ShareMultiplier / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
