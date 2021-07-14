@@ -87,31 +87,33 @@ namespace Miningcore.Payments
 
         private async Task ProcessPoolsAsync()
         {
-            foreach(var pool in pools.Values.ToArray().Select(x=> x.Config).Where(x => x.Enabled && x.PaymentProcessing.Enabled))
+            foreach(var pool in pools.Values.ToArray().Where(x => x.Config.Enabled && x.Config.PaymentProcessing.Enabled))
             {
-                logger.Info(() => $"Processing payments for pool {pool.Id}");
+                var config = pool.Config;
+
+                logger.Info(() => $"Processing payments for pool {config.Id}");
 
                 try
                 {
-                    var family = HandleFamilyOverride(pool.Template.Family, pool);
+                    var family = HandleFamilyOverride(config.Template.Family, config);
 
                     // resolve payout handler
                     var handlerImpl = ctx.Resolve<IEnumerable<Meta<Lazy<IPayoutHandler, CoinFamilyAttribute>>>>()
                         .First(x => x.Value.Metadata.SupportedFamilies.Contains(family)).Value;
 
                     var handler = handlerImpl.Value;
-                    await handler.ConfigureAsync(clusterConfig, pool);
+                    await handler.ConfigureAsync(clusterConfig, config);
 
                     // resolve payout scheme
-                    var scheme = ctx.ResolveKeyed<IPayoutScheme>(pool.PaymentProcessing.PayoutScheme);
+                    var scheme = ctx.ResolveKeyed<IPayoutScheme>(config.PaymentProcessing.PayoutScheme);
 
-                    await UpdatePoolBalancesAsync(pool, handler, scheme);
-                    await PayoutPoolBalancesAsync(pool, handler);
+                    await UpdatePoolBalancesAsync(pool, config, handler, scheme);
+                    await PayoutPoolBalancesAsync(pool, config, handler);
                 }
 
                 catch(InvalidOperationException ex)
                 {
-                    logger.Error(ex.InnerException ?? ex, () => $"[{pool.Id}] Payment processing failed");
+                    logger.Error(ex.InnerException ?? ex, () => $"[{config.Id}] Payment processing failed");
                 }
 
                 catch(AggregateException ex)
@@ -119,18 +121,18 @@ namespace Miningcore.Payments
                     switch(ex.InnerException)
                     {
                         case HttpRequestException httpEx:
-                            logger.Error(() => $"[{pool.Id}] Payment processing failed: {httpEx.Message}");
+                            logger.Error(() => $"[{config.Id}] Payment processing failed: {httpEx.Message}");
                             break;
 
                         default:
-                            logger.Error(ex.InnerException, () => $"[{pool.Id}] Payment processing failed");
+                            logger.Error(ex.InnerException, () => $"[{config.Id}] Payment processing failed");
                             break;
                     }
                 }
 
                 catch(Exception ex)
                 {
-                    logger.Error(ex, () => $"[{pool.Id}] Payment processing failed");
+                    logger.Error(ex, () => $"[{config.Id}] Payment processing failed");
                 }
             }
         }
@@ -151,31 +153,31 @@ namespace Miningcore.Payments
             return family;
         }
 
-        private async Task UpdatePoolBalancesAsync(PoolConfig pool, IPayoutHandler handler, IPayoutScheme scheme)
+        private async Task UpdatePoolBalancesAsync(IMiningPool pool, PoolConfig config, IPayoutHandler handler, IPayoutScheme scheme)
         {
             // get pending blockRepo for pool
-            var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, pool.Id));
+            var pendingBlocks = await cf.Run(con => blockRepo.GetPendingBlocksForPoolAsync(con, config.Id));
 
             // classify
-            var updatedBlocks = await handler.ClassifyBlocksAsync(pendingBlocks);
+            var updatedBlocks = await handler.ClassifyBlocksAsync(pool, pendingBlocks);
 
             if(updatedBlocks.Any())
             {
                 foreach(var block in updatedBlocks.OrderBy(x => x.Created))
                 {
-                    logger.Info(() => $"Processing payments for pool {pool.Id}, block {block.BlockHeight}");
+                    logger.Info(() => $"Processing payments for pool {config.Id}, block {block.BlockHeight}");
 
                     await cf.RunTx(async (con, tx) =>
                     {
                         if(!block.Effort.HasValue)  // fill block effort if empty
-                            await CalculateBlockEffortAsync(pool, block, handler);
+                            await CalculateBlockEffortAsync(pool, config, block, handler);
 
                         switch(block.Status)
                         {
                             case BlockStatus.Confirmed:
                                 // blockchains that do not support block-reward payments via coinbase Tx
                                 // must generate balance records for all reward recipients instead
-                                var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+                                var blockReward = await handler.UpdateBlockRewardBalancesAsync(con, tx, pool, block);
 
                                 await scheme.UpdateBalancesAsync(con, tx, pool, handler, block, blockReward);
                                 await blockRepo.UpdateBlockAsync(con, tx, block);
@@ -191,30 +193,30 @@ namespace Miningcore.Payments
             }
 
             else
-                logger.Info(() => $"No updated blocks for pool {pool.Id}");
+                logger.Info(() => $"No updated blocks for pool {config.Id}");
         }
 
-        private async Task PayoutPoolBalancesAsync(PoolConfig pool, IPayoutHandler handler)
+        private async Task PayoutPoolBalancesAsync(IMiningPool pool, PoolConfig config, IPayoutHandler handler)
         {
             var poolBalancesOverMinimum = await cf.Run(con =>
-                balanceRepo.GetPoolBalancesOverThresholdAsync(con, pool.Id, pool.PaymentProcessing.MinimumPayment));
+                balanceRepo.GetPoolBalancesOverThresholdAsync(con, config.Id, config.PaymentProcessing.MinimumPayment));
 
             if(poolBalancesOverMinimum.Length > 0)
             {
                 try
                 {
-                    await handler.PayoutAsync(poolBalancesOverMinimum);
+                    await handler.PayoutAsync(pool, poolBalancesOverMinimum);
                 }
 
                 catch(Exception ex)
                 {
-                    await NotifyPayoutFailureAsync(poolBalancesOverMinimum, pool, ex);
+                    await NotifyPayoutFailureAsync(poolBalancesOverMinimum, config, ex);
                     throw;
                 }
             }
 
             else
-                logger.Info(() => $"No balances over configured minimum payout for pool {pool.Id}");
+                logger.Info(() => $"No balances over configured minimum payout for pool {config.Id}");
         }
 
         private Task NotifyPayoutFailureAsync(Balance[] balances, PoolConfig pool, Exception ex)
@@ -224,14 +226,14 @@ namespace Miningcore.Payments
             return Task.FromResult(true);
         }
 
-        private async Task CalculateBlockEffortAsync(PoolConfig pool, Block block, IPayoutHandler handler)
+        private async Task CalculateBlockEffortAsync(IMiningPool pool, PoolConfig config, Block block, IPayoutHandler handler)
         {
             // get share date-range
             var from = DateTime.MinValue;
             var to = block.Created;
 
             // get last block for pool
-            var lastBlock = await cf.Run(con => blockRepo.GetBlockBeforeAsync(con, pool.Id, new[]
+            var lastBlock = await cf.Run(con => blockRepo.GetBlockBeforeAsync(con, config.Id, new[]
             {
                 BlockStatus.Confirmed,
                 BlockStatus.Orphaned,
@@ -243,11 +245,11 @@ namespace Miningcore.Payments
 
             // get combined diff of all shares for block
             var accumulatedShareDiffForBlock = await cf.Run(con =>
-                shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, pool.Id, from, to));
+                shareRepo.GetAccumulatedShareDifficultyBetweenCreatedAsync(con, config.Id, from, to));
 
             // handler has the final say
             if(accumulatedShareDiffForBlock.HasValue)
-                await handler.CalculateBlockEffortAsync(block, accumulatedShareDiffForBlock.Value);
+                await handler.CalculateBlockEffortAsync(pool, block, accumulatedShareDiffForBlock.Value);
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)

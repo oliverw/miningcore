@@ -12,6 +12,7 @@ using Miningcore.Configuration;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications;
 using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
@@ -78,7 +79,7 @@ namespace Miningcore.Blockchain.Bitcoin
             return Task.FromResult(true);
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -187,14 +188,14 @@ namespace Miningcore.Blockchain.Bitcoin
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
         {
             block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public virtual async Task PayoutAsync(Balance[] balances)
+        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 

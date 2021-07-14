@@ -8,6 +8,7 @@ using Miningcore.Blockchain;
 using Miningcore.Configuration;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Notifications.Messages;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -85,7 +86,7 @@ namespace Miningcore.Payments
             logger.Warn(() => $"[{LogCategory}] Retry {1} in {timeSpan} due to: {ex}");
         }
 
-        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public virtual async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block)
         {
             var blockRewardRemaining = block.Reward;
 

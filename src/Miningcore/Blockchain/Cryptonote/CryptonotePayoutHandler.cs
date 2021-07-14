@@ -12,6 +12,7 @@ using Miningcore.Configuration;
 using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
+using Miningcore.Mining;
 using Miningcore.Native;
 using Miningcore.Payments;
 using Miningcore.Persistence;
@@ -336,14 +337,12 @@ namespace Miningcore.Blockchain.Cryptonote
             // detect network
             await UpdateNetworkTypeAsync();
 
-var response1 = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(logger, CryptonoteWalletCommands.GetBalance);
-
             // detect transfer_split support
             var response = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.TransferSplit);
             walletSupportsTransferSplit = response.Error.Code != CryptonoteConstants.MoneroRpcMethodNotFound;
         }
 
-        public async Task<Block[]> ClassifyBlocksAsync(Block[] blocks)
+        public async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -420,16 +419,16 @@ var response1 = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(log
             return result.ToArray();
         }
 
-        public Task CalculateBlockEffortAsync(Block block, double accumulatedBlockShareDiff)
+        public Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
         {
             block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
 
             return Task.FromResult(true);
         }
 
-        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, Block block, PoolConfig pool)
+        public override async Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block)
         {
-            var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, block, pool);
+            var blockRewardRemaining = await base.UpdateBlockRewardBalancesAsync(con, tx, pool, block);
 
             // Deduct static reserve for tx fees
             blockRewardRemaining -= CryptonoteConstants.StaticTransactionFeeReserve;
@@ -437,7 +436,7 @@ var response1 = await walletDaemon.ExecuteCmdSingleAsync<GetBalanceResponse>(log
             return blockRewardRemaining;
         }
 
-        public async Task PayoutAsync(Balance[] balances)
+        public async Task PayoutAsync(IMiningPool pool, Balance[] balances)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
