@@ -287,9 +287,14 @@ namespace Miningcore.Blockchain.Ergo
 
         public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
         {
-            block.Effort = accumulatedBlockShareDiff / block.NetworkDifficulty;
+            block.Effort = accumulatedBlockShareDiff * ErgoConstants.ShareMultiplier / block.NetworkDifficulty;
 
             return Task.FromResult(true);
+        }
+
+        public override double AdjustShareDifficulty(double difficulty)
+        {
+            return difficulty * ErgoConstants.ShareMultiplier;
         }
 
         public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances)
