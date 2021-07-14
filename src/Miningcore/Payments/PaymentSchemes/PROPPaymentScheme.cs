@@ -151,6 +151,7 @@ namespace Miningcore.Payments.PaymentSchemes
         private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
+            var poolConfig = pool.Config;
             var done = false;
             var before = block.Created;
             var inclusive = true;
