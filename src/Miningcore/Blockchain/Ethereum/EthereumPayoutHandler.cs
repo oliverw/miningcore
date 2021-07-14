@@ -407,7 +407,7 @@ namespace Miningcore.Blockchain.Ethereum
                 throw new Exception($"{EC.SendTx} did not return a valid transaction hash");
 
             var txHash = response.Response;
-            logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}");
+            logger.Info(() => $"[{LogCategory}] Payment transaction id: {txHash}");
 
             // update db
             await PersistPaymentsAsync(new[] { balance }, txHash);

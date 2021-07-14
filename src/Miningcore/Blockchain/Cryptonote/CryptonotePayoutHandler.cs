@@ -68,7 +68,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 var txHash = response.Response.TxHash;
                 var txFee = (decimal) response.Response.Fee / coin.SmallestUnit;
 
-                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
+                logger.Info(() => $"[{LogCategory}] Payment transaction id: {txHash}, TxFee {FormatAmount(txFee)}, TxKey {response.Response.TxKey}");
 
                 await PersistPaymentsAsync(balances, txHash);
                 NotifyPayoutSuccess(poolConfig.Id, balances, new[] { txHash }, txFee);
@@ -93,7 +93,7 @@ namespace Miningcore.Blockchain.Cryptonote
                 var txHashes = response.Response.TxHashList;
                 var txFees = response.Response.FeeList.Select(x => (decimal) x / coin.SmallestUnit).ToArray();
 
-                logger.Info(() => $"[{LogCategory}] Split-Payout transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
+                logger.Info(() => $"[{LogCategory}] Split-Payment transaction ids: {string.Join(", ", txHashes)}, Corresponding TxFees were {string.Join(", ", txFees.Select(FormatAmount))}");
 
                 await PersistPaymentsAsync(balances, txHashes.First());
                 NotifyPayoutSuccess(poolConfig.Id, balances, txHashes, txFees.Sum());
@@ -156,7 +156,7 @@ namespace Miningcore.Blockchain.Cryptonote
 
             if(unlockedBalance < requiredAmount)
             {
-                logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payout, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
+                logger.Info(() => $"[{LogCategory}] {FormatAmount(requiredAmount)} unlocked balance required for payment, but only have {FormatAmount(unlockedBalance)} of {FormatAmount(balance)} available yet. Will try again.");
                 return false;
             }
 
@@ -194,7 +194,7 @@ namespace Miningcore.Blockchain.Cryptonote
             if(request.Destinations.Length == 0)
                 return true;
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
+            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses:\n{string.Join("\n", balances.OrderByDescending(x => x.Amount).Select(x => $"{FormatAmount(x.Amount)} to {x.Address}"))}");
 
             // send command
             var transferResponse = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, request);
@@ -269,9 +269,9 @@ namespace Miningcore.Blockchain.Cryptonote
                 request.PaymentId = paymentId;
 
             if(!isIntegratedAddress)
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
+                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to address {balance.Address} with paymentId {paymentId}");
             else
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
+                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balance.Amount)} to integrated address {balance.Address}");
 
             // send command
             var result = await walletDaemon.ExecuteCmdSingleAsync<TransferResponse>(logger, CryptonoteWalletCommands.Transfer, request);

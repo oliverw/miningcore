@@ -118,7 +118,7 @@ namespace Miningcore.Blockchain.Equihash
                     return;
                 }
 
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(pageAmount)} to {page.Length} addresses");
+                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(pageAmount)} to {page.Length} addresses");
 
                 var args = new object[]
                 {
@@ -141,7 +141,7 @@ namespace Miningcore.Blockchain.Equihash
                         logger.Error(() => $"[{LogCategory}] {EquihashCommands.ZSendMany} did not return a operation id!");
                     else
                     {
-                        logger.Info(() => $"[{LogCategory}] Tracking payout operation id: {operationId}");
+                        logger.Info(() => $"[{LogCategory}] Tracking payment operation id: {operationId}");
 
                         var continueWaiting = true;
 
