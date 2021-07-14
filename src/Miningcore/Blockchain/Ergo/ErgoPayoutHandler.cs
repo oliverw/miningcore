@@ -331,7 +331,7 @@ namespace Miningcore.Blockchain.Ergo
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
 
-                logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+                logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
                 var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
                 {
@@ -353,7 +353,7 @@ namespace Miningcore.Blockchain.Ergo
                     throw new PaymentException("Payment transaction failed to return a transaction id");
 
                 // payment successful
-                logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
                 await PersistPaymentsAsync(balances, txId);
 
