@@ -62,10 +62,9 @@ namespace Miningcore.Payments.PaymentSchemes
         {
             var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
-            var poolConfig = pool.Config;
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
-            var shareCutOffDate = await CalculateRewardsAsync(poolConfig, block, blockReward, shares, rewards);
+            var shareCutOffDate = await CalculateRewardsAsync(pool, block, blockReward, shares, rewards);
 
             // update balances
             foreach(var address in rewards.Keys)
@@ -149,10 +148,9 @@ namespace Miningcore.Payments.PaymentSchemes
 
         #endregion // IPayoutScheme
 
-        private async Task<DateTime?> CalculateRewardsAsync(IMiningPool pool, Block block, decimal blockReward,
+        private async Task<DateTime?> CalculateRewardsAsync(PoolConfig poolConfig, Block block, decimal blockReward,
             Dictionary<string, double> shares, Dictionary<string, decimal> rewards)
         {
-            var poolConfig = pool.Config;
             var done = false;
             var before = block.Created;
             var inclusive = true;
