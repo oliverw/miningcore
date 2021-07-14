@@ -62,6 +62,7 @@ namespace Miningcore.Payments.PaymentSchemes
         {
             var poolConfig = pool.Config;
             var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
+            var poolConfig = pool.Config;
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
             var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, block, blockReward, shares, rewards);
