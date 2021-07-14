@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -13,8 +11,6 @@ using Miningcore.DaemonInterface;
 using Miningcore.Extensions;
 using Miningcore.Messaging;
 using Miningcore.Mining;
-using Miningcore.Notifications;
-using Miningcore.Notifications.Messages;
 using Miningcore.Payments;
 using Miningcore.Persistence;
 using Miningcore.Persistence.Model;
@@ -207,7 +203,7 @@ namespace Miningcore.Blockchain.Bitcoin
             if(amounts.Count == 0)
                 return;
 
-            logger.Info(() => $"[{LogCategory}] Paying out {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
+            logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
             object[] args;
 
@@ -284,7 +280,7 @@ namespace Miningcore.Blockchain.Bitcoin
                 if(string.IsNullOrEmpty(txId))
                     logger.Error(() => $"[{LogCategory}] {BitcoinCommands.SendMany} did not return a transaction id!");
                 else
-                    logger.Info(() => $"[{LogCategory}] Payout transaction id: {txId}");
+                    logger.Info(() => $"[{LogCategory}] Payment transaction id: {txId}");
 
                 await PersistPaymentsAsync(balances, txId);
 

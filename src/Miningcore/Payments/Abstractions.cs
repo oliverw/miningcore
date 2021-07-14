@@ -14,9 +14,9 @@ namespace Miningcore.Payments
         Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff);
         Task<decimal> UpdateBlockRewardBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, Block block);
         Task PayoutAsync(IMiningPool pool, Balance[] balances);
+        double AdjustShareDifficulty(double difficulty);
 
         string FormatAmount(decimal amount);
-        double AdjustShareDifficulty(double difficulty);
     }
 
     public interface IPayoutScheme
