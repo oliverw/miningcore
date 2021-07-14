@@ -61,7 +61,6 @@ namespace Miningcore.Payments.PaymentSchemes
         public async Task UpdateBalancesAsync(IDbConnection con, IDbTransaction tx, IMiningPool pool, IPayoutHandler payoutHandler, Block block, decimal blockReward)
         {
             var poolConfig = pool.Config;
-            var payoutConfig = poolConfig.PaymentProcessing.PayoutSchemeConfig;
             var shares = new Dictionary<string, double>();
             var rewards = new Dictionary<string, decimal>();
             var shareCutOffDate = await CalculateRewardsAsync(pool, payoutHandler, block, blockReward, shares, rewards);
