@@ -23,6 +23,7 @@ using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Ergo
 {
@@ -227,7 +228,7 @@ namespace Miningcore.Blockchain.Ergo
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async connection =>
+            await Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
                 if(!connection.IsAlive)
                     return;
@@ -251,17 +252,7 @@ namespace Miningcore.Blockchain.Ergo
                     if(context.ApplyPendingDifficulty())
                         await SendJob(connection, context, currentJobParams);
                 }
-            });
-
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-
-            catch(Exception ex)
-            {
-                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-            }
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         private async Task SendJob(StratumConnection connection, ErgoWorkerContext context, object[] jobParams)
