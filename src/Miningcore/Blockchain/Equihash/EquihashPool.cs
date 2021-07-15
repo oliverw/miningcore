@@ -370,26 +370,15 @@ namespace Miningcore.Blockchain.Equihash
 
                 var context = connection.ContextAs<BitcoinWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(connection);
-                        return;
-                    }
+                // varDiff: if the client has a pending difficulty change, apply it now
+                if(context.ApplyPendingDifficulty())
+                    await connection.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        await connection.NotifyAsync(EquihashStratumMethods.SetTarget, new object[] { EncodeTarget(context.Difficulty) });
-
-                    // send job
-                    await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
-                }
+                // send job
+                await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
             })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 

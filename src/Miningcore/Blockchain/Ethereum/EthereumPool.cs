@@ -259,26 +259,15 @@ namespace Miningcore.Blockchain.Ethereum
 
                 var context = connection.ContextAs<EthereumWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized && context.IsInitialWorkSent)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(connection);
-                        return;
-                    }
+                // varDiff: if the client has a pending difficulty change, apply it now
+                if(context.ApplyPendingDifficulty())
+                    await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        await connection.NotifyAsync(EthereumStratumMethods.SetDifficulty, new object[] { context.Difficulty });
-
-                    // send job
-                    await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
-                }
+                // send job
+                await connection.NotifyAsync(EthereumStratumMethods.MiningNotify, currentJobParams);
             })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
