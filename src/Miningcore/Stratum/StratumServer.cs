@@ -25,6 +25,7 @@ using Miningcore.Util;
 using Newtonsoft.Json;
 using NLog;
 using Contract = Miningcore.Contracts.Contract;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Stratum
 {
@@ -83,7 +84,7 @@ namespace Miningcore.Stratum
         protected IBanManager banManager;
         protected ILogger logger;
 
-        public Task ServeStratum(CancellationToken ct, params StratumEndpoint[] endpoints)
+        public Task RunAsync(CancellationToken ct, params StratumEndpoint[] endpoints)
         {
             Contract.RequiresNonNull(endpoints, nameof(endpoints));
 
@@ -91,22 +92,12 @@ namespace Miningcore.Stratum
 
             var tasks = endpoints.Select(port =>
             {
-                // TLS cert
-                X509Certificate2 cert = null;
-
-                if(port.PoolEndpoint.Tls)
-                {
-                    if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out cert))
-                        cert = AddCert(port);
-                }
-
-                // Setup socket
                 var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                 server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 server.Bind(port.IPEndPoint);
                 server.Listen();
 
-                return Listen(server, port, cert, ct);
+                return Listen(server, port, GetTlsCert(port), ct);
             }).ToArray();
 
             return Task.WhenAll(tasks);
@@ -162,8 +153,6 @@ namespace Miningcore.Stratum
 
         protected virtual void RegisterConnection(StratumConnection connection, string connectionId)
         {
-            Contract.RequiresNonNull(connection, nameof(connection));
-
             lock(connections)
             {
                 connections[connectionId] = connection;
@@ -175,8 +164,6 @@ namespace Miningcore.Stratum
 
         protected virtual void UnregisterConnection(StratumConnection connection)
         {
-            Contract.RequiresNonNull(connection, nameof(connection));
-
             var subscriptionId = connection.ConnectionId;
 
             if(!string.IsNullOrEmpty(subscriptionId))
@@ -295,20 +282,23 @@ namespace Miningcore.Stratum
             UnregisterConnection(connection);
         }
 
-        private X509Certificate2 AddCert(StratumEndpoint endpoint)
+        private X509Certificate2 GetTlsCert(StratumEndpoint port)
         {
-            try
+            if(!port.PoolEndpoint.Tls)
+                return null;
+
+            if(!certs.TryGetValue(port.PoolEndpoint.TlsPfxFile, out var cert))
             {
-                var tlsCert = new X509Certificate2(endpoint.PoolEndpoint.TlsPfxFile);
-                certs.TryAdd(endpoint.PoolEndpoint.TlsPfxFile, tlsCert);
-                return tlsCert;
+                cert = Guard(()=> new X509Certificate2(port.PoolEndpoint.TlsPfxFile), ex =>
+                {
+                    logger.Info(() => $"Failed to load TLS certificate {port.PoolEndpoint.TlsPfxFile}: {ex.Message}");
+                    throw ex;
+                });
+
+                certs[port.PoolEndpoint.TlsPfxFile] = cert;
             }
 
-            catch(Exception ex)
-            {
-                logger.Info(() => $"Failed to load TLS certificate {endpoint.PoolEndpoint.TlsPfxFile}: {ex.Message}");
-                throw;
-            }
+            return cert;
         }
 
         protected void ForEachConnection(Action<StratumConnection> action)

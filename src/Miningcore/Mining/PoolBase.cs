@@ -376,7 +376,7 @@ Pool Fee:               {(poolConfig.RewardRecipients?.Any() == true ? poolConfi
                         .Select(port => PoolEndpoint2IPEndpoint(port, poolConfig.Ports[port]))
                         .ToArray();
 
-                    await ServeStratum(ct, ipEndpoints);
+                    await RunAsync(ct, ipEndpoints);
                 }
             }
 

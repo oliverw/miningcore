@@ -327,30 +327,29 @@ namespace Miningcore
             var coinTemplates = LoadCoinTemplates();
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
-            // Populate pool configs with corresponding template
-            foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
-            {
-                // Lookup coin definition
-                if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                    logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+            await Task.WhenAll(clusterConfig.Pools
+                .Where(config => config.Enabled)
+                .Select(config=> RunPool(config, coinTemplates, ct)));
+        }
 
-                poolConfig.Template = template;
-            }
+        private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
+        {
+            // Lookup coin
+            if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
-            // start pools
-            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
-            {
-                // resolve pool implementation
-                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+            poolConfig.Template = template;
 
-                // create and configure
-                var pool = poolImpl.Value;
-                pool.Configure(poolConfig, clusterConfig);
-                pools[poolConfig.Id] = pool;
+            // resolve implementation
+            var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
-                await pool.RunAsync(ct);
-            }));
+            // configure
+            var pool = poolImpl.Value;
+            pool.Configure(poolConfig, clusterConfig);
+            pools[poolConfig.Id] = pool;
+
+            await pool.RunAsync(ct);
         }
 
         private Task RecoverSharesAsync(string recoveryFilename)
