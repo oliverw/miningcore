@@ -355,7 +355,7 @@ namespace Miningcore.Blockchain.Ergo
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new ErgoWorkerContext();
         }
