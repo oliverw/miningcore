@@ -332,24 +332,28 @@ namespace Miningcore
                 .Select(config=> RunPool(config, coinTemplates, ct)));
         }
 
-        private async Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
+        private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
         {
-            // Lookup coin
-            if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
-                logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
+            return Task.Run(async () =>
+            {
+                // Lookup coin
+                if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
+                    logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
-            poolConfig.Template = template;
+                poolConfig.Template = template;
 
-            // resolve implementation
-            var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
-                .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
+                // resolve implementation
+                var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
+                    .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
-            // configure
-            var pool = poolImpl.Value;
-            pool.Configure(poolConfig, clusterConfig);
-            pools[poolConfig.Id] = pool;
+                // configure
+                var pool = poolImpl.Value;
+                pool.Configure(poolConfig, clusterConfig);
+                pools[poolConfig.Id] = pool;
 
-            await pool.RunAsync(ct);
+                // go
+                await pool.RunAsync(ct);
+            }, ct);
         }
 
         private Task RecoverSharesAsync(string recoveryFilename)
