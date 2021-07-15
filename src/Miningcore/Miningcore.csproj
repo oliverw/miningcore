@@ -102,6 +102,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Api\Requests\" />
+    </ItemGroup>
 
     <!-- Build library binaries from source on Linux -->
     <Target Name="BuildNativeLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">

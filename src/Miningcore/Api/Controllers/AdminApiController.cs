@@ -1,6 +1,5 @@
 using Autofac;
 using Microsoft.AspNetCore.Mvc;
-using Miningcore.Api.Requests;
 using Miningcore.Extensions;
 using Miningcore.Mining;
 using Miningcore.Persistence.Repositories;
@@ -94,26 +93,6 @@ namespace Miningcore.Api.Controllers
             var result = await cf.RunTx((con, tx) => minerRepo.UpdateSettings(con, tx, mapped));
 
             return mapper.Map<Responses.MinerSettings>(result);
-        }
-
-        [HttpPost("addbalance")]
-        public async Task<object> AddMinerBalanceAsync(AddBalanceRequest request)
-        {
-            request.Usage = request.Usage?.Trim();
-
-            if(string.IsNullOrEmpty(request.Usage))
-                request.Usage = $"Admin balance change from {Request.HttpContext.Connection.RemoteIpAddress}";
-
-            var oldBalance = await cf.Run(con => balanceRepo.GetBalanceAsync(con, request.PoolId, request.Address));
-
-            var count = await cf.RunTx(async (con, tx) =>
-            {
-                return await balanceRepo.AddAmountAsync(con, tx, request.PoolId, request.Address, request.Amount, request.Usage);
-            });
-
-            var newBalance = await cf.Run(con => balanceRepo.GetBalanceAsync(con, request.PoolId, request.Address));
-
-            return new { oldBalance, newBalance };
         }
 
         #endregion // Actions
