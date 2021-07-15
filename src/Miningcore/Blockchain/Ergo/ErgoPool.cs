@@ -308,7 +308,7 @@ namespace Miningcore.Blockchain.Ergo
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Jobs.Take(1).ToTask(ct);
             }
 
