@@ -378,7 +378,7 @@ namespace Miningcore.Blockchain.Cryptonote
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new CryptonoteWorkerContext();
         }

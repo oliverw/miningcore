@@ -76,7 +76,7 @@ namespace Miningcore.Mining
         protected readonly Dictionary<PoolEndpoint, VarDiffManager> varDiffManagers = new();
 
         protected abstract Task SetupJobManager(CancellationToken ct);
-        protected abstract WorkerContextBase CreateClientContext();
+        protected abstract WorkerContextBase CreateWorkerContext();
 
         protected double? GetStaticDiffFromPassparts(string[] parts)
         {
@@ -101,9 +101,7 @@ namespace Miningcore.Mining
 
         protected override void OnConnect(StratumConnection connection, IPEndPoint ipEndPoint)
         {
-            // client setup
-            var context = CreateClientContext();
-
+            var context = CreateWorkerContext();
             var poolEndpoint = poolConfig.Ports[ipEndPoint.Port];
             context.Init(poolConfig, poolEndpoint.Difficulty, poolConfig.EnableInternalStratum == true ? poolEndpoint.VarDiff : null, clock);
             connection.SetContext(context);

@@ -430,7 +430,7 @@ namespace Miningcore.Blockchain.Equihash
             }
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new BitcoinWorkerContext();
         }
