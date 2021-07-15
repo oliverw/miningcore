@@ -235,23 +235,12 @@ namespace Miningcore.Blockchain.Ergo
 
                 var context = connection.ContextAs<ErgoWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(connection);
-                        return;
-                    }
-
-                    // varDiff: if the client has a pending difficulty change, apply it now
-                    if(context.ApplyPendingDifficulty())
-                        await SendJob(connection, context, currentJobParams);
-                }
+                // varDiff: if the client has a pending difficulty change, apply it now
+                if(context.ApplyPendingDifficulty())
+                    await SendJob(connection, context, currentJobParams);
             })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
