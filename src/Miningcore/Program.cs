@@ -329,30 +329,33 @@ namespace Miningcore
             var coinTemplates = LoadCoinTemplates();
             logger.Info($"{coinTemplates.Keys.Count} coins loaded from {string.Join(", ", clusterConfig.CoinTemplates)}");
 
-            // Populate pool configs with corresponding template
-            foreach(var poolConfig in clusterConfig.Pools.Where(x => x.Enabled))
+            await Task.WhenAll(clusterConfig.Pools
+                .Where(config => config.Enabled)
+                .Select(config=> RunPool(config, coinTemplates, ct)));
+        }
+
+        private Task RunPool(PoolConfig poolConfig, Dictionary<string, CoinTemplate> coinTemplates, CancellationToken ct)
+        {
+            return Task.Run(async () =>
             {
-                // Lookup coin definition
+                // Lookup coin
                 if(!coinTemplates.TryGetValue(poolConfig.Coin, out var template))
                     logger.ThrowLogPoolStartupException($"Pool {poolConfig.Id} references undefined coin '{poolConfig.Coin}'");
 
                 poolConfig.Template = template;
-            }
 
-            // start pools
-            await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async poolConfig =>
-            {
-                // resolve pool implementation
+                // resolve implementation
                 var poolImpl = container.Resolve<IEnumerable<Meta<Lazy<IMiningPool, CoinFamilyAttribute>>>>()
                     .First(x => x.Value.Metadata.SupportedFamilies.Contains(poolConfig.Template.Family)).Value;
 
-                // create and configure
+                // configure
                 var pool = poolImpl.Value;
                 pool.Configure(poolConfig, clusterConfig);
                 pools[poolConfig.Id] = pool;
 
+                // go
                 await pool.RunAsync(ct);
-            }));
+            }, ct);
         }
 
         private Task RecoverSharesAsync(string recoveryFilename)

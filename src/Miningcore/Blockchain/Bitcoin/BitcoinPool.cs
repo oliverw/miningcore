@@ -325,12 +325,12 @@ namespace Miningcore.Blockchain.Bitcoin
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            var tasks = ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<BitcoinWorkerContext>();
+                var context = connection.ContextAs<BitcoinWorkerContext>();
 
                 if(context.IsSubscribed && context.IsAuthorized)
                 {
@@ -340,17 +340,17 @@ namespace Miningcore.Blockchain.Bitcoin
                     if(poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        logger.Info(() => $"[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
+                        logger.Info(() => $"[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        CloseConnection(connection);
                         return;
                     }
 
                     // varDiff: if the client has a pending difficulty change, apply it now
                     if(context.ApplyPendingDifficulty())
-                        await client.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
+                        await connection.NotifyAsync(BitcoinStratumMethods.SetDifficulty, new object[] { context.Difficulty });
 
                     // send job
-                    await client.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
+                    await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
             });
 
@@ -434,7 +434,7 @@ namespace Miningcore.Blockchain.Bitcoin
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new BitcoinWorkerContext();
         }

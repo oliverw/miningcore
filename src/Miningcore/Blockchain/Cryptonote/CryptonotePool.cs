@@ -288,12 +288,12 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async client =>
+            var tasks = ForEachConnection(async connection =>
             {
-                if(!client.IsAlive)
+                if(!connection.IsAlive)
                     return;
 
-                var context = client.ContextAs<CryptonoteWorkerContext>();
+                var context = connection.ContextAs<CryptonoteWorkerContext>();
 
                 if(context.IsSubscribed && context.IsAuthorized)
                 {
@@ -303,14 +303,14 @@ namespace Miningcore.Blockchain.Cryptonote
                     if(poolConfig.ClientConnectionTimeout > 0 &&
                         lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
                     {
-                        logger.Info(() => $"[[{client.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(client);
+                        logger.Info(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
+                        CloseConnection(connection);
                         return;
                     }
 
                     // send job
-                    var job = CreateWorkerJob(client);
-                    await client.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
+                    var job = CreateWorkerJob(connection);
+                    await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
                 }
             });
 
@@ -378,7 +378,7 @@ namespace Miningcore.Blockchain.Cryptonote
             blockchainStats = manager.BlockchainStats;
         }
 
-        protected override WorkerContextBase CreateClientContext()
+        protected override WorkerContextBase CreateWorkerContext()
         {
             return new CryptonoteWorkerContext();
         }
