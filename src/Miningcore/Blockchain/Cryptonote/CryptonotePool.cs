@@ -296,23 +296,12 @@ namespace Miningcore.Blockchain.Cryptonote
 
                 var context = connection.ContextAs<CryptonoteWorkerContext>();
 
-                if(context.IsSubscribed && context.IsAuthorized)
-                {
-                    // check alive
-                    var lastActivityAgo = clock.Now - context.LastActivity;
+                if(!context.IsSubscribed || !context.IsAuthorized || CloseIfDead(connection, context))
+                    return;
 
-                    if(poolConfig.ClientConnectionTimeout > 0 &&
-                        lastActivityAgo.TotalSeconds > poolConfig.ClientConnectionTimeout)
-                    {
-                        logger.Info(() => $"[[{connection.ConnectionId}] Booting zombie-worker (idle-timeout exceeded)");
-                        CloseConnection(connection);
-                        return;
-                    }
-
-                    // send job
-                    var job = CreateWorkerJob(connection);
-                    await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
-                }
+                // send job
+                var job = CreateWorkerJob(connection);
+                await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
             })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
