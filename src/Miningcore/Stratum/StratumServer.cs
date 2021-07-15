@@ -104,7 +104,7 @@ namespace Miningcore.Stratum
                 var server = new Socket(SocketType.Stream, ProtocolType.Tcp);
                 server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 server.Bind(port.IPEndPoint);
-                server.Listen(512);
+                server.Listen();
 
                 return Listen(server, port, cert, ct);
             }).ToArray();
