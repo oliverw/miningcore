@@ -21,6 +21,7 @@ using Miningcore.Persistence.Repositories;
 using Miningcore.Stratum;
 using Miningcore.Time;
 using Newtonsoft.Json;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Cryptonote
 {
@@ -288,7 +289,7 @@ namespace Miningcore.Blockchain.Cryptonote
         {
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async connection =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
                 if(!connection.IsAlive)
                     return;
@@ -312,9 +313,7 @@ namespace Miningcore.Blockchain.Cryptonote
                     var job = CreateWorkerJob(connection);
                     await connection.NotifyAsync(CryptonoteStratumMethods.JobNotify, job);
                 }
-            });
-
-            return Task.WhenAll(tasks);
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         #region Overrides
@@ -331,25 +330,16 @@ namespace Miningcore.Blockchain.Cryptonote
                 minerAlgo = GetMinerAlgo();
 
                 disposables.Add(manager.Blocks
-                    .Select(_ => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync();
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(_ => Observable.FromAsync(() =>
+                        Guard(OnNewJobAsync,
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Blocks.Take(1).ToTask(ct);
             }
 
