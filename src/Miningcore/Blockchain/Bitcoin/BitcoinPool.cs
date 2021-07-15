@@ -23,6 +23,7 @@ using Miningcore.Time;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Bitcoin
 {
@@ -319,13 +320,13 @@ namespace Miningcore.Blockchain.Bitcoin
             }
         }
 
-        protected virtual async Task OnNewJobAsync(object jobParams)
+        protected virtual Task OnNewJobAsync(object jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async connection =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
                 if(!connection.IsAlive)
                     return;
@@ -352,17 +353,7 @@ namespace Miningcore.Blockchain.Bitcoin
                     // send job
                     await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
-            });
-
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-
-            catch(Exception ex)
-            {
-                logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-            }
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         public override double HashrateFromShares(double shares, double interval)
@@ -398,25 +389,16 @@ namespace Miningcore.Blockchain.Bitcoin
             if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(job => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync(job);
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(job => Observable.FromAsync(() =>
+                        Guard(()=> OnNewJobAsync(job),
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Jobs.Take(1).ToTask(ct);
             }
 

@@ -23,6 +23,7 @@ using Miningcore.Stratum;
 using Miningcore.Time;
 using Miningcore.Util;
 using Newtonsoft.Json;
+using static Miningcore.Util.ActionUtils;
 
 namespace Miningcore.Blockchain.Equihash
 {
@@ -72,25 +73,16 @@ namespace Miningcore.Blockchain.Equihash
             if(poolConfig.EnableInternalStratum == true)
             {
                 disposables.Add(manager.Jobs
-                    .Select(job => Observable.FromAsync(async () =>
-                    {
-                        try
-                        {
-                            await OnNewJobAsync(job);
-                        }
-
-                        catch(Exception ex)
-                        {
-                            logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}");
-                        }
-                    }))
+                    .Select(job => Observable.FromAsync(() =>
+                        Guard(()=> OnNewJobAsync(job),
+                            ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"))))
                     .Concat()
                     .Subscribe(_ => { }, ex =>
                     {
                         logger.Debug(ex, nameof(OnNewJobAsync));
                     }));
 
-                // we need work before opening the gates
+                // start with initial blocktemplate
                 await manager.Jobs.Take(1).ToTask(ct);
             }
 
@@ -371,7 +363,7 @@ namespace Miningcore.Blockchain.Equihash
 
             logger.Info(() => "Broadcasting job");
 
-            var tasks = ForEachConnection(async connection =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
                 if(!connection.IsAlive)
                     return;
@@ -398,9 +390,7 @@ namespace Miningcore.Blockchain.Equihash
                     // send job
                     await connection.NotifyAsync(BitcoinStratumMethods.MiningNotify, currentJobParams);
                 }
-            });
-
-            return Task.WhenAll(tasks);
+            })), ex=> logger.Debug(() => $"{nameof(OnNewJobAsync)}: {ex.Message}"));
         }
 
         public override double HashrateFromShares(double shares, double interval)
