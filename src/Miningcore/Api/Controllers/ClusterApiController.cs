@@ -19,27 +19,21 @@ namespace Miningcore.Api.Controllers
 {
     [Route("api")]
     [ApiController]
-    public class ClusterApiController : ControllerBase
+    public class ClusterApiController : ApiControllerBase
     {
-        public ClusterApiController(IComponentContext ctx)
+        public ClusterApiController(IComponentContext ctx) : base(ctx)
         {
-            clusterConfig = ctx.Resolve<ClusterConfig>();
-            cf = ctx.Resolve<IConnectionFactory>();
             statsRepo = ctx.Resolve<IStatsRepository>();
             blocksRepo = ctx.Resolve<IBlockRepository>();
             paymentsRepo = ctx.Resolve<IPaymentRepository>();
-            mapper = ctx.Resolve<IMapper>();
             clock = ctx.Resolve<IMasterClock>();
             pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
             enabledPools = new HashSet<string>(clusterConfig.Pools.Where(x => x.Enabled).Select(x => x.Id));
         }
 
-        private readonly ClusterConfig clusterConfig;
-        private readonly IConnectionFactory cf;
         private readonly IStatsRepository statsRepo;
         private readonly IBlockRepository blocksRepo;
         private readonly IPaymentRepository paymentsRepo;
-        private readonly IMapper mapper;
         private readonly IMasterClock clock;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
         private readonly HashSet<string> enabledPools;
@@ -93,14 +87,5 @@ namespace Miningcore.Api.Controllers
         }
 
         #endregion // Actions
-
-        private PoolConfig GetPoolNoThrow(string poolId)
-        {
-            if(string.IsNullOrEmpty(poolId))
-                return null;
-
-            var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
-            return pool;
-        }
     }
 }

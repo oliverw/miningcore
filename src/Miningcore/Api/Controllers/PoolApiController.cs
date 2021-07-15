@@ -27,27 +27,21 @@ namespace Miningcore.Api.Controllers
 {
     [Route("api/pools")]
     [ApiController]
-    public class PoolApiController : ControllerBase
+    public class PoolApiController : ApiControllerBase
     {
-        public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp)
+        public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp) : base(ctx)
         {
-            clusterConfig = ctx.Resolve<ClusterConfig>();
-            cf = ctx.Resolve<IConnectionFactory>();
             statsRepo = ctx.Resolve<IStatsRepository>();
             blocksRepo = ctx.Resolve<IBlockRepository>();
             paymentsRepo = ctx.Resolve<IPaymentRepository>();
-            mapper = ctx.Resolve<IMapper>();
             clock = ctx.Resolve<IMasterClock>();
             pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
             adcp = _adcp;
         }
 
-        private readonly ClusterConfig clusterConfig;
-        private readonly IConnectionFactory cf;
         private readonly IStatsRepository statsRepo;
         private readonly IBlockRepository blocksRepo;
         private readonly IPaymentRepository paymentsRepo;
-        private readonly IMapper mapper;
         private readonly IMasterClock clock;
         private readonly IActionDescriptorCollectionProvider adcp;
         private readonly ConcurrentDictionary<string, IMiningPool> pools;
@@ -544,19 +538,6 @@ namespace Miningcore.Api.Controllers
         }
 
         #endregion // Actions
-
-        private PoolConfig GetPool(string poolId)
-        {
-            if(string.IsNullOrEmpty(poolId))
-                throw new ApiException("Invalid pool id", HttpStatusCode.NotFound);
-
-            var pool = clusterConfig.Pools.FirstOrDefault(x => x.Id == poolId && x.Enabled);
-
-            if(pool == null)
-                throw new ApiException($"Unknown pool {poolId}", HttpStatusCode.NotFound);
-
-            return pool;
-        }
 
         private async Task<Responses.WorkerPerformanceStatsContainer[]> GetMinerPerformanceInternal(
             SampleRange mode, PoolConfig pool, string address)
