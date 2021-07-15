@@ -222,13 +222,13 @@ namespace Miningcore.Blockchain.Ergo
             }
         }
 
-        protected virtual async Task OnNewJobAsync(object[] jobParams)
+        protected virtual Task OnNewJobAsync(object[] jobParams)
         {
             currentJobParams = jobParams;
 
             logger.Info(() => "Broadcasting job");
 
-            await Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
+            return Guard(()=> Task.WhenAll(ForEachConnection(async connection =>
             {
                 if(!connection.IsAlive)
                     return;
