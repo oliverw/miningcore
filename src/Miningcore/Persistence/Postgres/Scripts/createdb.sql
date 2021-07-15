@@ -69,7 +69,7 @@ CREATE TABLE miner_settings
 (
 	poolid TEXT NOT NULL,
 	address TEXT NOT NULL,
-	payment_threshold decimal(28,12) NOT NULL,
+	paymentthreshold decimal(28,12) NOT NULL,
 	created TIMESTAMP NOT NULL,
 	updated TIMESTAMP NOT NULL,
 

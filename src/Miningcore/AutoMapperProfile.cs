@@ -47,6 +47,7 @@ namespace Miningcore
             CreateMap<PoolStats, Api.Responses.PoolInfo>();
             CreateMap<PoolStats, Api.Responses.AggregatedPoolStats>();
             CreateMap<Block, Api.Responses.Block>();
+            CreateMap<MinerSettings, Api.Responses.MinerSettings>();
             CreateMap<Payment, Api.Responses.Payment>();
             CreateMap<BalanceChange, Api.Responses.BalanceChange>();
             CreateMap<PoolPaymentProcessingConfig, Api.Responses.ApiPoolPaymentProcessingConfig>();
@@ -64,6 +65,7 @@ namespace Miningcore
             CreateMap<Block, Persistence.Postgres.Entities.Block>();
             CreateMap<Balance, Persistence.Postgres.Entities.Balance>();
             CreateMap<Payment, Persistence.Postgres.Entities.Payment>();
+            CreateMap<MinerSettings, Persistence.Postgres.Entities.MinerSettings>();
             CreateMap<PoolStats, Persistence.Postgres.Entities.PoolStats>();
 
             CreateMap<MinerWorkerPerformanceStats, Persistence.Postgres.Entities.MinerWorkerPerformanceStats>()
@@ -72,6 +74,9 @@ namespace Miningcore
             //////////////////////
             // incoming mappings
 
+            // API
+            CreateMap<Api.Responses.MinerSettings, MinerSettings>();
+
             // PostgreSQL
             CreateMap<Persistence.Postgres.Entities.Share, Persistence.Model.Share>();
             CreateMap<Persistence.Postgres.Entities.Block, Block>();
@@ -79,6 +84,7 @@ namespace Miningcore
             CreateMap<Persistence.Postgres.Entities.Payment, Payment>();
             CreateMap<Persistence.Postgres.Entities.BalanceChange, BalanceChange>();
             CreateMap<Persistence.Postgres.Entities.PoolStats, PoolStats>();
+            CreateMap<Persistence.Postgres.Entities.MinerSettings, MinerSettings>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, MinerWorkerPerformanceStats>();
             CreateMap<Persistence.Postgres.Entities.MinerWorkerPerformanceStats, Api.Responses.MinerPerformanceStats>();
 
