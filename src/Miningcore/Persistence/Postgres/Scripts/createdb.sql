@@ -65,6 +65,17 @@ CREATE TABLE balance_changes
 CREATE INDEX IDX_BALANCE_CHANGES_POOL_ADDRESS_CREATED on balance_changes(poolid, address, created desc);
 CREATE INDEX IDX_BALANCE_CHANGES_POOL_TAGS on balance_changes USING gin (tags);
 
+CREATE TABLE miner_settings
+(
+	poolid TEXT NOT NULL,
+	address TEXT NOT NULL,
+	payment_threshold decimal(28,12) NOT NULL,
+	created TIMESTAMP NOT NULL,
+	updated TIMESTAMP NOT NULL,
+
+	primary key(poolid, address)
+);
+
 CREATE TABLE payments
 (
 	id BIGSERIAL NOT NULL PRIMARY KEY,
