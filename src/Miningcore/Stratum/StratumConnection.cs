@@ -75,7 +75,7 @@ namespace Miningcore.Stratum
 
         #region API-Surface
 
-        public void DispatchAsync(Socket socket, CancellationToken ct,
+        public async void DispatchAsync(Socket socket, CancellationToken ct,
             StratumEndpoint endpoint, X509Certificate2 cert,
             Func<StratumConnection, JsonRpcRequest, CancellationToken, Task> onRequestAsync,
             Action<StratumConnection> onCompleted,
@@ -86,79 +86,76 @@ namespace Miningcore.Stratum
 
             expectingProxyHeader = endpoint.PoolEndpoint.TcpProxyProtocol?.Enable == true;
 
-            Task.Run(async () =>
+            try
             {
-                try
+                // prepare socket
+                socket.NoDelay = true;
+                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+
+                // create stream
+                networkStream = new NetworkStream(socket, true);
+                logger.Info(() => $"[{ConnectionId}] Accepting connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} ...");
+
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+                using(var disposables = new CompositeDisposable(networkStream))
                 {
-                    // prepare socket
-                    socket.NoDelay = true;
-                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
-                    // create stream
-                    networkStream = new NetworkStream(socket, true);
-                    logger.Info(() => $"[{ConnectionId}] Accepting connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} ...");
-
-                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-
-                    using(var disposables = new CompositeDisposable(networkStream))
+                    if(endpoint.PoolEndpoint.Tls)
                     {
-                        if(endpoint.PoolEndpoint.Tls)
-                        {
-                            var sslStream = new SslStream(networkStream, false);
-                            disposables.Add(sslStream);
+                        var sslStream = new SslStream(networkStream, false);
+                        disposables.Add(sslStream);
 
-                            // TLS handshake
-                            await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
-                            networkStream = sslStream;
+                        // TLS handshake
+                        await sslStream.AuthenticateAsServerAsync(cert, false, SslProtocols.Tls11 | SslProtocols.Tls12, false);
+                        networkStream = sslStream;
 
-                            logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
-                        }
-
-                        else
-                            logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
-
-                        // Async I/O loop(s)
-                        var tasks = new[]
-                        {
-                            FillReceivePipeAsync(ct),
-                            ProcessReceivePipeAsync(ct, endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
-                            ProcessSendQueueAsync(ct)
-                        };
-
-                        await Task.WhenAny(tasks);
-
-                        // We are done with this client, make sure all tasks complete
-                        await receivePipe.Reader.CompleteAsync();
-                        await receivePipe.Writer.CompleteAsync();
-                        sendQueue.Complete();
-
-                        // additional safety net to ensure remaining tasks don't linger
-                        cts.Cancel();
-
-                        // Signal completion or error
-                        var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
-
-                        if(error == null)
-                            onCompleted(this);
-                        else
-                            onError(this, error);
+                        logger.Info(() => $"[{ConnectionId}] {sslStream.SslProtocol.ToString().ToUpper()}-{sslStream.CipherAlgorithm.ToString().ToUpper()} Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
                     }
-                }
 
-                catch(Exception ex)
-                {
-                    onError(this, ex);
-                }
+                    else
+                        logger.Info(() => $"[{ConnectionId}] Connection from {RemoteEndpoint.Address}:{RemoteEndpoint.Port} accepted on port {endpoint.IPEndPoint.Port}");
 
-                finally
-                {
-                    // Release external observables
-                    IsAlive = false;
-                    terminated.OnNext(Unit.Default);
+                    // Async I/O loop(s)
+                    var tasks = new[]
+                    {
+                        FillReceivePipeAsync(ct),
+                        ProcessReceivePipeAsync(ct, endpoint.PoolEndpoint.TcpProxyProtocol, onRequestAsync),
+                        ProcessSendQueueAsync(ct)
+                    };
 
-                    logger.Info(() => $"[{ConnectionId}] Connection closed");
+                    await Task.WhenAny(tasks);
+
+                    // We are done with this client, make sure all tasks complete
+                    await receivePipe.Reader.CompleteAsync();
+                    await receivePipe.Writer.CompleteAsync();
+                    sendQueue.Complete();
+
+                    // additional safety net to ensure remaining tasks don't linger
+                    cts.Cancel();
+
+                    // Signal completion or error
+                    var error = tasks.FirstOrDefault(t => t.IsFaulted)?.Exception;
+
+                    if(error == null)
+                        onCompleted(this);
+                    else
+                        onError(this, error);
                 }
-            }, ct);
+            }
+
+            catch(Exception ex)
+            {
+                onError(this, ex);
+            }
+
+            finally
+            {
+                // Release external observables
+                IsAlive = false;
+                terminated.OnNext(Unit.Default);
+
+                logger.Info(() => $"[{ConnectionId}] Connection closed");
+            }
         }
 
         public string ConnectionId { get; }
