@@ -135,12 +135,7 @@ namespace Miningcore.Util
 
         public override bool Equals(object obj)
         {
-            if(obj == null)
-                return false;
-
-            if(!(obj is BigRational))
-                return false;
-            return Equals((BigRational) obj);
+            return obj is BigRational rational && Equals(rational);
         }
 
         public override int GetHashCode()
@@ -153,7 +148,7 @@ namespace Miningcore.Util
         {
             if(obj == null)
                 return 1;
-            if(!(obj is BigRational))
+            if(obj is not BigRational)
                 throw new ArgumentException("Argument must be of type BigRational", "obj");
             return Compare(this, (BigRational) obj);
         }

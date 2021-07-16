@@ -242,7 +242,7 @@ namespace Miningcore.Blockchain.Equihash
 
             logger.LogInvoke(new object[] { worker.ConnectionId });
 
-            if(!(submission is object[] submitParams))
+            if(submission is not object[] submitParams)
                 throw new StratumException(StratumError.Other, "invalid params");
 
             var context = worker.ContextAs<BitcoinWorkerContext>();
