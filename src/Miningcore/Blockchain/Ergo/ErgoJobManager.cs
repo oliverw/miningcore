@@ -447,9 +447,9 @@ namespace Miningcore.Blockchain.Ergo
             daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, logger);
         }
 
-        protected override async Task<bool> AreDaemonsHealthyAsync()
+        protected override async Task<bool> AreDaemonsHealthyAsync(CancellationToken ct)
         {
-            var info = await Guard(() => daemon.GetNodeInfoAsync(),
+            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
                 ex=> logger.ThrowLogPoolStartupException($"Daemon reports: {ex.Message}"));
 
             if(info?.IsMining != true)
@@ -458,9 +458,9 @@ namespace Miningcore.Blockchain.Ergo
             return true;
         }
 
-        protected override async Task<bool> AreDaemonsConnectedAsync()
+        protected override async Task<bool> AreDaemonsConnectedAsync(CancellationToken ct)
         {
-            var info = await Guard(() => daemon.GetNodeInfoAsync(),
+            var info = await Guard(() => daemon.GetNodeInfoAsync(ct),
                 ex=> logger.Debug(ex));
 
             return info?.PeersCount > 0;

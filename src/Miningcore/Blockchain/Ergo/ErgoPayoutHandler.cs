@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
@@ -77,13 +78,13 @@ namespace Miningcore.Blockchain.Ergo
                 throw ex;
         }
 
-        private async Task UnlockWallet()
+        private async Task UnlockWallet(CancellationToken ct)
         {
             logger.Info(() => $"[{LogCategory}] Unlocking wallet");
 
             var walletPassword = extraPoolPaymentProcessingConfig.WalletPassword ?? string.Empty;
 
-            await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = walletPassword}), ex =>
+            await Guard(() => daemon.WalletUnlockAsync(new Body4 {Pass = walletPassword}, ct), ex =>
             {
                 if (ex is ApiException<ApiError> apiException)
                 {
@@ -100,11 +101,11 @@ namespace Miningcore.Blockchain.Ergo
             logger.Info(() => $"[{LogCategory}] Wallet unlocked");
         }
 
-        private async Task LockWallet()
+        private async Task LockWallet(CancellationToken ct)
         {
             logger.Info(() => $"[{LogCategory}] Locking wallet");
 
-            await Guard(() => daemon.WalletLockAsync(),
+            await Guard(() => daemon.WalletLockAsync(ct),
                 ex => ReportAndRethrowApiError("Failed to lock wallet", ex));
 
             logger.Info(() => $"[{LogCategory}] Wallet locked");
@@ -112,7 +113,7 @@ namespace Miningcore.Blockchain.Ergo
 
         #region IPayoutHandler
 
-        public virtual async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig)
+        public virtual async Task ConfigureAsync(ClusterConfig clusterConfig, PoolConfig poolConfig, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
 
@@ -127,11 +128,11 @@ namespace Miningcore.Blockchain.Ergo
             daemon = ErgoClientFactory.CreateClient(poolConfig, clusterConfig, null);
 
             // detect chain
-            var info = await daemon.GetNodeInfoAsync();
+            var info = await daemon.GetNodeInfoAsync(ct);
             network = ErgoConstants.RegexChain.Match(info.Name).Groups[1].Value.ToLower();
         }
 
-        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks)
+        public virtual async Task<Block[]> ClassifyBlocksAsync(IMiningPool pool, Block[] blocks, CancellationToken ct)
         {
             Contract.RequiresNonNull(poolConfig, nameof(poolConfig));
             Contract.RequiresNonNull(blocks, nameof(blocks));
@@ -144,8 +145,8 @@ namespace Miningcore.Blockchain.Ergo
             var pageCount = (int) Math.Ceiling(blocks.Length / (double) pageSize);
             var result = new List<Block>();
             var minConfirmations = extraPoolConfig?.MinimumConfirmations ?? (network == "mainnet" ? 720 : 72);
-            var minerRewardsPubKey = await daemon.MiningReadMinerRewardPubkeyAsync();
-            var minerRewardsAddress = await daemon.MiningReadMinerRewardAddressAsync();
+            var minerRewardsPubKey = await daemon.MiningReadMinerRewardPubkeyAsync(ct);
+            var minerRewardsAddress = await daemon.MiningReadMinerRewardAddressAsync(ct);
 
             for(var i = 0; i < pageCount; i++)
             {
@@ -156,7 +157,7 @@ namespace Miningcore.Blockchain.Ergo
                     .ToArray();
 
                 // fetch header ids for blocks in page
-                var headerBatch = page.Select(block => daemon.GetFullBlockAtAsync((int) block.BlockHeight)).ToArray();
+                var headerBatch = page.Select(block => daemon.GetFullBlockAtAsync((int) block.BlockHeight, ct)).ToArray();
 
                 await Guard(()=> Task.WhenAll(headerBatch),
                     ex=> logger.Debug(ex));
@@ -179,7 +180,7 @@ namespace Miningcore.Blockchain.Ergo
                     var headerIds = headerTask.Result;
 
                     // fetch blocks
-                    var blockBatch = headerIds.Select(x=> daemon.GetFullBlockByIdAsync(x)).ToArray();
+                    var blockBatch = headerIds.Select(x=> daemon.GetFullBlockByIdAsync(x, ct)).ToArray();
 
                     await Guard(()=> Task.WhenAll(blockBatch),
                         ex=> logger.Debug(ex));
@@ -217,7 +218,7 @@ namespace Miningcore.Blockchain.Ergo
 
                         foreach(var blockTx in fullBlock.BlockTransactions.Transactions)
                         {
-                            var walletTx = await Guard(()=> daemon.WalletGetTransactionAsync(blockTx.Id));
+                            var walletTx = await Guard(()=> daemon.WalletGetTransactionAsync(blockTx.Id, ct));
                             var coinbaseOutput = walletTx?.Outputs?.FirstOrDefault(x => x.Address == minerRewardsAddress.RewardAddress);
 
                             if(coinbaseOutput != null)
@@ -285,7 +286,7 @@ namespace Miningcore.Blockchain.Ergo
             return result.ToArray();
         }
 
-        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff)
+        public virtual Task CalculateBlockEffortAsync(IMiningPool pool, Block block, double accumulatedBlockShareDiff, CancellationToken ct)
         {
             block.Effort = accumulatedBlockShareDiff * ErgoConstants.ShareMultiplier / block.NetworkDifficulty;
 
@@ -297,7 +298,7 @@ namespace Miningcore.Blockchain.Ergo
             return difficulty * ErgoConstants.ShareMultiplier;
         }
 
-        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances)
+        public virtual async Task PayoutAsync(IMiningPool pool, Balance[] balances, CancellationToken ct)
         {
             Contract.RequiresNonNull(balances, nameof(balances));
 
@@ -314,16 +315,16 @@ namespace Miningcore.Blockchain.Ergo
                 logger.Info(() => $"[{LogCategory}] Paying {FormatAmount(balances.Sum(x => x.Amount))} to {balances.Length} addresses");
 
                 // get wallet status
-                var status = await daemon.GetWalletStatusAsync();
+                var status = await daemon.GetWalletStatusAsync(ct);
 
                 if(!status.IsInitialized)
                     throw new PaymentException($"Wallet is not initialized");
 
                 if(!status.IsUnlocked)
-                    await UnlockWallet();
+                    await UnlockWallet(ct);
 
                 // get balance
-                var walletBalances = await daemon.WalletBalancesAsync();
+                var walletBalances = await daemon.WalletBalancesAsync(ct);
                 logger.Info(() => $"[{LogCategory}] Current wallet balance is {FormatAmount(walletBalances.Balance / ErgoConstants.SmallestUnit)}");
 
                 // Create request batch
@@ -333,7 +334,7 @@ namespace Miningcore.Blockchain.Ergo
                     Value = (long) (x.Value * ErgoConstants.SmallestUnit),
                 }).ToArray();
 
-                var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests), ex =>
+                var txId = await Guard(()=> daemon.WalletPaymentTransactionGenerateAndSendAsync(requests, ct), ex =>
                 {
                     if(ex is ApiException<ApiError> apiException)
                     {
@@ -369,7 +370,7 @@ namespace Miningcore.Blockchain.Ergo
 
             finally
             {
-                await LockWallet();
+                await LockWallet(ct);
             }
         }
 
